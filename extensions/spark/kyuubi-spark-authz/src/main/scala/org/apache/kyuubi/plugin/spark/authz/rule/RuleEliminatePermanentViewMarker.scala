@@ -37,7 +37,7 @@ case class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends 
         }
         // For each SubqueryExpression's PVM, we should mark as resolved to
         // avoid check privilege of PVM's internal Subquery.
-        Authorization.markAuthChecked(ret)
+        Authorization.markAllNodesAuthChecked(ret)
         ret
     }
   }
@@ -52,8 +52,9 @@ case class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends 
         }
     }
     if (matched) {
-      Authorization.markAuthChecked(eliminatedPVM)
-      sparkSession.sessionState.optimizer.execute(eliminatedPVM)
+      Authorization.markAllNodesAuthChecked(eliminatedPVM)
+      val optimized = sparkSession.sessionState.optimizer.execute(eliminatedPVM)
+      Authorization.markAllNodesAuthChecked(optimized)
     } else {
       eliminatedPVM
     }

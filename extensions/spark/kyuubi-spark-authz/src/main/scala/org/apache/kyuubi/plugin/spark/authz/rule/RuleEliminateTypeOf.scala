@@ -25,10 +25,8 @@ import org.apache.kyuubi.plugin.spark.authz.rule.expression.TypeOfPlaceHolder
 
 object RuleEliminateTypeOf extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformUp { case p =>
-      p.transformExpressionsUp {
-        case toph: TypeOfPlaceHolder => TypeOf(toph.expr)
-      }
+    plan.transformExpressionsUp {
+      case toph: TypeOfPlaceHolder => TypeOf(toph.expr)
     }
   }
 }

@@ -54,7 +54,7 @@ sealed trait WithKyuubiServerOnYarn extends WithKyuubiServer {
     miniYarnService = new MiniYarnService()
     miniYarnService.initialize(conf)
     miniYarnService.start()
-    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", miniYarnService.getHadoopConfDir)
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", miniYarnService.getYarnConfDir)
     super.beforeAll()
   }
 

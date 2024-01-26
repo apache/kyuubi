@@ -20,12 +20,15 @@ package org.apache.spark.ui
 import java.util.Date
 import javax.servlet.http.HttpServletRequest
 
+import scala.collection.mutable
 import scala.xml.Node
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config.SECRET_REDACTION_PATTERN
 import org.apache.spark.ui.UIUtils._
 import org.apache.spark.util.Utils
+
+import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 
 /** Page for Spark Web UI that shows statistics of jobs running in the engine server */
 case class EngineSessionPage(parent: EngineTab)
@@ -126,50 +129,118 @@ case class EngineSessionPage(parent: EngineTab)
 
   /** Generate stats of batch statements of the engine server */
   private def generateSQLStatsTable(request: HttpServletRequest, sessionID: String): Seq[Node] = {
-    val executionList = store.getStatementList
+    val running = new mutable.ArrayBuffer[SparkOperationEvent]()
+    val completed = new mutable.ArrayBuffer[SparkOperationEvent]()
+    val failed = new mutable.ArrayBuffer[SparkOperationEvent]()
+
+    store.getStatementList
       .filter(_.sessionId == sessionID)
-    val numStatement = executionList.size
-    val table =
-      if (numStatement > 0) {
-
-        val sqlTableTag = "sqlsessionstat"
-
-        val sqlTablePage =
-          Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
-
-        try {
-          Some(new StatementStatsPagedTable(
-            request,
-            parent,
-            executionList,
-            "kyuubi/session",
-            UIUtils.prependBaseUri(request, parent.basePath),
-            sqlTableTag).table(sqlTablePage))
-        } catch {
-          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-            Some(<div class="alert alert-error">
-            <p>Error while rendering job table:</p>
-            <pre>
-              {Utils.exceptionString(e)}
-            </pre>
-          </div>)
+      .foreach { op =>
+        if (op.completeTime <= 0L) {
+          running += op
+        } else if (op.exception.isDefined) {
+          failed += op
+        } else {
+          completed += op
         }
-      } else {
-        None
       }
-    val content =
-      <span id="sqlsessionstat" class="collapse-aggregated-sqlsessionstat collapse-table"
-            onClick="collapseTable('collapse-aggregated-sqlsessionstat',
-                'aggregated-sqlsessionstat')">
-        <h4>
-          <span class="collapse-table-arrow arrow-open"></span>
-          <a>Statement Statistics</a>
-        </h4>
-      </span> ++
-        <div class="aggregated-sqlsessionstat collapsible-table">
-          {table.getOrElse("No statistics have been generated yet.")}
-        </div>
+    val content = mutable.ListBuffer[Node]()
+    if (running.nonEmpty) {
+      val sqlTableTag = "running-sqlstat"
+      val table = statementStatsTable(request, sqlTableTag, parent, running.toSeq)
+      content ++=
+        <span id="running-sqlstat" class="collapse-aggregated-runningSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-runningSqlstat',
+              'aggregated-runningSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Running Statement Statistics</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-runningSqlstat collapsible-table">
+            {table}
+          </div>
+    }
+
+    if (completed.nonEmpty) {
+      val table = {
+        val sqlTableTag = "completed-sqlstat"
+        statementStatsTable(
+          request,
+          sqlTableTag,
+          parent,
+          completed.toSeq)
+      }
+
+      content ++=
+        <span id="completed-sqlstat" class="collapse-aggregated-completedSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-completedSqlstat',
+              'aggregated-completedSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Completed Statement Statistics (
+              {completed.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-completedSqlstat collapsible-table">
+            {table}
+          </div>
+    }
+
+    if (failed.nonEmpty) {
+      val table = {
+        val sqlTableTag = "failed-sqlstat"
+        statementStatsTable(
+          request,
+          sqlTableTag,
+          parent,
+          failed.toSeq)
+      }
+
+      content ++=
+        <span id="failed-sqlstat" class="collapse-aggregated-failedSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-failedSqlstat',
+              'aggregated-failedSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Failed Statement Statistics (
+              {failed.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-failedSqlstat collapsible-table">
+            {table}
+          </div>
+    }
 
     content
+  }
+
+  private def statementStatsTable(
+      request: HttpServletRequest,
+      sqlTableTag: String,
+      parent: EngineTab,
+      data: Seq[SparkOperationEvent]): Seq[Node] = {
+    val sqlTablePage =
+      Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
+
+    try {
+      new StatementStatsPagedTable(
+        request,
+        parent,
+        data,
+        "kyuubi/session",
+        UIUtils.prependBaseUri(request, parent.basePath),
+        s"${sqlTableTag}").table(sqlTablePage)
+    } catch {
+      case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+        <div class="alert alert-error">
+          <p>Error while rendering job table:</p>
+          <pre>
+            {Utils.exceptionString(e)}
+          </pre>
+        </div>
+    }
   }
 }

@@ -89,7 +89,9 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
         "tdigest",
         "LikePattern",
         "function",
-        "Classifier")
+        "Classifier",
+        "json2016",
+        "JsonPath2016")
       val typeInfos: Set[String] = Set()
       while (typeInfo.next()) {
         assert(expectedTypes.contains(typeInfo.getString(TYPE_NAME)))

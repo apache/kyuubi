@@ -123,7 +123,7 @@
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <apache.archive.dist>http://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.23</codahale.metrics.version>
@@ -133,18 +133,17 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <etcd.version>0.7.3</etcd.version>
         <delta.artifact>delta-core</delta.artifact>
         <delta.version>2.4.0</delta.version>
-        <failsafe.verion>2.4.4</failsafe.verion>
+        <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.17.1</flink.version>
+        <flink.version>1.17.2</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
-        <grpc.version>1.53.0</grpc.version>
+        <grpc.version>1.60.1</grpc.version>
         <guava.version>32.0.1-jre</guava.version>
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.6</hadoop.version>
@@ -168,6 +167,7 @@
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.39.1</jersey.version>
+        <jetcd.version>0.7.7</jetcd.version>
         <jetty.version>9.4.52.v20230823</jetty.version>
         <jline.version>0.9.94</jline.version>
         <junit.version>4.13.2</junit.version>
@@ -212,7 +212,8 @@
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <thrift.version>0.9.3</thrift.version>
-        <trino.client.version>363</trino.client.version>
+        <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
+        <trino.client.version>411</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
 
@@ -1105,7 +1106,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-core</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>javax.annotation</groupId>
@@ -1117,7 +1118,7 @@
             <dependency>
                 <groupId>io.etcd</groupId>
                 <artifactId>jetcd-launcher</artifactId>
-                <version>${etcd.version}</version>
+                <version>${jetcd.version}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.testcontainers</groupId>
@@ -1157,6 +1158,12 @@
             </dependency>
 
             <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-util</artifactId>
+                <version>${grpc.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-java</artifactId>
                 <version>${protobuf.version}</version>
@@ -1169,7 +1176,7 @@
             </dependency>
 
             <dependency>
-                <groupId>net.jodah</groupId>
+                <groupId>dev.failsafe</groupId>
                 <artifactId>failsafe</artifactId>
                 <version>${failsafe.verion}</version>
             </dependency>
@@ -2337,7 +2344,7 @@
         <profile>
             <id>flink-1.17</id>
             <properties>
-                <flink.version>1.17.1</flink.version>
+                <flink.version>1.17.2</flink.version>
             </properties>
         </profile>
 
@@ -2374,13 +2381,6 @@
             <properties>
                 <hive.archive.download.skip>true</hive.archive.download.skip>
             </properties>
-        </profile>
-
-        <profile>
-            <id>spark-block-cleaner</id>
-            <modules>
-                <module>tools/spark-block-cleaner</module>
-            </modules>
         </profile>
 
         <profile>

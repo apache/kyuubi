@@ -45,7 +45,10 @@ class HiveSQLEngine extends Serverable("HiveSQLEngine") {
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
-    backendService.sessionManager.startTerminatingChecker(() => stop())
+    backendService.sessionManager.startTerminatingChecker(() => {
+      selfExited = true
+      stop()
+    })
   }
 
   override protected def stopServer(): Unit = {
@@ -151,7 +154,8 @@ object HiveSQLEngine extends Logging {
       }
 
     } catch {
-      case t: Throwable => currentEngine match {
+      case t: Throwable =>
+        currentEngine match {
           case Some(engine) =>
             engine.stop()
             val event = HiveEngineEvent(engine)
@@ -160,6 +164,7 @@ object HiveSQLEngine extends Logging {
           case _ =>
             error(s"Failed to start Hive SQL engine: ${t.getMessage}.", t)
         }
+        throw t
     }
   }
 }

@@ -38,7 +38,6 @@ class AccessResource private (val objectType: ObjectType, val catalog: Option[St
     val columnStr = getColumn
     if (columnStr == null) Nil else columnStr.split(",").filter(_.nonEmpty)
   }
-  def getUrl: String = getValue("url")
 }
 
 object AccessResource {

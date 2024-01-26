@@ -25,6 +25,7 @@ import scala.concurrent.ExecutionContext
 
 import com.google.common.base.Verify
 import io.trino.client.ClientSession
+import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 import io.trino.client.StatementClient
 import io.trino.client.StatementClientFactory
@@ -45,6 +46,9 @@ class TrinoStatement(
     kyuubiConf: KyuubiConf,
     sql: String,
     operationLog: Option[OperationLog]) extends Logging {
+
+  private val defaultSchema: List[Column] =
+    List(new Column("Result", "VARCHAR", new ClientTypeSignature("VARCHAR")))
 
   private lazy val trino = StatementClientFactory
     .newStatementClient(trinoContext.httpClient, trinoContext.clientSession.get, sql)
@@ -68,6 +72,9 @@ class TrinoStatement(
       val columns = results.getColumns()
       if (columns != null) {
         info(s"Execute with Trino query id: ${results.getId}")
+        if (columns.isEmpty) {
+          return defaultSchema
+        }
         return columns.asScala.toList
       }
       trino.advance()
@@ -121,13 +128,13 @@ class TrinoStatement(
     // update catalog and schema
     if (trino.getSetCatalog.isPresent || trino.getSetSchema.isPresent) {
       builder = builder
-        .withCatalog(trino.getSetCatalog.orElse(session.getCatalog))
-        .withSchema(trino.getSetSchema.orElse(session.getSchema))
+        .catalog(trino.getSetCatalog.orElse(session.getCatalog))
+        .schema(trino.getSetSchema.orElse(session.getSchema))
     }
 
     // update path if present
     if (trino.getSetPath.isPresent) {
-      builder = builder.withPath(trino.getSetPath.get)
+      builder = builder.path(trino.getSetPath.get)
     }
 
     // update session properties if present
@@ -135,7 +142,7 @@ class TrinoStatement(
       val properties = session.getProperties.asScala.clone()
       properties ++= trino.getSetSessionProperties.asScala
       properties --= trino.getResetSessionProperties.asScala
-      builder = builder.withProperties(properties.asJava)
+      builder = builder.properties(properties.asJava)
     }
 
     trinoContext.clientSession.set(builder.build())

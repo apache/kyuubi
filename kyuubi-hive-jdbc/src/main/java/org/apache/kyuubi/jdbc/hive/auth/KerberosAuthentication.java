@@ -28,6 +28,7 @@ import com.google.common.collect.ImmutableSet;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -107,6 +108,9 @@ public class KerberosAuthentication {
       ticketCache = System.getenv("KRB5CCNAME");
     }
     if (StringUtils.isNotBlank(ticketCache)) {
+      if (!Files.exists(Paths.get(ticketCache))) {
+        LOG.warn("TicketCache {} does not exist", ticketCache);
+      }
       optionsBuilder.put("ticketCache", ticketCache);
     }
     return createConfiguration(optionsBuilder);

@@ -129,8 +129,7 @@
       '.dockerignore',
       'bin/docker-image-tool.sh',
       'docker/**/*',
-      'integration-tests/kyuubi-kubernetes-it/**/*',
-      'tools/spark-block-cleaner/**/*'
+      'integration-tests/kyuubi-kubernetes-it/**/*'
     ]
 
 "module:metrics":
@@ -164,8 +163,7 @@
   - changed-files:
       - any-glob-to-any-file: [
         'externals/kyuubi-spark-sql-engine/**/*',
-        'extensions/spark/**/*',
-        'tools/spark-block-cleaner/**/*'
+        'extensions/spark/**/*'
       ]
 
 "module:extensions":

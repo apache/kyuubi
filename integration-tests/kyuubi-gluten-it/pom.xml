@@ -30,7 +30,7 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <gluten.version>1.1.0-SNAPSHOT</gluten.version>
+        <gluten.version>1.2.0-SNAPSHOT</gluten.version>
         <spark.version>3.4.2</spark.version>
         <spark.binary.version>3.4</spark.binary.version>
     </properties>

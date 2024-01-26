@@ -160,6 +160,17 @@ object Utils extends Logging {
   }
 
   /**
+   * List the files recursively in a directory.
+   */
+  def listFilesRecursively(file: File): Seq[File] = {
+    if (!file.isDirectory) {
+      file :: Nil
+    } else {
+      file.listFiles().flatMap(listFilesRecursively)
+    }
+  }
+
+  /**
    * Copies bytes from an InputStream source to a newly created temporary file
    * created in the directory destination. The temporary file will be created
    * with new name by adding random identifiers before original file name's suffix,

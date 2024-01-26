@@ -29,5 +29,6 @@ trait GlutenSuiteMixin {
     "spark.memory.offHeap.size" -> "4g",
     "spark.memory.offHeap.enabled" -> "true",
     "spark.shuffle.manager" -> "org.apache.spark.shuffle.sort.ColumnarShuffleManager",
+    "spark.gluten.ui.enabled" -> "false",
     "spark.jars" -> extraJars)
 }
