@@ -28,8 +28,8 @@ trait WithKyuubiServerAndTrinoContainer extends WithKyuubiServer with TestContai
 
   val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
 
-  final val IMAGE_VERSION = 363
-  final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
+  final val IMAGE_VERSION = 411
+  final val DOCKER_IMAGE_NAME = s"trinodb/trino:$IMAGE_VERSION"
 
   override val containerDef: TrinoContainer.Def = TrinoContainer.Def(DOCKER_IMAGE_NAME)
 

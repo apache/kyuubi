@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.phoenix
 
-import com.dimafeng.testcontainers.{GenericContainer, SingleContainer}
+import com.dimafeng.testcontainers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
 
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
@@ -27,21 +27,15 @@ trait WithPhoenixContainer extends WithJdbcServerContainer {
 
   private val phoenixDockerImage = "iteblog/hbase-phoenix-docker:1.0"
 
-  override val container: SingleContainer[_] = GenericContainer(
+  override val containerDef: GenericContainer.Def[GenericContainer] = GenericContainer.Def(
     dockerImage = phoenixDockerImage,
     exposedPorts = Seq(PHOENIX_PORT),
     waitStrategy = Wait.forListeningPort)
 
-  protected def queryServerUrl: String = {
+  protected def queryServerUrl: String = withContainers { container =>
     val queryServerHost: String = container.host
     val queryServerPort: Int = container.mappedPort(PHOENIX_PORT)
     val url = s"$queryServerHost:$queryServerPort"
     url
   }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    container.close()
-  }
-
 }

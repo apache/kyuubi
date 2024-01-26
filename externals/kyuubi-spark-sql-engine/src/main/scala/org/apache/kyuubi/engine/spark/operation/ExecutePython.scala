@@ -28,8 +28,6 @@ import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkFiles
 import org.apache.spark.api.python.KyuubiPythonGatewayServer
@@ -37,9 +35,11 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE, ENGINE_SPARK_PYTHON_MAGIC_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.EngineSparkOutputMode.{AUTO, EngineSparkOutputMode, NOTEBOOK}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
+import org.apache.kyuubi.engine.spark.util.JsonUtils
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -87,7 +87,7 @@ class ExecutePython(
         val response = worker.runCode(statement)
         val status = response.map(_.content.status).getOrElse("UNKNOWN_STATUS")
         if (PythonResponse.OK_STATUS.equalsIgnoreCase(status)) {
-          val output = response.map(_.content.getOutput()).getOrElse("")
+          val output = response.map(_.content.getOutput(outputMode)).getOrElse("")
           val ename = response.map(_.content.getEname()).getOrElse("")
           val evalue = response.map(_.content.getEvalue()).getOrElse("")
           val traceback = response.map(_.content.getTraceback()).getOrElse(Seq.empty)
@@ -95,7 +95,8 @@ class ExecutePython(
             new ArrayFetchIterator[Row](Array(Row(output, status, ename, evalue, traceback)))
           setState(OperationState.FINISHED)
         } else {
-          throw KyuubiSQLException(s"Interpret error:\n$statement\n $response")
+          throw KyuubiSQLException(s"Interpret error:\n" +
+            s"${JsonUtils.toPrettyJson(Map("code" -> statement, "response" -> response.orNull))}")
         }
       }
     } catch {
@@ -200,12 +201,12 @@ case class SessionPythonWorker(
       throw KyuubiSQLException("Python worker process has been exited, please check the error log" +
         " and re-create the session to run python code.")
     }
-    val input = ExecutePython.toJson(Map("code" -> code, "cmd" -> "run_code"))
+    val input = JsonUtils.toJson(Map("code" -> code, "cmd" -> "run_code"))
     // scalastyle:off println
     stdin.println(input)
     // scalastyle:on
     stdin.flush()
-    val pythonResponse = Option(stdout.readLine()).map(ExecutePython.fromJson[PythonResponse](_))
+    val pythonResponse = Option(stdout.readLine()).map(JsonUtils.fromJson[PythonResponse](_))
     // throw exception if internal python code fail
     if (internal && !pythonResponse.map(_.content.status).contains(PythonResponse.OK_STATUS)) {
       throw KyuubiSQLException(s"Internal python code $code failure: $pythonResponse")
@@ -214,7 +215,7 @@ case class SessionPythonWorker(
   }
 
   def close(): Unit = {
-    val exitCmd = ExecutePython.toJson(Map("cmd" -> "exit_worker"))
+    val exitCmd = JsonUtils.toJson(Map("cmd" -> "exit_worker"))
     // scalastyle:off println
     stdin.println(exitCmd)
     // scalastyle:on
@@ -233,6 +234,7 @@ object ExecutePython extends Logging {
   final val PY4J_REGEX = "py4j-[\\S]*.zip$".r
   final val PY4J_PATH = "PY4J_PATH"
   final val IS_PYTHON_APP_KEY = "spark.yarn.isPython"
+  final val MAGIC_ENABLED = "MAGIC_ENABLED"
 
   private val isPythonGatewayStart = new AtomicBoolean(false)
   private val kyuubiPythonPath = Utils.createTempDir()
@@ -280,6 +282,7 @@ object ExecutePython extends Logging {
     }
     env.put("KYUUBI_SPARK_SESSION_UUID", sessionId)
     env.put("PYTHON_GATEWAY_CONNECTION_INFO", KyuubiPythonGatewayServer.CONNECTION_FILE_PATH)
+    env.put(MAGIC_ENABLED, getSessionConf(ENGINE_SPARK_PYTHON_MAGIC_ENABLED, spark).toString)
     logger.info(
       s"""
          |launch python worker command: ${builder.command().asScala.mkString(" ")}
@@ -385,19 +388,6 @@ object ExecutePython extends Logging {
     sink.close()
     file
   }
-
-  val mapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
-  def toJson[T](obj: T): String = {
-    mapper.writeValueAsString(obj)
-  }
-  def fromJson[T](json: String, clz: Class[T]): T = {
-    mapper.readValue(json, clz)
-  }
-
-  def fromJson[T](json: String)(implicit m: Manifest[T]): T = {
-    mapper.readValue(json, m.runtimeClass).asInstanceOf[T]
-  }
-
 }
 
 case class PythonResponse(
@@ -409,15 +399,28 @@ object PythonResponse {
 }
 
 case class PythonResponseContent(
-    data: Map[String, String],
+    data: Map[String, Object],
     ename: String,
     evalue: String,
     traceback: Seq[String],
     status: String) {
-  def getOutput(): String = {
-    Option(data)
-      .map(_.getOrElse("text/plain", ""))
-      .getOrElse("")
+  def getOutput(outputMode: EngineSparkOutputMode): String = {
+    if (data == null) return ""
+
+    outputMode match {
+      case AUTO =>
+        // If data does not contains field other than `test/plain`, keep backward compatibility,
+        // otherwise, return all the data.
+        if (data.filterNot(_._1 == "text/plain").isEmpty) {
+          data.get("text/plain").map {
+            case str: String => str
+            case obj => JsonUtils.toJson(obj)
+          }.getOrElse("")
+        } else {
+          JsonUtils.toJson(data)
+        }
+      case NOTEBOOK => JsonUtils.toJson(data)
+    }
   }
   def getEname(): String = {
     Option(ename).getOrElse("")

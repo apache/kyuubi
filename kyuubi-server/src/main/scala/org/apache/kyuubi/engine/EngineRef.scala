@@ -38,7 +38,7 @@ import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths}
+import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -196,7 +196,7 @@ private[kyuubi] class EngineRef(
         new TrinoProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
         conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
-        new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog, defaultEngineName)
       case JDBC =>
         new JdbcProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
       case CHAT =>
@@ -297,6 +297,7 @@ private[kyuubi] class EngineRef(
    *
    * @param discoveryClient the zookeeper client to get or create engine instance
    * @param extraEngineLog the launch engine operation log, used to inject engine log into it
+   * @return engine host and port
    */
   def getOrCreate(
       discoveryClient: DiscoveryClient,
@@ -305,6 +306,42 @@ private[kyuubi] class EngineRef(
       .getOrElse {
         create(discoveryClient, extraEngineLog)
       }
+  }
+
+  /**
+   * Deregister the engine from engine space with the given host and port on connection failure.
+   *
+   * @param discoveryClient the zookeeper client to get or create engine instance
+   * @param hostPort the existing engine host and port
+   * @return deregister result and message
+   */
+  def deregister(discoveryClient: DiscoveryClient, hostPort: (String, Int)): (Boolean, String) =
+    tryWithLock(discoveryClient) {
+      // refer the DiscoveryClient::getServerHost implementation
+      discoveryClient.getServiceNodesInfo(engineSpace, Some(1), silent = true) match {
+        case Seq(sn) =>
+          if ((sn.host, sn.port) == hostPort) {
+            val msg = s"Deleting engine node:$sn"
+            info(msg)
+            discoveryClient.delete(s"$engineSpace/${sn.nodeName}")
+            (true, msg)
+          } else {
+            val msg = s"Engine node:$sn is not matched with host&port[$hostPort]"
+            warn(msg)
+            (false, msg)
+          }
+        case _ =>
+          val msg = s"No engine node found in $engineSpace"
+          warn(msg)
+          (false, msg)
+      }
+    }
+
+  def getServiceNode(
+      discoveryClient: DiscoveryClient,
+      hostPort: (String, Int)): Option[ServiceNodeInfo] = {
+    val serviceNodes = discoveryClient.getServiceNodesInfo(engineSpace)
+    serviceNodes.filter { sn => (sn.host, sn.port) == hostPort }.headOption
   }
 
   def close(): Unit = {

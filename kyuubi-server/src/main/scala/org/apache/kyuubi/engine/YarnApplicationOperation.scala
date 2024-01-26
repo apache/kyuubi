@@ -184,7 +184,8 @@ object YarnApplicationOperation extends Logging {
         ApplicationState.RUNNING
       case (YarnApplicationState.FINISHED, FinalApplicationStatus.SUCCEEDED) =>
         ApplicationState.FINISHED
-      case (YarnApplicationState.FAILED, FinalApplicationStatus.FAILED) =>
+      case (YarnApplicationState.FINISHED, FinalApplicationStatus.FAILED) |
+          (YarnApplicationState.FAILED, FinalApplicationStatus.FAILED) =>
         ApplicationState.FAILED
       case (YarnApplicationState.KILLED, FinalApplicationStatus.KILLED) =>
         ApplicationState.KILLED

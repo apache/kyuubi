@@ -26,10 +26,12 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
-import org.apache.kyuubi.engine.hive.HiveProcessBuilder._
+import org.apache.kyuubi.engine.deploy.DeployMode
+import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
+import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -45,7 +47,7 @@ class HiveProcessBuilder(
     this(proxyUser, conf, "")
   }
 
-  private val hiveHome: String = getEngineHome(shortName)
+  protected val hiveHome: String = getEngineHome(shortName)
 
   override protected def module: String = "kyuubi-hive-sql-engine"
 
@@ -113,7 +115,23 @@ class HiveProcessBuilder(
   override def shortName: String = "hive"
 }
 
-object HiveProcessBuilder {
+object HiveProcessBuilder extends Logging {
   final val HIVE_HADOOP_CLASSPATH_KEY = "HIVE_HADOOP_CLASSPATH"
   final val HIVE_ENGINE_NAME = "hive.engine.name"
+
+  def apply(
+      appUser: String,
+      conf: KyuubiConf,
+      engineRefId: String,
+      extraEngineLog: Option[OperationLog],
+      defaultEngineName: String): HiveProcessBuilder = {
+    DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
+      case LOCAL => new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case YARN =>
+        warn(s"Hive on YARN model is experimental.")
+        conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
+        new HiveYarnModeProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
+    }
+  }
 }

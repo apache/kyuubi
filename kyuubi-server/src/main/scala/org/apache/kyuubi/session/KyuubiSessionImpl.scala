@@ -25,10 +25,12 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.EngineOpenOnFailure._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
+import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
@@ -99,12 +101,12 @@ class KyuubiSessionImpl(
       sessionManager.getConf)
   }
 
-  private var _client: KyuubiSyncThriftClient = _
+  @volatile private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
-  private var _engineSessionHandle: SessionHandle = _
+  @volatile private var _engineSessionHandle: SessionHandle = _
 
-  private var openSessionError: Option[Throwable] = None
+  @volatile private var openSessionError: Option[Throwable] = None
 
   override def open(): Unit = handleSessionException {
     traceMetricsOnOpen()
@@ -116,6 +118,12 @@ class KyuubiSessionImpl(
 
     runOperation(launchEngineOp)
     engineLastAlive = System.currentTimeMillis()
+  }
+
+  def getEngineNode: Option[ServiceNodeInfo] = {
+    withDiscoveryClient(sessionConf) { discoveryClient =>
+      engine.getServiceNode(discoveryClient, _client.hostPort)
+    }
   }
 
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
@@ -141,10 +149,21 @@ class KyuubiSessionImpl(
 
         val maxAttempts = sessionManager.getConf.get(ENGINE_OPEN_MAX_ATTEMPTS)
         val retryWait = sessionManager.getConf.get(ENGINE_OPEN_RETRY_WAIT)
+        val openOnFailure =
+          EngineOpenOnFailure.withName(sessionManager.getConf.get(ENGINE_OPEN_ON_FAILURE))
         var attempt = 0
         var shouldRetry = true
         while (attempt <= maxAttempts && shouldRetry) {
           val (host, port) = engine.getOrCreate(discoveryClient, extraEngineLog)
+
+          def deregisterEngine(): Unit =
+            try {
+              engine.deregister(discoveryClient, (host, port))
+            } catch {
+              case e: Throwable =>
+                warn(s"Error on de-registering engine [${engine.engineSpace} $host:$port]", e)
+            }
+
           try {
             val passwd =
               if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -167,6 +186,10 @@ class KyuubiSessionImpl(
                   s" $attempt/$maxAttempts times, retrying",
                 e.getCause)
               Thread.sleep(retryWait)
+              openOnFailure match {
+                case DEREGISTER_IMMEDIATELY => deregisterEngine()
+                case _ =>
+              }
               shouldRetry = true
             case e: Throwable =>
               error(
@@ -174,6 +197,10 @@ class KyuubiSessionImpl(
                   s" for $user session failed",
                 e)
               openSessionError = Some(e)
+              openOnFailure match {
+                case DEREGISTER_IMMEDIATELY | DEREGISTER_AFTER_RETRY => deregisterEngine()
+                case _ =>
+              }
               throw e
           } finally {
             attempt += 1
@@ -290,7 +317,7 @@ class KyuubiSessionImpl(
   private val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
   private val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
   private val engineAliveMaxFailCount = sessionConf.get(KyuubiConf.ENGINE_ALIVE_MAX_FAILURES)
-  private var engineAliveFailCount = 0
+  @volatile private var engineAliveFailCount = 0
 
   def checkEngineConnectionAlive(): Boolean = {
     try {

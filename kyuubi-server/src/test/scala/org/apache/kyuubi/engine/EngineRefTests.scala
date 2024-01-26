@@ -22,6 +22,7 @@ import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
@@ -340,5 +341,28 @@ trait EngineRefTests extends KyuubiFunSuite {
     conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, true)
     val engine4 = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine4.subdomain.startsWith("engine-pool-"))
+  }
+
+  test("deregister engine with existing host port") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine = new EngineRef(conf, user, PluginLoader.loadGroupProvider(conf), id, null)
+
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+      val hp = engine.getOrCreate(client)
+      assert(client.getServerHost(engine.engineSpace) == Option(hp))
+      assert(!engine.deregister(client, ("non_existing_host", 0))._1)
+      assert(client.getServerHost(engine.engineSpace) == Option(hp))
+      assert(engine.deregister(client, hp)._1)
+      eventually(Timeout(10.seconds)) {
+        assert(client.getServerHost(engine.engineSpace).isEmpty)
+      }
+    }
   }
 }

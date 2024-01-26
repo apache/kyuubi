@@ -96,10 +96,10 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       val resp = EntityUtils.toString(response.getEntity)
 
       // check session section
-      assert(resp.contains("Session Statistics"))
+      assert(resp.contains("Online Session Statistics"))
 
       // check session stats table id
-      assert(resp.contains("sessionstat"))
+      assert(resp.contains("onlineSessionstat"))
 
       // check session stats table title
       assert(resp.contains("Total Statements"))
@@ -110,10 +110,11 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
     assert(spark.sparkContext.ui.nonEmpty)
     val client = HttpClients.createDefault()
     val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/kyuubi/")
-    val response = client.execute(req)
+    var response = client.execute(req)
     assert(response.getStatusLine.getStatusCode === 200)
-    val resp = EntityUtils.toString(response.getEntity)
+    var resp = EntityUtils.toString(response.getEntity)
     assert(resp.contains("0 session(s) are online,"))
+    assert(!resp.contains("Statement Statistics"))
     withJdbcStatement() { statement =>
       statement.execute(
         """
@@ -133,13 +134,23 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
       // check session section
       assert(resp.contains("Statement Statistics"))
+      assert(!resp.contains("Failed Statement Statistics"))
 
       // check sql stats table id
-      assert(resp.contains("sqlstat"))
+      assert(resp.contains("runningSqlstat") || resp.contains("completedSqlstat"))
+
+      assert(resp.contains("1 session(s) are online,"))
 
       // check sql stats table title
       assert(resp.contains("Query Details"))
     }
+    response = client.execute(req)
+    assert(response.getStatusLine.getStatusCode === 200)
+    resp = EntityUtils.toString(response.getEntity)
+    assert(resp.contains("0 session(s) are online,"))
+    assert(resp.contains("running 0 operation(s)"))
+    assert(resp.contains("completedSqlstat"))
+    assert(resp.contains("Completed Statement Statistics"))
   }
 
   test("statement redact for engine tab") {

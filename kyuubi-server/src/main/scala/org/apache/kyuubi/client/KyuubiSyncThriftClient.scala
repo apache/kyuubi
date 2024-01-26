@@ -42,6 +42,7 @@ import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 class KyuubiSyncThriftClient private (
+    val hostPort: (String, Int),
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
@@ -483,6 +484,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
         None
       }
     new KyuubiSyncThriftClient(
+      (host, port),
       tProtocol,
       aliveProbeProtocol,
       aliveProbeInterval,

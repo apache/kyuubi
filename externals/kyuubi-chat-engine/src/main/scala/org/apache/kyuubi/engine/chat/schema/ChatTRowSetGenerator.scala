@@ -18,31 +18,29 @@
 package org.apache.kyuubi.engine.chat.schema
 
 import org.apache.kyuubi.engine.chat.schema.ChatTRowSetGenerator._
-import org.apache.kyuubi.engine.schema.AbstractTRowSetGenerator
+import org.apache.kyuubi.engine.result.TRowSetGenerator
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId._
 
 class ChatTRowSetGenerator
-  extends AbstractTRowSetGenerator[Seq[String], Seq[String], String] {
+  extends TRowSetGenerator[Seq[String], Seq[String], String] {
 
   override def getColumnSizeFromSchemaType(schema: Seq[String]): Int = schema.length
 
   override def getColumnType(schema: Seq[String], ordinal: Int): String = COL_STRING_TYPE
 
-  override protected def isColumnNullAt(row: Seq[String], ordinal: Int): Boolean =
-    row(ordinal) == null
+  override def isColumnNullAt(row: Seq[String], ordinal: Int): Boolean = row(ordinal) == null
 
   override def getColumnAs[T](row: Seq[String], ordinal: Int): T = row(ordinal).asInstanceOf[T]
 
   override def toTColumn(rows: Seq[Seq[String]], ordinal: Int, typ: String): TColumn =
     typ match {
-      case COL_STRING_TYPE => toTTypeColumn(STRING_TYPE, rows, ordinal)
+      case COL_STRING_TYPE => asStringTColumn(rows, ordinal)
       case otherType => throw new UnsupportedOperationException(s"type $otherType")
     }
 
-  override def toTColumnValue(ordinal: Int, row: Seq[String], types: Seq[String]): TColumnValue =
+  override def toTColumnValue(row: Seq[String], ordinal: Int, types: Seq[String]): TColumnValue =
     getColumnType(types, ordinal) match {
-      case "String" => toTTypeColumnVal(STRING_TYPE, row, ordinal)
+      case COL_STRING_TYPE => asStringTColumnValue(row, ordinal)
       case otherType => throw new UnsupportedOperationException(s"type $otherType")
     }
 }

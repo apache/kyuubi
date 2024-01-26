@@ -53,8 +53,8 @@ We have a custom class ``CustomSessionConfAdvisor``:
 
 .. code-block:: java
 
-   @Override
-   public class CustomSessionConfAdvisor {
+   public class CustomSessionConfAdvisor implements SessionConfAdvisor {
+     @Override
      Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
        if ("uly".equals(user)) {
          return Collections.singletonMap("spark.driver.memory", "1G");

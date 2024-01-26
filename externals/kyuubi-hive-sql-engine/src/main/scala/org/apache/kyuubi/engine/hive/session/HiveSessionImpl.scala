@@ -31,6 +31,7 @@ import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
+import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
 
 class HiveSessionImpl(
     protocol: TProtocolVersion,
@@ -63,7 +64,22 @@ class HiveSessionImpl(
       case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Hive")
       case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Hive")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(HiveVersionInfo.getVersion)
-      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_ODBC_KEYWORDS =>
+        try {
+          // HIVE-17765 expose Hive keywords.
+          // exclude these keywords to be consistent with Hive behavior.
+          val excludes = DynFields.builder()
+            .hiddenImpl("org.apache.hive.service.cli.session.HiveSessionImpl", "ODBC_KEYWORDS")
+            .buildStaticChecked[util.Set[String]]().get()
+          val keywords = DynMethods.builder("getKeywords")
+            .impl("org.apache.hadoop.hive.ql.parse.ParseUtils", classOf[util.Set[String]])
+            .buildStaticChecked()
+            .invoke[String](excludes)
+          TGetInfoValue.stringValue(keywords)
+        } catch {
+          case _: ReflectiveOperationException =>
+            TGetInfoValue.stringValue("Unimplemented")
+        }
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
