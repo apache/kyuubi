@@ -288,7 +288,14 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
           "clone",
           classOf[HudiCallProcedureOutputTableExtractor],
           actionTypeDesc = Some(ActionTypeDesc(actionType = Some(UPDATE))),
-          setCurrentDatabaseIfMissing = true)))
+          setCurrentDatabaseIfMissing = true)),
+      uriDescs = Seq(
+        UriDesc(
+          "clone",
+          classOf[HudiCallProcedureInputUriExtractor],
+          isInput = true,
+          comment = "Hudi"),
+        UriDesc("clone", classOf[HudiCallProcedureOutputUriExtractor], comment = "Hudi")))
   }
 
   override def specs: Seq[TableCommandSpec] = Seq(
