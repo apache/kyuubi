@@ -179,12 +179,12 @@ class SparkProcessBuilder(
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
         if (doAsEnabled && ugi.getShortUserName != proxyUser) {
           warn(s"The session proxy user: $proxyUser is not same with " +
-            s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
-            s"Fallback to use proxy user.")
+            s"spark principal: ${ugi.getShortUserName}, skip using keytab. " +
+            "Fallback to use proxy user.")
           None
         } else if (!doAsEnabled && ugi.getShortUserName != Utils.currentUser) {
           warn(s"The server's user: ${Utils.currentUser} is not same with " +
-            s"spark principal: ${ugi.getShortUserName}, skip to use keytab. " +
+            s"spark principal: ${ugi.getShortUserName}, skip using keytab. " +
             "Fallback to use server's user.")
           None
         } else {
