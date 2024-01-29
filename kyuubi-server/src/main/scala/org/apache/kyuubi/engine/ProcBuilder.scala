@@ -99,6 +99,8 @@ trait ProcBuilder {
 
   protected def proxyUser: String
 
+  protected def doAsEnabled: Boolean
+
   protected val commands: Iterable[String]
 
   def conf: KyuubiConf

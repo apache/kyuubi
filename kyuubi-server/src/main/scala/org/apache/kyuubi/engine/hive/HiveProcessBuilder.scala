@@ -37,14 +37,15 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class HiveProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
   protected val hiveHome: String = getEngineHome(shortName)
@@ -121,16 +122,17 @@ object HiveProcessBuilder extends Logging {
 
   def apply(
       appUser: String,
+      doAsEnabled: Boolean,
       conf: KyuubiConf,
       engineRefId: String,
       extraEngineLog: Option[OperationLog],
       defaultEngineName: String): HiveProcessBuilder = {
     DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
-      case LOCAL => new HiveProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+      case LOCAL => new HiveProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case YARN =>
         warn(s"Hive on YARN model is experimental.")
         conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
-        new HiveYarnModeProcessBuilder(appUser, conf, engineRefId, extraEngineLog)
+        new HiveYarnModeProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
     }
   }

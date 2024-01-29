@@ -75,7 +75,7 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
       .set("spark.abc", id)
       .set("spark.master", "local")
       .set(SESSION_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
-    val builder = new SparkProcessBuilder(user, conf)
+    val builder = new SparkProcessBuilder(user, true, conf)
     builder.start
 
     assert(jps.isSupported(ApplicationManagerInfo(builder.clusterManager())))

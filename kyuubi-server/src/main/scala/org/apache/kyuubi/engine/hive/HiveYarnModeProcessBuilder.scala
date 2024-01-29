@@ -40,10 +40,12 @@ import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyVal
  */
 class HiveYarnModeProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     override val engineRefId: String,
     override val extraEngineLog: Option[OperationLog] = None)
-  extends HiveProcessBuilder(proxyUser, conf, engineRefId, extraEngineLog) with Logging {
+  extends HiveProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+  with Logging {
 
   override protected def mainClass: String =
     "org.apache.kyuubi.engine.hive.deploy.HiveYarnModeSubmitter"
