@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 import org.apache.atlas.ApplicationProperties
 import org.apache.commons.configuration.Configuration
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
+import scala.collection.JavaConverters._
 
 import java.util
 
@@ -28,9 +29,7 @@ class AtlasClientConf(configuration: Configuration) {
   def get(entry: ConfigEntry): String = {
     configuration.getProperty(entry.key) match {
       case s: String => s
-      case l: List[_] => l.mkString(",")
-      case jl: util.List[_] => val jlString = jl.toString
-        jlString.substring(1, jlString.length - 1)
+      case jl: util.List[_] => jl.asScala.mkString(",")
       case o if o != null => o.toString
       case _ => entry.defaultValue
     }
