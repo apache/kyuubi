@@ -416,7 +416,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
       new EngineRef(
         conf.clone,
@@ -667,7 +667,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
       new EngineRef(
         conf.clone,
