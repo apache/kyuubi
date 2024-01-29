@@ -175,22 +175,18 @@ object SparkCatalogUtils extends Logging {
           val identifiers =
             sessionCatalog.listTables(db, tablePattern, includeLocalTempViews = false)
           if (ignoreTableProperties) {
-            identifiers.map {
-              case TableIdentifier(
-                    table: String,
-                    database: Option[String],
-                    catalog: Option[String]) =>
-                Row(
-                  catalog.getOrElse(catalogName),
-                  database.getOrElse("default"),
-                  table,
-                  TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
-                  "",
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
+            identifiers.map { ti: TableIdentifier =>
+              Row(
+                catalogName,
+                ti.database.getOrElse("default"),
+                ti.table,
+                TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
+                "",
+                null,
+                null,
+                null,
+                null,
+                null)
             }
           } else {
             sessionCatalog.getTablesByName(identifiers)
