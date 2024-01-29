@@ -55,8 +55,8 @@ object JDBCMetadataStoreConf {
         "`org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>SQLITE: SQLite3, JDBC driver `org.sqlite.JDBC`.</li>" +
         " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver` " +
-        " <li>POSTGRESQL: PostgreSQL, JDBC driver `org.postgresql.Driver` " +
         "(fallback `com.mysql.jdbc.Driver`).</li>" +
+        " <li>POSTGRESQL: PostgreSQL, JDBC driver `org.postgresql.Driver`." +
         " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
         " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
         " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
