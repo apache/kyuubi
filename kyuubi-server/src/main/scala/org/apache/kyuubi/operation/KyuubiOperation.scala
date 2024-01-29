@@ -121,7 +121,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
     sessionManager.credentialsManager.sendCredentialsIfNeeded(
       session.handle.identifier.toString,
-      session.asInstanceOf[KyuubiSessionImpl].engine.effectiveUser,
+      session.asInstanceOf[KyuubiSessionImpl].engine.appUser,
       client.sendCredentials)
   }
 

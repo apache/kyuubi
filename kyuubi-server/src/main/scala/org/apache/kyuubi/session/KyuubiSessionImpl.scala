@@ -266,7 +266,7 @@ class KyuubiSessionImpl(
 
   private def renewEngineCredentials(): String = {
     try {
-      sessionManager.credentialsManager.renewCredentials(engine.effectiveUser)
+      sessionManager.credentialsManager.renewCredentials(engine.appUser)
     } catch {
       case e: Exception =>
         error(s"Failed to renew engine credentials for $handle", e)
@@ -335,7 +335,7 @@ class KyuubiSessionImpl(
         engineAliveFailCount = engineAliveFailCount + 1
         if (now - engineLastAlive > engineAliveTimeout &&
           engineAliveFailCount >= engineAliveMaxFailCount) {
-          error(s"The engineRef[${engine.getEngineRefId()}] is marked as not alive "
+          error(s"The engineRef[${engine.getEngineRefId}] is marked as not alive "
             + s"due to a lack of recent successful alive probes. "
             + s"The time since last successful probe: "
             + s"${now - engineLastAlive} ms exceeds the timeout of $engineAliveTimeout ms. "
@@ -344,7 +344,7 @@ class KyuubiSessionImpl(
           false
         } else {
           warn(
-            s"The engineRef[${engine.getEngineRefId()}] alive probe fails, " +
+            s"The engineRef[${engine.getEngineRefId}] alive probe fails, " +
               s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms, " +
               s"and has failed $engineAliveFailCount times.",
             e)

@@ -420,7 +420,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val engine =
       new EngineRef(
         conf.clone,
-        user = normalUser,
+        sessionUser = normalUser,
         true,
         PluginLoader.loadGroupProvider(conf),
         id,
@@ -671,7 +671,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val engine =
       new EngineRef(
         conf.clone,
-        user = normalUser,
+        sessionUser = normalUser,
         true,
         PluginLoader.loadGroupProvider(conf),
         id,

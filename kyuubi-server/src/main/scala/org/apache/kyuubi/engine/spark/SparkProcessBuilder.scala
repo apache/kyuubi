@@ -184,7 +184,8 @@ class SparkProcessBuilder(
           None
         } else if (!doAsEnabled && ugi.getShortUserName != Utils.currentUser) {
           warn(s"The server's user: ${Utils.currentUser} is not same with " +
-            s"spark principal: ${ugi.getShortUserName}, skip to use keytab.")
+            s"spark principal: ${ugi.getShortUserName}, skip to use keytab. " +
+            "Fallback to use server's user.")
           None
         } else {
           Some(ugi.getShortUserName)
