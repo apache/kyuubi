@@ -298,7 +298,7 @@ serviceMonitor:
   # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
   endpoints: []
   # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
-  additionalLabels: {}
+  labels: {}
 
 # Rules for the Prometheus Operator
 prometheusRule:
