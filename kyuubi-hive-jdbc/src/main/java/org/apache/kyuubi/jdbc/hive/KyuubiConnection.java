@@ -1128,7 +1128,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (isClosed) {
       throw new KyuubiSQLException("Connection is closed");
     }
-    return new KyuubiDatabaseMetaData(this, client, sessHandle);
+    return new KyuubiDatabaseMetaData(this, protocol, client, sessHandle);
   }
 
   @Override
@@ -1175,7 +1175,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     boolean rc = false;
     try {
-      new KyuubiDatabaseMetaData(this, client, sessHandle).getDatabaseProductName();
+      new KyuubiDatabaseMetaData(this, protocol, client, sessHandle).getDatabaseProductName();
       rc = true;
     } catch (SQLException ignore) {
     }
