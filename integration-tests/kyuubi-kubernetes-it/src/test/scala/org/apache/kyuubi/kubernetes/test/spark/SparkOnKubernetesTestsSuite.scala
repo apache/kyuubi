@@ -193,7 +193,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
     Seq("_123", "spark_exec", "spark@", "a" * 238).foreach { invalid =>
       conf.set(KUBERNETES_EXECUTOR_POD_NAME_PREFIX, invalid)
       val builder = new SparkProcessBuilder("test", true, conf)
-      val e = intercept[KyuubiException](builder.validateConf)
+      val e = intercept[KyuubiException](builder.validateConf())
       assert(e.getMessage === s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
         s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
         "working-with-objects/names/#dns-subdomain-names and the value length <= 237")
