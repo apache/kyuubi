@@ -45,7 +45,6 @@ import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHa
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
-  private var killMessage: KillResponse = (false, "UNKNOWN")
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
@@ -262,27 +261,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
     var msg = s"Engine $engineSpace is deleted successfully."
-    withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val engineNodes = discoveryClient.getChildren(engineSpace)
-      engineNodes.foreach { node =>
-        val nodePath = s"$engineSpace/$node"
-        info(s"Deleting engine node:$nodePath")
-        try {
-          discoveryClient.delete(nodePath)
-        } catch {
-          case e: Exception =>
-            error(s"Failed to delete engine node:$nodePath", e)
-            throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
-              s"${e.getMessage}")
-        }
-      }
-      if (forceKill) {
-
+    forceKill match {
+      case true =>
         val applicationManagerInfo = ApplicationManagerInfo(
           Option(sparkMaster),
           Option(sparK8Context),
           Option(sparK8Namespace))
 
+        var killMessage: KillResponse = (false, "UNKNOWN")
         killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
           .applicationManager.killApplication(applicationManagerInfo, refId)
         if (!killMessage._1) {
@@ -290,7 +276,24 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
             s"cause ${killMessage._2}"
           error(msg)
         }
-      }
+
+      case false =>
+        withDiscoveryClient(fe.getConf) { discoveryClient =>
+          val engineNodes = discoveryClient.getChildren(engineSpace)
+          engineNodes.foreach { node =>
+            val nodePath = s"$engineSpace/$node"
+            info(s"Deleting engine node:$nodePath")
+            try {
+              discoveryClient.delete(nodePath)
+            } catch {
+              case e: Exception =>
+                error(s"Failed to delete engine node:$nodePath", e)
+                throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
+                  s"${e.getMessage}")
+            }
+          }
+        }
+
     }
     Response.ok(msg).build()
   }
