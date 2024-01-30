@@ -94,8 +94,13 @@ class KyuubiBatchService(
                   metadata.appState match {
                     // app that is not submitted to resource manager
                     case None | Some(ApplicationState.NOT_FOUND) => false
-                    // app that is pending in resource manager
-                    case Some(ApplicationState.PENDING) => false
+                    // app that is pending in resource manager while the local startup
+                    // process is alive. For example, in Spark YARN cluster mode, if set
+                    // spark.yarn.submit.waitAppCompletion=false, the local spark-submit
+                    // process exits immediately once Application goes ACCEPTED status,
+                    // even no resource could be allocated for the AM container.
+                    case Some(ApplicationState.PENDING) if batchSession.startupProcessAlive =>
+                      false
                     // not sure, added for safe
                     case Some(ApplicationState.UNKNOWN) => false
                     case _ => true
