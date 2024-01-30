@@ -35,3 +35,4 @@ class GenericDatabaseDialect extends JdbcDatabaseDialect {
 
 class SQLiteDatabaseDialect extends GenericDatabaseDialect {}
 class MySQLDatabaseDialect extends GenericDatabaseDialect {}
+class PostgreSQLDatabaseDialect extends GenericDatabaseDialect {}

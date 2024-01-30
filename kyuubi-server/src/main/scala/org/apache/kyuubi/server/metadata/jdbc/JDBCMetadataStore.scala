@@ -57,6 +57,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case SQLITE => driverClassOpt.getOrElse("org.sqlite.JDBC")
     case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse(mysqlDriverClass)
+    case POSTGRESQL => driverClassOpt.getOrElse("org.postgresql.Driver")
     case CUSTOM => driverClassOpt.getOrElse(
         throw new IllegalArgumentException("No jdbc driver defined"))
   }
@@ -65,6 +66,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case DERBY => new DerbyDatabaseDialect
     case SQLITE => new SQLiteDatabaseDialect
     case MYSQL => new MySQLDatabaseDialect
+    case POSTGRESQL => new PostgreSQLDatabaseDialect
     case CUSTOM => new GenericDatabaseDialect
   }
 

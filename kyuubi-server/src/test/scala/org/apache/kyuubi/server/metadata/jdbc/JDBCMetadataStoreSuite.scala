@@ -55,6 +55,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
   test("test get init schema stream") {
     assert(jdbcMetadataStore.getInitSchema(DatabaseType.DERBY).isDefined)
     assert(jdbcMetadataStore.getInitSchema(DatabaseType.MYSQL).isDefined)
+    assert(jdbcMetadataStore.getInitSchema(DatabaseType.POSTGRESQL).isDefined)
     assert(jdbcMetadataStore.getInitSchema(DatabaseType.CUSTOM).isEmpty)
   }
 

@@ -20,5 +20,5 @@ package org.apache.kyuubi.server.metadata.jdbc
 object DatabaseType extends Enumeration {
   type DatabaseType = Value
 
-  val DERBY, MYSQL, CUSTOM, SQLITE = Value
+  val DERBY, MYSQL, CUSTOM, SQLITE, POSTGRESQL = Value
 }
