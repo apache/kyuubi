@@ -100,6 +100,9 @@ class BatchJobSubmission(
       getOperationLog)
   }
 
+  def startupProcessAlive: Boolean =
+    builder.processLaunched && Option(builder.process).exists(_.isAlive)
+
   override def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
       return _applicationInfo

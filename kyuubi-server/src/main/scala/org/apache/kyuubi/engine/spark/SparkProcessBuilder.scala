@@ -295,7 +295,7 @@ class SparkProcessBuilder(
     conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 
-  override def validateConf: Unit = Validator.validateConf(conf)
+  override def validateConf(): Unit = Validator.validateConf(conf)
 
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
   def setSparkUserName(userName: String, buffer: mutable.Buffer[String]): Unit = {

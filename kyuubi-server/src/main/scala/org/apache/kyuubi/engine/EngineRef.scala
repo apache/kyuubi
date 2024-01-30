@@ -215,7 +215,7 @@ private[kyuubi] class EngineRef(
       acquiredPermit = true
       val redactedCmd = builder.toString
       info(s"Launching engine:\n$redactedCmd")
-      builder.validateConf
+      builder.validateConf()
       val process = builder.start
       var exitValue: Option[Int] = None
       var lastApplicationInfo: Option[ApplicationInfo] = None
