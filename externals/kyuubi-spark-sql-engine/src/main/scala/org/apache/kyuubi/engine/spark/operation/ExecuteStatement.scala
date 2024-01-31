@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.RejectedExecutionException
 
-import scala.Array._
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
@@ -27,11 +26,11 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
-import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
+import org.apache.kyuubi.operation._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -71,10 +70,7 @@ class ExecuteStatement(
   override def close(): Unit = {
     super.close()
     fetchOrcStatement.foreach(_.close())
-    saveFileName.foreach { p =>
-      val path = new Path(p)
-      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
-    }
+    cleanupSavedResultFile()
   }
 
   protected def incrementalCollectResult(resultDF: DataFrame): Iterator[Any] = {
@@ -178,23 +174,29 @@ class ExecuteStatement(
           resultSaveThreshold,
           result)) {
         val sessionId = session.handle.identifier.toString
-        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
-        saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
-        // Rename all col name to avoid duplicate columns
-        val colName = range(0, result.schema.size).map(x => "col" + x)
-
-        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
-        // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
-        if (resultMaxRows > 0) {
-          result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
-        } else {
-          result.toDF(colName: _*).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
+        saveFileName = {
+          val resultSaveToDir =
+            session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
+          Some(s"$resultSaveToDir/$engineId/$sessionId/$statementId")
         }
-        info(s"Save result to $saveFileName")
+        Utils.addShutdownHook(() => cleanupSavedResultFile())
+        val saveFile = saveFileName.get
+        val resultDfToSave: DataFrame = {
+          // Rename all col name to avoid duplicate columns
+          val df = resultDF.toDF(result.schema.indices.map(x => s"col_$x"): _*)
+          if (resultMaxRows > 0) {
+            // df.write will introduce an extra shuffle for the outermost limit,
+            // and hurt performance
+            df.limit(resultMaxRows)
+          } else {
+            df
+          }
+        }
+        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
+        resultDfToSave.write.option("compression", codec).format("orc").save(saveFile)
+        info(s"Save result of statement $statementId to $saveFile")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
-        return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
+        return fetchOrcStatement.get.getIterator(saveFile, resultSchema)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
@@ -204,6 +206,20 @@ class ExecuteStatement(
         takeResult(resultDF, resultMaxRows)
       }
       new ArrayFetchIterator(internalArray)
+    }
+  }
+
+  private def cleanupSavedResultFile(): Unit = {
+    saveFileName.foreach { p =>
+      try {
+        val path = new Path(p)
+        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+        if (fs.exists(path)) {
+          fs.delete(path, true)
+        }
+      } catch {
+        case e: Exception => warn(s"Failed to cleanup saved result file $p", e)
+      }
     }
   }
 }
