@@ -723,12 +723,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     }
     // switch the database
     openConf.put("use:database", connParams.getDbName());
-    // HIVE-14901: set the fetchSize
-    if (protocol.compareTo(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10) >= 0) {
-      openConf.put(
-          "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
-          Integer.toString(fetchSize));
-    }
     if (wmPool != null) {
       openConf.put("set:hivevar:wmpool", wmPool);
     }
@@ -751,6 +745,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           String.format(
               "Unsupported Hive2 protocol version %s specified by session conf key %s",
               clientProtocolStr, CLIENT_PROTOCOL_VERSION));
+    }
+    // HIVE-14901: set the fetchSize
+    if (clientProtocol.compareTo(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10) >= 0) {
+      openConf.put(
+          "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
+          Integer.toString(fetchSize));
     }
     openReq.setClient_protocol(clientProtocol);
     try {
