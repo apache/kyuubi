@@ -746,13 +746,13 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               "Unsupported Hive2 protocol version %s specified by session conf key %s",
               clientProtocolStr, CLIENT_PROTOCOL_VERSION));
     }
+    openReq.setClient_protocol(clientProtocol);
     // HIVE-14901: set the fetchSize
     if (clientProtocol.compareTo(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10) >= 0) {
       openConf.put(
           "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
           Integer.toString(fetchSize));
     }
-    openReq.setClient_protocol(clientProtocol);
     try {
       openConf.put("kyuubi.client.ipAddress", InetAddress.getLocalHost().getHostAddress());
     } catch (UnknownHostException e) {
