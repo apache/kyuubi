@@ -18,5 +18,5 @@ package org.apache.kyuubi.engine.jdbc.mysql
 
 class MySQLConnectionProvider extends MySQL8ConnectionProvider {
 
-  override val name: String = classOf[MySQLConnectionProvider].getSimpleName
+  override val name: String = classOf[MySQLConnectionProvider].getName
 }

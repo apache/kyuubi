@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 
 abstract class JdbcConnectionProvider extends SupportServiceLoader with Logging {
 
-  override def name(): String = classOf[JdbcConnectionProvider].getSimpleName
+  override def name(): String = classOf[JdbcConnectionProvider].getName
 
   val driverClass: String
 
