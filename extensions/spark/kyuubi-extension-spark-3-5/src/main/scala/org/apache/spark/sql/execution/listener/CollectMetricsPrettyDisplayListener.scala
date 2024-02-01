@@ -20,8 +20,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.util.truncatedString
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, QueryStageExec}
@@ -34,33 +32,32 @@ import org.apache.spark.status.ElementTrackingStore
 
 import org.apache.kyuubi.sql.KyuubiSQLConf.COLLECT_METRICS_PRETTY_DISPLAY_ENABLED
 
-private class CollectMetricsPrettyDisplayListener extends SparkListener with SQLConfHelper {
-
-  private def session: SparkSession = SparkSession.active
-  private def kvstore: ElementTrackingStore =
-    session.sparkContext.statusStore.store.asInstanceOf[ElementTrackingStore]
+private class CollectMetricsPrettyDisplayListener extends SparkListener {
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
-    if (conf.getConf(COLLECT_METRICS_PRETTY_DISPLAY_ENABLED)) {
-      event match {
-        case e: SparkListenerSQLExecutionEnd =>
-          val qe = e.qe
-          if (qe.observedMetrics.nonEmpty) {
-            val executionId =
-              Option(session.sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)).map(
-                _.toLong).getOrElse(e.executionId)
+    event match {
+      case e: SparkListenerSQLExecutionEnd
+          if e.qe.sparkSession.conf.get(COLLECT_METRICS_PRETTY_DISPLAY_ENABLED) =>
+        val qe = e.qe
+        if (qe.observedMetrics.nonEmpty) {
+          val session = qe.sparkSession
+          val executionId =
+            Option(session.sparkContext.getLocalProperty(SQLExecution.EXECUTION_ID_KEY)).map(
+              _.toLong).getOrElse(e.executionId)
 
-            val sparkPlanInfo = fromSparkPlan(qe.executedPlan)
+          val sparkPlanInfo = fromSparkPlan(qe.executedPlan)
 
-            val planGraph = SparkPlanGraph(sparkPlanInfo)
-            val graphToStore = new SparkPlanGraphWrapper(
-              executionId,
-              toStoredNodes(planGraph.nodes),
-              planGraph.edges)
-            kvstore.write(graphToStore)
-          }
-        case _ =>
-      }
+          val planGraph = SparkPlanGraph(sparkPlanInfo)
+          val graphToStore = new SparkPlanGraphWrapper(
+            executionId,
+            toStoredNodes(planGraph.nodes),
+            planGraph.edges)
+
+          val kvstore: ElementTrackingStore =
+            session.sparkContext.statusStore.store.asInstanceOf[ElementTrackingStore]
+          kvstore.write(graphToStore)
+        }
+      case _ =>
     }
   }
 
@@ -87,7 +84,7 @@ private class CollectMetricsPrettyDisplayListener extends SparkListener with SQL
         val metrics: Map[String, Any] =
           c.collectedMetrics.getValuesMap[Any](c.metricsSchema.fieldNames)
         val metricsString = redactMapString(metrics, SQLConf.get.maxToStringFields)
-        s"CollectMetricsExec(${c.name}) $metricsString"
+        s"CollectMetrics(${c.name}) $metricsString"
       case p => p.simpleString(SQLConf.get.maxToStringFields)
     }
     new SparkPlanInfo(
