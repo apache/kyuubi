@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.plugin.lineage.dispatcher.atlas
 
+import java.util
+
+import scala.collection.JavaConverters._
+
 import org.apache.atlas.ApplicationProperties
 import org.apache.commons.configuration.Configuration
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
-import scala.collection.JavaConverters._
-
-import java.util
 
 class AtlasClientConf(configuration: Configuration) {
 
