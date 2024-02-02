@@ -264,6 +264,52 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
   }
 
+  test("force to kill engine - user share level") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine =
+      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      Utils.currentUser,
+      "default")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("forceKill", "true")
+        .queryParam("refId", id)
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+        .delete()
+
+      assert(response.getStatus === 200)
+      assert(client.pathExists(engineSpace))
+      eventually(timeout(5.seconds), interval(100.milliseconds)) {
+        assert(client.getChildren(engineSpace).isEmpty, s"refId same with $id?")
+      }
+
+      // kill the engine application
+      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+          _.state == ApplicationState.NOT_FOUND))
+      }
+    }
+  }
+
   test("delete engine - user share level") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
