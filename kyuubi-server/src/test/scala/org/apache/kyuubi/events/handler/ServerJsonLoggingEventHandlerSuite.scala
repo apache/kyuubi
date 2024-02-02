@@ -27,7 +27,6 @@ import scala.util.matching.Regex
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi._
@@ -40,6 +39,7 @@ import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionType}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TOpenSessionReq, TStatusCode}
 
 class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
   with BatchTestHelper {

@@ -103,6 +103,13 @@ object KyuubiApplicationManager {
     conf.set(SparkProcessBuilder.TAG_KEY, newTag)
   }
 
+  private def setupEngineYarnModeTag(tag: String, conf: KyuubiConf): Unit = {
+    val originalTag =
+      conf.getOption(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key).map(_ + ",").getOrElse("")
+    val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
+    conf.set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key, newTag)
+  }
+
   private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
   }
@@ -182,6 +189,8 @@ object KyuubiApplicationManager {
         // running flink on other platforms is not yet supported
         setupFlinkYarnTag(applicationTag, conf)
       // other engine types are running locally yet
+      case ("HIVE", Some("YARN")) =>
+        setupEngineYarnModeTag(applicationTag, conf)
       case _ =>
     }
   }

@@ -27,7 +27,7 @@ import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMark
 /**
  * Transforming up [[PermanentViewMarker]]
  */
-class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+case class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   def eliminatePVM(plan: LogicalPlan): LogicalPlan = {
     plan.transformUp {
@@ -37,7 +37,7 @@ class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[
         }
         // For each SubqueryExpression's PVM, we should mark as resolved to
         // avoid check privilege of PVM's internal Subquery.
-        Authorization.markAuthChecked(ret)
+        Authorization.markAllNodesAuthChecked(ret)
         ret
     }
   }
@@ -52,8 +52,9 @@ class RuleEliminatePermanentViewMarker(sparkSession: SparkSession) extends Rule[
         }
     }
     if (matched) {
-      Authorization.markAuthChecked(eliminatedPVM)
-      sparkSession.sessionState.optimizer.execute(eliminatedPVM)
+      Authorization.markAllNodesAuthChecked(eliminatedPVM)
+      val optimized = sparkSession.sessionState.optimizer.execute(eliminatedPVM)
+      Authorization.markAllNodesAuthChecked(optimized)
     } else {
       eliminatedPVM
     }

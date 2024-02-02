@@ -19,11 +19,25 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.Properties
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
+
+  def getMetadataStoreJdbcUrl(conf: KyuubiConf): String = {
+    val rawJdbcUrl = conf.get(METADATA_STORE_JDBC_URL)
+    if (rawJdbcUrl.contains("<KYUUBI_HOME>")) {
+      rawJdbcUrl.replace(
+        "<KYUUBI_HOME>",
+        sys.env.getOrElse(
+          "KYUUBI_HOME",
+          Utils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
+    } else {
+      rawJdbcUrl
+    }
+  }
 
   /** Get metadata store jdbc datasource properties. */
   def getMetadataStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
@@ -42,6 +56,7 @@ object JDBCMetadataStoreConf {
         " <li>SQLITE: SQLite3, JDBC driver `org.sqlite.JDBC`.</li>" +
         " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver` " +
         "(fallback `com.mysql.jdbc.Driver`).</li>" +
+        " <li>POSTGRESQL: PostgreSQL, JDBC driver `org.postgresql.Driver`.</li>" +
         " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
         " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
         " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
@@ -70,14 +85,14 @@ object JDBCMetadataStoreConf {
 
   val METADATA_STORE_JDBC_URL: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.url")
-      .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite" +
-        " database url, and the state information is not shared across kyuubi instances. To" +
-        " enable high availability for multiple kyuubi instances," +
-        " please specify a production JDBC url.")
+      .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite database " +
+        "url, and the state information is not shared across Kyuubi instances. To enable high " +
+        "availability for multiple kyuubi instances, please specify a production JDBC url. " +
+        "Note: this value support the variables substitution: `<KYUUBI_HOME>`.")
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .createWithDefault("jdbc:sqlite:kyuubi_state_store.db")
+      .createWithDefault("jdbc:sqlite:<KYUUBI_HOME>/kyuubi_state_store.db")
 
   val METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.user")

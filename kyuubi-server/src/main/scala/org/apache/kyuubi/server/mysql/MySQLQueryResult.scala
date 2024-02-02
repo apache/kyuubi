@@ -19,9 +19,8 @@ package org.apache.kyuubi.server.mysql
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
-
 import org.apache.kyuubi.server.mysql.constant.MySQLDataType
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 object MySQLQueryResult {
 

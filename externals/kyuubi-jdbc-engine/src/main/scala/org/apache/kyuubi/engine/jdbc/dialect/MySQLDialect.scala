@@ -23,8 +23,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.commons.lang3.StringUtils
 
-import org.apache.kyuubi.engine.jdbc.mysql.{MySQLRowSetHelper, MySQLSchemaHelper}
-import org.apache.kyuubi.engine.jdbc.schema.{RowSetHelper, SchemaHelper}
+import org.apache.kyuubi.engine.jdbc.mysql.{MySQLSchemaHelper, MySQLTRowSetGenerator}
+import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
@@ -122,9 +122,7 @@ class MySQLDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getRowSetHelper(): RowSetHelper = {
-    new MySQLRowSetHelper
-  }
+  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new MySQLTRowSetGenerator
 
   override def getSchemaHelper(): SchemaHelper = {
     new MySQLSchemaHelper

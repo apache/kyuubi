@@ -19,14 +19,13 @@ package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift._
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 abstract class AbstractSession(
     val protocol: TProtocolVersion,

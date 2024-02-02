@@ -23,6 +23,7 @@ import java.util.Date
 import javax.servlet.http.HttpServletRequest
 
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+import scala.collection.mutable
 import scala.xml.{Node, Unparsed}
 
 import org.apache.commons.text.StringEscapeUtils
@@ -36,18 +37,46 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.store
 
   override def render(request: HttpServletRequest): Seq[Node] = {
+    val onlineSession = new mutable.ArrayBuffer[SessionEvent]()
+    val closedSession = new mutable.ArrayBuffer[SessionEvent]()
+
+    val runningSqlStat = new mutable.ArrayBuffer[SparkOperationEvent]()
+    val completedSqlStat = new mutable.ArrayBuffer[SparkOperationEvent]()
+    val failedSqlStat = new mutable.ArrayBuffer[SparkOperationEvent]()
+
+    store.getSessionList.foreach { s =>
+      if (s.endTime <= 0L) {
+        onlineSession += s
+      } else {
+        closedSession += s
+      }
+    }
+
+    store.getStatementList.foreach { op =>
+      if (op.completeTime <= 0L) {
+        runningSqlStat += op
+      } else if (op.exception.isDefined) {
+        failedSqlStat += op
+      } else {
+        completedSqlStat += op
+      }
+    }
+
     val content =
       generateBasicStats() ++
         <br/> ++
         stop(request) ++
         <br/> ++
         <h4>
-        {store.getSessionCount} session(s) are online,
-        running {store.getStatementCount}
-        operations
+        {onlineSession.size} session(s) are online,
+        running {runningSqlStat.size} operation(s)
       </h4> ++
-        generateSessionStatsTable(request) ++
-        generateStatementStatsTable(request)
+        generateSessionStatsTable(request, onlineSession.toSeq, closedSession.toSeq) ++
+        generateStatementStatsTable(
+          request,
+          runningSqlStat.toSeq,
+          completedSqlStat.toSeq,
+          failedSqlStat.toSeq)
     UIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
@@ -129,100 +158,197 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     }
   }
 
-  /** Generate stats of statements for the engine */
-  private def generateStatementStatsTable(request: HttpServletRequest): Seq[Node] = {
+  /** Generate stats of running statements for the engine */
+  private def generateStatementStatsTable(
+      request: HttpServletRequest,
+      running: Seq[SparkOperationEvent],
+      completed: Seq[SparkOperationEvent],
+      failed: Seq[SparkOperationEvent]): Seq[Node] = {
 
-    val numStatement = store.getStatementList.size
+    val content = mutable.ListBuffer[Node]()
+    if (running.nonEmpty) {
+      val sqlTableTag = "running-sqlstat"
+      val table =
+        statementStatsTable(request, sqlTableTag, parent, running)
+      content ++=
+        <span id="running-sqlstat" class="collapse-aggregated-runningSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-runningSqlstat',
+              'aggregated-runningSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Running Statement Statistics (
+              {running.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-runningSqlstat collapsible-table">
+            {table}
+          </div>
+    }
 
-    val table =
-      if (numStatement > 0) {
-
-        val sqlTableTag = "sqlstat"
-
-        val sqlTablePage =
-          Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
-
-        try {
-          Some(new StatementStatsPagedTable(
-            request,
-            parent,
-            store.getStatementList,
-            "kyuubi",
-            UIUtils.prependBaseUri(request, parent.basePath),
-            sqlTableTag).table(sqlTablePage))
-        } catch {
-          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-            Some(<div class="alert alert-error">
-            <p>Error while rendering job table:</p>
-            <pre>
-              {Utils.stringifyException(e)}
-            </pre>
-          </div>)
-        }
-      } else {
-        None
+    if (completed.nonEmpty) {
+      val table = {
+        val sqlTableTag = "completed-sqlstat"
+        statementStatsTable(
+          request,
+          sqlTableTag,
+          parent,
+          completed)
       }
-    val content =
-      <span id="sqlstat" class="collapse-aggregated-sqlstat collapse-table"
-            onClick="collapseTable('collapse-aggregated-sqlstat',
-                'aggregated-sqlstat')">
-        <h4>
-          <span class="collapse-table-arrow arrow-open"></span>
-          <a>Statement Statistics ({numStatement})</a>
-        </h4>
-      </span> ++
-        <div class="aggregated-sqlstat collapsible-table">
-          {table.getOrElse("No statistics have been generated yet.")}
+
+      content ++=
+        <span id="completed-sqlstat" class="collapse-aggregated-completedSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-completedSqlstat',
+              'aggregated-completedSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Completed Statement Statistics (
+              {completed.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-completedSqlstat collapsible-table">
+          {table}
         </div>
+    }
+
+    if (failed.nonEmpty) {
+      val table = {
+        val sqlTableTag = "failed-sqlstat"
+        statementStatsTable(
+          request,
+          sqlTableTag,
+          parent,
+          failed)
+      }
+
+      content ++=
+        <span id="failed-sqlstat" class="collapse-aggregated-failedSqlstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-failedSqlstat',
+              'aggregated-failedSqlstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Failed Statement Statistics (
+              {failed.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-failedSqlstat collapsible-table">
+          {table}
+        </div>
+    }
     content
   }
 
-  /** Generate stats of sessions for the engine */
-  private def generateSessionStatsTable(request: HttpServletRequest): Seq[Node] = {
-    val numSessions = store.getSessionList.size
-    val table =
-      if (numSessions > 0) {
+  private def statementStatsTable(
+      request: HttpServletRequest,
+      sqlTableTag: String,
+      parent: EngineTab,
+      data: Seq[SparkOperationEvent]): Seq[Node] = {
 
-        val sessionTableTag = "sessionstat"
+    val sqlTablePage =
+      Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
 
-        val sessionTablePage =
-          Option(request.getParameter(s"$sessionTableTag.page")).map(_.toInt).getOrElse(1)
+    try {
+      new StatementStatsPagedTable(
+        request,
+        parent,
+        data,
+        "kyuubi",
+        UIUtils.prependBaseUri(request, parent.basePath),
+        s"${sqlTableTag}-table").table(sqlTablePage)
+    } catch {
+      case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+        <div class="alert alert-error">
+              <p>Error while rendering job table:</p>
+              <pre>
+                {Utils.stringifyException(e)}
+              </pre>
+            </div>
+    }
+  }
 
-        try {
-          Some(new SessionStatsPagedTable(
-            request,
-            parent,
-            store.getSessionList,
-            "kyuubi",
-            UIUtils.prependBaseUri(request, parent.basePath),
-            sessionTableTag).table(sessionTablePage))
-        } catch {
-          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-            Some(<div class="alert alert-error">
-            <p>Error while rendering job table:</p>
-            <pre>
-              {Utils.stringifyException(e)}
-            </pre>
-          </div>)
-        }
-      } else {
-        None
+  /** Generate stats of online sessions for the engine */
+  private def generateSessionStatsTable(
+      request: HttpServletRequest,
+      online: Seq[SessionEvent],
+      closed: Seq[SessionEvent]): Seq[Node] = {
+    val content = mutable.ListBuffer[Node]()
+    if (online.nonEmpty) {
+      val sessionTableTag = "online-sessionstat"
+      val table = sessionTable(
+        request,
+        sessionTableTag,
+        parent,
+        online)
+      content ++=
+        <span id="online-sessionstat" class="collapse-aggregated-onlineSessionstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-onlineSessionstat',
+              'aggregated-onlineSessionstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Online Session Statistics (
+              {online.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-onlineSessionstat collapsible-table">
+            {table}
+          </div>
+    }
+
+    if (closed.nonEmpty) {
+      val table = {
+        val sessionTableTag = "closed-sessionstat"
+        sessionTable(
+          request,
+          sessionTableTag,
+          parent,
+          closed)
       }
 
-    val content =
-      <span id="sessionstat" class="collapse-aggregated-sessionstat collapse-table"
-            onClick="collapseTable('collapse-aggregated-sessionstat',
-                'aggregated-sessionstat')">
-        <h4>
-          <span class="collapse-table-arrow arrow-open"></span>
-          <a>Session Statistics ({numSessions})</a>
-        </h4>
-      </span> ++
-        <div class="aggregated-sessionstat collapsible-table">
-          {table.getOrElse("No statistics have been generated yet.")}
+      content ++=
+        <span id="closed-sessionstat" class="collapse-aggregated-closedSessionstat collapse-table"
+              onClick="collapseTable('collapse-aggregated-closedSessionstat',
+              'aggregated-closedSessionstat')">
+          <h4>
+            <span class="collapse-table-arrow arrow-open"></span>
+            <a>Closed Session Statistics (
+              {closed.size}
+              )</a>
+          </h4>
+        </span> ++
+          <div class="aggregated-closedSessionstat collapsible-table">
+          {table}
         </div>
-
+    }
     content
+  }
+
+  private def sessionTable(
+      request: HttpServletRequest,
+      sessionTage: String,
+      parent: EngineTab,
+      data: Seq[SessionEvent]): Seq[Node] = {
+    val sessionPage =
+      Option(request.getParameter(s"$sessionTage.page")).map(_.toInt).getOrElse(1)
+    try {
+      new SessionStatsPagedTable(
+        request,
+        parent,
+        data,
+        "kyuubi",
+        UIUtils.prependBaseUri(request, parent.basePath),
+        s"${sessionTage}-table").table(sessionPage)
+    } catch {
+      case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+        <div class="alert alert-error">
+          <p>Error while rendering job table:</p>
+          <pre>
+            {Utils.stringifyException(e)}
+          </pre>
+        </div>
+    }
   }
 
   private class SessionStatsPagedTable(

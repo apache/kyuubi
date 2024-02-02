@@ -22,7 +22,6 @@ import java.nio.file.Paths
 import java.util.Locale
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
@@ -35,20 +34,23 @@ import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManage
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.{KubernetesUtils, Validator}
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
   import SparkProcessBuilder._
@@ -127,7 +129,7 @@ class SparkProcessBuilder(
     completeMasterUrl(conf)
 
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     buffer += CLASS
     buffer += mainClass
@@ -135,14 +137,12 @@ class SparkProcessBuilder(
     var allConf = conf.getAll
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server keytab file
-    if (AuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
-        == AuthTypes.KERBEROS) {
+    if (AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ appendPodNameConf(allConf)).foreach { case (k, v) =>
-      buffer += CONF
-      buffer += s"${convertConfigKey(k)}=$v"
+    (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
+      case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
     setupKerberos(buffer)
@@ -154,13 +154,15 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
-  protected def setupKerberos(buffer: ArrayBuffer[String]): Unit = {
+  protected def setupKerberos(buffer: mutable.Buffer[String]): Unit = {
     // if the keytab is specified, PROXY_USER is not supported
     tryKeytab() match {
-      case None =>
+      case None if doAsEnabled =>
         setSparkUserName(proxyUser, buffer)
         buffer += PROXY_USER
         buffer += proxyUser
+      case None => // doAs disabled
+        setSparkUserName(Utils.currentUser, buffer)
       case Some(name) =>
         setSparkUserName(name, buffer)
     }
@@ -175,10 +177,15 @@ class SparkProcessBuilder(
       try {
         val ugi = UserGroupInformation
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        if (ugi.getShortUserName != proxyUser) {
+        if (doAsEnabled && ugi.getShortUserName != proxyUser) {
           warn(s"The session proxy user: $proxyUser is not same with " +
-            s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
-            s"Fallback to use proxy user.")
+            s"spark principal: ${ugi.getShortUserName}, skip using keytab. " +
+            "Fallback to use proxy user.")
+          None
+        } else if (!doAsEnabled && ugi.getShortUserName != Utils.currentUser) {
+          warn(s"The server's user: ${Utils.currentUser} is not same with " +
+            s"spark principal: ${ugi.getShortUserName}, skip using keytab. " +
+            "Fallback to use server's user.")
           None
         } else {
           Some(ugi.getShortUserName)
@@ -259,6 +266,18 @@ class SparkProcessBuilder(
     map.result().toMap
   }
 
+  def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
+    val map = mutable.Map.newBuilder[String, String]
+    if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
+      if (!conf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
+        // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
+        // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
+        map += (YARN_MAX_APP_ATTEMPTS_KEY -> "1")
+      }
+    }
+    map.result().toMap
+  }
+
   override def clusterManager(): Option[String] = {
     conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
   }
@@ -283,16 +302,14 @@ class SparkProcessBuilder(
     conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 
-  override def validateConf: Unit = Validator.validateConf(conf)
+  override def validateConf(): Unit = Validator.validateConf(conf)
 
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
-  def setSparkUserName(userName: String, buffer: ArrayBuffer[String]): Unit = {
+  def setSparkUserName(userName: String, buffer: mutable.Buffer[String]): Unit = {
     clusterManager().foreach { cm =>
       if (cm.toUpperCase.startsWith("K8S")) {
-        buffer += CONF
-        buffer += s"spark.kubernetes.driverEnv.SPARK_USER_NAME=$userName"
-        buffer += CONF
-        buffer += s"spark.executorEnv.SPARK_USER_NAME=$userName"
+        buffer ++= confKeyValue("spark.kubernetes.driverEnv.SPARK_USER_NAME", userName)
+        buffer ++= confKeyValue("spark.executorEnv.SPARK_USER_NAME", userName)
       }
     }
   }
@@ -311,6 +328,7 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   /**
@@ -335,7 +353,6 @@ object SparkProcessBuilder {
     "spark.kubernetes.kerberos.krb5.path",
     "spark.kubernetes.file.upload.path")
 
-  final private[spark] val CONF = "--conf"
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
   final private[spark] val SPARK_FILES = "spark.files"

@@ -19,8 +19,6 @@ package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_BATCH_PRIORITY
@@ -30,6 +28,7 @@ import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.SessionType.SessionType
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class KyuubiBatchSession(
     user: String,
@@ -111,6 +110,8 @@ class KyuubiBatchSession(
       optimizedConf,
       batchArgs,
       metadata)
+
+  def startupProcessAlive: Boolean = batchJobSubmissionOp.startupProcessAlive
 
   private def waitMetadataRequestsRetryCompletion(): Unit = {
     val batchId = batchJobSubmissionOp.batchId

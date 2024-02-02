@@ -273,4 +273,11 @@ object KyuubiSQLConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val SCRIPT_TRANSFORMATION_ENABLED =
+    buildConf("spark.sql.execution.scriptTransformation.enabled")
+      .doc("When false, script transformation is not allowed.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(true)
 }

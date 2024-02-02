@@ -60,6 +60,11 @@
         </dependency>
 
         <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-util</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <scope>provided</scope>
@@ -232,15 +237,13 @@
                             <include>com.google.guava:*</include>
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
+                            <include>dev.failsafe:failsafe</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
                             <include>io.netty:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
-                            <include>net.jodah:failsafe</include>
-                            <include>org.apache.hive:hive-service-rpc</include>
                             <include>org.apache.kyuubi:*</include>
-                            <include>org.apache.thrift:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
@@ -266,24 +269,10 @@
                     </filters>
                     <relocations>
                         <relocation>
-                            <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
+                            <pattern>dev.failsafe</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.dev.failsafe</shadedPattern>
                             <includes>
-                                <include>org.apache.hive.service.rpc.thrift.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.facebook.fb303</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-                            <includes>
-                                <include>com.facebook.fb303.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.thrift.**</include>
+                                <include>dev.failsafe.**</include>
                             </includes>
                         </relocation>
                         <relocation>
@@ -313,13 +302,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.io.vertx</shadedPattern>
                             <includes>
                                 <include>io.vertx.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>net.jodah</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.net.jodah</shadedPattern>
-                            <includes>
-                                <include>net.jodah.**</include>
                             </includes>
                         </relocation>
                         <relocation>

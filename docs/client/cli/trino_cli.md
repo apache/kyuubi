@@ -21,7 +21,7 @@ The Trino CLI provides a terminal-based, interactive shell for running queries. 
 
 ## Start Kyuubi Trino Server
 
-First we should configure the trino protocol and the service port in the `kyuubi.conf`
+First we should configure the trino protocol and the service port in the `kyuubi-defaults.conf`
 
 ```
 kyuubi.frontend.protocols TRINO
@@ -30,11 +30,11 @@ kyuubi.frontend.trino.bind.port 10999 #default port
 
 ## Install
 
-Download [trino-cli-363-executable.jar](https://repo1.maven.org/maven2/io/trino/trino-jdbc/363/trino-jdbc-363.jar), rename it to `trino`, make it executable with `chmod +x`, and run it to show the version of the CLI:
+Download [trino-cli-411-executable.jar](https://repo1.maven.org/maven2/io/trino/trino-jdbc/411/trino-jdbc-411.jar), rename it to `trino`, make it executable with `chmod +x`, and run it to show the version of the CLI:
 
 ```
-wget https://repo1.maven.org/maven2/io/trino/trino-jdbc/363/trino-jdbc-363.jar
-mv trino-jdbc-363.jar trino
+wget https://repo1.maven.org/maven2/io/trino/trino-jdbc/411/trino-jdbc-411.jar
+mv trino-jdbc-411.jar trino
 chmod +x trino
 ./trino --version
 ```

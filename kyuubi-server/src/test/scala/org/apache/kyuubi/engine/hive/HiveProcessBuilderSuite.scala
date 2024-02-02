@@ -26,7 +26,7 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
 
   test("hive process builder") {
     val conf = KyuubiConf().set("kyuubi.on", "off")
-    val builder = new HiveProcessBuilder("kyuubi", conf) {
+    val builder = new HiveProcessBuilder("kyuubi", true, conf) {
       override def env: Map[String, String] = super.env + (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")
     }
     val commands = builder.toString.split('\n')
@@ -39,7 +39,7 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
   test("default engine memory") {
     val conf = KyuubiConf()
       .set(ENGINE_HIVE_EXTRA_CLASSPATH, "/hadoop")
-    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val builder = new HiveProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-Xmx1g"))
   }
@@ -48,7 +48,7 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
     val conf = KyuubiConf()
       .set(ENGINE_HIVE_MEMORY, "5g")
       .set(ENGINE_HIVE_EXTRA_CLASSPATH, "/hadoop")
-    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val builder = new HiveProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-Xmx5g"))
   }
@@ -59,14 +59,14 @@ class HiveProcessBuilderSuite extends KyuubiFunSuite {
       .set(
         ENGINE_HIVE_JAVA_OPTIONS,
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val builder = new HiveProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"))
   }
 
   test("set engine extra classpath") {
     val conf = KyuubiConf().set(ENGINE_HIVE_EXTRA_CLASSPATH, "/dummy_classpath/*")
-    val builder = new HiveProcessBuilder("kyuubi", conf)
+    val builder = new HiveProcessBuilder("kyuubi", true, conf)
     val commands = builder.toString
     assert(commands.contains("/dummy_classpath/*"))
   }

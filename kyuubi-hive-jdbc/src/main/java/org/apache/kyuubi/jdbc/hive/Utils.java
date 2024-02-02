@@ -28,8 +28,10 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hive.service.rpc.thrift.TStatus;
-import org.apache.hive.service.rpc.thrift.TStatusCode;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatus;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatusCode;
+import org.apache.kyuubi.util.reflect.DynConstructors;
+import org.apache.kyuubi.util.reflect.DynMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +59,11 @@ public class Utils {
   public static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
   public static final String HIVE_SERVER2_RETRY_TRUE = "true";
   public static final String HIVE_SERVER2_RETRY_FALSE = "false";
+
+  public static final String HADOOP_CONFIGURATION_CLASS = "org.apache.hadoop.conf.Configuration";
+
+  public static final String HADOOP_SECURITY_CREDENTIAL_PATH =
+      "hadoop.security.credential.provider.path";
 
   public static final Pattern KYUUBI_OPERATION_HINT_PATTERN =
       Pattern.compile("^__kyuubi_operation_result_(.*)__=(.*)", Pattern.CASE_INSENSITIVE);
@@ -201,7 +208,7 @@ public class Utils {
       uri = uri.replace(urlPrefix, urlPrefix + authorityFromClientJdbcURL);
     }
     connParams.setSuppliedURLAuthority(authorityFromClientJdbcURL);
-    uri = uri.replace(authorityFromClientJdbcURL, dummyAuthorityString);
+    uri = uri.replaceFirst(authorityFromClientJdbcURL, dummyAuthorityString);
 
     // Now parse the connection uri with dummy authority
     URI jdbcURI = URI.create(uri.substring(URI_JDBC_PREFIX.length()));
@@ -569,5 +576,70 @@ public class Utils {
       }
     }
     return KYUUBI_CLIENT_VERSION;
+  }
+
+  /**
+   * Method to get the password from the credential provider
+   *
+   * @param configuration Hadoop configuration
+   * @param providerPath provider path
+   * @param key alias name
+   * @return password
+   */
+  private static String getPasswordFromCredentialProvider(
+      Object configuration, String providerPath, String key) {
+    try {
+      if (providerPath != null) {
+        DynMethods.builder("set")
+            .impl(Class.forName(HADOOP_CONFIGURATION_CLASS), String.class, String.class)
+            .buildChecked()
+            .invoke(configuration, HADOOP_SECURITY_CREDENTIAL_PATH, providerPath);
+
+        char[] password =
+            DynMethods.builder("getPassword")
+                .impl(Class.forName(HADOOP_CONFIGURATION_CLASS), String.class)
+                .buildChecked()
+                .invoke(configuration, key);
+        if (password != null) {
+          return new String(password);
+        }
+      }
+    } catch (ClassNotFoundException exception) {
+      throw new RuntimeException(exception);
+    } catch (NoSuchMethodException exception) {
+      LOG.warn("Could not retrieve password for " + key, exception);
+      throw new RuntimeException(exception);
+    }
+    return null;
+  }
+
+  /**
+   * Method to get the password from the configuration map if available. Otherwise, get it from the
+   * Hadoop CredentialProvider if Hadoop classes are available
+   *
+   * @param confMap configuration map
+   * @param key param
+   * @return password
+   */
+  public static String getPassword(Map<String, String> confMap, String key) {
+    String password = confMap.get(key);
+    boolean hadoopCredentialProviderAvailable = false;
+    Object hadoopConfiguration = null;
+    if (password == null) {
+      try {
+        hadoopConfiguration =
+            DynConstructors.builder().impl(HADOOP_CONFIGURATION_CLASS).build().newInstance();
+        hadoopCredentialProviderAvailable = true;
+      } catch (Exception exception) {
+        LOG.warn("Hadoop credential provider is unavailable", exception);
+        throw new RuntimeException(exception);
+      }
+    }
+    if (password == null && hadoopCredentialProviderAvailable) {
+      password =
+          getPasswordFromCredentialProvider(
+              hadoopConfiguration, confMap.get(JdbcConnectionParams.SSL_STORE_PASSWORD_PATH), key);
+    }
+    return password;
   }
 }

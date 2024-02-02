@@ -21,12 +21,12 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.immutable.SortedMap
 
-import org.apache.hive.service.rpc.thrift.TJobExecutionStatus
 import org.apache.spark.kyuubi.SparkProgressMonitor._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.status.api.v1.StageStatus
 
 import org.apache.kyuubi.engine.spark.operation.progress.{SparkOperationProgressStatus, SparkStage, SparkStageProgress}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TJobExecutionStatus
 
 class SparkProgressMonitor(spark: SparkSession, jobGroup: String) {
 

@@ -757,7 +757,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"""INSERT OVERWRITE DIRECTORY '/tmp/test_dir'
                | USING parquet
                | SELECT * FROM $db1.$table;""".stripMargin)))
-      assert(e.getMessage.contains(s"does not have [select] privilege on [$db1/$table/id]"))
+      assert(e.getMessage.contains(
+        s"does not have [write] privilege on [[/tmp/test_dir, /tmp/test_dir/]]"))
     }
   }
 
@@ -1080,8 +1081,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |INSERT OVERWRITE DIRECTORY '$path'
                  |USING parquet
                  |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[write] privilege on [[$path, $path/]]")
+            s"does not have [write] privilege on [[$path, $path/]]")
         }
       }
     }
@@ -1122,8 +1122,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                    |INSERT OVERWRITE DIRECTORY '$path'
                    |USING parquet
                    |SELECT * FROM $db1.$table1""".stripMargin)))(
-            s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-              s"[write] privilege on [[$path, $path/]]")
+            s"does not have [write] privilege on [[$path, $path/]]")
 
           doAs(admin, sql(s"SELECT * FROM parquet.`$path`".stripMargin).explain(true))
           interceptEndsWith[AccessControlException](
@@ -1411,6 +1410,64 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |""".stripMargin))
 
         checkAnswer(permViewOnlyUser, s"SELECT * FROM $db1.$view1", Array.empty[Row])
+      }
+    }
+  }
+
+  test("[KYUUBI #5884] PVM should inherit MultiInstance and wrap with new exprId") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val perm_view = "perm_view"
+    val view1 = "view1"
+    val view2 = "view2"
+    val view3 = "view3"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq.empty) {
+        sql("set spark.sql.legacy.storeAnalyzedPlanForView=true")
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table1"))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE OR REPLACE TEMPORARY VIEW $view1 AS
+               |SELECT *
+               |FROM $db1.$perm_view
+               |WHERE id > 10
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE OR REPLACE TEMPORARY VIEW $view2 AS
+               |SELECT *
+               |FROM $view1
+               |WHERE scope <  10
+               |""".stripMargin))
+
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE OR REPLACE TEMPORARY VIEW $view3 AS
+               |SELECT *
+               |FROM $view1
+               |WHERE scope is not null
+               |""".stripMargin))
+
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(
+              s"""
+                 |SELECT a.*, b.scope as new_scope
+                 |FROM $view2 a
+                 |JOIN $view3 b
+                 |ON a.id == b.id
+                 |""".stripMargin).collect()))(s"does not have [select] privilege on " +
+          s"[$db1/$perm_view/id,$db1/$perm_view/scope,$db1/$perm_view/scope,$db1/$perm_view/id]")
       }
     }
   }

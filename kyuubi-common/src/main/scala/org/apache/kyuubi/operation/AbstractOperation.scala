@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.IOException
 import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
@@ -31,6 +31,7 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
 import org.apache.kyuubi.util.ThreadUtils
 
 abstract class AbstractOperation(session: Session) extends Operation with Logging {
@@ -104,6 +105,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     this.operationException = opEx
   }
 
+  def getOperationJobProgress: TProgressUpdateResp = operationJobProgress
   def setOperationJobProgress(opJobProgress: TProgressUpdateResp): Unit = {
     this.operationJobProgress = opJobProgress
   }
@@ -246,5 +248,20 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     val ok = new TStatus(TStatusCode.SUCCESS_STATUS)
     ok.setInfoMessages(hints.asJava)
     ok
+  }
+
+  /**
+   * Close the OperationLog, after running the block
+   */
+  def withClosingOperationLog[T](f: => T): T = {
+    try {
+      f
+    } finally {
+      try {
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
+    }
   }
 }

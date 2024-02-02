@@ -618,4 +618,54 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, sql(dropIndex))
     }
   }
+
+  test("ShowCommitsProcedure") {
+    withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+      doAs(
+        admin,
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+             |USING HUDI
+             |OPTIONS (
+             | type = 'mor',
+             | primaryKey = 'id',
+             | 'hoodie.datasource.hive_sync.enable' = 'false'
+             |)
+             |PARTITIONED BY(city)
+             |TBLPROPERTIES ('hoodie.datasource.write.precombine.field' = 'id')
+             |""".stripMargin))
+
+      val showCommitsSql = s"CALL SHOW_COMMITS(table => '$namespace1.$table1', limit => 10)"
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(showCommitsSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(showCommitsSql))
+    }
+  }
+
+  test("ShowClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL SHOW_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [read] privilege on [[$path, $path/]]")
+  }
+
+  test("RunClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
+
+  test("RunCompactionProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_COMPACTION(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
 }

@@ -21,27 +21,20 @@ import java.io.IOException
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.security.authentication.util.KerberosName
-import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
-
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.AuthTypes._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.kyuubi.shaded.thrift.TProcessorFactory
+import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
-  val authTypes: Set[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-  val noSaslEnabled: Boolean = authTypes == Set(NOSASL)
-  val kerberosEnabled: Boolean = authTypes.contains(KERBEROS)
-  private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
-    .filterNot(_.equals(NOSASL)).headOption
+  val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  val saslDisabled: Boolean = AuthUtils.saslDisabled(authTypes)
+  val kerberosEnabled: Boolean = AuthUtils.kerberosEnabled(authTypes)
+  val effectivePlainAuthType: Option[AuthType] = AuthUtils.effectivePlainAuthType(authTypes)
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
@@ -70,7 +63,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   }
 
   def getTTransportFactory: TTransportFactory = {
-    if (noSaslEnabled) {
+    if (saslDisabled) {
       new TTransportFactory()
     } else {
       var transportFactory: TSaslServerTransport.Factory = null
@@ -87,7 +80,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
         case _ =>
       }
 
-      plainAuthTypeOpt match {
+      effectivePlainAuthType match {
         case Some(plainAuthType) =>
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
@@ -117,47 +110,5 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   def getIpAddress: Option[String] = {
     hadoopAuthServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
-  }
-}
-object KyuubiAuthenticationFactory extends Logging {
-  val HS2_PROXY_USER = "hive.server2.proxy.user"
-
-  @throws[KyuubiSQLException]
-  def verifyProxyAccess(
-      realUser: String,
-      proxyUser: String,
-      ipAddress: String,
-      hadoopConf: Configuration): Unit = {
-    try {
-      val sessionUgi = {
-        if (UserGroupInformation.isSecurityEnabled) {
-          val kerbName = new KerberosName(realUser)
-          UserGroupInformation.createProxyUser(
-            kerbName.getServiceName,
-            UserGroupInformation.getLoginUser)
-        } else {
-          UserGroupInformation.createRemoteUser(realUser)
-        }
-      }
-
-      if (!proxyUser.equalsIgnoreCase(realUser)) {
-        ProxyUsers.refreshSuperUserGroupsConfiguration(hadoopConf)
-        ProxyUsers.authorize(UserGroupInformation.createProxyUser(proxyUser, sessionUgi), ipAddress)
-      }
-    } catch {
-      case e: IOException =>
-        throw KyuubiSQLException(
-          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser,
-          e)
-    }
-  }
-
-  def getValidPasswordAuthMethod(authTypes: Set[AuthType]): AuthMethod = {
-    if (authTypes == Set(NOSASL)) AuthMethods.NONE
-    else if (authTypes.contains(NONE)) AuthMethods.NONE
-    else if (authTypes.contains(LDAP)) AuthMethods.LDAP
-    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
-    else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
-    else throw new IllegalArgumentException("No valid Password Auth detected")
   }
 }

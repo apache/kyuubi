@@ -24,6 +24,7 @@
 ## Upgrading from Kyuubi 1.8.0 to 1.8.1
 
 * Since Kyuubi 1.8.1, for `DELETE /batches/${batchId}`, `hive.server2.proxy.user` is not needed in the request parameters.
+* Since Kyuubi 1.8.1, the default SQLite file `kyuubi_state_store.db` for Metadata store is located under `$KYUUBI_HOME` instead of `$PWD`. To restore previous behavior, set `kyuubi.metadata.store.jdbc.url` to `jdbc:sqlite:kyuubi_state_store.db`.
 
 ## Upgrading from Kyuubi 1.7 to 1.8
 

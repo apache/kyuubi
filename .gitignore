@@ -80,3 +80,7 @@ conf/kyuubi-env.sh
 kyuubi-server/gen
 kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/*.tokens
 kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/
+
+# For draw.io
+.$*.bkp
+.$*.dtmp

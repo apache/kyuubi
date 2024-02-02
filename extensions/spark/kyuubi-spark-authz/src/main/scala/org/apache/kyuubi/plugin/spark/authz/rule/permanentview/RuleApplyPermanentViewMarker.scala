@@ -31,7 +31,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
  * [[PermanentViewMarker]] must be transformed up later
  * in [[org.apache.kyuubi.plugin.spark.authz.rule.RuleEliminatePermanentViewMarker]] optimizer.
  */
-class RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
+object RuleApplyPermanentViewMarker extends Rule[LogicalPlan] {
 
   private def resolveSubqueryExpression(
       plan: LogicalPlan,

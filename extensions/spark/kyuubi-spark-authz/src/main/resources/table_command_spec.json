@@ -1398,11 +1398,7 @@
   "classname" : "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand",
   "tableDescs" : [ ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor",
-    "comment" : ""
-  } ],
+  "queryDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "storage",
     "fieldExtractor" : "CatalogStorageFormatURIExtractor",
@@ -1625,11 +1621,7 @@
     "comment" : ""
   } ],
   "opType" : "QUERY",
-  "queryDescs" : [ {
-    "fieldName" : "query",
-    "fieldExtractor" : "LogicalPlanQueryExtractor",
-    "comment" : ""
-  } ],
+  "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand",
@@ -2033,7 +2025,17 @@
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ {
+    "fieldName" : "clone",
+    "fieldExtractor" : "HudiCallProcedureInputUriExtractor",
+    "isInput" : true,
+    "comment" : "Hudi"
+  }, {
+    "fieldName" : "clone",
+    "fieldExtractor" : "HudiCallProcedureOutputUriExtractor",
+    "isInput" : false,
+    "comment" : "Hudi"
+  } ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand",
   "tableDescs" : [ ],

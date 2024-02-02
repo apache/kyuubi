@@ -25,13 +25,12 @@ import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 

@@ -186,8 +186,6 @@
                             <include>com.google.guava:guava</include>
                             <include>commons-codec:commons-codec</include>
                             <include>org.apache.commons:commons-lang3</include>
-                            <include>org.apache.hive:hive-service-rpc</include>
-                            <include>org.apache.thrift:*</include>
                             <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
@@ -238,27 +236,6 @@
                         <relocation>
                             <pattern>org.apache.commons.lang</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.hive.service.rpc.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive.service.rpc.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.hive.service.rpc.thrift.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>com.facebook.fb303</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook.fb303</shadedPattern>
-                            <includes>
-                                <include>com.facebook.fb303.**</include>
-                            </includes>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
-                            <includes>
-                                <include>org.apache.thrift.**</include>
-                            </includes>
                         </relocation>
                     </relocations>
                     <transformers>

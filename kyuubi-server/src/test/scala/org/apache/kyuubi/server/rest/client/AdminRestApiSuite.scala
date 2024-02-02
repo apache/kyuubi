@@ -21,7 +21,6 @@ import java.util.UUID
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 import org.mockito.Mockito.lenient
 import org.scalatestplus.mockito.MockitoSugar.mock
 
@@ -33,6 +32,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class AdminRestApiSuite extends RestClientTestHelper {
   test("refresh kyuubi server hadoop conf") {
@@ -50,10 +50,11 @@ class AdminRestApiSuite extends RestClientTestHelper {
     val id = UUID.randomUUID().toString
     conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 180000L)
-    conf.set(KyuubiConf.AUTHENTICATION_METHOD, Set("LDAP", "CUSTOM"))
+    conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
     val user = ldapUser
-    val engine = new EngineRef(conf.clone, user, PluginLoader.loadGroupProvider(conf), id, null)
+    val engine =
+      new EngineRef(conf.clone, user, true, PluginLoader.loadGroupProvider(conf), id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",

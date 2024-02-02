@@ -50,7 +50,7 @@ abstract class SparkOnKubernetesSuiteBase
     // TODO Support more Spark version
     // Spark official docker image: https://hub.docker.com/r/apache/spark/tags
     KyuubiConf().set("spark.master", s"k8s://$apiServerAddress")
-      .set("spark.kubernetes.container.image", "apache/spark:3.4.1")
+      .set("spark.kubernetes.container.image", "apache/spark:3.4.2")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
       .set("spark.executor.memory", "512M")
@@ -192,8 +192,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
   test("Check if spark.kubernetes.executor.podNamePrefix is invalid") {
     Seq("_123", "spark_exec", "spark@", "a" * 238).foreach { invalid =>
       conf.set(KUBERNETES_EXECUTOR_POD_NAME_PREFIX, invalid)
-      val builder = new SparkProcessBuilder("test", conf)
-      val e = intercept[KyuubiException](builder.validateConf)
+      val builder = new SparkProcessBuilder("test", true, conf)
+      val e = intercept[KyuubiException](builder.validateConf())
       assert(e.getMessage === s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
         s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
         "working-with-objects/names/#dns-subdomain-names and the value length <= 237")

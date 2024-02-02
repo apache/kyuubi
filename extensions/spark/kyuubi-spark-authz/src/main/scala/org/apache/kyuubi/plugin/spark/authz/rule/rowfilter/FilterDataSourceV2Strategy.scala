@@ -20,7 +20,7 @@ import org.apache.spark.sql.{SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.SparkPlan
 
-class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
+case class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     // For Spark 3.1 and below, `ColumnPruning` rule will set `ObjectFilterPlaceHolder#child` to
     // `Project`

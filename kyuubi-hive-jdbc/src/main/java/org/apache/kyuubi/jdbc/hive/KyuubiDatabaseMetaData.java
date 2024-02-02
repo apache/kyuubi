@@ -17,26 +17,24 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.apache.hive.service.rpc.thrift.TTypeId.*;
+import static org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId.*;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.jar.Attributes;
-import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLDatabaseMetaData;
-import org.apache.thrift.TException;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TException;
 
 /** KyuubiDatabaseMetaData. */
 public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   private final KyuubiConnection connection;
+  private final TProtocolVersion protocol;
   private final TCLIService.Iface client;
   private final TSessionHandle sessHandle;
   private static final String CATALOG_SEPARATOR = ".";
@@ -50,8 +48,12 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
   private String dbVersion = null;
 
   public KyuubiDatabaseMetaData(
-      KyuubiConnection connection, TCLIService.Iface client, TSessionHandle sessHandle) {
+      KyuubiConnection connection,
+      TProtocolVersion protocol,
+      TCLIService.Iface client,
+      TSessionHandle sessHandle) {
     this.connection = connection;
+    this.protocol = protocol;
     this.client = client;
     this.sessHandle = sessHandle;
   }
@@ -568,6 +570,12 @@ public class KyuubiDatabaseMetaData implements SQLDatabaseMetaData {
 
   @Override
   public String getSQLKeywords() throws SQLException {
+    if (protocol.compareTo(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11) < 0) {
+      throw new SQLFeatureNotSupportedException(
+          String.format(
+              "Feature is not supported, protocol version is %s, requires %s or higher",
+              protocol, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11));
+    }
     // Note: the definitions of what ODBC and JDBC keywords exclude are different in different
     //       places. For now, just return the ODBC version here; that excludes Hive keywords
     //       that are also ODBC reserved keywords. We could also exclude SQL:2003.

@@ -40,6 +40,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 object Utils extends Logging {
 
@@ -156,6 +157,17 @@ object Utils extends Logging {
     val dir = createDirectory(root, prefix)
     dir.toFile.deleteOnExit()
     dir
+  }
+
+  /**
+   * List the files recursively in a directory.
+   */
+  def listFilesRecursively(file: File): Seq[File] = {
+    if (!file.isDirectory) {
+      file :: Nil
+    } else {
+      file.listFiles().flatMap(listFilesRecursively)
+    }
   }
 
   /**
@@ -325,7 +337,7 @@ object Utils extends Logging {
     require(args.length % 2 == 0, s"Illegal size of arguments.")
     for (i <- args.indices by 2) {
       require(
-        args(i) == "--conf",
+        args(i) == CONF,
         s"Unrecognized main arguments prefix ${args(i)}," +
           s"the argument format is '--conf k=v'.")
 
@@ -336,25 +348,24 @@ object Utils extends Logging {
     }
   }
 
-  val REDACTION_REPLACEMENT_TEXT = "*********(redacted)"
-
-  private val PATTERN_FOR_KEY_VALUE_ARG = "(.+?)=(.+)".r
-
   def redactCommandLineArgs(conf: KyuubiConf, commands: Iterable[String]): Iterable[String] = {
-    val redactionPattern = conf.get(SERVER_SECRET_REDACTION_PATTERN)
-    var nextKV = false
-    commands.map {
-      case PATTERN_FOR_KEY_VALUE_ARG(key, value) if nextKV =>
-        val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
-        nextKV = false
-        s"$key=$newValue"
+    conf.get(SERVER_SECRET_REDACTION_PATTERN) match {
+      case Some(redactionPattern) =>
+        var nextKV = false
+        commands.map {
+          case PATTERN_FOR_KEY_VALUE_ARG(key, value) if nextKV =>
+            val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
+            nextKV = false
+            genKeyValuePair(key, newValue)
 
-      case cmd if cmd == "--conf" =>
-        nextKV = true
-        cmd
+          case cmd if cmd == CONF =>
+            nextKV = true
+            cmd
 
-      case cmd =>
-        cmd
+          case cmd =>
+            cmd
+        }
+      case _ => commands
     }
   }
 

@@ -23,7 +23,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
@@ -33,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.reflect.DynConstructors
 

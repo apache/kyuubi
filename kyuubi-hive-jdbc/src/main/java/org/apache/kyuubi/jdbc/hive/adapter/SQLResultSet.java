@@ -22,7 +22,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.net.URL;
 import java.sql.*;
-import java.util.Calendar;
 import java.util.Map;
 
 @SuppressWarnings("deprecation")
@@ -433,36 +432,6 @@ public interface SQLResultSet extends ResultSet {
 
   @Override
   default Array getArray(String columnLabel) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Date getDate(int columnIndex, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Date getDate(String columnLabel, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Time getTime(int columnIndex, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Time getTime(String columnLabel, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Timestamp getTimestamp(int columnIndex, Calendar cal) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
-  default Timestamp getTimestamp(String columnLabel, Calendar cal) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

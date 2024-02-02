@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql.parser.server
 import org.apache.kyuubi.sql.{KyuubiSqlBaseParser, KyuubiSqlBaseParserBaseVisitor}
 import org.apache.kyuubi.sql.KyuubiSqlBaseParser.SingleStatementContext
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.command.{DescribeSession, RunnableCommand}
+import org.apache.kyuubi.sql.plan.command.{DescribeEngine, DescribeSession, RunnableCommand}
 
 class KyuubiAstBuilder extends KyuubiSqlBaseParserBaseVisitor[AnyRef] {
 
@@ -43,5 +43,10 @@ class KyuubiAstBuilder extends KyuubiSqlBaseParserBaseVisitor[AnyRef] {
   override def visitDescribeSession(ctx: KyuubiSqlBaseParser.DescribeSessionContext)
       : RunnableCommand = {
     DescribeSession()
+  }
+
+  override def visitDescribeEngine(ctx: KyuubiSqlBaseParser.DescribeEngineContext)
+      : RunnableCommand = {
+    DescribeEngine()
   }
 }

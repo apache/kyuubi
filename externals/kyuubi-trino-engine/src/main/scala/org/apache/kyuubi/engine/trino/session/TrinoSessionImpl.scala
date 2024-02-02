@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.trino.session
 
 import java.net.URI
 import java.time.ZoneId
-import java.util.{Collections, Locale, Optional}
+import java.util.{Locale, Optional}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -28,7 +28,6 @@ import io.airlift.units.Duration
 import io.trino.client.ClientSession
 import io.trino.client.OkHttpUtil
 import okhttp3.OkHttpClient
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.currentUser
@@ -39,6 +38,7 @@ import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class TrinoSessionImpl(
     protocol: TProtocolVersion,
@@ -54,7 +54,7 @@ class TrinoSessionImpl(
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
-  private val username: String = sessionConf
+  private val sessionUser: String = sessionConf
     .getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY).getOrElse(currentUser)
 
   var trinoContext: TrinoContext = _
@@ -93,27 +93,18 @@ class TrinoSessionImpl(
 
     val properties = getTrinoSessionConf(sessionConf).asJava
 
-    new ClientSession(
-      URI.create(connectionUrl),
-      username,
-      Optional.empty(),
-      "kyuubi",
-      Optional.empty(),
-      Collections.emptySet(),
-      null,
-      catalogName,
-      databaseName,
-      null,
-      ZoneId.systemDefault(),
-      Locale.getDefault,
-      Collections.emptyMap(),
-      Collections.emptyMap(),
-      properties,
-      Collections.emptyMap(),
-      Collections.emptyMap(),
-      null,
-      new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
-      true)
+    ClientSession.builder()
+      .server(URI.create(connectionUrl))
+      .principal(Optional.of(sessionUser))
+      .source("kyuubi")
+      .catalog(catalogName)
+      .schema(databaseName)
+      .timeZone(ZoneId.systemDefault())
+      .locale(Locale.getDefault)
+      .properties(properties)
+      .clientRequestTimeout(new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS))
+      .compressionDisabled(true)
+      .build()
   }
 
   private def createHttpClient(): OkHttpClient = {
@@ -135,13 +126,16 @@ class TrinoSessionImpl(
       Optional.ofNullable(keystoreType.orNull),
       Optional.ofNullable(truststorePath.orNull),
       Optional.ofNullable(truststorePassword.orNull),
-      Optional.ofNullable(truststoreType.orNull))
+      Optional.ofNullable(truststoreType.orNull),
+      true)
 
     sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD).foreach { password =>
       require(
         serverScheme.equalsIgnoreCase("https"),
         "Trino engine using username/password requires HTTPS to be enabled")
-      builder.addInterceptor(OkHttpUtil.basicAuth(username, password))
+      val user: String = sessionConf
+        .get(KyuubiConf.ENGINE_TRINO_CONNECTION_USER).getOrElse(sessionUser)
+      builder.addInterceptor(OkHttpUtil.basicAuth(user, password))
     }
 
     builder.build()

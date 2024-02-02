@@ -33,7 +33,7 @@ trait BatchTestHelper {
   val sparkBatchTestAppName = "Spark Pi" // the app name is hard coded in spark example code
 
   val sparkBatchTestResource: Option[String] = {
-    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", KyuubiConf())
+    val sparkProcessBuilder = new SparkProcessBuilder("kyuubi", true, KyuubiConf())
     Paths.get(sparkProcessBuilder.sparkHome, "examples", "jars").toFile.listFiles().find(
       _.getName.startsWith("spark-examples")) map (_.getCanonicalPath)
   }

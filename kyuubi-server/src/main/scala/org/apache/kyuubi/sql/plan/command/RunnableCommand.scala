@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.sql.plan.command
 
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
-
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.session.KyuubiSession
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
 import org.apache.kyuubi.sql.plan.KyuubiTreeNode
-import org.apache.kyuubi.sql.schema.{Row, RowSetHelper, Schema}
+import org.apache.kyuubi.sql.schema.{Row, Schema, ServerTRowSetGenerator}
 
 trait RunnableCommand extends KyuubiTreeNode {
 
@@ -45,7 +44,7 @@ trait RunnableCommand extends KyuubiTreeNode {
       case FETCH_FIRST => iter.fetchAbsolute(0)
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSetHelper.toTRowSet(
+    val resultRowSet = new ServerTRowSetGenerator().toTRowSet(
       taken.toList,
       resultSchema,
       protocolVersion)

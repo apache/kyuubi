@@ -90,7 +90,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -101,11 +101,14 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.9'
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
+          if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.4" && "${{ matrix.spark-archive }}" == "" ]]; then
+            MVN_OPT="${MVN_OPT} -Pcodecov"
+          fi
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
@@ -144,7 +147,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -156,7 +159,7 @@ jobs:
         uses: ./.github/actions/cache-engine-archives
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
+          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it,!integration-tests/kyuubi-gluten-it"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
@@ -200,7 +203,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -248,12 +251,15 @@ jobs:
           - java: 8
             hive-archive: '-Dhive.archive.mirror=https://archive.apache.org/dist/hive/hive-2.3.9 -Dhive.archive.name=apache-hive-2.3.9-bin.tar.gz'
             comment: 'verify-on-hive-2.3-binary'
+          - java: 8
+            hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz'
+            comment: 'verify-on-hive-2.1-cdh6-binary'
     steps:
       - uses: actions/checkout@v4
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -299,7 +305,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -338,7 +344,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -350,9 +356,9 @@ jobs:
         uses: ./.github/actions/cache-engine-archives
       - name: Build and test Trino with maven w/o linters
         run: |
-          TEST_MODULES="kyuubi-server,externals/kyuubi-trino-engine,externals/kyuubi-spark-sql-engine,externals/kyuubi-download,integration-tests/kyuubi-trino-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided clean install -DskipTests
-          ./build/mvn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -pl ${TEST_MODULES} -am -Pflink-provided -Phive-provided test -Dtest=none -DwildcardSuites=org.apache.kyuubi.it.trino.operation.TrinoOperationSuite,org.apache.kyuubi.it.trino.server.TrinoFrontendSuite
+          TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -372,7 +378,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK 8
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8
@@ -404,7 +410,7 @@ jobs:
         with:
           # passthrough CI into build container
           build-args: |
-            CI=${CI} 
+            CI=${CI}
             MVN_ARG=--flink-provided --hive-provided -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
           context: .
           file: build/Dockerfile
@@ -421,8 +427,8 @@ jobs:
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
           # pre-install spark into minikube
-          docker pull apache/spark:3.4.1
-          minikube image load apache/spark:3.4.1
+          docker pull apache/spark:3.4.2
+          minikube image load apache/spark:3.4.2
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -518,7 +524,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}

@@ -23,8 +23,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.sql.SQLException;
-import org.apache.hive.service.rpc.thrift.*;
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

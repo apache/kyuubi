@@ -19,34 +19,36 @@ package org.apache.kyuubi.engine.hive
 
 import java.io.File
 import java.nio.file.{Files, Paths}
-import java.util
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
-import org.apache.kyuubi.engine.hive.HiveProcessBuilder._
+import org.apache.kyuubi.engine.deploy.DeployMode
+import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
+import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class HiveProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
-  private val hiveHome: String = getEngineHome(shortName)
+  protected val hiveHome: String = getEngineHome(shortName)
 
   override protected def module: String = "kyuubi-hive-sql-engine"
 
@@ -54,7 +56,7 @@ class HiveProcessBuilder(
 
   override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    val buffer = new ArrayBuffer[String]()
+    val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
     val memory = conf.get(ENGINE_HIVE_MEMORY)
@@ -65,8 +67,7 @@ class HiveProcessBuilder(
     }
     // -Xmx5g
     // java options
-    buffer += "-cp"
-    val classpathEntries = new util.LinkedHashSet[String]
+    val classpathEntries = new mutable.LinkedHashSet[String]
     // hive engine runtime jar
     mainResource.foreach(classpathEntries.add)
     // classpath contains hive configurations, default to hive.home/conf
@@ -101,25 +102,38 @@ class HiveProcessBuilder(
         classpathEntries.add(s"$devHadoopJars${File.separator}*")
       }
     }
-    buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+    buffer ++= genClasspathOption(classpathEntries)
     buffer += mainClass
 
-    buffer += "--conf"
-    buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
-    buffer += "--conf"
-    buffer += s"$KYUUBI_ENGINE_ID=$engineRefId"
+    buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
+    buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
 
-    for ((k, v) <- conf.getAll) {
-      buffer += "--conf"
-      buffer += s"$k=$v"
-    }
+    buffer ++= confKeyValues(conf.getAll)
+
     buffer
   }
 
   override def shortName: String = "hive"
 }
 
-object HiveProcessBuilder {
+object HiveProcessBuilder extends Logging {
   final val HIVE_HADOOP_CLASSPATH_KEY = "HIVE_HADOOP_CLASSPATH"
   final val HIVE_ENGINE_NAME = "hive.engine.name"
+
+  def apply(
+      appUser: String,
+      doAsEnabled: Boolean,
+      conf: KyuubiConf,
+      engineRefId: String,
+      extraEngineLog: Option[OperationLog],
+      defaultEngineName: String): HiveProcessBuilder = {
+    DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
+      case LOCAL => new HiveProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case YARN =>
+        warn(s"Hive on YARN model is experimental.")
+        conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
+        new HiveYarnModeProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
+    }
+  }
 }

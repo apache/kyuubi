@@ -20,8 +20,7 @@ package org.apache.kyuubi.engine.flink
 import java.io.{File, FilenameFilter}
 import java.nio.file.{Files, Paths}
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -32,20 +31,22 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.command.CommandLineUtils._
 
 /**
  * A builder to build flink sql engine progress.
  */
 class FlinkProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
   val flinkHome: String = getEngineHome(shortName)
@@ -84,11 +85,11 @@ class FlinkProcessBuilder(
     // flink.execution.target are required in Kyuubi conf currently
     executionTarget match {
       case Some("yarn-application") =>
-        val buffer = new ArrayBuffer[String]()
+        val buffer = new mutable.ListBuffer[String]()
         buffer += flinkExecutable
         buffer += "run-application"
 
-        val flinkExtraJars = new ListBuffer[String]
+        val flinkExtraJars = new mutable.ListBuffer[String]
         // locate flink sql jars
         val flinkSqlJars = Paths.get(flinkHome)
           .resolve("opt")
@@ -134,18 +135,14 @@ class FlinkProcessBuilder(
         buffer += s"$mainClass"
         buffer += s"${mainResource.get}"
 
-        buffer += "--conf"
-        buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
-        conf.getAll.foreach { case (k, v) =>
-          if (k.startsWith("kyuubi.")) {
-            buffer += "--conf"
-            buffer += s"$k=$v"
-          }
-        }
+        buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
+
+        buffer ++= confKeyValues(conf.getAll.filter(_._1.startsWith("kyuubi.")))
+
         buffer
 
       case _ =>
-        val buffer = new ArrayBuffer[String]()
+        val buffer = new mutable.ListBuffer[String]()
         buffer += executable
 
         val memory = conf.get(ENGINE_FLINK_MEMORY)
@@ -155,8 +152,7 @@ class FlinkProcessBuilder(
           buffer += javaOptions.get
         }
 
-        buffer += "-cp"
-        val classpathEntries = new java.util.LinkedHashSet[String]
+        val classpathEntries = new mutable.LinkedHashSet[String]
         // flink engine runtime jar
         mainResource.foreach(classpathEntries.add)
         // flink sql jars
@@ -200,16 +196,14 @@ class FlinkProcessBuilder(
             classpathEntries.add(s"$devHadoopJars${File.separator}*")
           }
         }
-        buffer += classpathEntries.asScala.mkString(File.pathSeparator)
+        buffer ++= genClasspathOption(classpathEntries)
+
         buffer += mainClass
 
-        buffer += "--conf"
-        buffer += s"$KYUUBI_SESSION_USER_KEY=$proxyUser"
+        buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-        conf.getAll.foreach { case (k, v) =>
-          buffer += "--conf"
-          buffer += s"$k=$v"
-        }
+        buffer ++= confKeyValues(conf.getAll)
+
         buffer
     }
   }

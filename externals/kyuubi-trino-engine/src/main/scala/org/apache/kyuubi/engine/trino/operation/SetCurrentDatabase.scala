@@ -33,7 +33,7 @@ class SetCurrentDatabase(session: Session, database: String)
     try {
       val session = trinoContext.clientSession.get
       var builder = ClientSession.builder(session)
-      builder = builder.withSchema(database)
+      builder = builder.schema(database)
       trinoContext.clientSession.set(builder.build())
       setHasResultSet(false)
     } catch onError()

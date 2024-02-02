@@ -85,10 +85,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.codegen</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.facebook</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.facebook</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>com.google</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google</shadedPattern>
                         </relocation>
@@ -109,16 +105,8 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>org.apache.hive</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hive</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>org.apache.http</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.http</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.thrift</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.thrift</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

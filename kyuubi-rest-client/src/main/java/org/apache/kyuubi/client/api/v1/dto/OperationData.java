@@ -37,6 +37,7 @@ public class OperationData {
   private String sessionType;
   private String kyuubiInstance;
   private Map<String, String> metrics;
+  private OperationProgress progress;
 
   public OperationData() {}
 
@@ -53,7 +54,8 @@ public class OperationData {
       String sessionUser,
       String sessionType,
       String kyuubiInstance,
-      Map<String, String> metrics) {
+      Map<String, String> metrics,
+      OperationProgress progress) {
     this.identifier = identifier;
     this.remoteId = remoteId;
     this.statement = statement;
@@ -67,6 +69,7 @@ public class OperationData {
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
     this.metrics = metrics;
+    this.progress = progress;
   }
 
   public String getIdentifier() {
@@ -174,6 +177,14 @@ public class OperationData {
 
   public void setMetrics(Map<String, String> metrics) {
     this.metrics = metrics;
+  }
+
+  public OperationProgress getProgress() {
+    return progress;
+  }
+
+  public void setProgress(OperationProgress progress) {
+    this.progress = progress;
   }
 
   @Override

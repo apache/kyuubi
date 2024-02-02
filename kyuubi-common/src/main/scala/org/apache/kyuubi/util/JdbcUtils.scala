@@ -115,6 +115,7 @@ object JdbcUtils extends Logging {
     val duplicatedKeyKeywords = Seq(
       "duplicate key value in a unique or primary key constraint or unique index", // Derby
       "Duplicate entry", // MySQL
+      "duplicate key value violates unique constraint", // PostgreSQL
       "A UNIQUE constraint failed" // SQLite
     )
     duplicatedKeyKeywords.exists(cause.getMessage.contains)

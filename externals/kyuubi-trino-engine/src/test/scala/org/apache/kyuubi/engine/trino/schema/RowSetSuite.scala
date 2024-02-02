@@ -28,11 +28,11 @@ import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 import io.trino.client.Row
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 import org.apache.kyuubi.engine.trino.util.TestUtils._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -126,7 +126,7 @@ class RowSetSuite extends KyuubiFunSuite {
   def uuidSuffix(value: Int): String = if (value > 9) value.toString else s"f$value"
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
+    val tRowSet = new TrinoTRowSetGenerator().toColumnBasedSet(rows, schema)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -277,7 +277,7 @@ class RowSetSuite extends KyuubiFunSuite {
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema)
+    val tRowSet = new TrinoTRowSetGenerator().toRowBasedSet(rows, schema)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -333,7 +333,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to row set") {
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto)
+      val set = new TrinoTRowSetGenerator().toTRowSet(rows, schema, proto)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)

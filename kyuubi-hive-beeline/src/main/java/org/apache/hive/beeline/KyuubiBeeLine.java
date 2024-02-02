@@ -20,11 +20,14 @@ package org.apache.hive.beeline;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Driver;
+import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hive.common.util.HiveStringUtils;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 import org.apache.kyuubi.util.reflect.DynFields;
 import org.apache.kyuubi.util.reflect.DynMethods;
@@ -85,7 +88,7 @@ public class KyuubiBeeLine extends BeeLine {
   @Override
   void usage() {
     super.usage();
-    output("Usage: java \" + KyuubiBeeLine.class.getCanonicalName()");
+    output("Usage: java " + KyuubiBeeLine.class.getCanonicalName());
     output("   --python-mode                   Execute python code/script.");
   }
 
@@ -298,5 +301,57 @@ public class KyuubiBeeLine extends BeeLine {
   @Override
   boolean dispatch(String line) {
     return super.dispatch(isPythonMode() ? line : HiveStringUtils.removeComments(line));
+  }
+
+  @Override
+  void handleSQLException(SQLException e) {
+    if (e instanceof SQLWarning && !(getOpts().getShowWarnings())) {
+      return;
+    }
+
+    if (e.getCause() instanceof TTransportException) {
+      switch (((TTransportException) e.getCause()).getType()) {
+        case TTransportException.ALREADY_OPEN:
+          error(loc("hs2-connection-already-open"));
+          break;
+        case TTransportException.END_OF_FILE:
+          error(loc("hs2-unexpected-end-of-file"));
+          break;
+        case TTransportException.NOT_OPEN:
+          error(loc("hs2-could-not-open-connection"));
+          break;
+        case TTransportException.TIMED_OUT:
+          error(loc("hs2-connection-timed-out"));
+          break;
+        case TTransportException.UNKNOWN:
+          error(loc("hs2-unknown-connection-problem"));
+          break;
+        default:
+          error(loc("hs2-unexpected-error"));
+      }
+    }
+
+    error(
+        loc(
+            e instanceof SQLWarning ? "Warning" : "Error",
+            new Object[] {
+              e.getMessage() == null ? "" : e.getMessage().trim(),
+              e.getSQLState() == null ? "" : e.getSQLState().trim(),
+              new Integer(e.getErrorCode())
+            }));
+
+    if (getOpts().getVerbose()) {
+      e.printStackTrace(getErrorStream());
+    }
+
+    if (!getOpts().getShowNestedErrs()) {
+      return;
+    }
+
+    for (SQLException nested = e.getNextException();
+        nested != null && nested != e;
+        nested = nested.getNextException()) {
+      handleSQLException(nested);
+    }
   }
 }

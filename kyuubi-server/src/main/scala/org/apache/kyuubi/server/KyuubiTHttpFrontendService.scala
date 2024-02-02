@@ -24,8 +24,6 @@ import javax.servlet.{ServletContextEvent, ServletContextListener}
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
-import org.apache.thrift.protocol.TBinaryProtocol
 import org.eclipse.jetty.http.HttpMethod
 import org.eclipse.jetty.security.{ConstraintMapping, ConstraintSecurityHandler}
 import org.eclipse.jetty.server._
@@ -43,7 +41,8 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
-import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
+import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
@@ -75,13 +74,8 @@ final class KyuubiTHttpFrontendService(
    */
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
-    if (authFactory.kerberosEnabled) {
-      try {
-        KyuubiAuthenticationFactory.getValidPasswordAuthMethod(authFactory.authTypes)
-      } catch {
-        case _: IllegalArgumentException =>
-          throw new AuthenticationException("Kerberos is not supported for thrift http mode")
-      }
+    if (authFactory.kerberosEnabled && authFactory.effectivePlainAuthType.isEmpty) {
+      throw new AuthenticationException("Kerberos is not supported for Thrift HTTP mode")
     }
 
     try {

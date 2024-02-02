@@ -43,7 +43,7 @@ object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
-  private def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
+  def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>
       p.setTagValue(KYUUBI_AUTHZ_TAG, ())
       p

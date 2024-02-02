@@ -190,9 +190,9 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       assert(children.size == 2)
 
       assert(children.head.startsWith(
-        s"serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence="))
+        s"serverUri=localhost:10000;version=$KYUUBI_VERSION;sequence="))
       assert(children.last.startsWith(
-        s"serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence="))
+        s"serverUri=localhost:10001;version=$KYUUBI_VERSION;sequence="))
       children.foreach { child =>
         framework.delete(s"""$znodeRoot/$child""")
       }

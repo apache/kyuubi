@@ -25,7 +25,6 @@ import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier => HiveTokenIden
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
@@ -38,6 +37,7 @@ import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.SemanticVersion
 
