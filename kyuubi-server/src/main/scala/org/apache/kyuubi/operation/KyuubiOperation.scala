@@ -25,7 +25,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
 import org.apache.kyuubi.events.{EventBus, KyuubiOperationEvent}
-import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_EXEC_TIME, OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -210,8 +210,11 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
-      if (!OperationState.isTerminal(state)) {
+      if (!isTerminalState(state)) {
         ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      } else {
+        val execTime = System.currentTimeMillis() - startTime
+        ms.updateHistogram(MetricRegistry.name(OPERATION_EXEC_TIME, opType), execTime)
       }
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))

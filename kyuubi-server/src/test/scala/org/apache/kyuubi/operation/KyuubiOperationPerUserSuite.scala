@@ -325,14 +325,20 @@ class KyuubiOperationPerUserSuite
     }
   }
 
-  test("trace ExecuteStatement exec time histogram") {
+  test("trace KyuubiOperation exec time histogram") {
     withJdbcStatement() { statement =>
       statement.executeQuery("select engine_name()")
+      statement.executeQuery("KYUUBI DESC ENGINE")
     }
-    val metric =
-      s"${MetricsConstants.OPERATION_EXEC_TIME}.${classOf[ExecuteStatement].getSimpleName}"
-    val snapshot = MetricsSystem.histogramSnapshot(metric).get
-    assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
+    Seq(
+      classOf[LaunchEngine].getSimpleName,
+      classOf[ExecutedCommandExec].getSimpleName,
+      classOf[ExecuteStatement].getSimpleName)
+      .map(className => s"${MetricsConstants.OPERATION_EXEC_TIME}.$className")
+      .foreach { metric =>
+        val snapshot = MetricsSystem.histogramSnapshot(metric).get
+        assert(snapshot.getMax > 0 && snapshot.getMedian > 0)
+      }
   }
 
   test("align the server/engine session/executeStatement handle for Spark engine") {
