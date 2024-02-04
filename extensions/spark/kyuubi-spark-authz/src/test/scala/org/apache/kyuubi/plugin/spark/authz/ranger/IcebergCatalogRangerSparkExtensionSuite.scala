@@ -93,73 +93,87 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("[KYUUBI #3515] MERGE INTO") {
-    val mergeIntoSql =
-      s"""
-         |MERGE INTO $catalogV2.$bobNamespace.$bobSelectTable AS target
-         |USING $catalogV2.$namespace1.$table1  AS source
-         |ON target.id = source.id
-         |WHEN MATCHED AND (target.name='delete') THEN DELETE
-         |WHEN MATCHED AND (target.name='update') THEN UPDATE SET target.city = source.city
+    withSingleCallEnabled {
+      val mergeIntoSql =
+        s"""
+           |MERGE INTO $catalogV2.$bobNamespace.$bobSelectTable AS target
+           |USING $catalogV2.$namespace1.$table1  AS source
+           |ON target.id = source.id
+           |WHEN MATCHED AND (target.name='delete') THEN DELETE
+           |WHEN MATCHED AND (target.name='update') THEN UPDATE SET target.city = source.city
       """.stripMargin
 
-    // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(mergeIntoSql)))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      // MergeIntoTable:  Using a MERGE INTO Statement
+      val e1 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(mergeIntoSql)))
+      assert(e1.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
 
-    withSingleCallEnabled {
-      interceptEndsWith[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
-        if (isSparkV35OrGreater) {
-          s"does not have [select] privilege on [$namespace1/table1/id" +
-            s",$namespace1/$table1/name,$namespace1/$table1/city]"
-        } else {
-          "does not have " +
-            s"[select] privilege on [$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city]," +
-            s" [update] privilege on [$bobNamespace/$bobSelectTable]"
-        })
+      withSingleCallEnabled {
+        interceptEndsWith[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
+          if (isSparkV35OrGreater) {
+            s"does not have [select] privilege on [$namespace1/table1/city" +
+              s",$namespace1/$table1/id,$namespace1/$table1/name]"
+          } else {
+            "does not have " +
+              s"[select] privilege on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]," +
+              s" [update] privilege on [$bobNamespace/$bobSelectTable]"
+          })
 
-      interceptEndsWith[AccessControlException] {
-        doAs(bob, sql(mergeIntoSql))
-      }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
+        interceptEndsWith[AccessControlException] {
+          doAs(bob, sql(mergeIntoSql))
+        }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
+      }
+
+      doAs(admin, sql(mergeIntoSql))
     }
-
-    doAs(admin, sql(mergeIntoSql))
   }
 
   test("[KYUUBI #3515] UPDATE TABLE") {
-    // UpdateTable
-    interceptEndsWith[AccessControlException] {
-      doAs(someone, sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
-    }(if (isSparkV35OrGreater) {
-      s"does not have [select] privilege on [$namespace1/$table1/id]"
-    } else {
-      s"does not have [update] privilege on [$namespace1/$table1]"
-    })
+    withSingleCallEnabled {
+      // UpdateTable
+      interceptEndsWith[AccessControlException] {
+        doAs(
+          someone,
+          sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
+      }(if (isSparkV35OrGreater) {
+        s"does not have [select] privilege on " +
+          s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
+          s"$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city], " +
+          s"[update] privilege on [$namespace1/$table1]"
+      } else {
+        s"does not have [update] privilege on [$namespace1/$table1]"
+      })
 
-    doAs(
-      admin,
-      sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
-        " WHERE id=1"))
+      doAs(
+        admin,
+        sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou' " +
+          " WHERE id=1"))
+    }
   }
 
   test("[KYUUBI #3515] DELETE FROM TABLE") {
-    // DeleteFromTable
-    interceptEndsWith[AccessControlException] {
-      doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
-    }(if (isSparkV34OrGreater) {
-      s"does not have [select] privilege on [$namespace1/$table1/id]"
-    } else {
-      s"does not have [update] privilege on [$namespace1/$table1]"
-    })
+    withSingleCallEnabled {
+      // DeleteFromTable
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+      }(if (isSparkV34OrGreater) {
+        s"does not have [select] privilege on " +
+          s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
+          s"$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name], " +
+          s"[update] privilege on [$namespace1/$table1]"
+      } else {
+        s"does not have [update] privilege on [$namespace1/$table1]"
+      })
 
-    interceptEndsWith[AccessControlException] {
-      doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
-    }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
+      interceptEndsWith[AccessControlException] {
+        doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))
+      }(s"does not have [update] privilege on [$bobNamespace/$bobSelectTable]")
 
-    doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+      doAs(admin, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
+    }
   }
 
   test("[KYUUBI #3666] Support {OWNER} variable for queries run on CatalogV2") {

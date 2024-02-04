@@ -20,7 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Expression, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
@@ -69,43 +69,19 @@ object PrivilegesBuilder {
       if (projectionList.isEmpty) {
         privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
-        val cols = (projectionList ++ conditionList).flatMap(collectLeaves)
-          .filter(plan.outputSet.contains).map(_.name).distinct
-        privilegeObjects += PrivilegeObject(table, cols)
+        val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
+        privilegeObjects += PrivilegeObject(table, cols.map(_.name).distinct)
       }
+    }
+
+    def columnPrune(projectionList: Seq[Expression], output: AttributeSet): Seq[NamedExpression] = {
+      (projectionList ++ conditionList)
+        .flatMap(collectLeaves)
+        .filter(output.contains)
     }
 
     plan match {
       case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
-
-      case p: Project => buildQuery(p.child, privilegeObjects, p.projectList, conditionList, spark)
-
-      case j: Join =>
-        val cols =
-          conditionList ++ j.condition.map(expr => collectLeaves(expr)).getOrElse(Nil)
-        buildQuery(j.left, privilegeObjects, projectionList, cols, spark)
-        buildQuery(j.right, privilegeObjects, projectionList, cols, spark)
-
-      case f: Filter =>
-        val cols = conditionList ++ collectLeaves(f.condition)
-        buildQuery(f.child, privilegeObjects, projectionList, cols, spark)
-
-      case w: Window =>
-        val orderCols = w.orderSpec.flatMap(orderSpec => collectLeaves(orderSpec))
-        val partitionCols = w.partitionSpec.flatMap(partitionSpec => collectLeaves(partitionSpec))
-        val cols = conditionList ++ orderCols ++ partitionCols
-        buildQuery(w.child, privilegeObjects, projectionList, cols, spark)
-
-      case s: Sort =>
-        val sortCols = s.order.flatMap(sortOrder => collectLeaves(sortOrder))
-        val cols = conditionList ++ sortCols
-        buildQuery(s.child, privilegeObjects, projectionList, cols, spark)
-
-      case a: Aggregate =>
-        val aggCols =
-          (a.aggregateExpressions ++ a.groupingExpressions).flatMap(e => collectLeaves(e))
-        val cols = conditionList ++ aggCols
-        buildQuery(a.child, privilegeObjects, projectionList, cols, spark)
 
       case scan if isKnownScan(scan) && scan.resolved =>
         val tables = getScanSpec(scan).tables(scan, spark)
@@ -125,7 +101,33 @@ object PrivilegesBuilder {
 
       case p =>
         for (child <- p.children) {
-          buildQuery(child, privilegeObjects, projectionList, conditionList, spark)
+          // If current plan's references don't have relation to it's input, have two cases
+          //   1. `MapInPandas`, `ScriptTransformation`
+          //   2. `Project` output only have constant value
+          if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
+            // If plan is project and output don't have relation to input, can ignore.
+            if (!p.isInstanceOf[Project]) {
+              buildQuery(
+                child,
+                privilegeObjects,
+                p.inputSet.map(_.toAttribute).toSeq,
+                Nil,
+                spark)
+            }
+          } else {
+            buildQuery(
+              child,
+              privilegeObjects,
+              // Here we use `projectList ++ p.reference` do column prune.
+              // For `Project`, `Aggregate`, plan's output is contained by plan's referenced
+              // For `Filter`, `Sort` etc... it rely on upper `Project` node,
+              //    since we wrap a `Project` before call `buildQuery()`.
+              // So here we use upper node's projectionList and current's references
+              // to do column pruning can get the correct column.
+              columnPrune(projectionList ++ p.references.toSeq, p.inputSet).distinct,
+              conditionList ++ p.references,
+              spark)
+          }
         }
     }
   }
@@ -221,7 +223,26 @@ object PrivilegesBuilder {
               LOG.debug(ud.error(plan, e))
           }
         }
-        spec.queries(plan).foreach(buildQuery(_, inputObjs, spark = spark))
+        spec.queries(plan).foreach { p =>
+          if (p.resolved) {
+            buildQuery(Project(p.output, p), inputObjs, spark = spark)
+          } else {
+            try {
+              // For spark 3.1, Some command such as CreateTableASSelect, its query was unresolved,
+              // Before this pr, we just ignore it, now we support this.
+              val analyzed = spark.sessionState.analyzer.execute(p)
+              buildQuery(Project(analyzed.output, analyzed), inputObjs, spark = spark)
+            } catch {
+              case e: Exception =>
+                LOG.debug(
+                  s"""
+                     |Failed to analyze unresolved
+                     |$p
+                     |due to ${e.getMessage}""".stripMargin,
+                  e)
+            }
+          }
+        }
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
@@ -315,7 +336,7 @@ object PrivilegesBuilder {
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
-        buildQuery(plan, inputObjs, spark = spark)
+        buildQuery(Project(plan.output, plan), inputObjs, spark = spark)
         OperationType.QUERY
     }
     (inputObjs, outputObjs, opType)

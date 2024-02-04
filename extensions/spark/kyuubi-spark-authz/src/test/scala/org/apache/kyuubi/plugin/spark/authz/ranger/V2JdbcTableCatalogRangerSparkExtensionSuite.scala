@@ -107,20 +107,23 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] CREATE TABLE") {
-    // CreateTable
-    val e2 = intercept[AccessControlException](
-      doAs(someone, sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
-    assert(e2.getMessage.contains(s"does not have [create] privilege" +
-      s" on [$namespace1/$table2]"))
+    withSingleCallEnabled {
+      // CreateTable
+      val e2 = intercept[AccessControlException](
+        doAs(someone, sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2")))
+      assert(e2.getMessage.contains(s"does not have [create] privilege" +
+        s" on [$namespace1/$table2]"))
 
-    // CreateTableAsSelect
-    val e21 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
-          s" AS select * from $catalogV2.$namespace1.$table1")))
-    assert(e21.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      // CreateTableAsSelect
+
+      val e21 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table2" +
+            s" AS select * from $catalogV2.$namespace1.$table1")))
+      assert(e21.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
+    }
   }
 
   test("[KYUUBI #3424] DROP TABLE") {
@@ -133,69 +136,74 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
   test("[KYUUBI #3424] INSERT TABLE") {
     // AppendData: Insert Using a VALUES Clause
-    val e4 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-          s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
-    assert(e4.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$outputTable1]"))
+    withSingleCallEnabled {
 
-    // AppendData: Insert Using a TABLE Statement
-    val e42 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-          s" TABLE $catalogV2.$namespace1.$table1")))
-    assert(e42.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      val e4 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+            s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
+      assert(e4.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$outputTable1]"))
 
-    // AppendData: Insert Using a SELECT Statement
-    val e43 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-          s" SELECT * from $catalogV2.$namespace1.$table1")))
-    assert(e43.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
+      // AppendData: Insert Using a TABLE Statement
+      val e42 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+            s" TABLE $catalogV2.$namespace1.$table1")))
+      assert(e42.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
 
-    // OverwriteByExpression: Insert Overwrite
-    val e44 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
-          s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
-    assert(e44.getMessage.contains(s"does not have [update] privilege" +
-      s" on [$namespace1/$outputTable1]"))
+      // AppendData: Insert Using a SELECT Statement
+      val e43 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"INSERT INTO $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+            s" SELECT * from $catalogV2.$namespace1.$table1")))
+      assert(e43.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
+
+      // OverwriteByExpression: Insert Overwrite
+      val e44 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"INSERT OVERWRITE $catalogV2.$namespace1.$outputTable1 (id, name, city)" +
+            s" VALUES (1, 'bowenliang123', 'Guangzhou')")))
+      assert(e44.getMessage.contains(s"does not have [update] privilege" +
+        s" on [$namespace1/$outputTable1]"))
+    }
   }
 
   test("[KYUUBI #3424] MERGE INTO") {
-    val mergeIntoSql =
-      s"""
-         |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
-         |USING $catalogV2.$namespace1.$table1  AS source
-         |ON target.id = source.id
-         |WHEN MATCHED AND (target.name='delete') THEN DELETE
-         |WHEN MATCHED AND (target.name='update') THEN UPDATE SET target.city = source.city
+    withSingleCallEnabled {
+      val mergeIntoSql =
+        s"""
+           |MERGE INTO $catalogV2.$namespace1.$outputTable1 AS target
+           |USING $catalogV2.$namespace1.$table1  AS source
+           |ON target.id = source.id
+           |WHEN MATCHED AND (target.name='delete') THEN DELETE
+           |WHEN MATCHED AND (target.name='update') THEN UPDATE SET target.city = source.city
       """.stripMargin
 
-    // MergeIntoTable:  Using a MERGE INTO Statement
-    val e1 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(mergeIntoSql)))
-    assert(e1.getMessage.contains(s"does not have [select] privilege" +
-      s" on [$namespace1/$table1/id]"))
-
-    withSingleCallEnabled {
-      val e2 = intercept[AccessControlException](
+      // MergeIntoTable:  Using a MERGE INTO Statement
+      val e1 = intercept[AccessControlException](
         doAs(
           someone,
           sql(mergeIntoSql)))
-      assert(e2.getMessage.contains(s"does not have" +
-        s" [select] privilege" +
-        s" on [$namespace1/$table1/id,$namespace1/table1/name,$namespace1/$table1/city]," +
-        s" [update] privilege on [$namespace1/$outputTable1]"))
+      assert(e1.getMessage.contains(s"does not have [select] privilege" +
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
+
+      withSingleCallEnabled {
+        val e2 = intercept[AccessControlException](
+          doAs(
+            someone,
+            sql(mergeIntoSql)))
+        assert(e2.getMessage.contains(s"does not have" +
+          s" [select] privilege" +
+          s" on [$namespace1/$table1/city,$namespace1/table1/id,$namespace1/$table1/name]," +
+          s" [update] privilege on [$namespace1/$outputTable1]"))
+      }
     }
   }
 
@@ -220,17 +228,14 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
 
   test("[KYUUBI #3424] CACHE TABLE") {
     // CacheTable
-    val e7 = intercept[AccessControlException](
-      doAs(
-        someone,
-        sql(s"CACHE TABLE $cacheTable1" +
-          s" AS select * from $catalogV2.$namespace1.$table1")))
-    if (isSparkV32OrGreater) {
+    withSingleCallEnabled {
+      val e7 = intercept[AccessControlException](
+        doAs(
+          someone,
+          sql(s"CACHE TABLE $cacheTable1" +
+            s" AS select * from $catalogV2.$namespace1.$table1")))
       assert(e7.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$namespace1/$table1/id]"))
-    } else {
-      assert(e7.getMessage.contains(s"does not have [select] privilege" +
-        s" on [$catalogV2.$namespace1/$table1]"))
+        s" on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]"))
     }
   }
 

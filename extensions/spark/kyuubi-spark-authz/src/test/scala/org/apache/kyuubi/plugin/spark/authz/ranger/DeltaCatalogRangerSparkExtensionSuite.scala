@@ -215,8 +215,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" SELECT * FROM $namespace1.$table2"
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(insertIntoSql)))(
-          s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
-            s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
+          s"does not have [select] privilege on " +
+            s"[$namespace1/$table2/birthDate,$namespace1/$table2/gender," +
+            s"$namespace1/$table2/id,$namespace1/$table2/name]," +
             s" [update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(insertIntoSql))
 
@@ -225,8 +226,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" SELECT * FROM $namespace1.$table2"
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(insertOverwriteSql)))(
-          s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
-            s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
+          s"does not have [select] privilege on " +
+            s"[$namespace1/$table2/birthDate,$namespace1/$table2/gender," +
+            s"$namespace1/$table2/id,$namespace1/$table2/name]," +
             s" [update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(insertOverwriteSql))
       }
@@ -283,8 +285,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
              |""".stripMargin
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(mergeIntoSql)))(
-          s"does not have [select] privilege on [$namespace1/$table2/id,$namespace1/$table2/name," +
-            s"$namespace1/$table2/gender,$namespace1/$table2/birthDate]," +
+          s"does not have [select] privilege on " +
+            s"[$namespace1/$table2/birthDate,$namespace1/$table2/gender," +
+            s"$namespace1/$table2/id,$namespace1/$table2/name]," +
             s" [update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSql))
       }
@@ -378,9 +381,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           val insertIntoSql = s"INSERT INTO delta.`$path` SELECT * FROM $namespace1.$table2"
           interceptEndsWith[AccessControlException](
             doAs(someone, sql(insertIntoSql)))(
-            s"does not have [select] privilege on [$namespace1/$table2/id," +
-              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
-              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+            s"does not have [select] privilege on [$namespace1/$table2/birthDate," +
+              s"$namespace1/$table2/gender,$namespace1/$table2/id," +
+              s"$namespace1/$table2/name], [write] privilege on [[$path, $path/]]")
           doAs(admin, sql(insertIntoSql))
 
           // insert overwrite
@@ -388,9 +391,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             s"INSERT OVERWRITE delta.`$path` SELECT * FROM $namespace1.$table2"
           interceptEndsWith[AccessControlException](
             doAs(someone, sql(insertOverwriteSql)))(
-            s"does not have [select] privilege on [$namespace1/$table2/id," +
-              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
-              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+            s"does not have [select] privilege on [$namespace1/$table2/birthDate," +
+              s"$namespace1/$table2/gender,$namespace1/$table2/id," +
+              s"$namespace1/$table2/name], [write] privilege on [[$path, $path/]]")
           doAs(admin, sql(insertOverwriteSql))
         })
       }
@@ -433,9 +436,9 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |""".stripMargin
           interceptEndsWith[AccessControlException](
             doAs(someone, sql(mergeIntoSql)))(
-            s"does not have [select] privilege on [$namespace1/$table2/id," +
-              s"$namespace1/$table2/name,$namespace1/$table2/gender," +
-              s"$namespace1/$table2/birthDate], [write] privilege on [[$path, $path/]]")
+            s"does not have [select] privilege on [$namespace1/$table2/birthDate," +
+              s"$namespace1/$table2/gender,$namespace1/$table2/id," +
+              s"$namespace1/$table2/name], [write] privilege on [[$path, $path/]]")
           doAs(admin, sql(mergeIntoSql))
         })
       }
