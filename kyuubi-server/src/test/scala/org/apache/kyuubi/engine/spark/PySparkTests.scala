@@ -187,6 +187,26 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("catch all exception when dump the result to json") {
+    checkPythonRuntimeAndVersion()
+    withSessionConf()(Map(KyuubiConf.ENGINE_SPARK_PYTHON_MAGIC_ENABLED.key -> "true"))() {
+      withMultipleConnectionJdbcStatement()({ stmt =>
+        val statement = stmt.asInstanceOf[KyuubiStatement]
+        statement.executePython("l = [('Alice', 1)]")
+        statement.executePython("df = spark.createDataFrame(l)")
+        val errorMsg = intercept[KyuubiSQLException] {
+          statement.executePython("%json df")
+        }.getMessage
+        assert(errorMsg.contains("Object of type DataFrame is not JSON serializable"))
+
+        statement.executePython("df = spark.createDataFrame(l).collect()")
+        val result = statement.executePython("%json df")
+        assert(result.next())
+        assert(result.getString("output") == "{\"application/json\":[[\"Alice\",1]]}")
+      })
+    }
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {
