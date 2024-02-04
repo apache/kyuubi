@@ -25,9 +25,9 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
-import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, SparkPlan, SQLExecution}
-import org.apache.spark.sql.execution.HiveResult
+import org.apache.spark.sql.execution.{CollectLimitExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -295,16 +295,23 @@ object SparkDatasetHelper extends Logging {
     SQLMetrics.postDriverMetricUpdates(sc, executionId, metrics.values.toSeq)
   }
 
+  private[kyuubi] def optimizedPlanLimit(queryExecution: QueryExecution): Option[Long] =
+    queryExecution.optimizedPlan match {
+      case globalLimit: GlobalLimit => globalLimit.maxRows
+      case _ => None
+    }
+
   def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
     if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
       return false
     }
-    lazy val limit = result.queryExecution.executedPlan match {
-      case collectLimit: CollectLimitExec => collectLimit.limit
-      case _ => resultMaxRows
+    val finalLimit = optimizedPlanLimit(result.queryExecution) match {
+      case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
+      case Some(limit) => limit
+      case None => resultMaxRows
     }
-    lazy val stats = if (limit > 0) {
-      limit * EstimationUtils.getSizePerRow(
+    lazy val stats = if (finalLimit > 0) {
+      finalLimit * EstimationUtils.getSizePerRow(
         result.queryExecution.executedPlan.output)
     } else {
       result.queryExecution.optimizedPlan.stats.sizeInBytes
