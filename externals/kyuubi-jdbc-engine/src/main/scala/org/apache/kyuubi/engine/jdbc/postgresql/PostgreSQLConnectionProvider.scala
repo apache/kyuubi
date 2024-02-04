@@ -20,7 +20,7 @@ import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
 class PostgreSQLConnectionProvider extends JdbcConnectionProvider {
 
-  override val name: String = classOf[PostgreSQLConnectionProvider].getSimpleName
+  override val name: String = classOf[PostgreSQLConnectionProvider].getName
 
   override val driverClass: String = "org.postgresql.Driver"
 
