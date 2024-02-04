@@ -175,9 +175,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         val elapsedTime = System.currentTimeMillis() - getStartTime
         if (!shutdown.get && elapsedTime > maxLifetime) {
           if (deregistered.compareAndSet(false, true)) {
-            info(s"Spark engine has been running for more than $maxLifetime ms," +
-              s" deregistering from engine discovery space.")
-            frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+            ThreadUtils.runInNewThread("engine-de-register", isDaemon = false) {
+              // for ETCD, the de-registering process might be blocked, so deregister it async
+              info(s"Spark engine has been running for more than $maxLifetime ms," +
+                s" deregistering from engine discovery space.")
+              frontendServices.flatMap(_.discoveryService).foreach(_.stop())
+            }
           }
 
           if (backendService.sessionManager.getOpenSessionCount <= 0) {
