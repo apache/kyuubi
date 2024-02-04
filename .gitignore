@@ -59,7 +59,7 @@ metastore_db
 derby.log
 rest-audit.log
 **/dependency-reduced-pom.xml
-metrics/
+/metrics/
 /kyuubi-ha/embedded_zookeeper/
 embedded_zookeeper/
 /externals/kyuubi-spark-sql-engine/operation_logs/
