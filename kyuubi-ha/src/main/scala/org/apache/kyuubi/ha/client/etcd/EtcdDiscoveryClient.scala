@@ -63,7 +63,6 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   var lockClient: Lock = _
   var leaseClient: Lease = _
   var serviceNode: ServiceNode = _
-  var serviceDiscovery: ServiceDiscovery = _
 
   var leaseTTL: Long = _
 
@@ -158,7 +157,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
-    this.serviceDiscovery = serviceDiscovery
+    // not need with etcd
   }
 
   override def tryWithLock[T](
@@ -276,10 +275,6 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         delete(serviceNode.path)
       }
       serviceNode = null
-    }
-    if (serviceDiscovery != null) {
-      serviceDiscovery.stopGracefully(true)
-      serviceDiscovery = null
     }
   }
 
