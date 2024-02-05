@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-# This script is copied from Apache Spark
+# This script is inspired by Apache Spark
 
 echo "=================================="
 echo "Free up disk space on CI system"
