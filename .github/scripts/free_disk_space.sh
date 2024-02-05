@@ -45,11 +45,10 @@ sudo rm -rf /opt/hostedtoolcache/node
 sudo apt-get remove --purge -y '^aspnet.*'
 sudo apt-get remove --purge -y '^dotnet-.*'
 sudo apt-get remove --purge -y '^llvm-.*'
-sudo apt-get remove --purge -y 'mono.*'
 sudo apt-get remove --purge -y 'php.*'
 sudo apt-get remove --purge -y '^temurin-\d{n,}.*'
 sudo apt-get remove --purge -y snapd google-chrome-stable microsoft-edge-stable firefox
-sudo apt-get remove --purge -y azure-cli google-cloud-sdk msbuild powershell libgl1-mesa-dri
+sudo apt-get remove --purge -y azure-cli google-cloud-sdk mono-devel msbuild powershell libgl1-mesa-dri
 sudo apt-get autoremove --purge -y
 sudo apt-get clean
 
