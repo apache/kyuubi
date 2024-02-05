@@ -46,7 +46,7 @@ sudo apt-get remove --purge -y '^aspnet.*'
 sudo apt-get remove --purge -y '^dotnet-.*'
 sudo apt-get remove --purge -y '^llvm-.*'
 sudo apt-get remove --purge -y 'php.*'
-sudo apt-get remove --purge -y '^temurin-.*'
+sudo apt-get remove --purge -y '^temurin-\d{n,}.*'
 sudo apt-get remove --purge -y snapd google-chrome-stable microsoft-edge-stable firefox
 sudo apt-get remove --purge -y azure-cli google-cloud-sdk mono-devel powershell libgl1-mesa-dri
 sudo apt-get autoremove --purge -y
