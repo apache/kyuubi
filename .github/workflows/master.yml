@@ -400,6 +400,8 @@ jobs:
     name: Kyuubi Server On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Checkout
         uses: actions/checkout@v4
       # https://github.com/docker/build-push-action
@@ -472,6 +474,8 @@ jobs:
     name: Spark Engine On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Checkout
         uses: actions/checkout@v4
       - name: Cache Engine Archives
