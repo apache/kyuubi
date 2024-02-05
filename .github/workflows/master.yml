@@ -68,6 +68,8 @@ jobs:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -120,6 +122,8 @@ jobs:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -169,6 +173,8 @@ jobs:
             comment: 'verify-on-flink-1.15-binary'
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -213,6 +219,8 @@ jobs:
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -248,6 +256,8 @@ jobs:
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -283,6 +293,8 @@ jobs:
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -313,6 +325,8 @@ jobs:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK 8
@@ -334,8 +348,9 @@ jobs:
     name: Kyuubi Server On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       # https://github.com/docker/build-push-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -397,8 +412,9 @@ jobs:
     name: Spark Engine On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
