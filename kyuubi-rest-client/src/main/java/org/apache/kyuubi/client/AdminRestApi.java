@@ -18,6 +18,7 @@
 package org.apache.kyuubi.client;
 
 import java.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
 import org.apache.kyuubi.client.api.v1.dto.ServerData;
@@ -103,10 +104,24 @@ public class AdminRestApi {
   }
 
   public List<OperationData> listOperations() {
+    return listOperations(Collections.emptyList(), null);
+  }
+
+  public List<OperationData> listOperations(List<String> users, String sessionHandleStr) {
+    Map<String, Object> params = new HashMap<>();
+    if (users != null && !users.isEmpty()) {
+      params.put("users", String.join(",", users));
+    }
+    if (StringUtils.isNotBlank(sessionHandleStr)) {
+      params.put("sessionHandle", sessionHandleStr);
+    }
     OperationData[] result =
         this.getClient()
             .get(
-                API_BASE_PATH + "/operations", null, OperationData[].class, client.getAuthHeader());
+                API_BASE_PATH + "/operations",
+                params,
+                OperationData[].class,
+                client.getAuthHeader());
     return Arrays.asList(result);
   }
 
