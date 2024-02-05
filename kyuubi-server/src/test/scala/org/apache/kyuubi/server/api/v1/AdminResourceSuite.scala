@@ -273,7 +273,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
