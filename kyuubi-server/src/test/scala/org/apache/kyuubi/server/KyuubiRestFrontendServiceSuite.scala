@@ -26,7 +26,7 @@ import org.apache.kyuubi.service.authentication.AnonymousAuthenticationProviderI
 class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(AUTHENTICATION_METHOD, Seq("NONE"))
+    .set(FRONTEND_REST_AUTHENTICATION_METHOD, Seq("NONE"))
 
   test("version") {
     val resp = v1Call("version")
@@ -61,7 +61,7 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 class KerberosKyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(AUTHENTICATION_METHOD, Seq("KERBEROS"))
+    .set(FRONTEND_REST_AUTHENTICATION_METHOD, Seq("KERBEROS"))
     .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
 
   test("security enabled - KERBEROS") {
@@ -72,7 +72,7 @@ class KerberosKyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 class NoneKyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(AUTHENTICATION_METHOD, Seq("NONE"))
+    .set(FRONTEND_REST_AUTHENTICATION_METHOD, Seq("NONE"))
     .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
 
   test("security enabled - NONE") {
@@ -83,7 +83,7 @@ class NoneKyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 class KerberosAndCustomKyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
-    .set(AUTHENTICATION_METHOD, Seq("KERBEROS,CUSTOM"))
+    .set(FRONTEND_REST_AUTHENTICATION_METHOD, Seq("KERBEROS,CUSTOM"))
     .set(AUTHENTICATION_CUSTOM_CLASS, classOf[AnonymousAuthenticationProviderImpl].getName)
 
   test("security enabled - KERBEROS,CUSTOM") {

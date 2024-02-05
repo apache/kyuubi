@@ -25,14 +25,14 @@ import org.eclipse.jetty.server.{Handler, Request}
 import org.eclipse.jetty.server.handler.HandlerWrapper
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, ENGINE_SECURITY_ENABLED}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SECURITY_ENABLED, FRONTEND_REST_AUTHENTICATION_METHOD}
 import org.apache.kyuubi.metrics.MetricsConstants.{REST_CONN_FAIL, REST_CONN_OPEN, REST_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
 class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
-  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  private val authTypes = conf.get(FRONTEND_REST_AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val kerberosEnabled = authTypes.contains(KERBEROS)
   private val ugi = UserGroupInformation.getCurrentUser
 

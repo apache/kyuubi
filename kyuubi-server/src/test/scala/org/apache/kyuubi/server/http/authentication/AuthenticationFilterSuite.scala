@@ -19,11 +19,14 @@ package org.apache.kyuubi.server.http.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
 import org.apache.kyuubi.service.authentication.AuthTypes
 
 class AuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
-    val filter = new AuthenticationFilter(KyuubiConf())
+    val conf = KyuubiConf()
+    val filter =
+      new AuthenticationFilter(conf, conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName))
     filter.addAuthHandler(new BasicAuthenticationHandler(null))
     assert(filter.authSchemeHandlers.isEmpty)
     filter.addAuthHandler(new BasicAuthenticationHandler(AuthTypes.LDAP))

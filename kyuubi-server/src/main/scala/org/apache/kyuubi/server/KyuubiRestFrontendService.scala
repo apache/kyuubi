@@ -72,7 +72,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private lazy val port: Int = conf.get(FRONTEND_REST_BIND_PORT)
 
   private[kyuubi] lazy val securityEnabled = {
-    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    val authTypes = conf.get(FRONTEND_REST_AUTHENTICATION_METHOD).map(AuthTypes.withName)
     AuthUtils.kerberosEnabled(authTypes) ||
     !AuthUtils.effectivePlainAuthType(authTypes).contains(AuthTypes.NONE)
   }
@@ -103,7 +103,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
-    val holder = new FilterHolder(new AuthenticationFilter(conf))
+    val holder = new FilterHolder(new AuthenticationFilter(
+      conf,
+      conf.get(FRONTEND_REST_AUTHENTICATION_METHOD).map(AuthTypes.withName)))
     contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))

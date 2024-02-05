@@ -182,3 +182,33 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
   }
 }
+
+class NoneKyuubiRestAuthenticationSuite extends RestClientTestHelper {
+
+  override protected val otherConfigs: Map[String, String] = {
+    Map(KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "NONE")
+  }
+
+  test("test disable restful api authentication") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+}
+
+class KerberosKyuubiRestAuthenticationSuite extends RestClientTestHelper {
+
+  override protected val otherConfigs: Map[String, String] = {
+    Map(KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "KERBEROS")
+  }
+
+  test("test without authorization when rest api authentication with KERBEROS") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .get()
+
+    assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
+  }
+}

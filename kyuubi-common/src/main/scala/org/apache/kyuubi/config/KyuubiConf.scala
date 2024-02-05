@@ -797,6 +797,14 @@ object KyuubiConf {
     .checkValues(AuthTypes)
     .createWithDefault(Seq(AuthTypes.NONE.toString))
 
+  val FRONTEND_REST_AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.rest.authentication")
+      .doc("A comma-separated list of client authentication types." +
+        " It fallback to `kyuubi.authentication` if not configure.")
+      .version("1.9.0")
+      .serverOnly
+      .fallbackConf(AUTHENTICATION_METHOD)
+
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.class")
       .doc("User-defined authentication implementation of " +

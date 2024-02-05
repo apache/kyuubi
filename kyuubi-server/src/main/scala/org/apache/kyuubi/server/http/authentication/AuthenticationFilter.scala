@@ -26,12 +26,13 @@ import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
-class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
+class AuthenticationFilter(conf: KyuubiConf, authTypes: Seq[AuthTypes.Value]) extends Filter
+  with Logging {
   import AuthenticationFilter._
   import AuthSchemes._
 
@@ -55,7 +56,6 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 
   private[kyuubi] def initAuthHandlers(): Unit = {
-    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
       if (authTypes == Set(NOSASL)) {
