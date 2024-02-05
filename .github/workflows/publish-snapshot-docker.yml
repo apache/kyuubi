@@ -27,8 +27,14 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-22.04
     steps:
+<<<<<<< HEAD
       - name: Checkout
         uses: actions/checkout@v3
+=======
+      - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
+>>>>>>> 5f99ec8d6 ([KYUUBI #6047] [CI] Free up disk space)
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
