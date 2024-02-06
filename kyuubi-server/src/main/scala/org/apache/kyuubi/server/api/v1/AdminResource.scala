@@ -149,7 +149,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   @Path("sessions")
-  def sessions(@QueryParam("users") users: String): Seq[SessionData] = {
+  def sessions(
+      @QueryParam("users") users: String,
+      @QueryParam("sessionType") sessionType: String): Seq[SessionData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val ipAddress = fe.getIpAddress
     info(s"Received listing all live sessions request from $userName/$ipAddress")
@@ -158,6 +160,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         s"$userName is not allowed to list all live sessions")
     }
     var sessions = fe.be.sessionManager.allSessions()
+    if (StringUtils.isNoneBlank(sessionType)) {
+      sessions = sessions.filter(session =>
+        sessionType.equals(session.asInstanceOf[KyuubiSession].sessionType.toString))
+    }
     if (StringUtils.isNotBlank(users)) {
       val usersSet = users.split(",").toSet
       sessions = sessions.filter(session => usersSet.contains(session.user))
