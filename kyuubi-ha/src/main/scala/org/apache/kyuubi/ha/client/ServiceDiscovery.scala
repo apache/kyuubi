@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.util.concurrent.CountDownLatch
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.Logging
@@ -68,7 +68,7 @@ abstract class ServiceDiscovery(
   def stopGracefully(isLost: Boolean = false): Unit = {
     while (fe.be.sessionManager.getOpenSessionCount > 0) {
       info(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
-      Thread.sleep(1000 * 60)
+      Thread.sleep(TimeUnit.SECONDS.toMillis(10))
     }
     isServerLost.set(isLost)
     gracefulShutdownLatch.countDown()
