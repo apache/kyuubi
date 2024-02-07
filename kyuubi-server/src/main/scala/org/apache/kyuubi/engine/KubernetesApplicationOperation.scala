@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.client.util.JsonUtils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, KubernetesCleanupDriverPodStrategy}
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
@@ -372,9 +373,18 @@ object KubernetesApplicationOperation extends Logging {
     }
     val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
-    val applicationError = containerStateToBuildAppState
-      .map(cs => containerStateToApplicationError(cs).map(r => s"$podName/$appStateContainer[$r]"))
-      .getOrElse(Option(pod.getStatus.getReason).map(r => s"$podName[$r]"))
+    val applicationError = if (ApplicationState.isFailed(applicationState)) {
+      containerStateToBuildAppState
+        .map(cs =>
+          s"""Pod: $podName
+             |Container: $appStateContainer
+             |ContainerStatus: ${JsonUtils.toPrettyJson(cs)}""".stripMargin)
+        .orElse(Some(
+          s"""Pod: $podName
+             |PodStatus: ${JsonUtils.toPrettyJson(pod.getStatus)}""".stripMargin))
+    } else {
+      None
+    }
     applicationState -> applicationError
   }
 
@@ -391,12 +401,6 @@ object KubernetesApplicationOperation extends Logging {
     } else {
       FAILED
     }
-  }
-
-  def containerStateToApplicationError(containerState: ContainerState): Option[String] = {
-    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
-    Option(containerState.getWaiting).map(_.getReason)
-      .orElse(Option(containerState.getTerminated).map(_.getReason))
   }
 
   def podStateToApplicationState(podState: String): ApplicationState = podState match {
