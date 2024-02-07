@@ -129,7 +129,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         info(s"Spark engine is de-registering from engine discovery space.")
         frontendServices.flatMap(_.discoveryService).foreach(_.stop())
         while (backendService.sessionManager.getOpenSessionCount > 0) {
-          Thread.sleep(1000 * 60)
+          Thread.sleep(TimeUnit.SECONDS.toMillis(10))
         }
         info(s"Spark engine has no open session now, terminating.")
         stop()
@@ -170,8 +170,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val maxLifetime = conf.get(ENGINE_SPARK_MAX_LIFETIME)
     val deregistered = new AtomicBoolean(false)
     if (maxLifetime > 0) {
+      val gracefulPeriod = conf.get(ENGINE_SPARK_MAX_LIFETIME_GRACEFUL_PERIOD)
       val checkTask: Runnable = () => {
-        if (!shutdown.get && System.currentTimeMillis() - getStartTime > maxLifetime) {
+        val elapsedTime = System.currentTimeMillis() - getStartTime
+        if (!shutdown.get && elapsedTime > maxLifetime) {
           if (deregistered.compareAndSet(false, true)) {
             info(s"Spark engine has been running for more than $maxLifetime ms," +
               s" deregistering from engine discovery space.")
@@ -182,6 +184,24 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             info(s"Spark engine has been running for more than $maxLifetime ms" +
               s" and no open session now, terminating.")
             stop()
+          } else if (gracefulPeriod > 0 && elapsedTime > maxLifetime + gracefulPeriod) {
+            backendService.sessionManager.allSessions().foreach { session =>
+              val operationCount =
+                backendService.sessionManager.operationManager.allOperations()
+                  .filter(_.getSession == session)
+                  .size
+              if (operationCount == 0) {
+                warn(s"Closing session ${session.handle.identifier} forcibly that has no" +
+                  s" operation and has been running for more than $gracefulPeriod ms after engine" +
+                  s" max lifetime.")
+                try {
+                  backendService.sessionManager.closeSession(session.handle)
+                } catch {
+                  case e: Throwable =>
+                    error(s"Error closing session ${session.handle.identifier}", e)
+                }
+              }
+            }
           }
         }
       }
