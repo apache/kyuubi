@@ -365,23 +365,23 @@ object KubernetesApplicationOperation extends Logging {
       appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): (ApplicationState, Option[String]) = {
     val podName = pod.getMetadata.getName
-    val containerStateToBuildAppState = appStateSource match {
+    val containerStatusToBuildAppState = appStateSource match {
       case KubernetesApplicationStateSource.CONTAINER =>
         pod.getStatus.getContainerStatuses.asScala
-          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName)).map(_.getState)
+          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName))
       case KubernetesApplicationStateSource.POD => None
     }
-    val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
+    val applicationState = containerStatusToBuildAppState
+      .map(_.getState)
+      .map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
     val applicationError = if (ApplicationState.isFailed(applicationState)) {
-      containerStateToBuildAppState
-        .map(cs =>
-          s"""Pod: $podName
-             |Container: $appStateContainer
-             |ContainerStatus: ${JsonUtils.toPrettyJson(cs)}""".stripMargin)
-        .orElse(Some(
-          s"""Pod: $podName
-             |PodStatus: ${JsonUtils.toPrettyJson(pod.getStatus)}""".stripMargin))
+      val errorMap = containerStatusToBuildAppState.map { cs =>
+        Map("Pod" -> podName, "Container" -> appStateContainer, "ContainerStatus" -> cs)
+      }.getOrElse {
+        Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
+      }
+      Some(JsonUtils.toPrettyJson(errorMap.asJava))
     } else {
       None
     }
