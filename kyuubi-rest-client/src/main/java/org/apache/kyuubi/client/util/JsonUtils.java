@@ -35,6 +35,15 @@ public final class JsonUtils {
     }
   }
 
+  public static String toPrettyJson(Object object) {
+    try {
+      return MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(object);
+    } catch (Exception e) {
+      throw new KyuubiRestException(
+          String.format("Failed to convert object(%s) to json", object), e);
+    }
+  }
+
   public static <T> T fromJson(String json, Class<T> clazz) {
     try {
       return MAPPER.readValue(json, clazz);
