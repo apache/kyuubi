@@ -59,13 +59,13 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   case class ServiceNode(path: String, lease: Long)
 
-  var client: Client = _
-  var kvClient: KV = _
-  var lockClient: Lock = _
-  var leaseClient: Lease = _
-  var serviceNode: ServiceNode = _
+  @volatile var client: Client = _
+  @volatile var kvClient: KV = _
+  @volatile var lockClient: Lock = _
+  @volatile var leaseClient: Lease = _
+  @volatile var serviceNode: ServiceNode = _
 
-  var leaseTTL: Long = _
+  @volatile var leaseTTL: Long = _
 
   private def buildClient(): Client = {
     val endpoints = conf.get(HA_ADDRESSES).split(",")
@@ -251,7 +251,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val instance = serviceDiscovery.fe.connectionUrl
     val watcher = new DeRegisterWatcher(instance, serviceDiscovery)
 
-    val serviceNode = createPersistentNode(
+    serviceNode = createPersistentNode(
       conf,
       namespace,
       instance,
