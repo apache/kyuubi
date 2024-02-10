@@ -53,6 +53,7 @@ import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient._
+import org.apache.kyuubi.util.ThreadUtils
 
 class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
@@ -381,7 +382,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         .filter(_.getEventType == WatchEvent.EventType.DELETE).foreach(_ => {
           warn(s"This Kyuubi instance ${instance} is now de-registered from" +
             s" ETCD. The server will be shut down after the last client session completes.")
-          serviceDiscovery.stopGracefully()
+          // for jetcd, the watcher event process might block the main thread,
+          // so start a new thread to do the de-register work as a workaround,
+          // see details in https://github.com/etcd-io/jetcd/issues/1089
+          ThreadUtils.runInNewThread("deregister-watcher-thread", isDaemon = false) {
+            serviceDiscovery.stopGracefully()
+          }
         })
     }
 
