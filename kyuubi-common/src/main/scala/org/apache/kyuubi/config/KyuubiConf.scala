@@ -576,7 +576,7 @@ object KyuubiConf {
       .doc("Stop timeout for Jetty server used by the RESTful frontend service.")
       .version("1.8.1")
       .timeConf
-      .createWithDefaultString("5s")
+      .createWithDefaultString("PT5S")
 
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.worker.keepalive.time")
@@ -1136,7 +1136,7 @@ object KyuubiConf {
       .doc("Stop timeout for Jetty server used by the Trino frontend service.")
       .version("1.8.1")
       .timeConf
-      .createWithDefaultString("5s")
+      .createWithDefaultString("PT5S")
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")
