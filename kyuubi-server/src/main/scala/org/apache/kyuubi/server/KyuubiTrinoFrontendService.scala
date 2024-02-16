@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_TRINO_BIND_HOST, FRONTEND_TRINO_BIND_PORT, FRONTEND_TRINO_MAX_WORKER_THREADS}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_TRINO_BIND_HOST, FRONTEND_TRINO_BIND_PORT, FRONTEND_TRINO_JETTY_STOP_TIMEOUT, FRONTEND_TRINO_MAX_WORKER_THREADS}
 import org.apache.kyuubi.server.trino.api.v1.ApiRootResource
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
@@ -54,7 +54,8 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
       getName,
       host,
       port,
-      conf.get(FRONTEND_TRINO_MAX_WORKER_THREADS))
+      conf.get(FRONTEND_TRINO_MAX_WORKER_THREADS),
+      conf.get(FRONTEND_TRINO_JETTY_STOP_TIMEOUT))
     super.initialize(conf)
   }
 

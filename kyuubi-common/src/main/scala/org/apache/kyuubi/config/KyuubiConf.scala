@@ -571,6 +571,13 @@ object KyuubiConf {
       .version("1.6.2")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
+  val FRONTEND_REST_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.rest.jetty.stopTimeout")
+      .doc("Stop timeout for Jetty server used by the RESTful frontend service.")
+      .version("1.8.1")
+      .timeConf
+      .createWithDefaultString("PT5S")
+
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")
@@ -1123,6 +1130,13 @@ object KyuubiConf {
         "frontend service")
       .version("1.7.0")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
+  val FRONTEND_TRINO_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.trino.jetty.stopTimeout")
+      .doc("Stop timeout for Jetty server used by the Trino frontend service.")
+      .version("1.8.1")
+      .timeConf
+      .createWithDefaultString("PT5S")
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")
