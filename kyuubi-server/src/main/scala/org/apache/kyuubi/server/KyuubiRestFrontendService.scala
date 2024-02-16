@@ -89,7 +89,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       getName,
       host,
       port,
-      conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
+      conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
+      conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT))
     super.initialize(conf)
   }
 
