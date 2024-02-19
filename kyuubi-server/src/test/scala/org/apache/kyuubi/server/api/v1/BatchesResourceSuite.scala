@@ -751,9 +751,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         getBatchJobSubmissionStateCounter(OperationState.ERROR)
 
     val batchId = UUID.randomUUID().toString
-    val requestObj = newSparkBatchRequest(Map(
-      "spark.master" -> "local",
-      KYUUBI_BATCH_ID_KEY -> batchId))
+    val requestObj = newBatchRequest(
+      sparkBatchTestBatchType,
+      sparkBatchTestResource.get,
+      "org.apache.spark.examples.DriverSubmissionTest",
+      "DriverSubmissionTest-" + batchId,
+      Map(
+        "spark.master" -> "local",
+        KYUUBI_BATCH_ID_KEY -> batchId),
+      Seq("120"))
 
     eventually(timeout(10.seconds)) {
       val response = webTarget.path("api/v1/batches")
