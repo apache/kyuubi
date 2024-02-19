@@ -302,13 +302,10 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .delete()
 
       assert(response.getStatus === 200)
-      assert(client.pathExists(engineSpace))
       eventually(timeout(5.seconds), interval(100.milliseconds)) {
         assert(client.getChildren(engineSpace).isEmpty, s"refId same with $id?")
       }
 
-      // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
         assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
           _.state == ApplicationState.NOT_FOUND))

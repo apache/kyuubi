@@ -263,8 +263,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     var msg = s"Engine $engineSpace is deleted successfully."
     if (forceKill) {
       if (StringUtils.isBlank(refId)) {
-        error(s"Invalid refId: $refId")
-        throw new NotFoundException(s"Invalid refId: $refId")
+        throw new IllegalArgumentException(s"Invalid refId: $refId")
       }
 
       val applicationManagerInfo = ApplicationManagerInfo(
@@ -279,6 +278,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         msg = s"Engine $engineSpace failed to get deleted forcibly," +
           s"cause ${killMessage._2}"
         error(msg)
+        throw new NotFoundException(msg)
       }
     } else {
       withDiscoveryClient(fe.getConf) { discoveryClient =>
