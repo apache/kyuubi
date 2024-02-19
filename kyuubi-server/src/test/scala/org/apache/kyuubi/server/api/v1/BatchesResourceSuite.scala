@@ -766,10 +766,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         batch.getState === OperationState.RUNNING.toString)
     }
 
-    eventually(timeout(10.seconds)) {
-      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) +
-        getBatchJobSubmissionStateCounter(OperationState.PENDING) +
-        getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
+    eventually(timeout(20.seconds)) {
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
     }
 
     val deleteResp = webTarget.path(s"api/v1/batches/$batchId")
