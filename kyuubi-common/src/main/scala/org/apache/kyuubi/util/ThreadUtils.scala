@@ -18,6 +18,7 @@
 package org.apache.kyuubi.util
 
 import java.util.concurrent._
+import java.util.concurrent.ForkJoinPool.ForkJoinWorkerThreadFactory
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -60,6 +61,24 @@ object ThreadUtils extends Logging {
   def newDaemonFixedThreadPool(nThreads: Int, prefix: String): ThreadPoolExecutor = {
     val threadFactory = new NamedThreadFactory(prefix, daemon = true)
     Executors.newFixedThreadPool(nThreads, threadFactory).asInstanceOf[ThreadPoolExecutor]
+  }
+
+  def newForkJoinPool(
+      nThreads: Int = Runtime.getRuntime.availableProcessors,
+      prefix: String): ForkJoinPool = {
+    val threadFactory = new ForkJoinWorkerThreadFactory {
+      override def newThread(pool: ForkJoinPool): ForkJoinWorkerThread = {
+        val worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool)
+        worker.setName(s"$prefix-${worker.getPoolIndex}")
+        worker
+      }
+    }
+    val uncaughtExceptionHandler = new Thread.UncaughtExceptionHandler {
+      override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        warn(s"Uncaught exception in thread ${t.getName}", e)
+      }
+    }
+    new ForkJoinPool(nThreads, threadFactory, uncaughtExceptionHandler, false)
   }
 
   def newDaemonCachedThreadPool(prefix: String): ThreadPoolExecutor = {

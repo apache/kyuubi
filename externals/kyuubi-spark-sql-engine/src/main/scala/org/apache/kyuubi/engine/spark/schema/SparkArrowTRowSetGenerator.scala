@@ -36,6 +36,9 @@ class SparkArrowTRowSetGenerator
     tRowSet
   }
 
+  override def toColumnBasedSetInParallel(rows: Seq[Array[Byte]], schema: StructType): TRowSet =
+    toColumnBasedSet(rows, schema)
+
   override def toTColumn(rows: Seq[Array[Byte]], ordinal: Int, typ: DataType): TColumn = {
     require(rows.length == 1, "ArrowRowSetGenerator accepts only one single byte array")
     typ match {

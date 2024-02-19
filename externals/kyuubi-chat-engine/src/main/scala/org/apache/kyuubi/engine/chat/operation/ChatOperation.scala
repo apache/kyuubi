@@ -31,6 +31,9 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
 
   protected lazy val conf: KyuubiConf = session.sessionManager.getConf
 
+  protected val isGenerateTRowSetInParallel: Boolean = session.conf
+    .getOrElse(KyuubiConf.OPERATION_TROWSET_GENERATION_IN_PARALLEL.key, "false").toBoolean
+
   override def getNextRowSetInternal(
       order: FetchOrientation,
       rowSetSize: Int): TFetchResultsResp = {
@@ -50,7 +53,8 @@ abstract class ChatOperation(session: Session) extends AbstractOperation(session
     val resultRowSet = new ChatTRowSetGenerator().toTRowSet(
       taken.toSeq,
       Seq(COL_STRING_TYPE),
-      getProtocolVersion)
+      getProtocolVersion,
+      isGenerateTRowSetInParallel)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
