@@ -52,8 +52,8 @@ COMMENT ON COLUMN metadata.end_time IS 'the metadata end time';
 COMMENT ON COLUMN metadata.priority IS 'the application priority, high value means high priority';
 COMMENT ON COLUMN metadata.peer_instance_closed IS 'closed by peer kyuubi instance';
 
-CREATE UNIQUE INDEX unique_identifier_index ON metadata(identifier);
-CREATE INDEX user_name_index ON metadata(user_name);
-CREATE INDEX engine_type_index ON metadata(engine_type);
-CREATE INDEX create_time_index ON metadata(create_time);
-CREATE INDEX priority_create_time_index ON metadata(priority DESC, create_time ASC);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_identifier_index ON metadata(identifier);
+CREATE INDEX IF NOT EXISTS user_name_index ON metadata(user_name);
+CREATE INDEX IF NOT EXISTS engine_type_index ON metadata(engine_type);
+CREATE INDEX IF NOT EXISTS create_time_index ON metadata(create_time);
+CREATE INDEX IF NOT EXISTS priority_create_time_index ON metadata(priority DESC, create_time ASC);
