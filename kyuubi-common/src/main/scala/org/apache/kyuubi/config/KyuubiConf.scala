@@ -799,7 +799,7 @@ object KyuubiConf {
 
   val FRONTEND_REST_AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.frontend.rest.authentication")
-      .doc("A comma-separated list of client authentication types." +
+      .doc("A comma-separated list of rest protocol client authentication types." +
         " It fallback to `kyuubi.authentication` if not configure.")
       .version("1.9.0")
       .serverOnly

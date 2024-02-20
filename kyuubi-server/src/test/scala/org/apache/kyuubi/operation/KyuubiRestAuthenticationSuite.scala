@@ -186,7 +186,9 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
 class NoneKyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
-    Map(KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "NONE")
+    Map(
+      KyuubiConf.AUTHENTICATION_METHOD.key -> "KERBEROS",
+      KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "NONE")
   }
 
   test("test disable restful api authentication") {
@@ -201,7 +203,7 @@ class NoneKyuubiRestAuthenticationSuite extends RestClientTestHelper {
 class KerberosKyuubiRestAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
-    Map(KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "KERBEROS")
+    Map(KyuubiConf.AUTHENTICATION_METHOD.key -> "KERBEROS")
   }
 
   test("test without authorization when rest api authentication with KERBEROS") {
