@@ -83,6 +83,7 @@ package() {
 }
 
 upload_svn_staging() {
+  rm -rf "${SVN_STAGING_DIR}"
   svn checkout --depth=empty "${SVN_STAGING_REPO}" "${SVN_STAGING_DIR}"
   mkdir -p "${SVN_STAGING_DIR}/${RELEASE_TAG}"
   rm -f "${SVN_STAGING_DIR}/${RELEASE_TAG}/*"
