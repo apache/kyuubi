@@ -20,3 +20,4 @@ org.apache.kyuubi.engine.jdbc.dialect.MySQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.PhoenixDialect
 org.apache.kyuubi.engine.jdbc.dialect.PostgreSQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.StarRocksDialect
+org.apache.kyuubi.engine.jdbc.dialect.ImpalaDialect

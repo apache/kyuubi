@@ -14,13 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.impala
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
-class PhoenixConnectionProvider extends JdbcConnectionProvider {
+trait WithImpalaEngine extends WithJdbcEngine with WithImpalaContainer {
 
-  override val name: String = classOf[PhoenixConnectionProvider].getName
-
-  override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_SHARE_LEVEL.key -> "SERVER",
+    ENGINE_JDBC_CONNECTION_URL.key -> hiveServerJdbcUrl,
+    ENGINE_TYPE.key -> "jdbc",
+    ENGINE_JDBC_SHORT_NAME.key -> "impala",
+    ENGINE_JDBC_DRIVER_CLASS.key -> ImpalaConnectionProvider.driverClass)
 }

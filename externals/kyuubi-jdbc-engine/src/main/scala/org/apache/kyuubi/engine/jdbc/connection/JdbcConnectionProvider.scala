@@ -30,7 +30,9 @@ abstract class JdbcConnectionProvider extends SupportServiceLoader with Logging 
 
   val driverClass: String
 
-  def canHandle(providerClass: String): Boolean
+  def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
 
   def getConnection(kyuubiConf: KyuubiConf): Connection = {
     val properties = new Properties()
