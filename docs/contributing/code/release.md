@@ -15,8 +15,7 @@
 - limitations under the License.
 -->
 
-Kyuubi Release Guide
-====================
+# Release Guide
 
 ## Introduction
 
