@@ -814,6 +814,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val FRONTEND_REST_AUTHENTICATION_CUSTOM_CLASS: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.rest.authentication.custom.class")
+      .doc("User-defined authentication implementation of " +
+        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider for rest protocol.")
+      .version("1.9.0")
+      .serverOnly
+      .fallbackConf(AUTHENTICATION_CUSTOM_CLASS)
+
   val AUTHENTICATION_LDAP_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.url")
       .doc("SPACE character separated LDAP connection URL(s).")

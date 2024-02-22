@@ -23,12 +23,13 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, AuthMethods}
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class BasicAuthenticationHandler(basicAuthType: AuthType)
+class BasicAuthenticationHandler(basicAuthType: AuthType, protocol: FrontendProtocol)
   extends AuthenticationHandler with Logging {
 
   private var conf: KyuubiConf = _
@@ -80,7 +81,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
       } else {
         val Seq(user, password) = creds.toSeq.take(2)
         val passwdAuthenticationProvider = AuthenticationProviderFactory
-          .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+          .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf, protocol)
         passwdAuthenticationProvider.authenticate(user, password)
         response.setStatus(HttpServletResponse.SC_OK)
         authUser = user

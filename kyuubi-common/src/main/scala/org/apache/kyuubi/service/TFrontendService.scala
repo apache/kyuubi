@@ -28,6 +28,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, PROXY_USER, SESSION_CLOSE_ON_DISCONNECT}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_BINARY
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.{AuthUtils, KyuubiAuthenticationFactory}
@@ -57,7 +58,7 @@ abstract class TFrontendService(name: String)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
   protected lazy val actualPort: Int = serverSocket.getLocalPort
   protected lazy val authFactory: KyuubiAuthenticationFactory =
-    new KyuubiAuthenticationFactory(conf, isServer())
+    new KyuubiAuthenticationFactory(conf, THRIFT_BINARY, isServer())
 
   protected def hadoopConf: Configuration = _hadoopConf
 

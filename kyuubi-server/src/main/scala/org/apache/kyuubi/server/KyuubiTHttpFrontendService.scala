@@ -36,11 +36,13 @@ import org.eclipse.jetty.util.thread.ExecutorThreadPool
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_HTTP
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.util.SessionManager
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
 import org.apache.kyuubi.util.NamedThreadFactory
@@ -59,6 +61,8 @@ final class KyuubiTHttpFrontendService(
   override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_HTTP_BIND_PORT)
   override protected lazy val actualPort: Int = portNum
   override protected lazy val serverSocket: ServerSocket = null
+  override protected lazy val authFactory: KyuubiAuthenticationFactory =
+    new KyuubiAuthenticationFactory(conf, THRIFT_HTTP, isServer())
 
   private var server: Option[Server] = None
   private val APPLICATION_THRIFT = "application/x-thrift"

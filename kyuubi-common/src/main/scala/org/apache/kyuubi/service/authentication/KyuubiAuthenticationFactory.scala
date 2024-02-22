@@ -24,12 +24,16 @@ import javax.security.sasl.Sasl
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.service.authentication.AuthTypes._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.kyuubi.shaded.thrift.TProcessorFactory
 import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
 
-class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
+class KyuubiAuthenticationFactory(
+    conf: KyuubiConf,
+    protocol: FrontendProtocol,
+    isServer: Boolean = true) extends Logging {
 
   val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   val saslDisabled: Boolean = AuthUtils.saslDisabled(authTypes)
@@ -85,6 +89,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
             conf,
+            protocol,
             Option(transportFactory),
             isServer).asInstanceOf[TSaslServerTransport.Factory]
 

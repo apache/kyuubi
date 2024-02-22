@@ -27,11 +27,15 @@ import scala.collection.mutable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
-class AuthenticationFilter(conf: KyuubiConf, authTypes: Seq[AuthTypes.Value]) extends Filter
+class AuthenticationFilter(
+    conf: KyuubiConf,
+    authTypes: Seq[AuthTypes.Value],
+    protocol: FrontendProtocol) extends Filter
   with Logging {
   import AuthenticationFilter._
   import AuthSchemes._
@@ -69,7 +73,7 @@ class AuthenticationFilter(conf: KyuubiConf, authTypes: Seq[AuthTypes.Value]) ex
       addAuthHandler(kerberosHandler)
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
-      val basicHandler = new BasicAuthenticationHandler(basicAuthType)
+      val basicHandler = new BasicAuthenticationHandler(basicAuthType, protocol)
       addAuthHandler(basicHandler)
     }
     if (InternalSecurityAccessor.get() != null) {

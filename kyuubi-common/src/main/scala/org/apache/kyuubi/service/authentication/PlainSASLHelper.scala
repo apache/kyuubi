@@ -23,6 +23,7 @@ import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, Pa
 import javax.security.sasl.AuthorizeCallback
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
@@ -42,11 +43,16 @@ object PlainSASLHelper {
   private class PlainServerCallbackHandler private (
       authMethod: AuthMethod,
       conf: KyuubiConf,
+      protocol: FrontendProtocol,
       isServer: Boolean)
     extends CallbackHandler {
 
-    def this(authMethodStr: String, conf: KyuubiConf, isServer: Boolean) =
-      this(AuthMethods.withName(authMethodStr), conf, isServer)
+    def this(
+        authMethodStr: String,
+        conf: KyuubiConf,
+        protocol: FrontendProtocol,
+        isServer: Boolean) =
+      this(AuthMethods.withName(authMethodStr), conf, protocol, isServer)
 
     @throws[UnsupportedCallbackException]
     override def handle(callbacks: Array[Callback]): Unit = {
@@ -64,7 +70,11 @@ object PlainSASLHelper {
         }
       }
       val provider =
-        AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf, isServer)
+        AuthenticationProviderFactory.getAuthenticationProvider(
+          authMethod,
+          conf,
+          protocol,
+          isServer)
       provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
     }
@@ -77,11 +87,12 @@ object PlainSASLHelper {
   def getTransportFactory(
       authTypeStr: String,
       conf: KyuubiConf,
+      protocol: FrontendProtocol,
       transportFactory: Option[TSaslServerTransport.Factory] = None,
       isServer: Boolean = true): TTransportFactory = {
     val saslFactory = transportFactory.getOrElse(new TSaslServerTransport.Factory())
     try {
-      val handler = new PlainServerCallbackHandler(authTypeStr, conf, isServer)
+      val handler = new PlainServerCallbackHandler(authTypeStr, conf, protocol, isServer)
       val props = new java.util.HashMap[String, String]
       saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
     } catch {

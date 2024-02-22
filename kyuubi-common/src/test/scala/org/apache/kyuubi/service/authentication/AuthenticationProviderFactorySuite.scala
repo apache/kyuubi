@@ -21,6 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_BINARY
 
 class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
@@ -28,13 +29,13 @@ class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
   test("get auth provider") {
     val conf = KyuubiConf()
-    val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf)
+    val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf, THRIFT_BINARY)
     p1.authenticate(Utils.currentUser, "")
-    val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
+    val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf, THRIFT_BINARY)
     val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
     assert(e1.getMessage.contains("Error validating LDAP user:"))
     val e2 = intercept[AuthenticationException](
-      AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
+      AuthenticationProviderFactory.getAuthenticationProvider(null, conf, THRIFT_BINARY))
     assert(e2.getMessage === "Not a valid authentication method")
   }
 

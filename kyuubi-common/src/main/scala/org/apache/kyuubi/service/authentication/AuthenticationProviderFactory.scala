@@ -20,6 +20,7 @@ package org.apache.kyuubi.service.authentication
 import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, REST}
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.util.ClassUtils
 
@@ -31,9 +32,10 @@ object AuthenticationProviderFactory {
   def getAuthenticationProvider(
       method: AuthMethod,
       conf: KyuubiConf,
+      protocol: FrontendProtocol,
       isServer: Boolean = true): PasswdAuthenticationProvider = {
     if (isServer) {
-      getAuthenticationProviderForServer(method, conf)
+      getAuthenticationProviderForServer(method, conf, protocol)
     } else {
       getAuthenticationProviderForEngine(conf)
     }
@@ -41,12 +43,16 @@ object AuthenticationProviderFactory {
 
   private def getAuthenticationProviderForServer(
       method: AuthMethod,
-      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
+      conf: KyuubiConf,
+      protocol: FrontendProtocol): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
     case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
-      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
+      val className = protocol match {
+        case REST => conf.get(KyuubiConf.FRONTEND_REST_AUTHENTICATION_CUSTOM_CLASS)
+        case _ => conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
+      }
       if (className.isEmpty) {
         throw new AuthenticationException(
           "authentication.custom.class must be set when auth method was CUSTOM.")

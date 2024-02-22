@@ -31,6 +31,7 @@ import org.apache.hadoop.hive.shims.Utils
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_HTTP
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
@@ -57,7 +58,10 @@ class ThriftHttpServlet(
   private var isHttpOnlyCookie = false
   private val X_FORWARDED_FOR_HEADER = "X-Forwarded-For"
   private val authenticationFilter =
-    new AuthenticationFilter(conf, conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName))
+    new AuthenticationFilter(
+      conf,
+      conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName),
+      THRIFT_HTTP)
 
   override def init(): Unit = {
     isCookieAuthEnabled = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
