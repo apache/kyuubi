@@ -24,8 +24,7 @@ import org.apache.kyuubi.service.authentication.AuthTypes
 
 class ThriftHttpAuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
-    val conf = KyuubiConf()
-    val filter = new AuthenticationFilter(conf, THRIFT_HTTP)
+    val filter = new AuthenticationFilter(KyuubiConf(), THRIFT_HTTP)
     filter.addAuthHandler(new BasicAuthenticationHandler(null, THRIFT_HTTP))
     assert(filter.authSchemeHandlers.isEmpty)
     filter.addAuthHandler(new BasicAuthenticationHandler(AuthTypes.LDAP, THRIFT_HTTP))
