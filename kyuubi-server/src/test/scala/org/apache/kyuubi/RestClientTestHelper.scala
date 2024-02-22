@@ -49,7 +49,7 @@ trait RestClientTestHelper extends RestFrontendTestHelper with KerberizedTestHel
     assert(UserGroupInformation.isSecurityEnabled)
 
     val conf = KyuubiConf().set(
-      KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD,
+      KyuubiConf.AUTHENTICATION_METHOD,
       Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
