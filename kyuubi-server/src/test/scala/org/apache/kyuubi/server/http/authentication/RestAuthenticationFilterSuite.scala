@@ -23,7 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.REST
 import org.apache.kyuubi.service.authentication.AuthTypes
 
-class AuthenticationFilterSuite extends KyuubiFunSuite {
+class RestAuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
     val conf = KyuubiConf()
     val filter =
