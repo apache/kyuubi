@@ -16,6 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# This script is inspired by Apache Spark
+
 # This file contains helper methods used in creating a release.
 
 import re

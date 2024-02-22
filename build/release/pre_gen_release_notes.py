@@ -17,6 +17,8 @@
 # limitations under the License.
 #
 
+# This script is inspired by Apache Spark
+
 # This script simplifies the process of creating release notes, it
 # - folds the original and the revert commits
 # - filters out unrelated commits
