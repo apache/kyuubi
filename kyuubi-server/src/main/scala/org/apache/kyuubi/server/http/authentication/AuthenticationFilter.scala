@@ -26,16 +26,13 @@ import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
-import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
+import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER, FRONTEND_REST_AUTHENTICATION_METHOD}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.{FrontendProtocol, REST}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
 
-class AuthenticationFilter(
-    conf: KyuubiConf,
-    authTypes: Seq[AuthTypes.Value],
-    protocol: FrontendProtocol) extends Filter
+class AuthenticationFilter(conf: KyuubiConf, protocol: FrontendProtocol) extends Filter
   with Logging {
   import AuthenticationFilter._
   import AuthSchemes._
@@ -60,6 +57,10 @@ class AuthenticationFilter(
   }
 
   private[kyuubi] def initAuthHandlers(): Unit = {
+    val authTypes = protocol match {
+      case REST => conf.get(FRONTEND_REST_AUTHENTICATION_METHOD).map(AuthTypes.withName)
+      case _ => conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    }
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
       if (authTypes == Set(NOSASL)) {

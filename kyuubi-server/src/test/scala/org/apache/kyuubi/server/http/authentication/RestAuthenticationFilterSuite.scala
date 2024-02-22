@@ -19,18 +19,13 @@ package org.apache.kyuubi.server.http.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_METHOD
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.REST
 import org.apache.kyuubi.service.authentication.AuthTypes
 
 class RestAuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
     val conf = KyuubiConf()
-    val filter =
-      new AuthenticationFilter(
-        conf,
-        conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName),
-        REST)
+    val filter = new AuthenticationFilter(conf, REST)
     filter.addAuthHandler(new BasicAuthenticationHandler(null, REST))
     assert(filter.authSchemeHandlers.isEmpty)
     filter.addAuthHandler(new BasicAuthenticationHandler(AuthTypes.LDAP, REST))

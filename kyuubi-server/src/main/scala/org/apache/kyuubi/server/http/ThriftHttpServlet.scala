@@ -57,11 +57,7 @@ class ThriftHttpServlet(
   private var isCookieSecure = false
   private var isHttpOnlyCookie = false
   private val X_FORWARDED_FOR_HEADER = "X-Forwarded-For"
-  private val authenticationFilter =
-    new AuthenticationFilter(
-      conf,
-      conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName),
-      THRIFT_HTTP)
+  private val authenticationFilter = new AuthenticationFilter(conf, THRIFT_HTTP)
 
   override def init(): Unit = {
     isCookieAuthEnabled = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
