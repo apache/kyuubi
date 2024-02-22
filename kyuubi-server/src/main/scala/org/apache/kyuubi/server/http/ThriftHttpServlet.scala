@@ -30,12 +30,12 @@ import org.apache.hadoop.hive.shims.Utils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.THRIFT_HTTP
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
-import org.apache.kyuubi.service.authentication.{AuthTypes, KyuubiAuthenticationFactory}
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.shaded.thrift.TProcessor
 import org.apache.kyuubi.shaded.thrift.protocol.TProtocolFactory
 import org.apache.kyuubi.shaded.thrift.server.TServlet
