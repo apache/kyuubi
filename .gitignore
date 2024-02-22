@@ -75,6 +75,7 @@ embedded_zookeeper/
 conf/log4j2.xml
 conf/kyuubi-defaults.conf
 conf/kyuubi-env.sh
+.java-version
 
 # For Antlr
 kyuubi-server/gen
