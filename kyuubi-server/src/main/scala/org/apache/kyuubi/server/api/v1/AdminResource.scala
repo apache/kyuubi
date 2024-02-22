@@ -278,7 +278,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      @QueryParam("forceKill") forceKill: Boolean,
+      @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean,
       @QueryParam("refId") refId: String,
       @QueryParam("sparK8Context") sparK8Context: String,
       @QueryParam("sparK8Namespace") sparK8Namespace: String,
