@@ -45,7 +45,7 @@ updateStrategy:
 image:
   repository: apache/kyuubi
   pullPolicy: IfNotPresent
-  tag: ~
+  tag: 1.8.1-spark
 
 imagePullSecrets: []
 

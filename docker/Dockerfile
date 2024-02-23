@@ -15,14 +15,12 @@
 # limitations under the License.
 #
 
-# Usage:
-#   1. use ./build/dist to make binary distributions of Kyuubi or download a release
-#   2. Untar it and run the docker command below
-#      docker build -f docker/Dockerfile -t repository/kyuubi:tagname .
-#   Options:
-#     -f this docker file
-#     -t the target repo and tag name
-#     more options can be found with -h
+# It's recommended to use ./bin/docker-image-tool.sh to build the image rather than the vanilla docker command.
+
+# Usage (use vanilla docker command):
+#   1. use ./build/dist to make binary tarball of Kyuubi or download an official binary tarball
+#   2. untar it and run the docker command below
+#      docker build -f docker/Dockerfile -t <private-repo>/kyuubi:<tag> .
 
 ARG BASE_IMAGE=eclipse-temurin:8-jdk-focal
 ARG spark_provided="spark_builtin"

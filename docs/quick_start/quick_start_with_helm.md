@@ -37,7 +37,7 @@ It will print release info with notes, including the ways to get Kyuubi accessed
 
 ```shell
 NAME: kyuubi
-LAST DEPLOYED: Sat Feb 11 20:59:00 2023
+LAST DEPLOYED: Fri Feb 23 13:15:10 UTC 2024
 NAMESPACE: kyuubi
 STATUS: deployed
 REVISION: 1
@@ -53,12 +53,12 @@ In order to check the release status, use:
 ************************
 ******* Services *******
 ************************
+REST:
+- To access kyuubi-rest service within the cluster, use the following URL:
+    kyuubi-rest.kyuubi.svc.cluster.local
 THRIFT_BINARY:
 - To access kyuubi-thrift-binary service within the cluster, use the following URL:
     kyuubi-thrift-binary.kyuubi.svc.cluster.local
-- To access kyuubi-thrift-binary service from outside the cluster for debugging, run the following command:
-    kubectl port-forward svc/kyuubi-thrift-binary 10009:10009 -n kyuubi
-  and use 127.0.0.1:10009
 ```
 
 #### Uninstall the chart
@@ -107,14 +107,14 @@ kubectl get pod -n kyuubi
 Find Kyuubi pods:
 
 ```shell
-NAME                      READY   STATUS    RESTARTS   AGE
-kyuubi-5b6d496c98-kbhws   1/1     Running   0          38m
-kyuubi-5b6d496c98-lqldk   1/1     Running   0          38m
+NAME       READY   STATUS    RESTARTS   AGE
+kyuubi-0   1/1     Running   0          38m
+kyuubi-1   1/1     Running   0          38m
 ```
 
-Then, use pod name to get logs:
+Then, use pod name to retrieve logs:
 
 ```shell
-kubectl logs kyuubi-5b6d496c98-kbhws -n kyuubi
+kubectl logs kyuubi-0 -n kyuubi
 ```
 

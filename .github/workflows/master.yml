@@ -428,7 +428,7 @@ jobs:
             CI=${CI}
             MVN_ARG=--flink-provided --hive-provided -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
           context: .
-          file: build/Dockerfile
+          file: build/Dockerfile.CI
           load: true
           tags: apache/kyuubi:latest
       - name: Cache Engine Archives

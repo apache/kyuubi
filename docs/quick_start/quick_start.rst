@@ -91,23 +91,26 @@ To install Kyuubi, you need to unpack the tarball. For example,
    ├── RELEASE
    ├── beeline-jars
    ├── bin
+   ├── charts
+   │   └── kyuubi
    ├── conf
    |   ├── kyuubi-defaults.conf.template
    │   ├── kyuubi-env.sh.template
-   │   └── log4j2.properties.template
+   │   └── log4j2.xml.template
+   ├── db-scripts
+   │   ├── mysql
+   │   ├── postgresql
+   │   └── sqlite
    ├── docker
    │   ├── Dockerfile
-   │   ├── helm
-   │   ├── kyuubi-configmap.yaml
-   │   ├── kyuubi-deployment.yaml
-   │   ├── kyuubi-pod.yaml
-   │   └── kyuubi-service.yaml
+   │   └── playground
    ├── externals
    │  └── engines
    ├── jars
    ├── licenses
    ├── logs
    ├── pid
+   ├── web-ui
    └── work
 
 From top to bottom are:
@@ -143,7 +146,7 @@ To install Spark, you need to unpack the tarball. For example,
 
 .. code-block::
 
-   $ tar zxf spark-3.3.2-bin-hadoop3.tgz
+   $ tar zxf spark-3.4.2-bin-hadoop3.tgz
 
 Configuration
 ~~~~~~~~~~~~~

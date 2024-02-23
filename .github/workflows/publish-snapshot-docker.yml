@@ -46,7 +46,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           context: .
-          file: build/Dockerfile
+          file: build/Dockerfile.CI
           platforms: linux/amd64,linux/arm64
           push: true
           tags: apache/kyuubi:master-snapshot
