@@ -271,8 +271,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         Option(sparK8Context),
         Option(sparK8Namespace))
 
-      var killMessage: KillResponse = (false, "UNKNOWN")
-      killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+      val killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
         .applicationManager.killApplication(applicationManagerInfo, refId)
       if (!killMessage._1) {
         msg = s"Engine $engineSpace failed to get deleted forcibly," +
