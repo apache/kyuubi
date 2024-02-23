@@ -21,6 +21,7 @@ import java.io.File;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
@@ -180,7 +181,10 @@ public class RestClient implements IRestClient {
 
       response = httpclient.execute(httpRequest, responseHandler);
       LOG.debug("Response: {}", response);
-    } catch (ConnectException | ConnectTimeoutException | NoHttpResponseException e) {
+    } catch (ConnectException
+        | UnknownHostException
+        | ConnectTimeoutException
+        | NoHttpResponseException e) {
       // net exception can be retried by connecting to other Kyuubi server
       throw new RetryableKyuubiRestException("Api request failed for " + uri.toString(), e);
     } catch (KyuubiRestException rethrow) {
