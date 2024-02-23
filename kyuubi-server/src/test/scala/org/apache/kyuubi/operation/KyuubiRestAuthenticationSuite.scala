@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.RestClientTestHelper
@@ -31,7 +32,7 @@ import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, Ses
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.server.http.util.HttpAuthUtils._
-import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
+import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, UserDefineAuthenticationProviderImpl}
 import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
@@ -183,7 +184,7 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 }
 
-class NoneKyuubiRestAuthenticationSuite extends RestClientTestHelper {
+class KyuubiRestIsolatedNoneAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
     Map(
@@ -200,7 +201,7 @@ class NoneKyuubiRestAuthenticationSuite extends RestClientTestHelper {
   }
 }
 
-class KerberosKyuubiRestAuthenticationSuite extends RestClientTestHelper {
+class KyuubiRestKerberosAuthenticationSuite extends RestClientTestHelper {
 
   override protected val otherConfigs: Map[String, String] = {
     Map(KyuubiConf.AUTHENTICATION_METHOD.key -> "KERBEROS")
@@ -212,5 +213,59 @@ class KerberosKyuubiRestAuthenticationSuite extends RestClientTestHelper {
       .get()
 
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
+  }
+}
+
+class KyuubiRestIsolatedKerberosAuthenticationSuite extends RestClientTestHelper {
+
+  override protected val otherConfigs: Map[String, String] = {
+    Map(
+      KyuubiConf.AUTHENTICATION_METHOD.key -> "NONE",
+      KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD.key -> "KERBEROS")
+  }
+
+  test("test disable restful api authentication") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+}
+
+class KyuubiRestIsolatedAuthenticationSuite extends KyuubiRestAuthenticationSuite {
+
+  override protected val otherConfigs: Map[String, String] = {
+    Map(
+      KyuubiConf.ENGINE_SECURITY_ENABLED.key -> "true",
+      KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER.key -> "simple",
+      KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key -> "_KYUUBI_REST_",
+      // allow to impersonate other users with spnego authentication
+      s"hadoop.proxyuser.$clientPrincipalUser.groups" -> "*",
+      s"hadoop.proxyuser.$clientPrincipalUser.hosts" -> "*")
+  }
+
+  override protected lazy val conf: KyuubiConf = {
+    val config = new Configuration()
+    val authType = "hadoop.security.authentication"
+    config.set(authType, "KERBEROS")
+    System.setProperty("java.security.krb5.conf", krb5ConfPath)
+    UserGroupInformation.setConfiguration(config)
+    assert(UserGroupInformation.isSecurityEnabled)
+
+    val conf = KyuubiConf().set(
+      KyuubiConf.FRONTEND_REST_AUTHENTICATION_METHOD,
+      Seq("KERBEROS", "LDAP", "CUSTOM"))
+      .set(KyuubiConf.SERVER_KEYTAB.key, testKeytab)
+      .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
+      .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
+      .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN, ldapBaseDn.head)
+      .set(
+        KyuubiConf.FRONTEND_REST_AUTHENTICATION_CUSTOM_CLASS,
+        Some(classOf[UserDefineAuthenticationProviderImpl].getCanonicalName))
+    otherConfigs.foreach(kv => conf.set(kv._1, kv._2))
+    conf
   }
 }
