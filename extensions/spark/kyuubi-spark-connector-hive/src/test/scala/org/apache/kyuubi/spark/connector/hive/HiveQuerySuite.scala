@@ -159,7 +159,7 @@ class HiveQuerySuite extends KyuubiHiveTest {
     }
   }
 
-  test("Partitioned table insert and static and dynamic insert") {
+  test("Partitioned table insert overwrite static and dynamic insert") {
     withSparkSession() { spark =>
       val table = "hive.default.employee"
       withTempPartitionedTable(spark, table) {
@@ -196,18 +196,14 @@ class HiveQuerySuite extends KyuubiHiveTest {
     withSparkSession() { spark =>
       val table = "hive.default.employee"
       withTempPartitionedTable(spark, table) {
-        val exception = intercept[KyuubiHiveConnectorException] {
-          spark.sql(
-            s"""
-               | INSERT OVERWRITE
-               | $table PARTITION(year = '', month = '08')
-               | VALUES("yi")
-               |""".stripMargin).collect()
-        }
-        // 1. not thrown `Dynamic partition cannot be the parent of a static partition`
-        // 2. thrown `Partition spec is invalid`, should be consist with spark v1.
-        assert(exception.message.contains("Partition spec is invalid. The spec (year='') " +
-          "contains an empty partition column value"))
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE
+             | $table PARTITION(year = '', month = '08')
+             | VALUES("yi")
+             |""".stripMargin).collect()
+
+        checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", null, "08")))
       }
     }
   }
@@ -250,6 +246,20 @@ class HiveQuerySuite extends KyuubiHiveTest {
   test("read un-partitioned ORC table") {
     readUnPartitionedTable("ORC", true)
     readUnPartitionedTable("ORC", false)
+  }
+
+  test("Partitioned table insert into static and dynamic insert") {
+    val table = "hive.default.employee"
+    withTempPartitionedTable(spark, table) {
+      spark.sql(
+        s"""
+           | INSERT INTO
+           | $table PARTITION(year = '2022')
+           | SELECT * FROM VALUES("yi", "08")
+           |""".stripMargin).collect()
+
+      checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "08")))
+    }
   }
 
   private def readPartitionedTable(format: String, hiveTable: Boolean): Unit = {

@@ -27,11 +27,8 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.hive.common.FileUtils
 import org.apache.hadoop.hive.ql.exec.TaskRunner
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.catalog.ExternalCatalogUtils
 import org.apache.spark.sql.catalyst.catalog.ExternalCatalogWithListener
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, HiveExternalCatalog, HiveVersion}
-
-import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorException
 
 // scalastyle:off line.size.limit
 /**
@@ -197,16 +194,5 @@ object HiveWriteHelper extends Logging {
 
   def cannotCreateStagingDirError(message: String, e: IOException = null): Throwable = {
     new RuntimeException(s"Cannot create staging directory: $message", e)
-  }
-
-  def getPartitionSpec(partition: Map[String, Option[String]]): Map[String, String] = {
-    partition.map {
-      case (key, Some(null)) => key -> ExternalCatalogUtils.DEFAULT_PARTITION_NAME
-      case (key, Some(value)) if value.equals("") =>
-        throw KyuubiHiveConnectorException(s"Partition spec is invalid. " +
-          s"The spec ($key='$value') contains an empty partition column value")
-      case (key, Some(value)) => key -> value
-      case (key, None) => key -> ""
-    }
   }
 }
