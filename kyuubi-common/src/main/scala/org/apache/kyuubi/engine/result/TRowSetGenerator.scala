@@ -61,11 +61,13 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rowSize))
     var i = 0
     val columnSize = getColumnSizeFromSchemaType(schema)
+    val tColumns = new JArrayList[TColumn](columnSize)
     while (i < columnSize) {
       val tColumn = toTColumn(rows, i, getColumnType(schema, i))
-      tRowSet.addToColumns(tColumn)
+      tColumns.add(tColumn)
       i += 1
     }
+    tRowSet.setColumns(tColumns)
     tRowSet
   }
 }
