@@ -43,15 +43,15 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
 
   def toRowBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
     val tRows = rows.map { row =>
-      val tRow = new TRow()
       var j = 0
       val columnSize = getColumnSizeFromSchemaType(schema)
+      val tColumnValues = new JArrayList[TColumnValue](columnSize)
       while (j < columnSize) {
         val columnValue = toTColumnValue(row, j, schema)
-        tRow.addToColVals(columnValue)
+        tColumnValues.add(columnValue)
         j += 1
       }
-      tRow
+      new TRow(tColumnValues)
     }.asJava
     new TRowSet(0, tRows)
   }
