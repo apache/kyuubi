@@ -18,6 +18,8 @@
 package org.apache.kyuubi.engine.result
 import java.util.{ArrayList => JArrayList}
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 trait TRowSetGenerator[SchemaT, RowT, ColumnT]
@@ -40,23 +42,17 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
   }
 
   def toRowBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
-    val rowSize = rows.length
-    val tRows = new JArrayList[TRow](rowSize)
-    var i = 0
-    while (i < rowSize) {
-      val row = rows(i)
-      var j = 0
+    val tRows = rows.map { row =>
+      var i = 0
       val columnSize = getColumnSizeFromSchemaType(schema)
       val tColumnValues = new JArrayList[TColumnValue](columnSize)
-      while (j < columnSize) {
-        val columnValue = toTColumnValue(row, j, schema)
+      while (i < columnSize) {
+        val columnValue = toTColumnValue(row, i, schema)
         tColumnValues.add(columnValue)
-        j += 1
+        i += 1
       }
-      i += 1
-      val tRow = new TRow(tColumnValues)
-      tRows.add(tRow)
-    }
+      new TRow(tColumnValues)
+    }.asJava
     new TRowSet(0, tRows)
   }
 
