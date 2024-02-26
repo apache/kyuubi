@@ -174,7 +174,7 @@ object HighAvailabilityConf {
   val HA_ENGINE_CLEANUP_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.engine.cleanup.enabled")
       .doc("When set to true, Kyuubi will delete the engine namespace node and lock node " +
-        "before engine stopped.")
+        "before engine stops.")
       .version("1.9.0")
       .booleanConf
       .createWithDefault(false)
