@@ -2303,7 +2303,7 @@
             </modules>
             <properties>
                 <delta.artifact>delta-spark</delta.artifact>
-                <delta.version>3.0.0</delta.version>
+                <delta.version>3.1.0</delta.version>
                 <!-- Remove this when Hudi supports Spark 3.5 -->
                 <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <!-- Remove this when Paimon supports Spark 3.5 -->
