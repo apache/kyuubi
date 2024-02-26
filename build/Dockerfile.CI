@@ -15,12 +15,14 @@
 # limitations under the License.
 #
 
+# This Dockerfile is for CI testing purpose, not for end-users
+
 # Usage:
 #   Run the docker command below
 #      docker build \
 #        --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" \
-#        --file build/Dockerfile \
-#        --tag apache/kyuubi:tagname \
+#        --file build/Dockerfile.CI \
+#        --tag apache/kyuubi:<tag> \
 #        .
 #   Options:
 #     -f, --file  this docker file
