@@ -20,6 +20,8 @@ package org.apache.kyuubi.ha.client
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_LOCK_PATH
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ENGINE_CLEANUP_ENABLED
 import org.apache.kyuubi.service.FrontendService
 
 /**
@@ -33,19 +35,28 @@ class EngineServiceDiscovery(
   override def stop(): Unit = synchronized {
     if (!isServerLost.get()) {
       discoveryClient.deregisterService()
-      conf.get(ENGINE_SHARE_LEVEL) match {
-        // For connection level, we should clean up the namespace in zk in case the disk stress.
-        case "CONNECTION" =>
-          try {
+      try {
+        conf.get(ENGINE_SHARE_LEVEL) match {
+          // For connection level, we should clean up the namespace in zk in case the disk stress.
+          case "CONNECTION" =>
             if (discoveryClient.postDeregisterService(namespace)) {
               info("Clean up discovery service due to this is connection share level.")
             }
-          } catch {
-            case NonFatal(e) =>
-              warn("Failed to clean up Spark engine before stop.", e)
-          }
-
-        case _ =>
+          case _ if conf.get(HA_ENGINE_CLEANUP_ENABLED) =>
+            if (discoveryClient.postDeregisterService(namespace)) {
+              info(s"Clean up discovery service due to " +
+                s"${HA_ENGINE_CLEANUP_ENABLED.key} is enabled.")
+            }
+            conf.getOption(KYUUBI_ENGINE_LOCK_PATH).foreach { engineLockPath =>
+              if (discoveryClient.postDeregisterService(engineLockPath)) {
+                info(s"Clean up engine lock path $engineLockPath")
+              }
+            }
+          case _ =>
+        }
+      } catch {
+        case NonFatal(e) =>
+          warn("Failed to clean up Spark engine before stop.", e)
       }
       discoveryClient.closeClient()
     } else {

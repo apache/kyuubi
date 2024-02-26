@@ -28,7 +28,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_LOCK_PATH, KYUUBI_ENGINE_SUBMIT_TIME_KEY}
 import org.apache.kyuubi.engine.EngineType._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.chat.ChatProcessBuilder
@@ -160,6 +160,12 @@ private[kyuubi] class EngineRef(
     }
   }
 
+  private val engineLockPath: String =
+    DiscoveryPaths.makePath(
+      s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
+      routingUser,
+      subdomain)
+
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.
@@ -168,13 +174,8 @@ private[kyuubi] class EngineRef(
     shareLevel match {
       case CONNECTION => f
       case _ =>
-        val lockPath =
-          DiscoveryPaths.makePath(
-            s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
-            routingUser,
-            subdomain)
         discoveryClient.tryWithLock(
-          lockPath,
+          engineLockPath,
           timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
     }
 
@@ -189,6 +190,7 @@ private[kyuubi] class EngineRef(
     conf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
     conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
+    conf.set(KYUUBI_ENGINE_LOCK_PATH, engineLockPath)
     builder = engineType match {
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
