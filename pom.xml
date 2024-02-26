@@ -2275,7 +2275,7 @@
             <properties>
                 <delta.version>2.3.0</delta.version>
                 <delta.artifact>delta-core</delta.artifact>
-                <spark.version>3.3.3</spark.version>
+                <spark.version>3.3.4</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
