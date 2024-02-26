@@ -162,16 +162,6 @@
 
     <profiles>
         <profile>
-            <id>spark-3.1</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kyuubi</groupId>
-                    <artifactId>kyuubi-extension-spark-3-1_${scala.binary.version}</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>spark-3.2</id>
             <dependencies>
                 <dependency>

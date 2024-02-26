@@ -75,10 +75,10 @@ Due to the extra sort, the upstream job will run a little slower than before
 
 This feature is inside Kyuubi extension, so you should apply the extension to Spark by following steps.
 
-- add extension jar: `copy $KYUUBI_HOME/extension/kyuubi-extension-spark-3-1* $SPARK_HOME/jars/`
+- add extension jar: `copy $KYUUBI_HOME/extension/kyuubi-extension-spark-3-5* $SPARK_HOME/jars/`
 - add config into `spark-defaults.conf`: `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
 
-Due to the extension, z-order only works with Spark-3.1 and higher version.
+Due to the extension, z-order only works with Spark 3.2 and higher version.
 
 ### Optimize history data
 

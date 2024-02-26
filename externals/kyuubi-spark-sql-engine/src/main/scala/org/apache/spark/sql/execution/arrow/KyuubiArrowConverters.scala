@@ -159,7 +159,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
           partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
 
         // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
-        // drop Spark-3.1.x support.
+        // drop Spark 3.1 support.
         val sc = SparkSession.active.sparkContext
         val res = sc.runJob(
           childRDD,
@@ -347,6 +347,6 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       largeVarTypes)
   }
 
-  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark-3.1/3.2
+  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark 3.1/3.2
   final private val ARROW_IPC_OPTION_DEFAULT = new IpcOption()
 }

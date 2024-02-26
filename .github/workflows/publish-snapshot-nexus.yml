@@ -33,14 +33,17 @@ jobs:
           - branch-1.7
           - branch-1.8
         profiles:
-          - -Pflink-provided,spark-provided,hive-provided,spark-3.1
           - -Pflink-provided,spark-provided,hive-provided,spark-3.2
           - -Pflink-provided,spark-provided,hive-provided,spark-3.3,tpcds
         include:
           - branch: master
             profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.4
+          - branch: master
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
           - branch: branch-1.8
             profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.4
+          - branch: branch-1.8
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
     steps:
       - uses: actions/checkout@v4
         with:

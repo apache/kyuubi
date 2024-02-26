@@ -20,7 +20,7 @@
 # Usage:
 #   Run the docker command below
 #      docker build \
-#        --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" \
+#        --build-arg MVN_ARG="-Pspark-3.5" \
 #        --file build/Dockerfile.CI \
 #        --tag apache/kyuubi:<tag> \
 #        .

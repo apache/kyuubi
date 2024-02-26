@@ -110,11 +110,6 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  # Spark Extension Plugin for Spark 3.1
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
-    -pl extensions/spark/kyuubi-extension-spark-3-1 -am
-
   # Spark Extension Plugin for Spark 3.2
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.2 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \

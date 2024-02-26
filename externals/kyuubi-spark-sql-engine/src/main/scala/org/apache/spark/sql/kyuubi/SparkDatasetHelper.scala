@@ -161,7 +161,7 @@ object SparkDatasetHelper extends Logging {
 
   private def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
     // TODO: SparkPlan.session introduced in SPARK-35798, replace with SparkPlan.session once we
-    // drop Spark-3.1.x support.
+    // drop Spark 3.1 support.
     val timeZoneId = SparkSession.active.sessionState.conf.sessionLocalTimeZone
     val maxRecordsPerBatch = SparkSession.active.sessionState.conf.arrowMaxRecordsPerBatch
 

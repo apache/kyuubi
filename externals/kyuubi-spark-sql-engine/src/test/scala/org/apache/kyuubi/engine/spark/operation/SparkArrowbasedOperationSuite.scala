@@ -523,9 +523,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   /**
    * This method provides a reflection-based implementation of [[SQLConf.isStaticConfigKey]] to
-   * adapt Spark-3.1.x
+   * adapt Spark 3.1
    *
-   * TODO: Once we drop support for Spark 3.1.x, we can directly call
+   * TODO: Once we drop support for Spark 3.1, we can directly call
    * [[SQLConf.isStaticConfigKey()]].
    */
   private def isStaticConfigKey(key: String): Boolean =
