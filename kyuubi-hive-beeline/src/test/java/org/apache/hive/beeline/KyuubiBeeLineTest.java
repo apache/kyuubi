@@ -89,6 +89,26 @@ public class KyuubiBeeLineTest {
   }
 
   @Test
+  public void testKyuubiBeelineIgnoreLaunchEngine() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String[] args1 = {"-u", "badUrl", "--ignore-launch-engine"};
+    kyuubiBeeLine.initArgs(args1);
+    assertTrue(kyuubiBeeLine.isIgnoreLaunchEngine());
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args2 = {"--ignore-launch-engine", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args2);
+    assertTrue(kyuubiBeeLine.isIgnoreLaunchEngine());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args3 = {"-u", "badUrl"};
+    kyuubiBeeLine.initArgs(args3);
+    assertTrue(!kyuubiBeeLine.isIgnoreLaunchEngine());
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+  }
+
+  @Test
   public void testKyuubiBeelineComment() {
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
     int result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment show database;"});
