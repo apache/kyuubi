@@ -130,7 +130,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
     }
   }
 
-  test("Cleanup engine namespace node and lock node") {
+  test("Kyuubi #6052: Cleanup engine namespace node and lock node") {
     val logAppender = new LogAppender("cleanup engine")
     withLogAppender(logAppender) {
       val namespace = "/kyuubiengine"
