@@ -26,10 +26,8 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 class JdbcUtilsSuite extends KyuubiFunSuite {
 
-  private val dbUrl = s"jdbc:derby:memory:jdbc_utils_test"
-  private val connUrl = s"$dbUrl;create=true"
-  private val shutdownUrl = s"$dbUrl;shutdown=true"
-  private val driverClz = "org.apache.derby.jdbc.AutoloadedDriver"
+  private val connUrl = "jdbc:sqlite:file:test_jdbc.db"
+  private val driverClz = "org.sqlite.JDBC"
 
   implicit private val ds: DataSource =
     new DriverDataSource(connUrl, driverClz, new Properties, "test", "test")
@@ -37,6 +35,7 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
   case class Person(id: Int, name: String)
 
   test("JdbcUtils methods") {
+    JdbcUtils.execute("DROP TABLE IF EXISTS person")()
     JdbcUtils.execute(
       """CREATE TABLE person(
         |  id   INT NOT NULL PRIMARY KEY,
@@ -78,5 +77,6 @@ class JdbcUtilsSuite extends KyuubiFunSuite {
       JdbcUtils.redactPassword(None)
     }
 
+    JdbcUtils.execute("DROP TABLE IF EXISTS person")()
   }
 }

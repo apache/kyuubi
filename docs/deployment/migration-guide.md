@@ -20,6 +20,7 @@
 ## Upgrading from Kyuubi 1.8 to 1.9
 
 * Since Kyuubi 1.9.0, `kyuubi.session.conf.advisor` can be set as a sequence, Kyuubi supported chaining SessionConfAdvisors.
+* Since Kyuubi 1.9.0, the support of Derby is removal for Kyuubi metastore.
 
 ## Upgrading from Kyuubi 1.8.0 to 1.8.1
 

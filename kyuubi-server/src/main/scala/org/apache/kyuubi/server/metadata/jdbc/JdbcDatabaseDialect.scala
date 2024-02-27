@@ -21,12 +21,6 @@ trait JdbcDatabaseDialect {
   def limitClause(limit: Int, offset: Int): String
 }
 
-class DerbyDatabaseDialect extends JdbcDatabaseDialect {
-  override def limitClause(limit: Int, offset: Int): String = {
-    s"OFFSET $offset ROWS FETCH NEXT $limit ROWS ONLY"
-  }
-}
-
 class GenericDatabaseDialect extends JdbcDatabaseDialect {
   override def limitClause(limit: Int, offset: Int): String = {
     s"LIMIT $limit OFFSET $offset"
