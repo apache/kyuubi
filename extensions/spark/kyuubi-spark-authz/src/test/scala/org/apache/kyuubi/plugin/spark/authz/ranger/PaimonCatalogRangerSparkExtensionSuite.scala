@@ -21,7 +21,6 @@ import org.scalatest.Outcome
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.PaimonTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -31,7 +30,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @PaimonTest
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
-  private def isSupportedVersion = !isSparkV35OrGreater
+  private def isSupportedVersion = true
 
   val catalogV2 = "paimon_catalog"
   val namespace1 = "paimon_ns"
