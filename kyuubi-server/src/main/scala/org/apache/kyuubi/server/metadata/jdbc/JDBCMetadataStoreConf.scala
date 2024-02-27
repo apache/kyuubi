@@ -51,8 +51,6 @@ object JDBCMetadataStoreConf {
   val METADATA_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.database.type")
       .doc("The database type for server jdbc metadata store.<ul>" +
-        " <li>(Deprecated) DERBY: Apache Derby, JDBC driver " +
-        "`org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>SQLITE: SQLite3, JDBC driver `org.sqlite.JDBC`.</li>" +
         " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver` " +
         "(fallback `com.mysql.jdbc.Driver`).</li>" +

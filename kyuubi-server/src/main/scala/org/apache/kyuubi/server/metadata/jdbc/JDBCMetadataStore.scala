@@ -55,7 +55,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   private val driverClass = dbType match {
     case SQLITE => driverClassOpt.getOrElse("org.sqlite.JDBC")
-    case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse(mysqlDriverClass)
     case POSTGRESQL => driverClassOpt.getOrElse("org.postgresql.Driver")
     case CUSTOM => driverClassOpt.getOrElse(
@@ -63,7 +62,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   }
 
   private val dialect = dbType match {
-    case DERBY => new DerbyDatabaseDialect
     case SQLITE => new SQLiteDatabaseDialect
     case MYSQL => new MySQLDatabaseDialect
     case POSTGRESQL => new PostgreSQLDatabaseDialect
