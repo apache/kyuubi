@@ -16,8 +16,8 @@
 #
 
 org.apache.kyuubi.engine.jdbc.doris.DorisConnectionProvider
+org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider
 org.apache.kyuubi.engine.jdbc.mysql.MySQLConnectionProvider
 org.apache.kyuubi.engine.jdbc.phoenix.PhoenixConnectionProvider
 org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider
 org.apache.kyuubi.engine.jdbc.starrocks.StarRocksConnectionProvider
-org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider
