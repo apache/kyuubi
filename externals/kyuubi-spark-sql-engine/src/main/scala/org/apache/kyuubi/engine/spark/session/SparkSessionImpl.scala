@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.util.concurrent.atomic.AtomicLong
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
@@ -110,12 +113,28 @@ class SparkSessionImpl(
   }
 
   override def close(): Unit = {
+    info(s"sessionId=${sessionEvent.sessionId}, " +
+      s"sessionRunTime=${KyuubiSparkUtil.formatDuration(sessionRunTime.get())}, " +
+      s"sessionCpuTime=${KyuubiSparkUtil.formatDurationNano(sessionCpuTime.get())}")
     sessionEvent.endTime = System.currentTimeMillis()
+    sessionEvent.sessionRunTime = sessionRunTime.get()
+    sessionEvent.sessionCpuTime = sessionCpuTime.get()
     EventBus.post(sessionEvent)
     super.close()
     spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closePythonProcess(
       handle)
+  }
+
+  val sessionRunTime = new AtomicLong(0)
+  val sessionCpuTime = new AtomicLong(0)
+
+  def increaseRunTime(time: Long): Unit = {
+    sessionRunTime.getAndAdd(time)
+  }
+
+  def increaseCpuTime(time: Long): Unit = {
+    sessionCpuTime.getAndAdd(time)
   }
 }

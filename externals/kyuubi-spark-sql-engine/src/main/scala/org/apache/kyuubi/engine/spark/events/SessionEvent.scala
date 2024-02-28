@@ -47,7 +47,9 @@ case class SessionEvent(
     conf: Map[String, String],
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent with SparkListenerEvent {
+    var totalOperations: Int = 0,
+    var sessionRunTime: Long = 0,
+    var sessionCpuTime: Long = 0) extends KyuubiEvent with SparkListenerEvent {
 
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil

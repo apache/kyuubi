@@ -19,6 +19,7 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 
@@ -29,6 +30,7 @@ import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SQL_EXECUTION_ID_KEY}
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
@@ -60,6 +62,9 @@ class SQLOperationListener(
     } else {
       None
     }
+
+  val operationRunTime = new AtomicLong(0)
+  val operationCpuTime = new AtomicLong(0)
 
   def getExecutionId: Option[Long] = executionId
 
@@ -140,6 +145,14 @@ class SQLOperationListener(
     val stageInfo = stageCompleted.stageInfo
     val stageId = stageInfo.stageId
     val stageAttempt = SparkStageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
+    val taskMetrics = stageInfo.taskMetrics
+    if (taskMetrics != null) {
+      info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
+        s"stageRunTime=${KyuubiSparkUtil.formatDuration(taskMetrics.executorRunTime)}, " +
+        s"stageCpuTime=${KyuubiSparkUtil.formatDurationNano(taskMetrics.executorCpuTime)}")
+      operationRunTime.getAndAdd(taskMetrics.executorRunTime)
+      operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
+    }
     activeStages.synchronized {
       if (activeStages.remove(stageAttempt) != null) {
         stageInfo.getStatusString match {
