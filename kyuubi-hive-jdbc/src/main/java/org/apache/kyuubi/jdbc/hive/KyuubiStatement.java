@@ -544,6 +544,18 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   @Override
+  public boolean getMoreResults(int current) throws SQLException {
+    // getMoreResults() javadoc says, that it should implicitly close
+    // any current ResultSet object, so here in case of Statement.CLOSE_CURRENT_RESULT
+    // we can implement the same logic
+    // see also https://issues.apache.org/jira/browse/HIVE-7680
+    if (current == Statement.CLOSE_CURRENT_RESULT) {
+      return false;
+    }
+    throw new SQLFeatureNotSupportedException("Method not supported");
+  }
+
+  @Override
   public boolean getMoreResults() throws SQLException {
     return false;
   }
