@@ -63,6 +63,6 @@ trait WithImpalaContainer extends WithJdbcServerContainer {
   protected def hiveServerJdbcUrl: String = withContainers { container =>
     val feHost: String = container.getServiceHost(IMPALAD_SERVICE_NAME, IMPALAD_PORT)
     val fePort: Int = container.getServicePort(IMPALAD_SERVICE_NAME, IMPALAD_PORT)
-    s"jdbc:hive2://$feHost:$fePort/;auth=noSasl"
+    s"jdbc:kyuubi://$feHost:$fePort/;auth=noSasl"
   }
 }

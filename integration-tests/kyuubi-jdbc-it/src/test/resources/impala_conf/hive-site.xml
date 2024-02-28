@@ -17,7 +17,7 @@
    limitations under the License.
 -->
 <!--
-Hive configuration for Impala quickstart docker cluster.
+   Hive configuration for Impala quickstart docker cluster.
 -->
 <configuration>
   <property>

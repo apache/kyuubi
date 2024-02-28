@@ -55,6 +55,10 @@ class ImpalaDialect extends JdbcDialect {
       schemaName: String,
       tableName: String,
       columnName: String): String = {
+    if (StringUtils.isEmpty(tableName)) {
+      throw KyuubiSQLException("Table name should not be empty")
+    }
+
     if (isPattern(schemaName)) {
       throw KyuubiSQLException.featureNotSupported("Pattern-like schema names not supported")
     }

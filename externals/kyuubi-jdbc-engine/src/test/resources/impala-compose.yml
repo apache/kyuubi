@@ -16,7 +16,7 @@
 # under the License.
 
 # modified compose file from Impala repo, see
-# https://github.com/apache/impala/blob/master/docker/quickstart.yml
+# https://github.com/apache/impala/blob/4.3.0/docker/quickstart.yml
 version: "3.5"
 services:
   metastore:
@@ -66,7 +66,7 @@ services:
                "-redirect_stdout_stderr=false", "-logtostderr",
                "-mt_dop_auto_fallback=true",
                "-default_query_options=mt_dop=4,default_file_format=parquet,default_transactional_type=insert_only",
-               "-mem_limit=4gb"]
+               "-mem_limit=1500mb"]
     environment:
       # Keep the Java heap small to preserve memory for query execution.
       - JAVA_TOOL_OPTIONS="-Xmx1g"
