@@ -19,6 +19,7 @@
 package org.apache.hive.beeline;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -104,7 +105,13 @@ public class KyuubiBeeLineTest {
 
     String[] args3 = {"-u", "badUrl"};
     kyuubiBeeLine.initArgs(args3);
-    assertTrue(!kyuubiBeeLine.isIgnoreLaunchEngine());
+    assertFalse(kyuubiBeeLine.isIgnoreLaunchEngine());
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args4 = {"--ignore-launch-engine", "--verbose", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args4);
+    assertFalse(kyuubiBeeLine.isIgnoreLaunchEngine());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
     kyuubiBeeLine.setIgnoreLaunchEngine(false);
   }
 

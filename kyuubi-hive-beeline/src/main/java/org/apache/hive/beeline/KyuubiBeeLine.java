@@ -191,6 +191,10 @@ public class KyuubiBeeLine extends BeeLine {
           };
       cl = beelineParser.parse(options, args);
 
+      if (getOpts().getVerbose()) {
+        ignoreLaunchEngine = false;
+      }
+
       connSuccessful =
           DynMethods.builder("connectUsingArgs")
               .hiddenImpl(BeeLine.class, BeelineParser.class, CommandLine.class)
