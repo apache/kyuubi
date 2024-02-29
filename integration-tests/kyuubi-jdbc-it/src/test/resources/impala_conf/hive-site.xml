@@ -16,9 +16,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 -->
-<!--
-   Hive configuration for Impala quickstart docker cluster.
--->
+<!-- Hive configuration for Impala quickstart docker cluster. -->
 <configuration>
   <property>
     <!-- Required for automatic metadata sync. -->
