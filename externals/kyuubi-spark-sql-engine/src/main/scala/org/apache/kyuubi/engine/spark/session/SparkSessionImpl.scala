@@ -127,8 +127,8 @@ class SparkSessionImpl(
       handle)
   }
 
-  val sessionRunTime = new AtomicLong(0)
-  val sessionCpuTime = new AtomicLong(0)
+  private val sessionRunTime = new AtomicLong(0)
+  private val sessionCpuTime = new AtomicLong(0)
 
   def increaseRunTime(time: Long): Unit = {
     sessionRunTime.getAndAdd(time)

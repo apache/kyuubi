@@ -63,8 +63,12 @@ class SQLOperationListener(
       None
     }
 
-  val operationRunTime = new AtomicLong(0)
-  val operationCpuTime = new AtomicLong(0)
+  private val operationRunTime = new AtomicLong(0)
+  private val operationCpuTime = new AtomicLong(0)
+
+  def getOperationRunTime: Long = operationRunTime.get()
+
+  def getOperationCpuTime: Long = operationCpuTime.get()
 
   def getExecutionId: Option[Long] = executionId
 
