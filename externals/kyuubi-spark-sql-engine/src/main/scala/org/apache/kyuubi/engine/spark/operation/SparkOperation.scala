@@ -25,7 +25,7 @@ import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
-import org.apache.spark.ui.SparkUIUtilsHelper.formatDurationVerbose
+import org.apache.spark.ui.SparkUIUtilsHelper.formatDuration
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -133,8 +133,8 @@ abstract class SparkOperation(session: Session)
       if (OperationState.isTerminal(newState)) {
         operationListener.foreach(l => {
           info(s"statementId=${statementId}, " +
-            s"operationRunTime=${formatDurationVerbose(l.getOperationRunTime)}, " +
-            s"operationCpuTime=${formatDurationVerbose(l.getOperationCpuTime / 1000000)}")
+            s"operationRunTime=${formatDuration(l.getOperationRunTime)}, " +
+            s"operationCpuTime=${formatDuration(l.getOperationCpuTime / 1000000)}")
           session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.getOperationRunTime)
           session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.getOperationCpuTime)
         })

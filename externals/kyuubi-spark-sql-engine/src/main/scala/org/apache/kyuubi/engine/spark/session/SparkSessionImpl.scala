@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.ui.SparkUIUtilsHelper.formatDurationVerbose
+import org.apache.spark.ui.SparkUIUtilsHelper.formatDuration
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
@@ -116,8 +116,8 @@ class SparkSessionImpl(
 
   override def close(): Unit = {
     info(s"sessionId=${sessionEvent.sessionId}, " +
-      s"sessionRunTime=${formatDurationVerbose(sessionRunTime.get())}, " +
-      s"sessionCpuTime=${formatDurationVerbose(sessionCpuTime.get() / 1000000)}")
+      s"sessionRunTime=${formatDuration(sessionRunTime.get())}, " +
+      s"sessionCpuTime=${formatDuration(sessionCpuTime.get() / 1000000)}")
     sessionEvent.endTime = System.currentTimeMillis()
     sessionEvent.sessionRunTime = sessionRunTime.get()
     sessionEvent.sessionCpuTime = sessionCpuTime.get()

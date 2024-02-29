@@ -23,8 +23,7 @@ package org.apache.spark.ui
  */
 object SparkUIUtilsHelper {
 
-  /** Generate a verbose human-readable string representing a duration such as "5 second 35 ms" */
-  def formatDurationVerbose(ms: Long): String = {
-    UIUtils.formatDurationVerbose(ms)
+  def formatDuration(ms: Long): String = {
+    UIUtils.formatDuration(ms)
   }
 }
