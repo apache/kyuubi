@@ -46,6 +46,8 @@ class SparkSessionImpl(
 
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+  private val sessionRunTime = new AtomicLong(0)
+  private val sessionCpuTime = new AtomicLong(0)
 
   private def setModifiableConfig(key: String, value: String): Unit = {
     try {
@@ -126,9 +128,6 @@ class SparkSessionImpl(
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closePythonProcess(
       handle)
   }
-
-  private val sessionRunTime = new AtomicLong(0)
-  private val sessionCpuTime = new AtomicLong(0)
 
   def increaseRunTime(time: Long): Unit = {
     sessionRunTime.getAndAdd(time)

@@ -128,15 +128,15 @@ abstract class SparkOperation(session: Session)
       EventBus.post(SparkOperationEvent(
         this,
         operationListener.flatMap(_.getExecutionId),
-        operationListener.map(_.operationRunTime.get()),
-        operationListener.map(_.operationCpuTime.get())))
+        operationListener.map(_.getOperationRunTime),
+        operationListener.map(_.getOperationCpuTime)))
       if (OperationState.isTerminal(newState)) {
         operationListener.foreach(l => {
           info(s"statementId=${statementId}, " +
-            s"operationRunTime=${formatDurationVerbose(l.operationRunTime.get())}, " +
-            s"operationCpuTime=${formatDurationVerbose(l.operationCpuTime.get() / 1000000)}")
-          session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.operationRunTime.get())
-          session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.operationCpuTime.get())
+            s"operationRunTime=${formatDurationVerbose(l.getOperationRunTime)}, " +
+            s"operationCpuTime=${formatDurationVerbose(l.getOperationCpuTime / 1000000)}")
+          session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.getOperationRunTime)
+          session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.getOperationCpuTime)
         })
       }
     }
