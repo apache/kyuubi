@@ -31,10 +31,11 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars._
 import org.apache.hadoop.hive.metastore.{HiveMetaException, HiveMetaStore}
-import org.apache.hadoop.hive.metastore.security.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
+import org.apache.hadoop.hive.metastore.security.{HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.authorize.ProxyUsers
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.thrift.TProcessor
 import org.apache.thrift.protocol.TProtocol
 import org.scalatest.Assertions._
@@ -44,6 +45,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KerberizedTestHelper, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.LocalMetaServer.defaultHiveConf
+import org.apache.kyuubi.shaded.hive.metastore.security.DelegationTokenIdentifier
 
 class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
 
@@ -118,7 +120,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       assert(aliasAndToken._2 != null)
 
       val token = aliasAndToken._2
-      val tokenIdent = token.decodeIdentifier().asInstanceOf[DelegationTokenIdentifier]
+      val tokenIdent = token.decodeIdentifier().asInstanceOf[AbstractDelegationTokenIdentifier]
       assertResult(DelegationTokenIdentifier.HIVE_DELEGATION_KIND)(token.getKind)
       assertResult(new Text(owner))(tokenIdent.getOwner)
       val currentUserName = UserGroupInformation.getCurrentUser.getUserName
