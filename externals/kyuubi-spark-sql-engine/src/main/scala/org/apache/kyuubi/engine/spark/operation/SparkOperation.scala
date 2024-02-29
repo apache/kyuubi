@@ -25,12 +25,12 @@ import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
+import org.apache.spark.ui.SparkUIUtilsHelper.formatDurationVerbose
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
@@ -133,8 +133,8 @@ abstract class SparkOperation(session: Session)
       if (OperationState.isTerminal(newState)) {
         operationListener.foreach(l => {
           info(s"statementId=${statementId}, " +
-            s"operationRunTime=${KyuubiSparkUtil.formatDuration(l.operationRunTime.get())}, " +
-            s"operationCpuTime=${KyuubiSparkUtil.formatDurationNano(l.operationCpuTime.get())}")
+            s"operationRunTime=${formatDurationVerbose(l.operationRunTime.get())}, " +
+            s"operationCpuTime=${formatDurationVerbose(l.operationCpuTime.get() / 1000000)}")
           session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.operationRunTime.get())
           session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.operationCpuTime.get())
         })

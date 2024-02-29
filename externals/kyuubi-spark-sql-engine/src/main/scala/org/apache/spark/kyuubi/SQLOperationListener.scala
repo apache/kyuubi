@@ -26,11 +26,11 @@ import scala.collection.JavaConverters._
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
+import org.apache.spark.ui.UIUtils.formatDurationVerbose
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SQL_EXECUTION_ID_KEY}
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
@@ -148,8 +148,8 @@ class SQLOperationListener(
     val taskMetrics = stageInfo.taskMetrics
     if (taskMetrics != null) {
       info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
-        s"stageRunTime=${KyuubiSparkUtil.formatDuration(taskMetrics.executorRunTime)}, " +
-        s"stageCpuTime=${KyuubiSparkUtil.formatDurationNano(taskMetrics.executorCpuTime)}")
+        s"stageRunTime=${formatDurationVerbose(taskMetrics.executorRunTime)}, " +
+        s"stageCpuTime=${formatDurationVerbose(taskMetrics.executorCpuTime / 1000000)}")
       operationRunTime.getAndAdd(taskMetrics.executorRunTime)
       operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
     }
