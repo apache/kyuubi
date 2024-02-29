@@ -402,7 +402,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Start Time", true, None),
           ("Finish Time", true, None),
           ("Duration", true, None),
-          ("Cpu Time", true, None),
+          ("CPU Time", true, None),
           ("Total Statements", true, None))
 
       headerStatRow(
@@ -486,7 +486,7 @@ private class StatementStatsPagedTable(
         ("Create Time", true, None),
         ("Finish Time", true, None),
         ("Duration", true, None),
-        ("Cpu Time", true, None),
+        ("CPU Time", true, None),
         ("Statement", true, None),
         ("State", true, None),
         ("Query Details", true, None),
@@ -596,7 +596,7 @@ private class SessionStatsTableDataSource(
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
-      case "Cpu Time" => Ordering.by(_.sessionCpuTime)
+      case "CPU Time" => Ordering.by(_.sessionCpuTime)
       case "Total Statements" => Ordering.by(_.totalOperations)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
@@ -632,7 +632,7 @@ private class StatementStatsTableDataSource(
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
-      case "Cpu Time" => Ordering.by(_.operationCpuTime.getOrElse(0L))
+      case "CPU Time" => Ordering.by(_.operationCpuTime.getOrElse(0L))
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)
       case "Query Details" => Ordering.by(_.executionId)
