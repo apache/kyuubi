@@ -80,7 +80,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(executeStmtResp.getOperationHandle === null)
       val errMsg = executeStmtResp.getStatus.getErrorMessage
       assert(errMsg.contains("Caused by: java.net.SocketException: Connection reset") ||
-        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
+        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
+        errMsg.contains("Socket is closed by peer"))
     }
   }
 
