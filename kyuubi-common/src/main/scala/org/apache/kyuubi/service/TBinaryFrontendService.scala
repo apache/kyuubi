@@ -101,8 +101,6 @@ abstract class TBinaryFrontendService(name: String)
         }
       _actualPort = tServerSocket.getServerSocket.getLocalPort
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
-      val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
       val args = new TThreadPoolServer.Args(tServerSocket)
         .processorFactory(tProcFactory)
         .transportFactory(transFactory)
