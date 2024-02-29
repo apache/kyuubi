@@ -24,8 +24,4 @@ class PostgreSQLConnectionProvider extends JdbcConnectionProvider {
 
   override val driverClass: String = "org.postgresql.Driver"
 
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
-
 }

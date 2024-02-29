@@ -14,13 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.impala
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class PhoenixConnectionProvider extends JdbcConnectionProvider {
+class SessionSuite extends WithImpalaEngine with HiveJDBCTestHelper {
 
-  override val name: String = classOf[PhoenixConnectionProvider].getName
+  test("impala - test session") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery(
+        "select '1' as id")
+      val metadata = resultSet.getMetaData
+      for (i <- 1 to metadata.getColumnCount) {
+        assert(metadata.getColumnName(i) == "id")
+      }
+      while (resultSet.next()) {
+        val id = resultSet.getObject(1)
+        assert(id == "1")
+      }
+    }
+  }
 
-  override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
+  override protected def jdbcUrl: String = jdbcConnectionUrl
 }

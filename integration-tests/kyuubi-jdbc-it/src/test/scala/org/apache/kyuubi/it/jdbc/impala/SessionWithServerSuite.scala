@@ -14,13 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+package org.apache.kyuubi.it.jdbc.impala
 
-class PhoenixConnectionProvider extends JdbcConnectionProvider {
+import org.apache.kyuubi.engine.jdbc.impala.SessionSuite
 
-  override val name: String = classOf[PhoenixConnectionProvider].getName
+class SessionWithServerSuite extends SessionSuite
+  with WithKyuubiServerAndImpalaContainer {
 
-  override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
+  override protected def jdbcUrl: String = getJdbcUrl
+
 }

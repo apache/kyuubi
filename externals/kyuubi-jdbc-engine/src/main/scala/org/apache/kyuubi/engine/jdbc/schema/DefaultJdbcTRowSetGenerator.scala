@@ -33,9 +33,11 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
       case INTEGER => toIntegerTColumn(rows, ordinal)
       case BIGINT => toBigIntTColumn(rows, ordinal)
       case REAL => toRealTColumn(rows, ordinal)
+      case FLOAT => toFloatTColumn(rows, ordinal)
       case DOUBLE => toDoubleTColumn(rows, ordinal)
       case CHAR => toCharTColumn(rows, ordinal)
       case VARCHAR => toVarcharTColumn(rows, ordinal)
+      case BOOLEAN => toBooleanTColumn(rows, ordinal)
       case _ => toDefaultTColumn(rows, ordinal, sqlType)
     }
 
@@ -47,9 +49,11 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
       case INTEGER => toIntegerTColumnValue(row, ordinal)
       case BIGINT => toBigIntTColumnValue(row, ordinal)
       case REAL => toRealTColumnValue(row, ordinal)
+      case FLOAT => toFloatTColumnValue(row, ordinal)
       case DOUBLE => toDoubleTColumnValue(row, ordinal)
       case CHAR => toCharTColumnValue(row, ordinal)
       case VARCHAR => toVarcharTColumnValue(row, ordinal)
+      case BOOLEAN => toBooleanTColumnValue(row, ordinal)
       case otherType => toDefaultTColumnValue(row, ordinal, otherType)
     }
   }
@@ -61,6 +65,9 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
       convertFunc = (row, ordinal) => toHiveString(row(ordinal), sqlType))
 
   def toBitTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    asBooleanTColumn(rows, ordinal)
+
+  def toBooleanTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     asBooleanTColumn(rows, ordinal)
 
   def toTinyIntTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
@@ -78,6 +85,9 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
   def toRealTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     asFloatTColumn(rows, ordinal)
 
+  def toFloatTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    asFloatTColumn(rows, ordinal)
+
   def toDoubleTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
     asDoubleTColumn(rows, ordinal)
 
@@ -90,6 +100,9 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
   // ==========================================================
 
   def toBitTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    asBooleanTColumnValue(row, ordinal)
+
+  def toBooleanTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     asBooleanTColumnValue(row, ordinal)
 
   def toTinyIntTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
@@ -105,6 +118,9 @@ class DefaultJdbcTRowSetGenerator extends JdbcTRowSetGenerator {
     asLongTColumnValue(row, ordinal)
 
   def toRealTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    asFloatTColumnValue(row, ordinal)
+
+  def toFloatTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
     asFloatTColumnValue(row, ordinal)
 
   def toDoubleTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =

@@ -16,6 +16,7 @@
 #
 
 org.apache.kyuubi.engine.jdbc.dialect.DorisDialect
+org.apache.kyuubi.engine.jdbc.dialect.ImpalaDialect
 org.apache.kyuubi.engine.jdbc.dialect.MySQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.PhoenixDialect
 org.apache.kyuubi.engine.jdbc.dialect.PostgreSQLDialect

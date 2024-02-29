@@ -14,13 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.impala
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 
-class PhoenixConnectionProvider extends JdbcConnectionProvider {
+class ImpalaTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
+  override def toFloatTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    asDoubleTColumn(rows, ordinal)
 
-  override val name: String = classOf[PhoenixConnectionProvider].getName
+  override def toFloatTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    asDoubleTColumnValue(row, ordinal)
 
-  override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
+  override def toRealTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn =
+    asDoubleTColumn(rows, ordinal)
+
+  override def toRealTColumnValue(row: Seq[_], ordinal: Int): TColumnValue =
+    asDoubleTColumnValue(row, ordinal)
 }

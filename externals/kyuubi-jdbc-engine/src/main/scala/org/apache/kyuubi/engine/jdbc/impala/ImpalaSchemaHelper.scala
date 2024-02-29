@@ -14,13 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.phoenix
+package org.apache.kyuubi.engine.jdbc.impala
 
-import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
+import org.apache.kyuubi.engine.jdbc.schema.SchemaHelper
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId
 
-class PhoenixConnectionProvider extends JdbcConnectionProvider {
+class ImpalaSchemaHelper extends SchemaHelper {
+  override protected def floatToTTypeId: TTypeId = {
+    TTypeId.DOUBLE_TYPE
+  }
 
-  override val name: String = classOf[PhoenixConnectionProvider].getName
-
-  override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
+  override protected def realToTTypeId: TTypeId = {
+    TTypeId.DOUBLE_TYPE
+  }
 }

@@ -76,8 +76,9 @@ class ExecuteStatement(
             })
           } else {
             warn(s"Execute in full collect mode")
-            jdbcStatement.closeOnCompletion()
-            new ArrayFetchIterator(resultSetWrapper.toArray())
+            val arrayIter = new ArrayFetchIterator(resultSetWrapper.toArray())
+            jdbcStatement.close()
+            arrayIter
           }
       } else {
         schema = Schema(List[Column](
