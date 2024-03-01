@@ -95,7 +95,7 @@ class TrinoSessionImpl(
 
     ClientSession.builder()
       .server(URI.create(connectionUrl))
-      .principal(Optional.of(sessionUser))
+      .principal(Optional.of(user))
       .source("kyuubi")
       .catalog(catalogName)
       .schema(databaseName)
