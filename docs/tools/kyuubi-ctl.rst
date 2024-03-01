@@ -112,7 +112,7 @@ Create server
 ***********
 Expose Kyuubi server instance to another domain.
 
-First read ``kyuubi.ha.zookeeper.namespace`` in ``conf/kyuubi-defaults.conf``, if there are server instances under this namespace, register them in the new namespace specified by the ``--namespace`` parameter.
+First read ``kyuubi.ha.namespace`` in ``conf/kyuubi-defaults.conf``, if there are server instances under this namespace, register them in the new namespace specified by the ``--namespace`` parameter.
 
 .. code-block:: bash
 
