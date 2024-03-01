@@ -149,14 +149,6 @@ class SQLOperationListener(
     val stageInfo = stageCompleted.stageInfo
     val stageId = stageInfo.stageId
     val stageAttempt = SparkStageAttempt(stageInfo.stageId, stageInfo.attemptNumber())
-    val taskMetrics = stageInfo.taskMetrics
-    if (taskMetrics != null) {
-      info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
-        s"stageRunTime=${formatDuration(taskMetrics.executorRunTime)}, " +
-        s"stageCpuTime=${formatDuration(taskMetrics.executorCpuTime / 1000000)}")
-      operationRunTime.getAndAdd(taskMetrics.executorRunTime)
-      operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
-    }
     activeStages.synchronized {
       if (activeStages.remove(stageAttempt) != null) {
         stageInfo.getStatusString match {
@@ -166,6 +158,14 @@ class SQLOperationListener(
                 jobInfo.numCompleteStages.getAndIncrement()
               }
             }
+        }
+        val taskMetrics = stageInfo.taskMetrics
+        if (taskMetrics != null) {
+          info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
+            s"stageRunTime=${formatDuration(taskMetrics.executorRunTime)}, " +
+            s"stageCpuTime=${formatDuration(taskMetrics.executorCpuTime / 1000000)}")
+          operationRunTime.getAndAdd(taskMetrics.executorRunTime)
+          operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
         }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
