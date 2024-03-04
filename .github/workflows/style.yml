@@ -66,17 +66,14 @@ jobs:
         run: |
           MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
           build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,spark-3.2,tpcds
-          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-1 -Pspark-3.1
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.3
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
           build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-5 -Pspark-3.5
 
       - name: Scalastyle with maven
         id: scalastyle-check
-        # Check with Spark 3.1 profile separately as it use Iceberg 1.3.1 which is not compatible with Spark 3.5+
         run: |
           build/mvn scalastyle:check ${{ matrix.profiles }}        
-          build/mvn scalastyle:check -Pflink-provided,hive-provided,spark-provided,spark-3.1
       - name: Print scalastyle error report
         if: failure() && steps.scalastyle-check.outcome != 'success'
         run: >-
@@ -90,7 +87,7 @@ jobs:
         run: |
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
-          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python,spark-3.1
+          build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
       - name: setup npm
         uses: actions/setup-node@v4
         with:

@@ -43,17 +43,19 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
 
 ## Usage
 
-| Kyuubi Spark SQL extension | Supported Spark version(s) | Available since  | EOL | Bundled in Binary release tarball | Maven profile |
-|----------------------------|----------------------------|------------------|-----|-----------------------------------|---------------|
-| kyuubi-extension-spark-3-1 | 3.1.x                      | 1.3.0-incubating | N/A | 1.3.0-incubating                  | spark-3.1     |
-| kyuubi-extension-spark-3-2 | 3.2.x                      | 1.4.0-incubating | N/A | 1.4.0-incubating                  | spark-3.2     |
-| kyuubi-extension-spark-3-3 | 3.3.x                      | 1.6.0-incubating | N/A | 1.6.0-incubating                  | spark-3.3     |
+| Kyuubi Spark SQL extension | Supported Spark version(s) | Available since  |  EOL  | Bundled in Binary release tarball | Maven profile |
+|----------------------------|----------------------------|------------------|-------|-----------------------------------|---------------|
+| kyuubi-extension-spark-3-1 | 3.1.x                      | 1.3.0-incubating | 1.8.0 | 1.3.0-incubating                  | spark-3.1     |
+| kyuubi-extension-spark-3-2 | 3.2.x                      | 1.4.0-incubating | N/A   | 1.4.0-incubating                  | spark-3.2     |
+| kyuubi-extension-spark-3-3 | 3.3.x                      | 1.6.0-incubating | N/A   | 1.6.0-incubating                  | spark-3.3     |
+| kyuubi-extension-spark-3-4 | 3.4.x                      | 1.8.0            | N/A   | 1.8.0                             | spark-3.4     |
+| kyuubi-extension-spark-3-4 | 3.5.x                      | 1.8.0            | N/A   | N/A                               | spark-3.5     |
 
 1. Check the matrix that if you are using the supported Spark version, and find the corresponding Kyuubi Spark SQL Extension jar
 2. Get the Kyuubi Spark SQL Extension jar
    1. Each Kyuubi binary release tarball only contains one default version of Kyuubi Spark SQL Extension jar, if you are looking for such version, you can find it under `$KYUUBI_HOME/extension`
    2. All supported versions of Kyuubi Spark SQL Extension jar will be deployed to [Maven Central](https://search.maven.org/search?q=kyuubi-extension-spark)
-   3. If you like, you can compile Kyuubi Spark SQL Extension jar by yourself, please activate the corresponding Maven's profile on you compile command, i.e. you can get Kyuubi Spark SQL Extension jar for Spark 3.1 under `extensions/spark/kyuubi-extension-spark-3-1/target` when compile with `-Pspark-3.1`
+   3. If you like, you can compile Kyuubi Spark SQL Extension jar by yourself, please activate the corresponding Maven's profile on you compile command, i.e. you can get Kyuubi Spark SQL Extension jar for Spark 3.5 under `extensions/spark/kyuubi-extension-spark-3-5/target` when compile with `-Pspark-3.5`
 3. Put the Kyuubi Spark SQL extension jar `kyuubi-extension-spark-*.jar` into `$SPARK_HOME/jars`
 4. Enable `KyuubiSparkSQLExtension`, i.e. add a config into `$SPARK_HOME/conf/spark-defaults.conf`, `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
 

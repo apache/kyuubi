@@ -245,7 +245,7 @@ Error operating EXECUTE_STATEMENT: org.apache.spark.sql.AnalysisException: Can n
 If you get this exception when creating a function, you can check your JDK version.
 You should update JDK to JDK1.8.0_121 and later, since JDK1.8.0_121 fix a security issue [Additional access restrictions for URLClassLoader.newInstance](https://www.oracle.com/java/technologies/javase/8u121-relnotes.html).
 
-### Failed to start Spark 3.1 with error msg 'Cannot modify the value of a Spark config'
+### Failed to start Spark 3.1 or above version with error msg 'Cannot modify the value of a Spark config'
 
 Here is the error message
 
@@ -260,6 +260,6 @@ Caused by: org.apache.spark.sql.AnalysisException: Cannot modify the value of a 
 	... 12 more
 ```
 
-This is because Spark-3.1 will check the config which you set and throw exception if the config is static or used in other module (e.g. yarn/core).
+This is because since Spark 3.1, it will check the config which you set and throw exception if the config is static or used in other module (e.g. yarn/core).
 
 You can add a config `spark.sql.legacy.setCommandRejectsSparkCoreConfs=false` in `spark-defaults.conf` to disable this behavior.
