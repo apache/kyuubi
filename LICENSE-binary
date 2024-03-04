@@ -230,14 +230,6 @@ com.google.guava:failureaccess
 com.google.guava:guava
 org.apache.hadoop:hadoop-client-api
 org.apache.hadoop:hadoop-client-runtime
-org.apache.hive:hive-common
-org.apache.hive:hive-metastore
-org.apache.hive:hive-standalone-metastore
-org.apache.hive:hive-llap-client
-org.apache.hive:hive-serde
-org.apache.hive:hive-service-rpc
-org.apache.hive:hive-shims-0.23
-org.apache.hive:hive-shims-common
 com.google.j2objc:j2objc-annotations
 com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
@@ -270,8 +262,6 @@ org.eclipse.jetty:jetty-servlet
 org.eclipse.jetty:jetty-util-ajax
 org.eclipse.jetty:jetty-util
 org.eclipse.jetty:jetty-proxy
-org.apache.thrift:libfb303
-org.apache.thrift:libthrift
 org.apache.logging.log4j:log4j-1.2-api
 org.apache.logging.log4j:log4j-api
 org.apache.logging.log4j:log4j-core
