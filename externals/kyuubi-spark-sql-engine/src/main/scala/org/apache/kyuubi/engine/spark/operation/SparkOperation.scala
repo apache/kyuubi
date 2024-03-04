@@ -25,6 +25,7 @@ import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.execution.SQLExecution
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
+import org.apache.spark.ui.SparkUIUtilsHelper.formatDuration
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -124,7 +125,20 @@ abstract class SparkOperation(session: Session)
   override protected def setState(newState: OperationState): Unit = {
     super.setState(newState)
     if (eventEnabled) {
-      EventBus.post(SparkOperationEvent(this, operationListener.flatMap(_.getExecutionId)))
+      EventBus.post(SparkOperationEvent(
+        this,
+        operationListener.flatMap(_.getExecutionId),
+        operationListener.map(_.getOperationRunTime),
+        operationListener.map(_.getOperationCpuTime)))
+      if (OperationState.isTerminal(newState)) {
+        operationListener.foreach(l => {
+          info(s"statementId=${statementId}, " +
+            s"operationRunTime=${formatDuration(l.getOperationRunTime)}, " +
+            s"operationCpuTime=${formatDuration(l.getOperationCpuTime / 1000000)}")
+          session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.getOperationRunTime)
+          session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.getOperationCpuTime)
+        })
+      }
     }
   }
 

@@ -19,12 +19,14 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
+import org.apache.spark.ui.UIUtils.formatDuration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
@@ -60,6 +62,13 @@ class SQLOperationListener(
     } else {
       None
     }
+
+  private val operationRunTime = new AtomicLong(0)
+  private val operationCpuTime = new AtomicLong(0)
+
+  def getOperationRunTime: Long = operationRunTime.get()
+
+  def getOperationCpuTime: Long = operationCpuTime.get()
 
   def getExecutionId: Option[Long] = executionId
 
@@ -149,6 +158,14 @@ class SQLOperationListener(
                 jobInfo.numCompleteStages.getAndIncrement()
               }
             }
+        }
+        val taskMetrics = stageInfo.taskMetrics
+        if (taskMetrics != null) {
+          info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
+            s"stageRunTime=${formatDuration(taskMetrics.executorRunTime)}, " +
+            s"stageCpuTime=${formatDuration(taskMetrics.executorCpuTime / 1000000)}")
+          operationRunTime.getAndAdd(taskMetrics.executorRunTime)
+          operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
         }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
