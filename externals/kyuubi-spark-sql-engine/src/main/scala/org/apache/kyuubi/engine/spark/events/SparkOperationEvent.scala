@@ -46,6 +46,10 @@ import org.apache.kyuubi.events.KyuubiEvent
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
  * @param executionId the query execution id of this operation
+ * @param operationRunTime total time of running the operation (including fetching shuffle data)
+ *                         in milliseconds
+ * @param operationCpuTime total CPU time of running the operation (including fetching shuffle data)
+ *                         in nanoseconds
  */
 case class SparkOperationEvent(
     @KVIndexParam statementId: String,
