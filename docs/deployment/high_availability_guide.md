@@ -48,21 +48,21 @@ Using multiple Kyuubi service units with load balancing instead of a single unit
 
 When applying HA to Kyuubi deployment, we need to be aware of the below two thing basically,
 
-- `kyuubi.ha.zookeeper.quorum` - the external zookeeper cluster address for deploy a `k.i.`
-- `kyuubi.ha.zookeeper.namespace` - the root directory, a.k.a. the ServerSpace for deploy a `k.i.`
+- `kyuubi.ha.addresses` - the external zookeeper cluster address for deploy a `k.i.`
+- `kyuubi.ha.namespace` - the root directory, a.k.a. the ServerSpace for deploy a `k.i.`
 
 For more configurations, please see the HA section of [Introduction to the Kyuubi Configurations System](./settings.html#ha)
 
 ### Pseudo mode
 
-When `kyuubi.ha.zookeeper.quorum` is not configured, a `k.i.` will start an embedded zookeeper service and expose the address of itself there.
+When `kyuubi.ha.addresses` is not configured, a `k.i.` will start an embedded zookeeper service and expose the address of itself there.
 In this pseduo mode, the `k.i.` can be connected by clients through both raw ip address and zk quorum + namespace.
 But it doesn't have any availability to being highly available.
 
 ### Production mode
 
-For production deployment purpose, an external zookeeper cluster is required for `kyuubi.ha.zookeeper.quorum`.
-In this mode, multiple `k.i.`s can be registered to the same ServerSpace configured by `kyuubi.ha.zookeeper.namespace` and serve together.
+For production deployment purpose, an external zookeeper cluster is required for `kyuubi.ha.addresses`.
+In this mode, multiple `k.i.`s can be registered to the same ServerSpace configured by `kyuubi.ha.namespace` and serve together.
 
 ## Client-side Usage
 

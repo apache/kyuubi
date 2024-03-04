@@ -177,7 +177,7 @@ Add the following content:
    kyuubi.frontend.bind.host       <YOUR_HOST>
    kyuubi.frontend.bind.port       10009
    # If you use your own zk cluster, you need to configure your zk host port.
-   # kyuubi.ha.zookeeper.quorum    <YOUR_HOST>:2181
+   # kyuubi.ha.addresses    <YOUR_HOST>:2181
 
 Start Kyuubi
 ************
