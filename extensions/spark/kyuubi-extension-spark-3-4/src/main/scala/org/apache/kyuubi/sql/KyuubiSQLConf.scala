@@ -18,7 +18,6 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.network.util.ByteUnit
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
 object KyuubiSQLConf {
