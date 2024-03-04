@@ -402,6 +402,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Start Time", true, None),
           ("Finish Time", true, None),
           ("Duration", true, None),
+          ("Run Time", true, None),
           ("CPU Time", true, None),
           ("Total Statements", true, None))
 
@@ -429,6 +430,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
         <td> {formatDuration(session.duration)} </td>
+        <td> {formatDuration(session.sessionRunTime)} </td>
         <td> {formatDuration(session.sessionCpuTime / 1000000)} </td>
         <td> {session.totalOperations} </td>
       </tr>
@@ -486,6 +488,7 @@ private class StatementStatsPagedTable(
         ("Create Time", true, None),
         ("Finish Time", true, None),
         ("Duration", true, None),
+        ("Run Time", true, None),
         ("CPU Time", true, None),
         ("Statement", true, None),
         ("State", true, None),
@@ -526,6 +529,7 @@ private class StatementStatsPagedTable(
       <td >
         {formatDuration(event.duration)}
       </td>
+      <td> {formatDuration(event.operationRunTime.getOrElse(0L))} </td>
       <td> {formatDuration(event.operationCpuTime.getOrElse(0L) / 1000000)} </td>
       <td>
         <span class="description-input">
@@ -596,6 +600,7 @@ private class SessionStatsTableDataSource(
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
+      case "Run Time" => Ordering.by(_.sessionRunTime)
       case "CPU Time" => Ordering.by(_.sessionCpuTime)
       case "Total Statements" => Ordering.by(_.totalOperations)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
@@ -632,6 +637,7 @@ private class StatementStatsTableDataSource(
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
+      case "Run Time" => Ordering.by(_.operationRunTime.getOrElse(0L))
       case "CPU Time" => Ordering.by(_.operationCpuTime.getOrElse(0L))
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)
