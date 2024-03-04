@@ -30,16 +30,6 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
-  val INSERT_REPARTITION_NUM =
-    buildConf("spark.sql.optimizer.insertRepartitionNum")
-      .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS.key}. " +
-        "If AQE is enabled, the default value is none that means depend on AQE. " +
-        "This config is used for Spark 3.1 only.")
-      .version("1.2.0")
-      .intConf
-      .createOptional
-
   val DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM =
     buildConf("spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum")
       .doc(s"The partition number of each dynamic partition if " +
