@@ -36,6 +36,10 @@ import org.apache.kyuubi.events.KyuubiEvent
  * @param ip Client IP address
  * @param serverIp Kyuubi Server IP address
  * @param totalOperations how many queries and meta calls
+ * @param sessionRunTime total time of running the session (including fetching shuffle data)
+ *                       in milliseconds
+ * @param sessionCpuTime total CPU time of running the session (including fetching shuffle data)
+ *                       in nanoseconds
  */
 case class SessionEvent(
     @KVIndexParam sessionId: String,
