@@ -21,6 +21,8 @@
 
 * Since Kyuubi 1.9.0, `kyuubi.session.conf.advisor` can be set as a sequence, Kyuubi supported chaining SessionConfAdvisors.
 * Since Kyuubi 1.9.0, the support of Derby is removal for Kyuubi metastore.
+* Since Kyuubi 1.9.0, the support of Spark SQL engine for Spark 3.1 is deprecated, and will be removed in the future.
+* Since Kyuubi 1.9.0, the support of Spark extensions for Spark 3.1 is removed, please use Spark 3.2 or higher versions.
 
 ## Upgrading from Kyuubi 1.8.0 to 1.8.1
 
