@@ -29,17 +29,6 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
-  val DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM =
-    buildConf("spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum")
-      .doc(s"The partition number of each dynamic partition if " +
-        s"${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        "We will repartition by dynamic partition columns to reduce the small file but that " +
-        "can cause data skew. This config is to extend the partition of dynamic " +
-        "partition column to avoid skew but may generate some small files.")
-      .version("1.2.0")
-      .intConf
-      .createWithDefault(100)
-
   val FORCE_SHUFFLE_BEFORE_JOIN =
     buildConf("spark.sql.optimizer.forceShuffleBeforeJoin.enabled")
       .doc("Ensure shuffle node exists before shuffled join (shj and smj) to make AQE " +
