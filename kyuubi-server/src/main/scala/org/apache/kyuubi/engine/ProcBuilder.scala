@@ -307,7 +307,7 @@ trait ProcBuilder {
    *
    * Take Spark as an example, we first lookup the SPARK_HOME from user specified environments.
    * If not found, we assume that it is a dev environment and lookup the kyuubi-download's output
-   * directly. If not found again, a `KyuubiSQLException` will be raised.
+   * directory. If not found again, a `KyuubiSQLException` will be raised.
    * In summarize, we walk through
    *   `kyuubi.engineEnv.SPARK_HOME` ->
    *   System.env("SPARK_HOME") ->
