@@ -109,9 +109,6 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
     plan
   }
 
-  /**
-   * Currently formula depend on AQE in Spark 3.1.1, not sure it can work in future.
-   */
   private def isFinalStage(plan: SparkPlan): Boolean = {
     var shuffleNum = 0
     var broadcastNum = 0

@@ -66,7 +66,7 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
 
   /**
    * Forked from Apache Spark's org.apache.spark.sql.catalyst.expressions.PredicateHelper
-   * The `PredicateHelper.isLikelySelective()` is available since Spark-3.3, forked for Spark
+   * The `PredicateHelper.isLikelySelective()` is available since Spark 3.3, forked for Spark
    * that is lower than 3.3.
    *
    * Returns whether an expression is likely to be selective

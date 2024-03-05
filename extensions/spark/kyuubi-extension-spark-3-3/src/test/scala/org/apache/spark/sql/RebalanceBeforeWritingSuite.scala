@@ -156,7 +156,6 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
     withSQLConf(
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
-      KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM.key -> "2",
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       Seq("USING PARQUET", "").foreach { storage =>
         withTable("tmp1") {
