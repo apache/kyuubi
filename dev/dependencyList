@@ -81,7 +81,7 @@ jakarta.inject/2.6.1//jakarta.inject-2.6.1.jar
 jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
 jakarta.validation-api/2.0.2//jakarta.validation-api-2.0.2.jar
 jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
-jakarta.xml.bind-api/2.3.2//jakarta.xml.bind-api-2.3.2.jar
+jakarta.xml.bind-api/2.3.3//jakarta.xml.bind-api-2.3.3.jar
 javassist/3.25.0-GA//javassist-3.25.0-GA.jar
 jcl-over-slf4j/1.7.36//jcl-over-slf4j-1.7.36.jar
 jersey-client/2.39.1//jersey-client-2.39.1.jar
