@@ -135,8 +135,9 @@ abstract class SparkOperation(session: Session)
           info(s"statementId=${statementId}, " +
             s"operationRunTime=${formatDuration(l.getOperationRunTime)}, " +
             s"operationCpuTime=${formatDuration(l.getOperationCpuTime / 1000000)}")
-          session.asInstanceOf[SparkSessionImpl].increaseRunTime(l.getOperationRunTime)
-          session.asInstanceOf[SparkSessionImpl].increaseCpuTime(l.getOperationCpuTime)
+          session.asInstanceOf[SparkSessionImpl].increaseRunAndCpuTime(
+            l.getOperationRunTime,
+            l.getOperationCpuTime)
         })
       }
     }
