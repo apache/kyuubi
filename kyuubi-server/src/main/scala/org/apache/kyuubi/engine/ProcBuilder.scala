@@ -25,6 +25,7 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.JavaConverters._
 
 import com.google.common.collect.EvictingQueue
+import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi._
@@ -306,7 +307,7 @@ trait ProcBuilder {
    *
    * Take Spark as an example, we first lookup the SPARK_HOME from user specified environments.
    * If not found, we assume that it is a dev environment and lookup the kyuubi-download's output
-   * directly. If not found again, a `KyuubiSQLException` will be raised.
+   * directory. If not found again, a `KyuubiSQLException` will be raised.
    * In summarize, we walk through
    *   `kyuubi.engineEnv.SPARK_HOME` ->
    *   System.env("SPARK_HOME") ->
@@ -319,7 +320,7 @@ trait ProcBuilder {
   protected def getEngineHome(shortName: String): String = {
     val homeKey = s"${shortName.toUpperCase}_HOME"
     // 1. get from env, e.g. SPARK_HOME, FLINK_HOME
-    env.get(homeKey)
+    env.get(homeKey).filter(StringUtils.isNotBlank)
       .orElse {
         // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
         env.get(KYUUBI_HOME).flatMap { p =>
