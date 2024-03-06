@@ -438,11 +438,6 @@
                 <artifactId>spark-core_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
-                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
                     <!--  Use log4j2 -->
                     <exclusion>
                         <groupId>log4j</groupId>
@@ -476,13 +471,6 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
-                <exclusions>
-                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-common</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -491,11 +479,6 @@
                 <version>${spark.version}</version>
                 <type>test-jar</type>
                 <exclusions>
-                    <!-- Use Hadoop Shaded Client to gain more clean transitive dependencies -->
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>hadoop-client</artifactId>
-                    </exclusion>
                     <!--  Use log4j2 -->
                     <exclusion>
                         <groupId>log4j</groupId>
@@ -1221,10 +1204,8 @@
             </dependency>
 
             <!--
-              Required for JDK 11. Previous as a transitive dependency of hadoop-client,
-              since SPARK-33212(will be included in Apache Spark 3.2), Apache Spark moved
-              to Hadoop Shaded Client, and Kyuubi always uses Hadoop Shaded Client, thus
-              we need explicitly add this dependency.
+              Required by Hadoop on JDK 11 or later. Could be omitted on modules already
+              pull Spark dependencies as it is already a transitive dependency of spark-core.
               -->
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
@@ -1233,8 +1214,8 @@
             </dependency>
 
             <!--
-              Required for Yarn Mini Cluster on JDK 11, it is already a transitive dependency
-              of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
+              Required by YARN Mini Cluster on JDK 11 or later. Could be omitted on modules already
+              pull Spark dependencies as it is already a transitive dependency of spark-core.
               -->
             <dependency>
                 <groupId>jakarta.activation</groupId>
@@ -1242,7 +1223,7 @@
                 <version>${jakarta.activation.version}</version>
             </dependency>
 
-            <!-- Zookeeper Cli required -->
+            <!-- Required by Zookeeper Cli and Beeline -->
             <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
@@ -1291,12 +1272,6 @@
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
                 <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>jakarta.xml.bind</groupId>
-                        <artifactId>jakarta.xml.bind-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
