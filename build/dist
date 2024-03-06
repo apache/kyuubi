@@ -233,8 +233,7 @@ if [[ "$HIVE_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Phive-provided"
 fi
 
-# Before start build, clean up the extension spark jars,
-# to avoid include unspecified version
+# clean up all versions of Spark extension, to avoid collecting outdated artifacts
 SPARK_EXTENSION_VERSIONS=('3-2' '3-3' '3-4' '3-5')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
