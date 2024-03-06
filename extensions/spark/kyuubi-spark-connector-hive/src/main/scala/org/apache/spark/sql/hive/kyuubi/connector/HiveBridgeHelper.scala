@@ -25,14 +25,13 @@ import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, Transform}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
-import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
+import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructField, StructType}
 
 object HiveBridgeHelper {
   type HiveSessionCatalog = org.apache.spark.sql.hive.HiveSessionCatalog
   type HiveMetastoreCatalog = org.apache.spark.sql.hive.HiveMetastoreCatalog
   type HiveExternalCatalog = org.apache.spark.sql.hive.HiveExternalCatalog
   type NextIterator[U] = org.apache.spark.util.NextIterator[U]
-  type FileSinkDesc = org.apache.spark.sql.hive.HiveShim.ShimFileSinkDesc
   type HiveVersion = org.apache.spark.sql.hive.client.HiveVersion
   type InsertIntoHiveTable = org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
@@ -95,9 +94,10 @@ object HiveBridgeHelper {
       }
     }
   }
-
   implicit class StructTypeHelper(structType: StructType) {
-    def toAttributes: Seq[AttributeReference] = structType.toAttributes
+    private def toAttribute(field: StructField): AttributeReference =
+      AttributeReference(field.name, field.dataType, field.nullable, field.metadata)()
+    def toAttributes: Seq[AttributeReference] = structType.map(toAttribute)
   }
 
   def toSQLValue(v: Any, t: DataType): String = Literal.create(v, t) match {

@@ -36,12 +36,14 @@ import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, Write
 import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, WriteJobDescription}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
-import org.apache.spark.sql.hive.execution.{HiveFileFormat, HiveOptions}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{FileSinkDesc, HiveClientImpl, StructTypeHelper}
+import org.apache.spark.sql.hive.execution.HiveOptions
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, StructTypeHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
+import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.getHiveFileFormat
+import org.apache.kyuubi.spark.connector.hive.write.HiveWriteHelper.getPartitionSpec
 
 case class HiveWrite(
     sparkSession: SparkSession,
@@ -75,7 +77,7 @@ case class HiveWrite(
   override def toBatch: BatchWrite = {
     val tmpLocation = HiveWriteHelper.getExternalTmpPath(externalCatalog, hadoopConf, tableLocation)
 
-    val fileSinkConf = new FileSinkDesc(tmpLocation.toString, tableDesc, false)
+    val fileSinkConf = new FileSinkDesc(tmpLocation, tableDesc, false)
     handleCompression(fileSinkConf, hadoopConf)
 
     val committer = FileCommitProtocol.instantiate(
@@ -118,7 +120,7 @@ case class HiveWrite(
       pathName: String,
       customPartitionLocations: Map[TablePartitionSpec, String],
       options: Map[String, String]): WriteJobDescription = {
-    val hiveFileFormat = new HiveFileFormat(fileSinkConf)
+    val hiveFileFormat = getHiveFileFormat(fileSinkConf)
     val dataSchema = StructType(info.schema().fields.take(dataColumns.length))
     val outputWriterFactory = hiveFileFormat.prepareWrite(sparkSession, job, options, dataSchema)
     val metrics: Map[String, SQLMetric] = BasicWriteJobStatsTracker.metrics
