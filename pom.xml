@@ -1204,8 +1204,17 @@
             </dependency>
 
             <!--
-              Required by YARN Mini Cluster on JDK 11 or later, it should be added to test scope
-              to modules that use YARN Mini Cluster for testing. Could be omitted on modules already
+              Required by Hadoop on JDK 11 or later. Could be omitted on modules already
+              pull Spark dependencies as it is already a transitive dependency of spark-core.
+              -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta.xml-bind.version}</version>
+            </dependency>
+
+            <!--
+              Required by YARN Mini Cluster on JDK 11 or later. Could be omitted on modules already
               pull Spark dependencies as it is already a transitive dependency of spark-core.
               -->
             <dependency>

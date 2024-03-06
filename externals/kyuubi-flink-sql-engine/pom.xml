@@ -163,6 +163,12 @@
             <artifactId>jakarta.activation-api</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
