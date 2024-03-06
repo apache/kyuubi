@@ -1223,7 +1223,7 @@
                 <version>${jakarta.activation.version}</version>
             </dependency>
 
-            <!-- Required Zookeeper Cli and Beeline -->
+            <!-- Required by Zookeeper Cli and Beeline -->
             <dependency>
                 <groupId>jline</groupId>
                 <artifactId>jline</artifactId>
