@@ -86,10 +86,10 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hive.beeline.cli.CliOptionsProcessor;
 import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
 import org.apache.hive.beeline.hs2connection.BeelineSiteParseException;
@@ -99,9 +99,9 @@ import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
 import org.apache.hive.beeline.hs2connection.HiveSiteHS2ConnectionFileParser;
 import org.apache.hive.beeline.hs2connection.UserHS2ConnectionFileParser;
 import org.apache.hive.common.util.ShutdownHookManager;
-import org.apache.hive.jdbc.JdbcUriParseException;
-import org.apache.hive.jdbc.Utils;
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.JdbcUriParseException;
+import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 
 /**
@@ -1178,7 +1178,7 @@ public class BeeLine implements Closeable {
   }
 
   private int embeddedConnect() {
-    if (!execCommandWithPrefix("!connect " + Utils.URL_PREFIX + " '' ''")) {
+    if (!execCommandWithPrefix("!connect jdbc:hive2:// '' ''")) {
       return ERRNO_OTHER;
     } else {
       return ERRNO_OK;
@@ -1226,7 +1226,7 @@ public class BeeLine implements Closeable {
       handleException(t);
       return ERRNO_OTHER;
     } finally {
-      IOUtils.closeStream(fileStream);
+      IOUtils.closeQuietly(fileStream);
     }
   }
 

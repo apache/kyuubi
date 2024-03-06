@@ -58,11 +58,12 @@ import org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.hadoop.hive.conf.SystemVariables;
 import org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.hive.common.util.HiveStringUtils;
-import org.apache.hive.jdbc.HiveStatement;
-import org.apache.hive.jdbc.Utils;
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
-import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
+import org.apache.kyuubi.jdbc.hive.Utils;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 
 public class Commands {
 
@@ -986,10 +987,10 @@ public class Commands {
             logThread = new Thread(createLogRunnable(stmnt, eventNotifier));
             logThread.setDaemon(true);
             logThread.start();
-            if (stmnt instanceof HiveStatement) {
-              // HiveStatement hiveStatement = (HiveStatement) stmnt;
-              // hiveStatement.setInPlaceUpdateStream(
-              //    new BeelineInPlaceUpdateStream(beeLine.getErrorStream(), eventNotifier));
+            if (stmnt instanceof KyuubiStatement) {
+              KyuubiStatement hiveStatement = (KyuubiStatement) stmnt;
+              hiveStatement.setInPlaceUpdateStream(
+                  new KyuubiBeelineInPlaceUpdateStream(beeLine.getErrorStream(), eventNotifier));
             }
             hasResults = stmnt.execute(sql);
             logThread.interrupt();
@@ -1289,11 +1290,11 @@ public class Commands {
 
   private Runnable createLogRunnable(
       final Statement statement, InPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (statement instanceof HiveStatement) {
+    if (statement instanceof KyuubiStatement) {
       return new LogRunnable(
-          this, (HiveStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
+          this, (KyuubiStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
     } else {
-      beeLine.debug("The statement instance is not HiveStatement type: " + statement.getClass());
+      beeLine.debug("The statement instance is not KyuubiStatement type: " + statement.getClass());
       return new Runnable() {
         @Override
         public void run() {
@@ -1313,13 +1314,13 @@ public class Commands {
 
   static class LogRunnable implements Runnable {
     private final Commands commands;
-    private final HiveStatement hiveStatement;
+    private final KyuubiStatement hiveStatement;
     private final long queryProgressInterval;
     private final InPlaceUpdateStream.EventNotifier notifier;
 
     LogRunnable(
         Commands commands,
-        HiveStatement hiveStatement,
+        KyuubiStatement hiveStatement,
         long queryProgressInterval,
         InPlaceUpdateStream.EventNotifier eventNotifier) {
       this.hiveStatement = hiveStatement;
@@ -1330,7 +1331,7 @@ public class Commands {
 
     private void updateQueryLog() {
       try {
-        List<String> queryLogs = hiveStatement.getQueryLog();
+        List<String> queryLogs = hiveStatement.getExecLog();
         for (String log : queryLogs) {
           if (!commands.beeLine.isTestMode()) {
             commands.beeLine.info(log);
@@ -1371,12 +1372,12 @@ public class Commands {
   }
 
   private void showRemainingLogsIfAny(Statement statement) {
-    if (statement instanceof HiveStatement) {
-      HiveStatement hiveStatement = (HiveStatement) statement;
+    if (statement instanceof KyuubiStatement) {
+      KyuubiStatement hiveStatement = (KyuubiStatement) statement;
       List<String> logs = null;
       do {
         try {
-          logs = hiveStatement.getQueryLog();
+          logs = hiveStatement.getExecLog();
         } catch (SQLException e) {
           beeLine.error(new SQLWarning(e));
           return;
@@ -1629,9 +1630,7 @@ public class Commands {
       props.setProperty(JdbcConnectionParams.AUTH_USER, username);
       if (password == null) {
         password =
-            beeLine
-                .getConsoleReader()
-                .readLine("Enter password for " + urlForPrompt + ": ", new Character('*'));
+            beeLine.getConsoleReader().readLine("Enter password for " + urlForPrompt + ": ", '*');
       }
       props.setProperty(JdbcConnectionParams.AUTH_PASSWD, password);
     }

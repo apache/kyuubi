@@ -18,7 +18,7 @@
 package org.apache.hive.beeline;
 
 import java.sql.SQLException;
-import org.apache.hive.jdbc.Utils;
+import org.apache.kyuubi.jdbc.hive.Utils;
 
 /** We need to update some client side information after executing some Hive Commands */
 public class ClientCommandHookFactory {

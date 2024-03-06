@@ -24,7 +24,6 @@ import static org.mockito.Mockito.when;
 import java.sql.Connection;
 import java.sql.SQLException;
 import junit.framework.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -103,7 +102,6 @@ public class TestClientCommandHookFactory {
   }
 
   @Test
-  @Ignore("Fix later: NoClassDefFound org/apache/curator/RetryPolicy")
   public void testConnectHook() {
     BeeLine beeLine = setupMockData(true, true);
     ClientHook hook =
