@@ -233,6 +233,13 @@ if [[ "$HIVE_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Phive-provided"
 fi
 
+# clean up all versions of Spark extension, to avoid collecting outdated artifacts
+SPARK_EXTENSION_VERSIONS=('3-2' '3-3' '3-4' '3-5')
+# shellcheck disable=SC2068
+for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
+  rm -f "$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar"
+done
+
 export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g}"
 
 BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
@@ -331,7 +338,6 @@ for jar in $(ls "$DISTDIR/jars/"); do
 done
 
 # Copy Kyuubi Spark extension
-SPARK_EXTENSION_VERSIONS=('3-1' '3-2' '3-3' '3-4' '3-5')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   if [[ -f $"$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
