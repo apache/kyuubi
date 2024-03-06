@@ -51,7 +51,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${spark.archive.download.skip}</skip>
-                            <url>${spark.archive.mirror}/${spark.archive.name}?action=download</url>
+                            <url>${spark.archive.mirror}/${spark.archive.name}</url>
                         </configuration>
                     </execution>
                     <execution>
@@ -62,7 +62,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${flink.archive.download.skip}</skip>
-                            <url>${flink.archive.mirror}/${flink.archive.name}?action=download</url>
+                            <url>${flink.archive.mirror}/${flink.archive.name}</url>
                         </configuration>
                     </execution>
                     <execution>
@@ -73,7 +73,7 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${hive.archive.download.skip}</skip>
-                            <url>${hive.archive.mirror}/${hive.archive.name}?action=download</url>
+                            <url>${hive.archive.mirror}/${hive.archive.name}</url>
                         </configuration>
                     </execution>
                 </executions>
