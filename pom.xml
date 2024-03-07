@@ -1683,7 +1683,7 @@
                     </executions>
                 </plugin>
 
-                <!-- disable surefire -->
+                <!-- disable surefire globally, only enable it on pure Java modules -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
