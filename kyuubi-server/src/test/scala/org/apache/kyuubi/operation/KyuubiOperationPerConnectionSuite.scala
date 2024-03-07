@@ -334,10 +334,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
         val errorMsg = executeStmtResp.getStatus.getErrorMessage
         assert(errorMsg.contains("java.net.SocketException") ||
-          errorMsg.contains("org.apache.thrift.transport.TTransportException") ||
+          errorMsg.contains("org.apache.kyuubi.shaded.thrift.transport.TTransportException") ||
           errorMsg.contains("connection does not exist") ||
-          errorMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
-          errorMsg.contains("Error submitting query in background, query rejected"))
+          errorMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         eventually(timeout(3.seconds)) {

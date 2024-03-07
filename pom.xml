@@ -173,7 +173,7 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.1</kafka.version>
         <kubernetes-client.version>6.8.1</kubernetes-client.version>
-        <kyuubi-relocated.version>0.3.0-SNAPSHOT</kyuubi-relocated.version>
+        <kyuubi-relocated.version>0.3.0</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
@@ -1511,18 +1511,6 @@
             <id>central</id>
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
-        </repository>
-
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>apache-snapshots</id>
-            <name>Apache Snapshots Repository</name>
-            <url>https://repository.apache.org/content/repositories/snapshots</url>
         </repository>
     </repositories>
 

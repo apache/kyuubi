@@ -107,11 +107,7 @@ abstract class TBinaryFrontendService(name: String)
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        // THRIFT-5297 (fixed in 0.14.0) removes these configurations
-        // .requestTimeout(requestTimeout)
-        // .requestTimeoutUnit(TimeUnit.MILLISECONDS)
-        // .beBackoffSlotLength(beBackoffSlotLength)
-        // .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
+        // THRIFT-5297 (fixed in 0.14.0) removes requestTimeout and beBackoffSlotLength
         .executorService(executor)
       // TCP Server
       server = Some(new TThreadPoolServer(args))
