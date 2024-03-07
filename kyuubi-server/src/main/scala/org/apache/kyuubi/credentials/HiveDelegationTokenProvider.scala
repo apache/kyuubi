@@ -27,6 +27,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.shaded.hive.metastore.{IMetaStoreClient, RetryingMetaStoreClient}
 import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf
+import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf.ConfVars
 import org.apache.kyuubi.shaded.hive.metastore.security.DelegationTokenIdentifier
 
 class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Logging {
@@ -39,17 +40,18 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
 
   override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
     val conf = MetastoreConf.newMetastoreConf(hadoopConf)
-    val metastoreUris = conf.getTrimmed("hive.metastore.uris", "")
+    val metastoreUris = MetastoreConf.getVar(hadoopConf, ConfVars.THRIFT_URIS)
     // SQL engine requires token alias to be `hive.metastore.uris`
     tokenAlias = new Text(metastoreUris)
 
     if (SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
       && metastoreUris.nonEmpty
-      && conf.getBoolean("hive.metastore.sasl.enabled", false)) {
+      && MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_SASL)) {
 
-      val principalKey = "hive.metastore.kerberos.principal"
-      principal = conf.getTrimmed(principalKey, "")
-      require(principal.nonEmpty, s"Hive principal $principalKey undefined")
+      principal = MetastoreConf.getVar(hadoopConf, ConfVars.KERBEROS_PRINCIPAL)
+      require(
+        principal.nonEmpty,
+        s"Hive principal ${ConfVars.KERBEROS_PRINCIPAL.getVarname} undefined")
 
       client = Some(RetryingMetaStoreClient.getProxy(conf))
       info(s"Created HiveMetaStoreClient with metastore uris $metastoreUris")
