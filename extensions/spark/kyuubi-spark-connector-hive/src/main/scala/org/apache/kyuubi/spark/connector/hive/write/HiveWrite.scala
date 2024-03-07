@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hive.ql.plan.TableDesc
+import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.spark.internal.Logging
@@ -41,9 +41,8 @@ import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientIm
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.getHiveFileFormat
-import org.apache.kyuubi.spark.connector.hive.write.HiveWriteHelper.getPartitionSpec
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
 
 case class HiveWrite(
     sparkSession: SparkSession,
