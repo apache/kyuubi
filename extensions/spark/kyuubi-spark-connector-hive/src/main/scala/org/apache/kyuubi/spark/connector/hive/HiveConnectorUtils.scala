@@ -40,16 +40,18 @@ import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 object HiveConnectorUtils extends Logging {
 
   def getHiveFileFormat(fileSinkConf: FileSinkDesc): HiveFileFormat = {
+    val hiveFormatClass = Class.forName("org.apache.spark.sql.hive.execution.HiveFileFormat")
     if (SPARK_RUNTIME_VERSION >= "3.5") {
       DynConstructors.builder().impl(
-        "org.apache.spark.sql.hive.execution.HiveFileFormat",
+        hiveFormatClass,
         classOf[FileSinkDesc])
         .build()
         .newInstance(fileSinkConf)
         .asInstanceOf[HiveFileFormat]
     } else if (SPARK_RUNTIME_VERSION >= "3.3") {
+      val shimClass = Class.forName("org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc")
       val shimFileSinkDesc = DynConstructors.builder().impl(
-        "org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc",
+        shimClass,
         classOf[String],
         classOf[TableDesc],
         classOf[Boolean])
@@ -60,8 +62,8 @@ object HiveConnectorUtils extends Logging {
           fileSinkConf.getCompressed.asInstanceOf[java.lang.Boolean])
         .asInstanceOf[AnyRef]
       DynConstructors.builder().impl(
-        "org.apache.spark.sql.hive.execution.HiveFileFormat",
-        Class.forName("org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc"))
+        hiveFormatClass,
+        shimClass)
         .build()
         .newInstance(shimFileSinkDesc)
         .asInstanceOf[HiveFileFormat]
