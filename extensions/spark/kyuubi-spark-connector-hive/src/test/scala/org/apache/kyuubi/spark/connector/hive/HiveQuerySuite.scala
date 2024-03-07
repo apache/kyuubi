@@ -80,7 +80,8 @@ class HiveQuerySuite extends KyuubiHiveTest {
         }
         assert(e.message.contains(
           "[TABLE_OR_VIEW_NOT_FOUND] The table or view `hive`.`ns1`.`tb1` cannot be found. " +
-            "Verify the spelling and correctness of the schema and catalog."))
+            "Verify the spelling and correctness of the schema and catalog.") ||
+          e.message.contains("Table or view not found: hive.ns1.tb1"))
       }
     }
   }

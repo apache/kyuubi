@@ -123,7 +123,8 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       }
       assert(exception.message.contains("[TABLE_OR_VIEW_NOT_FOUND] " +
         "The table or view `hive`.`ns1`.`nonexistent_table` cannot be found. " +
-        "Verify the spelling and correctness of the schema and catalog."))
+        "Verify the spelling and correctness of the schema and catalog.")
+        || exception.message.contains("Table or view not found: hive.ns1.nonexistent_table"))
     }
   }
 
