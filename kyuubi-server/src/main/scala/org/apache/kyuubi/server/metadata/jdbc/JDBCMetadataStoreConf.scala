@@ -19,9 +19,9 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.Properties
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
+import org.apache.kyuubi.util.JavaUtils
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
@@ -33,7 +33,7 @@ object JDBCMetadataStoreConf {
         "<KYUUBI_HOME>",
         sys.env.getOrElse(
           "KYUUBI_HOME",
-          Utils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
+          JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
     } else {
       rawJdbcUrl
     }

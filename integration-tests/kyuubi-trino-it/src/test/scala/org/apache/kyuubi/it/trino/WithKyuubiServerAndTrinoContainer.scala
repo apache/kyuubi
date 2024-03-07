@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 
 trait WithKyuubiServerAndTrinoContainer extends WithKyuubiServer with TestContainerForAll {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   final val IMAGE_VERSION = 411
   final val DOCKER_IMAGE_NAME = s"trinodb/trino:$IMAGE_VERSION"

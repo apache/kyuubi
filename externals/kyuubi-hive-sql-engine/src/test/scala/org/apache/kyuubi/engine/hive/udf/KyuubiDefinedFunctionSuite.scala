@@ -38,7 +38,7 @@ import org.apache.kyuubi.util.GoldenFileUtils._
  */
 class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
 
-  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass)
+  private val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass)
     .split("kyuubi-hive-sql-engine")(0)
   private val markdown =
     Paths.get(kyuubiHome, "..", "docs", "extensions", "engines", "hive", "functions.md")

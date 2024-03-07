@@ -32,6 +32,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiFunSuite, SCALA
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
@@ -71,7 +72,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
     conf.set(HA_ADDRESSES, zkServer.getConnectString)
 
     val envs = scala.collection.mutable.Map[String, String]()
-    val kyuubiExternals = Utils.getCodeSourceLocation(getClass)
+    val kyuubiExternals = JavaJavaUtils.getCodeSourceLocation(getClass)
       .split("externals").head
     val flinkHome = {
       val candidates = Paths.get(kyuubiExternals, "externals", "kyuubi-download", "target")
@@ -216,7 +217,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
         .find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass).split("externals")
+      val cwd = JavaUtils.getCodeSourceLocation(getClass).split("externals")
       assert(cwd.length > 1)
       Option(Paths.get(cwd.head, "externals", module, "target", jarName))
         .map(_.toAbsolutePath.toFile.getCanonicalPath)

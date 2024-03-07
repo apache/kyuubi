@@ -24,7 +24,7 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 
 trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   protected lazy val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _

@@ -44,7 +44,8 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  * }}}
  */
 class AllKyuubiConfiguration extends KyuubiFunSuite {
-  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
+  private val kyuubiHome: String =
+    JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "configuration", "settings.md")
     .toAbsolutePath
 

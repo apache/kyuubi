@@ -26,7 +26,7 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class KyuubiOperationHiveEnginePerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = {
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)

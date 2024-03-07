@@ -29,7 +29,7 @@ import org.apache.kyuubi.server.{MiniDFSService, MiniYarnService}
 
 trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiServer {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = new KyuubiConf(false)
 

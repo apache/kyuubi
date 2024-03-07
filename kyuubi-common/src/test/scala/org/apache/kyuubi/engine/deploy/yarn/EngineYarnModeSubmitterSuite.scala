@@ -29,7 +29,7 @@ import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.KYUUBI_ENGIN
 
 class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-common").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-common").head
 
   test("Classpath should contain engine jars dir and conf dir") {
     val kyuubiConf = new KyuubiConf()
@@ -56,7 +56,7 @@ class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
   }
 
   test("distinct archive files") {
-    val targetJars: String = s"${Utils.getCodeSourceLocation(getClass)}"
+    val targetJars: String = s"${JavaUtils.getCodeSourceLocation(getClass)}"
     // double the jars to make sure the distinct works
     val archives = s"$targetJars,$targetJars"
     val files = MockEngineYarnModeSubmitter.listDistinctFiles(archives)

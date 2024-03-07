@@ -19,15 +19,16 @@ package org.apache.kyuubi.it.jdbc.phoenix
 import java.nio.file.{Files, Path, Paths}
 import java.time.Duration
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.phoenix.WithPhoenixEngine
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndPhoenixContainer extends WithKyuubiServer with WithPhoenixEngine {
 
-  private val kyuubiHome: String = Utils
-    .getCodeSourceLocation(getClass).split("integration-tests").head
+  private val kyuubiHome: String =
+    JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   private val phoenixJdbcConnectorPath: String = {
     val keyword = "phoenix-queryserver"

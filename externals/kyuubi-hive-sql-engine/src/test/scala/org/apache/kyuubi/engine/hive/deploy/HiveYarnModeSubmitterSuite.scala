@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION, Utils}
 
 class HiveYarnModeSubmitterSuite extends KyuubiFunSuite {
-  val hiveEngineHome: String = Utils.getCodeSourceLocation(getClass).split("/target")(0)
+  val hiveEngineHome: String = JavaUtils.getCodeSourceLocation(getClass).split("/target")(0)
 
   test("hadoop class path") {
     val jars = new ListBuffer[File]

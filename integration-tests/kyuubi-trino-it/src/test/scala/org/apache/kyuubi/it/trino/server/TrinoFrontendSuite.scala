@@ -54,7 +54,7 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
     }
   }
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
