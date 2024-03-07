@@ -20,7 +20,8 @@ package org.apache.kyuubi.it.flink
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
 

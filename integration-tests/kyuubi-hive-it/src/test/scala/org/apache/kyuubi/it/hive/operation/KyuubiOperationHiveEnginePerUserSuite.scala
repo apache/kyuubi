@@ -21,6 +21,7 @@ import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+import org.apache.kyuubi.util.JavaUtils
 
 class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEngineTests {
 

@@ -23,6 +23,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.server.{MiniDFSService, MiniYarnService}
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndHadoopMiniCluster extends KyuubiFunSuite with WithKyuubiServer {
 

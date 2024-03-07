@@ -33,6 +33,8 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.util.JavaUtils
+
 trait KerberizedTestHelper extends KyuubiFunSuite {
   val clientPrincipalUser = "client"
   val baseDir: File =

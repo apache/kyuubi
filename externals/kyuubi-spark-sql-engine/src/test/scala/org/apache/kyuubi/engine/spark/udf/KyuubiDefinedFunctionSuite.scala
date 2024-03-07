@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine.spark.udf
 
 import java.nio.file.Paths
 
-import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder}
 import org.apache.kyuubi.util.GoldenFileUtils._
+import org.apache.kyuubi.util.JavaUtils
 
 /**
  * End-to-end test cases for configuration doc file

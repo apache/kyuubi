@@ -26,6 +26,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY
+import org.apache.kyuubi.util.JavaUtils
 
 class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
 

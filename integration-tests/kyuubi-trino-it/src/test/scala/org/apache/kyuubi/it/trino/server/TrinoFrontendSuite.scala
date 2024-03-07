@@ -19,10 +19,11 @@ package org.apache.kyuubi.it.trino.server
 
 import scala.util.control.NonFatal
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.operation.SparkMetadataTests
+import org.apache.kyuubi.util.JavaUtils
 
 /**
  * This test is for Trino jdbc driver with Kyuubi Server and Spark engine:

@@ -20,9 +20,10 @@ package org.apache.kyuubi.it.trino
 import com.dimafeng.testcontainers.TrinoContainer
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndTrinoContainer extends WithKyuubiServer with TestContainerForAll {
 

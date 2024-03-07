@@ -20,7 +20,8 @@ import java.io.File
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION}
+import org.apache.kyuubi.util.JavaUtils
 
 class HiveYarnModeSubmitterSuite extends KyuubiFunSuite {
   val hiveEngineHome: String = JavaUtils.getCodeSourceLocation(getClass).split("/target")(0)
