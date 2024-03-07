@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
-import scala.language.implicitConversions
-
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.spark.SPARK_VERSION
