@@ -156,6 +156,7 @@ class HiveInMemoryFileIndex(
 
   private val partDirToBindHivePart: mutable.Map[PartitionDirectory, CatalogTablePartition] =
     mutable.Map()
+
   implicit private def seqToArr(seq: Seq[FileStatus]): Array[FileStatus] = seq.toArray
 
   override def listFiles(
