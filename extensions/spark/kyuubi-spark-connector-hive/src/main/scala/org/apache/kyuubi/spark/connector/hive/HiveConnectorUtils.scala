@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
+import java.lang.{Boolean => JBoolean, Long => JLong}
+
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.spark.SPARK_VERSION
@@ -34,45 +36,44 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
 import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
-import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors, DynMethods}
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 object HiveConnectorUtils extends Logging {
 
+  // SPARK-43186
   def getHiveFileFormat(fileSinkConf: FileSinkDesc): HiveFileFormat = {
-    val hiveFormatClass = Class.forName("org.apache.spark.sql.hive.execution.HiveFileFormat")
     if (SPARK_RUNTIME_VERSION >= "3.5") {
-      DynConstructors.builder().impl(
-        hiveFormatClass,
-        classOf[FileSinkDesc])
-        .build()
+      DynConstructors.builder()
+        .impl(classOf[HiveFileFormat], classOf[FileSinkDesc])
+        .build[HiveFileFormat]()
         .newInstance(fileSinkConf)
-        .asInstanceOf[HiveFileFormat]
     } else if (SPARK_RUNTIME_VERSION >= "3.3") {
-      val shimClass = Class.forName("org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc")
-      val shimFileSinkDesc = DynConstructors.builder().impl(
-        shimClass,
-        classOf[String],
-        classOf[TableDesc],
-        classOf[Boolean])
+      val shimFileSinkDescClz = DynClasses.builder()
+        .impl("org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc")
         .build()
+      val shimFileSinkDesc = DynConstructors.builder()
+        .impl(
+          "org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc",
+          classOf[String],
+          classOf[TableDesc],
+          classOf[Boolean])
+        .build[AnyRef]()
         .newInstance(
           fileSinkConf.getDirName.toString,
           fileSinkConf.getTableInfo,
-          fileSinkConf.getCompressed.asInstanceOf[java.lang.Boolean])
-        .asInstanceOf[AnyRef]
-      DynConstructors.builder().impl(
-        hiveFormatClass,
-        shimClass)
-        .build()
+          fileSinkConf.getCompressed.asInstanceOf[JBoolean])
+      DynConstructors.builder()
+        .impl(classOf[HiveFileFormat], shimFileSinkDescClz)
+        .build[HiveFileFormat]()
         .newInstance(shimFileSinkDesc)
-        .asInstanceOf[HiveFileFormat]
     } else {
       throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
         s"is not supported by Kyuubi spark hive connector.")
     }
   }
 
+  // SPARK-41970
   def partitionedFilePath(file: PartitionedFile): String = {
     if (SPARK_RUNTIME_VERSION >= "3.4") {
       invokeAs[String](file, "urlEncodedPath")
@@ -84,6 +85,7 @@ object HiveConnectorUtils extends Logging {
     }
   }
 
+  // SPARK-43039
   def splitFiles(
       sparkSession: SparkSession,
       file: AnyRef,
@@ -91,41 +93,48 @@ object HiveConnectorUtils extends Logging {
       isSplitable: Boolean,
       maxSplitBytes: Long,
       partitionValues: InternalRow): Seq[PartitionedFile] = {
-    val pfuClass = Class.forName("org.apache.spark.sql.execution.PartitionedFileUtil")
+
     if (SPARK_RUNTIME_VERSION >= "3.5") {
-      pfuClass.getDeclaredMethod(
-        "splitFiles",
-        classOf[SparkSession],
-        Class.forName("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata"),
-        classOf[Boolean],
-        classOf[Long],
-        classOf[InternalRow])
-        .invoke(
+      val fileStatusWithMetadataClz = DynClasses.builder()
+        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+        .build()
+      DynMethods
+        .builder("splitFiles")
+        .impl(
+          "org.apache.spark.sql.execution.PartitionedFileUtil",
+          classOf[SparkSession],
+          fileStatusWithMetadataClz,
+          classOf[Boolean],
+          classOf[Long],
+          classOf[InternalRow])
+        .build()
+        .invoke[Seq[PartitionedFile]](
           null,
           sparkSession,
           file,
-          isSplitable.asInstanceOf[java.lang.Boolean],
-          maxSplitBytes.asInstanceOf[java.lang.Long],
+          isSplitable.asInstanceOf[JBoolean],
+          maxSplitBytes.asInstanceOf[JLong],
           partitionValues)
-        .asInstanceOf[Seq[PartitionedFile]]
     } else if (SPARK_RUNTIME_VERSION >= "3.3") {
-      pfuClass.getDeclaredMethod(
-        "splitFiles",
-        classOf[SparkSession],
-        classOf[FileStatus],
-        classOf[Path],
-        classOf[Boolean],
-        classOf[Long],
-        classOf[InternalRow])
-        .invoke(
+      DynMethods
+        .builder("splitFiles")
+        .impl(
+          "org.apache.spark.sql.execution.PartitionedFileUtil",
+          classOf[SparkSession],
+          classOf[FileStatus],
+          classOf[Path],
+          classOf[Boolean],
+          classOf[Long],
+          classOf[InternalRow])
+        .build()
+        .invoke[Seq[PartitionedFile]](
           null,
           sparkSession,
           file,
           filePath,
-          isSplitable.asInstanceOf[java.lang.Boolean],
-          maxSplitBytes.asInstanceOf[java.lang.Long],
+          isSplitable.asInstanceOf[JBoolean],
+          maxSplitBytes.asInstanceOf[JLong],
           partitionValues)
-        .asInstanceOf[Seq[PartitionedFile]]
     } else {
       throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
         s"is not supported by Kyuubi spark hive connector.")
