@@ -25,7 +25,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -101,7 +101,7 @@ public class TestBufferedRows {
               }
             });
 
-    when(mockResultSet.getObject(Matchers.anyInt()))
+    when(mockResultSet.getObject(ArgumentMatchers.anyInt()))
         .thenAnswer(
             new Answer<String>() {
               public String answer(InvocationOnMock invocation) {

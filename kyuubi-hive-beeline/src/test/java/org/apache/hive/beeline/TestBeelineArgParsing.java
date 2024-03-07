@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.hive.common.util.HiveTestUtils;
+import org.apache.kyuubi.util.JavaUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,20 +105,28 @@ public class TestBeelineArgParsing {
     extraContent.put(new File("META-INF/services/java.sql.Driver"), dummyDriverClazzName);
     File jarFile = HiveTestUtils.genLocalJarForTest(u, dummyDriverClazzName, extraContent);
     String pathToDummyDriver = jarFile.getAbsolutePath();
+    String kyuubiHome =
+        JavaUtils.getCodeSourceLocation(TestBeelineArgParsing.class)
+            .split("kyuubi-hive-beeline")[0];
+
+    Path jarsDir = Paths.get(kyuubiHome).resolve("kyuubi-hive-beeline").resolve("target");
+
+    String postgresqlJdbcDriverPath =
+        Files.list(jarsDir)
+            .filter(p -> p.getFileName().toString().contains("postgresql"))
+            .findFirst()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException("Can not find PostgreSQL JDBC driver in " + jarsDir))
+            .toAbsolutePath()
+            .toString();
+
     return Arrays.asList(
         new Object[][] {
           {
             "jdbc:postgresql://host:5432/testdb",
             "org.postgresql.Driver",
-            System.getProperty("maven.local.repository")
-                + File.separator
-                + "postgresql"
-                + File.separator
-                + "postgresql"
-                + File.separator
-                + "9.1-901.jdbc4"
-                + File.separator
-                + "postgresql-9.1-901.jdbc4.jar",
+            postgresqlJdbcDriverPath,
             true
           },
           {"jdbc:dummy://host:5432/testdb", dummyDriverClazzName, pathToDummyDriver, false}

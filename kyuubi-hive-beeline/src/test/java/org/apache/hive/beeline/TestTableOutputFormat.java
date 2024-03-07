@@ -24,7 +24,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -99,7 +99,7 @@ public class TestTableOutputFormat {
               }
             });
 
-    when(mockResultSet.getObject(Matchers.anyInt()))
+    when(mockResultSet.getObject(ArgumentMatchers.anyInt()))
         .thenAnswer(
             new Answer<String>() {
               @Override

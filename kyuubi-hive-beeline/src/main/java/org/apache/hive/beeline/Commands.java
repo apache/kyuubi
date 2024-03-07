@@ -58,7 +58,6 @@ import org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.hadoop.hive.conf.SystemVariables;
 import org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.hive.beeline.logs.BeelineInPlaceUpdateStream;
 import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.hive.jdbc.HiveStatement;
 import org.apache.hive.jdbc.Utils;
@@ -166,7 +165,8 @@ public class Commands {
       return false;
     }
 
-    URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
+    // HIVE-21584
+    ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
     try {
       beeLine.debug(jarPath + " is added to the local beeline.");
       URLClassLoader newClassLoader = new URLClassLoader(new URL[] {p.toURL()}, classLoader);
@@ -987,9 +987,9 @@ public class Commands {
             logThread.setDaemon(true);
             logThread.start();
             if (stmnt instanceof HiveStatement) {
-              HiveStatement hiveStatement = (HiveStatement) stmnt;
-              hiveStatement.setInPlaceUpdateStream(
-                  new BeelineInPlaceUpdateStream(beeLine.getErrorStream(), eventNotifier));
+              // HiveStatement hiveStatement = (HiveStatement) stmnt;
+              // hiveStatement.setInPlaceUpdateStream(
+              //    new BeelineInPlaceUpdateStream(beeLine.getErrorStream(), eventNotifier));
             }
             hasResults = stmnt.execute(sql);
             logThread.interrupt();

@@ -31,7 +31,7 @@ import org.junit.Test;
 /** TestBeeLineHistory - executes tests of the !history command of BeeLine */
 public class TestBeeLineHistory {
 
-  private static final String fileName = System.getProperty("test.tmp.dir") + "/history";
+  private static final String fileName = System.getProperty("java.io.tmpdir") + "/history";
 
   @BeforeClass
   public static void beforeTests() throws Exception {

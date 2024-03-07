@@ -102,7 +102,7 @@ import org.apache.hive.common.util.ShutdownHookManager;
 import org.apache.hive.jdbc.JdbcUriParseException;
 import org.apache.hive.jdbc.Utils;
 import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 
 /**
  * A console SQL shell with command completion.

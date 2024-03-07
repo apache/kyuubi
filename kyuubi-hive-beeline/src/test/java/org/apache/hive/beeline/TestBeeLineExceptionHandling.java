@@ -19,7 +19,7 @@ package org.apache.hive.beeline;
 
 import java.sql.SQLException;
 import junit.framework.Assert;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 import org.junit.Test;
 
 public class TestBeeLineExceptionHandling {
@@ -39,7 +39,9 @@ public class TestBeeLineExceptionHandling {
         Assert.assertEquals(loc(expectedLoc), log);
       } else {
         Assert.assertEquals(
-            "Error: org.apache.thrift.transport.TTransportException " + "(state=,code=0)", log);
+            "Error: org.apache.kyuubi.shaded.thrift.transport.TTransportException "
+                + "(state=,code=0)",
+            log);
       }
       logCount++;
       return false;

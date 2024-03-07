@@ -24,8 +24,9 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import javax.security.auth.login.LoginException;
 import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.hive.shims.Utils;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.jdbc.HiveConnection;
 import org.apache.hive.service.auth.HiveAuthConstants;
 import org.apache.hive.service.cli.session.SessionUtils;
@@ -206,8 +207,23 @@ public class ProxyAuthTest {
     }
   }
 
+  // copied from Hive 3.1.3 org.apache.hadoop.hive.shims.Utils#getUGI
+  private static UserGroupInformation getUGI() throws LoginException, IOException {
+    String doAs = System.getenv("HADOOP_USER_NAME");
+    if (doAs != null && doAs.length() > 0) {
+      /*
+       * this allows doAs (proxy user) to be passed along across process boundary where
+       * delegation tokens are not supported.  For example, a DDL stmt via WebHCat with
+       * a doAs parameter, forks to 'hcat' which needs to start a Session that
+       * proxies the end user
+       */
+      return UserGroupInformation.createProxyUser(doAs, UserGroupInformation.getLoginUser());
+    }
+    return UserGroupInformation.getCurrentUser();
+  }
+
   private static void storeTokenInJobConf(String tokenStr) throws Exception {
-    SessionUtils.setTokenStr(Utils.getUGI(), tokenStr, HiveAuthConstants.HS2_CLIENT_TOKEN);
+    SessionUtils.setTokenStr(getUGI(), tokenStr, HiveAuthConstants.HS2_CLIENT_TOKEN);
     System.out.println("Stored token " + tokenStr);
   }
 

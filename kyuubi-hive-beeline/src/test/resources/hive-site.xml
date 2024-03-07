@@ -36,13 +36,13 @@
 
   <property>
     <name>javax.jdo.option.ConnectionURL</name>
-    <value>jdbc:derby:;databaseName=${test.tmp.dir}/metastore_db;create=true</value>
+    <value>jdbc:derby:;databaseName=${java.io.tmpdir}/metastore_db;create=true</value>
     <description>JDBC connect string for a JDBC metastore</description>
   </property>
   <property>
     <!--  this should eventually be deprecated since the metastore should supply this -->
     <name>hive.metastore.warehouse.dir</name>
-    <value>${test.tmp.dir}/warehouse</value>
+    <value>${java.io.tmpdir}/warehouse</value>
     <description></description>
   </property>
   <property>
