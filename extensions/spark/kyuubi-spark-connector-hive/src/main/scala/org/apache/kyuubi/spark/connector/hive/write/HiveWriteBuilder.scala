@@ -19,11 +19,10 @@ package org.apache.kyuubi.spark.connector.hive.write
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.connector.write._
-import org.apache.spark.sql.sources.{AlwaysTrue, And, EqualNullSafe, EqualTo, Filter}
+import org.apache.spark.sql.sources.Filter
 
-import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
 
 case class HiveWriteBuilder(
     sparkSession: SparkSession,
@@ -33,11 +32,6 @@ case class HiveWriteBuilder(
   with SupportsDynamicOverwrite {
 
   private var forceOverwrite = false
-
-  private var staticPartition: TablePartitionSpec = Map.empty
-
-  private val ifPartitionNotExists = false
-
   private val parts = catalogTable.partitionColumnNames
 
   override def build(): Write = {
@@ -47,16 +41,12 @@ case class HiveWriteBuilder(
       info,
       hiveTableCatalog,
       forceOverwrite,
-      mergePartitionSpec(),
-      ifPartitionNotExists)
+      dynamicPartitionSpec())
   }
 
   override def overwrite(filters: Array[Filter]): WriteBuilder = {
-    filters match {
-      case Array(AlwaysTrue) => // no partition, do nothing
-      case _ => staticPartition = deduplicateFilters(filters)
-    }
-    overwriteDynamicPartitions()
+    forceOverwrite = true
+    this
   }
 
   override def overwriteDynamicPartitions(): WriteBuilder = {
@@ -64,28 +54,9 @@ case class HiveWriteBuilder(
     this
   }
 
-  private def mergePartitionSpec(): Map[String, Option[String]] = {
+  private def dynamicPartitionSpec(): Map[String, Option[String]] = {
     var partSpec = Map.empty[String, Option[String]]
-
-    staticPartition.foreach {
-      case (p, v) => partSpec = partSpec.updated(p, Some(v))
-    }
-
-    val dynamicCols = parts diff staticPartition.keySet.toSeq
-    dynamicCols.foreach(p => partSpec = partSpec.updated(p, None))
+    parts.foreach(p => partSpec = partSpec.updated(p, None))
     partSpec
-  }
-
-  private def deduplicateFilters(filters: Array[Filter]): TablePartitionSpec = {
-    filters.map(extractConjunctions).reduce((partDesc1, partDesc2) => partDesc1 ++ partDesc2)
-  }
-
-  private def extractConjunctions(filter: Filter): TablePartitionSpec = {
-    filter match {
-      case And(l, r) => extractConjunctions(l) ++ extractConjunctions(r)
-      case EqualNullSafe(att, value) => Map(att -> value.toString)
-      case EqualTo(att, value) => Map(att -> value.toString)
-      case _ => throw KyuubiHiveConnectorException(s"Unsupported static insert condition $filter")
-    }
   }
 }
