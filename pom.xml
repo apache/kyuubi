@@ -2274,6 +2274,7 @@
             <id>spark-3.5</id>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-3-5</module>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
                 <delta.artifact>delta-spark</delta.artifact>

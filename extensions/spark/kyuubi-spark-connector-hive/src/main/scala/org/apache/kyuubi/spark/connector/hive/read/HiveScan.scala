@@ -28,7 +28,6 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.read.PartitionReaderFactory
-import org.apache.spark.sql.execution.PartitionedFileUtil
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
@@ -106,7 +105,7 @@ case class HiveScan(
         }
       partition.files.flatMap { file =>
         val filePath = file.getPath
-        val partFiles = PartitionedFileUtil.splitFiles(
+        val partFiles = HiveConnectorUtils.splitFiles(
           sparkSession = sparkSession,
           file = file,
           filePath = filePath,
