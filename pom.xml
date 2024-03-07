@@ -1687,10 +1687,26 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <!-- Note config is repeated in scalatest config -->
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                         <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <environmentVariables>
+                            <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
+                        </environmentVariables>
+                        <systemProperties>
+                            <log4j.ignoreTCL>true</log4j.ignoreTCL>
+                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
+                            <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
+                            <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+                            <spark.driver.memory>1g</spark.driver.memory>
+                            <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
+                            <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
+                            <sun.security.krb5.debug>false</sun.security.krb5.debug>
+                            <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
+                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
+                        </systemProperties>
                     </configuration>
                 </plugin>
                 <!-- enable scalatest -->
@@ -1698,6 +1714,7 @@
                     <groupId>org.scalatest</groupId>
                     <artifactId>scalatest-maven-plugin</artifactId>
                     <version>${maven.plugin.scalatest.version}</version>
+                    <!-- Note config is repeated in surefire config -->
                     <configuration>
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
