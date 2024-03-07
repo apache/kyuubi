@@ -19,15 +19,16 @@ package org.apache.kyuubi.it.jdbc.impala
 
 import java.nio.file.{Files, Path, Paths}
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
 import org.apache.kyuubi.engine.jdbc.impala.WithImpalaEngine
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndImpalaContainer extends WithKyuubiServer with WithImpalaEngine {
 
-  private val kyuubiHome: String = Utils
-    .getCodeSourceLocation(getClass).split("integration-tests").head
+  private val kyuubiHome: String =
+    JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   private val hiveJdbcConnectorPath: String = {
     val keyword = "kyuubi-hive-jdbc-shaded"

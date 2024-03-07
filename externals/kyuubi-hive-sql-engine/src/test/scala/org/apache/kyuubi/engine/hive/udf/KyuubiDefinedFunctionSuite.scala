@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine.hive.udf
 
 import java.nio.file.Paths
 
-import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder}
 import org.apache.kyuubi.util.GoldenFileUtils._
+import org.apache.kyuubi.util.JavaUtils
 
 /**
  * End-to-end test cases for configuration doc file
@@ -38,7 +39,7 @@ import org.apache.kyuubi.util.GoldenFileUtils._
  */
 class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
 
-  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass)
+  private val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass)
     .split("kyuubi-hive-sql-engine")(0)
   private val markdown =
     Paths.get(kyuubiHome, "..", "docs", "extensions", "engines", "hive", "functions.md")

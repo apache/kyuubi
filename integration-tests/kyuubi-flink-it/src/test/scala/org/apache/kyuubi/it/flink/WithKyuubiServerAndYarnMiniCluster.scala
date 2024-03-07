@@ -26,10 +26,11 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.server.{MiniDFSService, MiniYarnService}
+import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiServer {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = new KyuubiConf(false)
 

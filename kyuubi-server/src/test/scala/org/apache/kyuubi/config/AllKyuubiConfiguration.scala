@@ -21,12 +21,13 @@ import java.nio.file.Paths
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, MarkdownBuilder}
 import org.apache.kyuubi.ctl.CtlConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf
 import org.apache.kyuubi.util.GoldenFileUtils._
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 
 /**
@@ -44,7 +45,8 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  * }}}
  */
 class AllKyuubiConfiguration extends KyuubiFunSuite {
-  private val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
+  private val kyuubiHome: String =
+    JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "configuration", "settings.md")
     .toAbsolutePath
 

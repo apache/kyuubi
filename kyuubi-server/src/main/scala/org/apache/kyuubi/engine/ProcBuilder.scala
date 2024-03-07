@@ -32,7 +32,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
 
 trait ProcBuilder {
 
@@ -83,7 +83,7 @@ trait ProcBuilder {
         .find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
+      val cwd = JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server")
       assert(cwd.length > 1)
       Option(Paths.get(cwd.head, "externals", module, "target", jarName))
         .map(_.toAbsolutePath.toFile.getCanonicalPath)
@@ -330,7 +330,7 @@ trait ProcBuilder {
         }.filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
       }.orElse {
         // 3. get from kyuubi-server/../externals/kyuubi-download/target
-        Utils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
+        JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
           val candidates = Paths.get(cwd, "externals", "kyuubi-download", "target")
             .toFile.listFiles(engineHomeDirFilter)
           if (candidates == null) None else candidates.map(_.toPath).headOption
