@@ -72,7 +72,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
     conf.set(HA_ADDRESSES, zkServer.getConnectString)
 
     val envs = scala.collection.mutable.Map[String, String]()
-    val kyuubiExternals = JavaJavaUtils.getCodeSourceLocation(getClass)
+    val kyuubiExternals = JavaUtils.getCodeSourceLocation(getClass)
       .split("externals").head
     val flinkHome = {
       val candidates = Paths.get(kyuubiExternals, "externals", "kyuubi-download", "target")
