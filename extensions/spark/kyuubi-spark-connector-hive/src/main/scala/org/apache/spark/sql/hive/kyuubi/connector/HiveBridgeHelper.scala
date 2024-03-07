@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, Transform}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
-import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructField, StructType}
+import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
 
 object HiveBridgeHelper {
   type HiveSessionCatalog = org.apache.spark.sql.hive.HiveSessionCatalog
@@ -94,10 +94,11 @@ object HiveBridgeHelper {
       }
     }
   }
+
   implicit class StructTypeHelper(structType: StructType) {
-    private def toAttribute(field: StructField): AttributeReference =
+    def toAttributes: Seq[AttributeReference] = structType.map { field =>
       AttributeReference(field.name, field.dataType, field.nullable, field.metadata)()
-    def toAttributes: Seq[AttributeReference] = structType.map(toAttribute)
+    }
   }
 
   def toSQLValue(v: Any, t: DataType): String = Literal.create(v, t) match {
