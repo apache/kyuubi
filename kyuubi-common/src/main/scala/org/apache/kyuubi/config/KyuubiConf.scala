@@ -605,34 +605,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
-  @deprecated("using kyuubi.frontend.thrift.login.timeout instead", "1.4.0")
-  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.frontend.login.timeout")
-      .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(20).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("kyuubi.frontend.thrift.login.timeout")
-      .doc("Timeout for Thrift clients during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
-
-  @deprecated("using kyuubi.frontend.thrift.backoff.slot.length instead", "1.4.0")
-  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("kyuubi.frontend.backoff.slot.length")
-      .doc("(deprecated) Time to back off during login to the thrift frontend service.")
-      .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofMillis(100).toMillis)
-
-  val FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
-    buildConf("kyuubi.frontend.thrift.backoff.slot.length")
-      .doc("Time to back off during login to the thrift frontend service.")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
-
   val FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.http.request.header.size")
       .doc("Request header size in bytes, when using HTTP transport mode. Jetty defaults used.")
@@ -3144,14 +3116,6 @@ object KyuubiConf {
         FRONTEND_MAX_MESSAGE_SIZE.key,
         "1.4.0",
         s"Use ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key} instead"),
-      DeprecatedConfig(
-        FRONTEND_LOGIN_TIMEOUT.key,
-        "1.4.0",
-        s"Use ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead"),
-      DeprecatedConfig(
-        FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH.key,
-        "1.4.0",
-        s"Use ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead"),
       DeprecatedConfig(
         SESSION_TIMEOUT.key,
         "1.2.0",

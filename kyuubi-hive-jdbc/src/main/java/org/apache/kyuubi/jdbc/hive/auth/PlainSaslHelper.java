@@ -22,11 +22,13 @@ import javax.security.auth.callback.*;
 import javax.security.sasl.SaslException;
 import org.apache.kyuubi.shaded.thrift.transport.TSaslClientTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 
 public final class PlainSaslHelper {
 
   public static TTransport getPlainTransport(
-      String username, String password, TTransport underlyingTransport) throws SaslException {
+      String username, String password, TTransport underlyingTransport)
+      throws SaslException, TTransportException {
     return new TSaslClientTransport(
         "PLAIN",
         null,

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
+import org.apache.kyuubi.shaded.thrift.TConfiguration;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 
@@ -94,5 +95,20 @@ public class TFilterTransport extends TTransport {
   @Override
   public void consumeBuffer(int len) {
     wrapped.consumeBuffer(len);
+  }
+
+  @Override
+  public TConfiguration getConfiguration() {
+    return wrapped.getConfiguration();
+  }
+
+  @Override
+  public void updateKnownMessageSize(long l) throws TTransportException {
+    wrapped.updateKnownMessageSize(l);
+  }
+
+  @Override
+  public void checkReadBytesAvailable(long l) throws TTransportException {
+    wrapped.checkReadBytesAvailable(l);
   }
 }
