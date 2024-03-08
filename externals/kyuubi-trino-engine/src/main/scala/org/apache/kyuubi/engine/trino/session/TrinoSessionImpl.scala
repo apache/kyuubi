@@ -50,7 +50,7 @@ class TrinoSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   val sessionConf: KyuubiConf = {
-    val engineConf = sessionManager.getConf
+    val engineConf = sessionManager.getConf.clone
     conf.foreach(kv => engineConf.set(kv._1, kv._2))
     engineConf
   }
