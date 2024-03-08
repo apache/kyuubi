@@ -34,6 +34,7 @@ private[kyuubi] case class JettyServer(
       server.start()
       connector.start()
       server.addConnector(connector)
+      server.setStopAtShutdown(true)
     } catch {
       case e: Exception =>
         stop()
