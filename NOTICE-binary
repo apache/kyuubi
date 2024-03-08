@@ -189,6 +189,21 @@ JUnit (4.12)
 
 * License: Eclipse Public License
 
+Hive Beeline
+Copyright 2022 The Apache Software Foundation
+
+Hive Common
+Copyright 2022 The Apache Software Foundation
+
+Hive JDBC
+Copyright 2022 The Apache Software Foundation
+
+Hive Service
+Copyright 2022 The Apache Software Foundation
+
+Hive Service RPC
+Copyright 2022 The Apache Software Foundation
+
 Apache HttpClient
 Copyright 1999-2020 The Apache Software Foundation
 
