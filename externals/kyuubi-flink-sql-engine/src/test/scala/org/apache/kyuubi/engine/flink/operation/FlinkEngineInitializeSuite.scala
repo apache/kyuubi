@@ -109,10 +109,12 @@ trait FlinkEngineInitializeSuite extends HiveJDBCTestHelper
       eventually(Timeout(10.seconds)) {
         assert(!engineProcess.isAlive)
       }
-      withJdbcStatement() { statement =>
-        val resultSet = statement.executeQuery("select 1")
-        assert(resultSet.next())
+      val e = intercept[Exception] {
+        withJdbcStatement() { statement =>
+          statement.executeQuery("select 1")
+        }
       }
+      assert(e.getMessage() == "Time out retrieving Flink engine service url.")
     }
     // check engine alive status after close session with user level engine
     if (shareLevel == ShareLevel.USER) {
