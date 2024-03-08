@@ -993,6 +993,8 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
         statement.getConnection.setSchema("db_a")
         val changedSchema = statement.getConnection.getSchema
         assert(changedSchema == "db_a")
+        // reset database to default
+        statement.getConnection.setSchema("default_database")
         assert(statement.execute("drop database db_a"))
       }
     }
