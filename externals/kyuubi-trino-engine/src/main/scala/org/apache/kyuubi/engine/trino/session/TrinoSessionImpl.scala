@@ -51,7 +51,7 @@ class TrinoSessionImpl(
 
   val sessionConf: KyuubiConf = {
     val engineConf = sessionManager.getConf.clone
-    conf.foreach(kv => engineConf.set(kv._1, kv._2))
+    conf.foreach { case (k, v) => engineConf.set(k, v) }
     engineConf
   }
 
