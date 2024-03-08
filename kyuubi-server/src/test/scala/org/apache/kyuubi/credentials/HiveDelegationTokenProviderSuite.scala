@@ -35,7 +35,6 @@ import org.apache.hadoop.hive.metastore.security.{HadoopThriftAuthBridge, Hadoop
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 import org.apache.thrift.TProcessor
 import org.apache.thrift.protocol.TProtocol
 import org.scalatest.Assertions._
@@ -120,7 +119,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       assert(aliasAndToken._2 != null)
 
       val token = aliasAndToken._2
-      val tokenIdent = token.decodeIdentifier().asInstanceOf[AbstractDelegationTokenIdentifier]
+      val tokenIdent = token.decodeIdentifier().asInstanceOf[DelegationTokenIdentifier]
       assertResult(DelegationTokenIdentifier.HIVE_DELEGATION_KIND)(token.getKind)
       assertResult(new Text(owner))(tokenIdent.getOwner)
       val currentUserName = UserGroupInformation.getCurrentUser.getUserName
