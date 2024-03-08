@@ -49,7 +49,11 @@ class TrinoSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  val sessionConf: KyuubiConf = sessionManager.getConf
+  val sessionConf: KyuubiConf = {
+    val engineConf = sessionManager.getConf.clone
+    conf.foreach { case (k, v) => engineConf.set(k, v) }
+    engineConf
+  }
 
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
