@@ -101,17 +101,13 @@ abstract class TBinaryFrontendService(name: String)
         }
       _actualPort = tServerSocket.getServerSocket.getLocalPort
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
-      val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
       val args = new TThreadPoolServer.Args(tServerSocket)
         .processorFactory(tProcFactory)
         .transportFactory(transFactory)
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.MILLISECONDS)
-        .beBackoffSlotLength(beBackoffSlotLength)
-        .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
+        // THRIFT-5297 (fixed in 0.14.0) removes requestTimeout and beBackoffSlotLength
         .executorService(executor)
       // TCP Server
       server = Some(new TThreadPoolServer(args))

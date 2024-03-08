@@ -105,7 +105,7 @@ jetty-server/9.4.52.v20230823//jetty-server-9.4.52.v20230823.jar
 jetty-servlet/9.4.52.v20230823//jetty-servlet-9.4.52.v20230823.jar
 jetty-util-ajax/9.4.52.v20230823//jetty-util-ajax-9.4.52.v20230823.jar
 jetty-util/9.4.52.v20230823//jetty-util-9.4.52.v20230823.jar
-jline/0.9.94//jline-0.9.94.jar
+jline/2.14.6//jline-2.14.6.jar
 jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
 kafka-clients/3.5.1//kafka-clients-3.5.1.jar
 kubernetes-client-api/6.8.1//kubernetes-client-api-6.8.1.jar

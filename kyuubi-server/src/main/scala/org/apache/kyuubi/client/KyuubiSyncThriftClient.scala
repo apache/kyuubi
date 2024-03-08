@@ -36,6 +36,7 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.TConfiguration
 import org.apache.kyuubi.shaded.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.kyuubi.shaded.thrift.transport.TSocket
 import org.apache.kyuubi.util.{ThreadUtils, ThriftUtils}
@@ -457,7 +458,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       port: Int,
       socketTimeout: Int,
       connectionTimeout: Int): TProtocol = {
-    val tSocket = new TSocket(host, port, socketTimeout, connectionTimeout)
+    val tSocket = new TSocket(TConfiguration.DEFAULT, host, port, socketTimeout, connectionTimeout)
     val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
     tTransport.open()
     new TBinaryProtocol(tTransport)

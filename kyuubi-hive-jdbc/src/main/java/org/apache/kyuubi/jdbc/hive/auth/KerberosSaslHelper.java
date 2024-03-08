@@ -22,6 +22,7 @@ import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import org.apache.kyuubi.shaded.thrift.transport.TSaslClientTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public final class KerberosSaslHelper {
       String host,
       TTransport underlyingTransport,
       Map<String, String> saslProps)
-      throws SaslException {
+      throws SaslException, TTransportException {
     String resolvedPrincipal = KerberosUtils.canonicalPrincipal(serverPrincipal, host);
     String[] names = KerberosUtils.splitPrincipal(resolvedPrincipal);
     TTransport saslTransport =

@@ -28,7 +28,7 @@ class TSetIpAddressProcessor[I <: Iface](
   import TSetIpAddressProcessor._
 
   @throws[TException]
-  override def process(in: TProtocol, out: TProtocol): Boolean = {
+  override def process(in: TProtocol, out: TProtocol): Unit = {
     setIpAddress(in)
     setUserName(in)
     try {

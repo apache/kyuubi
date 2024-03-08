@@ -23,6 +23,7 @@
 * Since Kyuubi 1.9.0, the support of Derby is removal for Kyuubi metastore.
 * Since Kyuubi 1.9.0, the support of Spark SQL engine for Spark 3.1 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.9.0, the support of Spark extensions for Spark 3.1 is removed, please use Spark 3.2 or higher versions.
+* Since Kyuubi 1.9.0, `kyuubi.frontend.login.timeout`, `kyuubi.frontend.thrift.login.timeout`, `kyuubi.frontend.backoff.slot.length`, `kyuubi.frontend.thrift.backoff.slot.length` are removed.
 
 ## Upgrading from Kyuubi 1.8.0 to 1.8.1
 
