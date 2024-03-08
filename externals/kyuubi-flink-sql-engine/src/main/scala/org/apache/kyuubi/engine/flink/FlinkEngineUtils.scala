@@ -109,7 +109,22 @@ object FlinkEngineUtils extends Logging {
     val libDirs: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
       .getOrElse(JCollections.emptyList())
     val dependencies: JList[URL] = discoverDependencies(jars, libDirs)
-    if (FLINK_RUNTIME_VERSION === "1.16") {
+    if (FLINK_RUNTIME_VERSION >= "1.19") {
+      invokeAs[DefaultContext](
+        classOf[DefaultContext],
+        "load",
+        (classOf[Configuration], flinkConf),
+        (classOf[JList[URL]], dependencies),
+        (classOf[Boolean], JBoolean.TRUE))
+    } else if (FLINK_RUNTIME_VERSION >= "1.17") {
+      invokeAs[DefaultContext](
+        classOf[DefaultContext],
+        "load",
+        (classOf[Configuration], flinkConf),
+        (classOf[JList[URL]], dependencies),
+        (classOf[Boolean], JBoolean.TRUE),
+        (classOf[Boolean], JBoolean.FALSE))
+    } else if (FLINK_RUNTIME_VERSION === "1.16") {
       val commandLines: JList[CustomCommandLine] =
         Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
       DynConstructors.builder()
@@ -120,14 +135,6 @@ object FlinkEngineUtils extends Logging {
         .build()
         .newInstance(flinkConf, commandLines)
         .asInstanceOf[DefaultContext]
-    } else if (FLINK_RUNTIME_VERSION >= "1.17") {
-      invokeAs[DefaultContext](
-        classOf[DefaultContext],
-        "load",
-        (classOf[Configuration], flinkConf),
-        (classOf[JList[URL]], dependencies),
-        (classOf[Boolean], JBoolean.TRUE),
-        (classOf[Boolean], JBoolean.FALSE))
     } else {
       throw new KyuubiException(
         s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
