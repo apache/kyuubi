@@ -41,7 +41,7 @@ trait WithSecuredHMSContainer extends KyuubiFunSuite with TestContainerForAll {
   final val HIVE_METASTORE_KERBEROS_REALM = "TEST.ORG"
   final val HIVE_METASTORE_KERBEROS_PRINCIPAL = "hive/localhost"
   final val HIVE_METASTORE_KERBEROS_KEYTAB = "/hive.service.keytab"
-  final val DOCKER_IMAGE_NAME = "apache/kyuubi-hive-metastore:latest"
+  final val DOCKER_IMAGE_NAME = "nekyuubi/kyuubi-hive-metastore:latest"
 
   val hiveConf: Configuration = MetastoreConf.newMetastoreConf()
   val testPrincipal: String = HIVE_METASTORE_KERBEROS_PRINCIPAL

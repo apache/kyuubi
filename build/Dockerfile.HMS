@@ -24,7 +24,7 @@
 #        --build-arg HIVE_VERSION="2.3.9" \
 #        --build-arg HADOOP_VERSION="2.10.2" \
 #        --file build/Dockerfile.HMS \
-#        --tag apache/kyuubi-hive-metastore:<tag> \
+#        --tag nekyuubi/kyuubi-hive-metastore:<tag> \
 #        .
 #   Options:
 #     -f, --file  this docker file
