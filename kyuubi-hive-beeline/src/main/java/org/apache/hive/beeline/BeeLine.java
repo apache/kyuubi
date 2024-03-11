@@ -134,7 +134,7 @@ public class BeeLine implements Closeable {
   private final BeeLineOpts opts = new BeeLineOpts(this, System.getProperties());
   private String lastProgress = null;
   private final Map<SQLWarning, Date> seenWarnings = new HashMap<SQLWarning, Date>();
-  private final Commands commands = new Commands(this);
+  private Commands commands = new Commands(this);
   private OutputFile scriptOutputFile = null;
   private OutputFile recordOutputFile = null;
   private PrintStream outputStream = new PrintStream(System.out, true);
@@ -2381,5 +2381,9 @@ public class BeeLine implements Closeable {
 
   boolean isTestMode() {
     return isTestMode;
+  }
+
+  protected void setCommands(Commands commands) {
+    this.commands = commands;
   }
 }

@@ -137,7 +137,7 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     eventNotifier.progressBarCompleted();
 
     Thread logThread =
-        new Thread(beeLine.commands.createLogRunnable(kyuubiConnection, eventNotifier));
+        new Thread(beeLine.getCommands().createLogRunnable(kyuubiConnection, eventNotifier));
     logThread.setDaemon(true);
     logThread.start();
     kyuubiConnection.setEngineLogThread(logThread);

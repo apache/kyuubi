@@ -26,8 +26,13 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import org.apache.kyuubi.util.reflect.DynFields;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KyuubiBeeLineTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(KyuubiBeeLineTest.class);
+
   @Test
   public void testKyuubiBeelineWithoutArgs() {
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
@@ -90,15 +95,46 @@ public class KyuubiBeeLineTest {
 
   @Test
   public void testKyuubiBeelineComment() {
-    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
-    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment show database;"});
-    assertEquals(0, result);
-    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;"});
-    assertEquals(1, result);
-    result =
-        kyuubiBeeLine.initArgsFromCliVars(
-            new String[] {"-e", "--comment line 1 \n    --comment line 2 \n show database;"});
-    assertEquals(1, result);
+    KyuubiBeeLine interceptedKyuubiBeeLine =
+        new KyuubiBeeLine() {
+          @Override
+          boolean dispatch(String line) {
+            if (line != null && line.startsWith("!connect")) {
+              LOG.info("Return true for command: {} to pretend connection is established.", line);
+              return true;
+            }
+            return super.dispatch(line);
+          }
+        };
+
+    String[] cmd = new String[] {""};
+    KyuubiCommands interceptedCommands =
+        new KyuubiCommands(interceptedKyuubiBeeLine) {
+          @Override
+          public boolean sql(String line, boolean entireLineAsCommand) {
+            LOG.info("Return true for sql {} to pretend sql is executed successfully.", line);
+            cmd[0] = line;
+            return true;
+          }
+        };
+    interceptedKyuubiBeeLine.setCommands(interceptedCommands);
+
+    interceptedKyuubiBeeLine.initArgs(
+        new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
+    assertEquals(0, cmd[0].length());
+
+    // Beeline#exit must be false to execute sql
+    interceptedKyuubiBeeLine.setExit(false);
+    interceptedKyuubiBeeLine.initArgs(
+        new String[] {"-u", "dummy_url", "-e", "--comment\n show database;"});
+    assertEquals("show database;", cmd[0]);
+
+    interceptedKyuubiBeeLine.setExit(false);
+    interceptedKyuubiBeeLine.initArgs(
+        new String[] {
+          "-u", "dummy_url", "-e", "--comment line 1 \n    --comment line 2 \n show database;"
+        });
+    assertEquals("show database;", cmd[0]);
   }
 
   static class BufferPrintStream extends PrintStream {
