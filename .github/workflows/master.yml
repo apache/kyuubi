@@ -224,13 +224,16 @@ jobs:
         if: matrix.flink-archive == ''
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+          # ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+          ./build/sbt ${MVN_OPT} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} kyuubi-flink-sql-engine/test
+          ./build/sbt ${MVN_OPT} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} kyuubi-flink-it/test
       - name: Cross-version test Flink
         if: matrix.flink-archive != ''
         run: |
           IT_FLINK=`echo "${{ matrix.flink-archive }}" | grep -E 'flink\-([0-9]+\.[0-9]+.[0-9]+)\-bin' -o | grep -E '[0-9]+\.[0-9]+' -o`
           IT_MODULE="integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
+          # ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
+          ./build/sbt ${MVN_OPT} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} kyuubi-flink-it/test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -285,7 +288,9 @@ jobs:
             rm $HIVE_239_LIB/derby-*
             wget https://repo1.maven.org/maven2/org/apache/derby/derby/10.14.2.0/derby-10.14.2.0.jar -P $HIVE_239_LIB
           fi
-          ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
+          # ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
+          ./build/sbt ${MVN_OPT} ${{ matrix.hive-archive }} kyuubi-hive-sql-engine/test
+          ./build/sbt ${MVN_OPT} ${{ matrix.hive-archive }} kyuubi-hive-it/test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -326,7 +331,9 @@ jobs:
         run: |
           TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
           ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          # ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          ./build/sbt ${MVN_OPT} kyuubi-jdbc-engine/test
+          ./build/sbt ${MVN_OPT} kyuubi-jdbc-it/test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
