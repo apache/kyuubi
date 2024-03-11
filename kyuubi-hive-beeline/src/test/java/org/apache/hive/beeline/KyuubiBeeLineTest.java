@@ -111,10 +111,7 @@ public class KyuubiBeeLineTest {
             return true;
           }
         };
-    DynFields.builder()
-        .hiddenImpl(BeeLine.class, "commands")
-        .buildChecked(kyuubiBeeLine)
-        .set(commands);
+    kyuubiBeeLine.setCommands(commands);
 
     kyuubiBeeLine.initArgs(new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
     assertEquals(0, cmd[0].length());
