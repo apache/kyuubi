@@ -289,7 +289,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void showLaunchEngineLog() {
-    if (launchEngineOpHandle != null) {
+    if (launchEngineOpHandle != null && !ignoreLaunchEngineLog) {
       LOG.info("Starting to get launch engine log.");
       engineLogThread =
           new Thread("engine-launch-log") {
