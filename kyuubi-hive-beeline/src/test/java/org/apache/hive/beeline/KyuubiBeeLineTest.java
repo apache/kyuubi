@@ -89,8 +89,8 @@ public class KyuubiBeeLineTest {
   }
 
   @Test
-  public void testKyuubiBeelineComment() throws NoSuchFieldException {
-    KyuubiBeeLine kyuubiBeeLine =
+  public void testKyuubiBeelineComment() {
+    KyuubiBeeLine interceptedKyuubiBeeLine =
         new KyuubiBeeLine() {
           @Override
           boolean dispatch(String line) {
@@ -103,26 +103,28 @@ public class KyuubiBeeLineTest {
         };
 
     String[] cmd = new String[] {""};
-    KyuubiCommands commands =
-        new KyuubiCommands(kyuubiBeeLine) {
+    KyuubiCommands interceptedCommands =
+        new KyuubiCommands(interceptedKyuubiBeeLine) {
           @Override
           public boolean sql(String line, boolean entireLineAsCommand) {
             cmd[0] = line;
             return true;
           }
         };
-    kyuubiBeeLine.setCommands(commands);
+    interceptedKyuubiBeeLine.setCommands(interceptedCommands);
 
-    kyuubiBeeLine.initArgs(new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
+    interceptedKyuubiBeeLine.initArgs(
+        new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
     assertEquals(0, cmd[0].length());
 
     // Beeline#exit must be false to execute sql
-    kyuubiBeeLine.setExit(false);
-    kyuubiBeeLine.initArgs(new String[] {"-u", "dummy_url", "-e", "--comment\n show database;"});
+    interceptedKyuubiBeeLine.setExit(false);
+    interceptedKyuubiBeeLine.initArgs(
+        new String[] {"-u", "dummy_url", "-e", "--comment\n show database;"});
     assertEquals("show database;", cmd[0]);
 
-    kyuubiBeeLine.setExit(false);
-    kyuubiBeeLine.initArgs(
+    interceptedKyuubiBeeLine.setExit(false);
+    interceptedKyuubiBeeLine.initArgs(
         new String[] {
           "-u", "dummy_url", "-e", "--comment line 1 \n    --comment line 2 \n show database;"
         });
