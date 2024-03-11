@@ -146,6 +146,10 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     val authType = "hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
+      // auth_to_local is required for non-default realm
+      conf.set(
+        "hadoop.security.auth_to_local",
+        "DEFAULT RULE:[1:$1] RULE:[2:$1]")
       System.setProperty("java.security.krb5.conf", krb5ConfPath)
       UserGroupInformation.setConfiguration(conf)
       assert(UserGroupInformation.isSecurityEnabled)
