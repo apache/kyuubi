@@ -83,8 +83,8 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     try {
-      val fSession = super.getSessionOption(sessionHandle)
-      fSession.foreach(s =>
+      val session = super.getSessionOption(sessionHandle)
+      session.foreach(s =>
         sessionManager.closeSession(s.asInstanceOf[FlinkSessionImpl].fSession.getSessionHandle))
       super.closeSession(sessionHandle)
     } catch {
