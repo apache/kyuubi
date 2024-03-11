@@ -25,17 +25,12 @@ import com.dimafeng.testcontainers.{ContainerDef, GenericContainer}
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import com.github.dockerjava.api.model.{ExposedPort, Ports}
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.UserGroupInformation
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 
 import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf
 import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf.ConfVars._
 
-trait WithSecuredHMSContainer extends KyuubiFunSuite with TestContainerForAll {
-
-  private val tempDir = Utils.createTempDir(prefix = "kyuubi-server-hms")
-  private val exposedKdcPort = 88
-  private val exposedHmsPort = 9083
+trait WithSecuredHMSContainer extends KerberizedTestHelper with TestContainerForAll {
 
   final val HADOOP_SECURITY_AUTHENTICATION = "kerberos"
   final val HIVE_METASTORE_KERBEROS_REALM = "TEST.ORG"
@@ -43,11 +38,16 @@ trait WithSecuredHMSContainer extends KyuubiFunSuite with TestContainerForAll {
   final val HIVE_METASTORE_KERBEROS_KEYTAB = "/hive.service.keytab"
   final val DOCKER_IMAGE_NAME = "nekyuubi/kyuubi-hive-metastore:latest"
 
-  val hiveConf: Configuration = MetastoreConf.newMetastoreConf()
-  val testPrincipal: String = HIVE_METASTORE_KERBEROS_PRINCIPAL
-  val testKeytab: String = new File(tempDir.toFile, "hive.service.keytab").getAbsolutePath
-  val krb5ConfPath: String = new File(tempDir.toFile, "krb5.conf").getAbsolutePath
+  private val tempDir = Utils.createTempDir(prefix = "kyuubi-server-hms")
+  private val exposedKdcPort = 88
+  private val exposedHmsPort = 9083
+  private val testPrincipalOverride =
+    HIVE_METASTORE_KERBEROS_PRINCIPAL + "@" + HIVE_METASTORE_KERBEROS_REALM
+  private val krb5ConfPathOverride = new File(tempDir.toFile, "krb5.conf").getAbsolutePath
 
+  val hiveConf: Configuration = MetastoreConf.newMetastoreConf()
+
+  override val testKeytab: String = new File(tempDir.toFile, "hive.service.keytab").getAbsolutePath
   override val containerDef: HMSContainer.Def = HMSContainer.Def(
     DOCKER_IMAGE_NAME,
     exposedKdcPort,
@@ -56,6 +56,12 @@ trait WithSecuredHMSContainer extends KyuubiFunSuite with TestContainerForAll {
       "HADOOP_SECURITY_AUTHENTICATION" -> HADOOP_SECURITY_AUTHENTICATION,
       "HIVE_METASTORE_KERBEROS_PRINCIPAL" -> HIVE_METASTORE_KERBEROS_PRINCIPAL,
       "HIVE_METASTORE_KERBEROS_KEYTAB" -> HIVE_METASTORE_KERBEROS_KEYTAB))
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    testPrincipal = testPrincipalOverride
+    krb5ConfPath = krb5ConfPathOverride
+  }
 
   override def afterContainersStart(containers: Containers): Unit = {
     containers.copyFileFromContainer(HIVE_METASTORE_KERBEROS_KEYTAB, testKeytab)
@@ -85,29 +91,9 @@ trait WithSecuredHMSContainer extends KyuubiFunSuite with TestContainerForAll {
          |
          |""".stripMargin
 
-    val writer = Files.newBufferedWriter(Paths.get(krb5ConfPath), StandardCharsets.UTF_8)
+    val writer = Files.newBufferedWriter(Paths.get(krb5ConfPathOverride), StandardCharsets.UTF_8)
     writer.write(krb5ConfContent)
     writer.close()
-  }
-
-  def tryWithSecurityEnabled(block: => Unit): Unit = {
-    val conf = new Configuration()
-    assert(!UserGroupInformation.isSecurityEnabled)
-    val currentUser = UserGroupInformation.getCurrentUser
-    val authType = "hadoop.security.authentication"
-    try {
-      conf.set(authType, "KERBEROS")
-      System.setProperty("java.security.krb5.conf", krb5ConfPath)
-      UserGroupInformation.setConfiguration(conf)
-      assert(UserGroupInformation.isSecurityEnabled)
-      block
-    } finally {
-      conf.unset(authType)
-      System.clearProperty("java.security.krb5.conf")
-      UserGroupInformation.setLoginUser(currentUser)
-      UserGroupInformation.setConfiguration(conf)
-      assert(!UserGroupInformation.isSecurityEnabled)
-    }
   }
 }
 
