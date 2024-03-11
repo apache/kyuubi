@@ -89,16 +89,47 @@ public class KyuubiBeeLineTest {
   }
 
   @Test
-  public void testKyuubiBeelineComment() {
-    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
-    int result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment show database;"});
-    assertEquals(0, result);
-    result = kyuubiBeeLine.initArgsFromCliVars(new String[] {"-e", "--comment\n show database;"});
-    assertEquals(1, result);
-    result =
-        kyuubiBeeLine.initArgsFromCliVars(
-            new String[] {"-e", "--comment line 1 \n    --comment line 2 \n show database;"});
-    assertEquals(1, result);
+  public void testKyuubiBeelineComment() throws NoSuchFieldException {
+    KyuubiBeeLine kyuubiBeeLine =
+        new KyuubiBeeLine() {
+          @Override
+          boolean dispatch(String line) {
+            // Pretend connection is established
+            if (line != null && line.startsWith("!connect")) {
+              return true;
+            }
+            return super.dispatch(line);
+          }
+        };
+
+    String[] cmd = new String[] {""};
+    KyuubiCommands commands =
+        new KyuubiCommands(kyuubiBeeLine) {
+          @Override
+          public boolean sql(String line, boolean entireLineAsCommand) {
+            cmd[0] = line;
+            return true;
+          }
+        };
+    DynFields.builder()
+        .hiddenImpl(BeeLine.class, "commands")
+        .buildChecked(kyuubiBeeLine)
+        .set(commands);
+
+    kyuubiBeeLine.initArgs(new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
+    assertEquals(0, cmd[0].length());
+
+    // Beeline#exit must be false to execute sql
+    kyuubiBeeLine.setExit(false);
+    kyuubiBeeLine.initArgs(new String[] {"-u", "dummy_url", "-e", "--comment\n show database;"});
+    assertEquals("show database;", cmd[0]);
+
+    kyuubiBeeLine.setExit(false);
+    kyuubiBeeLine.initArgs(
+        new String[] {
+          "-u", "dummy_url", "-e", "--comment line 1 \n    --comment line 2 \n show database;"
+        });
+    assertEquals("show database;", cmd[0]);
   }
 
   static class BufferPrintStream extends PrintStream {
