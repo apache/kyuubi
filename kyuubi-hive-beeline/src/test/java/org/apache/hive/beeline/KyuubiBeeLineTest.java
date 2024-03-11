@@ -26,8 +26,13 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import org.apache.kyuubi.util.reflect.DynFields;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class KyuubiBeeLineTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(KyuubiBeeLineTest.class);
+
   @Test
   public void testKyuubiBeelineWithoutArgs() {
     KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
@@ -94,8 +99,8 @@ public class KyuubiBeeLineTest {
         new KyuubiBeeLine() {
           @Override
           boolean dispatch(String line) {
-            // Pretend connection is established
             if (line != null && line.startsWith("!connect")) {
+              LOG.info("Return true for command: {} to pretend connection is established.", line);
               return true;
             }
             return super.dispatch(line);
@@ -107,6 +112,7 @@ public class KyuubiBeeLineTest {
         new KyuubiCommands(interceptedKyuubiBeeLine) {
           @Override
           public boolean sql(String line, boolean entireLineAsCommand) {
+            LOG.info("Return true for sql {} to pretend sql is executed successfully.", line);
             cmd[0] = line;
             return true;
           }
