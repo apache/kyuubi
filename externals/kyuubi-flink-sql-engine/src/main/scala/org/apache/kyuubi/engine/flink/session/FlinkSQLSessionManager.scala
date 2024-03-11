@@ -61,8 +61,6 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
           .setSessionEndpointVersion(SqlGatewayRestAPIVersion.V1)
           .addSessionConfig(mapAsJavaMap(conf))
           .build)
-      val sessionConfig = flinkInternalSession.getSessionConfig
-      sessionConfig.putAll(conf.asJava)
       val session = new FlinkSessionImpl(
         protocol,
         user,
