@@ -65,8 +65,8 @@ Since v1.1.0, Kyuubi support building with different Spark profiles,
 |-------------|---------|-------|
 | -Pspark-3.2 |         | 1.4.0 |
 | -Pspark-3.3 |         | 1.6.0 |
-| -Pspark-3.4 | ✓       | 1.8.0 |
-| -Pspark-3.5 |         | 1.8.0 |
+| -Pspark-3.4 |         | 1.8.0 |
+| -Pspark-3.5 | ✓       | 1.8.0 |
 
 ## Building Kyuubi Against Different Scala Versions
 

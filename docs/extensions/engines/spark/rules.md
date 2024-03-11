@@ -49,7 +49,7 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
 | kyuubi-extension-spark-3-2 | 3.2.x                      | 1.4.0-incubating | N/A   | 1.4.0-incubating                  | spark-3.2     |
 | kyuubi-extension-spark-3-3 | 3.3.x                      | 1.6.0-incubating | N/A   | 1.6.0-incubating                  | spark-3.3     |
 | kyuubi-extension-spark-3-4 | 3.4.x                      | 1.8.0            | N/A   | 1.8.0                             | spark-3.4     |
-| kyuubi-extension-spark-3-4 | 3.5.x                      | 1.8.0            | N/A   | N/A                               | spark-3.5     |
+| kyuubi-extension-spark-3-5 | 3.5.x                      | 1.8.0            | N/A   | 1.9.0                             | spark-3.5     |
 
 1. Check the matrix that if you are using the supported Spark version, and find the corresponding Kyuubi Spark SQL Extension jar
 2. Get the Kyuubi Spark SQL Extension jar
