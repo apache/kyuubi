@@ -26,10 +26,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import javax.security.auth.login.LoginException;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hive.jdbc.HiveConnection;
-import org.apache.hive.service.auth.HiveAuthConstants;
-import org.apache.hive.service.cli.session.SessionUtils;
+import org.apache.hadoop.security.token.Token;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 
 /**
  * Simple client application to test various direct and proxy connection to HiveServer2 Note that
@@ -40,7 +41,7 @@ import org.apache.hive.service.cli.session.SessionUtils;
  * <client-principal>
  */
 public class ProxyAuthTest {
-  private static final String driverName = "org.apache.hive.jdbc.HiveDriver";
+  private static final String driverName = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   private static final String BEELINE_EXIT = "beeline.system.exit";
   private static Connection con = null;
   private static boolean noClose = false;
@@ -86,7 +87,7 @@ public class ProxyAuthTest {
       con = DriverManager.getConnection(url);
       System.out.println("Connected successfully to " + url);
       // get delegation token for the given proxy user
-      String token = ((HiveConnection) con).getDelegationToken(proxyUser, serverPrincipal);
+      String token = ((KyuubiConnection) con).getDelegationToken(proxyUser, serverPrincipal);
       if ("true".equals(System.getProperty("proxyAuth.debug", "false"))) {
         System.out.println("Got token: " + token);
       }
@@ -190,7 +191,7 @@ public class ProxyAuthTest {
       System.out.println("Connected successfully to " + url);
       runTest();
 
-      ((HiveConnection) con).cancelDelegationToken(token);
+      ((KyuubiConnection) con).cancelDelegationToken(token);
       con.close();
     } catch (SQLException e) {
       System.out.println("*** SQLException: " + e.getMessage() + " : " + e.getSQLState());
@@ -222,9 +223,25 @@ public class ProxyAuthTest {
     return UserGroupInformation.getCurrentUser();
   }
 
+  private static final String HS2_CLIENT_TOKEN = "hiveserver2ClientToken";
+
   private static void storeTokenInJobConf(String tokenStr) throws Exception {
-    SessionUtils.setTokenStr(getUGI(), tokenStr, HiveAuthConstants.HS2_CLIENT_TOKEN);
+    setTokenStr(getUGI(), tokenStr, HS2_CLIENT_TOKEN);
     System.out.println("Stored token " + tokenStr);
+  }
+
+  private static void setTokenStr(UserGroupInformation ugi, String tokenStr, String tokenService)
+      throws IOException {
+    Token<DelegationTokenIdentifier> delegationToken = createToken(tokenStr, tokenService);
+    ugi.addToken(delegationToken);
+  }
+
+  private static Token<DelegationTokenIdentifier> createToken(String tokenStr, String tokenService)
+      throws IOException {
+    Token<DelegationTokenIdentifier> delegationToken = new Token<>();
+    delegationToken.decodeFromUrlString(tokenStr);
+    delegationToken.setService(new Text(tokenService));
+    return delegationToken;
   }
 
   // run sql operations

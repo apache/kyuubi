@@ -207,6 +207,7 @@
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.42.0.0</sqlite.version>
+        <supercsv.version>2.2.0</supercsv.version>
         <swagger.version>2.2.1</swagger.version>
         <testcontainers-scala.version>0.41.0</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
@@ -221,9 +222,6 @@
         <webui.skip>true</webui.skip>
         <node.version>v18.16.0</node.version>
         <pnpm.version>v8.6.1</pnpm.version>
-
-        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
-        <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
 
         <hive.jdbc.artifact>kyuubi-hive-jdbc</hive.jdbc.artifact>
 
@@ -1257,6 +1255,12 @@
                 <groupId>com.jakewharton.fliptables</groupId>
                 <artifactId>fliptables</artifactId>
                 <version>${fliptables.verion}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>net.sf.supercsv</groupId>
+                <artifactId>super-csv</artifactId>
+                <version>${supercsv.version}</version>
             </dependency>
 
             <!-- RESTful service required -->
