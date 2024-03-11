@@ -30,20 +30,6 @@ public class ClientCommandHookFactory {
     return instance;
   }
 
-  public class SetCommandHook extends ClientHook {
-
-    public SetCommandHook(String sql) {
-      super(sql);
-    }
-
-    @Override
-    public void postHook(BeeLine beeLine) {
-      if (!beeLine.isBeeLine()) {
-        beeLine.getOpts().setHiveConf(beeLine.getCommands().getHiveConf(false));
-      }
-    }
-  }
-
   public class UseCommandHook extends ClientHook {
 
     public UseCommandHook(String sql) {
@@ -112,36 +98,20 @@ public class ClientCommandHookFactory {
   }
 
   public ClientHook getHook(BeeLine beeLine, String cmdLine) {
-    if (!beeLine.isBeeLine()) {
-      // In compatibility mode we need to hook to set, and use
-      if (cmdLine.toLowerCase().startsWith("set")) {
-        // Only set A = B command needs updating the configuration stored in client side.
-        if (cmdLine.contains("=")) {
-          return new SetCommandHook(cmdLine);
-        } else {
-          return null;
-        }
-      } else if (cmdLine.toLowerCase().startsWith("use")) {
+    // In beeline mode we need to hook to use, connect, go, in case
+    // the ShowDbInPrompt is set, so the database name is needed
+    if (beeLine.getOpts().getShowDbInPrompt()) {
+      if (cmdLine.toLowerCase().startsWith("use")) {
         return new UseCommandHook(cmdLine);
+      } else if (cmdLine.toLowerCase().startsWith("connect")) {
+        return new ConnectCommandHook(cmdLine);
+      } else if (cmdLine.toLowerCase().startsWith("go")) {
+        return new GoCommandHook(cmdLine);
       } else {
         return null;
       }
     } else {
-      // In beeline mode we need to hook to use, connect, go, in case
-      // the ShowDbInPrompt is set, so the database name is needed
-      if (beeLine.getOpts().getShowDbInPrompt()) {
-        if (cmdLine.toLowerCase().startsWith("use")) {
-          return new UseCommandHook(cmdLine);
-        } else if (cmdLine.toLowerCase().startsWith("connect")) {
-          return new ConnectCommandHook(cmdLine);
-        } else if (cmdLine.toLowerCase().startsWith("go")) {
-          return new GoCommandHook(cmdLine);
-        } else {
-          return null;
-        }
-      } else {
-        return null;
-      }
+      return null;
     }
   }
 }

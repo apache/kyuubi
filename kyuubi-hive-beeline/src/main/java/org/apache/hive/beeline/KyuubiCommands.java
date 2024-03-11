@@ -70,7 +70,6 @@ public class KyuubiCommands extends Commands {
     String[] tokens = tokenizeCmd(cmd);
     String cmd_1 = getFirstCmd(cmd, tokens[0].length());
 
-    cmd_1 = substituteVariables(getHiveConf(false), cmd_1);
     File sourceFile = new File(cmd_1);
     if (!sourceFile.isFile()) {
       return false;
@@ -487,10 +486,6 @@ public class KyuubiCommands extends Commands {
           .getDatabaseConnections()
           .setConnection(new KyuubiDatabaseConnection(beeLine, driver, url, props));
       beeLine.getDatabaseConnection().getConnection();
-
-      if (!beeLine.isBeeLine()) {
-        beeLine.updateOptsForCli();
-      }
 
       // see HIVE-19048 : Initscript errors are ignored
       int initScriptExecutionResult = beeLine.runInit();
