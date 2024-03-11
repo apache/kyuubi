@@ -215,7 +215,6 @@ org.apache.commons:commons-lang3
 com.google.errorprone:error_prone_annotations
 dev.failsafe:failsafe
 com.jakewharton.fliptables:fliptables
-com.github.mifmif:generex
 io.grpc:grpc-api
 io.grpc:grpc-context
 io.grpc:grpc-core
@@ -320,7 +319,6 @@ org.antlr:antlr4-runtime
 org.antlr:ST4
 jline:jline
 com.thoughtworks.paranamer:paranamer
-dk.brics.automaton:automaton
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
 com.github.luben:zstd-jni
