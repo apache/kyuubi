@@ -110,7 +110,7 @@ function build {
         error "Cannot found dir SPARK_HOME $SPARK_HOME, you must configure SPARK_HOME correct."
       fi
     fi
-    cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
+    cp -r "$SPARK_HOME/." "$KYUUBI_ROOT/spark-binary/"
   fi
 
   # Verify that the Docker image content directory is present
