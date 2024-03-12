@@ -24,7 +24,7 @@ import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.hive.common.util.HiveStringUtils;
+import org.apache.hive.beeline.common.util.HiveStringUtils;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 import org.apache.kyuubi.util.reflect.DynFields;
 import org.apache.kyuubi.util.reflect.DynMethods;

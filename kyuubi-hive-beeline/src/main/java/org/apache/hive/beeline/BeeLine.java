@@ -88,9 +88,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hive.beeline.cli.CliOptionsProcessor;
+import org.apache.hive.beeline.common.util.ShutdownHookManager;
 import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
 import org.apache.hive.beeline.hs2connection.BeelineSiteParseException;
 import org.apache.hive.beeline.hs2connection.BeelineSiteParser;
@@ -98,7 +96,6 @@ import org.apache.hive.beeline.hs2connection.HS2ConnectionFileParser;
 import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
 import org.apache.hive.beeline.hs2connection.HiveSiteHS2ConnectionFileParser;
 import org.apache.hive.beeline.hs2connection.UserHS2ConnectionFileParser;
-import org.apache.hive.common.util.ShutdownHookManager;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.JdbcUriParseException;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -684,66 +681,6 @@ public class BeeLine implements Closeable {
     }
   }
 
-  int initArgsFromCliVars(String[] args) {
-    List<String> commands = Collections.emptyList();
-
-    CliOptionsProcessor optionsProcessor = new CliOptionsProcessor();
-    if (!optionsProcessor.process(args)) {
-      return 1;
-    }
-    CommandLine commandLine = optionsProcessor.getCommandLine();
-
-    Properties confProps = commandLine.getOptionProperties("hiveconf");
-    for (String propKey : confProps.stringPropertyNames()) {
-      setHiveConfVar(propKey, confProps.getProperty(propKey));
-    }
-
-    Properties hiveVars = commandLine.getOptionProperties("define");
-    for (String propKey : hiveVars.stringPropertyNames()) {
-      getOpts().getHiveConfVariables().put(propKey, hiveVars.getProperty(propKey));
-    }
-
-    Properties hiveVars2 = commandLine.getOptionProperties("hivevar");
-    for (String propKey : hiveVars2.stringPropertyNames()) {
-      getOpts().getHiveConfVariables().put(propKey, hiveVars2.getProperty(propKey));
-    }
-
-    getOpts().setScriptFile(commandLine.getOptionValue("f"));
-
-    if (commandLine.getOptionValues("i") != null) {
-      getOpts().setInitFiles(commandLine.getOptionValues("i"));
-    }
-
-    dbName = commandLine.getOptionValue("database");
-    getOpts().setVerbose(Boolean.parseBoolean(commandLine.getOptionValue("verbose")));
-    getOpts().setSilent(Boolean.parseBoolean(commandLine.getOptionValue("silent")));
-
-    int code = 0;
-    if (commandLine.getOptionValues("e") != null) {
-      commands = Arrays.asList(commandLine.getOptionValues("e"));
-    }
-
-    if (!commands.isEmpty() && getOpts().getScriptFile() != null) {
-      System.err.println("The '-e' and '-f' options cannot be specified simultaneously");
-      optionsProcessor.printCliUsage();
-      return 1;
-    }
-
-    if (!commands.isEmpty()) {
-      embeddedConnect();
-      connectDBInEmbededMode();
-      for (Iterator<String> i = commands.iterator(); i.hasNext(); ) {
-        String command = i.next().toString();
-        debug(loc("executing-command", command));
-        if (!dispatch(command)) {
-          code++;
-        }
-      }
-      exit = true; // execute and exit
-    }
-    return code;
-  }
-
   int initArgs(String[] args) {
     List<String> commands = Collections.emptyList();
 
@@ -884,9 +821,6 @@ public class BeeLine implements Closeable {
 
   private void setHiveConfVar(String key, String val) {
     getOpts().getHiveConfVariables().put(key, val);
-    if (HiveConf.ConfVars.HIVE_EXECUTION_ENGINE.varname.equals(key) && "mr".equals(val)) {
-      info(HiveConf.generateMrDeprecationWarning());
-    }
   }
 
   private String constructCmd(
@@ -976,15 +910,6 @@ public class BeeLine implements Closeable {
     }
   }
 
-  public void updateOptsForCli() {
-    getOpts().updateBeeLineOptsFromConf();
-    getOpts().setShowHeader(false);
-    getOpts().setEscapeCRLF(false);
-    getOpts().setOutputFormat("dsv");
-    getOpts().setDelimiterForDSV(' ');
-    getOpts().setNullEmptyString(true);
-  }
-
   /**
    * Start accepting input from stdin, and dispatch it to the appropriate {@link CommandHandler}
    * until the global variable <code>exit</code> is true.
@@ -1005,17 +930,9 @@ public class BeeLine implements Closeable {
     // this method also initializes the consoleReader which is
     // needed by initArgs for certain execution paths
     ConsoleReader reader = initializeConsoleReader(inputStream);
-    if (isBeeLine) {
-      int code = initArgs(args);
-      if (code != 0) {
-        return code;
-      }
-    } else {
-      int code = initArgsFromCliVars(args);
-      if (code != 0 || exit) {
-        return code;
-      }
-      defaultConnect(false);
+    int code = initArgs(args);
+    if (code != 0) {
+      return code;
     }
 
     if (getOpts().isHelpAsked()) {
@@ -1194,33 +1111,10 @@ public class BeeLine implements Closeable {
     return ERRNO_OK;
   }
 
-  public int defaultConnect(boolean exitOnError) {
-    if (embeddedConnect() != ERRNO_OK && exitOnError) {
-      return ERRNO_OTHER;
-    }
-    if (connectDBInEmbededMode() != ERRNO_OK && exitOnError) {
-      return ERRNO_OTHER;
-    }
-    return ERRNO_OK;
-  }
-
   private int executeFile(String fileName) {
     InputStream fileStream = null;
     try {
-      if (!isBeeLine) {
-        org.apache.hadoop.fs.Path path = new org.apache.hadoop.fs.Path(fileName);
-        FileSystem fs;
-        HiveConf conf = getCommands().getHiveConf(true);
-        if (!path.toUri().isAbsolute()) {
-          fs = FileSystem.getLocal(conf);
-          path = fs.makeQualified(path);
-        } else {
-          fs = FileSystem.get(path.toUri(), conf);
-        }
-        fileStream = fs.open(path);
-      } else {
-        fileStream = new FileInputStream(fileName);
-      }
+      fileStream = new FileInputStream(fileName);
       return execute(initializeConsoleReader(fileStream), !getOpts().getForce());
     } catch (Throwable t) {
       handleException(t);
@@ -1385,13 +1279,9 @@ public class BeeLine implements Closeable {
       line = "!help";
     }
 
-    if (isBeeLine) {
-      if (line.startsWith(COMMAND_PREFIX)) {
-        // handle SQLLine command in beeline which starts with ! and does not end with ;
-        return execCommandWithPrefix(line);
-      } else {
-        return commands.sql(line, getOpts().getEntireLineAsCommand());
-      }
+    if (line.startsWith(COMMAND_PREFIX)) {
+      // handle SQLLine command in beeline which starts with ! and does not end with ;
+      return execCommandWithPrefix(line);
     } else {
       return commands.sql(line, getOpts().getEntireLineAsCommand());
     }
@@ -1664,20 +1554,7 @@ public class BeeLine implements Closeable {
   }
 
   String getPrompt() {
-    if (isBeeLine) {
-      return getPromptForBeeline();
-    } else {
-      return getPromptForCli();
-    }
-  }
-
-  String getPromptForCli() {
-    String prompt;
-    // read prompt configuration and substitute variables.
-    HiveConf conf = getCommands().getHiveConf(true);
-    prompt = conf.getVar(HiveConf.ConfVars.CLIPROMPT);
-    prompt = getCommands().substituteVariables(conf, prompt);
-    return prompt + getFormattedDb() + "> ";
+    return getPromptForBeeline();
   }
 
   /**

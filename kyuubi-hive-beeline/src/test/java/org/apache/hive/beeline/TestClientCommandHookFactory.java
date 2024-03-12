@@ -48,21 +48,6 @@ public class TestClientCommandHookFactory {
   }
 
   @Test
-  public void testGetHookCli() {
-    BeeLine beeLine = setupMockData(false, false);
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));
-    Assert.assertTrue(
-        ClientCommandHookFactory.get().getHook(beeLine, "set a=b;")
-            instanceof ClientCommandHookFactory.SetCommandHook);
-    Assert.assertTrue(
-        ClientCommandHookFactory.get().getHook(beeLine, "USE a.b")
-            instanceof ClientCommandHookFactory.UseCommandHook);
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "coNNect a.b"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "gO 1"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "g"));
-  }
-
-  @Test
   public void testGetHookBeeLineWithShowDbInPrompt() {
     BeeLine beeLine = setupMockData(true, true);
     Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));

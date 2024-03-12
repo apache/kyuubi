@@ -29,7 +29,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Iterator;
-import org.apache.hadoop.hive.common.cli.EscapeCRLFHelper;
+import org.apache.hive.beeline.common.cli.EscapeCRLFHelper;
 
 /**
  * Abstract base class representing a set of rows to be displayed. Holds column values as strings

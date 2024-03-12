@@ -52,14 +52,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.hadoop.hive.common.cli.ShellCmdExecutor;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.conf.HiveVariableSource;
-import org.apache.hadoop.hive.conf.SystemVariables;
-import org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hive.beeline.common.cli.ShellCmdExecutor;
+import org.apache.hive.beeline.common.util.HiveStringUtils;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
-import org.apache.hive.common.util.HiveStringUtils;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -755,29 +751,6 @@ public class Commands {
   }
 
   /**
-   * This method should only be used in CLI mode.
-   *
-   * @return the hive configuration from server side
-   */
-  public HiveConf getHiveConf(boolean call) {
-    HiveConf hiveConf = beeLine.getOpts().getConf();
-    if (hiveConf != null && call) {
-      return hiveConf;
-    } else {
-      return getHiveConfHelper(call);
-    }
-  }
-
-  public HiveConf getHiveConfHelper(boolean call) {
-    HiveConf conf = new HiveConf();
-    BufferedRows rows = getConfInternal(call);
-    while (rows != null && rows.hasNext()) {
-      addConf((Rows.Row) rows.next(), conf);
-    }
-    return conf;
-  }
-
-  /**
    * Use call statement to retrieve the configurations for substitution and sql for the
    * substitution.
    *
@@ -827,23 +800,6 @@ public class Commands {
     return rows;
   }
 
-  private void addConf(Rows.Row r, HiveConf hiveConf) {
-    if (r.isMeta) {
-      return;
-    }
-    if (r.values == null || r.values[0] == null || r.values[0].isEmpty()) {
-      return;
-    }
-    String val = r.values[0];
-    if (r.values[0].startsWith(SystemVariables.SYSTEM_PREFIX)
-        || r.values[0].startsWith(SystemVariables.ENV_PREFIX)) {
-      return;
-    } else {
-      String[] kv = val.split("=", 2);
-      if (kv.length == 2) hiveConf.set(kv[0], kv[1]);
-    }
-  }
-
   /** Extract and clean up the first command in the input. */
   private String getFirstCmd(String cmd, int length) {
     return cmd.substring(length).trim();
@@ -863,7 +819,6 @@ public class Commands {
     String[] tokens = tokenizeCmd(cmd);
     String cmd_1 = getFirstCmd(cmd, tokens[0].length());
 
-    cmd_1 = substituteVariables(getHiveConf(false), cmd_1);
     File sourceFile = new File(cmd_1);
     if (!sourceFile.isFile()) {
       return false;
@@ -1123,21 +1078,6 @@ public class Commands {
     return execute(line, false, entireLineAsCommand);
   }
 
-  public String substituteVariables(HiveConf conf, String line) {
-    if (!beeLine.isBeeLine()) {
-      // Substitution is only supported in non-beeline mode.
-      return new VariableSubstitution(
-              new HiveVariableSource() {
-                @Override
-                public Map<String, String> getHiveVariable() {
-                  return getHiveVariables();
-                }
-              })
-          .substitute(conf, line);
-    }
-    return line;
-  }
-
   public boolean sh(String line) {
     if (line == null || line.length() == 0) {
       return false;
@@ -1148,7 +1088,6 @@ public class Commands {
     }
 
     line = line.substring("sh".length()).trim();
-    if (!beeLine.isBeeLine()) line = substituteVariables(getHiveConf(false), line.trim());
 
     try {
       ShellCmdExecutor executor =
@@ -1641,9 +1580,6 @@ public class Commands {
           .setConnection(new DatabaseConnection(beeLine, driver, url, props));
       beeLine.getDatabaseConnection().getConnection();
 
-      if (!beeLine.isBeeLine()) {
-        beeLine.updateOptsForCli();
-      }
       beeLine.runInit();
 
       beeLine.setCompletions();

@@ -45,7 +45,6 @@ import jline.TerminalFactory;
 import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
 import jline.console.history.MemoryHistory;
-import org.apache.hadoop.hive.conf.HiveConf;
 
 class BeeLineOpts implements Completer {
   public static final int DEFAULT_MAX_WIDTH = 80;
@@ -89,8 +88,6 @@ class BeeLineOpts implements Completer {
   int timeout = -1;
   private String isolation = DEFAULT_ISOLATION_LEVEL;
   private String outputFormat = "table";
-  // This configuration is used only for client side configuration.
-  private HiveConf conf;
   private boolean trimScripts = true;
   private boolean allowMultiLineCommand = true;
 
@@ -266,20 +263,6 @@ class BeeLineOpts implements Completer {
     Properties p = new Properties();
     p.load(fin);
     loadProperties(p);
-  }
-
-  /** Update the options after connection is established in CLI mode. */
-  public void updateBeeLineOptsFromConf() {
-    if (!beeLine.isBeeLine()) {
-      if (conf == null) {
-        conf = beeLine.getCommands().getHiveConf(false);
-      }
-      setForce(HiveConf.getBoolVar(conf, HiveConf.ConfVars.CLIIGNOREERRORS));
-    }
-  }
-
-  public void setHiveConf(HiveConf conf) {
-    this.conf = conf;
   }
 
   public void loadProperties(Properties props) {
@@ -469,14 +452,7 @@ class BeeLineOpts implements Completer {
   }
 
   public boolean getShowHeader() {
-    if (beeLine.isBeeLine()) {
-      return showHeader;
-    } else {
-      boolean header;
-      HiveConf conf = beeLine.getCommands().getHiveConf(true);
-      header = HiveConf.getBoolVar(conf, HiveConf.ConfVars.HIVE_CLI_PRINT_HEADER);
-      return header;
-    }
+    return showHeader;
   }
 
   public void setEscapeCRLF(boolean escapeCRLF) {
@@ -484,14 +460,7 @@ class BeeLineOpts implements Completer {
   }
 
   public boolean getEscapeCRLF() {
-    if (beeLine.isBeeLine()) {
-      return escapeCRLF;
-    } else {
-      boolean flag;
-      HiveConf conf = beeLine.getCommands().getHiveConf(true);
-      flag = HiveConf.getBoolVar(conf, HiveConf.ConfVars.HIVE_CLI_PRINT_ESCAPE_CRLF);
-      return flag;
-    }
+    return escapeCRLF;
   }
 
   public void setShowDbInPrompt(boolean showDbInPrompt) {
@@ -505,12 +474,7 @@ class BeeLineOpts implements Completer {
    * @return Should the current db displayed in the prompt
    */
   public boolean getShowDbInPrompt() {
-    if (beeLine.isBeeLine()) {
-      return showDbInPrompt;
-    } else {
-      HiveConf conf = beeLine.getCommands().getHiveConf(true);
-      return HiveConf.getBoolVar(conf, HiveConf.ConfVars.CLIPRINTCURRENTDB);
-    }
+    return showDbInPrompt;
   }
 
   public void setHeaderInterval(int headerInterval) {
@@ -649,11 +613,6 @@ class BeeLineOpts implements Completer {
 
   public void setDelimiterForDSV(char delimiterForDSV) {
     this.delimiterForDSV = delimiterForDSV;
-  }
-
-  @Ignore
-  public HiveConf getConf() {
-    return conf;
   }
 
   public void setHelpAsked(boolean helpAsked) {

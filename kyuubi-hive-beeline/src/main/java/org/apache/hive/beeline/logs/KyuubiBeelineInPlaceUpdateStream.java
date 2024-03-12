@@ -19,8 +19,8 @@ package org.apache.hive.beeline.logs;
 
 import java.io.PrintStream;
 import java.util.List;
-import org.apache.hadoop.hive.common.log.InPlaceUpdate;
-import org.apache.hadoop.hive.common.log.ProgressMonitor;
+import org.apache.hive.beeline.common.log.InPlaceUpdate;
+import org.apache.hive.beeline.common.log.ProgressMonitor;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TJobExecutionStatus;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProgressUpdateResp;
