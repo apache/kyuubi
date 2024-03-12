@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      max-parallel: 1
+      max-parallel: 3
       matrix:
         java:
           - 8
@@ -296,15 +296,13 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-hive-sql-engine.log*
 
-  jdbc-it:
-    name: JDBC Test
+  jdbc-trino-tpc-it:
+    name: JDBC Trino TPC Tests
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      max-parallel: 1
       matrix:
-        java:
-          - 8
+        java: [ 8 ]
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v4
@@ -323,11 +321,17 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
-      - name: Build and test JDBC with maven w/o linters
+      - name: Build and test JDBC and Trino engines, TPC-H/TPC-DS with maven w/o linters
         run: |
-          TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          JDBC_TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
+          TRINO_TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
+          TPC_TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
+          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES},${TRINO_TEST_MODULES},${TPC_TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES} test
+          ./build/mvn ${MVN_OPT} -pl ${TRINO_TEST_MODULES} test
+          ./build/mvn ${MVN_OPT} -pl ${TPC_TEST_MODULES} test \
+          -Dmaven.plugin.scalatest.exclude.tags='' \
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -336,77 +340,7 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-jdbc-engine.log*
-
-  trino-it:
-    name: Trino Test
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        java:
-          - 8
-        comment: [ "normal" ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Free up disk space
-        run: ./.github/scripts/free_disk_space.sh
-      - name: Tune Runner VM
-        uses: ./.github/actions/tune-runner-vm
-      - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-          cache: 'maven'
-          check-latest: false
-      - name: Setup Maven
-        uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
-      - name: Build and test Trino with maven w/o linters
-        run: |
-          TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
-      - name: Upload test logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: unit-tests-log-java-${{ matrix.java }}-trino-${{ matrix.comment }}
-          path: |
-            **/target/unit-tests.log
             **/kyuubi-trino-engine.log*
-
-  tpch-tpcds:
-    name: TPC-H and TPC-DS Tests
-    runs-on: ubuntu-22.04
-    env:
-      SPARK_LOCAL_IP: localhost
-    steps:
-      - uses: actions/checkout@v4
-      - name: Free up disk space
-        run: ./.github/scripts/free_disk_space.sh
-      - name: Tune Runner VM
-        uses: ./.github/actions/tune-runner-vm
-      - name: Setup JDK 8
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 8
-          cache: 'maven'
-          check-latest: false
-      - name: Setup Maven
-        uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
-      - name: Run TPC-DS Tests
-        run: |
-          TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test \
-          -Dmaven.plugin.scalatest.exclude.tags='' \
-          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test
