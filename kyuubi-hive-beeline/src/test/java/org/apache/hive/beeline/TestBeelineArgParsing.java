@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.hive.common.util.HiveTestUtils;
+import org.apache.hive.beeline.common.HiveTestUtils;
 import org.apache.kyuubi.util.JavaUtils;
 import org.junit.Assert;
 import org.junit.Test;

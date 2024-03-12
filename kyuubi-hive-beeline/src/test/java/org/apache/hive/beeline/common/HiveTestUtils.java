@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.common.util;
+package org.apache.hive.beeline.common;
 
 import com.google.common.io.Files;
 import java.io.*;

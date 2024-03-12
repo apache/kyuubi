@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.common.log;
+package org.apache.hive.beeline.common.log;
 
 import static org.fusesource.jansi.Ansi.ansi;
 

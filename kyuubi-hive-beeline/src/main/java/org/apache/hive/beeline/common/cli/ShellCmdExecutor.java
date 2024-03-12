@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.hadoop.hive.common.cli;
+package org.apache.hive.beeline.common.cli;
 
 import java.io.IOException;
 import java.io.PrintStream;
-import org.apache.hive.common.util.StreamPrinter;
+import org.apache.hive.beeline.common.util.StreamPrinter;
 
 public class ShellCmdExecutor {
   private String cmd;

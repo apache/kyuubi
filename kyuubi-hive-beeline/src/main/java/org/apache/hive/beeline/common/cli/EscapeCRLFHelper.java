@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hadoop.hive.common.cli;
+package org.apache.hive.beeline.common.cli;
 
 public class EscapeCRLFHelper {
 

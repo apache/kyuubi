@@ -18,7 +18,7 @@
 
 package org.apache.hive.beeline;
 
-import static org.apache.hive.common.util.HiveStringUtils.removeComments;
+import static org.apache.hive.beeline.common.util.HiveStringUtils.removeComments;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;

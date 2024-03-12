@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.common.util;
+package org.apache.hive.beeline.common.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;

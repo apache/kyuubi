@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.common.util;
+package org.apache.hive.beeline.common.util;
 
 import java.io.*;
 import org.apache.hadoop.io.IOUtils;

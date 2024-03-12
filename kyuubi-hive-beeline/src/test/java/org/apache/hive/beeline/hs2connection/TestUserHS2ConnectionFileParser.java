@@ -20,7 +20,7 @@ package org.apache.hive.beeline.hs2connection;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.hive.common.util.HiveTestUtils;
+import org.apache.hive.beeline.common.HiveTestUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
