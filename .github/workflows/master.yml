@@ -46,7 +46,6 @@ jobs:
       matrix:
         java:
           - 8
-          - 11
           - 17
         spark:
           - '3.2'
@@ -185,7 +184,6 @@ jobs:
       matrix:
         java:
           - 8
-          - 11
         flink:
           - '1.16'
           - '1.17'
@@ -307,7 +305,6 @@ jobs:
       matrix:
         java:
           - 8
-          - 11
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v4
@@ -349,7 +346,6 @@ jobs:
       matrix:
         java:
           - 8
-          - 11
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v4
