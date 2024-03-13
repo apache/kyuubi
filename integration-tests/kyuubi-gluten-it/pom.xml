@@ -31,11 +31,18 @@
 
     <properties>
         <gluten.version>1.2.0-SNAPSHOT</gluten.version>
-        <spark.version>3.4.2</spark.version>
-        <spark.binary.version>3.4</spark.binary.version>
+        <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}-ubuntu_22.04</gluten.artifact.name>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.glutenproject</groupId>
+            <artifactId>${gluten.artifact.name}</artifactId>
+            <version>${gluten.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
@@ -90,38 +97,18 @@
 
     <profiles>
         <profile>
-            <id>gluten-spark-3.4</id>
+            <id>gluten-it</id>
             <properties>
+                <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
                 <maven.plugin.scalatest.include.tags>org.apache.kyuubi.tags.GlutenTest</maven.plugin.scalatest.include.tags>
-                <spark.version>3.4.2</spark.version>
-                <spark.binary.version>3.4</spark.binary.version>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>io.glutenproject</groupId>
-                    <artifactId>gluten-velox-bundle-spark3.4_2.12-ubuntu_22.04</artifactId>
-                    <version>${gluten.version}</version>
-                    <scope>system</scope>
-                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.4_2.12-ubuntu_22.04_x86_64-${gluten.version}.jar</systemPath>
-                </dependency>
-            </dependencies>
         </profile>
         <profile>
-            <id>gluten-spark-3.3</id>
+            <id>spark-3.3</id>
             <properties>
-                <maven.plugin.scalatest.include.tags>org.apache.kyuubi.tags.GlutenTest</maven.plugin.scalatest.include.tags>
+                <!-- Gluten does not support the latest Spark 3.3 now -->
                 <spark.version>3.3.1</spark.version>
-                <spark.binary.version>3.3</spark.binary.version>
             </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>io.glutenproject</groupId>
-                    <artifactId>gluten-velox-bundle-spark3.3_2.12-ubuntu_22.04</artifactId>
-                    <version>${gluten.version}</version>
-                    <scope>system</scope>
-                    <systemPath>${project.basedir}/../../gluten/package/target/gluten-velox-bundle-spark3.3_2.12-ubuntu_22.04_x86_64-${gluten.version}.jar</systemPath>
-                </dependency>
-            </dependencies>
         </profile>
     </profiles>
 </project>

@@ -115,9 +115,8 @@ jobs:
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests -Pgluten-spark-${{ matrix.spark }}
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test -Pgluten-spark-${{ matrix.spark }} \
-          -Dmaven.plugin.scalatest.exclude.tags='' -Dtest=none -Dmaven.plugin.scalatest.include.tags='org.apache.kyuubi.tags.GlutenTest'
+          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
+          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
