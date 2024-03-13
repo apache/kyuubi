@@ -2190,6 +2190,7 @@
                 <spark.binary.version>3.2</spark.binary.version>
                 <delta.artifact>delta-core</delta.artifact>
                 <delta.version>2.0.2</delta.version>
+                <!-- Iceberg 1.5.0 removed support for Spark 3.2. apache/iceberg#9295 -->
                 <iceberg.version>1.4.3</iceberg.version>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
