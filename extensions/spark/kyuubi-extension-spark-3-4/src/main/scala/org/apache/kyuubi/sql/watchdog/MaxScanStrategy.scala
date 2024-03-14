@@ -30,7 +30,6 @@ import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
  * Add MaxScanStrategy to avoid scan excessive partitions or files
