@@ -327,7 +327,7 @@ object SparkSQLEngine extends Logging {
       SparkTBinaryFrontendService.renewDelegationToken(session.sparkContext, credentials)
     }
 
-    kyuubiConf.get(ENGINE_SPARK_LOG_LEVEL).foreach { level =>
+    kyuubiConf.get(ENGINE_LOG_LEVEL).foreach { level =>
       session.sparkContext.setLogLevel(level)
     }
 

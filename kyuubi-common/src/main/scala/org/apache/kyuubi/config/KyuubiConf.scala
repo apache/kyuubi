@@ -3477,9 +3477,9 @@ object KyuubiConf {
     val ALL, DEBUG, ERROR, FATAL, INFO, OFF, TRACE, WARN = Value
   }
 
-  val ENGINE_SPARK_LOG_LEVEL: OptionalConfigEntry[String] =
+  val ENGINE_LOG_LEVEL: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.log.level")
-      .doc("The initialize sql for Spark engine.")
+      .doc("The log level of engine. It will override any user-defined log settings.")
       .version("1.9.1")
       .stringConf
       .checkValues(LOG_LEVEL)
