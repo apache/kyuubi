@@ -154,9 +154,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
         conf.set(key, value)
       }
       conf.set(KUBERNETES_CONTEXT, c)
-      namespace.foreach(ns => conf.set(KUBERNETES_NAMESPACE, ns))
       conf
     }
+    namespace.foreach(ns => conf.set(KUBERNETES_NAMESPACE, ns))
     conf
   }
 
