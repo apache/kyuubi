@@ -337,7 +337,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
   test("test fetch orientation with incremental collect mode") {
     val sql = "SELECT id FROM range(2)"
 
-    withSessionConf(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
+    withSessionConf(Map(KyuubiConf.ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TExecuteStatementReq()
         req.setSessionHandle(handle)

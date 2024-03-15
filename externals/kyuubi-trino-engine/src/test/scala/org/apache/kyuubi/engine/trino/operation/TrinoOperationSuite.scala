@@ -604,7 +604,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
 
       val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
       val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
-      if (kyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)) {
+      if (kyuubiConf.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT)) {
         assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       } else {
         assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
@@ -615,7 +615,7 @@ class TrinoOperationSuite extends WithTrinoEngine with TrinoQueryTests {
 
       val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
       val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
-      if (kyuubiConf.get(OPERATION_INCREMENTAL_COLLECT)) {
+      if (kyuubiConf.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT)) {
         assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
       } else {
         assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
