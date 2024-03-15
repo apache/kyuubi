@@ -234,50 +234,6 @@ case class MaxScanStrategy(session: SparkSession)
               logicalRelation.catalogTable)
           }
         }
-      case ScanOperation(_, _, _, relation: DataSourceV2ScanRelation) =>
-        val table = relation.relation.table
-        if (table.partitioning().nonEmpty &&
-          relation.scan.isInstanceOf[SupportsReportPartitioning]) {
-          val partitionColumnNames = table.partitioning().map(_.describe())
-          val stats = relation.computeStats()
-          lazy val scanFileSize = stats.sizeInBytes
-          lazy val scanPartitions = relation.scan.asInstanceOf[SupportsReportPartitioning]
-            .outputPartitioning()
-            .numPartitions()
-          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-            throw new MaxFileSizeExceedException(
-              s"""
-                 |SQL job scan file size in bytes: $scanFileSize
-                 |exceed restrict of table scan maxFileSize ${maxFileSizeOpt.get}
-                 |You should optimize your SQL logical according partition structure
-                 |or shorten query scope such as p_date, detail as below:
-                 |Table: ${table.name()}
-                 |Partition Structure: ${partitionColumnNames.mkString(",")}
-                 |""".stripMargin)
-          }
-          if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
-            throw new MaxPartitionExceedException(
-              s"""
-                 |Your SQL job scan a whole huge table without any partition filter,
-                 |You should optimize your SQL logical according partition structure
-                 |or shorten query scope such as p_date, detail as below:
-                 |Table: ${table.name()}
-                 |Partition Structure: ${partitionColumnNames.mkString(",")}
-                 |""".stripMargin)
-          }
-        } else {
-          val stats = relation.computeStats()
-          lazy val scanFileSize = stats.sizeInBytes
-          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-            new MaxFileSizeExceedException(
-              s"""
-                 |SQL job scan file size in bytes: $scanFileSize
-                 |exceed restrict of table scan maxFileSize ${maxFileSizeOpt.get}
-                 |detail as below:
-                 |Table: ${table.name()}
-                 |""".stripMargin)
-          }
-        }
       case _ =>
     }
   }
