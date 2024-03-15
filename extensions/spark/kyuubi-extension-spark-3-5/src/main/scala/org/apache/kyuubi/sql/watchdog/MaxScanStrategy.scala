@@ -234,14 +234,17 @@ case class MaxScanStrategy(session: SparkSession)
               logicalRelation.catalogTable)
           }
         }
-      case ScanOperation(_, _, _, relation: DataSourceV2ScanRelation) =>
+      case ScanOperation(
+            _,
+            _,
+            _,
+            relation @ DataSourceV2ScanRelation(_, scan: SupportsReportPartitioning, _, _, _)) =>
         val table = relation.relation.table
-        if (table.partitioning().nonEmpty &&
-          relation.scan.isInstanceOf[SupportsReportPartitioning]) {
+        if (table.partitioning().nonEmpty) {
           val partitionColumnNames = table.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
-          lazy val scanPartitions = relation.scan.asInstanceOf[SupportsReportPartitioning]
+          lazy val scanPartitions = scan
             .outputPartitioning()
             .numPartitions()
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
