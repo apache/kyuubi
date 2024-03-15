@@ -296,7 +296,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .queryParam("sharelevel", "USER")
         .queryParam("type", "spark_sql")
         .queryParam("forceKill", "true")
-        .queryParam("refId", id)
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
         .delete()
