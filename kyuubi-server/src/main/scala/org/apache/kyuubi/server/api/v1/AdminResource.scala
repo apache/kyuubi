@@ -293,23 +293,27 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val engineSpace = calculateEngineSpace(engine)
     var msg = s"Engine $engineSpace is deleted successfully."
     if (forceKill) {
-      if (StringUtils.isBlank(refId)) {
-        throw new IllegalArgumentException(s"Invalid refId: $refId")
-      }
+      val refIds = listEngines(
+        engineType,
+        shareLevel,
+        subdomain,
+        kyuubiProxyUser,
+        hs2ProxyUser).map(_.getAttributes.get("refId"))
 
-      val applicationManagerInfo = ApplicationManagerInfo(
-        Option(resourceManager),
-        Option(kubernetesContext),
-        Option(kubernetesNamespace))
-
-      val killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-        .applicationManager.killApplication(applicationManagerInfo, refId)
-      if (!killMessage._1) {
-        msg = s"Engine $engineSpace failed to get deleted forcibly," +
-          s"cause ${killMessage._2}"
-        error(msg)
-        throw new NotFoundException(msg)
-      }
+      refIds.filter(StringUtils.isNotBlank(_)).foreach(refId => {
+          val applicationManagerInfo = ApplicationManagerInfo(
+            Option(resourceManager),
+            Option(kubernetesContext),
+            Option(kubernetesNamespace))
+          val killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+            .applicationManager.killApplication(applicationManagerInfo, refId)
+          if (!killMessage._1) {
+            msg = s"Engine $engineSpace failed to get deleted forcibly," +
+              s"cause ${killMessage._2}"
+            error(msg)
+            throw new NotFoundException(msg)
+          }
+      })
     } else {
       withDiscoveryClient(fe.getConf) { discoveryClient =>
         val engineNodes = discoveryClient.getChildren(engineSpace)
