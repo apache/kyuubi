@@ -249,9 +249,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
       @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean,
       @QueryParam("refId") refId: String,
-      @QueryParam("sparK8Context") sparK8Context: String,
-      @QueryParam("sparK8Namespace") sparK8Namespace: String,
-      @QueryParam("sparkMaster") sparkMaster: String): Response = {
+      @QueryParam("kubernetesContext") kubernetesContext: String,
+      @QueryParam("kubernetesNamespace") kubernetesNamespace: String,
+      @QueryParam("resourceManager") resourceManager: String): Response = {
     val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(activeProxyUser).getOrElse(fe.getRealUser())
@@ -267,9 +267,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       }
 
       val applicationManagerInfo = ApplicationManagerInfo(
-        Option(sparkMaster),
-        Option(sparK8Context),
-        Option(sparK8Namespace))
+        Option(resourceManager),
+        Option(kubernetesContext),
+        Option(kubernetesNamespace))
 
       val killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
         .applicationManager.killApplication(applicationManagerInfo, refId)
