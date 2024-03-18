@@ -2292,6 +2292,13 @@
         </profile>
 
         <profile>
+            <id>flink-1.19</id>
+            <properties>
+                <flink.version>1.19.0</flink.version>
+            </properties>
+        </profile>
+
+        <profile>
             <id>zookeeper-3.6</id>
             <properties>
                 <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-36</kyuubi-relocated-zookeeper.artifacts>
