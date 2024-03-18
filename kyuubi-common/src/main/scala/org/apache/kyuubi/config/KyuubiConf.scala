@@ -575,7 +575,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.idleTimeout")
       .doc("The idle timeout in milliseconds for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .timeConf
       .createWithDefaultString("PT30S")
 
@@ -583,7 +583,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.maxConnections")
       .doc("The max number of connections per destination for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .intConf
       .createWithDefault(32768)
 
@@ -591,7 +591,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.maxThreads")
       .doc("The max number of threads of HttpClient's Executor for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .intConf
       .createWithDefault(256)
 
@@ -599,7 +599,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.requestBufferSize")
       .doc("Size of the buffer in bytes used to write requests for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .intConf
       .createWithDefault(4096)
 
@@ -607,7 +607,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.responseBufferSize")
       .doc("Size of the buffer in bytes used to read response for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .intConf
       .createWithDefault(4096)
 
@@ -615,7 +615,7 @@ object KyuubiConf {
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.timeout")
       .doc("The total timeout in milliseconds for Jetty server " +
         "used by the RESTful frontend service.")
-      .version("1.9.0")
+      .version("1.10.0")
       .timeConf
       .createWithDefaultString("PT60S")
 
