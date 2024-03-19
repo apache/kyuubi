@@ -2836,6 +2836,20 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_DEPLOY_YARN_PRINCIPAL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.yarn.principal")
+      .doc("Kerberos principal for the kyuubi engine when the engine deploy mode is YARN.")
+      .version("1.10.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DEPLOY_YARN_KEYTAB: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.yarn.keytab")
+      .doc("Kerberos keytab for the kyuubi engine when the engine deploy mode is YARN.")
+      .version("1.10.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_FLINK_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.flink.memory")
       .doc("The heap memory for the Flink SQL engine. Only effective in yarn session mode.")

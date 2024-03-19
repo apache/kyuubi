@@ -17,17 +17,19 @@
 package org.apache.kyuubi.engine.deploy.yarn
 
 import java.io.{File, IOException}
+import java.security.PrivilegedExceptionAction
 
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
-import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.command.CommandLineUtils.confKeyValues
@@ -71,7 +73,37 @@ object ApplicationMaster extends Logging {
           unregister(finalStatus, finalMsg)
         }
       })
-      runApplicationMaster()
+
+      val ugi = kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_PRINCIPAL) match {
+        case Some(principalName) =>
+          val originalCreds = UserGroupInformation.getCurrentUser().getCredentials()
+          val keytabFilename = kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_KEYTAB).orNull
+          if (!new File(keytabFilename).exists()) {
+            throw new KyuubiException(s"Keytab file: ${keytabFilename} does not exist")
+          } else {
+            info("Attempting to login to Kerberos " +
+              s"using principal: ${principalName} and keytab: ${keytabFilename}")
+            UserGroupInformation.loginUserFromKeytab(principalName, keytabFilename)
+          }
+
+          val newUGI = UserGroupInformation.getCurrentUser()
+
+          // Transfer the original user's tokens to the new user, since it may contain needed tokens
+          // (such as those user to connect to YARN).
+          // TODO originalCreds may have been expired if Application retries.
+          newUGI.addCredentials(originalCreds)
+          newUGI
+        case _ =>
+          val appUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+          require(appUser.isDefined)
+          val newUGI = UserGroupInformation.createRemoteUser(appUser.get)
+          newUGI.addCredentials(UserGroupInformation.getCurrentUser.getCredentials)
+          newUGI
+      }
+
+      ugi.doAs(new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = runApplicationMaster()
+      })
     } catch {
       case t: Throwable =>
         error("Error running ApplicationMaster", t)
