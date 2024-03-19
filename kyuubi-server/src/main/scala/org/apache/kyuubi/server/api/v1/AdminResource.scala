@@ -297,9 +297,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       engineNodes.foreach { node =>
         val nodePath = s"$engineSpace/$node"
         if (forceKill) {
-          val refIds = discoveryClient.getServiceNodesInfo(nodePath)
-            .flatMap(_.attributes.get("refId"))
-            .filter(StringUtils.isNotBlank(_))
+          val refIds = node.split(";")
+            .flatMap(_.split("=", 2) match {
+              case Array("refId", value) if StringUtils.isNotBlank(value) => Some(value)
+              case _ => None
+            })
 
           refIds.foreach(refId => {
             val applicationManagerInfo = ApplicationManagerInfo(
