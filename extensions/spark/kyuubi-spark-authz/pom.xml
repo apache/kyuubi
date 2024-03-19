@@ -50,16 +50,17 @@
             <version>${ranger.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-bundle</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.ranger</groupId>
                     <artifactId>ranger-plugin-classloader</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.ranger</groupId>
                     <artifactId>ranger-plugins-audit</artifactId>
+                </exclusion>
+                <!-- this is going to be replaced with jersey-client -->
+                <exclusion>
+                    <groupId>com.sun.jersey</groupId>
+                    <artifactId>jersey-bundle</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>log4j</groupId>
@@ -70,16 +71,8 @@
                     <artifactId>logback-classic</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>commons-logging</groupId>
                     <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>*</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -88,14 +81,6 @@
                 <exclusion>
                     <groupId>javax.ws.rs</groupId>
                     <artifactId>jsr311-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.jackson</groupId>
-                    <artifactId>jackson-core-asl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.jackson</groupId>
-                    <artifactId>jackson-mapper-asl</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.kstruct</groupId>
@@ -140,6 +125,12 @@
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna-platform</artifactId>
             <version>${jna.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.ranger</groupId>
+            <artifactId>ranger-plugin-classloader</artifactId>
+            <version>${ranger.version}</version>
         </dependency>
 
         <dependency>
@@ -257,18 +248,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
             <scope>provided</scope>
@@ -292,6 +271,18 @@
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
             <scope>test</scope>
             <!-- for hive related test only -->
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
