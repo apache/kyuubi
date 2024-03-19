@@ -54,6 +54,7 @@ class JdbcSessionImpl(
       kyuubiConf.set(ENGINE_JDBC_CONNECTION_USER, user)
       kyuubiConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
     }
+    conf.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
 
