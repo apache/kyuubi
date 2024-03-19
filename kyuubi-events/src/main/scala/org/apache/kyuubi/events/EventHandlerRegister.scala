@@ -55,6 +55,10 @@ trait EventHandlerRegister extends Logging {
     throw new KyuubiException(s"Unsupported kafka event logger.")
   }
 
+  protected def createHttpEventHandler(kyuubiConf: KyuubiConf): EventHandler[KyuubiEvent] = {
+    throw new KyuubiException(s"Unsupported http event logger.")
+  }
+
   private def loadEventHandler(
       eventLoggerType: EventLoggerType,
       kyuubiConf: KyuubiConf): Seq[EventHandler[KyuubiEvent]] = {
@@ -70,6 +74,9 @@ trait EventHandlerRegister extends Logging {
 
       case EventLoggerType.KAFKA =>
         createKafkaEventHandler(kyuubiConf) :: Nil
+
+      case EventLoggerType.HTTP =>
+        createHttpEventHandler(kyuubiConf) :: Nil
 
       case EventLoggerType.CUSTOM =>
         EventHandlerLoader.loadCustom(kyuubiConf)
