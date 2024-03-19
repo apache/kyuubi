@@ -52,4 +52,8 @@ else
   KYUUBI_BEELINE_CLASSPATH="${KYUUBI_BEELINE_JARS}/*:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
 fi
 
+if [[ -f ${KYUUBI_CONF_DIR}/log4j2-repl.xml ]]; then
+  KYUUBI_CTL_JAVA_OPTS="${KYUUBI_CTL_JAVA_OPTS} -Dlog4j2.configurationFile=log4j2-repl.xml"
+fi
+
 exec ${RUNNER} ${KYUUBI_BEELINE_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"

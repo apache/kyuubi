@@ -55,7 +55,7 @@
         <Root level="INFO">
             <AppenderRef ref="stdout"/>
         </Root>
-        <Logger name="org.apache.kyuubi.ctl.ServiceControlCli" level="error" additivity="false">
+        <Logger name="org.apache.kyuubi.ctl" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
         </Logger>
         <!--
