@@ -171,6 +171,14 @@ object HighAvailabilityConf {
       .checkValue(_ > 0, "Must be positive")
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
+  val HA_ENGINE_CLEANUP_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.ha.engine.cleanup.enabled")
+      .doc("When set to true, Kyuubi will delete the engine namespace node and lock node " +
+        "before engine stops.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val HA_ENGINE_REF_ID: OptionalConfigEntry[String] =
     buildConf("kyuubi.ha.engine.ref.id")
       .doc("The engine reference id will be attached to ZooKeeper node when engine started, " +

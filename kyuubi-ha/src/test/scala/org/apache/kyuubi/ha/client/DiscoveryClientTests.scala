@@ -22,8 +22,9 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, KyuubiSQLException}
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ENGINE_CLEANUP_ENABLED, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.service._
 
@@ -121,6 +122,63 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
             assert(logAppender.loggingEvents.exists(
               _.getMessage.getFormattedMessage.contains(msg)))
           }
+        }
+      } finally {
+        service.stop()
+        discovery.stop()
+      }
+    }
+  }
+
+  test("Kyuubi #6052: Cleanup engine namespace node and lock node") {
+    val logAppender = new LogAppender("cleanup engine")
+    withLogAppender(logAppender) {
+      val namespace = "/kyuubiengine"
+      val lockPath = DiscoveryPaths.makePath("lock", namespace)
+
+      conf
+        .set(HA_ADDRESSES, getConnectString)
+        .set(HA_NAMESPACE, namespace)
+        .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+        .set(HighAvailabilityConf.HA_ENGINE_CLEANUP_ENABLED, true)
+        .set(KyuubiReservedKeys.KYUUBI_ENGINE_LOCK_PATH, lockPath)
+
+      var discovery: ServiceDiscovery = null
+      val service: Serverable = new NoopTBinaryFrontendServer() {
+        override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+          new NoopTBinaryFrontendService(this) {
+            override val discoveryService: Option[Service] = {
+              discovery = new EngineServiceDiscovery(this)
+              Some(discovery)
+            }
+          })
+      }
+      service.initialize(conf)
+      service.start()
+
+      val basePath = s"$namespace"
+      try {
+        withDiscoveryClient(conf) { discoveryClient =>
+          assert(discoveryClient.pathExists(basePath))
+          val children = discoveryClient.getChildren(basePath)
+          assert(children.head ===
+            s"serverUri=${service.frontendServices.head.connectionUrl};" +
+            s"version=$KYUUBI_VERSION;sequence=0000000000")
+          discoveryClient.tryWithLock(lockPath, 1000) {}
+          assert(discoveryClient.pathExists(lockPath))
+
+          discovery.stop()
+
+          assert(discoveryClient.pathNonExists(basePath))
+          val cleanNamespaceMsg = s"Clean up discovery service due to " +
+            s"${HA_ENGINE_CLEANUP_ENABLED.key} is enabled."
+          assert(logAppender.loggingEvents.exists(
+            _.getMessage.getFormattedMessage.contains(cleanNamespaceMsg)))
+
+          assert(discoveryClient.pathNonExists(lockPath))
+          val cleanLockMsg = s"Clean up engine lock path $lockPath"
+          assert(logAppender.loggingEvents.exists(
+            _.getMessage.getFormattedMessage.contains(cleanLockMsg)))
         }
       } finally {
         service.stop()
