@@ -30,9 +30,6 @@
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %tn %c: %m%n%ex"/>
-            <Filters>
-                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-            </Filters>
         </Console>
         <RollingFile name="restAudit" fileName="${sys:logDir}/${sys:restAuditLogPath}"
                      filePattern="${sys:restAuditLogFilePattern}">
@@ -55,7 +52,7 @@
         <Root level="INFO">
             <AppenderRef ref="stdout"/>
         </Root>
-        <Logger name="org.apache.kyuubi.ctl.ServiceControlCli" level="error" additivity="false">
+        <Logger name="org.apache.kyuubi.ctl" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
         </Logger>
         <!--
