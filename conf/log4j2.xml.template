@@ -30,9 +30,6 @@
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %tn %c: %m%n%ex"/>
-            <Filters>
-                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-            </Filters>
         </Console>
         <RollingFile name="restAudit" fileName="${sys:logDir}/${sys:restAuditLogPath}"
                      filePattern="${sys:restAuditLogFilePattern}">
