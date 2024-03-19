@@ -247,21 +247,21 @@ case class MaxScanStrategy(session: SparkSession)
           lazy val scanPartitions = scan
             .outputPartitioning()
             .numPartitions()
-          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-            throw new MaxFileSizeExceedException(
+          if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
+            throw new MaxPartitionExceedException(
               s"""
-                 |SQL job scan file size in bytes: $scanFileSize
-                 |exceed restrict of table scan maxFileSize ${maxFileSizeOpt.get}
+                 |Your SQL job scan a whole huge table without any partition filter,
                  |You should optimize your SQL logical according partition structure
                  |or shorten query scope such as p_date, detail as below:
                  |Table: ${table.name()}
                  |Partition Structure: ${partitionColumnNames.mkString(",")}
                  |""".stripMargin)
           }
-          if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
-            throw new MaxPartitionExceedException(
+          if (maxFileSizeOpt.exists(_ < scanFileSize)) {
+            throw new MaxFileSizeExceedException(
               s"""
-                 |Your SQL job scan a whole huge table without any partition filter,
+                 |SQL job scan file size in bytes: $scanFileSize
+                 |exceed restrict of table scan maxFileSize ${maxFileSizeOpt.get}
                  |You should optimize your SQL logical according partition structure
                  |or shorten query scope such as p_date, detail as below:
                  |Table: ${table.name()}

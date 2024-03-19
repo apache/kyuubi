@@ -18,14 +18,12 @@
 package org.apache.spark.sql
 
 import java.io.File
-
 import scala.collection.JavaConverters._
-
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
-
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -605,6 +603,33 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         sql("SELECT TRANSFORM('') USING 'ls /'")
       }
       assert(e.getMessage == "Script transformation is not allowed")
+    }
+  }
+
+  test("watchdog with scan maxPartitions -- data source v2") {
+    withTempView("test") {
+      val df = spark.read.format(classOf[ReportStatisticsPartitionAwareDataSource].getName).load()
+      df.createOrReplaceTempView("test")
+      checkMaxPartition
+    }
+  }
+
+  test("watchdog with scan maxFileSize -- data source v2") {
+    withTempView("test", "test_non_part") {
+      val df = spark.read.format(classOf[ReportStatisticsPartitionAwareDataSource].getName).load()
+      df.createOrReplaceTempView("test")
+      val logical = df.queryExecution.optimizedPlan.collect {
+        case d: DataSourceV2ScanRelation => d
+      }.head
+      val tableSize = logical.computeStats().sizeInBytes.toLong
+
+      val nonPartDf = spark.read.format(classOf[ReportStatisticsDataSource].getName).load()
+      nonPartDf.createOrReplaceTempView("test_non_part")
+      val nonPartLogical = nonPartDf.queryExecution.optimizedPlan.collect {
+        case d: DataSourceV2ScanRelation => d
+      }.head
+      val nonPartTableSize = nonPartLogical.computeStats().sizeInBytes.toLong
+      checkMaxFileSize(tableSize, nonPartTableSize)
     }
   }
 }
