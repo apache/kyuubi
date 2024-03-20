@@ -58,7 +58,7 @@ class IncrementalResultFetchIterator(
 
   var hasNext: Boolean = true
 
-  val FETCH_INTERVAL_MS: Long = 1000
+  val FETCH_INTERVAL_MS: Long = 50
 
   // for Flink 1.16 and below, isQueryResult is not supported
   val isQueryResult: Boolean =
