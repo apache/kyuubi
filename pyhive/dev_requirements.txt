@@ -1,0 +1,19 @@
+# test-only packages: pin everything to minimize change
+flake8==3.4.1
+mock==2.0.0
+pycodestyle==2.3.1
+pytest==3.2.1
+pytest-cov==2.5.1
+pytest-flake8==0.8.1
+pytest-random==0.2
+pytest-timeout==1.2.0
+
+# actual dependencies: let things break if a package changes
+requests>=1.0.0
+requests_kerberos>=0.12.0
+sasl>=0.2.1
+pure-sasl>=0.6.2
+kerberos>=1.3.0
+thrift>=0.10.0
+#thrift_sasl>=0.1.0
+git+https://github.com/cloudera/thrift_sasl  # Using master branch in order to get Python 3 SASL patches

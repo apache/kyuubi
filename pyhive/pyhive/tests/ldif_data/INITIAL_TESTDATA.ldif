@@ -1,0 +1,13 @@
+dn: cn=existing,dc=example,dc=com
+objectClass: inetOrgPerson
+objectClass: organizationalPerson
+objectClass: person
+objectClass: top
+cn: existing
+sn: testentry
+mail: test.entry@example.com
+mail: te@example.com
+ou:: UGFsbcO2
+userPassword: testpw
+givenName: i am
+description: A test entry for pyhive
