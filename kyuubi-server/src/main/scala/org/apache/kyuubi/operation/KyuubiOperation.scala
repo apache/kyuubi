@@ -195,9 +195,9 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
-    val rowset = client.fetchResults(_remoteOpHandle, order, rowSetSize, fetchLog = false)
-    val resp = new TFetchResultsResp(OK_STATUS)
-    resp.setResults(rowset)
+    val remoteResp = client.fetchResp(_remoteOpHandle, order, rowSetSize, fetchLog = false)
+    val resp = new TFetchResultsResp(remoteResp.getStatus)
+    resp.setResults(remoteResp.getResults)
     resp.setHasMoreRows(false)
     resp
   }

@@ -17,6 +17,17 @@
 
 package org.apache.kyuubi.server
 
+import java.io.{ByteArrayInputStream, IOException}
+import java.nio.channels.Channels
+import java.util.Locale
+
+import scala.collection.JavaConverters._
+
+import org.apache.arrow.flatbuf.RecordBatch
+import org.apache.arrow.vector.ipc.ReadChannel
+import org.apache.arrow.vector.ipc.message.MessageSerializer
+
+import org.apache.kyuubi.Utils.warn
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -185,8 +196,17 @@ trait BackendServiceMetric extends BackendService {
       fetchLog: Boolean): TFetchResultsResp = {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
       val fetchResultsResp = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+      val infoMessages = fetchResultsResp.getStatus.getInfoMessages
+      val properties = if (infoMessages != null) {
+        infoMessages.asScala.map(line => {
+          val keyValue = line.toLowerCase(Locale.ROOT).split("=")
+          assert(keyValue.length == 2, "Illegal Kyuubi operation hint found!")
+          (keyValue(0), keyValue(1))
+        }).toMap
+      } else Map[String, String]()
+      val resultFormat = properties.getOrElse("__kyuubi_operation_result_format__", "thrift")
       val rowSet = fetchResultsResp.getResults
-      // TODO: the statistics are wrong when we enabled the arrow.
+
       val rowsSize =
         if (rowSet.getColumnsSize > 0) {
           rowSet.getColumns.get(0).getFieldValue match {
@@ -197,6 +217,24 @@ trait BackendServiceMetric extends BackendService {
             case t: TI16Column => t.getValues.size()
             case t: TBoolColumn => t.getValues.size()
             case t: TByteColumn => t.getValues.size()
+            case t: TBinaryColumn
+                if resultFormat == "arrow" =>
+              t.getValues.asScala.map(listBuff => {
+                val batchBytes = listBuff.array()
+                val input = new ByteArrayInputStream(batchBytes)
+                val readChannel = new ReadChannel(Channels.newChannel(input))
+                val messageMeta = MessageSerializer.readMessage(readChannel)
+                val recordBatch: RecordBatch =
+                  messageMeta.getMessage.header(new RecordBatch()).asInstanceOf[RecordBatch]
+                try {
+                  input.close()
+                  readChannel.close()
+                } catch {
+                  case e: IOException =>
+                    warn(e.getMessage, e)
+                }
+                recordBatch.length().toInt
+              }).sum
             case t: TBinaryColumn => t.getValues.size()
             case _ => 0
           }
@@ -210,7 +248,6 @@ trait BackendServiceMetric extends BackendService {
       val operation = sessionManager.operationManager
         .getOperation(operationHandle)
         .asInstanceOf[KyuubiOperation]
-
       if (fetchLog) {
         operation.increaseFetchLogCount(rowsSize)
       } else {
