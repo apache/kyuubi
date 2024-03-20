@@ -178,7 +178,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
 
   private def obtainHadoopFsDelegationToken(): Credentials = {
     val tokenRenewer = Master.getMasterPrincipal(hadoopConf)
-    info("Delegation token renewer is: " + tokenRenewer)
+    info(s"Delegation token renewer is: $tokenRenewer")
 
     if (tokenRenewer == null || tokenRenewer.isEmpty) {
       val errorMessage = "Can't get Master Kerberos principal for use as renewer."

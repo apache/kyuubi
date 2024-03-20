@@ -90,7 +90,6 @@ object ApplicationMaster extends Logging {
 
           // Transfer the original user's tokens to the new user, since it may contain needed tokens
           // (such as those user to connect to YARN).
-          // TODO originalCreds may have been expired if Application retries.
           newUGI.addCredentials(originalCreds)
           newUGI
         case _ =>
