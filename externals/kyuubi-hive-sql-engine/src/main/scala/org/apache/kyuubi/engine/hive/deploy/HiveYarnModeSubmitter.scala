@@ -35,10 +35,10 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
 
     if (UserGroupInformation.isSecurityEnabled) {
       require(
-        kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_PRINCIPAL).isDefined
-          && kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_KEYTAB).isDefined,
-        s"${KyuubiConf.ENGINE_DEPLOY_YARN_PRINCIPAL.key} and " +
-          s"${KyuubiConf.ENGINE_DEPLOY_YARN_KEYTAB.key} must be set when submit " +
+        kyuubiConf.get(KyuubiConf.ENGINE_PRINCIPAL).isDefined
+          && kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).isDefined,
+        s"${KyuubiConf.ENGINE_PRINCIPAL.key} and " +
+          s"${KyuubiConf.ENGINE_KEYTAB.key} must be set when submit " +
           s"${HiveSQLEngine.getClass.getSimpleName.stripSuffix("$")} to YARN")
     }
     run()

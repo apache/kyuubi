@@ -2836,16 +2836,16 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val ENGINE_DEPLOY_YARN_PRINCIPAL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.yarn.principal")
-      .doc("Kerberos principal for the kyuubi engine when the engine deploy mode is YARN.")
+  val ENGINE_PRINCIPAL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.principal")
+      .doc("Kerberos principal for the kyuubi engine.")
       .version("1.10.0")
       .stringConf
       .createOptional
 
-  val ENGINE_DEPLOY_YARN_KEYTAB: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.yarn.keytab")
-      .doc("Kerberos keytab for the kyuubi engine when the engine deploy mode is YARN.")
+  val ENGINE_KEYTAB: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.keytab")
+      .doc("Kerberos keytab for the kyuubi engine.")
       .version("1.10.0")
       .stringConf
       .createOptional

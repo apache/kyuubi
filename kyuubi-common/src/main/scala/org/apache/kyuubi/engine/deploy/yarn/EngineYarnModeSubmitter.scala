@@ -103,9 +103,9 @@ abstract class EngineYarnModeSubmitter extends Logging {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     appUser = kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY).orNull
     require(appUser != null)
-    keytab = kyuubiConf.get(ENGINE_DEPLOY_YARN_KEYTAB).orNull
+    keytab = kyuubiConf.get(ENGINE_KEYTAB).orNull
     amKeytabFileName = if (keytab != null) {
-      val principal = kyuubiConf.get(ENGINE_DEPLOY_YARN_PRINCIPAL).orNull
+      val principal = kyuubiConf.get(ENGINE_PRINCIPAL).orNull
       require(
         (principal == null) == (keytab == null),
         "Both principal and keytab must be defined, or neither.")
@@ -324,7 +324,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
       listDistinctFiles(yarnConf.get).foreach(putEntry)
 
       val properties = confToProperties(kyuubiConf)
-      amKeytabFileName.foreach(kt => properties.put(ENGINE_DEPLOY_YARN_KEYTAB.key, kt))
+      amKeytabFileName.foreach(kt => properties.put(ENGINE_KEYTAB.key, kt))
       writePropertiesToArchive(properties, KYUUBI_CONF_FILE, confStream)
     } finally {
       confStream.close()

@@ -74,10 +74,10 @@ object ApplicationMaster extends Logging {
         }
       })
 
-      val ugi = kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_PRINCIPAL) match {
+      val ugi = kyuubiConf.get(KyuubiConf.ENGINE_PRINCIPAL) match {
         case Some(principalName) =>
           val originalCreds = UserGroupInformation.getCurrentUser().getCredentials()
-          val keytabFilename = kyuubiConf.get(KyuubiConf.ENGINE_DEPLOY_YARN_KEYTAB).orNull
+          val keytabFilename = kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).orNull
           if (!new File(keytabFilename).exists()) {
             throw new KyuubiException(s"Keytab file: ${keytabFilename} does not exist")
           } else {
