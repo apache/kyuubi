@@ -345,6 +345,7 @@ object MetadataManager extends Logging {
       batchState,
       batchMetadata.createTime,
       batchMetadata.endTime,
-      Map.empty[String, String].asJava)
+      Map.empty[String, String].asJava,
+      batchMetadata.requestArgs.asJava)
   }
 }

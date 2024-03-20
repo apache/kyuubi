@@ -109,7 +109,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchOpStatus.state.toString,
       session.createTime,
       batchOpStatus.completed,
-      Map.empty[String, String].asJava)
+      Map.empty[String, String].asJava,
+      session.getBatchArgs.asJava)
   }
 
   private def buildBatch(
@@ -147,7 +148,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         currentBatchState,
         metadata.createTime,
         metadata.endTime,
-        Map.empty[String, String].asJava)
+        Map.empty[String, String].asJava,
+        metadata.requestArgs.asJava)
     }.getOrElse(MetadataManager.buildBatch(metadata))
   }
 
@@ -311,18 +313,19 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def batchInfo(@PathParam("batchId") batchId: String): Batch = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
+    var batch2return = new Batch()
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-      buildBatch(batchSession)
+      batch2return = buildBatch(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
         if (batchV2Enabled(metadata.requestConf) ||
           OperationState.isTerminal(OperationState.withName(metadata.state)) ||
           metadata.kyuubiInstance == fe.connectionUrl) {
-          MetadataManager.buildBatch(metadata)
+          batch2return = MetadataManager.buildBatch(metadata)
         } else {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
-            internalRestClient.getBatch(userName, batchId)
+            batch2return = internalRestClient.getBatch(userName, batchId)
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
@@ -332,7 +335,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                 Some(userName),
                 // prevent that the batch be marked as terminated if application state is NOT_FOUND
                 Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
-              buildBatch(metadata, batchAppStatus)
+              batch2return = buildBatch(metadata, batchAppStatus)
           }
         }
       }.getOrElse {
@@ -340,6 +343,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         throw new NotFoundException(s"Invalid batchId: $batchId")
       }
     }
+
+    val responseModel = ResponseModels
+      .withName(fe.getConf.get(BATCH_INFORMATION_RESPONSE_MODEL).toUpperCase)
+    responseModel match {
+      case ResponseModels.FAT => return batch2return
+      case _ => batch2return.setArgs(java.util.Collections.emptyList())
+    }
+    batch2return
   }
 
   @ApiResponse(

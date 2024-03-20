@@ -60,6 +60,8 @@ class KyuubiBatchSession(
 
   override def createTime: Long = metadata.map(_.createTime).getOrElse(super.createTime)
 
+  def getBatchArgs: Seq[String] = batchArgs
+
   override def getNoOperationTime: Long = {
     if (batchJobSubmissionOp != null) {
       val batchStatus = batchJobSubmissionOp.getStatus
