@@ -251,7 +251,6 @@ abstract class EngineYarnModeSubmitter extends Logging {
     amKeytabFileName.foreach { kt =>
       info("To enable the AM to login from keytab, credentials are being copied over to the AM" +
         " via the YARN Secure Distributed Cache.")
-      // TODO Add credentials to YARN Secure Distributed Cache instead of HDFS.
       distribute(
         new Path(new File(keytab).toURI),
         LocalResourceType.FILE,
