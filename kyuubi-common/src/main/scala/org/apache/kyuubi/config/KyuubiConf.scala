@@ -2656,7 +2656,7 @@ object KyuubiConf {
       .doc("When true, the result will be sequentially calculated and returned to" +
         s" the Spark driver. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
         " on incremental collect mode. It fallback to `kyuubi.operation.incremental.collect`")
-      .version("1.9.0")
+      .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
@@ -2692,7 +2692,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.trino.operation.incremental.collect")
       .doc("When true, the result will be sequentially calculated and returned to" +
         " the trino. It fallback to `kyuubi.operation.incremental.collect`")
-      .version("1.9.0")
+      .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_HIVE_MEMORY: ConfigEntry[String] =
@@ -3059,7 +3059,7 @@ object KyuubiConf {
     buildConf("kyuubi.engine.jdbc.operation.incremental.collect")
       .doc("When true, the result will be sequentially calculated and returned to" +
         " the JDBC engine. It fallback to `kyuubi.operation.incremental.collect`")
-      .version("1.9.0")
+      .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
