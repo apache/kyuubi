@@ -35,7 +35,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   def this() = this(classOf[SparkSQLOperationManager].getSimpleName)
 
   private lazy val planOnlyModeDefault = getConf.get(OPERATION_PLAN_ONLY_MODE)
-  private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
+  private lazy val operationIncrementalCollectDefault =
+    getConf.get(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT)
   private lazy val operationLanguageDefault = getConf.get(OPERATION_LANGUAGE)
   private lazy val operationConvertCatalogDatabaseDefault =
     getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED)
@@ -83,8 +84,10 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           spark.conf.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
           mode match {
             case NoneMode =>
-              val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
-                .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
+              val incrementalCollect =
+                spark.conf.getOption(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT.key)
+                  .orElse(spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key))
+                  .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
               // TODO: respect the config of the operation ExecuteStatement, if it was set.
               val resultFormat = spark.conf.get(OPERATION_RESULT_FORMAT.key, "thrift")
               resultFormat.toLowerCase match {

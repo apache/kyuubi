@@ -2033,8 +2033,7 @@ object KyuubiConf {
     buildConf("kyuubi.operation.incremental.collect")
       .internal
       .doc("When true, the executor side result will be sequentially calculated and returned to" +
-        s" the Spark driver side. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
-        " on incremental collect mode.")
+        s" the engine side.")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
@@ -2700,6 +2699,14 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 
+  val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.operation.incremental.collect")
+      .doc("When true, the result will be sequentially calculated and returned to" +
+        s" the Spark driver. Note that, ${OPERATION_RESULT_MAX_ROWS.key} will be ignored" +
+        " on incremental collect mode. It fallback to `kyuubi.operation.incremental.collect`")
+      .version("1.10.0")
+      .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
+
   val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.engine.spark.initialize.sql")
       .doc("The initialize sql for Spark session. " +
@@ -2728,6 +2735,13 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createOptional
+
+  val ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.trino.operation.incremental.collect")
+      .doc("When true, the result will be sequentially calculated and returned to" +
+        " the trino. It fallback to `kyuubi.operation.incremental.collect`")
+      .version("1.10.0")
+      .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_HIVE_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.hive.memory")
@@ -3088,6 +3102,13 @@ object KyuubiConf {
       .version("1.9.0")
       .intConf
       .createWithDefault(1000)
+
+  val ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.jdbc.operation.incremental.collect")
+      .doc("When true, the result will be sequentially calculated and returned to" +
+        " the JDBC engine. It fallback to `kyuubi.operation.incremental.collect`")
+      .version("1.10.0")
+      .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")
