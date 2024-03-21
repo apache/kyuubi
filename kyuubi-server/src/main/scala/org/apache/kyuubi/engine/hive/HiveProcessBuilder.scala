@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.hive
 
-import java.io.{File, IOException}
+import java.io.File
 import java.nio.file.{Files, Paths}
 
 import scala.collection.mutable
