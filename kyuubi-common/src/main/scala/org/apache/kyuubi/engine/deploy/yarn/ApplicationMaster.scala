@@ -102,7 +102,7 @@ object ApplicationMaster extends Logging {
           newUGI
         case _ =>
           val appUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
-          require(appUser.isDefined)
+          require(appUser.isDefined, s"${KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY} is not set")
           val newUGI = UserGroupInformation.createRemoteUser(appUser.get)
           newUGI.addCredentials(UserGroupInformation.getCurrentUser.getCredentials)
           newUGI

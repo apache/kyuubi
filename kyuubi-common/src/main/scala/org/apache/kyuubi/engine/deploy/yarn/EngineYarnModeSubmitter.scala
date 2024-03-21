@@ -102,14 +102,15 @@ abstract class EngineYarnModeSubmitter extends Logging {
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(kyuubiConf)
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     appUser = kyuubiConf.getOption(KYUUBI_SESSION_USER_KEY).orNull
-    require(appUser != null)
+    require(appUser != null, s"$KYUUBI_SESSION_USER_KEY is not set")
     keytab = kyuubiConf.get(ENGINE_KEYTAB).orNull
+    val principal = kyuubiConf.get(ENGINE_PRINCIPAL).orNull
+    require(
+      (principal == null) == (keytab == null),
+      "Both principal and keytab must be defined, or neither.")
     amKeytabFileName = if (keytab != null) {
-      val principal = kyuubiConf.get(ENGINE_PRINCIPAL).orNull
-      require(
-        (principal == null) == (keytab == null),
-        "Both principal and keytab must be defined, or neither.")
       info(s"Kerberos credentials: principal = $principal, keytab = $keytab")
+      UserGroupInformation.loginUserFromKeytab(principal, keytab)
       // Generate a file name that can be used for the keytab file, that does not conflict
       // with any user file.
       Some(new File(keytab).getName() + "-" + UUID.randomUUID().toString)
