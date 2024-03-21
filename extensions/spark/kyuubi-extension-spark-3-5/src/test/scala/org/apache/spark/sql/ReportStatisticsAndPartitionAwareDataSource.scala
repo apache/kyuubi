@@ -18,39 +18,47 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import java.util.OptionalLong
+
+import org.apache.spark.sql.connector.{RangeInputPartition, SimpleBatchTable, SimpleScanBuilder, SimpleWritableDataSource}
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.connector.expressions.FieldReference
+import org.apache.spark.sql.connector.expressions.{Expressions, FieldReference, Transform}
+import org.apache.spark.sql.connector.read.{InputPartition, ScanBuilder, Statistics, SupportsReportPartitioning, SupportsReportStatistics}
 import org.apache.spark.sql.connector.read.partitioning.{KeyGroupedPartitioning, Partitioning}
-import org.apache.spark.sql.connector.read.{InputPartition, PartitionReaderFactory, ScanBuilder, SupportsReportPartitioning, SupportsReportStatistics}
-import org.apache.spark.sql.connector.{RangeInputPartition, SimpleBatchTable, SimpleScanBuilder, SimpleWritableDataSource, SpecificReaderFactory}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class ReportStatisticsPartitionAwareDataSource extends SimpleWritableDataSource {
+class ReportStatisticsAndPartitionAwareDataSource extends SimpleWritableDataSource {
 
-  class MyScanBuilder extends SimpleScanBuilder
+  class MyScanBuilder(
+      val partitionKeys: Seq[String]) extends SimpleScanBuilder
     with SupportsReportStatistics with SupportsReportPartitioning {
 
     override def estimateStatistics(): Statistics = {
-     Statistics(sizeInBytes = 80, rowCount = 10)
+      new Statistics {
+        override def sizeInBytes(): OptionalLong = OptionalLong.of(80)
+
+        override def numRows(): OptionalLong = OptionalLong.of(10)
+
+      }
     }
 
     override def planInputPartitions(): Array[InputPartition] = {
       Array(RangeInputPartition(0, 5), RangeInputPartition(5, 10))
     }
 
-    override def createReaderFactory(): PartitionReaderFactory = {
-      SpecificReaderFactory
+    override def outputPartitioning(): Partitioning = {
+      new KeyGroupedPartitioning(partitionKeys.map(FieldReference(_)).toArray, 10)
     }
-
-    override def outputPartitioning(): Partitioning =
-      new KeyGroupedPartitioning(Array(FieldReference("p")), 10)
   }
 
   override def getTable(options: CaseInsensitiveStringMap): Table = {
     new SimpleBatchTable {
       override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-        new MyScanBuilder
+        new MyScanBuilder(Seq("i"))
+      }
+
+      override def partitioning(): Array[Transform] = {
+        Array(Expressions.identity("i"))
       }
     }
   }

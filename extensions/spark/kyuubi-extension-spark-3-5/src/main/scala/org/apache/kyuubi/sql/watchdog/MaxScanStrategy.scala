@@ -238,13 +238,14 @@ case class MaxScanStrategy(session: SparkSession)
             _,
             _,
             _,
-            relation @ DataSourceV2ScanRelation(_, scan: SupportsReportPartitioning, _, _, _)) =>
+            relation @ DataSourceV2ScanRelation(_, _, _, _, _)) =>
         val table = relation.relation.table
-        if (table.partitioning().nonEmpty) {
+        if (table.partitioning().nonEmpty &&
+          relation.scan.isInstanceOf[SupportsReportPartitioning]) {
           val partitionColumnNames = table.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
-          lazy val scanPartitions = scan
+          lazy val scanPartitions = relation.scan.asInstanceOf[SupportsReportPartitioning]
             .outputPartitioning()
             .numPartitions()
           if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
@@ -272,7 +273,7 @@ case class MaxScanStrategy(session: SparkSession)
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
-            new MaxFileSizeExceedException(
+            throw new MaxFileSizeExceedException(
               s"""
                  |SQL job scan file size in bytes: $scanFileSize
                  |exceed restrict of table scan maxFileSize ${maxFileSizeOpt.get}

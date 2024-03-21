@@ -18,12 +18,11 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
-import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.connector.expressions.FieldReference
-import org.apache.spark.sql.connector.read.partitioning.{KeyGroupedPartitioning, Partitioning}
-import org.apache.spark.sql.connector.read._
+import java.util.OptionalLong
+
 import org.apache.spark.sql.connector._
+import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class ReportStatisticsDataSource extends SimpleWritableDataSource {
@@ -32,16 +31,17 @@ class ReportStatisticsDataSource extends SimpleWritableDataSource {
     with SupportsReportStatistics {
 
     override def estimateStatistics(): Statistics = {
-      Statistics(sizeInBytes = 80, rowCount = 10)
+      new Statistics {
+        override def sizeInBytes(): OptionalLong = OptionalLong.of(80)
+
+        override def numRows(): OptionalLong = OptionalLong.of(10)
+      }
     }
 
     override def planInputPartitions(): Array[InputPartition] = {
       Array(RangeInputPartition(0, 5), RangeInputPartition(5, 10))
     }
 
-    override def createReaderFactory(): PartitionReaderFactory = {
-      SpecificReaderFactory
-    }
   }
 
   override def getTable(options: CaseInsensitiveStringMap): Table = {

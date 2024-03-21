@@ -18,12 +18,15 @@
 package org.apache.spark.sql
 
 import java.io.File
+
 import scala.collection.JavaConverters._
+
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
+
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
 trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
@@ -607,29 +610,47 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   }
 
   test("watchdog with scan maxPartitions -- data source v2") {
-    withTempView("test") {
-      val df = spark.read.format(classOf[ReportStatisticsPartitionAwareDataSource].getName).load()
-      df.createOrReplaceTempView("test")
-      checkMaxPartition
+    val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
+    df.createOrReplaceTempView("test")
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "10") {
+      checkAnswer(sql("SELECT count(distinct(i)) FROM test"), Row(10) :: Nil)
+    }
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "5") {
+      intercept[MaxPartitionExceedException](
+        sql("SELECT * FROM test").queryExecution.sparkPlan)
     }
   }
 
   test("watchdog with scan maxFileSize -- data source v2") {
-    withTempView("test", "test_non_part") {
-      val df = spark.read.format(classOf[ReportStatisticsPartitionAwareDataSource].getName).load()
-      df.createOrReplaceTempView("test")
-      val logical = df.queryExecution.optimizedPlan.collect {
-        case d: DataSourceV2ScanRelation => d
-      }.head
-      val tableSize = logical.computeStats().sizeInBytes.toLong
-
-      val nonPartDf = spark.read.format(classOf[ReportStatisticsDataSource].getName).load()
-      nonPartDf.createOrReplaceTempView("test_non_part")
-      val nonPartLogical = nonPartDf.queryExecution.optimizedPlan.collect {
-        case d: DataSourceV2ScanRelation => d
-      }.head
-      val nonPartTableSize = nonPartLogical.computeStats().sizeInBytes.toLong
-      checkMaxFileSize(tableSize, nonPartTableSize)
+    val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
+    df.createOrReplaceTempView("test")
+    val logical = df.queryExecution.optimizedPlan.collect {
+      case d: DataSourceV2ScanRelation => d
+    }.head
+    val tableSize = logical.computeStats().sizeInBytes.toLong
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> tableSize.toString) {
+      sql("SELECT * FROM test").queryExecution.sparkPlan
     }
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> (tableSize / 2).toString) {
+      intercept[MaxFileSizeExceedException](
+        sql("SELECT * FROM test").queryExecution.sparkPlan)
+    }
+
+    val nonPartDf = spark.read.format(classOf[ReportStatisticsDataSource].getName).load()
+    nonPartDf.createOrReplaceTempView("test_non_part")
+    val nonPartLogical = nonPartDf.queryExecution.optimizedPlan.collect {
+      case d: DataSourceV2ScanRelation => d
+    }.head
+    val nonPartTableSize = nonPartLogical.computeStats().sizeInBytes.toLong
+
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> nonPartTableSize.toString) {
+      sql("SELECT * FROM test_non_part").queryExecution.sparkPlan
+    }
+
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> (nonPartTableSize / 2).toString) {
+      intercept[MaxFileSizeExceedException](
+        sql("SELECT * FROM test_non_part").queryExecution.sparkPlan)
+    }
+
   }
 }
