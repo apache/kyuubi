@@ -27,6 +27,7 @@ import org.apache.hadoop.yarn.api.records.FinalApplicationStatus
 import org.apache.hadoop.yarn.client.api.AMRMClient
 import org.apache.hadoop.yarn.client.api.AMRMClient.ContainerRequest
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.hadoop.yarn.security.AMRMTokenIdentifier
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
@@ -79,18 +80,25 @@ object ApplicationMaster extends Logging {
           val originalCreds = UserGroupInformation.getCurrentUser().getCredentials()
           val keytabFilename = kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).orNull
           if (!new File(keytabFilename).exists()) {
-            throw new KyuubiException(s"Keytab file: ${keytabFilename} does not exist")
+            throw new KyuubiException(s"Keytab file: $keytabFilename does not exist")
           } else {
             info("Attempting to login to Kerberos " +
-              s"using principal: ${principalName} and keytab: ${keytabFilename}")
+              s"using principal: $principalName and keytab: $keytabFilename")
             UserGroupInformation.loginUserFromKeytab(principalName, keytabFilename)
           }
 
           val newUGI = UserGroupInformation.getCurrentUser()
 
-          // Transfer the original user's tokens to the new user, since it may contain needed tokens
-          // (such as those user to connect to YARN).
-          newUGI.addCredentials(originalCreds)
+          // Transfer YARN_AM_RM_TOKEN to the new user.
+          // Not transfer other tokens, such as HDFS_DELEGATION_TOKEN,
+          // to avoid "org.apache.hadoop.ipc.RemoteException(java.io.IOException):
+          // Delegation Token can be issued only with kerberos or web authentication"
+          // when engine tries to obtain new tokens.
+          KyuubiHadoopUtils.getTokenMap(originalCreds).values
+            .find(_.getKind == AMRMTokenIdentifier.KIND_NAME)
+            .foreach { token =>
+              newUGI.addToken(token)
+            }
           newUGI
         case _ =>
           val appUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)

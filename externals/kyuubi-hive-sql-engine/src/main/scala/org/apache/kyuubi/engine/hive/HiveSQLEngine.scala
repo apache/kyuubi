@@ -145,9 +145,10 @@ object HiveSQLEngine extends Logging {
         case DeployMode.LOCAL if principal.isDefined && keytab.isDefined =>
           UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
           val newUGI = UserGroupInformation.getCurrentUser
-          require(newUGI.getShortUserName == proxyUser.get,
+          require(
+            newUGI.getShortUserName == proxyUser.get,
             s"Engine proxy user: ${proxyUser.get} is not same with " +
-            s"engine principal: ${newUGI.getShortUserName}. ")
+              s"engine principal: ${newUGI.getShortUserName}. ")
           newUGI
         case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>
           val newUGI = UserGroupInformation.createProxyUser(proxyUser.get, realUser)
