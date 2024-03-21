@@ -105,10 +105,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
     require(appUser != null, s"$KYUUBI_SESSION_USER_KEY is not set")
     keytab = kyuubiConf.get(ENGINE_KEYTAB).orNull
     val principal = kyuubiConf.get(ENGINE_PRINCIPAL).orNull
-    require(
-      (principal == null) == (keytab == null),
-      "Both principal and keytab must be defined, or neither.")
-    amKeytabFileName = if (keytab != null) {
+    amKeytabFileName = if (principal != null && keytab != null) {
       info(s"Kerberos credentials: principal = $principal, keytab = $keytab")
       UserGroupInformation.loginUserFromKeytab(principal, keytab)
       // Generate a file name that can be used for the keytab file, that does not conflict

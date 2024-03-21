@@ -147,18 +147,12 @@ object HiveProcessBuilder extends Logging {
       principal.isDefined == keytab.isDefined,
       "Both principal and keytab must be defined, or neither.")
     if (principal.isDefined && keytab.isDefined) {
-      try {
-        val ugi = UserGroupInformation
-          .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        require(
-          ugi.getShortUserName == proxyUser,
-          s"Proxy user: $proxyUser is not same with " +
-            s"engine principal: ${ugi.getShortUserName}.")
-      } catch {
-        case e: IOException =>
-          error(s"Failed to login for ${principal.get}", e)
-          None
-      }
+      val ugi = UserGroupInformation
+        .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
+      require(
+        ugi.getShortUserName == proxyUser,
+        s"Proxy user: $proxyUser is not same with " +
+          s"engine principal: ${ugi.getShortUserName}.")
     }
   }
 }
