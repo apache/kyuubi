@@ -103,16 +103,16 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
     val session = createSession(protocol, user, password, ipAddress, conf)
+    val handle = session.handle
     try {
-      val handle = session.handle
-      session.open()
       setSession(handle, session)
+      session.open()
       logSessionCountInfo(session, "opened")
       handle
     } catch {
       case e: Exception =>
         try {
-          session.close()
+          closeSession(handle)
         } catch {
           case t: Throwable =>
             warn(s"Error closing session for $user client ip: $ipAddress", t)
