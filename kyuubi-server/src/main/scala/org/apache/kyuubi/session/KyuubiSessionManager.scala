@@ -175,14 +175,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
     val handle = batchSession.handle
     try {
-      batchSession.open()
       setSession(handle, batchSession)
+      batchSession.open()
       logSessionCountInfo(batchSession, "opened")
       handle
     } catch {
       case e: Exception =>
         try {
-          batchSession.close()
+          closeSession(handle)
         } catch {
           case t: Throwable =>
             warn(s"Error closing batch session[$handle] for $user client ip: $ipAddress", t)
