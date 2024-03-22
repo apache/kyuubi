@@ -31,7 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, EN
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
-import org.apache.kyuubi.engine.deploy.DeployMode.{DeployMode, LOCAL, YARN}
+import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -128,9 +128,8 @@ object HiveProcessBuilder extends Logging {
       engineRefId: String,
       extraEngineLog: Option[OperationLog],
       defaultEngineName: String): HiveProcessBuilder = {
-    val deployMode = DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE))
-    checkKeytab(deployMode, proxyUser, conf)
-    deployMode match {
+    checkKeytab(proxyUser, conf)
+    DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
       case LOCAL =>
         new HiveProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case YARN =>
@@ -141,7 +140,7 @@ object HiveProcessBuilder extends Logging {
     }
   }
 
-  private def checkKeytab(deployMode: DeployMode, proxyUser: String, conf: KyuubiConf): Unit = {
+  private def checkKeytab(proxyUser: String, conf: KyuubiConf): Unit = {
     val principal = conf.get(ENGINE_PRINCIPAL)
     val keytab = conf.get(ENGINE_KEYTAB)
     if (!UserGroupInformation.isSecurityEnabled) {
@@ -163,6 +162,7 @@ object HiveProcessBuilder extends Logging {
           s"engine principal: ${ugi.getShortUserName}.")
     }
 
+    val deployMode = DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE))
     if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
       warn("Hive on YARN can not work properly without principal and keytab.")
     }
