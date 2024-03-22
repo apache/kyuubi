@@ -186,7 +186,6 @@
         <prometheus.version>0.16.0</prometheus.version>
         <protobuf.version>3.21.7</protobuf.version>
         <py4j.version>0.10.7</py4j.version>
-        <ranger.version>2.4.0</ranger.version>
         <scalatest.version>3.2.16</scalatest.version>
         <scalatestplus.version>3.2.16.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
