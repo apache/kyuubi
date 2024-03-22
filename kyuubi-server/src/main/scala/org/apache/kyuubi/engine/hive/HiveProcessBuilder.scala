@@ -23,10 +23,11 @@ import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
@@ -121,19 +122,49 @@ object HiveProcessBuilder extends Logging {
   final val HIVE_ENGINE_NAME = "hive.engine.name"
 
   def apply(
-      appUser: String,
+      proxyUser: String,
       doAsEnabled: Boolean,
       conf: KyuubiConf,
       engineRefId: String,
       extraEngineLog: Option[OperationLog],
       defaultEngineName: String): HiveProcessBuilder = {
+    checkKeytab(proxyUser, conf)
     DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
-      case LOCAL => new HiveProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case LOCAL =>
+        new HiveProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case YARN =>
         warn(s"Hive on YARN model is experimental.")
         conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
-        new HiveYarnModeProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        new HiveYarnModeProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
+    }
+  }
+
+  private def checkKeytab(proxyUser: String, conf: KyuubiConf): Unit = {
+    val principal = conf.get(ENGINE_PRINCIPAL)
+    val keytab = conf.get(ENGINE_KEYTAB)
+    if (!UserGroupInformation.isSecurityEnabled) {
+      if (principal.isDefined || keytab.isDefined) {
+        warn("Principal and keytab takes no effect when hadoop security is not enabled.")
+      }
+      return
+    }
+
+    require(
+      principal.isDefined == keytab.isDefined,
+      s"Both principal and keytab must be defined, or neither.")
+    if (principal.isDefined && keytab.isDefined) {
+      val ugi = UserGroupInformation
+        .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
+      require(
+        ugi.getShortUserName == proxyUser,
+        s"Proxy user: $proxyUser is not same with " +
+          s"engine principal: ${ugi.getShortUserName}.")
+    }
+
+    val deployMode = DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE))
+    if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
+      warn("Hive on YARN can not work properly without principal and keytab.")
     }
   }
 }

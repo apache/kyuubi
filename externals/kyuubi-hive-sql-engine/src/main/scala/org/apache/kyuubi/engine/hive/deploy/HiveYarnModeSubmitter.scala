@@ -20,7 +20,10 @@ import java.io.File
 
 import scala.collection.mutable.ListBuffer
 
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_EXTRA_CLASSPATH
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
@@ -29,7 +32,16 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
 
   def main(args: Array[String]): Unit = {
     Utils.fromCommandLineArgs(args, kyuubiConf)
-    submitApplication()
+
+    if (UserGroupInformation.isSecurityEnabled) {
+      require(
+        kyuubiConf.get(KyuubiConf.ENGINE_PRINCIPAL).isDefined
+          && kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).isDefined,
+        s"${KyuubiConf.ENGINE_PRINCIPAL.key} and " +
+          s"${KyuubiConf.ENGINE_KEYTAB.key} must be set when submit " +
+          s"${HiveSQLEngine.getClass.getSimpleName.stripSuffix("$")} to YARN")
+    }
+    run()
   }
 
   override var engineType: String = "hive"

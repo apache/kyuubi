@@ -21,6 +21,7 @@ import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -34,7 +35,9 @@ class HiveCatalogDatabaseOperationSuite extends HiveJDBCTestHelper {
       CONF,
       s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true",
       CONF,
-      s"${ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key}=true")
+      s"${ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key}=true",
+      CONF,
+      s"${KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY}=kyuubi")
     HiveSQLEngine.main(args)
     super.beforeAll()
   }

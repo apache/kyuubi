@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.hive.operation
 import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 
 import org.apache.kyuubi.{HiveEngineTests, KYUUBI_VERSION, Utils}
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -31,7 +32,9 @@ class HiveOperationSuite extends HiveEngineTests {
     metastore.toFile.delete()
     val args = Array(
       CONF,
-      s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true")
+      s"javax.jdo.option.ConnectionURL=jdbc:derby:;databaseName=$metastore;create=true",
+      CONF,
+      s"${KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY}=kyuubi")
     HiveSQLEngine.main(args)
     super.beforeAll()
   }

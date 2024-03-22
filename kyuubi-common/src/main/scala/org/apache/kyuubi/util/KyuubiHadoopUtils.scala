@@ -72,6 +72,21 @@ object KyuubiHadoopUtils extends Logging {
     creds
   }
 
+  def serializeCredentials(creds: Credentials): Array[Byte] = {
+    val byteStream = new ByteArrayOutputStream
+    val dataStream = new DataOutputStream(byteStream)
+    creds.writeTokenStorageToStream(dataStream)
+    byteStream.toByteArray
+  }
+
+  def deserializeCredentials(tokenBytes: Array[Byte]): Credentials = {
+    val tokensBuf = new ByteArrayInputStream(tokenBytes)
+
+    val creds = new Credentials()
+    creds.readTokenStorageStream(new DataInputStream(tokensBuf))
+    creds
+  }
+
   /**
    * Get [[Credentials#tokenMap]] by reflection as [[Credentials#getTokenMap]] is not present before
    * Hadoop 3.2.1.
