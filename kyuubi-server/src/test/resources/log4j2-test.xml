@@ -21,6 +21,7 @@
 <Configuration status="WARN">
     <Properties>
         <Property name="restAuditLogPath">target/rest-audit.log</Property>
+        <Property name="opAuditLogPath">target/operation-audit.log</Property>
     </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
@@ -39,6 +40,9 @@
         <File name="restAudit" fileName="${sys:restAuditLogPath}">
             <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
         </File>
+        <File name="opAudit" fileName="${sys:opAuditLogPath}">
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
+        </File>
     </Appenders>
     <Loggers>
         <Root level="INFO">
@@ -47,6 +51,9 @@
         </Root>
         <Logger name="org.apache.kyuubi.server.http.authentication.AuthenticationAuditLogger" additivity="false">
             <AppenderRef ref="restAudit" />
+        </Logger>
+        <Logger name="org.apache.kyuubi.operation.OperationAuditLogger" additivity="false">
+            <AppenderRef ref="opAudit" />
         </Logger>
         <Logger name="org.apache.kyuubi.server.metadata.jdbc" level="DEBUG" additivity="false">
             <AppenderRef ref="stdout" />
