@@ -260,45 +260,34 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
     var msg = s"Engine $engineSpace is deleted successfully."
-
     withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val engineNodes = discoveryClient.getChildren(engineSpace)
-      engineNodes.foreach { node =>
-        val nodePath = s"$engineSpace/$node"
-        if (forceKill) {
-          val refIds = node.split(";")
-            .flatMap(_.split("=", 2) match {
-              case Array("refId", value) if StringUtils.isNotBlank(value) => Some(value)
-              case _ => None
-            })
+      val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace, silent = true)
+      engineNodes.foreach { engineNode =>
+        val nodePath = s"$engineSpace/${engineNode.nodeName}"
+        info(s"Deleting engine node:$nodePath")
+        try {
+          discoveryClient.delete(nodePath)
+        } catch {
+          case e: Exception =>
+            error(s"Failed to delete engine node:$nodePath", e)
+            throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
+              s"${e.getMessage}")
+        }
 
-          refIds.foreach(refId => {
-            val applicationManagerInfo = ApplicationManagerInfo(
-              Option(resourceManager),
-              Option(kubernetesContext),
-              Option(kubernetesNamespace))
-            val killMessage = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-              .applicationManager.killApplication(applicationManagerInfo, refId)
-            if (!killMessage._1) {
-              msg = s"Engine $engineSpace failed to get deleted forcibly," +
-                s"cause ${killMessage._2}"
-              error(msg)
-              throw new NotFoundException(msg)
-            }
-          })
-        } else {
-          info(s"Deleting engine node:$nodePath")
-          try {
-            discoveryClient.delete(nodePath)
-          } catch {
-            case e: Exception =>
-              error(s"Failed to delete engine node:$nodePath", e)
-              throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
-                s"${e.getMessage}")
+        if (forceKill) {
+          val applicationManagerInfo = ApplicationManagerInfo(
+            Option(resourceManager),
+            Option(kubernetesContext),
+            Option(kubernetesNamespace))
+          engineNode.engineRefId.foreach { engineRefId =>
+            fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+              .applicationManager.killApplication(applicationManagerInfo, engineRefId)
+
           }
         }
       }
     }
+
     Response.ok(msg).build()
   }
 
