@@ -150,17 +150,10 @@ object HiveProcessBuilder extends Logging {
       }
       return
     }
-    deployMode match {
-      case LOCAL =>
-        require(
-          principal.isDefined == keytab.isDefined,
-          s"Both principal and keytab must be defined, or neither in $LOCAL deploy mode.")
-      case YARN =>
-        require(
-          principal.isDefined && keytab.isDefined,
-          s"Both principal and keytab must be defined in $YARN deploy mode.")
-      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
-    }
+
+    require(
+      principal.isDefined == keytab.isDefined,
+      s"Both principal and keytab must be defined, or neither.")
     if (principal.isDefined && keytab.isDefined) {
       val ugi = UserGroupInformation
         .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
@@ -168,6 +161,10 @@ object HiveProcessBuilder extends Logging {
         ugi.getShortUserName == proxyUser,
         s"Proxy user: $proxyUser is not same with " +
           s"engine principal: ${ugi.getShortUserName}.")
+    }
+
+    if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
+      warn("Hive on YARN can not work properly without principal and keytab.")
     }
   }
 }
