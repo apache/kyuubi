@@ -76,7 +76,7 @@ object ApplicationMaster extends Logging {
       })
 
       val ugi = kyuubiConf.get(KyuubiConf.ENGINE_PRINCIPAL) match {
-        case Some(principalName) =>
+        case Some(principalName) if UserGroupInformation.isSecurityEnabled =>
           val originalCreds = UserGroupInformation.getCurrentUser().getCredentials()
           val keytabFilename = kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).orNull
           if (!new File(keytabFilename).exists()) {

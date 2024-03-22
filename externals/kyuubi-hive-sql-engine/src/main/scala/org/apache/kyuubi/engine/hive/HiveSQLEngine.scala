@@ -142,7 +142,8 @@ object HiveSQLEngine extends Logging {
       val keytab = kyuubiConf.get(ENGINE_KEYTAB)
 
       val ugi = DeployMode.withName(kyuubiConf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
-        case DeployMode.LOCAL if principal.isDefined && keytab.isDefined =>
+        case DeployMode.LOCAL
+            if UserGroupInformation.isSecurityEnabled && principal.isDefined && keytab.isDefined =>
           UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
           UserGroupInformation.getCurrentUser
         case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>

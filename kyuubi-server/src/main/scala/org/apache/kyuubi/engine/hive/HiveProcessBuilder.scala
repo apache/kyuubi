@@ -31,7 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, EN
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
-import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
+import org.apache.kyuubi.engine.deploy.DeployMode.{DeployMode, LOCAL, YARN}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -128,8 +128,9 @@ object HiveProcessBuilder extends Logging {
       engineRefId: String,
       extraEngineLog: Option[OperationLog],
       defaultEngineName: String): HiveProcessBuilder = {
-    checkKeytab(proxyUser, conf)
-    DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
+    val deployMode = DeployMode.withName(conf.get(ENGINE_HIVE_DEPLOY_MODE))
+    checkKeytab(deployMode, proxyUser, conf)
+    deployMode match {
       case LOCAL =>
         new HiveProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case YARN =>
@@ -140,12 +141,26 @@ object HiveProcessBuilder extends Logging {
     }
   }
 
-  private def checkKeytab(proxyUser: String, conf: KyuubiConf): Unit = {
+  private def checkKeytab(deployMode: DeployMode, proxyUser: String, conf: KyuubiConf): Unit = {
     val principal = conf.get(ENGINE_PRINCIPAL)
     val keytab = conf.get(ENGINE_KEYTAB)
-    require(
-      principal.isDefined == keytab.isDefined,
-      "Both principal and keytab must be defined, or neither.")
+    if (!UserGroupInformation.isSecurityEnabled) {
+      if (principal.isDefined || keytab.isDefined) {
+        warn("Principal and keytab takes no effect when hadoop security is not enabled.")
+      }
+      return
+    }
+    deployMode match {
+      case LOCAL =>
+        require(
+          principal.isDefined == keytab.isDefined,
+          s"Both principal and keytab must be defined, or neither in $LOCAL deploy mode.")
+      case YARN =>
+        require(
+          principal.isDefined && keytab.isDefined,
+          s"Both principal and keytab must be defined in $YARN deploy mode.")
+      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
+    }
     if (principal.isDefined && keytab.isDefined) {
       val ugi = UserGroupInformation
         .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
