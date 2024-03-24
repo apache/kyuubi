@@ -180,6 +180,27 @@ kyuubiConf:
   # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
   log4j2: ~
 
+# $HADOOP_CONF_DIR directory
+hadoopConfDir: /opt/hadoop/conf
+# Hadoop configuration files
+hadoopConf:
+  # The value (templated string) is used for core-site.xml file
+  # See https://github.com/apache/hadoop/blob/trunk/hadoop-common-project/hadoop-common/src/main/resources/core-default.xml and Hadoop documentation for more details
+  coreSite: ~
+  #  coreSite: |
+  #    <?xml version="1.0"?>
+  #    <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+  #    <configuration>
+  #      <property>
+  #        <name>hadoop.tmp.dir</name>
+  #        <value>/tmp/hadoop-${user.name}</value>
+  #      </property>
+  #    </configuration>
+
+  # The value (templated string) is used for hdfs-site.xml file
+  # See https://github.com/apache/hadoop/blob/trunk/hadoop-hdfs-project/hadoop-hdfs/src/main/resources/hdfs-default.xml and Hadoop documentation for more details
+  hdfsSite: ~
+
 # $SPARK_CONF_DIR directory
 sparkConfDir: /opt/spark/conf
 # Spark configuration files
