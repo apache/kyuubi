@@ -72,10 +72,8 @@ class SQLOperationListener(
 
   def getExecutionId: Option[Long] = executionId
 
-  // For broadcast, Spark will introduce a new runId as SPARK_JOB_GROUP_ID, see:
-  // https://github.com/apache/spark/pull/24595, So we will miss these logs.
-  // TODO: Fix this until the below ticket resolved
-  // https://issues.apache.org/jira/browse/SPARK-34064
+  // Prior SPARK-43952 (3.5.0), broadcast jobs uses a different group id, so we will
+  // miss those logs. See more details in SPARK-20774 (3.0.0)
   private def sameGroupId(properties: Properties): Boolean = {
     properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
