@@ -377,14 +377,22 @@ object SparkCatalogUtils extends Logging {
     // format: on
   }
 
-  /**
-   * Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.quoteIfNeeded]]
-   */
+  // SPARK-47300 (4.0.0): quoteIfNeeded should quote identifier starts with digits
+  private val validIdentPattern = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*")
+
+  // Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.QuotingUtils.quoteIfNeeded]]
   def quoteIfNeeded(part: String): String = {
-    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
+    if (validIdentPattern.matcher(part).matches()) {
       part
     } else {
-      s"`${part.replace("`", "``")}`"
+      quoteIdentifier(part)
     }
+  }
+
+  // Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.QuotingUtils.quoteIdentifier]]
+  def quoteIdentifier(name: String): String = {
+    // Escapes back-ticks within the identifier name with double-back-ticks, and then quote the
+    // identifier with back-ticks.
+    "`" + name.replace("`", "``") + "`"
   }
 }
