@@ -184,6 +184,8 @@ abstract class SparkOperation(session: Session)
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
+      // Prior SPARK-43952 (3.5.0), broadcast jobs uses a different group id, so we can not
+      // cancel those broadcast jobs. See more details in SPARK-20774 (3.0.0)
       if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
       withLockRequired {
         val errMsg = Utils.stringifyException(e)
