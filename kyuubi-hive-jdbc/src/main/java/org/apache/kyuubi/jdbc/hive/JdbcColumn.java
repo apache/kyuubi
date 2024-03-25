@@ -178,6 +178,7 @@ public class JdbcColumn {
       case INTERVAL_YEAR_MONTH_TYPE:
       case INTERVAL_DAY_TIME_TYPE:
       case UNION_TYPE:
+      case USER_DEFINED_TYPE:
         return OTHER;
       case DECIMAL_TYPE:
         return DECIMAL;
