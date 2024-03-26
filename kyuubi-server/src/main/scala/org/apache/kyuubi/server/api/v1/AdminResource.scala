@@ -45,6 +45,7 @@ import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHa
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class AdminResource extends ApiRequestContext with Logging {
+
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
@@ -290,14 +291,22 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
-    var msg = s"Engine $engineSpace is deleted successfully."
+    val responseMsgBuilder = new StringBuilder()
+
     withDiscoveryClient(fe.getConf) { discoveryClient =>
+      val appMgrInfo = ApplicationManagerInfo(
+        Option(resourceManager),
+        Option(kubernetesContext),
+        Option(kubernetesNamespace))
       val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace, silent = true)
       engineNodes.foreach { engineNode =>
         val nodePath = s"$engineSpace/${engineNode.nodeName}"
+        val engineRefId = engineNode.engineRefId.orNull
         info(s"Deleting engine node:$nodePath")
         try {
           discoveryClient.delete(nodePath)
+          responseMsgBuilder
+            .append(s"Engine $engineSpace refId=$engineRefId is deleted successfully.")
         } catch {
           case e: Exception =>
             error(s"Failed to delete engine node:$nodePath", e)
@@ -305,21 +314,16 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               s"${e.getMessage}")
         }
 
-        if (forceKill) {
-          val applicationManagerInfo = ApplicationManagerInfo(
-            Option(resourceManager),
-            Option(kubernetesContext),
-            Option(kubernetesNamespace))
-          engineNode.engineRefId.foreach { engineRefId =>
-            fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-              .applicationManager.killApplication(applicationManagerInfo, engineRefId)
-
-          }
+        if (forceKill && engineRefId != null) {
+          val killResponse = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+            .applicationManager.killApplication(appMgrInfo, engineRefId)
+          responseMsgBuilder
+            .append(s"\nKilled engine with $appMgrInfo/$engineRefId: $killResponse")
         }
       }
     }
 
-    Response.ok(msg).build()
+    Response.ok(responseMsgBuilder.toString()).build()
   }
 
   @ApiResponse(
