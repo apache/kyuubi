@@ -240,6 +240,8 @@ public class JdbcColumn {
         return "struct";
       case NULL_TYPE:
         return "void";
+      case UNION_TYPE:
+        return "uniontype";
       default:
         throw new KyuubiSQLException("Invalid column type: " + type);
     }
