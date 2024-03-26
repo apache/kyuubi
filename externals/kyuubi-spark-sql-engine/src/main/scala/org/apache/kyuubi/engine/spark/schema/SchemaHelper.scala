@@ -22,6 +22,7 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
+import org.apache.spark.sql.kyuubi.SparkDataTypeHelper
 import org.apache.spark.sql.types._
 
 object SchemaHelper {
@@ -64,7 +65,8 @@ object SchemaHelper {
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
-    // TODO: it is private now, case udt: UserDefinedType => TTypeId.USER_DEFINED_TYPE
+    // SPARK-7768(fixed in 3.2.0) promoted UserDefinedType to DeveloperApi
+    case _ if SparkDataTypeHelper.isUserDefinedType(typ) => TTypeId.USER_DEFINED_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")
   }
