@@ -241,6 +241,8 @@ public class JdbcColumn {
         return "struct";
       case NULL_TYPE:
         return "void";
+      case UNION_TYPE:
+        return "uniontype";
       case USER_DEFINED_TYPE:
         return "user_defined";
       default:
