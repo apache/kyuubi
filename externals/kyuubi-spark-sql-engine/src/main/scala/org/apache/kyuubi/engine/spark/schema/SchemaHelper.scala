@@ -66,6 +66,7 @@ object SchemaHelper {
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
+    // SPARK-7768(fixed in 3.2.0) promoted UserDefinedType to DeveloperApi
     case _ if SparkDataTypeHelper.isUserDefinedType(typ) => TTypeId.USER_DEFINED_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")
