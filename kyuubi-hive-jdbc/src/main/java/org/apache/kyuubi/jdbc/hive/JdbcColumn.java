@@ -241,6 +241,8 @@ public class JdbcColumn {
         return "struct";
       case NULL_TYPE:
         return "void";
+      case USER_DEFINED_TYPE:
+        return "user_defined";
       default:
         throw new KyuubiSQLException("Invalid column type: " + type);
     }
