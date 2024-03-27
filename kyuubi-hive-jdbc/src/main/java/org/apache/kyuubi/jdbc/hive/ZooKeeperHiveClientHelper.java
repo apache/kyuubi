@@ -22,9 +22,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.kyuubi.jdbc.hive.strategy.ChooseServerStrategy;
+import org.apache.kyuubi.jdbc.hive.strategy.StrategyFactory;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory;
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry;
@@ -111,13 +112,20 @@ class ZooKeeperHiveClientHelper {
     try (CuratorFramework zooKeeperClient = getZkClient(connParams)) {
       List<String> serverHosts = getServerHosts(connParams, zooKeeperClient);
       // Now pick a server node randomly
-      String serverNode = serverHosts.get(ThreadLocalRandom.current().nextInt(serverHosts.size()));
+      String serverNode = chooseServer(connParams,serverHosts,zooKeeperClient);
       updateParamsWithZKServerNode(connParams, zooKeeperClient, serverNode);
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Unable to read HiveServer2 configs from ZooKeeper", e);
     }
     // Close the client connection with ZooKeeper
+  }
+
+  private static String chooseServer(JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient) throws ZooKeeperHiveClientException {
+    String zooKeeperNamespace = getZooKeeperNamespace(connParams);
+    String zkStrategy = connParams.getSessionVars().getOrDefault(JdbcConnectionParams.ZOOKEEPER_STRATEGY, "random");
+    ChooseServerStrategy chooseServerStrategy = StrategyFactory.createStrategy(zkStrategy);
+    return chooseServerStrategy.chooseServer(serverHosts,zkClient,zooKeeperNamespace);
   }
 
   static List<JdbcConnectionParams> getDirectParamsList(JdbcConnectionParams connParams)
