@@ -112,7 +112,7 @@ class ZooKeeperHiveClientHelper {
     try (CuratorFramework zooKeeperClient = getZkClient(connParams)) {
       List<String> serverHosts = getServerHosts(connParams, zooKeeperClient);
       // Now pick a server node randomly
-      String serverNode = chooseServer(connParams,serverHosts,zooKeeperClient);
+      String serverNode = chooseServer(connParams, serverHosts, zooKeeperClient);
       updateParamsWithZKServerNode(connParams, zooKeeperClient, serverNode);
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
@@ -121,11 +121,14 @@ class ZooKeeperHiveClientHelper {
     // Close the client connection with ZooKeeper
   }
 
-  private static String chooseServer(JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient) throws ZooKeeperHiveClientException {
+  private static String chooseServer(
+      JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient)
+      throws ZooKeeperHiveClientException {
     String zooKeeperNamespace = getZooKeeperNamespace(connParams);
-    String zkStrategy = connParams.getSessionVars().getOrDefault(JdbcConnectionParams.ZOOKEEPER_STRATEGY, "random");
+    String zkStrategy =
+        connParams.getSessionVars().getOrDefault(JdbcConnectionParams.ZOOKEEPER_STRATEGY, "random");
     ChooseServerStrategy chooseServerStrategy = StrategyFactory.createStrategy(zkStrategy);
-    return chooseServerStrategy.chooseServer(serverHosts,zkClient,zooKeeperNamespace);
+    return chooseServerStrategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
   }
 
   static List<JdbcConnectionParams> getDirectParamsList(JdbcConnectionParams connParams)
