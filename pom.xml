@@ -562,6 +562,12 @@
 
             <dependency>
                 <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-trino_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>
@@ -1302,6 +1308,18 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>0.6.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>1.8.0</version>
             </dependency>
 
             <!-- flink -->

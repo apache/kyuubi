@@ -39,6 +39,12 @@ object ResultSetSchemaConstant {
 
   /**
    * String.
+   * CK Schema name
+   */
+  final val CK_TABLE_SCHEMA = "TABLE_SCHEMA"
+
+  /**
+   * String.
    * Schema name
    */
   final val TABLE_SCHEMA = "TABLE_SCHEMA"
