@@ -368,7 +368,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     withSessionConf(Map("spark.jars" -> localPath.toString))(Map.empty)() {
       withJdbcStatement() { statement =>
         val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
-        statement.executeQuery(s"add jar $localPath")
         val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
         rs.next()
         assert(rs.getString(1) === "3")
