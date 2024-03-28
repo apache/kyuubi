@@ -40,7 +40,7 @@
             <artifactId>${gluten.artifact.name}</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
+            <systemPath>${project.basedir}/../../gluten/dist/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
         </dependency>
 
         <dependency>
