@@ -161,6 +161,14 @@ object KyuubiServer extends Logging {
     val refreshedDenyUsers = sessionMgr.getDenyUsers
     info(s"Refreshed deny users from $existingDenyUsers to $refreshedDenyUsers")
   }
+
+  private[kyuubi] def refreshDenyIps(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingDenyIps = sessionMgr.getDenyIps
+    sessionMgr.refreshDenyIps(KyuubiConf().loadFileDefaults())
+    val refreshedDenyIps = sessionMgr.getDenyIps
+    info(s"Refreshed deny client ips from $existingDenyIps to $refreshedDenyIps")
+  }
 }
 
 class KyuubiServer(name: String) extends Serverable(name) {

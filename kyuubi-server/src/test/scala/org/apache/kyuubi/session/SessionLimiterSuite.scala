@@ -152,6 +152,21 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       "Connection denied because the user is in the deny user list. (user: user002)"))
   }
 
+  test("test session limiter with ip deny list") {
+    val ipAddress = "127.0.0.1"
+    val denyIps = Set(ipAddress)
+    val limiter =
+      SessionLimiter(100, 100, 100, Set.empty, Set.empty, denyIps)
+
+    val caught = intercept[KyuubiSQLException] {
+      val userIpAddress = UserIpAddress("user001", ipAddress)
+      limiter.increment(userIpAddress)
+    }
+
+    assert(caught.getMessage.equals(
+      "Connection denied because the client ip is in the deny ip list. (ipAddress: 127.0.0.1)"))
+  }
+
   test("test refresh unlimited users and deny users") {
     val random: Random = new Random()
     val latch = new CountDownLatch(600)
