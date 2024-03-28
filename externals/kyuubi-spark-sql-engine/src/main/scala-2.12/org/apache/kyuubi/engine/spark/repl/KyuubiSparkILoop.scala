@@ -18,12 +18,13 @@
 package org.apache.kyuubi.engine.spark.repl
 
 import java.io.{ByteArrayOutputStream, File, PrintWriter}
+import java.net.URI
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interpreter.Results
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
@@ -38,12 +39,31 @@ private[spark] case class KyuubiSparkILoop private (
 
   val result = new DataFrameHolder(spark)
 
+  /**
+   * Return the local jar files which will be added to REPL's classpath. These jar files are
+   * specified by --jars (spark.jars) or --packages, remote jars will be downloaded to local by
+   * SparkSubmit at first.
+   *
+   * Copied from o.a.s.util.Utils.getLocalUserJarsForShell
+   */
+  private def getLocalUserJarsForShell(conf: SparkConf): Seq[String] = {
+    val localJars = conf.getOption("spark.repl.local.jars")
+    localJars.map(_.split(",")).map(_.filter(_.nonEmpty)).toSeq.flatten
+  }
+
   private def initialize(): Unit = withLockRequired {
-    settings = new Settings
+    val sparkConf = spark.sparkContext.getConf
+    val jars = getLocalUserJarsForShell(sparkConf)
+      // Remove file:///, file:// or file:/ scheme if exists for each jar
+      .map { x => if (x.startsWith("file:")) new File(new URI(x)).getPath else x }
+      .mkString(File.pathSeparator)
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
-      s"${spark.sparkContext.getConf.get("spark.repl.class.outputDir")}")
+      s"${sparkConf.get("spark.repl.class.outputDir")}",
+      "-classpath",
+      jars)
+    settings = new Settings
     settings.processArguments(interpArguments, processAll = true)
     settings.usejavacp.value = true
     val currentClassLoader = Thread.currentThread().getContextClassLoader
