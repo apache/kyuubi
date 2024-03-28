@@ -144,7 +144,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
-    description = "refresh the deny users")
+    description = "refresh the deny ips")
   @POST
   @Path("refresh/deny_ips")
   def refreshDenyIp(): Response = {
