@@ -18,6 +18,7 @@
 package org.apache.hive.beeline;
 
 import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
+import static org.apache.kyuubi.jdbc.hive.KyuubiConnection.IGNORE_LAUNCH_ENGINE_PROPERTY;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.io.*;
@@ -448,6 +449,10 @@ public class KyuubiCommands extends Commands {
             new String[] {
               AUTH_PASSWD, "javax.jdo.option.ConnectionPassword", "ConnectionPassword",
             });
+
+    if (beeLine.isIgnoreLaunchEngine()) {
+      props.put(IGNORE_LAUNCH_ENGINE_PROPERTY, "true");
+    }
 
     if (url == null || url.length() == 0) {
       return beeLine.error("Property \"url\" is required");

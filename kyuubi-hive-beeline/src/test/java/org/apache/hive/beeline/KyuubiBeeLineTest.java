@@ -19,6 +19,7 @@
 package org.apache.hive.beeline;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -91,6 +92,32 @@ public class KyuubiBeeLineTest {
     kyuubiBeeLine.initArgs(args3);
     assertTrue(!kyuubiBeeLine.isPythonMode());
     kyuubiBeeLine.setPythonMode(false);
+  }
+
+  @Test
+  public void testKyuubiBeelineIgnoreLaunchEngine() {
+    KyuubiBeeLine kyuubiBeeLine = new KyuubiBeeLine();
+    String[] args1 = {"-u", "badUrl", "--ignore-launch-engine"};
+    kyuubiBeeLine.initArgs(args1);
+    assertTrue(kyuubiBeeLine.isIgnoreLaunchEngine());
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args2 = {"--ignore-launch-engine", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args2);
+    assertTrue(kyuubiBeeLine.isIgnoreLaunchEngine());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args3 = {"-u", "badUrl"};
+    kyuubiBeeLine.initArgs(args3);
+    assertFalse(kyuubiBeeLine.isIgnoreLaunchEngine());
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
+
+    String[] args4 = {"--ignore-launch-engine", "--verbose", "-f", "test.sql"};
+    kyuubiBeeLine.initArgs(args4);
+    assertFalse(kyuubiBeeLine.isIgnoreLaunchEngine());
+    assert kyuubiBeeLine.getOpts().getScriptFile().equals("test.sql");
+    kyuubiBeeLine.setIgnoreLaunchEngine(false);
   }
 
   @Test

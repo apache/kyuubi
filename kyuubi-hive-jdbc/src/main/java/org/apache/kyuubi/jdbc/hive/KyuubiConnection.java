@@ -78,6 +78,7 @@ import org.slf4j.LoggerFactory;
 public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
+  public static final String IGNORE_LAUNCH_ENGINE_PROPERTY = "IGNORE_LAUNCH_ENGINE_LOG";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
@@ -112,6 +113,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isBeeLineMode;
 
+  private boolean ignoreLaunchEngineLog;
+
   /** Get all direct HiveServer2 URLs from a ZooKeeper based HiveServer2 URL */
   public static List<JdbcConnectionParams> getAllUrls(String zookeeperBasedHS2Url)
       throws Exception {
@@ -127,6 +130,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     isBeeLineMode = Boolean.parseBoolean(info.getProperty(BEELINE_MODE_PROPERTY));
+    ignoreLaunchEngineLog = Boolean.parseBoolean(info.getProperty(IGNORE_LAUNCH_ENGINE_PROPERTY));
     try {
       connParams = Utils.parseURL(uri, info);
     } catch (ZooKeeperHiveClientException e) {
@@ -262,7 +266,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           "Method getExecLog() failed. The " + "connection has been closed.");
     }
 
-    if (launchEngineOpHandle == null) {
+    if (launchEngineOpHandle == null || ignoreLaunchEngineLog) {
       return Collections.emptyList();
     }
 
@@ -285,7 +289,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void showLaunchEngineLog() {
-    if (launchEngineOpHandle != null) {
+    if (launchEngineOpHandle != null && !ignoreLaunchEngineLog) {
       LOG.info("Starting to get launch engine log.");
       engineLogThread =
           new Thread("engine-launch-log") {

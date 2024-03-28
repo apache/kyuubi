@@ -56,7 +56,9 @@ public class KyuubiBeeLine extends BeeLine {
   private static final int ERRNO_OTHER = 2;
 
   private static final String PYTHON_MODE_PREFIX = "--python-mode";
+  private static final String IGNORE_LAUNCH_ENGINE_PREFIX = "--ignore-launch-engine";
   private boolean pythonMode = false;
+  private boolean ignoreLaunchEngine = false;
 
   public KyuubiBeeLine() {
     this(true);
@@ -82,6 +84,8 @@ public class KyuubiBeeLine extends BeeLine {
     super.usage();
     output("Usage: java " + KyuubiBeeLine.class.getCanonicalName());
     output("   --python-mode                   Execute python code/script.");
+    output("Usage: java " + KyuubiBeeLine.class.getCanonicalName());
+    output("   --ignore-launch-engine          Ignore launch engine log.");
   }
 
   public boolean isPythonMode() {
@@ -91,6 +95,15 @@ public class KyuubiBeeLine extends BeeLine {
   // Visible for testing
   public void setPythonMode(boolean pythonMode) {
     this.pythonMode = pythonMode;
+  }
+
+  public boolean isIgnoreLaunchEngine() {
+    return ignoreLaunchEngine;
+  }
+
+  // Visible for testing
+  public void setIgnoreLaunchEngine(boolean ignoreLaunchEngine) {
+    this.ignoreLaunchEngine = ignoreLaunchEngine;
   }
 
   /** Starts the program. */
@@ -161,12 +174,18 @@ public class KyuubiBeeLine extends BeeLine {
             protected void processOption(String arg, ListIterator iter) throws ParseException {
               if (PYTHON_MODE_PREFIX.equals(arg)) {
                 pythonMode = true;
+              } else if (IGNORE_LAUNCH_ENGINE_PREFIX.equals(arg)) {
+                ignoreLaunchEngine = true;
               } else {
                 super.processOption(arg, iter);
               }
             }
           };
       cl = beelineParser.parse(options, args);
+
+      if (getOpts().getVerbose()) {
+        ignoreLaunchEngine = false;
+      }
 
       connSuccessful =
           DynMethods.builder("connectUsingArgs")
