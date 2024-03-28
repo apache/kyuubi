@@ -51,7 +51,7 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
       String dataStr = new String(data, StandardCharsets.UTF_8);
       int counter = Integer.parseInt(dataStr);
       String server = serverHosts.get(counter % serverHosts.size());
-      counter = (counter + 1) % COUNTER_RESET_VALUE; // 避免计数器溢出
+      counter = (counter + 1) % COUNTER_RESET_VALUE;
       zkClient.setData().forPath(counter_path, (counter + "").getBytes(StandardCharsets.UTF_8));
       return server;
     } catch (Exception e) {
