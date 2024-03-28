@@ -33,13 +33,14 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
-import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle}
 
 @Tag(name = "Admin")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -246,7 +247,11 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("sharelevel") shareLevel: String,
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
-      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String): Response = {
+      @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
+      @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean,
+      @QueryParam("kubernetesContext") kubernetesContext: String,
+      @QueryParam("kubernetesNamespace") kubernetesNamespace: String,
+      @QueryParam("resourceManager") resourceManager: String): Response = {
     val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(activeProxyUser).getOrElse(fe.getRealUser())
@@ -255,24 +260,39 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
     val engine = normalizeEngineInfo(userName, engineType, shareLevel, subdomain, "default")
     val engineSpace = calculateEngineSpace(engine)
+    val responseMsgBuilder = new StringBuilder()
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val engineNodes = discoveryClient.getChildren(engineSpace)
-      engineNodes.foreach { node =>
-        val nodePath = s"$engineSpace/$node"
+      val appMgrInfo = ApplicationManagerInfo(
+        Option(resourceManager),
+        Option(kubernetesContext),
+        Option(kubernetesNamespace))
+      val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace, silent = true)
+      engineNodes.foreach { engineNode =>
+        val nodePath = s"$engineSpace/${engineNode.nodeName}"
+        val engineRefId = engineNode.engineRefId.orNull
         info(s"Deleting engine node:$nodePath")
         try {
           discoveryClient.delete(nodePath)
+          responseMsgBuilder
+            .append(s"Engine $engineSpace refId=$engineRefId is deleted successfully.")
         } catch {
           case e: Exception =>
             error(s"Failed to delete engine node:$nodePath", e)
             throw new NotFoundException(s"Failed to delete engine node:$nodePath," +
               s"${e.getMessage}")
         }
+
+        if (forceKill && engineRefId != null) {
+          val killResponse = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+            .applicationManager.killApplication(appMgrInfo, engineRefId)
+          responseMsgBuilder
+            .append(s"\nKilled engine with $appMgrInfo/$engineRefId: $killResponse")
+        }
       }
     }
 
-    Response.ok(s"Engine $engineSpace is deleted successfully.").build()
+    Response.ok(responseMsgBuilder.toString()).build()
   }
 
   @ApiResponse(
