@@ -338,14 +338,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userUnlimitedList =
       conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
-    val userIpList = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
+    val ipDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
     limiter = applySessionLimiter(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
       userUnlimitedList,
       userDenyList,
-      userIpList)
+      ipDenyList)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
@@ -357,7 +357,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userIpAddressBatchLimit,
       userUnlimitedList,
       userDenyList,
-      userIpList)
+      ipDenyList)
   }
 
   private[kyuubi] def getUnlimitedUsers: Set[String] = {
