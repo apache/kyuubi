@@ -18,9 +18,9 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunctionName, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.plans.logical.{DropFunction, DropNamespace, LogicalPlan, NoopCommand, UncacheTable}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropTableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropFunctionCommand, DropTableCommand}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._
 
@@ -33,8 +33,15 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
           i.copy(ifExists = true)
         case i @ DropTableCommand(_, false, _, _) =>
           i.copy(ifExists = true)
+        case i @ DropTable(_, false, _) =>
+          i.copy(ifExists = true)
         case i @ DropNamespace(_, false, _) =>
           i.copy(ifExists = true)
+        case i @ DropFunctionCommand(_, false, _) =>
+          i.copy(ifExists = true)
+        case i @ DropView(_, false) =>
+          i.copy(ifExists = true)
+        // refer: org.apache.spark.sql.catalyst.analysis.ResolveCommandsWithIfExists
         case UncacheTable(u: UnresolvedRelation, false, _) =>
           NoopCommand("UNCACHE TABLE", u.multipartIdentifier)
         case DropFunction(u: UnresolvedFunctionName, false) =>
