@@ -25,10 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -155,5 +152,50 @@ public class UtilsTest {
   public void testGetVersion() {
     Pattern pattern = Pattern.compile("^\\d+\\.\\d+\\.\\d+.*");
     assert pattern.matcher(Utils.getVersion()).matches();
+  }
+
+  @Test
+  public void testSplitSqlStatement() {
+    String simpleSql = "select 1 from ? where a = ?";
+    List<String> splitSql = Utils.splitSqlStatement(simpleSql);
+    assertEquals(3, splitSql.size());
+    assertEquals("select 1 from ", splitSql.get(0));
+    assertEquals(" where a = ", splitSql.get(1));
+    assertEquals("", splitSql.get(2));
+
+    String placeHolderWithinSingleQuote = "select '?' from ? where a = ?";
+    splitSql = Utils.splitSqlStatement(placeHolderWithinSingleQuote);
+    assertEquals(3, splitSql.size());
+    assertEquals("select '?' from ", splitSql.get(0));
+    assertEquals(" where a = ", splitSql.get(1));
+    assertEquals("", splitSql.get(2));
+
+    String escapePlaceHolder = "select \\? from ? where a = ?";
+    splitSql = Utils.splitSqlStatement(escapePlaceHolder);
+    assertEquals(3, splitSql.size());
+    assertEquals("select \\? from ", splitSql.get(0));
+    assertEquals(" where a = ", splitSql.get(1));
+    assertEquals("", splitSql.get(2));
+
+    String inQuoteLikeRegexFunction =
+        "select "
+            + "regexp_extract(field_a, \"[a-zA-Z]+?\", 0) as extracted_a,"
+            + "regexp_extract(field_b, '[a-zA-Z]+?', 0) as extracted_b"
+            + " from ?";
+    splitSql = Utils.splitSqlStatement(inQuoteLikeRegexFunction);
+    assertEquals(2, splitSql.size());
+    assertEquals(
+        "select "
+            + "regexp_extract(field_a, \"[a-zA-Z]+?\", 0) as extracted_a,"
+            + "regexp_extract(field_b, '[a-zA-Z]+?', 0) as extracted_b from ",
+        splitSql.get(0));
+    assertEquals("", splitSql.get(1));
+
+    String inCommentBlock = "--comments\n" + "select --? \n" + "? from ?";
+    splitSql = Utils.splitSqlStatement(inCommentBlock);
+    assertEquals(3, splitSql.size());
+    assertEquals("--comments\n" + "select --? \n", splitSql.get(0));
+    assertEquals(" from ", splitSql.get(1));
+    assertEquals("", splitSql.get(2));
   }
 }
