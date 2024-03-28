@@ -324,4 +324,19 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     // scalastyle:on
   }
 
+  test("KYUUBI #5092: Spark crashes with ClassCastException when resolving a join") {
+    import spark.sqlContext.implicits._
+    doAs(
+      "bob", {
+        val df0 = spark.table("default.src")
+          .select("key")
+          .filter($"key" === 1)
+          .sort($"key")
+        assert(
+          df0.as("a").join(
+            right = df0.as("b"),
+            joinExprs = $"a.key" === $"b.key",
+            joinType = "left_outer").collect() === Seq(Row(1, 1)))
+      })
+  }
 }
