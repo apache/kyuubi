@@ -42,7 +42,7 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
             .create()
             .creatingParentsIfNeeded()
             .withMode(CreateMode.PERSISTENT)
-            .forPath(counter_path, "1".getBytes(StandardCharsets.UTF_8));
+            .forPath(counter_path, "0".getBytes(StandardCharsets.UTF_8));
       }
       if (!lock.acquire(60, TimeUnit.SECONDS)) {
         return null;
