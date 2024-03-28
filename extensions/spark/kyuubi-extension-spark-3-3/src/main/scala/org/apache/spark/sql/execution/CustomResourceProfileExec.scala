@@ -53,7 +53,12 @@ case class CustomResourceProfileExec(child: SparkPlan) extends UnaryExecNode {
   private val executorMemoryOverhead =
     conf.getConf(FINAL_WRITE_STAGE_EXECUTOR_MEMORY_OVERHEAD)
       .getOrElse(sparkContext.getConf.get("spark.executor.memoryOverhead", "1G"))
-  private val executorOffHeapMemory = conf.getConf(FINAL_WRITE_STAGE_EXECUTOR_OFF_HEAP_MEMORY)
+  private val executorOffHeapMemory =
+    if (sparkContext.getConf.getBoolean("spark.memory.offHeap.enabled", false)) {
+      conf.getConf(FINAL_WRITE_STAGE_EXECUTOR_OFF_HEAP_MEMORY)
+    } else {
+      None
+    }
 
   override lazy val metrics: Map[String, SQLMetric] = {
     val base = Map(
