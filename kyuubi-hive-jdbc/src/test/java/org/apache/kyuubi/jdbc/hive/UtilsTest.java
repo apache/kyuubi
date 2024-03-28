@@ -170,10 +170,10 @@ public class UtilsTest {
     assertEquals(" where a = ", splitSql.get(1));
     assertEquals("", splitSql.get(2));
 
-    String escapePlaceHolder = "select '\\?' from ? where a = ?";
+    String escapePlaceHolder = "select \\? from ? where a = ?";
     splitSql = Utils.splitSqlStatement(escapePlaceHolder);
     assertEquals(3, splitSql.size());
-    assertEquals("select '\\?' from ", splitSql.get(0));
+    assertEquals("select \\? from ", splitSql.get(0));
     assertEquals(" where a = ", splitSql.get(1));
     assertEquals("", splitSql.get(2));
 
