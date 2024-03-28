@@ -16,7 +16,7 @@
  */
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.{DropNamespace, NoopCommand}
+import org.apache.spark.sql.catalyst.plans.logical.{DropNamespace, DropTable, NoopCommand}
 import org.apache.spark.sql.execution.command._
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
@@ -29,9 +29,22 @@ class DropIgnoreNonexistentSuite extends KyuubiSparkSQLExtensionTest {
       val df1 = sql("DROP DATABASE nonexistent_database")
       assert(df1.queryExecution.analyzed.asInstanceOf[DropNamespace].ifExists == true)
 
+      // drop nonexistent table
+      val df2 = sql("DROP TABLE nonexistent_table")
+      assert(df2.queryExecution.analyzed.asInstanceOf[DropTable].ifExists == true)
+
+      // drop nonexistent view
+      val df3 = sql("DROP VIEW nonexistent_view")
+      assert(df3.queryExecution.analyzed.asInstanceOf[DropTableCommand].isView == true &&
+        df3.queryExecution.analyzed.asInstanceOf[DropTableCommand].ifExists == true)
+
       // drop nonexistent function
       val df4 = sql("DROP FUNCTION nonexistent_function")
       assert(df4.queryExecution.analyzed.isInstanceOf[NoopCommand])
+
+      // drop nonexistent temporary function
+      val df5 = sql("DROP TEMPORARY FUNCTION nonexistent_temp_function")
+      assert(df5.queryExecution.analyzed.asInstanceOf[DropFunctionCommand].ifExists == true)
 
       // drop nonexistent PARTITION
       withTable("test") {
