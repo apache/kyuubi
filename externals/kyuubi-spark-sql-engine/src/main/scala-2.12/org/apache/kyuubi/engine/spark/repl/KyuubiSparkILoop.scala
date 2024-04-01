@@ -63,7 +63,8 @@ private[spark] case class KyuubiSparkILoop private (
               // Some bad spark packages depend on the wrong version of scala-reflect. Blacklist it.
               !file.getName.contains("scala-lang_scala-reflect")
             }
-            debug(s"Adding jars to Scala interpreter's class path: $allJars")
+            info(s"Adding jars to Scala interpreter's class path: " +
+              allJars.mkString(File.pathSeparator))
             this.addUrlsToClassPath(allJars: _*)
             classLoader = null
           case _ =>
