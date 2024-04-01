@@ -44,7 +44,7 @@
       </el-dropdown>
       <el-select
         v-model="param.engineType"
-        disabled
+        :disabled="false"
         :placeholder="$t('engine_type')">
         <el-option
           v-for="item in getEngineType()"
@@ -151,7 +151,7 @@
 
     if (!sessionIdentifier.value) {
       const openSessionResponse: IResponse = await openSession({
-        'kyuubi.engine.type': param.engineType
+        configs: { 'kyuubi.engine.type': param.engineType }
       }).catch(catchSessionError)
       if (!openSessionResponse) return
       sessionIdentifier.value = openSessionResponse.identifier
