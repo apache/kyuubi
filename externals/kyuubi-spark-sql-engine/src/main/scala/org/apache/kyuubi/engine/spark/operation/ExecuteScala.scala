@@ -89,7 +89,7 @@ class ExecuteScala(
         if (legacyOutput.nonEmpty) {
           warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
         }
-        val replUrls = repl.classLoader.getParent.asInstanceOf[URLClassLoader].getURLs
+        val replUrls = repl.global.classPath.asURLs
         spark.sharedState.jarClassLoader.getURLs.filterNot(replUrls.contains).foreach { jar =>
           try {
             if ("file".equals(jar.toURI.getScheme)) {
