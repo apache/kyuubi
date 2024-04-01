@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 import org.apache.hadoop.util.ShutdownHookManager
+import org.apache.ranger.audit.provider.AuditProviderFactory
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.slf4j.LoggerFactory
@@ -78,6 +79,10 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
         if (plugin != null) {
           LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
           plugin.cleanup()
+          val auditProviderFactory = plugin.getAuditProviderFactory
+          if (auditProviderFactory != null) {
+            auditProviderFactory.shutdown()
+          }
         }
       },
       Integer.MAX_VALUE)
