@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, LinkedHashMap}
 
 import org.apache.hadoop.util.ShutdownHookManager
-import org.apache.ranger.audit.provider.AuditProviderFactory
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.slf4j.LoggerFactory
