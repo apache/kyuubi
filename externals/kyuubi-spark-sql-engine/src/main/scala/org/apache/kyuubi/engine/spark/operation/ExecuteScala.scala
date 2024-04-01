@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.File
 import java.util.concurrent.RejectedExecutionException
 
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
 import org.apache.hadoop.fs.Path
@@ -88,7 +89,7 @@ class ExecuteScala(
         if (legacyOutput.nonEmpty) {
           warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
         }
-        val replUrls = repl.global.classPath.asURLs
+        val replUrls = repl.classLoader.getParent.asInstanceOf[URLClassLoader].getURLs
         spark.sharedState.jarClassLoader.getURLs.filterNot(replUrls.contains).foreach { jar =>
           try {
             if ("file".equals(jar.toURI.getScheme)) {

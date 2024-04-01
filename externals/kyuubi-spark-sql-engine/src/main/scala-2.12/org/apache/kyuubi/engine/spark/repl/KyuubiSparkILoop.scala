@@ -28,12 +28,12 @@ import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{Logging, Utils}
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
-  extends SparkILoop(None, new PrintWriter(output)) {
+  extends SparkILoop(None, new PrintWriter(output)) with Logging {
   import KyuubiSparkILoop._
 
   val result = new DataFrameHolder(spark)
@@ -60,8 +60,9 @@ private[spark] case class KyuubiSparkILoop private (
             val allJars = loader.getURLs.filter { u =>
               val file = new File(u.getPath)
               u.getProtocol == "file" && file.isFile &&
-              file.getName.contains("scala-lang_scala-reflect")
+              !file.getName.contains("scala-lang_scala-reflect")
             }
+            debug(s"Adding jars to Scala interpreter's class path: $allJars")
             this.addUrlsToClassPath(allJars: _*)
             classLoader = null
           case _ =>
