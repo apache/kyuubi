@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.File
 import java.util.concurrent.RejectedExecutionException
 
-import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
 import org.apache.hadoop.fs.Path
