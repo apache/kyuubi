@@ -60,6 +60,7 @@ private[spark] case class KyuubiSparkILoop private (
             val allJars = loader.getURLs.filter { u =>
               val file = new File(u.getPath)
               u.getProtocol == "file" && file.isFile &&
+              // Some bad spark packages depend on the wrong version of scala-reflect. Blacklist it.
               !file.getName.contains("scala-lang_scala-reflect")
             }
             debug(s"Adding jars to Scala interpreter's class path: $allJars")
