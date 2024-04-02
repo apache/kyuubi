@@ -191,7 +191,6 @@
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
         <ck.jdbc.version>0.6.0</ck.jdbc.version>
-        <ck.lz4.version>1.8.0</ck.lz4.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
@@ -1315,13 +1314,8 @@
             <dependency>
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
+                <classifier>http</classifier>
                 <version>${ck.jdbc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.lz4</groupId>
-                <artifactId>lz4-java</artifactId>
-                <version>${ck.lz4.version}</version>
             </dependency>
 
             <!-- flink -->
