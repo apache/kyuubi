@@ -16,44 +16,10 @@
 # limitations under the License.
 #
 
-## Kyuubi BeeLine Entrance
-CLASS="org.apache.hive.beeline.KyuubiBeeLine"
+echo "Warning: beeline is deprecated and will be removed in the future, please use kyuubi-beeline instead."
 
 if [ -z "${KYUUBI_HOME}" ]; then
   KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 fi
 
-. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
-
-if [[ -z ${JAVA_HOME} ]]; then
-  echo "Error: JAVA_HOME IS NOT SET! CANNOT PROCEED."
-  exit 1
-fi
-
-RUNNER="${JAVA_HOME}/bin/java"
-
-# Append jline option to enable the Beeline process to run in background.
-if [[ ( ! $(ps -o stat= -p $$) =~ "+" ) && ! ( -p /dev/stdin ) ]]; then
-  export KYUUBI_BEELINE_OPTS="$KYUUBI_BEELINE_OPTS -Djline.terminal=jline.UnsupportedTerminal"
-fi
-
-## Find the Kyuubi beeline Jar
-if [[ -z "$KYUUBI_BEELINE_JARS" ]]; then
-  KYUUBI_BEELINE_JARS="$KYUUBI_HOME/beeline-jars"
-  if [[ ! -d ${KYUUBI_BEELINE_JARS} ]]; then
-    echo -e "\nCandidate Kyuubi beeline jars $KYUUBI_BEELINE_JARS doesn't exist, using $KYUUBI_HOME/kyuubi-hive-beeline/target/"
-    KYUUBI_BEELINE_JARS="$KYUUBI_HOME/kyuubi-hive-beeline/target"
-  fi
-fi
-
-if [[ -z ${YARN_CONF_DIR} ]]; then
-  KYUUBI_BEELINE_CLASSPATH="${KYUUBI_BEELINE_JARS}/*:${HADOOP_CONF_DIR}"
-else
-  KYUUBI_BEELINE_CLASSPATH="${KYUUBI_BEELINE_JARS}/*:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
-fi
-
-if [[ -f ${KYUUBI_CONF_DIR}/log4j2-repl.xml ]]; then
-  KYUUBI_CTL_JAVA_OPTS="${KYUUBI_CTL_JAVA_OPTS} -Dlog4j2.configurationFile=log4j2-repl.xml"
-fi
-
-exec ${RUNNER} ${KYUUBI_BEELINE_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"
+exec "${KYUUBI_HOME}/bin/kyuubi-beeline" "$@"
