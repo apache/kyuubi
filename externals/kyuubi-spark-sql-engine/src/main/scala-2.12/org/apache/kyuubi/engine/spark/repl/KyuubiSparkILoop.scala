@@ -93,10 +93,7 @@ private[spark] case class KyuubiSparkILoop private (
       classLoader match {
         case loader: MutableURLClassLoader =>
           allJars = loader.getURLs.filter { u =>
-            val file = new File(u.getPath)
-            u.getProtocol == "file" && file.isFile &&
-            // Some bad spark packages depend on the wrong version of scala-reflect. Blacklist it.
-            !file.getName.contains("scala-lang_scala-reflect")
+            u.getProtocol == "file" && new File(u.getPath).isFile
           }
           classLoader = null
         case _ =>
