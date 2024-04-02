@@ -41,15 +41,15 @@ private[spark] case class KyuubiSparkILoop private (
 
   private def initialize(): Unit = withLockRequired {
     val currentClassLoader = Thread.currentThread().getContextClassLoader
-    val allJars = getAllJars(currentClassLoader)
-    info(s"Adding jars to Scala interpreter's class path: ${allJars.mkString(File.pathSeparator)}")
+    val interpreterClasspath = getAllJars(currentClassLoader).mkString(File.pathSeparator)
+    info(s"Adding jars to Scala interpreter's class path: $interpreterClasspath")
     settings = new Settings
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
       s"${spark.sparkContext.getConf.get("spark.repl.class.outputDir")}",
       "-classpath",
-      allJars.mkString(File.pathSeparator))
+      interpreterClasspath)
     settings.processArguments(interpArguments, processAll = true)
     settings.usejavacp.value = true
     settings.embeddedDefaults(currentClassLoader)
