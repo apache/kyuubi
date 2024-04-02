@@ -346,6 +346,37 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       }
     }
   }
+
+  test("throw connectionClosed KyuubiSQLException when engine died") {
+    withSessionConf()(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val sessionHandle = SessionHandle(handle)
+
+        val exitReq = new TExecuteStatementReq()
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
+          "java_method('java.lang.System', 'exit', 1)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        client.ExecuteStatement(exitReq)
+
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(true)
+        exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
+        exitReq.setSessionHandle(handle)
+        exitReq.setRunAsync(true)
+        val e = client.ExecuteStatement(exitReq)
+        assert(e.getStatus.getSqlState.equals("08003"))
+        assert(e.getStatus.getErrorMessage.contains(s"connection for ${sessionHandle} is closed"))
+      }
+    }
+  }
 }
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {

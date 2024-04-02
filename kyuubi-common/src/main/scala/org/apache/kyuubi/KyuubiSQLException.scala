@@ -24,6 +24,7 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.Utils.stringifyException
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TStatus, TStatusCode}
 import org.apache.kyuubi.util.reflect.DynConstructors
 
@@ -88,6 +89,10 @@ object KyuubiSQLException {
 
   def connectionDoesNotExist(): KyuubiSQLException = {
     new KyuubiSQLException("connection does not exist", "08003", 91001, null)
+  }
+
+  def connectionClosed(session: SessionHandle, e: Throwable): KyuubiSQLException = {
+    new KyuubiSQLException(s"connection for ${session} is closed", "08003", 91001, e)
   }
 
   def toTStatus(e: Exception, verbose: Boolean = false): TStatus = e match {

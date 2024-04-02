@@ -20,7 +20,6 @@ package org.apache.kyuubi.operation
 import java.io.IOException
 
 import com.codahale.metrics.MetricRegistry
-import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_OPERATION_HANDLE_KEY
@@ -83,13 +82,9 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
             MetricRegistry.name(OPERATION_FAIL, opType, errorType)))
           val ke = e match {
             case kse: KyuubiSQLException => kse
-            case te: TTransportException
-                if te.getType == TTransportException.END_OF_FILE &&
-                  StringUtils.isEmpty(te.getMessage) =>
-              // https://issues.apache.org/jira/browse/THRIFT-4858
-              KyuubiSQLException(
-                s"Error $action $opType: Socket for ${session.handle} is closed",
-                e)
+            case te: TTransportException =>
+              warn(s"Error $action $opType: Socket for ${session.handle} is closed", e)
+              KyuubiSQLException.connectionClosed(session.handle, e)
             case e =>
               KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
           }
