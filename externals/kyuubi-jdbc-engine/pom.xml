@@ -71,6 +71,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>${hive.jdbc.artifact}</artifactId>
             <version>${project.version}</version>
@@ -92,6 +98,13 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.clickhouse</groupId>
+            <artifactId>clickhouse-jdbc</artifactId>
+            <classifier>http</classifier>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.apache.kyuubi.engine.jdbc.clickhouse.ClickHouseConnectionProvider
 org.apache.kyuubi.engine.jdbc.doris.DorisConnectionProvider
 org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider
 org.apache.kyuubi.engine.jdbc.mysql.MySQLConnectionProvider

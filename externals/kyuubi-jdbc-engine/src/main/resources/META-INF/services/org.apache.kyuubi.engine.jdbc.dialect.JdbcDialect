@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.apache.kyuubi.engine.jdbc.dialect.ClickHouseDialect
 org.apache.kyuubi.engine.jdbc.dialect.DorisDialect
 org.apache.kyuubi.engine.jdbc.dialect.ImpalaDialect
 org.apache.kyuubi.engine.jdbc.dialect.MySQLDialect

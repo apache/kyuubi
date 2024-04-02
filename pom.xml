@@ -190,6 +190,7 @@
         <scalatestplus.version>3.2.16.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
+        <clickhouse-java.version>0.6.0</clickhouse-java.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
@@ -557,6 +558,12 @@
             <dependency>
                 <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-postgresql_${scala.binary.version}</artifactId>
+                <version>${testcontainers-scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.dimafeng</groupId>
+                <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>
 
@@ -1302,6 +1309,13 @@
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.clickhouse</groupId>
+                <artifactId>clickhouse-jdbc</artifactId>
+                <version>${clickhouse-java.version}</version>
+                <classifier>http</classifier>
             </dependency>
 
             <!-- flink -->

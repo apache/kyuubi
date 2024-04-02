@@ -96,6 +96,19 @@
             <artifactId>testcontainers-scala-postgresql_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.clickhouse</groupId>
+            <artifactId>clickhouse-jdbc</artifactId>
+            <classifier>http</classifier>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -137,6 +150,14 @@
                                     <groupId>org.apache.kyuubi</groupId>
                                     <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
                                     <version>${project.version}</version>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${project.build.directory}</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.clickhouse</groupId>
+                                    <artifactId>clickhouse-jdbc</artifactId>
+                                    <version>${clickhouse-java.version}</version>
+                                    <classifier>http</classifier>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>
