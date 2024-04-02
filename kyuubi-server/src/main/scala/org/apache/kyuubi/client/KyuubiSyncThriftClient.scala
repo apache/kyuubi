@@ -141,6 +141,9 @@ class KyuubiSyncThriftClient private (
    * Lock every rpc call to send them sequentially
    */
   private def withLockAcquired[T](block: => T): T = Utils.withLockRequired(lock) {
+    if (engineConnectionClosed) {
+      throw KyuubiSQLException.connectionDoesNotExist()
+    }
     block
   }
 
