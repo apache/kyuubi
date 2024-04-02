@@ -93,6 +93,7 @@ private[spark] case class KyuubiSparkILoop private (
       classLoader match {
         case loader: MutableURLClassLoader =>
           allJars = loader.getURLs.filter { u =>
+            // TODO: handle SPARK-47475 since Spark 4.0.0 in the future
             u.getProtocol == "file" && new File(u.getPath).isFile
           }
           classLoader = null
