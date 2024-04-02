@@ -16,7 +16,6 @@
  */
 package org.apache.kyuubi.it.jdbc.clickhouse
 
-import java.io.File
 import java.nio.file.{Files, Path, Paths}
 import java.time.Duration
 
@@ -32,21 +31,19 @@ trait WithKyuubiServerAndClickHouseContainer extends WithKyuubiServer with WithC
     JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   private val clickHouseJdbcConnectorPath: String = {
-    val keywords = List("clickhouse-jdbc", "lz4")
+    val keyword = "clickhouse-jdbc"
 
     val jarsDir = Paths.get(kyuubiHome)
       .resolve("integration-tests")
       .resolve("kyuubi-jdbc-it")
       .resolve("target")
 
-    keywords.map { keyword =>
-      Files.list(jarsDir)
-        .filter { p: Path => p.getFileName.toString contains keyword }
-        .findFirst
-        .orElseThrow { () => new IllegalStateException(s"Can not find $keyword in $jarsDir.") }
-        .toAbsolutePath
-        .toString
-    }.mkString(File.pathSeparator)
+    Files.list(jarsDir)
+      .filter { p: Path => p.getFileName.toString contains keyword }
+      .findFirst
+      .orElseThrow { () => new IllegalStateException(s"Can not find $keyword in $jarsDir.") }
+      .toAbsolutePath
+      .toString
   }
 
   override protected val conf: KyuubiConf = {

@@ -156,7 +156,7 @@
                                 <artifactItem>
                                     <groupId>com.clickhouse</groupId>
                                     <artifactId>clickhouse-jdbc</artifactId>
-                                    <version>${ck.jdbc.version}</version>
+                                    <version>${clickhouse-java.version}</version>
                                     <classifier>http</classifier>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
