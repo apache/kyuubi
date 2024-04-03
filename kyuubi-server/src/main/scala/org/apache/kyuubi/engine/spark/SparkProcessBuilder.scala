@@ -124,7 +124,7 @@ class SparkProcessBuilder(
     file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
   }
 
-  override protected lazy val commands: Iterable[String] = {
+  override protected[kyuubi] lazy val commands: Iterable[String] = {
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
