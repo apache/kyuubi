@@ -27,7 +27,7 @@ You can add parameters to the URL when establishing a JDBC connection, the param
 JDBC URLs have the following format:
 
 ```shell
-jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
+jdbc:kyuubi://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
 ```
 
 Refer to [hive_jdbc doc](../../jdbc/hive_jdbc.md) for details of others parameters

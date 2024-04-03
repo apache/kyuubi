@@ -46,7 +46,7 @@ Connecting to jdbc:kyuubi://localhost:10009/
 Connected to: Spark SQL (version 3.4.2)
 Driver: Kyuubi Project Hive JDBC Client (version 1.9.0)
 Beeline version 1.9.0 by Apache Kyuubi
-0: jdbc:hive2://localhost:10009/> show databases;
+0: jdbc:kyuubi://localhost:10009/> show databases;
 2020-11-16 23:50:50.388 INFO operation.ExecuteStatement:
            Spark application name: kyuubi_kentyao_spark_2020-11-16T15:50:08.968Z
                  application ID:  local-1605541809797

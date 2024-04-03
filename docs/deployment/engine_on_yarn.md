@@ -61,7 +61,7 @@ These properties are defined by Spark and Kyuubi will pass them to `spark-submit
 
 **Note:** None of these would take effect if the application for a particular user already exists.
 
-- Specify it in the JDBC connection URL, e.g. `jdbc:hive2://localhost:10009/;#spark.master=yarn;spark.yarn.queue=thequeue`
+- Specify it in the JDBC connection URL, e.g. `jdbc:kyuubi://localhost:10009/;#spark.master=yarn;spark.yarn.queue=thequeue`
 - Specify it in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`
 - Specify it in `$SPARK_HOME/conf/spark-defaults.conf`
 

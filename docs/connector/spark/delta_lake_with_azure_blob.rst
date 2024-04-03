@@ -190,7 +190,7 @@ Check kyuubi log, in order to check kyuubi start status and find the jdbc connec
 
 .. code-block:: log
 
-   2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:hive2://HOST:10009/
+   2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:kyuubi://HOST:10009/
    2021-11-26 17:49:50.265 INFO client.ServiceDiscovery: Created a /kyuubi/serviceUri=host:10009;version=1.3.1-incubating;sequence=0000000037 on ZooKeeper for KyuubiServer uri: host:10009
    2021-11-26 17:49:50.267 INFO server.KyuubiServer: Service[KyuubiServer] is started.
 

@@ -68,6 +68,6 @@ If a user `uly` creates a connection with:
 
 .. code-block:: java
 
-   jdbc:hive2://localhost:10009/;hive.server2.proxy.user=uly;#spark.driver.memory=2G
+   jdbc:kyuubi://localhost:10009/;hive.server2.proxy.user=uly;#spark.driver.memory=2G
 
 The final Spark application will allocate ``1G`` rather than ``2G`` for the driver jvm.
