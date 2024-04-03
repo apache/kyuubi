@@ -19,6 +19,5 @@ Tools
 .. toctree::
     :maxdepth: 2
 
-    spark_block_cleaner
     kyuubi-ctl
     kyuubi-admin
