@@ -17,6 +17,10 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.9 to 1.10
+
+* Since Kyuubi 1.10, `beeline` is deprecated and will be removed in the future, please use `kyuubi-beeline` instead.
+
 ## Upgrading from Kyuubi 1.8 to 1.9
 
 * Since Kyuubi 1.9.0, `kyuubi.session.conf.advisor` can be set as a sequence, Kyuubi supported chaining SessionConfAdvisors.

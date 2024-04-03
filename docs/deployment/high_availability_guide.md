@@ -71,7 +71,7 @@ With [Kyuubi Hive JDBC Driver](https://mvnrepository.com/artifact/org.apache.kyu
 For example,
 
 ```shell
-bin/beeline -u 'jdbc:hive2://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kentyao
+bin/kyuubi-beeline -u 'jdbc:kyuubi://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kentyao
 ```
 
 ## How to Hot Upgrade Kyuubi Server

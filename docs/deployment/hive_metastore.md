@@ -41,20 +41,19 @@ By default, Kyuubi launches Spark SQL engines pointing to a dummy embedded [Apac
 and this metadata can only be seen by one user at a time, e.g.
 
 ```shell script
-bin/beeline -u 'jdbc:hive2://localhost:10009/' -n kentyao
-Connecting to jdbc:hive2://localhost:10009/
-Connected to: Spark SQL (version 1.0.0-SNAPSHOT)
-Driver: Hive JDBC (version 2.3.7)
-Transaction isolation: TRANSACTION_REPEATABLE_READ
-Beeline version 2.3.7 by Apache Hive
-0: jdbc:hive2://localhost:10009/> show databases;
+bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009/' -n kentyao
+Connecting to jdbc:kyuubi://localhost:10009/
+Connected to: Spark SQL (version 3.4.2)
+Driver: Kyuubi Project Hive JDBC Client (version 1.9.0)
+Beeline version 1.9.0 by Apache Kyuubi
+0: jdbc:kyuubi://localhost:10009/> show databases;
 2020-11-16 23:50:50.388 INFO operation.ExecuteStatement:
            Spark application name: kyuubi_kentyao_spark_2020-11-16T15:50:08.968Z
                  application ID:  local-1605541809797
                  application web UI: http://192.168.1.14:60165
                  master: local[*]
                  deploy mode: client
-                 version: 3.0.1
+                 version: 3.4.2
            Start time: 2020-11-16T15:50:09.123Z
            User: kentyao
 2020-11-16 23:50:50.404 INFO metastore.HiveMetaStore: 2: get_databases: *
@@ -66,14 +65,14 @@ Beeline version 2.3.7 by Apache Hive
 | default    |
 +------------+
 1 row selected (0.122 seconds)
-0: jdbc:hive2://localhost:10009/> show tables;
+0: jdbc:kyuubi://localhost:10009/> show tables;
 2020-11-16 23:50:52.957 INFO operation.ExecuteStatement:
            Spark application name: kyuubi_kentyao_spark_2020-11-16T15:50:08.968Z
                  application ID:  local-1605541809797
                  application web UI: http://192.168.1.14:60165
                  master: local[*]
                  deploy mode: client
-                 version: 3.0.1
+                 version: 3.4.2
            Start time: 2020-11-16T15:50:09.123Z
            User: kentyao
 2020-11-16 23:50:52.968 INFO metastore.HiveMetaStore: 2: get_database: default
@@ -139,7 +138,7 @@ This version of configuration has lower priority than those in `$KYUUBI_HOME/con
 We can pass _**Hive primitives**_ or **_Spark derivatives_** directly in the JDBC connection URL, e.g.
 
 ```
-jdbc:hive2://localhost:10009/;#hive.metastore.uris=thrift://localhost:9083
+jdbc:kyuubi://localhost:10009/;#hive.metastore.uris=thrift://localhost:9083
 ```
 
 This will override the defaults in `$SPARK_HOME/conf/hive-site.xml` and `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for each _**user account**_.

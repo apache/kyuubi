@@ -176,16 +176,16 @@ Operation log will show how SQL queries are executed, such as query planning, ex
 
 Operation logs can reveal directly to end-users how their queries are being executed on the server/engine-side, including some process-oriented information, and why their queries are slow or in error.
 
-For example, when you, as an end-user, use `beeline` to connect a Kyuubi server and execute query like below.
+For example, when you, as an end-user, use `kyuubi-beeline` to connect a Kyuubi server and execute query like below.
 
 ```shell
-bin/beeline -u 'jdbc:hive2://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kent -e 'select * from src;'
+kyuubi-beeline -u 'jdbc:kyuubi://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kent -e 'select * from src;'
 ```
 
 You will both get the final results and the corresponding operation logs telling you the journey of the query.
 
 ```log
-0: jdbc:hive2://10.242.189.214:2181/> select * from src;
+0: jdbc:kyuubi://10.242.189.214:2181/> select * from src;
 2021-10-27 17:00:19.399 INFO operation.ExecuteStatement: Processing kent's query[fb5f57d2-2b50-4a46-961b-3a5c6a2d2597]: INITIALIZED_STATE -> PENDING_STATE, statement: select * from src
 2021-10-27 17:00:19.401 INFO operation.ExecuteStatement: Processing kent's query[fb5f57d2-2b50-4a46-961b-3a5c6a2d2597]: PENDING_STATE -> RUNNING_STATE, statement: select * from src
 2021-10-27 17:00:19.400 INFO operation.ExecuteStatement: Processing kent's query[26e169a2-6c06-450a-b758-e577ac673d70]: INITIALIZED_STATE -> PENDING_STATE, statement: select * from src

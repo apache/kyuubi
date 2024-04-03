@@ -100,13 +100,13 @@ You should connect like:
 
 ```shell
 kubectl exec -it kyuubi-example -- /bin/bash
-${KYUUBI_HOME}/bin/beeline -u 'jdbc:kyuubi://localhost:10009'
+${KYUUBI_HOME}/bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009'
 ```
 
-Or you can submit tasks directly through local beeline:
+Or you can submit tasks directly through kyuubi-beeline:
 
 ```shell
-${KYUUBI_HOME}/bin/beeline -u 'jdbc:kyuubi://${hostname}:${port}'
+${KYUUBI_HOME}/bin/kyuubi-beeline -u 'jdbc:kyuubi://${hostname}:${port}'
 ```
 
 As using service nodePort, port means nodePort and hostname means any hostname of kubernetes node.

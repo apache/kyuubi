@@ -229,13 +229,13 @@ The last step is to connect to Kyuubi with the right JDBC URL.
 The JDBC URL should be in format:
 
 ```
-jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;principal=<kyuubi_server_principal>
+jdbc:kyuubi://<kyuubi_server_address>:<kyuubi_server_port>/<db>;principal=<kyuubi_server_principal>
 ```
 
 or
 
 ```
-jdbc:hive2://<kyuubi_server_address>:<kyuubi_server_port>/<db>;kyuubiServerPrincipal=<kyuubi_server_principal>
+jdbc:kyuubi://<kyuubi_server_address>:<kyuubi_server_port>/<db>;kyuubiServerPrincipal=<kyuubi_server_principal>
 ```
 
 **Note**:  
