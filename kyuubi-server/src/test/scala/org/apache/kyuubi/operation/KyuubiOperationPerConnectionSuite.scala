@@ -80,7 +80,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(executeStmtResp.getOperationHandle === null)
       val errMsg = executeStmtResp.getStatus.getErrorMessage
       assert(errMsg.contains("Caused by: java.net.SocketException: Connection reset") ||
-        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
+        errMsg.contains(s"connection for ${SessionHandle(handle)} is closed") ||
         errMsg.contains("Socket is closed by peer") ||
         errMsg.contains("SparkContext was shut down"))
     }
@@ -371,9 +371,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 30000l)")
         exitReq.setSessionHandle(handle)
         exitReq.setRunAsync(true)
-        val e = client.ExecuteStatement(exitReq)
-        assert(e.getStatus.getSqlState.equals("08003"))
-        assert(e.getStatus.getErrorMessage.contains(s"connection for ${sessionHandle} is closed"))
+        val status = client.ExecuteStatement(exitReq).getStatus
+        assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(status.getSqlState.equals("08003"))
+        assert(status.getErrorCode == 91001)
+        assert(status.getErrorMessage.contains(s"connection for ${sessionHandle} is closed"))
       }
     }
   }
