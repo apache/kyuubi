@@ -438,9 +438,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val commands2 = builder2.toString.split(' ')
     assert(commands2.contains("spark.yarn.maxAppAttempts=1"))
   }
+
+  test("spark conf should be converted with `spark.` prefix") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("kyuubi.key", "value")
+    val builder = new SparkProcessBuilder(
+      "kyuubi",
+      kyuubiConf,
+      UUID.randomUUID().toString,
+      None)
+    assert(builder.commands.toSeq.contains("spark.kyuubi.key=value"))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)
   extends SparkProcessBuilder("fake", config) {
-  override protected lazy val commands: Iterable[String] = Seq("ls")
+  override lazy val commands: Iterable[String] = Seq("ls")
 }
