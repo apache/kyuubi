@@ -2126,7 +2126,7 @@ object KyuubiConf {
       " all the capacity of the Hive Server2.</li>" +
       " <li>JDBC: specify this engine type will launch a JDBC engine which can forward" +
       " queries to the database system through the certain JDBC driver," +
-      " for now, it supports Doris, MySQL, Phoenix, PostgreSQL and StarRocks.</li>" +
+      " for now, it supports Doris, MySQL, Phoenix, PostgreSQL, StarRocks and Impala.</li>" +
       " <li>CHAT: specify this engine type will launch a Chat engine.</li>" +
       "</ul>")
     .version("1.4.0")
@@ -2991,7 +2991,8 @@ object KyuubiConf {
         "<li>mysql: For establishing MySQL connections.</li> " +
         "<li>phoenix: For establishing Phoenix connections.</li> " +
         "<li>postgresql: For establishing PostgreSQL connections.</li>" +
-        "<li>starrocks: For establishing StarRocks connections.</li>")
+        "<li>starrocks: For establishing StarRocks connections.</li>" +
+        "<li>impala: For establishing Impala connections.</li>")
       .version("1.6.0")
       .stringConf
       .transform {
@@ -3005,6 +3006,8 @@ object KyuubiConf {
           "org.apache.kyuubi.engine.jdbc.postgresql.PostgreSQLConnectionProvider"
         case "StarRocks" | "starrocks" | "StarRocksConnectionProvider" =>
           "org.apache.kyuubi.engine.jdbc.starrocks.StarRocksConnectionProvider"
+        case "Impala" | "impala" | "ImpalaConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider"
         case other => other
       }
       .createOptional
