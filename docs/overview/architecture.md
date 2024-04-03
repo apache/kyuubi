@@ -116,7 +116,7 @@ With these features, Kyuubi provides a two-level elastic resource management arc
 For example,
 
 ```shell
-./beeline -u "jdbc:hive2://kyuubi.org:10009/;\
+bin/kyuubi-beeline -u "jdbc:kyuubi://kyuubi.org:10009/;\
 hive.server2.proxy.user=tom#\
 spark.yarn.queue=thequeue;\
 spark.dynamicAllocation.enabled=true;\

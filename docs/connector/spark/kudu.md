@@ -50,7 +50,7 @@ Now, you can start Kyuubi server with this kudu embedded Spark distribution.
 #### Start Beeline Or Other Client You Prefer
 
 ```shell
-bin/beeline -u 'jdbc:hive2://<host>:<port>/;principal=<if kerberized>;#spark.yarn.queue=kyuubi_test'
+bin/kyuubi-beeline -u 'jdbc:kyuubi://<host>:<port>/;principal=<if kerberized>;#spark.yarn.queue=kyuubi_test'
 ```
 
 #### Register Kudu table as Spark Temporary view
@@ -64,7 +64,7 @@ options (
 ```
 
 ```sql
-0: jdbc:hive2://spark5.jd.163.org:10009/> show tables;
+0: jdbc:kyuubi://spark5.jd.163.org:10009/> show tables;
 19/07/09 15:28:03 INFO ExecuteStatementInClientMode: Running query 'show tables' with 1104328b-515c-4f8b-8a68-1c0b202bc9ed
 19/07/09 15:28:03 INFO KyuubiSparkUtil$: Application application_1560304876299_3805060 has been activated
 19/07/09 15:28:03 INFO ExecuteStatementInClientMode: Executing query in incremental mode, running 1 jobs before optimization
@@ -82,7 +82,7 @@ options (
 #### Query Kudu Table
 
 ```sql
-0: jdbc:hive2://spark5.jd.163.org:10009/> select * from kudutest;
+0: jdbc:kyuubi://spark5.jd.163.org:10009/> select * from kudutest;
 19/07/09 15:25:17 INFO ExecuteStatementInClientMode: Running query 'select * from kudutest' with ac3e8553-0d79-4c57-add1-7d3ffe34ba16
 19/07/09 15:25:17 INFO KyuubiSparkUtil$: Application application_1560304876299_3805060 has been activated
 19/07/09 15:25:17 INFO ExecuteStatementInClientMode: Executing query in incremental mode, running 3 jobs before optimization
@@ -103,7 +103,7 @@ options (
 #### Join Kudu table with Hive table
 
 ```sql
-0: jdbc:hive2://spark5.jd.163.org:10009/> select t1.*, t2.* from hive_tbl t1 join kudutest t2 on t1.userid=t2.userid+1;
+0: jdbc:kyuubi://spark5.jd.163.org:10009/> select t1.*, t2.* from hive_tbl t1 join kudutest t2 on t1.userid=t2.userid+1;
 19/07/09 15:31:01 INFO ExecuteStatementInClientMode: Running query 'select t1.*, t2.* from hive_tbl t1 join kudutest t2 on t1.userid=t2.userid+1' with 6982fa5c-29fa-49be-a5bf-54c935bbad18
 19/07/09 15:31:01 INFO KyuubiSparkUtil$: Application application_1560304876299_3805060 has been activated
 <omitted lines.... >
@@ -123,7 +123,7 @@ options (
 You should notice that only `INSERT INTO` is supported by Kudu, `OVERWRITE` data is not supported
 
 ```sql
-0: jdbc:hive2://spark5.jd.163.org:10009/> insert overwrite table kudutest select *  from hive_tbl;
+0: jdbc:kyuubi://spark5.jd.163.org:10009/> insert overwrite table kudutest select *  from hive_tbl;
 19/07/09 15:35:29 INFO ExecuteStatementInClientMode: Running query 'insert overwrite table kudutest select *  from hive_tbl' with 1afdb791-1aa7-4ceb-8ba8-ff53c17615d1
 19/07/09 15:35:29 INFO KyuubiSparkUtil$: Application application_1560304876299_3805060 has been activated
 19/07/09 15:35:30 ERROR ExecuteStatementInClientMode:
@@ -163,7 +163,7 @@ java.lang.UnsupportedOperationException: overwrite is not yet supported
 ```
 
 ```sql
-0: jdbc:hive2://spark5.jd.163.org:10009/> insert into table kudutest select * from hive_tbl;
+0: jdbc:kyuubi://spark5.jd.163.org:10009/> insert into table kudutest select * from hive_tbl;
 19/07/09 15:36:26 INFO ExecuteStatementInClientMode: Running query 'insert into table kudutest select *  from hive_tbl' with f7460400-0564-4f98-93b6-ad76e579e7af
 19/07/09 15:36:26 INFO KyuubiSparkUtil$: Application application_1560304876299_3805060 has been activated
 <omitted lines ...>

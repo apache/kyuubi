@@ -199,11 +199,11 @@ You can get the jdbc connection url by the log above.
 Test The Connectivity Of Kyuubi And Delta Lake
 **********************************************
 
-Use ``$KYUUBI_HOME/bin/beeline`` tool,
+Use ``$KYUUBI_HOME/bin/kyuubi-beeline`` tool,
 
 .. code-block:: shell
 
-   ./bin//beeline -u 'jdbc:hive2://<YOUR_HOST>:10009/'
+   ./bin/kyuubi-beeline -u 'jdbc:kyuubi://<YOUR_HOST>:10009/'
 
 At the same time, you can also check whether the engine is running on the spark UI:
 
