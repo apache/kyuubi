@@ -74,7 +74,6 @@ To enable the custom EventHandler, we need to
   on each node where kyuubi server is installed. If you need use other event handler, it can be appended after the ``CUSTOM``.
 
 .. code-block:: property
-   :margin:
 
    kyuubi.backend.server.event.loggers=CUSTOM
 
