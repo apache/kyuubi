@@ -1262,12 +1262,9 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
       assert(stmt.asInstanceOf[KyuubiStatement].getQueryId === null)
       stmt.executeQuery("insert into tbl_a values (1)")
       val queryId = stmt.asInstanceOf[KyuubiStatement].getQueryId
-      // Flink 1.16 doesn't support query id via ResultFetcher
-      if (FLINK_RUNTIME_VERSION >= "1.17") {
-        assert(queryId !== null)
-        // parse the string to check if it's valid Flink job id
-        assert(JobID.fromHexString(queryId) !== null)
-      }
+      assert(queryId !== null)
+      // parse the string to check if it's valid Flink job id
+      assert(JobID.fromHexString(queryId) !== null)
     }
   }
 

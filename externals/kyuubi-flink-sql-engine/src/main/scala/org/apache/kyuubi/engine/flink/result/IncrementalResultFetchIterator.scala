@@ -19,22 +19,19 @@ package org.apache.kyuubi.engine.flink.result
 
 import java.util
 import java.util.concurrent.Executors
-
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
-
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.ResolvedSchema
 import org.apache.flink.table.data.RowData
 import org.apache.flink.table.data.conversion.DataStructureConverters
+import org.apache.flink.table.gateway.api.results.ResultSet.ResultType
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
-
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils
 import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.util.reflect.DynFields
@@ -60,9 +57,7 @@ class IncrementalResultFetchIterator(
 
   val FETCH_INTERVAL_MS: Long = 1000
 
-  // for Flink 1.16 and below, isQueryResult is not supported
   val isQueryResult: Boolean =
-    FlinkEngineUtils.FLINK_RUNTIME_VERSION < "1.17" ||
       DynFields.builder
         .hiddenImpl(classOf[ResultFetcher], "isQueryResult")
         .build[Boolean](resultFetcher).get()
@@ -91,16 +86,15 @@ class IncrementalResultFetchIterator(
       while (!fetched && !Thread.interrupted()) {
         val rs = resultFetcher.fetchResults(token, effectiveMaxRows - bufferedRows.length)
         val flinkRs = new FlinkResultSet(rs)
-        // TODO: replace string-based match when Flink 1.16 support is dropped
-        flinkRs.getResultType.name() match {
-          case "EOS" =>
+        flinkRs.getResultType match {
+          case ResultType.EOS =>
             debug("EOS received, no more data to fetch.")
             fetched = true
             hasNext = false
-          case "NOT_READY" =>
+          case ResultType.NOT_READY =>
             // if flink jobs are not ready, continue to retry
             debug("Result not ready, retrying...")
-          case "PAYLOAD" =>
+          case ResultType.PAYLOAD =>
             val fetchedData = flinkRs.getData
             // if no data fetched, continue to retry
             if (!fetchedData.isEmpty) {

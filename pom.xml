@@ -2284,13 +2284,6 @@
         </profile>
 
         <profile>
-            <id>flink-1.16</id>
-            <properties>
-                <flink.version>1.16.3</flink.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>flink-1.17</id>
             <properties>
                 <flink.version>1.17.2</flink.version>
