@@ -17,19 +17,18 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import scala.collection.JavaConverters._
 import scala.collection.JavaConverters.mapAsJavaMap
 
 import org.apache.flink.table.gateway.api.session.SessionEnvironment
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion
 import org.apache.flink.table.gateway.service.context.DefaultContext
+import org.apache.flink.table.gateway.service.session.SessionManagerImpl
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
-import org.apache.kyuubi.engine.flink.shim.FlinkSessionManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
@@ -41,7 +40,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   private lazy val shareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
   val operationManager = new FlinkSQLOperationManager()
-  val sessionManager = new FlinkSessionManager(engineContext)
+  val sessionManager = new SessionManagerImpl(engineContext)
 
   override def start(): Unit = {
     super.start()

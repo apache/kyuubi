@@ -35,15 +35,7 @@ object KDFRegistry {
 
     val kyuubiDefinedFunctions = new ArrayBuffer[KyuubiDefinedFunction]
 
-    val flinkConfigMap: util.Map[String, String] = {
-        DynMethods
-          .builder("getSessionConf")
-          .impl(classOf[SessionContext])
-          .build()
-          .invoke(sessionContext)
-          .asInstanceOf[Configuration]
-          .toMap
-    }
+    val flinkConfigMap: util.Map[String, String] = sessionContext.getSessionConf.toMap
 
     val kyuubi_version: KyuubiDefinedFunction = create(
       "kyuubi_version",

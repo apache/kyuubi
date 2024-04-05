@@ -19,9 +19,11 @@ package org.apache.kyuubi.engine.flink.result
 
 import java.util
 import java.util.concurrent.Executors
+
 import scala.collection.convert.ImplicitConversions._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.duration.Duration
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.catalog.ResolvedSchema
@@ -31,6 +33,7 @@ import org.apache.flink.table.gateway.api.results.ResultSet.ResultType
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 import org.apache.kyuubi.operation.FetchIterator
@@ -58,9 +61,9 @@ class IncrementalResultFetchIterator(
   val FETCH_INTERVAL_MS: Long = 1000
 
   val isQueryResult: Boolean =
-      DynFields.builder
-        .hiddenImpl(classOf[ResultFetcher], "isQueryResult")
-        .build[Boolean](resultFetcher).get()
+    DynFields.builder
+      .hiddenImpl(classOf[ResultFetcher], "isQueryResult")
+      .build[Boolean](resultFetcher).get()
 
   val effectiveMaxRows: Int = if (isQueryResult) maxRows else Int.MaxValue
 
