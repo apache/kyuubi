@@ -21,13 +21,11 @@ import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.functions.{ScalarFunction, UserDefinedFunction}
 import org.apache.flink.table.gateway.service.context.SessionContext
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.util.reflect.DynMethods
 
 object KDFRegistry {
 
