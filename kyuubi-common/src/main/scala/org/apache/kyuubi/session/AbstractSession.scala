@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.ByteBuffer
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -258,5 +260,51 @@ abstract class AbstractSession(
 
   override def open(): Unit = {
     OperationLog.createOperationLogRootDirectory(this)
+  }
+
+  override def uploadData(values: ByteBuffer, tableName: String, path: String): OperationHandle = {
+    acquire(true);
+    val operationManager = sessionManager.operationManager
+    val operation = operationManager.newUploadDataOperation(
+      this,
+      values,
+      tableName,
+      path)
+    val opHandle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(opHandle)
+      opHandle
+    } catch {
+      case e: Exception =>
+        sessionManager.operationManager.closeOperation(operation.getHandle)
+        throw e
+    } finally release(true)
+
+  }
+
+  override def downloadData(
+      tableName: String,
+      query: String,
+      format: String,
+      options: Map[String, String]): OperationHandle = {
+    acquire(true);
+    val operationManager = sessionManager.operationManager
+    val operation = operationManager.newDownloadDataOperation(
+      this,
+      tableName,
+      query,
+      format,
+      options)
+    val opHandle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(opHandle)
+      opHandle
+    } catch {
+      case e: Exception =>
+        sessionManager.operationManager.closeOperation(operation.getHandle)
+        throw e
+    } finally release(true)
   }
 }

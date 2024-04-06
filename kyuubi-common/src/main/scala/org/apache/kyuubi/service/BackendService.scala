@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service
 
+import java.nio.ByteBuffer
+
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
@@ -103,4 +105,17 @@ trait BackendService {
       fetchLog: Boolean): TFetchResultsResp
 
   def sessionManager: SessionManager
+
+  def uploadData(
+      sessionHandle: SessionHandle,
+      values: ByteBuffer,
+      tableName: String,
+      path: String): OperationHandle
+
+  def downloadData(
+      sessionHandle: SessionHandle,
+      tableName: String,
+      query: String,
+      format: String,
+      options: Map[String, String]): OperationHandle
 }
