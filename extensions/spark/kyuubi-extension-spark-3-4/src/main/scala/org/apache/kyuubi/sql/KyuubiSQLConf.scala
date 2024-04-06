@@ -48,16 +48,6 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
-  val SQL_CLASSIFICATION = "spark.sql.analyzer.classification"
-  val SQL_CLASSIFICATION_ENABLED =
-    buildConf("spark.sql.analyzer.classification.enabled")
-      .doc("When true, allows Kyuubi engine to judge this SQL's classification " +
-        s"and set `$SQL_CLASSIFICATION` back into sessionConf. " +
-        "Through this configuration item, Spark can optimizing configuration dynamic")
-      .version("1.4.0")
-      .booleanConf
-      .createWithDefault(false)
-
   val INSERT_ZORDER_BEFORE_WRITING =
     buildConf("spark.sql.optimizer.insertZorderBeforeWriting.enabled")
       .doc("When true, we will follow target table properties to insert zorder or not. " +

@@ -84,7 +84,6 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
       .set(
         StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
         "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
-      .set(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key, "true")
       .set(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
       .set("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
       .set("spark.hadoop.hive.metastore.client.capability.check", "false")
