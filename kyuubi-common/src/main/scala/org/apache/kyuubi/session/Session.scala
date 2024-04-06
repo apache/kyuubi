@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.ByteBuffer
+
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetInfoType, TGetInfoValue, TGetResultSetMetadataResp, TProtocolVersion}
@@ -93,4 +95,15 @@ trait Session {
       fetchLog: Boolean): TFetchResultsResp
 
   def closeExpiredOperations(): Unit
+
+  def uploadData(
+      values: ByteBuffer,
+      tableName: String,
+      path: String): OperationHandle
+
+  def downloadData(
+      tableName: String,
+      query: String,
+      format: String,
+      options: Map[String, String]): OperationHandle
 }

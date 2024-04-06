@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.service
 
+import java.nio.ByteBuffer
 import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
 
 import scala.concurrent.CancellationException
@@ -211,6 +212,27 @@ abstract class AbstractBackendService(name: String)
       .getOperation(operationHandle)
       .getSession
       .fetchResults(operationHandle, orientation, maxRows, fetchLog)
+  }
+
+  override def uploadData(
+      sessionHandle: SessionHandle,
+      values: ByteBuffer,
+      tableName: String,
+      path: String): OperationHandle = {
+    sessionManager
+      .getSession(sessionHandle)
+      .uploadData(values, tableName, path)
+  }
+
+  override def downloadData(
+      sessionHandle: SessionHandle,
+      tableName: String,
+      query: String,
+      format: String,
+      options: Map[String, String]): OperationHandle = {
+    sessionManager
+      .getSession(sessionHandle)
+      .downloadData(tableName, query, format, options)
   }
 
   override def initialize(conf: KyuubiConf): Unit = {

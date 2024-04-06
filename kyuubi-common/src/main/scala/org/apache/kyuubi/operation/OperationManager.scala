@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.nio.ByteBuffer
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -192,4 +194,23 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       null
     }
   }
+  @throws[KyuubiSQLException]
+  def newUploadDataOperation(
+      parentSession: Session,
+      values: ByteBuffer,
+      tableName: String,
+      path: String): Operation = {
+    throw KyuubiSQLException("Method newUploadDataOperation has not been implemented.")
+  }
+  @throws[KyuubiSQLException]
+  def newDownloadDataOperation(
+      parentSession: Session,
+      tableName: String,
+      query: String,
+      format: String,
+      options: Map[String, String]): Operation = {
+    throw KyuubiSQLException("Method newDownloadDataOperation has not been implemented.")
+
+  }
+
 }
