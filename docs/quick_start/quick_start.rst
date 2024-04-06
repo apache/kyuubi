@@ -44,7 +44,7 @@ pre-installed and the ``JAVA_HOME`` is correctly set to each component.
                    Engine lib                        - Kyuubi Engine
                    Beeline                           - Kyuubi Beeline
   **Spark**        Engine       3.1 to 3.5           A Spark distribution
-  **Flink**        Engine       1.16 to 1.19         A Flink distribution
+  **Flink**        Engine       1.17 to 1.19         A Flink distribution
   **Trino**        Engine       N/A                  A Trino cluster allows to access via trino-client v411
   **Doris**        Engine       N/A                  A Doris cluster
   **Hive**         Engine       - 2.1-cdh6/2.3/3.1   - A Hive distribution

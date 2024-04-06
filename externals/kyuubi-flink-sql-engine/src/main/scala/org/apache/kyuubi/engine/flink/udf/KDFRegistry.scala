@@ -21,14 +21,11 @@ import java.util
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.flink.configuration.Configuration
 import org.apache.flink.table.functions.{ScalarFunction, UserDefinedFunction}
 import org.apache.flink.table.gateway.service.context.SessionContext
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_NAME, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
-import org.apache.kyuubi.util.reflect.DynMethods
 
 object KDFRegistry {
 
@@ -36,24 +33,7 @@ object KDFRegistry {
 
     val kyuubiDefinedFunctions = new ArrayBuffer[KyuubiDefinedFunction]
 
-    val flinkConfigMap: util.Map[String, String] = {
-      if (FLINK_RUNTIME_VERSION === "1.16") {
-        DynMethods
-          .builder("getConfigMap")
-          .impl(classOf[SessionContext])
-          .build()
-          .invoke(sessionContext)
-          .asInstanceOf[util.Map[String, String]]
-      } else {
-        DynMethods
-          .builder("getSessionConf")
-          .impl(classOf[SessionContext])
-          .build()
-          .invoke(sessionContext)
-          .asInstanceOf[Configuration]
-          .toMap
-      }
-    }
+    val flinkConfigMap: util.Map[String, String] = sessionContext.getSessionConf.toMap
 
     val kyuubi_version: KyuubiDefinedFunction = create(
       "kyuubi_version",
