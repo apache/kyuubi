@@ -49,7 +49,7 @@ object InsertShuffleNodeBeforeJoin extends Rule[SparkPlan] {
     }
   }
 
-  // Since spark 3.3, insertShuffleBeforeJoin shouldn't be applied if join is skewed.
+  // SPARK-33832 (Spark 3.3) already handles skew join cases
   private def insertShuffleBeforeJoin(plan: SparkPlan): SparkPlan = plan transformUp {
     case smj @ SortMergeJoinExec(_, _, _, _, l, r, isSkewJoin) if !isSkewJoin =>
       smj.withNewChildren(checkAndInsertShuffle(smj.requiredChildDistribution.head, l) ::
