@@ -106,15 +106,18 @@
     emit('editorMounted', editor)
   }
   const getSelectValue = () => {
-    const selection: any = editor.getSelection()
-    const range: any = {
+    const selection = editor.getSelection()
+    if (!selection) {
+      return ''
+    }
+    const range = {
       startLineNumber: selection.selectionStartLineNumber,
       startColumn: selection.selectionStartColumn,
       endLineNumber: selection.positionLineNumber,
       endColumn: selection.positionColumn
     }
-    const model: any = editor.getModel()
-    return model.getValueInRange(range)
+    const model = editor.getModel()
+    return model?.getValueInRange(range)
   }
   watch(
     () => props.modelValue,
