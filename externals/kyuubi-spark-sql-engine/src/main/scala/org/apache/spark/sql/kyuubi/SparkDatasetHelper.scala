@@ -55,8 +55,8 @@ object SparkDatasetHelper extends Logging {
       doCollectLimit(collectLimit)
     case collectLimit: CollectLimitExec if collectLimit.limit < 0 =>
       executeArrowBatchCollect(collectLimit.child)
-    case command: CommandResultExec =>
-      doCommandResultExec(command)
+    case commandResult: CommandResultExec =>
+      doCommandResultExec(commandResult)
     case localTableScan: LocalTableScanExec =>
       doLocalTableScan(localTableScan)
     case plan: SparkPlan =>
@@ -184,18 +184,13 @@ object SparkDatasetHelper extends Logging {
     result.toArray
   }
 
-  private lazy val commandResultExecRowsMethod = DynMethods.builder("rows")
-    .impl("org.apache.spark.sql.execution.CommandResultExec")
-    .build()
-
-  private def doCommandResultExec(command: SparkPlan): Array[Array[Byte]] = {
-    val spark = SparkSession.active
-    val rows = command.asInstanceOf[CommandResultExec].rows
-    command.longMetric("numOutputRows").add(rows.size)
-    sendDriverMetrics(spark.sparkContext, command.metrics)
+  private def doCommandResultExec(commandResult: CommandResultExec): Array[Array[Byte]] = {
+    val spark = commandResult.session
+    commandResult.longMetric("numOutputRows").add(commandResult.rows.size)
+    sendDriverMetrics(spark.sparkContext, commandResult.metrics)
     KyuubiArrowConverters.toBatchIterator(
-      rows.iterator,
-      command.schema,
+      commandResult.rows.iterator,
+      commandResult.schema,
       spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
@@ -203,7 +198,7 @@ object SparkDatasetHelper extends Logging {
   }
 
   private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
-    val spark = SparkSession.active
+    val spark = localTableScan.session
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
     KyuubiArrowConverters.toBatchIterator(

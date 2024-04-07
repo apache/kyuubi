@@ -294,11 +294,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     val listener = new JobCountListener
     val l2 = new SQLMetricsListener
     val nodeName = spark.sql("SHOW TABLES").queryExecution.executedPlan.getClass.getName
-    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
-      assert(nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec")
-    } else {
-      assert(nodeName == "org.apache.spark.sql.execution.CommandResultExec")
-    }
+    assert(nodeName == "org.apache.spark.sql.execution.CommandResultExec")
     withJdbcStatement("table_1") { statement =>
       statement.executeQuery("CREATE TABLE table_1 (id bigint) USING parquet")
       withSparkListener(listener) {
@@ -310,15 +306,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
 
-    if (SPARK_ENGINE_RUNTIME_VERSION < "3.2") {
-      // Note that before Spark 3.2, a LocalTableScan SparkPlan will be submitted, and the issue of
-      // preventing LocalTableScan from triggering a job submission was addressed in [KYUUBI #4710].
-      assert(l2.queryExecution.executedPlan.getClass.getName ==
-        "org.apache.spark.sql.execution.LocalTableScanExec")
-    } else {
-      assert(l2.queryExecution.executedPlan.getClass.getName ==
-        "org.apache.spark.sql.execution.CommandResultExec")
-    }
+    assert(l2.queryExecution.executedPlan.getClass.getName ==
+      "org.apache.spark.sql.execution.CommandResultExec")
     assert(listener.numJobs == 0)
   }
 
@@ -374,7 +363,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
 
   test("post CommandResultExec driver-side metrics") {
     spark.sql("show tables").show(truncate = false)
-    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.2")
     val expectedMetrics = Map(
       0L -> (("CommandResult", Map("number of output rows" -> "2"))))
     withTables("table_1", "table_2") {

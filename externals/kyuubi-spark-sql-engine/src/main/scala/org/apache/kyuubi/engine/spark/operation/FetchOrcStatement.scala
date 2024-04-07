@@ -36,7 +36,6 @@ import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
 import org.apache.kyuubi.util.reflect.DynConstructors
 
@@ -76,27 +75,13 @@ class FetchOrcStatement(spark: SparkSession) {
 
   private def getOrcDeserializer(orcSchema: StructType, colId: Array[Int]): OrcDeserializer = {
     try {
-      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
-        // SPARK-34535 changed the constructor signature of OrcDeserializer
-        DynConstructors.builder()
-          .impl(classOf[OrcDeserializer], classOf[StructType], classOf[Array[Int]])
-          .build[OrcDeserializer]()
-          .newInstance(
-            orcSchema,
-            colId)
-      } else {
-        DynConstructors.builder()
-          .impl(
-            classOf[OrcDeserializer],
-            classOf[StructType],
-            classOf[StructType],
-            classOf[Array[Int]])
-          .build[OrcDeserializer]()
-          .newInstance(
-            new StructType,
-            orcSchema,
-            colId)
-      }
+      // SPARK-34535 changed the constructor signature of OrcDeserializer
+      DynConstructors.builder()
+        .impl(classOf[OrcDeserializer], classOf[StructType], classOf[Array[Int]])
+        .build[OrcDeserializer]()
+        .newInstance(
+          orcSchema,
+          colId)
     } catch {
       case e: Throwable =>
         throw new KyuubiException("Failed to create OrcDeserializer", e)

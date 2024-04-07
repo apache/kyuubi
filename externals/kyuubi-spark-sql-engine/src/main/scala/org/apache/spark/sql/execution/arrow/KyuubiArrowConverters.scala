@@ -344,6 +344,6 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       largeVarTypes)
   }
 
-  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark 3.1/3.2
+  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark 3.2
   final private val ARROW_IPC_OPTION_DEFAULT = new IpcOption()
 }
