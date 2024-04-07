@@ -39,26 +39,47 @@ trait TColumnValueGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     TColumnValue.byteVal(tValue)
   }
 
-  def asShortTColumnValue(row: RowT, ordinal: Int): TColumnValue = {
+  def asShortTColumnValue(
+      row: RowT,
+      ordinal: Int,
+      convertFunc: Any => JShort = null): TColumnValue = {
     val tValue = new TI16Value
     if (!isColumnNullAt(row, ordinal)) {
-      tValue.setValue(getColumnAs[JShort](row, ordinal))
+      val short = getColumnAs[JShort](row, ordinal) match {
+        case sObj: JShort => sObj
+        case obj if convertFunc != null => convertFunc(obj)
+      }
+      tValue.setValue(short)
     }
     TColumnValue.i16Val(tValue)
   }
 
-  def asIntegerTColumnValue(row: RowT, ordinal: Int): TColumnValue = {
+  def asIntegerTColumnValue(
+      row: RowT,
+      ordinal: Int,
+      convertFunc: Any => Integer = null): TColumnValue = {
     val tValue = new TI32Value
     if (!isColumnNullAt(row, ordinal)) {
-      tValue.setValue(getColumnAs[Integer](row, ordinal))
+      val integer = getColumnAs[Integer](row, ordinal) match {
+        case iObj: Integer => iObj
+        case obj if convertFunc != null => convertFunc(obj)
+      }
+      tValue.setValue(integer)
     }
     TColumnValue.i32Val(tValue)
   }
 
-  def asLongTColumnValue(row: RowT, ordinal: Int): TColumnValue = {
+  def asLongTColumnValue(
+      row: RowT,
+      ordinal: Int,
+      convertFunc: Any => JLong = null): TColumnValue = {
     val tValue = new TI64Value
     if (!isColumnNullAt(row, ordinal)) {
-      tValue.setValue(getColumnAs[JLong](row, ordinal))
+      val long = getColumnAs[JLong](row, ordinal) match {
+        case lObj: JLong => lObj
+        case obj if convertFunc != null => convertFunc(obj)
+      }
+      tValue.setValue(long)
     }
     TColumnValue.i64Val(tValue)
   }

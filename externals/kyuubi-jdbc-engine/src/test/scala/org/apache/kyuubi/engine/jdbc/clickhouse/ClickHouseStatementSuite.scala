@@ -64,17 +64,25 @@ class ClickHouseStatementSuite extends WithClickHouseEngine with HiveJDBCTestHel
           | boolean_col boolean,
           | double_col double,
           | float_col float,
-          | x UUID)
+          | x UUID,
+          | ui8 UInt8,
+          | ui16 UInt16,
+          | ui32 UInt32,
+          | ui64 UInt64,
+          | ui128 UInt128,
+          | ui256 UInt256,
+          | i128 Int128,
+          | i256 Int256)
           | ENGINE=File(TabSeparated)
           |""".stripMargin)
       statement.execute(
         """ insert into db1.type_test
           | (id, tiny_col, smallint_col, int_col, bigint_col, largeint_col, decimal_col,
           | date_col, datetime_col, char_col, varchar_col, string_col, boolean_col,
-          | double_col, float_col, x)
+          | double_col, float_col, x, ui8, ui16, ui32, ui64, ui128, ui256, i128, i256)
           | VALUES (1, 2, 3, 4, 5, 6, 7.7,
           | '2022-05-08', '2022-05-08 17:47:45', 'a', 'Hello', 'Hello, Kyuubi', true,
-          | 8.8, 9.9, generateUUIDv4())
+          | 8.8, 9.9, generateUUIDv4(), 8, 16, 32, 64, 128, 256, -128, -256)
           |""".stripMargin)
       val resultSet1 = statement.executeQuery("select * from db1.type_test")
       while (resultSet1.next()) {
@@ -94,6 +102,14 @@ class ClickHouseStatementSuite extends WithClickHouseEngine with HiveJDBCTestHel
         assert(resultSet1.getObject(14) == 8.8)
         assert(resultSet1.getObject(15) == 9.9)
         assert(resultSet1.getString(16).length == 36)
+        assert(resultSet1.getObject(17) == 8)
+        assert(resultSet1.getObject(18) == 16)
+        assert(resultSet1.getObject(19) == 32)
+        assert(resultSet1.getObject(20) == "64")
+        assert(resultSet1.getObject(21) == "128")
+        assert(resultSet1.getObject(22) == "256")
+        assert(resultSet1.getObject(23) == "-128")
+        assert(resultSet1.getObject(24) == "-256")
       }
     }
   }
