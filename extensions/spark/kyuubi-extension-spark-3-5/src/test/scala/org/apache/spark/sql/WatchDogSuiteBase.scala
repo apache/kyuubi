@@ -639,6 +639,5 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
       intercept[MaxFileSizeExceedException](
         sql("SELECT * FROM test_non_part").queryExecution.sparkPlan)
     }
-
   }
 }
