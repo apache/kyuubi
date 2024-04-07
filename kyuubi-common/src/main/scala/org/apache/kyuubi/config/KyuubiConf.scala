@@ -2934,6 +2934,15 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
+  val SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.server.limit.connections.ip.deny.list")
+      .doc("The client ip in the deny list will be denied to connect to kyuubi server.")
+      .version("1.9.1")
+      .serverOnly
+      .stringConf
+      .toSet()
+      .createWithDefault(Set.empty)
+
   val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.batch.connections.per.user")
       .doc("Maximum kyuubi server batch connections per user." +

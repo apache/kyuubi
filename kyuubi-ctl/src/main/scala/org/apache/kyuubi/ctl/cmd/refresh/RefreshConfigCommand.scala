@@ -21,7 +21,7 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
-import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType.{DENY_USERS, HADOOP_CONF, KUBERNETES_CONF, UNLIMITED_USERS, USER_DEFAULTS_CONF}
+import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType.{DENY_IPS, DENY_USERS, HADOOP_CONF, KUBERNETES_CONF, UNLIMITED_USERS, USER_DEFAULTS_CONF}
 import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.{Tabulator, Validator}
 
@@ -39,6 +39,7 @@ class RefreshConfigCommand(cliConfig: CliConfig) extends AdminCtlCommand[String]
         case KUBERNETES_CONF => adminRestApi.refreshKubernetesConf()
         case UNLIMITED_USERS => adminRestApi.refreshUnlimitedUsers()
         case DENY_USERS => adminRestApi.refreshDenyUsers()
+        case DENY_IPS => adminRestApi.refreshDenyIps()
         case configType => throw new KyuubiException(s"Invalid config type:$configType")
       }
     }
@@ -54,4 +55,5 @@ object RefreshConfigCommandConfigType {
   final val KUBERNETES_CONF = "kubernetesConf"
   final val UNLIMITED_USERS = "unlimitedUsers"
   final val DENY_USERS = "denyUsers"
+  final val DENY_IPS = "denyIps"
 }

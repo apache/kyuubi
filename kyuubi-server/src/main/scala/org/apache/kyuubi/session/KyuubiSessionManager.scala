@@ -338,12 +338,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val userUnlimitedList =
       conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+    val ipDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
     limiter = applySessionLimiter(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
       userUnlimitedList,
-      userDenyList)
+      userDenyList,
+      ipDenyList)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
@@ -354,7 +356,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddressBatchLimit,
       userIpAddressBatchLimit,
       userUnlimitedList,
-      userDenyList)
+      userDenyList,
+      ipDenyList)
   }
 
   private[kyuubi] def getUnlimitedUsers: Set[String] = {
@@ -378,19 +381,32 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     batchLimiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
   }
 
+  private[kyuubi] def getDenyIps: Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getDenyIps).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshDenyIps(conf: KyuubiConf): Unit = {
+    val denyIps = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
+    limiter.foreach(SessionLimiter.resetDenyIps(_, denyIps))
+    batchLimiter.foreach(SessionLimiter.resetDenyIps(_, denyIps))
+  }
+
   private def applySessionLimiter(
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
       userUnlimitedList: Set[String],
-      userDenyList: Set[String]): Option[SessionLimiter] = {
-    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) || userDenyList.nonEmpty) {
+      userDenyList: Set[String],
+      ipDenyList: Set[String]): Option[SessionLimiter] = {
+    if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) ||
+      userDenyList.nonEmpty || ipDenyList.nonEmpty) {
       Some(SessionLimiter(
         userLimit,
         ipAddressLimit,
         userIpAddressLimit,
         userUnlimitedList,
-        userDenyList))
+        userDenyList,
+        ipDenyList))
     } else {
       None
     }
