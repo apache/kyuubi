@@ -1488,7 +1488,7 @@
                 <enabled>true</enabled>
             </releases>
             <snapshots>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </snapshots>
             <id>kyuubi-shaded-staging-0.4.0-rc0</id>
             <url>https://repository.apache.org/content/repositories/orgapachekyuubi-1045</url>
