@@ -595,42 +595,11 @@ abstract class TFrontendService(name: String)
   }
 
   override def UploadData(req: TUploadDataReq): TUploadDataResp = {
-    val resp = new TUploadDataResp()
-    try {
-      val sessionHandle = SessionHandle(req.getSessionHandle())
-      val operationHandle =
-        be.uploadData(sessionHandle, req.bufferForValues(), req.getTableName(), req.getPath())
-      val tOperationHandle = operationHandle.toTOperationHandle
-      resp.setOperationHandle(tOperationHandle)
-      resp.setStatus(OK_STATUS)
-    } catch {
-      case e: Exception =>
-        error("Error upload Data: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
-    }
-    resp
+    throw new UnsupportedOperationException("Method UploadData has not been implemented.")
   }
 
   override def DownloadData(req: TDownloadDataReq): TDownloadDataResp = {
-    val resp = new TDownloadDataResp()
-    try {
-      val sessionHandle = SessionHandle(req.getSessionHandle())
-      val options: Map[String, String] = req.getDownloadOptions().asScala.toMap
-      val operationHandle = be.downloadData(
-        sessionHandle,
-        req.getTableName(),
-        req.getQuery(),
-        req.getFormat(),
-        options)
-      val tOperationHandle = operationHandle.toTOperationHandle
-      resp.setOperationHandle(tOperationHandle)
-      resp.setStatus(OK_STATUS)
-    } catch {
-      case e: Exception =>
-        error("Error download data: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
-    }
-    resp
+    throw new UnsupportedOperationException("Method DownloadData has not been implemented.")
   }
 
   protected def isServer(): Boolean = false
