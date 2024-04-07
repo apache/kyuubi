@@ -109,6 +109,6 @@ object AdminCommandLine extends CommonCommandLine {
           .action((v, c) => c.copy(adminConfigOpts = c.adminConfigOpts.copy(configType = v)))
           .text("The valid config type can be one of the following: " +
             s"$HADOOP_CONF, $USER_DEFAULTS_CONF, $KUBERNETES_CONF, " +
-            s"$UNLIMITED_USERS, $DENY_USERS."))
+            s"$UNLIMITED_USERS, $DENY_USERS, $DENY_IPS."))
   }
 }
