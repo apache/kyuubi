@@ -245,19 +245,6 @@ case class MaxScanStrategy(session: SparkSession)
           val partitionColumnNames = table.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
-          lazy val scanPartitions = relation.scan.asInstanceOf[SupportsReportPartitioning]
-            .outputPartitioning()
-            .numPartitions()
-          if (maxScanPartitionsOpt.exists(_ < scanPartitions)) {
-            throw new MaxPartitionExceedException(
-              s"""
-                 |Your SQL job scan a whole huge table without any partition filter,
-                 |You should optimize your SQL logical according partition structure
-                 |or shorten query scope such as p_date, detail as below:
-                 |Table: ${table.name()}
-                 |Partition Structure: ${partitionColumnNames.mkString(",")}
-                 |""".stripMargin)
-          }
           if (maxFileSizeOpt.exists(_ < scanFileSize)) {
             throw new MaxFileSizeExceedException(
               s"""

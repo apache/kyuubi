@@ -608,19 +608,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
       assert(e.getMessage == "Script transformation is not allowed")
     }
   }
-
-  test("watchdog with scan maxPartitions -- data source v2") {
-    val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
-    df.createOrReplaceTempView("test")
-    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "10") {
-      checkAnswer(sql("SELECT count(distinct(i)) FROM test"), Row(10) :: Nil)
-    }
-    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "5") {
-      intercept[MaxPartitionExceedException](
-        sql("SELECT * FROM test").queryExecution.sparkPlan)
-    }
-  }
-
+  
   test("watchdog with scan maxFileSize -- data source v2") {
     val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
     df.createOrReplaceTempView("test")
