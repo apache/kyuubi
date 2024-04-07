@@ -34,7 +34,7 @@
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %tn %c: %m%n%ex"/>
         </Console>
         <RollingFile name="restAudit" fileName="${sys:logDir}/${sys:restAuditLogPath}"
-                     filePattern="${sys:restAuditLogFilePattern}">
+                     filePattern="${sys:logDir}/${sys:restAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
@@ -42,7 +42,7 @@
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
         <RollingFile name="k8sAudit" fileName="${sys:logDir}/${sys:k8sAuditLogPath}"
-                     filePattern="${sys:k8sAuditLogFilePattern}">
+                     filePattern="${sys:logDir}/${sys:k8sAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
@@ -50,7 +50,7 @@
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
         <RollingFile name="opAudit" fileName="${sys:logDir}/${sys:opAuditLogPath}"
-                     filePattern="${sys:opAuditLogFilePattern}">
+                     filePattern="${sys:logDir}/${sys:opAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
