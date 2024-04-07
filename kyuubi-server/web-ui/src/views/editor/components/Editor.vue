@@ -55,6 +55,7 @@
     </el-space>
     <section>
       <MonacoEditor
+        ref="monacoEditor"
         v-model="editorVariables.content"
         :language="editorVariables.language"
         :theme="theme"
@@ -113,6 +114,7 @@
   })
   const limit = ref(10)
   const sqlResult: Ref<any[] | null> = ref(null)
+  const monacoEditor = ref()
   const sqlLog = ref('')
   const activeTab = ref('result')
   const resultLoading = ref(false)
@@ -156,10 +158,10 @@
       if (!openSessionResponse) return
       sessionIdentifier.value = openSessionResponse.identifier
     }
-
+    const selectValue = monacoEditor.value.getSelectValue()
     const runSqlResponse: IResponse = await runSql(
       {
-        statement: editorVariables.content,
+        statement: selectValue || editorVariables.content,
         runAsync: false
       },
       sessionIdentifier.value
