@@ -16,6 +16,7 @@
  */
 
 package org.apache.kyuubi.session
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
