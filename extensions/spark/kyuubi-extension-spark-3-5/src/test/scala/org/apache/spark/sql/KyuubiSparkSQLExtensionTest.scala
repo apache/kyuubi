@@ -27,8 +27,6 @@ import org.apache.spark.sql.test.SQLTestUtils
 import org.apache.spark.sql.util.QueryExecutionListener
 import org.apache.spark.util.Utils
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
-
 trait KyuubiSparkSQLExtensionTest extends QueryTest
   with SQLTestUtils
   with AdaptiveSparkPlanHelper {
