@@ -608,7 +608,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
       assert(e.getMessage == "Script transformation is not allowed")
     }
   }
-  
+
   test("watchdog with scan maxFileSize -- data source v2") {
     val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
     df.createOrReplaceTempView("test")

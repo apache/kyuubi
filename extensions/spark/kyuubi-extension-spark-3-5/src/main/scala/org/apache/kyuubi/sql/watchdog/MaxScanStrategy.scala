@@ -240,8 +240,7 @@ case class MaxScanStrategy(session: SparkSession)
             _,
             relation @ DataSourceV2ScanRelation(_, _, _, _, _)) =>
         val table = relation.relation.table
-        if (table.partitioning().nonEmpty &&
-          relation.scan.isInstanceOf[SupportsReportPartitioning]) {
+        if (table.partitioning().nonEmpty) {
           val partitionColumnNames = table.partitioning().map(_.describe())
           val stats = relation.computeStats()
           lazy val scanFileSize = stats.sizeInBytes
