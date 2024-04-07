@@ -61,6 +61,9 @@ class JdbcSessionManager(name: String)
   }
 
   private def stopSession(): Unit = {
-    JdbcSQLEngine.currentEngine.foreach(_.stop())
+    JdbcSQLEngine.currentEngine.foreach { engine =>
+      engine.selfExited = true
+      engine.stop()
+    }
   }
 }

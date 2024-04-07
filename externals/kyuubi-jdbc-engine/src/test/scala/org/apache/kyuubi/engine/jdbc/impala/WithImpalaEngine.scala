@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.impala
 
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
 trait WithImpalaEngine extends WithJdbcEngine with WithImpalaContainer {
@@ -26,5 +27,6 @@ trait WithImpalaEngine extends WithJdbcEngine with WithImpalaContainer {
     ENGINE_JDBC_CONNECTION_URL.key -> hiveServerJdbcUrl,
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "impala",
+    KYUUBI_SESSION_USER_KEY -> "kyuubi",
     ENGINE_JDBC_DRIVER_CLASS.key -> ImpalaConnectionProvider.driverClass)
 }

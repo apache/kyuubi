@@ -315,8 +315,10 @@ abstract class EngineYarnModeSubmitter extends Logging {
       }
       // respect the following priority loading configuration, and distinct files
       // hive configuration -> hadoop configuration -> yarn configuration
-      val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
-      listDistinctFiles(hiveConf.get).foreach(putEntry)
+      if ("hive".equalsIgnoreCase(engineType)) {
+        val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
+        listDistinctFiles(hiveConf.get).foreach(putEntry)
+      }
       val hadoopConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY)
       listDistinctFiles(hadoopConf.get).foreach(putEntry)
       val yarnConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY)

@@ -14,21 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.doris
 
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+package org.apache.kyuubi.it.jdbc.mysql
 
-trait WithDorisEngine extends WithJdbcEngine with WithDorisContainer {
+import org.apache.kyuubi.engine.jdbc.mysql.MySQLOperationSuite
 
-  override def withKyuubiConf: Map[String, String] = Map(
-    ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> feJdbcUrl,
-    ENGINE_JDBC_CONNECTION_USER.key -> "root",
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
-    ENGINE_TYPE.key -> "jdbc",
-    ENGINE_JDBC_SHORT_NAME.key -> "doris",
-    KYUUBI_SESSION_USER_KEY -> "kyuubi",
-    ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+class OperationWithServerYarnModeSuite extends MySQLOperationSuite
+  with WithKyuubiServerAndMySQLContainer {
+
+  override protected def jdbcUrl: String = getJdbcUrl
+
 }
