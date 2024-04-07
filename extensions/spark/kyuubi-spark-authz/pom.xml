@@ -351,7 +351,7 @@
 
         <dependency>
             <groupId>org.apache.paimon</groupId>
-            <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
+            <artifactId>paimon-spark-${spark.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
 

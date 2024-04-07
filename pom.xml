@@ -179,13 +179,10 @@
         <openai.java.version>0.12.0</openai.java.version>
         <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.7.0-incubating</paimon.version>
-        <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
-        <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
         <postgresql.version>42.7.2</postgresql.version>
         <prometheus.version>0.16.0</prometheus.version>
         <protobuf.version>3.21.7</protobuf.version>
-        <py4j.version>0.10.7</py4j.version>
         <scalatest.version>3.2.16</scalatest.version>
         <scalatestplus.version>3.2.16.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
@@ -1405,12 +1402,6 @@
             </dependency>
 
             <dependency>
-                <groupId>net.sf.py4j</groupId>
-                <artifactId>py4j</artifactId>
-                <version>${py4j.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.theokanning.openai-gpt3-java</groupId>
                 <artifactId>service</artifactId>
                 <version>${openai.java.version}</version>
@@ -1430,7 +1421,7 @@
 
             <dependency>
                 <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-spark-${paimon.spark.binary.version}</artifactId>
+                <artifactId>paimon-spark-${spark.binary.version}</artifactId>
                 <version>${paimon.version}</version>
             </dependency>
         </dependencies>
