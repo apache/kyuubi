@@ -62,18 +62,27 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     TColumn.byteVal(new TByteColumn(values, nulls))
   }
 
-  def asShortTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[JShort](rows, ordinal, 0.toShort)
+  def asShortTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => JShort = null): TColumn = {
+    val (values, nulls) = getColumnToList[JShort](rows, ordinal, 0.toShort, convertFunc)
     TColumn.i16Val(new TI16Column(values, nulls))
   }
 
-  def asIntegerTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[Integer](rows, ordinal, 0)
+  def asIntegerTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => Integer = null): TColumn = {
+    val (values, nulls) = getColumnToList[Integer](rows, ordinal, 0, convertFunc)
     TColumn.i32Val(new TI32Column(values, nulls))
   }
 
-  def asLongTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[JLong](rows, ordinal, 0.toLong)
+  def asLongTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => JLong = null): TColumn = {
+    val (values, nulls) = getColumnToList[JLong](rows, ordinal, 0.toLong, convertFunc)
     TColumn.i64Val(new TI64Column(values, nulls))
   }
 
