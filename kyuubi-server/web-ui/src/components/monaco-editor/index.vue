@@ -105,6 +105,17 @@
     })
     emit('editorMounted', editor)
   }
+  const getSelectValue = () => {
+    const selection: any = editor.getSelection()
+    const range: any = {
+      startLineNumber: selection.selectionStartLineNumber,
+      startColumn: selection.selectionStartColumn,
+      endLineNumber: selection.positionLineNumber,
+      endColumn: selection.positionColumn
+    }
+    const model: any = editor.getModel()
+    return model.getValueInRange(range)
+  }
   watch(
     () => props.modelValue,
     (newValue) => {
@@ -145,5 +156,8 @@
   })
   onMounted(() => {
     init()
+  })
+  defineExpose({
+    getSelectValue
   })
 </script>
