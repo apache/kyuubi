@@ -194,6 +194,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       null
     }
   }
+  
   @throws[KyuubiSQLException]
   def newUploadDataOperation(
       parentSession: Session,
@@ -202,6 +203,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       path: String): Operation = {
     throw KyuubiSQLException("Method newUploadDataOperation has not been implemented.")
   }
+
   @throws[KyuubiSQLException]
   def newDownloadDataOperation(
       parentSession: Session,
@@ -210,7 +212,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       format: String,
       options: Map[String, String]): Operation = {
     throw KyuubiSQLException("Method newDownloadDataOperation has not been implemented.")
-
   }
 
 }
