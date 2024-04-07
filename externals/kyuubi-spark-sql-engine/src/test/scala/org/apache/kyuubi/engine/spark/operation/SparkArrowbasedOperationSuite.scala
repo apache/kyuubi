@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.lang.{Boolean => JBoolean}
 import java.sql.Statement
-import java.util.{Locale, Set => JSet}
+import java.util.Locale
 
 import org.apache.spark.{KyuubiSparkContextHelper, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
@@ -43,7 +43,6 @@ import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.SparkDataTypeTests
 import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
-import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTypeTests
   with SparkMetricsTestUtils {
@@ -188,12 +187,9 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       returnSize.foreach { size =>
         val df = spark.sql(s"select * from t_1 limit $size")
         val headPlan = df.queryExecution.executedPlan.collectLeaves().head
-        if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
-          assert(headPlan.isInstanceOf[AdaptiveSparkPlanExec])
-          val finalPhysicalPlan =
-            SparkDatasetHelper.finalPhysicalPlan(headPlan.asInstanceOf[AdaptiveSparkPlanExec])
-          assert(finalPhysicalPlan.isInstanceOf[CollectLimitExec])
-        }
+        assert(headPlan.isInstanceOf[AdaptiveSparkPlanExec])
+        val finalPhysicalPlan = headPlan.asInstanceOf[AdaptiveSparkPlanExec].finalPhysicalPlan
+        assert(finalPhysicalPlan.isInstanceOf[CollectLimitExec])
         if (size > 1000) {
           runAndCheck(df.queryExecution.executedPlan, 1000)
         } else {
@@ -493,7 +489,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
     (keys, values).zipped.foreach { (k, v) =>
-      if (isStaticConfigKey(k)) {
+      if (SQLConf.isStaticConfigKey(k)) {
         throw new KyuubiException(s"Cannot modify the value of a static config: $k")
       }
       conf.setConfString(k, v)
@@ -520,16 +516,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       }
     }
   }
-
-  /**
-   * This method provides a reflection-based implementation of [[SQLConf.isStaticConfigKey]] to
-   * adapt Spark 3.1
-   *
-   * TODO: Once we drop support for Spark 3.1, we can directly call
-   * [[SQLConf.isStaticConfigKey()]].
-   */
-  private def isStaticConfigKey(key: String): Boolean =
-    getField[JSet[String]]((SQLConf.getClass, SQLConf), "staticConfKeys").contains(key)
 
   // the signature of function [[ArrowConverters.fromBatchIterator]] is changed in SPARK-43528
   // (since Spark 3.5)
