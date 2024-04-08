@@ -61,7 +61,7 @@ class FetchOrcStatement(spark: SparkSession) {
     val fullSchema = orcSchema.map(f =>
       AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
     val unsafeProjection = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
-    val deserializer = getOrcDeserializer(orcSchema, colId)
+    val deserializer = new OrcDeserializer(orcSchema, colId)
     orcIter = new OrcFileIterator(list)
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
@@ -71,21 +71,6 @@ class FetchOrcStatement(spark: SparkSession) {
 
   def close(): Unit = {
     orcIter.close()
-  }
-
-  private def getOrcDeserializer(orcSchema: StructType, colId: Array[Int]): OrcDeserializer = {
-    try {
-      // SPARK-34535 changed the constructor signature of OrcDeserializer
-      DynConstructors.builder()
-        .impl(classOf[OrcDeserializer], classOf[StructType], classOf[Array[Int]])
-        .build[OrcDeserializer]()
-        .newInstance(
-          orcSchema,
-          colId)
-    } catch {
-      case e: Throwable =>
-        throw new KyuubiException("Failed to create OrcDeserializer", e)
-    }
   }
 }
 
