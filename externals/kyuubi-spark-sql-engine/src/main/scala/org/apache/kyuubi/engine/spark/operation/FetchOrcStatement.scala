@@ -35,9 +35,7 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
-import org.apache.kyuubi.util.reflect.DynConstructors
 
 class FetchOrcStatement(spark: SparkSession) {
 
