@@ -78,6 +78,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
         if (plugin != null) {
           LOG.info(s"clean up ranger plugin, appId: ${plugin.getAppId}")
           plugin.cleanup()
+          plugin.getAuditProviderFactory.shutdown()
         }
       },
       Integer.MAX_VALUE)
