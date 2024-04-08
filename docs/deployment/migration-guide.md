@@ -20,6 +20,7 @@
 ## Upgrading from Kyuubi 1.9 to 1.10
 
 * Since Kyuubi 1.10, `beeline` is deprecated and will be removed in the future, please use `kyuubi-beeline` instead.
+* Since Kyuubi 1.10, the support of Spark engine for Spark 3.1 is removed.
 * Since Kyuubi 1.10, the support of Flink engine for Flink 1.16 is removed.
 
 ## Upgrading from Kyuubi 1.8 to 1.9
