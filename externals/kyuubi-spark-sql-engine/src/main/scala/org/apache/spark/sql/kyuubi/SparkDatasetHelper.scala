@@ -211,7 +211,7 @@ object SparkDatasetHelper extends Logging {
   }
 
   /**
-   * offset support was add since Spark-3.4(set SPARK-28330), to ensure backward compatibility with
+   * offset support was add in SPARK-28330(3.4.0), to ensure backward compatibility with
    * earlier versions of Spark, this function uses reflective calls to the "offset".
    */
   private def offset(collectLimitExec: CollectLimitExec): Int = {
