@@ -26,6 +26,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_EXTRA_CLASSPATH
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter
+import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
 
 object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
@@ -60,18 +61,8 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
     jars.toSeq
   }
 
-  private[hive] def parseClasspath(classpath: String, jars: ListBuffer[File]): Unit = {
-    classpath.split(":").filter(_.nonEmpty).foreach { cp =>
-      if (cp.endsWith("/*")) {
-        val dir = cp.substring(0, cp.length - 2)
-        new File(dir) match {
-          case f if f.isDirectory =>
-            f.listFiles().filter(_.getName.endsWith(".jar")).foreach(jars += _)
-          case _ =>
-        }
-      } else {
-        jars += new File(cp)
-      }
-    }
+  override def listConfFiles(): Seq[File] = {
+    val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
+    listDistinctFiles(hiveConf.get) ++ super.listConfFiles()
   }
 }

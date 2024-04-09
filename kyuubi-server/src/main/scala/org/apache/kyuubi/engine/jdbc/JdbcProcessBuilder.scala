@@ -133,7 +133,7 @@ object JdbcProcessBuilder extends Logging {
       case LOCAL =>
         new JdbcProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case YARN =>
-        warn(s"Hive on YARN model is experimental.")
+        warn(s"JDBC on YARN model is experimental.")
         conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
         new JdbcYarnModeProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
       case other => throw new KyuubiException(s"Unsupported deploy mode: $other")

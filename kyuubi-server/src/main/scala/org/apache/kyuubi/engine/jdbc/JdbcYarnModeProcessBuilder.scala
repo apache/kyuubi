@@ -33,9 +33,9 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyValues}
 
 /**
- * A process builder for Hive on Yarn.
+ * A process builder for JDBC on Yarn.
  *
- * It will new a process on kyuubi server side to submit hive engine to yarn.
+ * It will new a process on kyuubi server side to submit jdbc engine to yarn.
  */
 class JdbcYarnModeProcessBuilder(
     override val proxyUser: String,
