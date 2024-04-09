@@ -21,7 +21,6 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.kyuubi.SparkDataTypeHelper
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
@@ -32,16 +31,6 @@ object SchemaHelper {
    * Spark 3.4.0 DataType TimestampNTZType's class name.
    */
   final val TIMESTAMP_NTZ = "TimestampNTZType$"
-
-  /**
-   * Spark 3.2.0 DataType DayTimeIntervalType's class name.
-   */
-  final val DAY_TIME_INTERVAL = "DayTimeIntervalType"
-
-  /**
-   * Spark 3.2.0 DataType YearMonthIntervalType's class name.
-   */
-  final val YEAR_MONTH_INTERVAL = "YearMonthIntervalType"
 
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
@@ -59,15 +48,12 @@ object SchemaHelper {
     case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
-    case dt if dt.getClass.getSimpleName.equals(DAY_TIME_INTERVAL) =>
-      TTypeId.INTERVAL_DAY_TIME_TYPE
-    case ym if ym.getClass.getSimpleName.equals(YEAR_MONTH_INTERVAL) =>
-      TTypeId.INTERVAL_YEAR_MONTH_TYPE
+    case _: DayTimeIntervalType => TTypeId.INTERVAL_DAY_TIME_TYPE
+    case _: YearMonthIntervalType => TTypeId.INTERVAL_YEAR_MONTH_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
-    // SPARK-7768(fixed in 3.2.0) promoted UserDefinedType to DeveloperApi
-    case _ if SparkDataTypeHelper.isUserDefinedType(typ) => TTypeId.USER_DEFINED_TYPE
+    case _: UserDefinedType[_] => TTypeId.USER_DEFINED_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")
   }
@@ -140,13 +126,12 @@ object SchemaHelper {
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
-    case dt
-        if Array(TIMESTAMP_NTZ, DAY_TIME_INTERVAL, YEAR_MONTH_INTERVAL)
-          .contains(dt.getClass.getSimpleName) => Some(dt.defaultSize)
+    case dt if dt.getClass.getSimpleName == TIMESTAMP_NTZ =>
+      Some(dt.defaultSize)
     case dt: DecimalType =>
       Some(dt.precision)
-    case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
-        CalendarIntervalType | NullType) =>
+    case dt @ (BooleanType | _: NumericType | DateType | TimestampType | NullType |
+        CalendarIntervalType | _: DayTimeIntervalType | _: YearMonthIntervalType) =>
       Some(dt.defaultSize)
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
