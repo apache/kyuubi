@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+  <property>
+    <name>hive.metastore.uris</name>
+    <value>thrift://localhost:9083</value>
+  </property>
+  <property>
+    <name>javax.jdo.option.ConnectionURL</name>
+    <value>jdbc:derby:;databaseName=/var/lib/hive/metastore/metastore_db;create=true</value>
+  </property>
+  <property>
+    <name>fs.defaultFS</name>
+    <value>file:///</value>
+  </property>
+  <property>
+    <name>hive.server2.authentication</name>
+    <value>LDAP</value>
+  </property>
+  <property>
+    <name>hive.server2.authentication.ldap.url</name>
+    <value>ldap://localhost:3389</value>
+  </property>
+  <property>
+    <name>hive.server2.authentication.ldap.baseDN</name>
+    <value>dc=example,dc=com</value>
+  </property>
+  <property>
+    <name>hive.server2.authentication.ldap.guidKey</name>
+    <value>cn</value>
+  </property>
+</configuration>
