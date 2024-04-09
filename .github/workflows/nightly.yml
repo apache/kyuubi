@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
-      - name: Setup JDK 8
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
