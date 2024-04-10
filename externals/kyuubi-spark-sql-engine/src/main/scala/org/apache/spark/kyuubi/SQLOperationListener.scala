@@ -156,6 +156,7 @@ class SQLOperationListener(
                 jobInfo.numCompleteStages.getAndIncrement()
               }
             }
+          case _ => // do nothing, failed stage not counted to numCompleteStages
         }
         val taskMetrics = stageInfo.taskMetrics
         if (taskMetrics != null) {
