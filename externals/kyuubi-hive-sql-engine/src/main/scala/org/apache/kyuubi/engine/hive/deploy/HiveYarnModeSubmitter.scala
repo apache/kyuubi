@@ -62,6 +62,8 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
   }
 
   override def listConfFiles(): Seq[File] = {
+    // respect the following priority loading configuration, and distinct files
+    // hive configuration -> hadoop configuration -> yarn configuration
     val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
     listDistinctFiles(hiveConf.get) ++ super.listConfFiles()
   }
