@@ -65,9 +65,7 @@
   import { useLocales } from './use-locales'
   import { LOCALES } from './types'
   import { reactive } from 'vue'
-  import { ref, onUnmounted } from 'vue';
   import { useAuthStore } from '@/pinia/auth/auth';
-  import LoginModal from '@/login/LoginModal.vue';
 
   const locales = reactive(LOCALES)
   const { changeLocale, currentLocale } = useLocales()
