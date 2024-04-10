@@ -595,11 +595,13 @@ abstract class TFrontendService(name: String)
   }
 
   override def UploadData(req: TUploadDataReq): TUploadDataResp = {
-    throw new UnsupportedOperationException("Method UploadData has not been implemented.")
+    debug(req.toString)
+    throw KyuubiSQLException.featureNotSupported("Method UploadData has not been implemented.")
   }
 
   override def DownloadData(req: TDownloadDataReq): TDownloadDataResp = {
-    throw new UnsupportedOperationException("Method DownloadData has not been implemented.")
+    debug(req.toString)
+    throw KyuubiSQLException.featureNotSupported("Method DownloadData has not been implemented.")
   }
 
   protected def isServer(): Boolean = false
