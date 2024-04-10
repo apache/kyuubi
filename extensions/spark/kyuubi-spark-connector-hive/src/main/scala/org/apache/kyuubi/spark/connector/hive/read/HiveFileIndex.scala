@@ -167,7 +167,7 @@ class HiveInMemoryFileIndex(
     }
     val selectedPartitions =
       if (partitionSpec().partitionColumns.isEmpty) {
-        PartitionDirectory(InternalRow.empty, allFiles().filter(isNonEmptyFile)) :: Nil
+        PartitionDirectory(InternalRow.empty, allFiles().toArray.filter(isNonEmptyFile)) :: Nil
       } else {
         if (recursiveFileLookup) {
           throw new IllegalArgumentException(
@@ -184,7 +184,7 @@ class HiveInMemoryFileIndex(
                 // Directory does not exist, or has no children files
                 Nil
             }
-            val partDir = PartitionDirectory(values, files)
+            val partDir = PartitionDirectory(values, files.toArray)
             // Update Partition Directory -> binding Hive part map
             updatePartDirHivePartitionMapping(partDir, partPath)
 
