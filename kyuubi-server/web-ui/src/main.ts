@@ -24,7 +24,7 @@ import '@/assets/styles/element/index.scss'
 import '@/assets/styles/index.scss'
 import App from './App.vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
-import LoginModal from '@/components/login/LoginModal.vue'
+import LoginModal from '@/components/login/index.vue'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
 const app = createApp(App)
