@@ -16,7 +16,7 @@
  */
 
 import axios, { AxiosResponse } from 'axios'
-import { useAuthStore } from '@/pinia/auth/auth';
+import { useAuthStore } from '@/pinia/auth/auth'
 
 // create an axios instance
 const service = axios.create({
@@ -29,9 +29,9 @@ const service = axios.create({
 service.interceptors.request.use(
   (config) => {
     // do something before request is sent
-    const authStore = useAuthStore();
+    const authStore = useAuthStore()
     if (authStore.isAuthenticated) {
-      config.headers.Authorization = authStore.authToken;
+      config.headers.Authorization = authStore.authToken
     }
     return config
   },
@@ -62,7 +62,7 @@ service.interceptors.response.use(
     // for debug
     // do something when error
     if (error.response && error.response.status === 401) {
-      window.dispatchEvent(new CustomEvent('auth-required'));
+      window.dispatchEvent(new CustomEvent('auth-required'))
     }
     return Promise.reject(error)
   }

@@ -34,7 +34,9 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click.native="handleLogout">Sign out</el-dropdown-item>
+              <el-dropdown-item @click="handleLogout"
+                >Sign out</el-dropdown-item
+              >
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -49,7 +51,10 @@
         </span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item v-for="(locale, key) in locales" :key="key" :command="locale.key">
+            <el-dropdown-item
+              v-for="(locale, key) in locales"
+              :key="key"
+              :command="locale.key">
               {{ locale.label }}
             </el-dropdown-item>
           </el-dropdown-menu>
@@ -65,14 +70,13 @@
   import { useLocales } from './use-locales'
   import { LOCALES } from './types'
   import { reactive } from 'vue'
-  import { useAuthStore } from '@/pinia/auth/auth';
+  import { useAuthStore } from '@/pinia/auth/auth'
 
   const locales = reactive(LOCALES)
   const { changeLocale, currentLocale } = useLocales()
   const store = useStore()
   const { isCollapse } = storeToRefs(store)
   const { changeCollapse } = store
-  
 
   function _changeCollapse() {
     changeCollapse()
@@ -82,17 +86,17 @@
     changeLocale(command)
   }
 
-  const authStore = useAuthStore();
-  const handleLogout = (command: string) => {
-      logout(); 
-  };
+  const authStore = useAuthStore()
+  const handleLogout = () => {
+    logout()
+  }
   const logout = () => {
-    authStore.clearUser();
-  };
+    authStore.clearUser()
+  }
 
   const showLoginModal = () => {
-    window.dispatchEvent(new CustomEvent('auth-required'));
-  };
+    window.dispatchEvent(new CustomEvent('auth-required'))
+  }
 </script>
 
 <style lang="scss" scoped>
@@ -103,7 +107,7 @@
   }
 
   .left-container {
-    >.el-icon {
+    > .el-icon {
       padding: 0 24px;
       cursor: pointer;
       position: relative;
@@ -115,12 +119,12 @@
     display: flex;
     align-items: center;
 
-    >*:not(:last-child) {
-      margin-right: 16px; 
+    > *:not(:last-child) {
+      margin-right: 16px;
     }
-    
-    >.el-dropdown .el-icon,
-    >.el-button {
+
+    > .el-dropdown .el-icon,
+    > .el-button {
       position: relative;
       top: 2px;
     }

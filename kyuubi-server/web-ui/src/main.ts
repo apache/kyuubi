@@ -25,11 +25,17 @@ import '@/assets/styles/index.scss'
 import App from './App.vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import LoginModal from '@/components/login/index.vue'
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 
 const app = createApp(App)
 for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
   app.component(key, component)
 }
-store.use(piniaPluginPersistedstate);
-app.component('LoginModal',LoginModal).use(router).use(store).use(i18n).use(ElementPlus).mount('#app')
+store.use(piniaPluginPersistedstate)
+app
+  .component('LoginModal', LoginModal)
+  .use(router)
+  .use(store)
+  .use(i18n)
+  .use(ElementPlus)
+  .mount('#app')
