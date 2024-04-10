@@ -594,6 +594,16 @@ abstract class TFrontendService(name: String)
     resp
   }
 
+  override def UploadData(req: TUploadDataReq): TUploadDataResp = {
+    debug(req.toString)
+    throw KyuubiSQLException.featureNotSupported("Method UploadData has not been implemented.")
+  }
+
+  override def DownloadData(req: TDownloadDataReq): TDownloadDataResp = {
+    debug(req.toString)
+    throw KyuubiSQLException.featureNotSupported("Method DownloadData has not been implemented.")
+  }
+
   protected def isServer(): Boolean = false
 
   class FeTServerEventHandler extends TServerEventHandler {
