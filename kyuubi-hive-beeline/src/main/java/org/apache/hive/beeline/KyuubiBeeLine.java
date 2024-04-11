@@ -79,9 +79,7 @@ public class KyuubiBeeLine extends BeeLine {
 
   @Override
   void usage() {
-    super.usage();
-    output("Usage: java " + KyuubiBeeLine.class.getCanonicalName());
-    output("   --python-mode                   Execute python code/script.");
+    output(loc("kyuubi-beeline-usage"));
   }
 
   public boolean isPythonMode() {
