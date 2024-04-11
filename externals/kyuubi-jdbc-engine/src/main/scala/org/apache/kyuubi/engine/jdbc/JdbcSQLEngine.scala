@@ -72,6 +72,7 @@ object JdbcSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
+
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
@@ -88,17 +89,7 @@ object JdbcSQLEngine extends Logging {
           UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
           UserGroupInformation.getCurrentUser
         case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>
-          val newUGI = UserGroupInformation.createProxyUser(proxyUser.get, realUser)
-          newUGI.doAs(new PrivilegedExceptionAction[Unit] {
-            override def run(): Unit = {
-              val engineCredentials =
-                kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-              kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-              engineCredentials.filter(_.nonEmpty).foreach { credentials =>
-              }
-            }
-          })
-          newUGI
+          UserGroupInformation.createProxyUser(proxyUser.get, realUser)
         case _ =>
           UserGroupInformation.getCurrentUser
       }
