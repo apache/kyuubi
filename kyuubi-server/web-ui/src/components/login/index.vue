@@ -37,14 +37,19 @@
     </el-form>
     <template #footer>
       <div class="dialog-footer">
-        <el-button type="primary" @click="handleLogin">Login</el-button>
+        <el-button
+          type="primary"
+          :disabled="isLoginDisabled"
+          @click="handleLogin"
+          >Log in</el-button
+        >
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted } from 'vue'
+  import { ref, computed, onMounted } from 'vue'
   import { useAuthStore } from '@/pinia/auth/auth'
 
   const authStore = useAuthStore()
@@ -52,6 +57,12 @@
   const username = ref('')
   const password = ref('')
   const loginError = ref('')
+
+  const isLoginDisabled = computed(() => {
+    return (
+      username.value.trim().length === 0 || password.value.trim().length === 0
+    )
+  })
 
   const handleLogin = async () => {
     try {
