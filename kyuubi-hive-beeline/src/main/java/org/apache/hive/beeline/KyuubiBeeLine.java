@@ -79,7 +79,7 @@ public class KyuubiBeeLine extends BeeLine {
 
   @Override
   void usage() {
-    output(loc("kyuubi-beeline-usage"));
+    super.usage();
   }
 
   public boolean isPythonMode() {
