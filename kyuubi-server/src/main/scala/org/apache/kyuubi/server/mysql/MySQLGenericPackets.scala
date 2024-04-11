@@ -55,7 +55,7 @@ object MySQLErrPacket {
         // prefer brief nested error message instead of whole stacktrace
         apply(kse.getCause)
       case e: Exception
-          if (e.getMessage != null) && (e.getMessage contains "NoSuchDatabaseException") =>
+          if e.getMessage != null && e.getMessage.contains("NoSuchDatabaseException") =>
         MySQLErrPacket(1, MySQLErrorCode.ER_BAD_DB_ERROR, cause.getMessage)
       case se: SQLException if se.getSQLState == null =>
         MySQLErrPacket(1, MySQLErrorCode.ER_INTERNAL_ERROR, cause.getMessage)
