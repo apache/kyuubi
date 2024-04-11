@@ -147,6 +147,7 @@ class SQLOperationListener(
                 jobInfo.numCompleteStages.getAndIncrement()
               }
             }
+          case _ => // do nothing, failed stage not counted to numCompleteStages
         }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }
