@@ -21,6 +21,7 @@
 </script>
 
 <template>
+  <login-modal />
   <router-view />
 </template>
 
