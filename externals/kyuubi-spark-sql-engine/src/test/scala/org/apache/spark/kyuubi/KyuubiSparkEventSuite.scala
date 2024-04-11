@@ -16,8 +16,9 @@
  */
 package org.apache.spark.kyuubi
 
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.SparkException
-import org.apache.spark.util.JsonProtocol
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
@@ -41,16 +42,15 @@ class KyuubiSparkEventSuite extends KyuubiFunSuite {
       None,
       None,
       None)
-    val json = JsonProtocol.sparkEventToJsonString(event)
+    val mapper: ObjectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
+      .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    val json = mapper.writeValueAsString(event)
     assert(json.contains("\"exception\":{\"Message\":\"message\",\"Stack Trace\":" +
       "[{\"Declaring Class\":\"org.apache.spark.kyuubi.KyuubiSparkEventSuite\","))
-    val deserializeEvent = JsonProtocol.sparkEventFromJson(json)
-    assert(deserializeEvent.isInstanceOf[SparkOperationEvent])
-    assert(deserializeEvent.asInstanceOf[SparkOperationEvent].exception.isDefined)
-    assert(
-      deserializeEvent.asInstanceOf[SparkOperationEvent].exception.get.getMessage === "message")
-    assert(
-      deserializeEvent.asInstanceOf[SparkOperationEvent].exception.get.getStackTrace.length > 0)
+    val deserializeEvent = mapper.readValue(json, classOf[SparkOperationEvent])
+    assert(deserializeEvent.exception.isDefined)
+    assert(deserializeEvent.exception.get.getMessage === "message")
+    assert(deserializeEvent.exception.get.getStackTrace.length > 0)
   }
 
 }
