@@ -48,7 +48,7 @@ class WithKyuubiServerAndMySQLContainerYarnMode extends MySQLOperationSuite
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
       .set(ENGINE_JDBC_EXTRA_CLASSPATH, mysqlJdbcConnectorPath)
       .set(ENGINE_TYPE, "JDBC")
-      .set(KyuubiConf.ENGINE_HIVE_DEPLOY_MODE, DeployMode.YARN.toString)
+      .set(KyuubiConf.ENGINE_JDBC_DEPLOY_MODE, DeployMode.YARN.toString)
       .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)
   }
 

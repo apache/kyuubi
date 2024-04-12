@@ -164,7 +164,7 @@ object JdbcProcessBuilder extends Logging {
 
     val deployMode = DeployMode.withName(conf.get(ENGINE_JDBC_DEPLOY_MODE))
     if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
-      warn("Hive on YARN can not work properly without principal and keytab.")
+      warn("JDBC on YARN can not work properly without principal and keytab.")
     }
   }
 }

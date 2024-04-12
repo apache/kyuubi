@@ -89,6 +89,7 @@ object JdbcSQLEngine extends Logging {
           UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
           UserGroupInformation.getCurrentUser
         case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>
+          kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
           UserGroupInformation.createProxyUser(proxyUser.get, realUser)
         case _ =>
           UserGroupInformation.getCurrentUser
