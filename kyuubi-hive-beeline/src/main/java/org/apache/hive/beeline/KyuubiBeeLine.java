@@ -77,11 +77,6 @@ public class KyuubiBeeLine extends BeeLine {
     }
   }
 
-  @Override
-  void usage() {
-    super.usage();
-  }
-
   public boolean isPythonMode() {
     return pythonMode;
   }
