@@ -1095,7 +1095,7 @@ This product optionally depends on 'Eclipse Collections', the Java collections f
 ever that brings happiness to your Java development.
 It can be obtained at:
   * LICENSE:
-    * licenses/LICENSE-EDL-1.0.txt (Eclipse Distribution License 1.0 (BSD))
-    * licenses/LICENSE-EPL-1.0.txt (Eclipse Public License 1.0)
+    * licenses-binary/LICENSE-EDL1.0.txt (Eclipse Distribution License 1.0 (BSD))
+    * licenses-binary/LICENSE-EPL-1.0.txt (Eclipse Public License 1.0)
   * HOMEPAGE:
     * https://eclipse.dev/collections/index.html
