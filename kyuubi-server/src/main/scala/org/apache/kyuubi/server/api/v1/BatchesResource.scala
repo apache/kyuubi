@@ -341,9 +341,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                 Some(metadata.engineOpenTime).filter(_ > 0).orElse(Some(System.currentTimeMillis)))
               // if the batch app is terminated, update the metadata in db.
               if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
+                val appInfo = batchAppStatus.get
                 sessionManager.updateMetadata(Metadata(
                   identifier = batchId,
-                  engineState = batchAppStatus.get.state.toString))
+                  engineId = appInfo.id,
+                  engineName = appInfo.name,
+                  engineUrl = appInfo.url.orNull,
+                  engineState = appInfo.state.toString,
+                  engineError = appInfo.error))
               }
               buildBatch(metadata, batchAppStatus)
           }
