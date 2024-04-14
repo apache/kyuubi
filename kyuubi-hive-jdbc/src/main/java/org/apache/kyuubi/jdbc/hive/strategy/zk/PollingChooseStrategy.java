@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.jdbc.hive.strategy.zk;
 
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
@@ -27,12 +26,10 @@ import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.kyuubi.shaded.curator.retry.RetryForever;
-import org.apache.kyuubi.shaded.zookeeper.CreateMode;
 
 public class PollingChooseStrategy implements ChooseServerStrategy {
   private static final String COUNTER_PATH_PREFIX = "/";
   private static final String COUNTER_PATH_SUFFIX = "-counter";
-  private static final int COUNTER_RESET_VALUE = 1000;
 
   @Override
   public String chooseServer(List<String> serverHosts, CuratorFramework zkClient, String namespace)
@@ -40,17 +37,11 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
     String counterPath = COUNTER_PATH_PREFIX + namespace + COUNTER_PATH_SUFFIX;
     InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(zkClient, counterPath);
     try {
-      if (zkClient.checkExists().forPath(counterPath) == null) {
-        zkClient
-            .create()
-            .creatingParentsIfNeeded()
-            .withMode(CreateMode.PERSISTENT)
-            .forPath(counterPath, "0".getBytes(StandardCharsets.UTF_8));
-      }
+      int counter = getAndIncrement(zkClient, counterPath);
       if (!lock.acquire(60, TimeUnit.SECONDS)) {
         return null;
       }
-      return serverHosts.get(getAndIncrement(zkClient, counterPath) % serverHosts.size());
+      return serverHosts.get(counter % serverHosts.size());
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Oops, PollingChooseStrategy get the server is wrong!", e);
@@ -71,7 +62,6 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
     do {
       atomicVal = dai.add(1);
     } while (atomicVal == null || !atomicVal.succeeded());
-    dai.trySet(atomicVal.postValue() % COUNTER_RESET_VALUE);
     return atomicVal.preValue();
   }
 }
