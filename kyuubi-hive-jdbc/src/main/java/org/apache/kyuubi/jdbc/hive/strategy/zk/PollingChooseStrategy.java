@@ -23,7 +23,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.jdbc.hive.strategy.ChooseServerStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
+import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.AtomicValue;
+import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
+import org.apache.kyuubi.shaded.curator.retry.RetryForever;
 import org.apache.kyuubi.shaded.zookeeper.CreateMode;
 
 public class PollingChooseStrategy implements ChooseServerStrategy {
@@ -34,26 +37,20 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
   @Override
   public String chooseServer(List<String> serverHosts, CuratorFramework zkClient, String namespace)
       throws ZooKeeperHiveClientException {
-    String counter_path = COUNTER_PATH_PREFIX + namespace + COUNTER_PATH_SUFFIX;
-    InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(zkClient, counter_path);
+    String counterPath = COUNTER_PATH_PREFIX + namespace + COUNTER_PATH_SUFFIX;
+    InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(zkClient, counterPath);
     try {
-      if (zkClient.checkExists().forPath(counter_path) == null) {
+      if (zkClient.checkExists().forPath(counterPath) == null) {
         zkClient
             .create()
             .creatingParentsIfNeeded()
             .withMode(CreateMode.PERSISTENT)
-            .forPath(counter_path, "0".getBytes(StandardCharsets.UTF_8));
+            .forPath(counterPath, "0".getBytes(StandardCharsets.UTF_8));
       }
       if (!lock.acquire(60, TimeUnit.SECONDS)) {
         return null;
       }
-      byte[] data = zkClient.getData().forPath(counter_path);
-      String dataStr = new String(data, StandardCharsets.UTF_8);
-      int counter = Integer.parseInt(dataStr);
-      String server = serverHosts.get(counter % serverHosts.size());
-      counter = (counter + 1) % COUNTER_RESET_VALUE;
-      zkClient.setData().forPath(counter_path, (counter + "").getBytes(StandardCharsets.UTF_8));
-      return server;
+      return serverHosts.get(getAndIncrement(zkClient, counterPath) % serverHosts.size());
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Oops, PollingChooseStrategy get the server is wrong!", e);
@@ -65,5 +62,15 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
             "Oops,PollingChooseStrategy releasing lock is wrong!", e);
       }
     }
+  }
+
+  private int getAndIncrement(CuratorFramework zkClient, String path) throws Exception {
+    DistributedAtomicInteger dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000));
+    AtomicValue<Integer> atomicVal;
+    do {
+      atomicVal = dai.add(1);
+    }while (atomicVal == null || !atomicVal.succeeded());
+    dai.trySet(atomicVal.postValue() % COUNTER_RESET_VALUE);
+    return atomicVal.preValue();
   }
 }
