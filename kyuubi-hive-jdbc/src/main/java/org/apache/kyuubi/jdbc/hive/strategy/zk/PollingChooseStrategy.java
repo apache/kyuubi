@@ -65,11 +65,12 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
   }
 
   private int getAndIncrement(CuratorFramework zkClient, String path) throws Exception {
-    DistributedAtomicInteger dai = new DistributedAtomicInteger(zkClient, path, new RetryForever(1000));
+    DistributedAtomicInteger dai =
+        new DistributedAtomicInteger(zkClient, path, new RetryForever(1000));
     AtomicValue<Integer> atomicVal;
     do {
       atomicVal = dai.add(1);
-    }while (atomicVal == null || !atomicVal.succeeded());
+    } while (atomicVal == null || !atomicVal.succeeded());
     dai.trySet(atomicVal.postValue() % COUNTER_RESET_VALUE);
     return atomicVal.preValue();
   }
