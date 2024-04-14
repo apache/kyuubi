@@ -252,14 +252,14 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 if [ "$SCALA_VERSION" = "2.12" ]; then
   EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT $@ -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
 else
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT -pl :kyuubi-spark-sql-engine_2.12 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT $@ -Pscala-2.12 -pl :kyuubi-spark-sql-engine_2.12 -am)
 fi
 
 # shellcheck disable=SC2145
 echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
 
 "${BUILD_COMMAND[@]}"
-"${EXTRA_SPARK_ENGINE_BUILD_COMMAND}"
+"${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
