@@ -626,6 +626,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
+  val FRONTEND_REST_ENABLE_WEBUI: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.enable.webui")
+      .doc("If set to false then web ui will disabled when RESTful protocol is enabled")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")

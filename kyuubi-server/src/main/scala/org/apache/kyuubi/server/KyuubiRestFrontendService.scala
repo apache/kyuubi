@@ -116,6 +116,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   private def installWebUI(): Unit = {
+    if (!conf.get(FRONTEND_REST_ENABLE_WEBUI)) {
+      val filterHolder = new FilterHolder(JettyUtils.createFilter("/enable.html"))
+      val servletHandler = JettyUtils.createStaticHandler("dist", "/")
+      servletHandler.addFilter(filterHolder, "/*", null)
+      server.addHandler(servletHandler)
+      return
+    }
     // redirect root path to Web UI home page
     server.addRedirectHandler("/", "/ui")
 

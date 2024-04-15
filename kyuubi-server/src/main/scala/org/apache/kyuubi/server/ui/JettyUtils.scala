@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.ui
 
 import java.net.URL
+import javax.servlet.{Filter, FilterChain, FilterConfig, ServletRequest, ServletResponse}
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
@@ -86,5 +87,25 @@ private[kyuubi] object JettyUtils {
 
     createServletHandler(src, redirectedServlet)
 
+  }
+
+  def createFilter(targetPage: String): Filter = new Filter {
+    override def init(filterConfig: FilterConfig): Unit = {}
+
+    override def doFilter(
+        request: ServletRequest,
+        response: ServletResponse,
+        chain: FilterChain): Unit = {
+      val httpRequest = request.asInstanceOf[HttpServletRequest]
+      val httpResponse = response.asInstanceOf[HttpServletResponse]
+      val requestURI = httpRequest.getRequestURI
+      if (requestURI != targetPage) {
+        httpResponse.sendRedirect(httpRequest.getContextPath + targetPage)
+      } else {
+        chain.doFilter(request, response)
+      }
+    }
+
+    override def destroy(): Unit = {}
   }
 }
