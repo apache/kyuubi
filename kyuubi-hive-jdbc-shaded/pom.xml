@@ -101,6 +101,10 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>org.eclipse.collections</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.eclipse.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>org.apache.commons</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons</shadedPattern>
                         </relocation>
