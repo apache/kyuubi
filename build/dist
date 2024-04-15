@@ -248,7 +248,18 @@ echo -e "\nBuilding with..."
 # shellcheck disable=SC2145
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 
+# shellcheck disable=SC2050
+if [ "$SCALA_VERSION" = "2.12" ]; then
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT $@ -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
+else
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT $@ -Pscala-2.12 -pl :kyuubi-spark-sql-engine_2.12 -am)
+fi
+
+# shellcheck disable=SC2145
+echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
+
 "${BUILD_COMMAND[@]}"
+"${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
@@ -296,7 +307,9 @@ done
 cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/flink/"
 
 # Copy spark engines
-cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/spark/"
+for scala_version in 2.12 2.13; do
+  cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${scala_version}-${VERSION}.jar" "$DISTDIR/externals/engines/spark/"
+done
 
 # Copy trino engines
 cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/trino/"
