@@ -35,13 +35,8 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
   public String chooseServer(List<String> serverHosts, CuratorFramework zkClient, String namespace)
       throws ZooKeeperHiveClientException {
     String counterPath = COUNTER_PATH_PREFIX + namespace + COUNTER_PATH_SUFFIX;
-    InterProcessSemaphoreMutex lock = new InterProcessSemaphoreMutex(zkClient, counterPath);
     try {
-      int counter = getAndIncrement(zkClient, counterPath);
-      if (!lock.acquire(60, TimeUnit.SECONDS)) {
-        return null;
-      }
-      return serverHosts.get(counter % serverHosts.size());
+      return serverHosts.get(getAndIncrement(zkClient, counterPath) % serverHosts.size());
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Oops, PollingChooseStrategy get the server is wrong!", e);
