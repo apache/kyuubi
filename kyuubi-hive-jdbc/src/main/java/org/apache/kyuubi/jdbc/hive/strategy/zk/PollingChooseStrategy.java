@@ -18,13 +18,11 @@
 package org.apache.kyuubi.jdbc.hive.strategy.zk;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.jdbc.hive.strategy.ChooseServerStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.DistributedAtomicInteger;
-import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex;
 import org.apache.kyuubi.shaded.curator.retry.RetryForever;
 
 public class PollingChooseStrategy implements ChooseServerStrategy {
@@ -40,13 +38,6 @@ public class PollingChooseStrategy implements ChooseServerStrategy {
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
           "Oops, PollingChooseStrategy get the server is wrong!", e);
-    } finally {
-      try {
-        lock.release();
-      } catch (Exception e) {
-        throw new ZooKeeperHiveClientException(
-            "Oops,PollingChooseStrategy releasing lock is wrong!", e);
-      }
     }
   }
 
