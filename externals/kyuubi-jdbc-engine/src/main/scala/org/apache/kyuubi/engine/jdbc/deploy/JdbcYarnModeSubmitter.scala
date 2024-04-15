@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.hive.deploy
+package org.apache.kyuubi.engine.jdbc.deploy
 
 import java.io.File
 
@@ -24,12 +24,11 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_HIVE_EXTRA_CLASSPATH
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_JDBC_EXTRA_CLASSPATH
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter
-import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY
-import org.apache.kyuubi.engine.hive.HiveSQLEngine
+import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine
 
-object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
+object JdbcYarnModeSubmitter extends EngineYarnModeSubmitter {
 
   def main(args: Array[String]): Unit = {
     Utils.fromCommandLineArgs(args, kyuubiConf)
@@ -40,31 +39,22 @@ object HiveYarnModeSubmitter extends EngineYarnModeSubmitter {
           && kyuubiConf.get(KyuubiConf.ENGINE_KEYTAB).isDefined,
         s"${KyuubiConf.ENGINE_PRINCIPAL.key} and " +
           s"${KyuubiConf.ENGINE_KEYTAB.key} must be set when submit " +
-          s"${HiveSQLEngine.getClass.getSimpleName.stripSuffix("$")} to YARN")
+          s"${JdbcSQLEngine.getClass.getSimpleName.stripSuffix("$")} to YARN")
     }
     run()
   }
 
-  override var engineType: String = "hive"
+  override var engineType: String = "jdbc"
 
-  override def engineMainClass(): String = HiveSQLEngine.getClass.getName
+  override def engineMainClass(): String = JdbcSQLEngine.getClass.getName
 
   /**
-   * Jar list for the Hive engine.
+   * Jar list for the JDBC engine.
    */
   override def engineExtraJars(): Seq[File] = {
-    val hadoopCp = sys.env.get("HIVE_HADOOP_CLASSPATH")
-    val extraCp = kyuubiConf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
+    val extraCp = kyuubiConf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
     val jars = new ListBuffer[File]
-    hadoopCp.foreach(cp => parseClasspath(cp, jars))
     extraCp.foreach(cp => parseClasspath(cp, jars))
     jars.toSeq
-  }
-
-  override def listConfFiles(): Seq[File] = {
-    // respect the following priority loading configuration, and distinct files
-    // hive configuration -> hadoop configuration -> yarn configuration
-    val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
-    listDistinctFiles(hiveConf.get) ++ super.listConfFiles()
   }
 }

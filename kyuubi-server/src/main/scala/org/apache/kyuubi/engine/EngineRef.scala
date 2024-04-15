@@ -208,7 +208,14 @@ private[kyuubi] class EngineRef(
           extraEngineLog,
           defaultEngineName)
       case JDBC =>
-        new JdbcProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        conf.setIfMissing(JdbcProcessBuilder.JDBC_ENGINE_NAME, defaultEngineName)
+        JdbcProcessBuilder(
+          appUser,
+          doAsEnabled,
+          conf,
+          engineRefId,
+          extraEngineLog,
+          defaultEngineName)
       case CHAT =>
         new ChatProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
     }

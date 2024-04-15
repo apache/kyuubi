@@ -23,12 +23,15 @@ import java.nio.file.Paths
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
+import org.apache.kyuubi.{KyuubiException, Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DEPLOY_MODE, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.deploy.DeployMode
+import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -110,6 +113,58 @@ class JdbcProcessBuilder(
         case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
+    }
+  }
+}
+
+object JdbcProcessBuilder extends Logging {
+
+  final val JDBC_ENGINE_NAME = "jdbc.engine.name"
+
+  def apply(
+      proxyUser: String,
+      doAsEnabled: Boolean,
+      conf: KyuubiConf,
+      engineRefId: String,
+      extraEngineLog: Option[OperationLog],
+      defaultEngineName: String): JdbcProcessBuilder = {
+    checkKeytab(proxyUser, conf)
+    DeployMode.withName(conf.get(ENGINE_JDBC_DEPLOY_MODE)) match {
+      case LOCAL =>
+        new JdbcProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case YARN =>
+        warn(s"JDBC on YARN model is experimental.")
+        conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
+        new JdbcYarnModeProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
+    }
+  }
+
+  private def checkKeytab(proxyUser: String, conf: KyuubiConf): Unit = {
+    val principal = conf.get(ENGINE_PRINCIPAL)
+    val keytab = conf.get(ENGINE_KEYTAB)
+    if (!UserGroupInformation.isSecurityEnabled) {
+      if (principal.isDefined || keytab.isDefined) {
+        warn("Principal and keytab takes no effect when hadoop security is not enabled.")
+      }
+      return
+    }
+
+    require(
+      principal.isDefined == keytab.isDefined,
+      s"Both principal and keytab must be defined, or neither.")
+    if (principal.isDefined && keytab.isDefined) {
+      val ugi = UserGroupInformation
+        .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
+      require(
+        ugi.getShortUserName == proxyUser,
+        s"Proxy user: $proxyUser is not same with " +
+          s"engine principal: ${ugi.getShortUserName}.")
+    }
+
+    val deployMode = DeployMode.withName(conf.get(ENGINE_JDBC_DEPLOY_MODE))
+    if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
+      warn("JDBC on YARN can not work properly without principal and keytab.")
     }
   }
 }
