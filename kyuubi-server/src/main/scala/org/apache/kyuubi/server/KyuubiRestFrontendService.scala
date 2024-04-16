@@ -113,16 +113,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
     if (conf.get(FRONTEND_REST_UI_ENABLED)) {
       installWebUI()
-    } else {
-      installDisableWebUI()
     }
-  }
-
-  private def installDisableWebUI(): Unit = {
-    val filterHolder = new FilterHolder(JettyUtils.createFilter("/enable.html"))
-    val servletHandler = JettyUtils.createStaticHandler("dist", "/")
-    servletHandler.addFilter(filterHolder, "/*", null)
-    server.addHandler(servletHandler)
   }
 
   private def installWebUI(): Unit = {
