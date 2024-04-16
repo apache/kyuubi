@@ -626,9 +626,9 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
-  val FRONTEND_REST_ENABLE_WEBUI: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.rest.enable.webui")
-      .doc("If set to false then web ui will disabled when RESTful protocol is enabled")
+  val FRONTEND_REST_UI_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.ui.enabled")
+      .doc("Whether to enable Web UI when RESTful protocol is enabled")
       .version("1.10.0")
       .booleanConf
       .createWithDefault(true)
