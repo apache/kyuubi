@@ -224,3 +224,9 @@ MIT License
 -----------
 org.slf4j:slf4j-api
 org.slf4j:jcl-over-slf4j
+
+Eclipse Distribution License - v 1.0
+------------------------------------
+org.eclipse.collections:eclipse-collections-api
+org.eclipse.collections:eclipse-collections
+

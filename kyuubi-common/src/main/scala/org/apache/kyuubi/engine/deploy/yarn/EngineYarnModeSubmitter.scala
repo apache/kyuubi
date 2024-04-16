@@ -313,15 +313,7 @@ abstract class EngineYarnModeSubmitter extends Logging {
             env)
         }
       }
-      // respect the following priority loading configuration, and distinct files
-      // hive configuration -> hadoop configuration -> yarn configuration
-      val hiveConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HIVE_CONF_KEY)
-      listDistinctFiles(hiveConf.get).foreach(putEntry)
-      val hadoopConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY)
-      listDistinctFiles(hadoopConf.get).foreach(putEntry)
-      val yarnConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY)
-      listDistinctFiles(yarnConf.get).foreach(putEntry)
-
+      listConfFiles().foreach(putEntry)
       val properties = confToProperties(kyuubiConf)
       amKeytabFileName.foreach(kt => properties.put(ENGINE_KEYTAB.key, kt))
       writePropertiesToArchive(properties, KYUUBI_CONF_FILE, confStream)
@@ -350,6 +342,14 @@ abstract class EngineYarnModeSubmitter extends Logging {
     distinctFiles.groupBy(_.getName).map {
       case (_, items) => items.head
     }.toSeq
+  }
+
+  def listConfFiles(): Seq[File] = {
+    // respect the following priority loading configuration, and distinct files
+    // hadoop configuration -> yarn configuration
+    val hadoopConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY)
+    val yarnConf = kyuubiConf.getOption(KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY)
+    listDistinctFiles(hadoopConf.get) ++ listDistinctFiles(yarnConf.get)
   }
 
   private def distribute(
@@ -485,6 +485,21 @@ abstract class EngineYarnModeSubmitter extends Logging {
     conf.writeXml(writer)
     writer.flush()
     out.closeEntry()
+  }
+
+  def parseClasspath(classpath: String, jars: ListBuffer[File]): Unit = {
+    classpath.split(":").filter(_.nonEmpty).foreach { cp =>
+      if (cp.endsWith("/*")) {
+        val dir = cp.substring(0, cp.length - 2)
+        new File(dir) match {
+          case f if f.isDirectory =>
+            f.listFiles().filter(_.getName.endsWith(".jar")).foreach(jars += _)
+          case _ =>
+        }
+      } else {
+        jars += new File(cp)
+      }
+    }
   }
 }
 

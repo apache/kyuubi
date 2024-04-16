@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.clickhouse
 
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
 trait WithClickHouseEngine extends WithJdbcEngine with WithClickHouseContainer {
@@ -29,6 +30,7 @@ trait WithClickHouseEngine extends WithJdbcEngine with WithClickHouseContainer {
       ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
       ENGINE_TYPE.key -> "jdbc",
       ENGINE_JDBC_SHORT_NAME.key -> "clickhouse",
+      KYUUBI_SESSION_USER_KEY -> "kyuubi",
       ENGINE_JDBC_DRIVER_CLASS.key -> container.driverClassName)
   }
 }

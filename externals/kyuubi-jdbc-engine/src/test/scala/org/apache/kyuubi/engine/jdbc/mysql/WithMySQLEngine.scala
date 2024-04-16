@@ -21,6 +21,7 @@ import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import org.testcontainers.utility.DockerImageName
 
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
 trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
@@ -40,6 +41,7 @@ trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
       ENGINE_JDBC_CONNECTION_PASSWORD.key -> mysqlContainer.password,
       ENGINE_TYPE.key -> "jdbc",
       ENGINE_JDBC_SHORT_NAME.key -> "mysql",
+      KYUUBI_SESSION_USER_KEY -> "kyuubi",
       ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
   }
 }

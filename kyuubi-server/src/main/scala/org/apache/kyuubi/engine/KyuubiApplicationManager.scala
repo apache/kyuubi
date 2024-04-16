@@ -188,9 +188,11 @@ object KyuubiApplicationManager {
       case ("FLINK", Some("YARN")) =>
         // running flink on other platforms is not yet supported
         setupFlinkYarnTag(applicationTag, conf)
-      // other engine types are running locally yet
       case ("HIVE", Some("YARN")) =>
         setupEngineYarnModeTag(applicationTag, conf)
+      case ("JDBC", Some("YARN")) =>
+        setupEngineYarnModeTag(applicationTag, conf)
+      // other engine types are running locally yet
       case _ =>
     }
   }

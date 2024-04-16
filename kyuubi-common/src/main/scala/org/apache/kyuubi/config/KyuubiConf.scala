@@ -626,6 +626,13 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT5S")
 
+  val FRONTEND_REST_UI_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.ui.enabled")
+      .doc("Whether to enable Web UI when RESTful protocol is enabled")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")
@@ -3139,6 +3146,19 @@ object KyuubiConf {
         " the JDBC engine. It fallback to `kyuubi.operation.incremental.collect`")
       .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
+
+  val ENGINE_JDBC_DEPLOY_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.engine.jdbc.deploy.mode")
+      .doc("Configures the jdbc engine deploy mode, The value can be 'local', 'yarn'. " +
+        "In local mode, the engine operates on the same node as the KyuubiServer. " +
+        "In YARN mode, the engine runs within the Application Master (AM) container of YARN. ")
+      .version("1.10.0")
+      .stringConf
+      .transformToUpperCase
+      .checkValue(
+        mode => Set("LOCAL", "YARN").contains(mode),
+        "Invalid value for 'kyuubi.engine.jdbc.deploy.mode'. Valid values are 'local', 'yarn'.")
+      .createWithDefault(DeployMode.LOCAL.toString)
 
   val ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.operation.convert.catalog.database.enabled")

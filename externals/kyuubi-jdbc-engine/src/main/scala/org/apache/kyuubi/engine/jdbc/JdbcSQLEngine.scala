@@ -16,10 +16,15 @@
  */
 package org.apache.kyuubi.engine.jdbc
 
+import java.security.PrivilegedExceptionAction
+
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, JDBC_ENGINE_SHUTDOWN_PRIORITY}
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_JDBC_INITIALIZE_SQL
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_DEPLOY_MODE, ENGINE_JDBC_INITIALIZE_SQL, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
+import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine.currentEngine
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY
@@ -38,6 +43,7 @@ class JdbcSQLEngine extends Serverable("JdbcSQLEngine") {
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker(() => {
+      selfExited = true
       currentEngine.foreach(_.stop())
     })
   }
@@ -71,10 +77,32 @@ object JdbcSQLEngine extends Logging {
       Utils.fromCommandLineArgs(args, kyuubiConf)
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+      val proxyUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+      require(proxyUser.isDefined, s"${KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY} is not set")
+      val realUser = UserGroupInformation.getLoginUser
+      val principal = kyuubiConf.get(ENGINE_PRINCIPAL)
+      val keytab = kyuubiConf.get(ENGINE_KEYTAB)
 
-      startEngine()
+      val ugi = DeployMode.withName(kyuubiConf.get(ENGINE_JDBC_DEPLOY_MODE)) match {
+        case DeployMode.LOCAL
+            if UserGroupInformation.isSecurityEnabled && principal.isDefined && keytab.isDefined =>
+          UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
+          UserGroupInformation.getCurrentUser
+        case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>
+          kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+          UserGroupInformation.createProxyUser(proxyUser.get, realUser)
+        case _ =>
+          UserGroupInformation.getCurrentUser
+      }
 
-      KyuubiJdbcUtils.initializeJdbcSession(kyuubiConf, kyuubiConf.get(ENGINE_JDBC_INITIALIZE_SQL))
+      ugi.doAs(new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = {
+          startEngine()
+          KyuubiJdbcUtils.initializeJdbcSession(
+            kyuubiConf,
+            kyuubiConf.get(ENGINE_JDBC_INITIALIZE_SQL))
+        }
+      })
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>

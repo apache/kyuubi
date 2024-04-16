@@ -111,8 +111,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
     val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
-
-    installWebUI()
+    if (conf.get(FRONTEND_REST_UI_ENABLED)) {
+      installWebUI()
+    }
   }
 
   private def installWebUI(): Unit = {
