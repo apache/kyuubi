@@ -49,6 +49,7 @@ class KyuubiSessionImpl(
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf,
+    doAsEnabled: Boolean,
     parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
@@ -77,6 +78,7 @@ class KyuubiSessionImpl(
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,
     user,
+    doAsEnabled,
     sessionManager.groupProvider,
     handle.identifier.toString,
     sessionManager.applicationManager,
@@ -333,7 +335,7 @@ class KyuubiSessionImpl(
         engineAliveFailCount = engineAliveFailCount + 1
         if (now - engineLastAlive > engineAliveTimeout &&
           engineAliveFailCount >= engineAliveMaxFailCount) {
-          error(s"The engineRef[${engine.getEngineRefId()}] is marked as not alive "
+          error(s"The engineRef[${engine.getEngineRefId}] is marked as not alive "
             + s"due to a lack of recent successful alive probes. "
             + s"The time since last successful probe: "
             + s"${now - engineLastAlive} ms exceeds the timeout of $engineAliveTimeout ms. "
@@ -342,7 +344,7 @@ class KyuubiSessionImpl(
           false
         } else {
           warn(
-            s"The engineRef[${engine.getEngineRefId()}] alive probe fails, " +
+            s"The engineRef[${engine.getEngineRefId}] alive probe fails, " +
               s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms, " +
               s"and has failed $engineAliveFailCount times.",
             e)

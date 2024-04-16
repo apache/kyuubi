@@ -29,6 +29,7 @@ import org.glassfish.jersey.servlet.ServletContainer
 
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.api.{ApiRequestContext, EngineUIProxyServlet, FrontendServiceContext, OpenAPIConfig}
 
@@ -86,6 +87,25 @@ private[server] object ApiRootResource {
   def getEngineUIProxyHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
     val proxyServlet = new EngineUIProxyServlet()
     val holder = new ServletHolder(proxyServlet)
+    val conf = fe.getConf
+    holder.setInitParameter(
+      "idleTimeout",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_IDLE_TIMEOUT).toString)
+    holder.setInitParameter(
+      "maxConnections",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_CONNECTIONS).toString)
+    holder.setInitParameter(
+      "maxThreads",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_THREADS).toString)
+    holder.setInitParameter(
+      "requestBufferSize",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_REQUEST_BUFFER_SIZE).toString)
+    holder.setInitParameter(
+      "responseBufferSize",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_RESPONSE_BUFFER_SIZE).toString)
+    holder.setInitParameter(
+      "timeout",
+      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_TIMEOUT).toString)
     val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     proxyHandler.setContextPath("/engine-ui")
     proxyHandler.addServlet(holder, "/*")

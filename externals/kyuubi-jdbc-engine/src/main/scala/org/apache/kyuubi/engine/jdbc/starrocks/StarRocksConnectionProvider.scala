@@ -20,5 +20,5 @@ import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
 class StarRocksConnectionProvider extends MySQL8ConnectionProvider {
 
-  override val name: String = classOf[StarRocksConnectionProvider].getSimpleName
+  override val name: String = classOf[StarRocksConnectionProvider].getName
 }

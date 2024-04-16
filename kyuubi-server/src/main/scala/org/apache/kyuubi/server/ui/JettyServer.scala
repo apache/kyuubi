@@ -73,11 +73,17 @@ private[kyuubi] case class JettyServer(
 
 object JettyServer {
 
-  def apply(name: String, host: String, port: Int, poolSize: Int): JettyServer = {
+  def apply(
+      name: String,
+      host: String,
+      port: Int,
+      poolSize: Int,
+      stopTimeout: Long): JettyServer = {
     val pool = new QueuedThreadPool(poolSize)
     pool.setName(name)
     pool.setDaemon(true)
     val server = new Server(pool)
+    server.setStopTimeout(stopTimeout)
 
     val errorHandler = new ErrorHandler()
     errorHandler.setShowStacks(true)

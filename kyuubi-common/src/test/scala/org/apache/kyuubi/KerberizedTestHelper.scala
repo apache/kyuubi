@@ -33,10 +33,12 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.ietf.jgss.{GSSContext, GSSException, GSSManager, GSSName}
 import org.scalatest.time.SpanSugar._
 
+import org.apache.kyuubi.util.JavaUtils
+
 trait KerberizedTestHelper extends KyuubiFunSuite {
   val clientPrincipalUser = "client"
   val baseDir: File =
-    Utils.createTempDir("kyuubi-kdc", Utils.getCodeSourceLocation(getClass)).toFile
+    Utils.createTempDir("kyuubi-kdc", JavaUtils.getCodeSourceLocation(getClass)).toFile
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
   kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)
@@ -144,6 +146,10 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     val authType = "hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
+      // auth_to_local is required for non-default realm
+      conf.set(
+        "hadoop.security.auth_to_local",
+        "DEFAULT RULE:[1:$1] RULE:[2:$1]")
       System.setProperty("java.security.krb5.conf", krb5ConfPath)
       UserGroupInformation.setConfiguration(conf)
       assert(UserGroupInformation.isSecurityEnabled)

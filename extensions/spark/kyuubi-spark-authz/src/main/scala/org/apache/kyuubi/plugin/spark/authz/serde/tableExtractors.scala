@@ -311,7 +311,7 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
   }
 }
 
-abstract class HudiCallProcedureTableExtractor extends TableExtractor {
+trait HudiCallProcedureExtractor {
 
   protected def extractTableIdentifier(
       procedure: AnyRef,
@@ -334,204 +334,236 @@ abstract class HudiCallProcedureTableExtractor extends TableExtractor {
     }
   }
 
-  case class ProcedureArgsInputOutputPair(
-      input: Option[String] = None,
-      output: Option[String] = None)
+  case class ProcedureArgsInputOutputTuple(
+      inputTable: Option[String] = None,
+      outputTable: Option[String] = None,
+      inputUri: Option[String] = None,
+      outputUri: Option[String] = None)
 
   protected val PROCEDURE_CLASS_PATH = "org.apache.spark.sql.hudi.command.procedures"
 
   protected val INVALID_INDEX = -1
 
   // These pairs are used to get the procedure input/output args which user passed in call command.
-  protected val procedureArgsInputOutputPairs: Map[String, ProcedureArgsInputOutputPair] = Map(
+  protected val procedureArgsInputOutputPairs: Map[String, ProcedureArgsInputOutputTuple] = Map(
     (
       s"$PROCEDURE_CLASS_PATH.ArchiveCommitsProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CommitsCompareProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CopyToTableProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("table"),
-        output = Some("new_table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("table"),
+        outputTable = Some("new_table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CopyToTempViewProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CreateMetadataTableProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.CreateSavepointProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteMarkerProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteMetadataTableProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.DeleteSavepointProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ExportInstantsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.HdfsParquetImportProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.HelpProcedure",
-      ProcedureArgsInputOutputPair()),
+      ProcedureArgsInputOutputTuple()),
     (
       s"$PROCEDURE_CLASS_PATH.HiveSyncProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.InitMetadataTableProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RepairAddpartitionmetaProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RepairCorruptedCleanFilesProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RepairDeduplicateProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RepairMigratePartitionMetaProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RepairOverwriteHoodiePropsProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RollbackToInstantTimeProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RollbackToSavepointProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RunBootstrapProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("table"),
-        output = Some("table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("table"),
+        outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RunCleanProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("table"),
-        output = Some("table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("table"),
+        outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.RunClusteringProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("table"),
-        output = Some("table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("table"),
+        outputTable = Some("table"),
+        outputUri = Some("path"))),
     (
       s"$PROCEDURE_CLASS_PATH.RunCompactionProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("table"),
-        output = Some("table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("table"),
+        outputTable = Some("table"),
+        outputUri = Some("path"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowArchivedCommitsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowBootstrapMappingProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowClusteringProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"), inputUri = Some("path"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCommitsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCommitExtraMetadataProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCommitFilesProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCommitPartitionsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCommitWriteStatsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowCompactionProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"), inputUri = Some("path"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowFileSystemViewProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowFsPathDetailProcedure",
-      ProcedureArgsInputOutputPair()),
+      ProcedureArgsInputOutputTuple()),
     (
       s"$PROCEDURE_CLASS_PATH.ShowHoodieLogFileMetadataProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowHoodieLogFileRecordsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowInvalidParquetProcedure",
-      ProcedureArgsInputOutputPair()),
+      ProcedureArgsInputOutputTuple()),
     (
       s"$PROCEDURE_CLASS_PATH.ShowMetadataTableFilesProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowMetadataTablePartitionsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowMetadataTableStatsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowRollbacksProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowSavepointsProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ShowTablePropertiesProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.StatsFileSizeProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.StatsWriteAmplificationProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))),
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.UpgradeOrDowngradeProcedure",
-      ProcedureArgsInputOutputPair(output = Some("table"))),
+      ProcedureArgsInputOutputTuple(outputTable = Some("table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ValidateHoodieSyncProcedure",
-      ProcedureArgsInputOutputPair(
-        input = Some("src_table"),
-        output = Some("dst_table"))),
+      ProcedureArgsInputOutputTuple(
+        inputTable = Some("src_table"),
+        outputTable = Some("dst_table"))),
     (
       s"$PROCEDURE_CLASS_PATH.ValidateMetadataTableFilesProcedure",
-      ProcedureArgsInputOutputPair(input = Some("table"))))
+      ProcedureArgsInputOutputTuple(inputTable = Some("table"))))
 }
 
 class HudiCallProcedureOutputTableExtractor
-  extends HudiCallProcedureTableExtractor {
+  extends TableExtractor with HudiCallProcedureExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val procedure = invokeAs[AnyRef](v1, "procedure")
     val args = invokeAs[AnyRef](v1, "args")
     procedureArgsInputOutputPairs.get(procedure.getClass.getName)
-      .filter(_.output.isDefined)
+      .filter(_.outputTable.isDefined)
       .map { argsPairs =>
-        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.output.get)
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.outputTable.get)
         lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
       }
   }
 }
 
 class HudiCallProcedureInputTableExtractor
-  extends HudiCallProcedureTableExtractor {
+  extends TableExtractor with HudiCallProcedureExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val procedure = invokeAs[AnyRef](v1, "procedure")
     val args = invokeAs[AnyRef](v1, "args")
     procedureArgsInputOutputPairs.get(procedure.getClass.getName)
-      .filter(_.input.isDefined)
+      .filter(_.inputTable.isDefined)
       .map { argsPairs =>
-        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.input.get)
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.inputTable.get)
         lookupExtractor[StringTableExtractor].apply(spark, tableIdentifier.get).orNull
       }
+  }
+}
+
+class HudiCallProcedureInputUriExtractor
+  extends URIExtractor with HudiCallProcedureExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
+    val procedure = invokeAs[AnyRef](v1, "procedure")
+    val args = invokeAs[AnyRef](v1, "args")
+    procedureArgsInputOutputPairs.get(procedure.getClass.getName)
+      .filter(_.inputUri.isDefined)
+      .map { argsPairs =>
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.inputUri.get)
+        lookupExtractor[StringURIExtractor].apply(spark, tableIdentifier.get)
+      }.getOrElse(Nil)
+  }
+}
+
+class HudiCallProcedureOutputUriExtractor
+  extends URIExtractor with HudiCallProcedureExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Seq[Uri] = {
+    val procedure = invokeAs[AnyRef](v1, "procedure")
+    val args = invokeAs[AnyRef](v1, "args")
+    procedureArgsInputOutputPairs.get(procedure.getClass.getName)
+      .filter(_.outputUri.isDefined)
+      .map { argsPairs =>
+        val tableIdentifier = extractTableIdentifier(procedure, args, argsPairs.outputUri.get)
+        lookupExtractor[StringURIExtractor].apply(spark, tableIdentifier.get)
+      }.getOrElse(Nil)
   }
 }

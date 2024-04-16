@@ -23,10 +23,11 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.util.JavaUtils
 
 class KyuubiOperationHiveEnginePerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("integration-tests").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("integration-tests").head
 
   override protected val conf: KyuubiConf = {
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)

@@ -19,14 +19,18 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.util.UUID
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineLocal}
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.operation.{HiveJDBCTestHelper, NoneMode}
 
-class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
+trait FlinkEngineInitializeSuite extends HiveJDBCTestHelper
   with WithDiscoveryFlinkSQLEngine with WithFlinkSQLEngineLocal {
 
   protected def jdbcUrl: String = getFlinkEngineServiceUrl
@@ -51,7 +55,7 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
       HA_NAMESPACE.key -> namespace,
       HA_ENGINE_REF_ID.key -> engineRefId,
       ENGINE_TYPE.key -> "FLINK_SQL",
-      ENGINE_SHARE_LEVEL.key -> shareLevel,
+      ENGINE_SHARE_LEVEL.key -> shareLevel.toString,
       OPERATION_PLAN_ONLY_MODE.key -> NoneMode.name,
       ENGINE_FLINK_INITIALIZE_SQL.key -> ENGINE_INITIALIZE_SQL_VALUE,
       ENGINE_SESSION_FLINK_INITIALIZE_SQL.key -> ENGINE_SESSION_INITIALIZE_SQL_VALUE,
@@ -62,7 +66,7 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
 
   def namespace: String = "/kyuubi/flink-local-engine-test"
 
-  def shareLevel: String = ShareLevel.USER.toString
+  def shareLevel: ShareLevel
 
   def engineType: String = "flink"
 
@@ -100,5 +104,33 @@ class FlinkEngineInitializeSuite extends HiveJDBCTestHelper
       assert(dropResult.next())
       assert(dropResult.getString(1) === "OK")
     }
+    // check engine alive status after close session with connection level engine
+    if (shareLevel == ShareLevel.CONNECTION) {
+      eventually(Timeout(10.seconds)) {
+        assert(!engineProcess.isAlive)
+      }
+      val e = intercept[Exception] {
+        withJdbcStatement() { statement =>
+          statement.executeQuery("select 1")
+        }
+      }
+      assert(e.getMessage() == "Time out retrieving Flink engine service url.")
+    }
+    // check engine alive status after close session with user level engine
+    if (shareLevel == ShareLevel.USER) {
+      assert(engineProcess.isAlive)
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery("select 1")
+        assert(resultSet.next())
+      }
+    }
   }
+}
+
+class FlinkConnectionLevelEngineInitializeSuite extends FlinkEngineInitializeSuite {
+  def shareLevel: ShareLevel = ShareLevel.CONNECTION
+}
+
+class FlinkUserLevelEngineInitializeSuite extends FlinkEngineInitializeSuite {
+  def shareLevel: ShareLevel = ShareLevel.USER
 }

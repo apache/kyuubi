@@ -63,11 +63,10 @@ Since v1.1.0, Kyuubi support building with different Spark profiles,
 
 |   Profile   | Default | Since |
 |-------------|---------|-------|
-| -Pspark-3.1 |         | 1.1.0 |
 | -Pspark-3.2 |         | 1.4.0 |
 | -Pspark-3.3 |         | 1.6.0 |
-| -Pspark-3.4 | ✓       | 1.8.0 |
-| -Pspark-3.5 |         | 1.8.0 |
+| -Pspark-3.4 |         | 1.8.0 |
+| -Pspark-3.5 | ✓       | 1.8.0 |
 
 ## Building Kyuubi Against Different Scala Versions
 
@@ -84,7 +83,7 @@ For the Scala version for Spark engines, the server will look up the `SPARK_SCAL
 
 ## Building With Apache dlcdn Site
 
-By default, we use `closer.lua` to download the built-in release packages of engines,
+By default, we use `https://archive.apache.org/dist/` to download the built-in release packages of engines,
 such as Spark or Flink.
 But sometimes, you may find it hard to reach, or the download speed is too slow,
 then you can define the `apache.archive.dist` by `-Pmirror-cdn` to accelerate to download speed.

@@ -18,18 +18,21 @@ package org.apache.kyuubi.engine.deploy.yarn
 
 import java.io.File
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.KYUUBI_ENGINE_DEPLOY_YARN_MODE_JARS_KEY
+import org.apache.kyuubi.util.JavaUtils
 
 class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
 
-  val kyuubiHome: String = Utils.getCodeSourceLocation(getClass).split("kyuubi-common").head
+  val kyuubiHome: String = JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-common").head
 
   test("Classpath should contain engine jars dir and conf dir") {
     val kyuubiConf = new KyuubiConf()
@@ -56,13 +59,24 @@ class EngineYarnModeSubmitterSuite extends KyuubiFunSuite with Matchers {
   }
 
   test("distinct archive files") {
-    val targetJars: String = s"${Utils.getCodeSourceLocation(getClass)}"
+    val targetJars: String = s"${JavaUtils.getCodeSourceLocation(getClass)}"
     // double the jars to make sure the distinct works
     val archives = s"$targetJars,$targetJars"
     val files = MockEngineYarnModeSubmitter.listDistinctFiles(archives)
     val targetFiles = Utils.listFilesRecursively(new File(targetJars))
     assert(targetFiles != null)
     assert(targetFiles.length == files.length)
+  }
+
+  test("hadoop class path") {
+    val jars = new ListBuffer[File]
+    val classpath =
+      s"$kyuubiHome/target/scala-$SCALA_COMPILE_VERSION/jars/*:" +
+        s"$kyuubiHome/target/kyuubi-common-$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
+    MockEngineYarnModeSubmitter.parseClasspath(classpath, jars)
+    assert(jars.nonEmpty)
+    assert(jars.exists(
+      _.getName == s"kyuubi-common-$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"))
   }
 
 }

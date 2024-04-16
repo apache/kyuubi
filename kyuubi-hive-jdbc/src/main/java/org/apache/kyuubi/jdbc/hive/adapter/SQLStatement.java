@@ -65,11 +65,6 @@ public interface SQLStatement extends Statement {
   }
 
   @Override
-  default boolean getMoreResults(int current) throws SQLException {
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  @Override
   default ResultSet getGeneratedKeys() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }

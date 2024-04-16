@@ -23,12 +23,15 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.expressions.PythonUDF
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.functions.col
+import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -555,11 +558,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
       val e2 = intercept[AccessControlException](
         doAs(someone, sql(s"CREATE VIEW $permView AS SELECT * FROM $table")))
-      if (isSparkV32OrGreater) {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
-      } else {
-        assert(e2.getMessage.contains(s"does not have [select] privilege on [$table]"))
-      }
+      assert(e2.getMessage.contains(s"does not have [select] privilege on [default/$table/id]"))
     }
   }
 
@@ -638,14 +637,12 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s" FROM $db1.$srcTable1 as tb1" +
         s" JOIN $db1.$srcTable2 as tb2" +
         s" on tb1.id = tb2.id"
-      val e1 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
-      assert(e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
 
       withSingleCallEnabled {
-        val e2 = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
-        assert(e2.getMessage.contains(s"does not have" +
+        val e = intercept[AccessControlException](doAs(someone, sql(insertSql1)))
+        assert(e.getMessage.contains(s"does not have" +
           s" [select] privilege on" +
-          s" [$db1/$srcTable1/id,$db1/$srcTable1/name,$db1/$srcTable1/city," +
+          s" [$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name," +
           s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
           s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
           s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
@@ -675,11 +672,13 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
             s" (id int, name string, city string)"))
 
-        val e1 = intercept[AccessControlException](
-          doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-        assert(
-          e1.getMessage.contains(s"does not have [select] privilege on [$db1/$srcTable1/id]"))
-
+        withSingleCallEnabled {
+          val e1 = intercept[AccessControlException](
+            doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
+          assert(
+            e1.getMessage.contains(s"does not have [select] privilege on " +
+              s"[$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name]"))
+        }
         doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
         doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
       }
@@ -888,9 +887,15 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(
             someone,
             sql(s"SELECT id as new_id, name, max_scope FROM $db1.$view1".stripMargin).show()))
-        assert(e2.getMessage.contains(
-          s"does not have [select] privilege on " +
-            s"[$db1/$view1/id,$db1/$view1/name,$db1/$view1/max_scope]"))
+        if (isSparkV35OrGreater) {
+          assert(e2.getMessage.contains(
+            s"does not have [select] privilege on " +
+              s"[$db1/$view1/id,$db1/$view1/max_scope,$db1/$view1/name]"))
+        } else {
+          assert(e2.getMessage.contains(
+            s"does not have [select] privilege on " +
+              s"[$db1/$view1/name,$db1/$view1/id,$db1/$view1/max_scope]"))
+        }
       }
     }
   }
@@ -927,17 +932,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |AS
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
-        interceptEndsWith[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+        checkAnswer(someone, s"SELECT count(*) FROM $db1.$table1", Row(0) :: Nil)
 
-        interceptEndsWith[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))(
-          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+        checkAnswer(someone, s"SELECT count(*) FROM $db1.$view1", Row(0) :: Nil)
 
-        interceptEndsWith[AccessControlException](
-          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))(
-          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+        checkAnswer(someone, s"SELECT count(*) FROM $db1.$view2", Row(1) :: Nil)
 
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(id) FROM $db1.$table1 WHERE id > 10").show()))(
@@ -1321,7 +1320,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(
             someone,
             sql(s"SELECT typeof(id), typeof(typeof(day)) FROM $db1.$table1").collect()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+          s"does not have [select] privilege on [$db1/$table1/day,$db1/$table1/id]")
         interceptEndsWith[AccessControlException](
           doAs(
             someone,
@@ -1331,7 +1330,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                  |typeof(cast(id as string)),
                  |typeof(substring(day, 1, 3))
                  |FROM $db1.$table1""".stripMargin).collect()))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/day]")
+          s"does not have [select] privilege on [$db1/$table1/day,$db1/$table1/id]")
         checkAnswer(
           admin,
           s"""
@@ -1414,60 +1413,76 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5884] PVM should inherit MultiInstance and wrap with new exprId") {
+  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect normal node's input ") {
+    assume(!isSparkV35OrGreater, "mapInPandas not supported after spark 3.5")
     val db1 = defaultDb
     val table1 = "table1"
-    val perm_view = "perm_view"
     val view1 = "view1"
-    val view2 = "view2"
-    val view3 = "view3"
     withSingleCallEnabled {
-      withCleanTmpResources(Seq.empty) {
-        sql("set spark.sql.legacy.storeAnalyzedPlanForView=true")
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)"))
-        doAs(admin, sql(s"CREATE VIEW $db1.$perm_view AS SELECT * FROM $db1.$table1"))
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
 
-        doAs(
-          admin,
-          sql(
-            s"""
-               |CREATE OR REPLACE TEMPORARY VIEW $view1 AS
-               |SELECT *
-               |FROM $db1.$perm_view
-               |WHERE id > 10
-               |""".stripMargin))
-
-        doAs(
-          admin,
-          sql(
-            s"""
-               |CREATE OR REPLACE TEMPORARY VIEW $view2 AS
-               |SELECT *
-               |FROM $view1
-               |WHERE scope <  10
-               |""".stripMargin))
-
-        doAs(
-          admin,
-          sql(
-            s"""
-               |CREATE OR REPLACE TEMPORARY VIEW $view3 AS
-               |SELECT *
-               |FROM $view1
-               |WHERE scope is not null
-               |""".stripMargin))
-
+        val table = spark.read.table(s"$db1.$table1")
+        val mapTableInPandasUDF = PythonUDF(
+          "mapInPandasUDF",
+          null,
+          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
+          table.queryExecution.analyzed.output,
+          205,
+          true)
         interceptContains[AccessControlException](
           doAs(
             someone,
-            sql(
-              s"""
-                 |SELECT a.*, b.scope as new_scope
-                 |FROM $view2 a
-                 |JOIN $view3 b
-                 |ON a.id == b.id
-                 |""".stripMargin).collect()))(s"does not have [select] privilege on " +
-          s"[$db1/$perm_view/id,$db1/$perm_view/scope,$db1/$perm_view/scope,$db1/$perm_view/id]")
+            invokeAs(
+              table,
+              "mapInPandas",
+              (classOf[PythonUDF], mapTableInPandasUDF))
+              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+
+        val view = spark.read.table(s"$db1.$view1")
+        val mapViewInPandasUDF = PythonUDF(
+          "mapInPandasUDF",
+          null,
+          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
+          view.queryExecution.analyzed.output,
+          205,
+          true)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            invokeAs(
+              view,
+              "mapInPandas",
+              (classOf[PythonUDF], mapViewInPandasUDF))
+              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+      }
+    }
+  }
+
+  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect sort agg input") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$table1 WHERE id > 1",
+          Row(0) :: Nil)
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$view1 WHERE id > 1",
+          Row(0) :: Nil)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$view1/id]")
       }
     }
   }

@@ -34,10 +34,11 @@ class SparkBatchProcessBuilder(
     batchConf: Map[String, String],
     batchArgs: Seq[String],
     override val extraEngineLog: Option[OperationLog])
-  extends SparkProcessBuilder(proxyUser, conf, batchId, extraEngineLog) {
+// TODO respect doAsEnabled
+  extends SparkProcessBuilder(proxyUser, true, conf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
-  override protected lazy val commands: Iterable[String] = {
+  override protected[kyuubi] lazy val commands: Iterable[String] = {
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     Option(mainClass).foreach { cla =>
@@ -52,11 +53,12 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    val allConfigs = batchKyuubiConf.getAll ++
+    (batchKyuubiConf.getAll ++
       sparkAppNameConf() ++
       engineLogPathConf() ++
-      appendPodNameConf(batchConf)
-    buffer ++= confKeyValues(allConfigs)
+      appendPodNameConf(batchConf)).map { case (k, v) =>
+      buffer ++= confKeyValue(convertConfigKey(k), v)
+    }
 
     setupKerberos(buffer)
 

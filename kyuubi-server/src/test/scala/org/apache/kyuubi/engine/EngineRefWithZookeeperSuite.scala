@@ -80,6 +80,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
             new EngineRef(
               conf1,
               user,
+              true,
               PluginLoader.loadGroupProvider(conf),
               UUID.randomUUID().toString,
               null)
@@ -95,6 +96,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
             new EngineRef(
               conf2,
               user,
+              true,
               PluginLoader.loadGroupProvider(conf),
               UUID.randomUUID().toString,
               null)

@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.phoenix
 
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
 trait WithPhoenixEngine extends WithJdbcEngine with WithPhoenixContainer {
@@ -32,6 +33,7 @@ trait WithPhoenixEngine extends WithJdbcEngine with WithPhoenixContainer {
     ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "phoenix",
+    KYUUBI_SESSION_USER_KEY -> "kyuubi",
     ENGINE_JDBC_DRIVER_CLASS.key -> "org.apache.phoenix.queryserver.client.Driver")
 
   private def getConnectString: String = s"$jdbcUrlPrefix=http://$queryServerUrl;$serialization"

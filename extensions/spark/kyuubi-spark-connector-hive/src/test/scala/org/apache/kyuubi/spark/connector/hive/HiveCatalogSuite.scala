@@ -27,7 +27,7 @@ import scala.util.Try
 import com.google.common.collect.Maps
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -121,9 +121,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       val exception = intercept[AnalysisException] {
         spark.table("hive.ns1.nonexistent_table")
       }
-      assert(exception.plan.exists { p =>
-        p.exists(child => child.isInstanceOf[UnresolvedRelation])
-      })
+      assert(exception.message.contains("[TABLE_OR_VIEW_NOT_FOUND] " +
+        "The table or view `hive`.`ns1`.`nonexistent_table` cannot be found.")
+        || exception.message.contains("Table or view not found: hive.ns1.nonexistent_table"))
     }
   }
 

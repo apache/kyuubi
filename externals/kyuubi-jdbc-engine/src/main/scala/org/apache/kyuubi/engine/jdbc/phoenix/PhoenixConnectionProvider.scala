@@ -20,12 +20,7 @@ import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
 class PhoenixConnectionProvider extends JdbcConnectionProvider {
 
-  override val name: String = classOf[PhoenixConnectionProvider].getSimpleName
+  override val name: String = classOf[PhoenixConnectionProvider].getName
 
   override val driverClass: String = "org.apache.phoenix.queryserver.client.Driver"
-
-  override def canHandle(providerClass: String): Boolean = {
-    driverClass.equalsIgnoreCase(providerClass)
-  }
-
 }

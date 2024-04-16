@@ -497,7 +497,21 @@ def main():
                         "content": {
                             "status": "error",
                             "ename": "ValueError",
-                            "evalue": "cannot json-ify %s" % response,
+                            "evalue": "cannot json-ify %s" % result,
+                            "traceback": [],
+                        },
+                    }
+                )
+            except Exception:
+                exc_type, exc_value, tb = sys.exc_info()
+                result = json.dumps(
+                    {
+                        "msg_type": "inspect_reply",
+                        "content": {
+                            "status": "error",
+                            "ename": str(exc_type.__name__),
+                            "evalue": "cannot json-ify %s: %s"
+                            % (result, str(exc_value)),
                             "traceback": [],
                         },
                     }

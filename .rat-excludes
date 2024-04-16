@@ -51,3 +51,6 @@ build/scala-*/**
 **/node_modules/**
 **/gen/*
 **/*.tokens
+**/BeeLine.properties
+**/sql-keywords.properties
+**/python/**

@@ -751,9 +751,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         getBatchJobSubmissionStateCounter(OperationState.ERROR)
 
     val batchId = UUID.randomUUID().toString
-    val requestObj = newSparkBatchRequest(Map(
-      "spark.master" -> "local",
-      KYUUBI_BATCH_ID_KEY -> batchId))
+    val requestObj = newBatchRequest(
+      sparkBatchTestBatchType,
+      sparkBatchTestResource.get,
+      "org.apache.spark.examples.DriverSubmissionTest",
+      "DriverSubmissionTest-" + batchId,
+      Map(
+        "spark.master" -> "local",
+        KYUUBI_BATCH_ID_KEY -> batchId),
+      Seq("120"))
 
     eventually(timeout(10.seconds)) {
       val response = webTarget.path("api/v1/batches")
@@ -766,10 +772,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         batch.getState === OperationState.RUNNING.toString)
     }
 
-    eventually(timeout(10.seconds)) {
-      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) +
-        getBatchJobSubmissionStateCounter(OperationState.PENDING) +
-        getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
+    eventually(timeout(20.seconds)) {
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
     }
 
     val deleteResp = webTarget.path(s"api/v1/batches/$batchId")

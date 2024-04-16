@@ -17,85 +17,18 @@
 
 package org.apache.kyuubi.credentials
 
-import java.io.{File, FileOutputStream}
-import java.net.URLClassLoader
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.locks.ReentrantLock
-
 import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
-import org.apache.commons.io.FileUtils
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars._
-import org.apache.hadoop.hive.metastore.{HiveMetaException, HiveMetaStore}
-import org.apache.hadoop.hive.metastore.security.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
-import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.thrift.TProcessor
-import org.apache.thrift.protocol.TProtocol
-import org.scalatest.Assertions._
-import org.scalatest.concurrent.Eventually._
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KerberizedTestHelper, Logging, Utils}
+import org.apache.kyuubi.WithSecuredHMSContainer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.credentials.LocalMetaServer.defaultHiveConf
+import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf
+import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf.ConfVars
+import org.apache.kyuubi.shaded.hive.metastore.security.DelegationTokenIdentifier
 
-class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
-
-  private val hadoopConfDir: File = Utils.createTempDir().toFile
-  private var hiveConf: HiveConf = _
-
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-
-    tryWithSecurityEnabled {
-      UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
-
-      // HiveMetaStore creates a new hadoop `Configuration` object for each request to verify
-      // whether user can impersonate others.
-      // So we create a URLClassLoader with core-site.xml and set it as the thread's context
-      // classloader when creating `Configuration` object.
-      val conf = new Configuration(false)
-      conf.set("hadoop.security.authentication", "kerberos")
-      val realUser = UserGroupInformation.getCurrentUser.getShortUserName
-      conf.set(s"hadoop.proxyuser.$realUser.groups", "*")
-      conf.set(s"hadoop.proxyuser.$realUser.hosts", "*")
-
-      val xml = new File(hadoopConfDir, "core-site.xml")
-      val os = new FileOutputStream(xml)
-      try {
-        conf.writeXml(os)
-      } finally {
-        os.close()
-      }
-
-      val classloader =
-        new URLClassLoader(
-          Array(hadoopConfDir.toURI.toURL),
-          classOf[Configuration].getClassLoader)
-
-      hiveConf = LocalMetaServer.defaultHiveConf()
-      hiveConf.addResource(conf)
-      hiveConf.setVar(METASTORE_USE_THRIFT_SASL, "true")
-      hiveConf.setVar(METASTORE_KERBEROS_PRINCIPAL, testPrincipal)
-      hiveConf.setVar(METASTORE_KERBEROS_KEYTAB_FILE, testKeytab)
-      hiveConf.setVar(METASTORE_CONNECTION_POOLING_TYPE, "NONE")
-      hiveConf.setVar(METASTORE_AUTO_CREATE_ALL, "true")
-      hiveConf.setVar(METASTORE_SCHEMA_VERIFICATION, "false")
-      ProxyUsers.refreshSuperUserGroupsConfiguration(hiveConf)
-      val metaServer = new LocalMetaServer(hiveConf, classloader)
-      metaServer.start()
-    }
-  }
-
-  override def afterAll(): Unit = {
-    FileUtils.deleteDirectory(hadoopConfDir)
-  }
+class HiveDelegationTokenProviderSuite extends WithSecuredHMSContainer {
 
   test("obtain hive delegation token") {
     tryWithSecurityEnabled {
@@ -114,7 +47,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
         credentials.getTokenMap.asScala
           .filter(_._2.getKind == DelegationTokenIdentifier.HIVE_DELEGATION_KIND)
           .head
-      assert(aliasAndToken._1 == new Text(hiveConf.getTrimmed("hive.metastore.uris")))
+      assert(aliasAndToken._1 == new Text(MetastoreConf.getVar(hiveConf, ConfVars.THRIFT_URIS)))
       assert(aliasAndToken._2 != null)
 
       val token = aliasAndToken._2
@@ -125,94 +58,4 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       assertResult(new Text(currentUserName))(tokenIdent.getRealUser)
     }
   }
-}
-
-class LocalMetaServer(
-    hiveConf: HiveConf = defaultHiveConf(),
-    serverContextClassLoader: ClassLoader)
-  extends Logging {
-  import LocalMetaServer._
-
-  def start(): Unit = {
-    val startLock = new ReentrantLock
-    val startCondition = startLock.newCondition
-    val startedServing = new AtomicBoolean(false)
-    val startFailed = new AtomicBoolean(false)
-
-    Future {
-      try {
-        HiveMetaStore.startMetaStore(
-          port,
-          new HadoopThriftAuthBridgeWithServerContextClassLoader(
-            serverContextClassLoader),
-          hiveConf,
-          startLock,
-          startCondition,
-          startedServing)
-      } catch {
-        case t: Throwable =>
-          error("Failed to start LocalMetaServer", t)
-          startFailed.set(true)
-      }
-    }
-
-    eventually(timeout(30.seconds), interval(100.milliseconds)) {
-      assert(startedServing.get() || startFailed.get())
-    }
-
-    if (startFailed.get()) {
-      throw new HiveMetaException("Failed to start LocalMetaServer")
-    }
-  }
-
-  def getHiveConf: HiveConf = hiveConf
-}
-
-object LocalMetaServer {
-
-  private val port = 20101
-
-  def defaultHiveConf(): HiveConf = {
-    val hiveConf = new HiveConf()
-    hiveConf.setVar(METASTOREURIS, "thrift://localhost:" + port)
-    hiveConf.setVar(METASTORE_SCHEMA_VERIFICATION, "false")
-    hiveConf.set("datanucleus.schema.autoCreateTables", "true")
-    hiveConf
-  }
-
-}
-
-class HadoopThriftAuthBridgeWithServerContextClassLoader(classloader: ClassLoader)
-  extends HadoopThriftAuthBridge23 {
-
-  override def createServer(
-      keytabFile: String,
-      principalConf: String,
-      clientConf: String): HadoopThriftAuthBridge.Server = {
-    new Server(keytabFile, principalConf, clientConf)
-  }
-
-  class Server(keytabFile: String, principalConf: String, clientConf: String)
-    extends HadoopThriftAuthBridge.Server(keytabFile, principalConf, clientConf) {
-
-    override def wrapProcessor(processor: TProcessor): TProcessor = {
-      new SetThreadContextClassLoaderProcess(super.wrapProcessor(processor))
-    }
-
-  }
-
-  class SetThreadContextClassLoaderProcess(wrapped: TProcessor) extends TProcessor {
-
-    override def process(in: TProtocol, out: TProtocol): Boolean = {
-      val origin = Thread.currentThread().getContextClassLoader
-      try {
-        Thread.currentThread().setContextClassLoader(classloader)
-        wrapped.process(in, out)
-      } finally {
-        Thread.currentThread().setContextClassLoader(origin)
-      }
-    }
-
-  }
-
 }

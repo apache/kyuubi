@@ -1,0 +1,40 @@
+--- TCLIService.thrift	2017-04-16 22:51:45.000000000 -0700
++++ TCLIService.thrift	2017-03-17 17:12:07.000000000 -0700
+@@ -32,8 +32,9 @@
+ // * Service names begin with the letter "T", use a capital letter for each
+ //   new word (with no underscores), and end with the word "Service".
+ 
+ namespace java org.apache.hive.service.rpc.thrift
+ namespace cpp apache.hive.service.rpc.thrift
++namespace py TCLIService
+ 
+ // List of protocol versions. A new token should be
+ // added to the end of this list every time a change is made.
+@@ -1224,6 +1225,19 @@
+   6: required i64 startTime
+ }
+ 
++// GetLog() is not present in never versions of Hive, but we add it here for backwards compatibility
++struct TGetLogReq {
++  // operation handle
++  1: required TOperationHandle operationHandle
++}
++
++struct TGetLogResp {
++  // status of the request
++  1: required TStatus status
++  // log content as text
++  2: required string log
++}
++
+ service TCLIService {
+ 
+   TOpenSessionResp OpenSession(1:TOpenSessionReq req);
+@@ -1267,4 +1281,7 @@
+   TCancelDelegationTokenResp CancelDelegationToken(1:TCancelDelegationTokenReq req);
+ 
+   TRenewDelegationTokenResp RenewDelegationToken(1:TRenewDelegationTokenReq req);
++
++  // Adding older log retrieval method for backward compatibility
++  TGetLogResp GetLog(1:TGetLogReq req);
+ }

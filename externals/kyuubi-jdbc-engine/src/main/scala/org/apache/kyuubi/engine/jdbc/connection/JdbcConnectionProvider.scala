@@ -26,11 +26,13 @@ import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 
 abstract class JdbcConnectionProvider extends SupportServiceLoader with Logging {
 
-  override def name(): String = classOf[JdbcConnectionProvider].getSimpleName
+  override def name(): String = classOf[JdbcConnectionProvider].getName
 
   val driverClass: String
 
-  def canHandle(providerClass: String): Boolean
+  def canHandle(providerClass: String): Boolean = {
+    driverClass.equalsIgnoreCase(providerClass)
+  }
 
   def getConnection(kyuubiConf: KyuubiConf): Connection = {
     val properties = new Properties()

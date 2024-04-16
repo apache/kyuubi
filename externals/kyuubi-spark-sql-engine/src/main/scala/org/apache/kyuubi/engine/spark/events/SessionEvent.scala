@@ -36,6 +36,10 @@ import org.apache.kyuubi.events.KyuubiEvent
  * @param ip Client IP address
  * @param serverIp Kyuubi Server IP address
  * @param totalOperations how many queries and meta calls
+ * @param sessionRunTime total time of running the session (including fetching shuffle data)
+ *                       in milliseconds
+ * @param sessionCpuTime total CPU time of running the session (including fetching shuffle data)
+ *                       in nanoseconds
  */
 case class SessionEvent(
     @KVIndexParam sessionId: String,
@@ -47,7 +51,9 @@ case class SessionEvent(
     conf: Map[String, String],
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent with SparkListenerEvent {
+    var totalOperations: Int = 0,
+    var sessionRunTime: Long = 0,
+    var sessionCpuTime: Long = 0) extends KyuubiEvent with SparkListenerEvent {
 
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil

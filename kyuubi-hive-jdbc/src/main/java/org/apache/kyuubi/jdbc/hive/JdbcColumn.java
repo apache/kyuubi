@@ -178,6 +178,7 @@ public class JdbcColumn {
       case INTERVAL_YEAR_MONTH_TYPE:
       case INTERVAL_DAY_TIME_TYPE:
       case UNION_TYPE:
+      case USER_DEFINED_TYPE:
         return OTHER;
       case DECIMAL_TYPE:
         return DECIMAL;
@@ -240,6 +241,10 @@ public class JdbcColumn {
         return "struct";
       case NULL_TYPE:
         return "void";
+      case UNION_TYPE:
+        return "uniontype";
+      case USER_DEFINED_TYPE:
+        return "user_defined";
       default:
         throw new KyuubiSQLException("Invalid column type: " + type);
     }

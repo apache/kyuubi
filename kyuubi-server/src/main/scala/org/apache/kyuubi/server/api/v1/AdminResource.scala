@@ -143,6 +143,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the deny ips")
+  @POST
+  @Path("refresh/deny_ips")
+  def refreshDenyIp(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh deny ips request from $userName/$ipAddress")
+    if (!fe.isAdministrator(userName)) {
+      throw new NotAllowedException(
+        s"$userName is not allowed to refresh the deny ips")
+    }
+    info(s"Reloading deny ips")
+    KyuubiServer.refreshDenyIps()
+    Response.ok(s"Refresh the deny ips successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),

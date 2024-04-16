@@ -182,10 +182,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     }
     closeClientOperation();
     client = null;
-    if (resultSet != null) {
-      resultSet.close();
-      resultSet = null;
-    }
+    closeResultSet();
     isClosed = true;
   }
 
@@ -486,7 +483,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void executeSetCurrentCatalog(String sql, String catalog) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.catalog", catalog))) {
-      resultSet.close();
+      closeResultSet();
     }
   }
 
@@ -501,7 +498,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public void executeSetCurrentDatabase(String sql, String database) throws SQLException {
     if (executeWithConfOverlay(
         sql, Collections.singletonMap("kyuubi.operation.set.current.database", database))) {
-      resultSet.close();
+      closeResultSet();
     }
   }
 
@@ -544,8 +541,26 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   @Override
+  public boolean getMoreResults(int current) throws SQLException {
+    if (current == Statement.CLOSE_CURRENT_RESULT) {
+      closeResultSet();
+      return false;
+    }
+
+    if (current != KEEP_CURRENT_RESULT && current != CLOSE_ALL_RESULTS) {
+      throw new SQLException("Invalid argument: " + current);
+    }
+
+    throw new SQLFeatureNotSupportedException("Multiple open results not supported");
+  }
+
+  @Override
   public boolean getMoreResults() throws SQLException {
-    return false;
+    // The javadoc of this method says, that it should implicitly close any current
+    // ResultSet object, i.e. is similar to calling the getMoreResults(int)
+    // method with Statement.CLOSE_CURRENT_RESULT argument.
+    // this is an additional enhancement on top of HIVE-7680
+    return getMoreResults(Statement.CLOSE_CURRENT_RESULT);
   }
 
   @Override
@@ -837,6 +852,13 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
           columns.get(pos).getTypeDesc().getTypes().get(0).getPrimitiveEntry();
       columnTypes.add(primitiveTypeEntry.getType());
       columnAttributes.add(KyuubiArrowQueryResultSet.getColumnAttributes(primitiveTypeEntry));
+    }
+  }
+
+  private void closeResultSet() throws SQLException {
+    if (resultSet != null) {
+      resultSet.close();
+      resultSet = null;
     }
   }
 }

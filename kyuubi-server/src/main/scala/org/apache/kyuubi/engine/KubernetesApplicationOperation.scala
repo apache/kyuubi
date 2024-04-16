@@ -29,6 +29,7 @@ import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.client.util.JsonUtils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, KubernetesCleanupDriverPodStrategy}
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
@@ -364,17 +365,26 @@ object KubernetesApplicationOperation extends Logging {
       appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): (ApplicationState, Option[String]) = {
     val podName = pod.getMetadata.getName
-    val containerStateToBuildAppState = appStateSource match {
+    val containerStatusToBuildAppState = appStateSource match {
       case KubernetesApplicationStateSource.CONTAINER =>
         pod.getStatus.getContainerStatuses.asScala
-          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName)).map(_.getState)
+          .find(cs => appStateContainer.equalsIgnoreCase(cs.getName))
       case KubernetesApplicationStateSource.POD => None
     }
-    val applicationState = containerStateToBuildAppState.map(containerStateToApplicationState)
+    val applicationState = containerStatusToBuildAppState
+      .map(_.getState)
+      .map(containerStateToApplicationState)
       .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
-    val applicationError = containerStateToBuildAppState
-      .map(cs => containerStateToApplicationError(cs).map(r => s"$podName/$appStateContainer[$r]"))
-      .getOrElse(Option(pod.getStatus.getReason).map(r => s"$podName[$r]"))
+    val applicationError = if (ApplicationState.isFailed(applicationState)) {
+      val errorMap = containerStatusToBuildAppState.map { cs =>
+        Map("Pod" -> podName, "Container" -> appStateContainer, "ContainerStatus" -> cs)
+      }.getOrElse {
+        Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
+      }
+      Some(JsonUtils.toPrettyJson(errorMap.asJava))
+    } else {
+      None
+    }
     applicationState -> applicationError
   }
 
@@ -391,12 +401,6 @@ object KubernetesApplicationOperation extends Logging {
     } else {
       FAILED
     }
-  }
-
-  def containerStateToApplicationError(containerState: ContainerState): Option[String] = {
-    // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
-    Option(containerState.getWaiting).map(_.getReason)
-      .orElse(Option(containerState.getTerminated).map(_.getReason))
   }
 
   def podStateToApplicationState(podState: String): ApplicationState = podState match {

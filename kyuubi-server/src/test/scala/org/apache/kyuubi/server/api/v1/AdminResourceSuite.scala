@@ -273,7 +273,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -317,7 +323,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -363,7 +375,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id = UUID.randomUUID().toString
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -398,9 +416,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        sessionUser = normalUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -459,7 +483,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -503,7 +533,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -554,7 +590,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id1 = UUID.randomUUID().toString
     val engine1 =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id1, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id1,
+        null)
     val engineSpace1 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -562,7 +604,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id2 = UUID.randomUUID().toString
     val engine2 =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id2, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id2,
+        null)
     val engineSpace2 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -619,9 +667,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        sessionUser = normalUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(

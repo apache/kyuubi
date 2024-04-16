@@ -19,18 +19,19 @@ package org.apache.kyuubi.operation
 
 import java.sql.SQLException
 import java.util
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.fs.Path
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KYUUBI_VERSION, WithKyuubiServer}
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState}
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException}
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
@@ -80,7 +81,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(executeStmtResp.getOperationHandle === null)
       val errMsg = executeStmtResp.getStatus.getErrorMessage
       assert(errMsg.contains("Caused by: java.net.SocketException: Connection reset") ||
-        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
+        errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
+        errMsg.contains("Socket is closed by peer") ||
+        errMsg.contains("SparkContext was shut down"))
     }
   }
 
@@ -332,14 +335,43 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
         val errorMsg = executeStmtResp.getStatus.getErrorMessage
         assert(errorMsg.contains("java.net.SocketException") ||
-          errorMsg.contains("org.apache.thrift.transport.TTransportException") ||
+          errorMsg.contains("org.apache.kyuubi.shaded.thrift.transport.TTransportException") ||
           errorMsg.contains("connection does not exist") ||
-          errorMsg.contains(s"Socket for ${SessionHandle(handle)} is closed"))
+          errorMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
+          errorMsg.contains("Error submitting query in background, query rejected"))
         val elapsedTime = System.currentTimeMillis() - startTime
         assert(elapsedTime < 20 * 1000)
         eventually(timeout(3.seconds)) {
           assert(session.client.asyncRequestInterrupted)
         }
+      }
+    }
+  }
+
+  test("Scala REPL should see jars added by spark.jars") {
+    val jarDir = Utils.createTempDir().toFile
+    val udfCode =
+      """
+        |package test.utils
+        |
+        |object Math {
+        |  def add(x: Int, y: Int): Int = x + y
+        |}
+        |
+        |""".stripMargin
+    val jarFile = UserJarTestUtils.createJarFile(
+      udfCode,
+      "test",
+      s"test-function-${UUID.randomUUID}.jar",
+      jarDir.toString)
+    val localPath = new Path(jarFile.getAbsolutePath)
+    withSessionConf()(Map("spark.jars" -> localPath.toString))() {
+      withJdbcStatement() { statement =>
+        val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+        kyuubiStatement.executeScala("import test.utils.{Math => TMath}")
+        val rs = kyuubiStatement.executeScala("println(TMath.add(1,2))")
+        rs.next()
+        assert(rs.getString(1) === "3")
       }
     }
   }

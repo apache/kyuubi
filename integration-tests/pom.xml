@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.9.0-SNAPSHOT</version>
+        <version>1.10.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -31,7 +31,6 @@
 
     <modules>
         <module>kyuubi-flink-it</module>
-        <module>kyuubi-gluten-it</module>
         <module>kyuubi-hive-it</module>
         <module>kyuubi-trino-it</module>
         <module>kyuubi-jdbc-it</module>
@@ -43,6 +42,12 @@
             <id>kubernetes-it</id>
             <modules>
                 <module>kyuubi-kubernetes-it</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>gluten-it</id>
+            <modules>
+                <module>kyuubi-gluten-it</module>
             </modules>
         </profile>
     </profiles>

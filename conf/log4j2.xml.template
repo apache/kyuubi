@@ -26,16 +26,15 @@
         <Property name="restAuditLogFilePattern">rest-audit-%d{yyyy-MM-dd}-%i.log</Property>
         <Property name="k8sAuditLogPath">k8s-audit.log</Property>
         <Property name="k8sAuditLogFilePattern">k8s-audit-%d{yyyy-MM-dd}-%i.log</Property>
+        <Property name="opAuditLogPath">operation-audit.log</Property>
+        <Property name="opAuditLogFilePattern">operation-audit-%d{yyyy-MM-dd}-%i.log</Property>
     </Properties>
     <Appenders>
         <Console name="stdout" target="SYSTEM_OUT">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %tn %c: %m%n%ex"/>
-            <Filters>
-                <RegexFilter regex=".*Thrift error occurred during processing of message.*" onMatch="DENY" onMismatch="NEUTRAL"/>
-            </Filters>
         </Console>
         <RollingFile name="restAudit" fileName="${sys:logDir}/${sys:restAuditLogPath}"
-                     filePattern="${sys:restAuditLogFilePattern}">
+                     filePattern="${sys:logDir}/${sys:restAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
@@ -43,7 +42,15 @@
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
         <RollingFile name="k8sAudit" fileName="${sys:logDir}/${sys:k8sAuditLogPath}"
-                     filePattern="${sys:k8sAuditLogFilePattern}">
+                     filePattern="${sys:logDir}/${sys:k8sAuditLogFilePattern}">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="51200KB" />
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+        <RollingFile name="opAudit" fileName="${sys:logDir}/${sys:opAuditLogPath}"
+                     filePattern="${sys:logDir}/${sys:opAuditLogFilePattern}">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{1}: %m%n%ex"/>
             <Policies>
                 <SizeBasedTriggeringPolicy size="51200KB" />
@@ -55,7 +62,7 @@
         <Root level="INFO">
             <AppenderRef ref="stdout"/>
         </Root>
-        <Logger name="org.apache.kyuubi.ctl.ServiceControlCli" level="error" additivity="false">
+        <Logger name="org.apache.kyuubi.ctl" level="error" additivity="false">
             <AppenderRef ref="stdout"/>
         </Logger>
         <!--
@@ -71,6 +78,9 @@
         </Logger>
         <Logger name="org.apache.kyuubi.engine.KubernetesApplicationAuditLogger" additivity="false">
             <AppenderRef ref="k8sAudit" />
+        </Logger>
+        <Logger name="org.apache.kyuubi.operation.OperationAuditLogger" additivity="false">
+            <AppenderRef ref="opAudit" />
         </Logger>
     </Loggers>
 </Configuration>

@@ -23,8 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
-import org.apache.hadoop.hive.ql.ErrorMsg
-import org.apache.hadoop.hive.ql.plan.TableDesc
+import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat
 import org.apache.spark.internal.Logging
@@ -37,13 +36,13 @@ import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, Write
 import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, WriteJobDescription}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
-import org.apache.spark.sql.hive.execution.{HiveFileFormat, HiveOptions}
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{FileSinkDesc, HiveClientImpl, StructTypeHelper}
+import org.apache.spark.sql.hive.execution.HiveOptions
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, StructTypeHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
-import org.apache.kyuubi.spark.connector.hive.write.HiveWriteHelper.getPartitionSpec
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.getHiveFileFormat
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
 
 case class HiveWrite(
     sparkSession: SparkSession,
@@ -51,8 +50,7 @@ case class HiveWrite(
     info: LogicalWriteInfo,
     hiveTableCatalog: HiveTableCatalog,
     forceOverwrite: Boolean,
-    partition: Map[String, Option[String]],
-    ifPartitionNotExists: Boolean) extends Write with Logging {
+    dynamicPartition: Map[String, Option[String]]) extends Write with Logging {
 
   private val options = info.options()
 
@@ -78,10 +76,8 @@ case class HiveWrite(
   override def toBatch: BatchWrite = {
     val tmpLocation = HiveWriteHelper.getExternalTmpPath(externalCatalog, hadoopConf, tableLocation)
 
-    val fileSinkConf = new FileSinkDesc(tmpLocation.toString, tableDesc, false)
+    val fileSinkConf = new FileSinkDesc(tmpLocation, tableDesc, false)
     handleCompression(fileSinkConf, hadoopConf)
-
-    val partitionColumnNames = extractAndValidatePartitionCols(fileSinkConf, hadoopConf)
 
     val committer = FileCommitProtocol.instantiate(
       className = sparkSession.sessionState.conf.fileCommitProtocolClass,
@@ -106,10 +102,8 @@ case class HiveWrite(
       table,
       hiveTableCatalog,
       Some(tmpLocation),
-      partition,
-      partitionColumnNames,
+      dynamicPartition,
       forceOverwrite,
-      ifPartitionNotExists,
       hadoopConf,
       new FileBatchWrite(job, description, committer),
       externalCatalog,
@@ -125,7 +119,7 @@ case class HiveWrite(
       pathName: String,
       customPartitionLocations: Map[TablePartitionSpec, String],
       options: Map[String, String]): WriteJobDescription = {
-    val hiveFileFormat = new HiveFileFormat(fileSinkConf)
+    val hiveFileFormat = getHiveFileFormat(fileSinkConf)
     val dataSchema = StructType(info.schema().fields.take(dataColumns.length))
     val outputWriterFactory = hiveFileFormat.prepareWrite(sparkSession, job, options, dataSchema)
     val metrics: Map[String, SQLMetric] = BasicWriteJobStatsTracker.metrics
@@ -179,38 +173,5 @@ case class HiveWrite(
       HiveOptions.getHiveWriteCompression(fileSinkConf.getTableInfo, sparkSession.sessionState.conf)
         .foreach { case (compression, codec) => hadoopConf.set(compression, codec) }
     }
-  }
-
-  private def extractAndValidatePartitionCols(
-      fileSinkConf: FileSinkDesc,
-      hadoopConf: Configuration): Seq[String] = {
-    val partitionSpec = getPartitionSpec(partition)
-    val numDynamicPartitions = partitionSpec.values.count(_.equals(""))
-    val numStaticPartitions = partitionSpec.size - numDynamicPartitions
-
-    // All partition column names in the format of "<column name 1>/<column name 2>/..."
-    val partitionColumns = fileSinkConf.getTableInfo.getProperties.getProperty("partition_columns")
-    val partitionColumnNames = Option(partitionColumns).map(_.split("/")).getOrElse(Array.empty)
-
-    // Validate partition spec if there exist any dynamic partitions
-    if (numDynamicPartitions > 0) {
-      // Report error if dynamic partitioning is not enabled
-      if (!hadoopConf.get("hive.exec.dynamic.partition", "true").toBoolean) {
-        throw KyuubiHiveConnectorException(ErrorMsg.DYNAMIC_PARTITION_DISABLED.getMsg)
-      }
-
-      // Report error if dynamic partition strict mode is on but no static partition is found
-      if (numStaticPartitions == 0 &&
-        hadoopConf.get("hive.exec.dynamic.partition.mode", "strict").equalsIgnoreCase("strict")) {
-        throw KyuubiHiveConnectorException(ErrorMsg.DYNAMIC_PARTITION_STRICT_MODE.getMsg)
-      }
-
-      // Report error if any static partition appears after a dynamic partition
-      val isDynamic = partitionColumnNames.map(partitionSpec(_).equals(""))
-      if (isDynamic.init.zip(isDynamic.tail).contains((true, false))) {
-        throw KyuubiHiveConnectorException(ErrorMsg.PARTITION_DYN_STA_ORDER.getMsg)
-      }
-    }
-    partitionColumnNames
   }
 }

@@ -42,13 +42,12 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      max-parallel: 3
       matrix:
         java:
           - 8
-          - 11
           - 17
         spark:
-          - '3.1'
           - '3.2'
           - '3.3'
           - '3.4'
@@ -58,35 +57,30 @@ jobs:
         comment: ["normal"]
         include:
           - java: 8
-            spark: '3.4'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.3 -Dspark.archive.name=spark-3.1.3-bin-hadoop3.2.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.1-binary'
-          - java: 8
-            spark: '3.4'
+            spark: '3.5'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.2-binary'
           - java: 8
-            spark: '3.4'
+            spark: '3.5'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.3-binary'
           - java: 8
-            spark: '3.4'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.5.0 -Dspark.archive.name=spark-3.5.0-bin-hadoop3.tgz -Pzookeeper-3.6'
+            spark: '3.5'
+            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.4.2 -Dspark.archive.name=spark-3.4.2-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.5-binary'
+            comment: 'verify-on-spark-3.4-binary'
         exclude:
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
-          - java: 17
-            spark: '3.1'
           - java: 17
             spark: '3.2'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -106,7 +100,7 @@ jobs:
           python-version: '3.9'
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
-          if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.4" && "${{ matrix.spark-archive }}" == "" ]]; then
+          if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.5" && "${{ matrix.spark-archive }}" == "" ]]; then
             MVN_OPT="${MVN_OPT} -Pcodecov"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
@@ -115,7 +109,7 @@ jobs:
       - name: Code coverage
         if: |
           matrix.java == 8 &&
-          matrix.spark == '3.4' &&
+          matrix.spark == '3.5' &&
           matrix.spark-archive == ''
         uses: codecov/codecov-action@v3
         with:
@@ -141,9 +135,11 @@ jobs:
         java:
           - '8'
         spark:
-          - '3.4'
+          - '3.5'
     steps:
       - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -159,7 +155,7 @@ jobs:
         uses: ./.github/actions/cache-engine-archives
       - name: Build on Scala ${{ matrix.scala }}
         run: |
-          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it,!integration-tests/kyuubi-gluten-it"
+          TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
@@ -179,27 +175,29 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         java:
           - 8
-          - 11
         flink:
-          - '1.16'
           - '1.17'
           - '1.18'
+          - '1.19'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
           - java: 8
             flink: '1.17'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.16.1 -Dflink.archive.name=flink-1.16.1-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.16-binary'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.1 -Dflink.archive.name=flink-1.18.1-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.18-binary'
           - java: 8
             flink: '1.17'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.0 -Dflink.archive.name=flink-1.18.0-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.18-binary'
+            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.19.0 -Dflink.archive.name=flink-1.19.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-1.19-binary'
     steps:
       - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -242,6 +240,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         java:
           - 8
@@ -256,6 +255,8 @@ jobs:
             comment: 'verify-on-hive-2.1-cdh6-binary'
     steps:
       - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -290,18 +291,18 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-hive-sql-engine.log*
 
-  jdbc-it:
-    name: JDBC Test
+  jdbc-trino-tpc-it:
+    name: JDBC Trino TPC Tests
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        java:
-          - 8
-          - 11
+        java: [ 8 ]
         comment: [ "normal" ]
     steps:
       - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
@@ -315,11 +316,17 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
-      - name: Build and test JDBC with maven w/o linters
+      - name: Build and test JDBC and Trino engines, TPC-H/TPC-DS with maven w/o linters
         run: |
-          TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          JDBC_TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
+          TRINO_TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
+          TPC_TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
+          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES},${TRINO_TEST_MODULES},${TPC_TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES} test
+          ./build/mvn ${MVN_OPT} -pl ${TRINO_TEST_MODULES} test
+          ./build/mvn ${MVN_OPT} -pl ${TPC_TEST_MODULES} test \
+          -Dmaven.plugin.scalatest.exclude.tags='' \
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -328,80 +335,15 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-jdbc-engine.log*
-
-  trino-it:
-    name: Trino Test
-    runs-on: ubuntu-22.04
-    strategy:
-      fail-fast: false
-      matrix:
-        java:
-          - 8
-          - 11
-        comment: [ "normal" ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Tune Runner VM
-        uses: ./.github/actions/tune-runner-vm
-      - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: ${{ matrix.java }}
-          cache: 'maven'
-          check-latest: false
-      - name: Setup Maven
-        uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
-      - name: Build and test Trino with maven w/o linters
-        run: |
-          TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
-      - name: Upload test logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: unit-tests-log-java-${{ matrix.java }}-trino-${{ matrix.comment }}
-          path: |
-            **/target/unit-tests.log
             **/kyuubi-trino-engine.log*
-
-  tpch-tpcds:
-    name: TPC-H and TPC-DS Tests
-    runs-on: ubuntu-22.04
-    env:
-      SPARK_LOCAL_IP: localhost
-    steps:
-      - uses: actions/checkout@v4
-      - name: Tune Runner VM
-        uses: ./.github/actions/tune-runner-vm
-      - name: Setup JDK 8
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 8
-          cache: 'maven'
-          check-latest: false
-      - name: Setup Maven
-        uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
-      - name: Run TPC-DS Tests
-        run: |
-          TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test \
-          -Dmaven.plugin.scalatest.exclude.tags='' \
-          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       # https://github.com/docker/build-push-action
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -413,7 +355,7 @@ jobs:
             CI=${CI}
             MVN_ARG=--flink-provided --hive-provided -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
           context: .
-          file: build/Dockerfile
+          file: build/Dockerfile.CI
           load: true
           tags: apache/kyuubi:latest
       - name: Cache Engine Archives
@@ -427,8 +369,8 @@ jobs:
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
           # pre-install spark into minikube
-          docker pull apache/spark:3.4.2
-          minikube image load apache/spark:3.4.2
+          docker pull apache/spark:3.5.1
+          minikube image load apache/spark:3.5.1
       - name: kubectl pre-check
         run: |
           kubectl get nodes
@@ -472,8 +414,9 @@ jobs:
     name: Spark Engine On Kubernetes Integration Test
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
@@ -515,6 +458,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
+      max-parallel: 1
       matrix:
         java: [ 8 ]
         zookeeper: ["3.4", "3.5", "3.6", "3.7" ]

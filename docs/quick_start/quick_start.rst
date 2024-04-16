@@ -42,9 +42,9 @@ pre-installed and the ``JAVA_HOME`` is correctly set to each component.
   **Java**         JRE          8/11/17              Officially released against JDK8
   **Kyuubi**       Gateway      \ |release| \        - Kyuubi Server
                    Engine lib                        - Kyuubi Engine
-                   Beeline                           - Kyuubi Hive Beeline
-  **Spark**        Engine       3.1 to 3.5           A Spark distribution
-  **Flink**        Engine       1.16/1.17/1.18       A Flink distribution
+                   Beeline                           - Kyuubi Beeline
+  **Spark**        Engine       3.2 to 3.5           A Spark distribution
+  **Flink**        Engine       1.17 to 1.19         A Flink distribution
   **Trino**        Engine       N/A                  A Trino cluster allows to access via trino-client v411
   **Doris**        Engine       N/A                  A Doris cluster
   **Hive**         Engine       - 2.1-cdh6/2.3/3.1   - A Hive distribution
@@ -91,23 +91,26 @@ To install Kyuubi, you need to unpack the tarball. For example,
    ├── RELEASE
    ├── beeline-jars
    ├── bin
+   ├── charts
+   │   └── kyuubi
    ├── conf
    |   ├── kyuubi-defaults.conf.template
    │   ├── kyuubi-env.sh.template
-   │   └── log4j2.properties.template
+   │   └── log4j2.xml.template
+   ├── db-scripts
+   │   ├── mysql
+   │   ├── postgresql
+   │   └── sqlite
    ├── docker
    │   ├── Dockerfile
-   │   ├── helm
-   │   ├── kyuubi-configmap.yaml
-   │   ├── kyuubi-deployment.yaml
-   │   ├── kyuubi-pod.yaml
-   │   └── kyuubi-service.yaml
+   │   └── playground
    ├── externals
    │  └── engines
    ├── jars
    ├── licenses
    ├── logs
    ├── pid
+   ├── web-ui
    └── work
 
 From top to bottom are:
@@ -143,7 +146,7 @@ To install Spark, you need to unpack the tarball. For example,
 
 .. code-block::
 
-   $ tar zxf spark-3.3.2-bin-hadoop3.tgz
+   $ tar zxf spark-3.4.2-bin-hadoop3.tgz
 
 Configuration
 ~~~~~~~~~~~~~
@@ -184,7 +187,7 @@ And you are able to get the JDBC connection URL from the log file -
 
 For example,
 
-  Starting and exposing JDBC connection at: jdbc:hive2://localhost:10009/
+  Starting and exposing JDBC connection at: jdbc:kyuubi://localhost:10009/
 
 If something goes wrong, you shall be able to find some clues in the log file too.
 
@@ -203,7 +206,7 @@ If something goes wrong, you shall be able to find some clues in the log file to
 Operate Clients
 ---------------
 
-Kyuubi delivers a beeline client, enabling a similar experience to Apache Hive use cases.
+Kyuubi delivers a kyuubi-beeline client, enabling a similar experience to Apache Hive use cases.
 
 Open Connections
 ~~~~~~~~~~~~~~~~
@@ -213,21 +216,21 @@ for the following JDBC URL. The case below open a session for user named `apache
 
 .. code-block::
 
-   $ bin/beeline -u 'jdbc:hive2://localhost:10009/' -n apache
+   $ bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009/' -n apache
 
 .. note::
    :class: toggle
 
-   Use `--help` to display the usage guide for the beeline tool.
+   Use `--help` to display the usage guide for the kyuubi-beeline tool.
 
    .. code-block::
 
-      $ bin/beeline --help
+      $ bin/kyuubi-beeline --help
 
 Execute Statements
 ~~~~~~~~~~~~~~~~~~
 
-After successfully connected with the server, you can run sql queries in the beeline
+After successfully connected with the server, you can run sql queries in the kyuubi-beeline
 console. For instance,
 
 .. code-block::
@@ -235,7 +238,7 @@ console. For instance,
 
    > SHOW DATABASES;
 
-You will see a wall of operation logs, and a result table in the beeline console.
+You will see a wall of operation logs, and a result table in the kyuubi-beeline console.
 
 .. code-block::
 
@@ -261,19 +264,19 @@ started.
 
 .. code-block::
 
-   $ bin/beeline -u 'jdbc:hive2://localhost:10009/' -n kentyao
+   $ bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009/' -n kentyao
 
 This may change depending on the `engine share level`_ you set.
 
 Close Connections
 ~~~~~~~~~~~~~~~~~
 
-Close the session between beeline and Kyuubi server by executing `!quit`, for example,
+Close the session between kyuubi-beeline and Kyuubi server by executing `!quit`, for example,
 
 .. code-block::
 
    > !quit
-   Closing: 0: jdbc:hive2://localhost:10009/
+   Closing: 0: jdbc:kyuubi://localhost:10009/
 
 Stop Engines
 ~~~~~~~~~~~~
@@ -286,7 +289,7 @@ mean terminations of engines. It depends on both the `engine share level`_ and
 Stop Kyuubi
 -----------
 
-Stop Kyuubi by running the following in the `$KYUUBI_HOME` directory:
+Stop Kyuubi which running at the background by performing the following in the `$KYUUBI_HOME` directory:
 
 .. code-block::
 

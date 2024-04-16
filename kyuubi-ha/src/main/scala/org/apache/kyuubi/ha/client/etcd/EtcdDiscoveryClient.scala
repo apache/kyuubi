@@ -53,18 +53,19 @@ import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient._
+import org.apache.kyuubi.util.ThreadUtils
 
 class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   case class ServiceNode(path: String, lease: Long)
 
-  var client: Client = _
-  var kvClient: KV = _
-  var lockClient: Lock = _
-  var leaseClient: Lease = _
-  var serviceNode: ServiceNode = _
+  @volatile var client: Client = _
+  @volatile var kvClient: KV = _
+  @volatile var lockClient: Lock = _
+  @volatile var leaseClient: Lease = _
+  @volatile var serviceNode: ServiceNode = _
 
-  var leaseTTL: Long = _
+  @volatile var leaseTTL: Long = _
 
   private def buildClient(): Client = {
     val endpoints = conf.get(HA_ADDRESSES).split(",")
@@ -250,7 +251,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val instance = serviceDiscovery.fe.connectionUrl
     val watcher = new DeRegisterWatcher(instance, serviceDiscovery)
 
-    val serviceNode = createPersistentNode(
+    serviceNode = createPersistentNode(
       conf,
       namespace,
       instance,
@@ -381,7 +382,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         .filter(_.getEventType == WatchEvent.EventType.DELETE).foreach(_ => {
           warn(s"This Kyuubi instance ${instance} is now de-registered from" +
             s" ETCD. The server will be shut down after the last client session completes.")
-          serviceDiscovery.stopGracefully()
+          // for jetcd, the watcher event process might block the main thread,
+          // so start a new thread to do the de-register work as a workaround,
+          // see details in https://github.com/etcd-io/jetcd/issues/1089
+          ThreadUtils.runInNewThread("deregister-watcher-thread", isDaemon = false) {
+            serviceDiscovery.stopGracefully()
+          }
         })
     }
 

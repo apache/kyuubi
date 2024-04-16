@@ -111,6 +111,8 @@ class KyuubiBatchSession(
       batchArgs,
       metadata)
 
+  def startupProcessAlive: Boolean = batchJobSubmissionOp.startupProcessAlive
+
   private def waitMetadataRequestsRetryCompletion(): Unit = {
     val batchId = batchJobSubmissionOp.batchId
     sessionManager.getMetadataRequestsRetryRef(batchId).foreach {

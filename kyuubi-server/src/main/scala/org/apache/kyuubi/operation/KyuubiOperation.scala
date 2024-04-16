@@ -118,11 +118,10 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   }
 
   protected def sendCredentialsIfNeeded(): Unit = {
-    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
     val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
     sessionManager.credentialsManager.sendCredentialsIfNeeded(
       session.handle.identifier.toString,
-      appUser,
+      session.asInstanceOf[KyuubiSessionImpl].engine.appUser,
       client.sendCredentials)
   }
 

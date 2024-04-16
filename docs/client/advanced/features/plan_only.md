@@ -27,17 +27,17 @@ You can add parameters to the URL when establishing a JDBC connection, the param
 JDBC URLs have the following format:
 
 ```shell
-jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
+jdbc:kyuubi://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
 ```
 
 Refer to [hive_jdbc doc](../../jdbc/hive_jdbc.md) for details of others parameters
 
 ### Example:
 
-Using beeline tool to connect to the local service, the Shell command is:
+Using `kyuubi-beeline` to connect to the local service, the Shell command is:
 
 ```shell
-beeline -u 'jdbc:hive2://0.0.0.0:10009/default?kyuubi.operation.plan.only.mode=parse' -n {user_name}
+kyuubi-beeline -u 'jdbc:kyuubi://0.0.0.0:10009/default?kyuubi.operation.plan.only.mode=parse' -n {user_name}
 ```
 
 Running the following SQL:
@@ -50,7 +50,7 @@ The results are as follows:
 
 ```shell
 # SQL:
-0: jdbc:hive2://0.0.0.0:10009/default> SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id;
+0: jdbc:kyuubi://0.0.0.0:10009/default> SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id;
 
 #Result:
 +----------------------------------------------------+
@@ -63,7 +63,7 @@ The results are as follows:
  |
 +----------------------------------------------------+
 1 row selected (3.008 seconds)
-0: jdbc:hive2://0.0.0.0:10009/default>
+0: jdbc:kyuubi://0.0.0.0:10009/default>
 ```
 
 ## Session-level parameter setting
@@ -71,7 +71,7 @@ The results are as follows:
 You can also set the kyuubi.operation.plan.only.mode parameter by executing the set command after the connection has been established
 
 ```shell
-beeline -u 'jdbc:hive2://0.0.0.0:10009/default' -n {user_name}
+kyuubi-beeline -u 'jdbc:kyuubi://0.0.0.0:10009/default' -n {user_name}
 ```
 
 Running the following SQL:
@@ -85,7 +85,7 @@ The results are as follows:
 
 ```shell
 #set command:
-0: jdbc:hive2://0.0.0.0:10009/default> set kyuubi.operation.plan.only.mode=parse;
+0: jdbc:kyuubi://0.0.0.0:10009/default> set kyuubi.operation.plan.only.mode=parse;
 
 #set command result:
 +----------------------------------+--------+
@@ -96,7 +96,7 @@ The results are as follows:
 1 row selected (0.568 seconds)
 
 #execute SQL:
-0: jdbc:hive2://0.0.0.0:10009/default> SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id;
+0: jdbc:kyuubi://0.0.0.0:10009/default> SELECT * FROM t1 LEFT JOIN t2 ON t1.id = t2.id;
 
 # SQL result:
 +----------------------------------------------------+
@@ -109,6 +109,6 @@ The results are as follows:
  |
 +----------------------------------------------------+
 1 row selected (0.404 seconds)
-0: jdbc:hive2://0.0.0.0:10009/default>
+0: jdbc:kyuubi://0.0.0.0:10009/default>
 ```
 

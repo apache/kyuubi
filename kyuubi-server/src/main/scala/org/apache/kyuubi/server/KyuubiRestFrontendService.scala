@@ -89,7 +89,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       getName,
       host,
       port,
-      conf.get(FRONTEND_REST_MAX_WORKER_THREADS))
+      conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
+      conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT))
     super.initialize(conf)
   }
 
@@ -110,8 +111,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
     val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
-
-    installWebUI()
+    if (conf.get(FRONTEND_REST_UI_ENABLED)) {
+      installWebUI()
+    }
   }
 
   private def installWebUI(): Unit = {

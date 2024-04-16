@@ -83,6 +83,7 @@ package() {
 }
 
 upload_svn_staging() {
+  rm -rf "${SVN_STAGING_DIR}"
   svn checkout --depth=empty "${SVN_STAGING_REPO}" "${SVN_STAGING_DIR}"
   mkdir -p "${SVN_STAGING_DIR}/${RELEASE_TAG}"
   rm -f "${SVN_STAGING_DIR}/${RELEASE_TAG}/*"
@@ -109,11 +110,6 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  # Spark Extension Plugin for Spark 3.1
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.1 \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
-    -pl extensions/spark/kyuubi-extension-spark-3-1 -am
-
   # Spark Extension Plugin for Spark 3.2
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.2 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
@@ -124,18 +120,18 @@ upload_nexus_staging() {
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
     -pl extensions/spark/kyuubi-extension-spark-3-3 -am
 
-  # Spark Extension Plugin for Spark 3.5
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.5 \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
-    -pl extensions/spark/kyuubi-extension-spark-3-5 -am
-
-  # Spark TPC-DS/TPC-H Connector built with default Spark version (3.4) and Scala 2.13
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4,scala-2.13 \
-    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
-    -pl extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch -am
-
-  # All modules including Spark Extension Plugin and Connectors built with default Spark version (3.4) and default Scala version (2.12)
+  # Spark Extension Plugin for Spark 3.4
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.4 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl extensions/spark/kyuubi-extension-spark-3-4 -am
+
+  # Spark Hive/TPC-DS/TPC-H Connector built with default Spark version (3.5) and Scala 2.13
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.5,scala-2.13 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl extensions/spark/kyuubi-spark-connector-hive,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch -am
+
+  # All modules including Spark Extension Plugin and Connectors built with default Spark version (3.5) and default Scala version (2.12)
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,hive-provided,spark-3.5 \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
 }
 

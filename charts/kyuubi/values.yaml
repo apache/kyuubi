@@ -297,6 +297,8 @@ serviceMonitor:
   # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
   # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
   endpoints: []
+  # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
+  labels: {}
 
 # Rules for the Prometheus Operator
 prometheusRule:

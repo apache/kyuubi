@@ -47,12 +47,12 @@ As above explains, the incremental collection mode is not suitable for common qu
 collection mode for specific queries by using
 
 ```
-beeline -u 'jdbc:hive2://kyuubi:10009/?spark.driver.maxResultSize=8g;spark.driver.memory=12g#kyuubi.engine.share.level=CONNECTION;kyuubi.operation.incremental.collect=true' \
+kyuubi-beeline -u 'jdbc:kyuubi://kyuubi:10009/?spark.driver.maxResultSize=8g;spark.driver.memory=12g#kyuubi.engine.share.level=CONNECTION;kyuubi.operation.incremental.collect=true' \
     --incremental=true \
     -f big_result_query.sql
 ```
 
-`--incremental=true` is required for beeline client, otherwise, the entire result sets is fetched and buffered before
+`--incremental=true` is required for kyuubi-beeline client, otherwise, the entire result sets is fetched and buffered before
 being displayed, which may cause client side OOM.
 
 ## Change incremental collection mode in session
@@ -60,10 +60,10 @@ being displayed, which may cause client side OOM.
 The configuration `kyuubi.operation.incremental.collect` can also be changed using `SET` in session.
 
 ```
-~ beeline -u 'jdbc:hive2://localhost:10009'
-Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
+~ kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009'
+Connected to: Apache Kyuubi (version 1.9.0)
 
-0: jdbc:hive2://localhost:10009/> set kyuubi.operation.incremental.collect=true;
+0: jdbc:kyuubi://localhost:10009/> set kyuubi.operation.incremental.collect=true;
 +---------------------------------------+--------+
 |                  key                  | value  |
 +---------------------------------------+--------+
@@ -71,7 +71,7 @@ Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
 +---------------------------------------+--------+
 1 row selected (0.039 seconds)
 
-0: jdbc:hive2://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 10);
+0: jdbc:kyuubi://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 10);
 +-----+
 | id  |
 +-----+
@@ -88,7 +88,7 @@ Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
 +-----+
 10 rows selected (1.929 seconds)
 
-0: jdbc:hive2://localhost:10009/> set kyuubi.operation.incremental.collect=false;
+0: jdbc:kyuubi://localhost:10009/> set kyuubi.operation.incremental.collect=false;
 +---------------------------------------+--------+
 |                  key                  | value  |
 +---------------------------------------+--------+
@@ -96,7 +96,7 @@ Connected to: Apache Kyuubi (Incubating) (version 1.5.0-SNAPSHOT)
 +---------------------------------------+--------+
 1 row selected (0.027 seconds)
 
-0: jdbc:hive2://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 10);
+0: jdbc:kyuubi://localhost:10009/> select /*+ REPARTITION(5) */ * from range(1, 10);
 +-----+
 | id  |
 +-----+

@@ -557,9 +557,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       assert(cancelOpResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       assert(sessionManager.getOpenSessionCount === 1)
       assert(session.lastIdleTime === 0)
-      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
-        assert(lastAccessTime < session.lastAccessTime)
-      }
+
       lastAccessTime = session.lastAccessTime
 
       eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {

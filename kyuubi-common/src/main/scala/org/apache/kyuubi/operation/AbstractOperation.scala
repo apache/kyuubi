@@ -74,6 +74,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   override def getOperationLog: Option[OperationLog] = None
 
+  OperationAuditLogger.audit(this, OperationState.INITIALIZED)
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _
   @volatile protected var completedTime: Long = _
@@ -126,6 +127,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     }
     state = newState
     lastAccessTime = System.currentTimeMillis()
+    OperationAuditLogger.audit(this, state)
   }
 
   protected def isClosedOrCanceled: Boolean = {

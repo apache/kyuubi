@@ -110,7 +110,7 @@ function build {
         error "Cannot found dir SPARK_HOME $SPARK_HOME, you must configure SPARK_HOME correct."
       fi
     fi
-    cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
+    cp -r "$SPARK_HOME"/* "$KYUUBI_ROOT"/spark-binary/
   fi
 
   # Verify that the Docker image content directory is present
@@ -177,16 +177,16 @@ Options:
 
 Examples:
 
-  - Build and push image with tag "v1.4.0" to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push image with tag "v1.8.1" to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.8.1 build
+    $0 -r docker.io/myrepo -t v1.8.1 push
 
-  - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push with tag "v1.8.1" and Spark-3.5.1 as base image to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.8.1 -b BASE_IMAGE=repo/spark:3.5.1 build
+    $0 -r docker.io/myrepo -t v1.8.1 push
 
   - Build and push for multiple archs to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -X build
+    $0 -r docker.io/myrepo -t v1.8.1 -X build
 
     # Note: buildx, which does cross building, needs to do the push during build
     # So there is no separate push step with -X
@@ -194,8 +194,8 @@ Examples:
   - Build with Spark placed "/path/spark"
     $0 -s /path/spark build
 
-  - Build with Spark Image myrepo/spark:3.1.0
-    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+  - Build with Spark Image myrepo/spark:3.4.2
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.4.2 build
 
 EOF
 }

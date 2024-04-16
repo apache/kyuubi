@@ -36,10 +36,11 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.server.metadata.api.MetadataFilter
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.util.JavaUtils
 
 class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with BatchTestHelper {
 
-  val basePath: String = Utils.getCodeSourceLocation(getClass)
+  val basePath: String = JavaUtils.getCodeSourceLocation(getClass)
   val batchFile: String = s"${basePath}/batch.yaml"
   val longTimeBatchFile: String = s"${basePath}/batch_long_time.yaml"
 

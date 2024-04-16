@@ -24,15 +24,15 @@ import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
 
-import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.EvictingQueue
+import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
 
 trait ProcBuilder {
 
@@ -83,7 +83,7 @@ trait ProcBuilder {
         .find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass).split("kyuubi-server")
+      val cwd = JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server")
       assert(cwd.length > 1)
       Option(Paths.get(cwd.head, "externals", module, "target", jarName))
         .map(_.toAbsolutePath.toFile.getCanonicalPath)
@@ -98,6 +98,8 @@ trait ProcBuilder {
   protected def mainClass: String
 
   protected def proxyUser: String
+
+  protected def doAsEnabled: Boolean
 
   protected val commands: Iterable[String]
 
@@ -164,9 +166,8 @@ trait ProcBuilder {
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
-  private var process: Process = _
-  @VisibleForTesting
-  @volatile private[kyuubi] var processLaunched: Boolean = _
+  @volatile private[kyuubi] var process: Process = _
+  @volatile private[kyuubi] var processLaunched: Boolean = false
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -204,7 +205,7 @@ trait ProcBuilder {
     file
   }
 
-  def validateConf: Unit = {}
+  def validateConf(): Unit = {}
 
   final def start: Process = synchronized {
     process = processBuilder.start()
@@ -306,7 +307,7 @@ trait ProcBuilder {
    *
    * Take Spark as an example, we first lookup the SPARK_HOME from user specified environments.
    * If not found, we assume that it is a dev environment and lookup the kyuubi-download's output
-   * directly. If not found again, a `KyuubiSQLException` will be raised.
+   * directory. If not found again, a `KyuubiSQLException` will be raised.
    * In summarize, we walk through
    *   `kyuubi.engineEnv.SPARK_HOME` ->
    *   System.env("SPARK_HOME") ->
@@ -319,7 +320,7 @@ trait ProcBuilder {
   protected def getEngineHome(shortName: String): String = {
     val homeKey = s"${shortName.toUpperCase}_HOME"
     // 1. get from env, e.g. SPARK_HOME, FLINK_HOME
-    env.get(homeKey)
+    env.get(homeKey).filter(StringUtils.isNotBlank)
       .orElse {
         // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
         env.get(KYUUBI_HOME).flatMap { p =>
@@ -329,7 +330,7 @@ trait ProcBuilder {
         }.filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
       }.orElse {
         // 3. get from kyuubi-server/../externals/kyuubi-download/target
-        Utils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
+        JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server").flatMap { cwd =>
           val candidates = Paths.get(cwd, "externals", "kyuubi-download", "target")
             .toFile.listFiles(engineHomeDirFilter)
           if (candidates == null) None else candidates.map(_.toPath).headOption

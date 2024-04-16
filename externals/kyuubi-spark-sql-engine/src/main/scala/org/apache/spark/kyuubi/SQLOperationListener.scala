@@ -19,12 +19,14 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.JavaConverters._
 
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
+import org.apache.spark.ui.UIUtils.formatDuration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_SHOW_PROGRESS, ENGINE_SPARK_SHOW_PROGRESS_TIME_FORMAT, ENGINE_SPARK_SHOW_PROGRESS_UPDATE_INTERVAL}
@@ -61,12 +63,17 @@ class SQLOperationListener(
       None
     }
 
+  private val operationRunTime = new AtomicLong(0)
+  private val operationCpuTime = new AtomicLong(0)
+
+  def getOperationRunTime: Long = operationRunTime.get()
+
+  def getOperationCpuTime: Long = operationCpuTime.get()
+
   def getExecutionId: Option[Long] = executionId
 
-  // For broadcast, Spark will introduce a new runId as SPARK_JOB_GROUP_ID, see:
-  // https://github.com/apache/spark/pull/24595, So we will miss these logs.
-  // TODO: Fix this until the below ticket resolved
-  // https://issues.apache.org/jira/browse/SPARK-34064
+  // Prior SPARK-43952 (3.5.0), broadcast jobs uses a different group id, so we will
+  // miss those logs. See more details in SPARK-20774 (3.0.0)
   private def sameGroupId(properties: Properties): Boolean = {
     properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
@@ -149,6 +156,15 @@ class SQLOperationListener(
                 jobInfo.numCompleteStages.getAndIncrement()
               }
             }
+          case _ => // do nothing, failed stage not counted to numCompleteStages
+        }
+        val taskMetrics = stageInfo.taskMetrics
+        if (taskMetrics != null) {
+          info(s"stageId=${stageCompleted.stageInfo.stageId}, " +
+            s"stageRunTime=${formatDuration(taskMetrics.executorRunTime)}, " +
+            s"stageCpuTime=${formatDuration(taskMetrics.executorCpuTime / 1000000)}")
+          operationRunTime.getAndAdd(taskMetrics.executorRunTime)
+          operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
         }
         withOperationLog(super.onStageCompleted(stageCompleted))
       }

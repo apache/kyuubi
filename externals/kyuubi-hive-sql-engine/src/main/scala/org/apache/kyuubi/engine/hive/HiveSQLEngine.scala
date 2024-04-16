@@ -27,6 +27,8 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_DEPLOY_MODE, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
+import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.hive.HiveSQLEngine.currentEngine
 import org.apache.kyuubi.engine.hive.events.{HiveEngineEvent, HiveEventHandlerRegister}
 import org.apache.kyuubi.events.EventBus
@@ -133,26 +135,37 @@ object HiveSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
     try {
       Utils.fromCommandLineArgs(args, kyuubiConf)
-      val sessionUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+      val proxyUser = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY)
+      require(proxyUser.isDefined, s"${KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY} is not set")
       val realUser = UserGroupInformation.getLoginUser
+      val principal = kyuubiConf.get(ENGINE_PRINCIPAL)
+      val keytab = kyuubiConf.get(ENGINE_KEYTAB)
 
-      if (sessionUser.isEmpty || sessionUser.get == realUser.getShortUserName) {
-        startEngine()
-      } else {
-        val effectiveUser = UserGroupInformation.createProxyUser(sessionUser.get, realUser)
-        effectiveUser.doAs(new PrivilegedExceptionAction[Unit] {
-          override def run(): Unit = {
-            val engineCredentials =
-              kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-            kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
-            engineCredentials.filter(_.nonEmpty).foreach { credentials =>
-              HiveTBinaryFrontendService.renewDelegationToken(credentials)
+      val ugi = DeployMode.withName(kyuubiConf.get(ENGINE_HIVE_DEPLOY_MODE)) match {
+        case DeployMode.LOCAL
+            if UserGroupInformation.isSecurityEnabled && principal.isDefined && keytab.isDefined =>
+          UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
+          UserGroupInformation.getCurrentUser
+        case DeployMode.LOCAL if proxyUser.get != realUser.getShortUserName =>
+          val newUGI = UserGroupInformation.createProxyUser(proxyUser.get, realUser)
+          newUGI.doAs(new PrivilegedExceptionAction[Unit] {
+            override def run(): Unit = {
+              val engineCredentials =
+                kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+              kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
+              engineCredentials.filter(_.nonEmpty).foreach { credentials =>
+                HiveTBinaryFrontendService.renewDelegationToken(credentials)
+              }
             }
-            startEngine()
-          }
-        })
+          })
+          newUGI
+        case _ =>
+          UserGroupInformation.getCurrentUser
       }
 
+      ugi.doAs(new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = startEngine()
+      })
     } catch {
       case t: Throwable =>
         currentEngine match {

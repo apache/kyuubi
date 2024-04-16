@@ -19,7 +19,7 @@
 
 ## Requirements
 
-If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the following things.
+To deploy Kyuubi on Kubernetes, you'd better have cognition upon the following things.
 
 * Use Kyuubi official docker image or build Kyuubi docker image
 * An active Kubernetes cluster
@@ -29,7 +29,7 @@ If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the foll
 
 ## Kyuubi Official Docker Image
 
-You can find the official docker image at [Apache Kyuubi Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
+You can find the official docker image at [Docker Hub - apache/kyuubi](https://registry.hub.docker.com/r/apache/kyuubi).
 
 ## Build Kyuubi Docker Image
 
@@ -38,22 +38,22 @@ You can build custom Docker images from the `${KYUUBI_HOME}/bin/docker-image-too
 Examples:
 
 ```shell
-  - Build and push image with tag "v1.4.0" to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push image with tag "v1.8.1" to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.8.1 build
+    $0 -r docker.io/myrepo -t v1.8.1 push
 
-  - Build and push with tag "v1.4.0" and Spark-3.2.1 as base image to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -b BASE_IMAGE=repo/spark:3.2.1 build
-    $0 -r docker.io/myrepo -t v1.4.0 push
+  - Build and push with tag "v1.8.1" and Spark-3.5.1 as base image to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.8.1 -b BASE_IMAGE=repo/spark:3.5.1 build
+    $0 -r docker.io/myrepo -t v1.8.1 push
 
   - Build and push for multiple archs to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.4.0 -X build
+    $0 -r docker.io/myrepo -t v1.8.1 -X build
 
   - Build with Spark placed "/path/spark"
     $0 -s /path/spark build
     
-  - Build with Spark Image myrepo/spark:3.1.0
-    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+  - Build with Spark Image myrepo/spark:3.4.2
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.4.2 build
 ```
 
 `${KYUUBI_HOME}/bin/docker-image-tool.sh` use `Kyuubi Version` as default docker tag and always build `${repo}/kyuubi:${tag}` image.
@@ -66,23 +66,18 @@ You can use `${KYUUBI_HOME}/bin/docker-image-tool.sh -h` for more parameters.
 
 ## Deploy
 
-Multiple YAML files are provided under `${KYUUBI_HOME}/docker/` to help you deploy Kyuubi.
-
-You can deploy single-node Kyuubi through `${KYUUBI_HOME}/docker/kyuubi-pod.yaml` or `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml`.
-
-Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` to deploy Kyuubi Service.
+It's recommended to [use Helm Chart to run Kyuubi on Kubernetes](../quick_start/quick_start_with_helm.md).
 
 ### [Optional] ServiceAccount
 
-According to [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), we need to give kyuubi server the corresponding kubernetes privileges for `created/list/delete` engine pods in kubernetes.
+According to [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/), you need to grant to Kyuubi server the corresponding kubernetes privileges for `created/list/delete` engine pods in Kubernetes.
 
-You should create your serviceAccount ( or reuse account with the appropriate privileges ) and set your serviceAccountName for kyuubi pod, which you can find template in `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml` or `${KYUUBI_HOME}/docker/kyuubi-pod.yaml`.
+You should create your ServiceAccount(or reuse account with the appropriate privileges) and set your ServiceAccountName for Kyuubi pod, which you can find template in `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml` or `${KYUUBI_HOME}/docker/kyuubi-pod.yaml`.
 
-For example, you can create serviceAccount by following command:
+For example, you can create ServiceAccount by following command:
 
 ```shell
 kubectl create serviceAccount kyuubi -n <your namespace>
-
 kubectl create rolebinding kyuubi-role --role=edit --serviceAccount=<your namespace>:kyuubi --namespace=<your namespace>
 ```
 
@@ -92,11 +87,11 @@ See more related details in [Using RBAC Authorization](https://kubernetes.io/doc
 
 You can configure Kyuubi the old-fashioned way by placing `kyuubi-defaults.conf` inside the image. Kyuubi does not recommend using this way on Kubernetes.
 
-Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build Configmap for Kyuubi.
+Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build ConfigMap for Kyuubi.
 
 You can find out how to use it in the comments inside the above file.
 
-If you want to know kyuubi engine on kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md)
+If you want to know Kyuubi engine on Kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md)
 
 ## Connect
 
@@ -105,13 +100,13 @@ You should connect like:
 
 ```shell
 kubectl exec -it kyuubi-example -- /bin/bash
-${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
+${KYUUBI_HOME}/bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009'
 ```
 
-Or you can submit tasks directly through local beeline:
+Or you can submit tasks directly through kyuubi-beeline:
 
 ```shell
-${KYUUBI_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
+${KYUUBI_HOME}/bin/kyuubi-beeline -u 'jdbc:kyuubi://${hostname}:${port}'
 ```
 
 As using service nodePort, port means nodePort and hostname means any hostname of kubernetes node.

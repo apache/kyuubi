@@ -20,7 +20,7 @@ import java.util
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, OPERATION_INCREMENTAL_COLLECT}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT}
 import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
@@ -41,9 +41,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val incrementalCollect = normalizedConf.get(OPERATION_INCREMENTAL_COLLECT.key).map(
+    val incrementalCollect = normalizedConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT.key).map(
       _.toBoolean).getOrElse(
-      session.sessionManager.getConf.get(OPERATION_INCREMENTAL_COLLECT))
+      session.sessionManager.getConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
     val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
       .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
     val executeStatement =

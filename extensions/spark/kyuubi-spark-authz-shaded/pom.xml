@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.9.0-SNAPSHOT</version>
+        <version>1.10.0-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
@@ -30,196 +30,11 @@
     <name>Kyuubi Dev Spark Authorization Extension Shaded</name>
     <url>https://kyuubi.apache.org/</url>
 
-    <properties>
-        <!-- the following components' version may need to tune to align w/ the ranger.version-->
-        <gethostname4j.version>1.0.0</gethostname4j.version>
-        <jersey.client.version>1.19.4</jersey.client.version>
-        <jna.version>5.7.0</jna.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ranger</groupId>
-            <artifactId>ranger-plugins-common</artifactId>
-            <version>${ranger.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.sun.jersey</groupId>
-                    <artifactId>jersey-bundle</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ranger</groupId>
-                    <artifactId>ranger-plugin-classloader</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ranger</groupId>
-                    <artifactId>ranger-plugins-audit</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.kstruct</groupId>
-                    <artifactId>gethostname4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>net.java.dev.jna</groupId>
-                    <artifactId>jna-platform</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.sun.jersey</groupId>
-            <artifactId>jersey-client</artifactId>
-            <version>${jersey.client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>com.kstruct</groupId>
-            <artifactId>gethostname4j</artifactId>
-            <version>${gethostname4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>${jna.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna-platform</artifactId>
-            <version>${jna.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.ranger</groupId>
-            <artifactId>ranger-plugins-audit</artifactId>
-            <version>${ranger.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.ranger</groupId>
-                    <artifactId>ranger-plugins-cred</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.solr</groupId>
-                    <artifactId>solr-solrj</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.client</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.plugin</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.lucene</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.carrotsearch</groupId>
-                    <artifactId>hppc</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hive</groupId>
-                    <artifactId>hive-storage-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.orc</groupId>
-                    <artifactId>orc-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>joda-time</groupId>
-                    <artifactId>joda-time</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.amazonaws</groupId>
-                    <artifactId>aws-java-sdk-bundle</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
     </dependencies>
 
@@ -232,17 +47,12 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-util-scala_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-spark-authz_${scala.binary.version}</include>
-                            <include>org.apache.kyuubi:kyuubi-util</include>
-                            <include>org.apache.ranger:ranger-plugins-common</include>
-                            <include>org.apache.ranger:ranger-plugins-audit</include>
-                            <include>org.codehaus.jackson:jackson-jaxrs</include>
-                            <include>org.codehaus.jackson:jackson-core-asl</include>
-                            <include>org.codehaus.jackson:jackson-mapper-asl</include>
-                            <include>com.sun.jersey:jersey-client</include>
-                            <include>com.sun.jersey:jersey-core</include>
+                            <include>org.apache.kyuubi:*</include>
+                            <include>org.apache.ranger:*</include>
+                            <include>org.codehaus.jackson:*</include>
+                            <include>com.sun.jersey:*</include>
                             <include>com.kstruct:gethostname4j</include>
+                            <!-- JNA is the transitive dependency of gethostname4j -->
                             <include>net.java.dev.jna:jna</include>
                             <include>net.java.dev.jna:jna-platform</include>
                         </includes>
@@ -285,15 +95,6 @@
                         <relocation>
                             <pattern>com.kstruct.gethostname4j</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.kstruct.gethostname4j</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.apache.hadoop.security</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.hadoop.security</shadedPattern>
-                            <includes>
-                                <include>org.apache.hadoop.security.KrbPasswordSaverLoginModule</include>
-                                <include>org.apache.hadoop.security.SecureClientLogin</include>
-                                <include>org.apache.hadoop.security.SecureClientLoginConfiguration</include>
-                            </includes>
                         </relocation>
                     </relocations>
                     <transformers>

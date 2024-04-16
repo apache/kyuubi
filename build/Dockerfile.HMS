@@ -1,0 +1,280 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This Dockerfile is for building a HiveMetaStore used in testing
+
+# Usage:
+#   Run the docker command below
+#      docker build \
+#        --build-arg APACHE_MIRROR="https://archive.apache.org/dist" \
+#        --build-arg HIVE_VERSION="2.3.9" \
+#        --build-arg HADOOP_VERSION="2.10.2" \
+#        --file build/Dockerfile.HMS \
+#        --tag nekyuubi/kyuubi-hive-metastore:<tag> \
+#        .
+#   Options:
+#     -f, --file  this docker file
+#     -t, --tag   the target repo and tag name
+#     more options can be found with -h, --help
+
+FROM eclipse-temurin:8-jdk-focal
+
+ARG APACHE_MIRROR=https://archive.apache.org/dist
+ARG HIVE_VERSION=2.3.9
+ARG HADOOP_VERSION=2.10.2
+
+# Setup KDC
+RUN mkdir -p /etc/krb5kdc
+COPY <<"EOF" /etc/krb5kdc/kadm5.acl
+*/admin@TEST.ORG	*
+EOF
+
+COPY <<"EOF" /etc/krb5kdc/kdc.conf
+[kdcdefaults]
+ kdc_ports = 88
+ kdc_tcp_ports = 88
+
+[realms]
+ TEST.ORG = {
+  acl_file = /etc/krb5kdc/kadm5.acl
+  dict_file = /usr/share/dict/words
+  admin_keytab = /etc/krb5kdc/kadm5.keytab
+  supported_enctypes = aes128-cts:normal
+ }
+
+EOF
+
+COPY <<"EOF" /etc/krb5.conf
+[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = TEST.ORG
+ dns_lookup_realm = false
+ dns_lookup_kdc = false
+ forwardable = true
+ allow_weak_crypto = true
+
+[realms]
+ TEST.ORG = {
+  kdc = localhost:88
+  admin_server = localhost
+ }
+EOF
+
+COPY <<"EOF" /usr/local/bin/create-principal
+#!/bin/bash
+
+set -euo pipefail
+
+function usage() {
+    if [ $# -ne 2 ]; then
+        echo "Usage: $0 -p <principal> -k <output keytab file>" >&2
+        exit 1
+    fi
+}
+
+while getopts "p:k:" o; do
+    case "${o}" in
+        p)
+            principal="$OPTARG"
+            ;;
+        k)
+            keytab="$OPTARG"
+            ;;
+        *)
+    esac
+done
+
+if [[ ! -v principal ]]; then
+    usage
+fi
+
+if [[ ! -v keytab ]]; then
+    usage
+fi
+
+/usr/sbin/kadmin.local -q "addprinc -randkey $principal@TEST.ORG"
+/usr/sbin/kadmin.local -q "ktadd -norandkey -k $keytab $principal"
+EOF
+
+RUN chmod +x /usr/local/bin/create-principal
+
+RUN set -xeu && \
+    ln -snf /usr/bin/bash /usr/bin/sh && \
+    apt update -qq && \
+    apt install -y busybox curl krb5-kdc krb5-admin-server krb5-user && \
+    rm -r /var/lib/apt/lists /var/cache/apt/archives && \
+    mkdir /opt/busybox && \
+    busybox --install /opt/busybox
+
+# CREATE KERBEROS DATABASE
+RUN /usr/sbin/kdb5_util create -s -P password
+
+# Setup Hive MetaStore
+WORKDIR /opt
+RUN wget ${APACHE_MIRROR}/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz && \
+    tar -xzf apache-hive-${HIVE_VERSION}-bin.tar.gz && \
+    rm apache-hive-${HIVE_VERSION}-bin.tar.gz && \
+    wget ${APACHE_MIRROR}/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz && \
+    tar -xzf hadoop-${HADOOP_VERSION}.tar.gz && \
+    rm hadoop-${HADOOP_VERSION}.tar.gz
+
+ENV HIVE_HOME=/opt/apache-hive-${HIVE_VERSION}-bin
+ENV HADOOP_HOME=/opt/hadoop-${HADOOP_VERSION}
+
+COPY <<"EOF" /wait-kdc-ready.sh
+#!/bin/bash
+
+timeout=60
+interval=1
+
+end_time=$((SECONDS + timeout))
+
+while [ $SECONDS -lt $end_time ]; do
+    if /opt/busybox/nc localhost 88 -e true && /opt/busybox/nc localhost 749 -e true; then
+        echo "KDC is now available"
+        break
+    else
+        echo "KDC is not available, retrying in $interval seconds..."
+        sleep $interval
+    fi
+done
+
+if [ $SECONDS -ge $end_time ]; then
+    echo "Timeout reached. KDC is still not available."
+    exit 1
+fi
+EOF
+
+COPY <<"EOF" /start-hive-metastore.sh
+auth=${HADOOP_SECURITY_AUTHENTICATION:-simple}
+
+if  [[ "${auth}" == "kerberos" ]]; then
+  bash /wait-kdc-ready.sh
+
+  # Create Hive MetaStore Principal
+  HIVE_METASTORE_KERBEROS_PRINCIPAL=${HIVE_METASTORE_KERBEROS_PRINCIPAL:-hive/localhost}
+  HIVE_METASTORE_KERBEROS_KEYTAB_FILE=${HIVE_METASTORE_KERBEROS_KEYTAB_FILE:-/hive.service.keytab}
+  HIVE_METASTORE_KERBEROS_PRINCIPAL_NAME=$(echo ${HIVE_METASTORE_KERBEROS_PRINCIPAL} | cut -d '/' -f 1)
+  if [[ ! -f $HIVE_METASTORE_KERBEROS_KEYTAB_FILE ]]; then
+    bash create-principal -p ${HIVE_METASTORE_KERBEROS_PRINCIPAL} -k ${HIVE_METASTORE_KERBEROS_KEYTAB_FILE}
+  fi
+
+  cat > ${HIVE_HOME}/conf/hive-site.xml <<_EOF
+  <configuration>
+    <property>
+      <name>hive.metastore.schema.verification</name>
+      <value>false</value>
+    </property>
+    <property>
+      <name>datanucleus.schema.autoCreateTables</name>
+      <value>true</value>
+    </property>
+    <property>
+      <name>hive.metastore.sasl.enabled</name>
+      <value>true</value>
+    </property>
+    <property>
+      <name>hive.metastore.kerberos.principal</name>
+      <value>${HIVE_METASTORE_KERBEROS_PRINCIPAL}</value>
+    </property>
+    <property>
+      <name>hive.metastore.kerberos.keytab.file</name>
+      <value>${HIVE_METASTORE_KERBEROS_KEYTAB_FILE}</value>
+    </property>
+  </configuration>
+_EOF
+
+  cat > ${HADOOP_HOME}/etc/hadoop/core-site.xml <<_EOF
+  <configuration>
+    <property>
+      <name>hadoop.security.authentication</name>
+      <value>kerberos</value>
+    </property>
+    <property>
+      <name>hadoop.proxyuser.${HIVE_METASTORE_KERBEROS_PRINCIPAL_NAME}.hosts</name>
+      <value>*</value>
+    </property>
+    <property>
+      <name>hadoop.proxyuser.${HIVE_METASTORE_KERBEROS_PRINCIPAL_NAME}.groups</name>
+      <value>*</value>
+    </property>
+  </configuration>
+_EOF
+
+elif [[ "${auth}" == "simple" ]]; then
+  cat > ${HIVE_HOME}/conf/hive-site.xml <<_EOF
+    <configuration>
+      <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+      </property>
+      <property>
+        <name>datanucleus.schema.autoCreateTables</name>
+        <value>true</value>
+      </property>
+    </configuration>
+_EOF
+
+    cat > ${HADOOP_HOME}/etc/hadoop/core-site.xml <<_EOF
+    <configuration>
+      <property>
+        <name>hadoop.security.authentication</name>
+        <value>simple</value>
+      </property>
+      <property>
+        <name>hadoop.proxyuser.hive.hosts</name>
+        <value>*</value>
+      </property>
+      <property>
+        <name>hadoop.proxyuser.hive.groups</name>
+        <value>*</value>
+      </property>
+    </configuration>
+_EOF
+else
+  echo "Invalid auth type: ${auth}"
+  exit 1
+fi
+
+bash ${HIVE_HOME}/bin/hive --service metastore
+EOF
+
+COPY <<"EOF" /entrypoint.sh
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+/bin/bash -c "exec /usr/sbin/krb5kdc -P /var/run/krb5kdc.pid -n -r TEST.ORG" &
+/bin/bash -c "exec /usr/sbin/kadmind -P /var/run/kadmind.pid -nofork -r TEST.ORG" &
+/bin/bash /start-hive-metastore.sh &
+
+tail -F /tmp/root/hive.log
+EOF
+
+# Hive MetaStore Thrift Port
+EXPOSE 9083/tcp
+
+# KDC Ports
+EXPOSE	88/tcp
+EXPOSE	88/udp
+EXPOSE	749/tcp
+
+ENTRYPOINT ["/usr/bin/bash", "/entrypoint.sh"]

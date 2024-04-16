@@ -22,12 +22,10 @@ import java.lang.{Boolean => JBoolean}
 import java.net.URL
 import java.util.{ArrayList => JArrayList, Collections => JCollections, List => JList}
 
-import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions._
 
 import org.apache.commons.cli.{CommandLine, DefaultParser, Options}
 import org.apache.flink.api.common.JobID
-import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI, GenericCLI}
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.core.fs.Path
 import org.apache.flink.runtime.util.EnvironmentInformation
@@ -41,14 +39,14 @@ import org.apache.flink.util.JarUtils
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.util.SemanticVersion
-import org.apache.kyuubi.util.reflect._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object FlinkEngineUtils extends Logging {
 
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
-  private def SUPPORTED_FLINK_VERSIONS = Set("1.16", "1.17", "1.18").map(SemanticVersion.apply)
+  private def SUPPORTED_FLINK_VERSIONS =
+    Set("1.17", "1.18", "1.19").map(SemanticVersion.apply)
 
   val FLINK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
@@ -108,17 +106,13 @@ object FlinkEngineUtils extends Logging {
     val libDirs: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
       .getOrElse(JCollections.emptyList())
     val dependencies: JList[URL] = discoverDependencies(jars, libDirs)
-    if (FLINK_RUNTIME_VERSION === "1.16") {
-      val commandLines: JList[CustomCommandLine] =
-        Seq(new GenericCLI(flinkConf, flinkConfDir), new DefaultCLI).asJava
-      DynConstructors.builder()
-        .impl(
-          classOf[DefaultContext],
-          classOf[Configuration],
-          classOf[JList[CustomCommandLine]])
-        .build()
-        .newInstance(flinkConf, commandLines)
-        .asInstanceOf[DefaultContext]
+    if (FLINK_RUNTIME_VERSION >= "1.19") {
+      invokeAs[DefaultContext](
+        classOf[DefaultContext],
+        "load",
+        (classOf[Configuration], flinkConf),
+        (classOf[JList[URL]], dependencies),
+        (classOf[Boolean], JBoolean.TRUE))
     } else if (FLINK_RUNTIME_VERSION >= "1.17") {
       invokeAs[DefaultContext](
         classOf[DefaultContext],
@@ -136,9 +130,6 @@ object FlinkEngineUtils extends Logging {
   def getSessionContext(session: Session): SessionContext = getField(session, "sessionContext")
 
   def getResultJobId(resultFetch: ResultFetcher): Option[JobID] = {
-    if (FLINK_RUNTIME_VERSION <= "1.16") {
-      return None
-    }
     try {
       Option(getField[JobID](resultFetch, "jobID"))
     } catch {

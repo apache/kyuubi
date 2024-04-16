@@ -68,7 +68,7 @@ object HighAvailabilityConf {
     "1.3.2")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.ha.zookeeper.acl.enabled")
-      .doc("Set to true if the ZooKeeper ensemble is kerberized")
+      .doc("(deprecated) Set to true if the ZooKeeper ensemble is kerberized")
       .version("1.0.0")
       .booleanConf
       .createWithDefault(UserGroupInformation.isSecurityEnabled)

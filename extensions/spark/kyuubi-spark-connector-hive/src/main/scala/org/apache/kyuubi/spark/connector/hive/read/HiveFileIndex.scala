@@ -20,6 +20,7 @@ package org.apache.kyuubi.spark.connector.hive.read
 import java.net.URI
 
 import scala.collection.mutable
+import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
@@ -155,6 +156,8 @@ class HiveInMemoryFileIndex(
 
   private val partDirToBindHivePart: mutable.Map[PartitionDirectory, CatalogTablePartition] =
     mutable.Map()
+
+  implicit private def seqToArr(seq: Seq[FileStatus]): Array[FileStatus] = seq.toArray
 
   override def listFiles(
       partitionFilters: Seq[Expression],

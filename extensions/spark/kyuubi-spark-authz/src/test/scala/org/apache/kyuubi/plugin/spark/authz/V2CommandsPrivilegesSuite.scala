@@ -127,7 +127,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assert(po0.catalog.isEmpty)
       assertEqualsIgnoreCase(reusedDb)(po0.dbname)
       assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
-      assert(po0.columns.take(2) === Seq("key", "value"))
+      assert(po0.columns === Seq("a", "key", "value"))
       checkTableOwner(po0)
 
       assert(outputs.size === 1)
@@ -186,7 +186,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assert(po0.catalog.isEmpty)
       assertEqualsIgnoreCase(reusedDb)(po0.dbname)
       assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
-      assert(po0.columns.take(2) === Seq("key", "value"))
+      assert(po0.columns === Seq("a", "key", "value"))
       checkTableOwner(po0)
 
       assert(outputs.size === 1)

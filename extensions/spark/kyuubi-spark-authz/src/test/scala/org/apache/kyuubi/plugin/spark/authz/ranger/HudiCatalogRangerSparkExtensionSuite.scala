@@ -507,7 +507,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptEndsWith[AccessControlException] {
           doAs(someone, sql(mergeIntoSQL))
         }(s"does not have [select] privilege on " +
-          s"[$namespace1/$table2/id,$namespace1/$table2/name,$namespace1/$table2/city], " +
+          s"[$namespace1/$table2/city,$namespace1/$table2/id,$namespace1/$table2/name], " +
           s"[update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSQL))
       }
@@ -643,5 +643,29 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }(s"does not have [select] privilege on [$namespace1/$table1]")
       doAs(admin, sql(showCommitsSql))
     }
+  }
+
+  test("ShowClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL SHOW_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [read] privilege on [[$path, $path/]]")
+  }
+
+  test("RunClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
+
+  test("RunCompactionProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_COMPACTION(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
   }
 }

@@ -15,8 +15,12 @@
  * limitations under the License.
  */
 
+interface ISessionConfigs {
+  [key: string]: string
+}
+
 interface IOpenSessionRequest {
-  'kyuubi.engine.type': string
+  configs: ISessionConfigs
 }
 
 interface IRunSqlRequest {

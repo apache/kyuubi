@@ -222,12 +222,6 @@ What's Next
    contributing/doc/index
 
 .. toctree::
-   :caption: Community
-   :maxdepth: 2
-
-   community/index
-
-.. toctree::
    :caption: Appendix
    :maxdepth: 2
 

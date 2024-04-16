@@ -163,8 +163,8 @@ object SparkCatalogUtils extends Logging {
     val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
       case builtin if builtin.name() == SESSION_CATALOG =>
-        val catalog = spark.sessionState.catalog
-        val databases = catalog.listDatabases(schemaPattern)
+        val sessionCatalog = spark.sessionState.catalog
+        val databases = sessionCatalog.listDatabases(schemaPattern)
 
         def isMatchedTableType(tableTypes: Set[String], tableType: String): Boolean = {
           val typ = if (tableType.equalsIgnoreCase(VIEW)) VIEW else TABLE
@@ -172,22 +172,39 @@ object SparkCatalogUtils extends Logging {
         }
 
         databases.flatMap { db =>
-          val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = false)
-          catalog.getTablesByName(identifiers)
-            .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
-              val typ = if (t.tableType.name == VIEW) VIEW else TABLE
+          val identifiers =
+            sessionCatalog.listTables(db, tablePattern, includeLocalTempViews = false)
+          if (ignoreTableProperties) {
+            identifiers.map { ti: TableIdentifier =>
               Row(
                 catalogName,
-                t.database,
-                t.identifier.table,
-                typ,
-                t.comment.getOrElse(""),
+                ti.database.getOrElse("default"),
+                ti.table,
+                TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
+                "",
                 null,
                 null,
                 null,
                 null,
                 null)
             }
+          } else {
+            sessionCatalog.getTablesByName(identifiers)
+              .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
+                val typ = if (t.tableType.name == VIEW) VIEW else TABLE
+                Row(
+                  catalogName,
+                  t.database,
+                  t.identifier.table,
+                  typ,
+                  t.comment.getOrElse(""),
+                  null,
+                  null,
+                  null,
+                  null,
+                  null)
+              }
+          }
         }
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
@@ -360,14 +377,22 @@ object SparkCatalogUtils extends Logging {
     // format: on
   }
 
-  /**
-   * Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.quoteIfNeeded]]
-   */
+  // SPARK-47300 (4.0.0): quoteIfNeeded should quote identifier starts with digits
+  private val validIdentPattern = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*")
+
+  // Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.QuotingUtils.quoteIfNeeded]]
   def quoteIfNeeded(part: String): String = {
-    if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
+    if (validIdentPattern.matcher(part).matches()) {
       part
     } else {
-      s"`${part.replace("`", "``")}`"
+      quoteIdentifier(part)
     }
+  }
+
+  // Forked from Apache Spark's [[org.apache.spark.sql.catalyst.util.QuotingUtils.quoteIdentifier]]
+  def quoteIdentifier(name: String): String = {
+    // Escapes back-ticks within the identifier name with double-back-ticks, and then quote the
+    // identifier with back-ticks.
+    "`" + name.replace("`", "``") + "`"
   }
 }

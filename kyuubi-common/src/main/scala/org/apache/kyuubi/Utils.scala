@@ -329,10 +329,6 @@ object Utils extends Logging {
     }
   }
 
-  def getCodeSourceLocation(clazz: Class[_]): String = {
-    new File(clazz.getProtectionDomain.getCodeSource.getLocation.toURI).getPath
-  }
-
   def fromCommandLineArgs(args: Array[String], conf: KyuubiConf): Unit = {
     require(args.length % 2 == 0, s"Illegal size of arguments.")
     for (i <- args.indices by 2) {

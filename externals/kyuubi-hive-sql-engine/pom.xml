@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.9.0-SNAPSHOT</version>
+        <version>1.10.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service</artifactId>
-            <version>${hive.engine.hive.version}</version>
+            <version>${hive.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -99,7 +99,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
-            <version>${hive.engine.hive.version}</version>
+            <version>${hive.version}</version>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>

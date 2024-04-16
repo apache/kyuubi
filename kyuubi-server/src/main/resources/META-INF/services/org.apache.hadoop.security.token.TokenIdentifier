@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.apache.hadoop.hive.metastore.security.DelegationTokenIdentifier
+org.apache.kyuubi.shaded.hive.metastore.security.DelegationTokenIdentifier

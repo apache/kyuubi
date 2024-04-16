@@ -82,8 +82,8 @@ object KyuubiSQLException {
     }
   }
 
-  def featureNotSupported(): KyuubiSQLException = {
-    KyuubiSQLException("feature not supported", sqlState = "0A000")
+  def featureNotSupported(message: String = "feature not supported"): KyuubiSQLException = {
+    KyuubiSQLException(message, sqlState = "0A000")
   }
 
   def connectionDoesNotExist(): KyuubiSQLException = {

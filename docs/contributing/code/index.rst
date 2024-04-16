@@ -30,3 +30,4 @@ code to the Kyuubi project.
     debugging
     developer
     idea_setup
+    release

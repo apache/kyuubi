@@ -19,9 +19,9 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.Properties
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
+import org.apache.kyuubi.util.JavaUtils
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
@@ -33,7 +33,7 @@ object JDBCMetadataStoreConf {
         "<KYUUBI_HOME>",
         sys.env.getOrElse(
           "KYUUBI_HOME",
-          Utils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
+          JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
     } else {
       rawJdbcUrl
     }
@@ -51,11 +51,10 @@ object JDBCMetadataStoreConf {
   val METADATA_STORE_JDBC_DATABASE_TYPE: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.database.type")
       .doc("The database type for server jdbc metadata store.<ul>" +
-        " <li>(Deprecated) DERBY: Apache Derby, JDBC driver " +
-        "`org.apache.derby.jdbc.AutoloadedDriver`.</li>" +
         " <li>SQLITE: SQLite3, JDBC driver `org.sqlite.JDBC`.</li>" +
         " <li>MYSQL: MySQL, JDBC driver `com.mysql.cj.jdbc.Driver` " +
         "(fallback `com.mysql.jdbc.Driver`).</li>" +
+        " <li>POSTGRESQL: PostgreSQL, JDBC driver `org.postgresql.Driver`.</li>" +
         " <li>CUSTOM: User-defined database type, need to specify corresponding JDBC driver.</li>" +
         " Note that: The JDBC datasource is powered by HiKariCP, for datasource properties," +
         " please specify them with the prefix: kyuubi.metadata.store.jdbc.datasource." +
