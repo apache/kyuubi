@@ -55,6 +55,8 @@ serviceAccount:
   create: true
   # Specifies ServiceAccount name to be used (created if `create: true`)
   name: ~
+  # Annotations to add to the ServiceAccount
+  annotations: {}
 
 # priorityClass used for Kyuubi server pod
 priorityClass:
