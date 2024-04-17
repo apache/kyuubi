@@ -137,7 +137,6 @@ metrics-jmx/4.2.23//metrics-jmx-4.2.23.jar
 metrics-json/4.2.23//metrics-json-4.2.23.jar
 metrics-jvm/4.2.23//metrics-jvm-4.2.23.jar
 mimepull/1.9.15//mimepull-1.9.15.jar
-netty-all/4.1.100.Final//netty-all-4.1.100.Final.jar
 netty-buffer/4.1.100.Final//netty-buffer-4.1.100.Final.jar
 netty-codec-dns/4.1.100.Final//netty-codec-dns-4.1.100.Final.jar
 netty-codec-http/4.1.100.Final//netty-codec-http-4.1.100.Final.jar
