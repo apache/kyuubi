@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
-import io.fabric8.kubernetes.api.model.{ContainerState, Pod}
+import io.fabric8.kubernetes.api.model.{ContainerState, Pod, Service}
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
@@ -44,6 +44,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     new ConcurrentHashMap[KubernetesInfo, KubernetesClient]
   private val enginePodInformers: ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]] =
     new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Pod]]
+  private val engineSvcInformers: ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Service]] =
+    new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Service]]
 
   private var submitTimeout: Long = _
   private var kyuubiConf: KyuubiConf = _
@@ -98,7 +100,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
+        val engineSvcInformer = client.services()
+          .withLabelSelector(LABEL_KYUUBI_UNIQUE_KEY)
+          .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
+        engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
         client
 
       case None => throw new KyuubiException(s"Fail to build Kubernetes client for $kubernetesInfo")
@@ -264,6 +270,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
     enginePodInformers.clear()
 
+    engineSvcInformers.asScala.foreach { case (_, informer) =>
+      Utils.tryLogNonFatalError(informer.stop())
+    }
+    engineSvcInformers.clear()
+
     if (cleanupTerminatedAppInfoTrigger != null) {
       cleanupTerminatedAppInfoTrigger.invalidateAll()
       cleanupTerminatedAppInfoTrigger = null
@@ -317,22 +328,75 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
+  private class SparkEngineSvcEventHandler(kubernetesInfo: KubernetesInfo)
+    extends ResourceEventHandler[Service] {
+
+    override def onAdd(svc: Service): Unit = {
+      if (isSparkEngineSvc(svc)) {
+        updateApplicationUrl(kubernetesInfo, svc)
+      }
+    }
+
+    override def onUpdate(oldSvc: Service, newSvc: Service): Unit = {
+      if (isSparkEngineSvc(newSvc)) {
+        updateApplicationUrl(kubernetesInfo, newSvc)
+      }
+    }
+
+    override def onDelete(svc: Service, deletedFinalStateUnknown: Boolean): Unit = {
+      // do nothing
+    }
+  }
+
   private def isSparkEnginePod(pod: Pod): Boolean = {
     val labels = pod.getMetadata.getLabels
     labels.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && labels.containsKey(SPARK_APP_ID_LABEL)
+  }
+
+  private def isSparkEngineSvc(svc: Service): Boolean = {
+    val selectors = svc.getSpec.getSelector
+    selectors.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && selectors.containsKey(SPARK_APP_ID_LABEL)
   }
 
   private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     val (appState, appError) =
       toApplicationStateAndError(pod, appStateSource, appStateContainer)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
-    appInfoStore.put(
-      pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY),
-      kubernetesInfo -> ApplicationInfo(
-        id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
-        name = pod.getMetadata.getName,
-        state = appState,
-        error = appError))
+    val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+    appInfoStore.synchronized {
+      Option(appInfoStore.get(kyuubiUniqueKey)).map { case (_, appInfo) =>
+        appInfoStore.put(
+          kyuubiUniqueKey,
+          kubernetesInfo -> appInfo.copy(
+            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+            name = pod.getMetadata.getName,
+            state = appState,
+            error = appError))
+      }.getOrElse {
+        appInfoStore.put(
+          kyuubiUniqueKey,
+          kubernetesInfo -> ApplicationInfo(
+            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+            name = pod.getMetadata.getName,
+            state = appState,
+            error = appError))
+      }
+    }
+  }
+
+  private def updateApplicationUrl(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
+    val appUrl =
+      svc.getSpec.getPorts.asScala.find(_.getName == SPARK_UI_PORT_NAME).map(_.getPort).map {
+        uiPort =>
+          s"http://${svc.getMetadata.getName}.${kubernetesInfo.namespace.orNull}.svc:$uiPort"
+      }
+    debug(s"Driver Informer svc: ${svc.getMetadata.getName} app url: $appUrl")
+    val kyuubiUniqueKey = svc.getSpec.getSelector.get(LABEL_KYUUBI_UNIQUE_KEY)
+    appInfoStore.synchronized {
+      Option(appInfoStore.get(kyuubiUniqueKey)).foreach { case (_, appInfo) =>
+        appInfoStore.put(kyuubiUniqueKey, kubernetesInfo -> appInfo.copy(url = appUrl))
+      }
+    }
   }
 
   private def markApplicationTerminated(pod: Pod): Unit = synchronized {
@@ -350,6 +414,7 @@ object KubernetesApplicationOperation extends Logging {
   val SPARK_APP_ID_LABEL = "spark-app-selector"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
+  val SPARK_UI_PORT_NAME = "spark-ui"
 
   def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
