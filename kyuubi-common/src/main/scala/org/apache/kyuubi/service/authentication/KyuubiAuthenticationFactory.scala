@@ -21,15 +21,9 @@ import java.io.IOException
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.security.authentication.util.KerberosName
-import org.apache.hadoop.security.authorize.ProxyUsers
-
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.AuthTypes._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.kyuubi.shaded.thrift.TProcessorFactory
@@ -38,14 +32,9 @@ import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTranspo
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
   val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
-  val saslDisabled: Boolean = authTypes == Seq(NOSASL)
-  val kerberosEnabled: Boolean = authTypes.contains(KERBEROS)
-
-  // take the first declared SASL/PLAIN auth type
-  private val effectivePlainAuthType = authTypes.find {
-    case NOSASL | KERBEROS => false
-    case _ => true
-  }
+  val saslDisabled: Boolean = AuthUtils.saslDisabled(authTypes)
+  val kerberosEnabled: Boolean = AuthUtils.kerberosEnabled(authTypes)
+  val effectivePlainAuthType: Option[AuthType] = AuthUtils.effectivePlainAuthType(authTypes)
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
@@ -121,47 +110,5 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   def getIpAddress: Option[String] = {
     hadoopAuthServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
-  }
-}
-object KyuubiAuthenticationFactory extends Logging {
-  val HS2_PROXY_USER = "hive.server2.proxy.user"
-
-  @throws[KyuubiSQLException]
-  def verifyProxyAccess(
-      realUser: String,
-      proxyUser: String,
-      ipAddress: String,
-      hadoopConf: Configuration): Unit = {
-    try {
-      val sessionUgi = {
-        if (UserGroupInformation.isSecurityEnabled) {
-          val kerbName = new KerberosName(realUser)
-          UserGroupInformation.createProxyUser(
-            kerbName.getServiceName,
-            UserGroupInformation.getLoginUser)
-        } else {
-          UserGroupInformation.createRemoteUser(realUser)
-        }
-      }
-
-      if (!proxyUser.equalsIgnoreCase(realUser)) {
-        ProxyUsers.refreshSuperUserGroupsConfiguration(hadoopConf)
-        ProxyUsers.authorize(UserGroupInformation.createProxyUser(proxyUser, sessionUgi), ipAddress)
-      }
-    } catch {
-      case e: IOException =>
-        throw KyuubiSQLException(
-          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser,
-          e)
-    }
-  }
-
-  def getValidPasswordAuthMethod(authTypes: Seq[AuthType]): AuthMethod = {
-    if (authTypes == Seq(NOSASL)) AuthMethods.NONE
-    else if (authTypes.contains(NONE)) AuthMethods.NONE
-    else if (authTypes.contains(LDAP)) AuthMethods.LDAP
-    else if (authTypes.contains(JDBC)) AuthMethods.JDBC
-    else if (authTypes.contains(CUSTOM)) AuthMethods.CUSTOM
-    else throw new IllegalArgumentException("No valid Password Auth detected")
   }
 }

@@ -567,7 +567,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       "logicalRelation",
       classOf[LogicalRelationTableExtractor],
       actionTypeDesc = Some(actionTypeDesc))
-    TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryQueryDesc))
+    TableCommandSpec(cmd, Seq(tableDesc))
   }
 
   val InsertIntoHiveTable = {
@@ -585,9 +585,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
 
   val InsertIntoDataSourceDir = {
     val cmd = "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand"
-    val queryDesc = queryQueryDesc
     val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
-    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
+    TableCommandSpec(cmd, Nil, uriDescs = Seq(uriDesc))
   }
 
   val SaveIntoDataSourceCommand = {
@@ -608,6 +607,13 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
+  }
+
+  val InsertIntoHiveDirCommand = {
+    val cmd = "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"
+    val queryDesc = queryQueryDesc
+    val uriDesc = UriDesc("storage", classOf[CatalogStorageFormatURIExtractor])
+    TableCommandSpec(cmd, Nil, queryDescs = Seq(queryDesc), uriDescs = Seq(uriDesc))
   }
 
   val LoadData = {
@@ -723,8 +729,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     InsertIntoDataSourceDir,
     SaveIntoDataSourceCommand,
     InsertIntoHadoopFsRelationCommand,
-    InsertIntoDataSourceDir.copy(classname =
-      "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand"),
+    InsertIntoHiveDirCommand,
     InsertIntoHiveTable,
     LoadData,
     MergeIntoTable,

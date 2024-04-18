@@ -123,7 +123,7 @@
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <apache.archive.dist>http://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.2.23</codahale.metrics.version>
