@@ -504,11 +504,18 @@ object KubernetesApplicationOperation extends Logging {
       kubernetesContext: String,
       kubernetesNamespace: String,
       sparkUiPort: Int): String = {
-    sparkAppUrlPattern
-      .replaceAll(SPARK_APP_ID_PLACEHOLDER, sparkAppId)
-      .replaceAll(SPARK_DRIVER_SVC_PLACEHOLDER, sparkDriverSvc)
-      .replaceAll(KUBERNETES_CONTEXT_PLACEHOLDER, kubernetesContext)
-      .replaceAll(KUBERNETES_NAMESPACE_PLACEHOLDER, kubernetesNamespace)
-      .replaceAll(SPARK_UI_PORT_PLACEHOLDER, sparkUiPort.toString)
+    try {
+      sparkAppUrlPattern
+        .replaceAll(SPARK_APP_ID_PLACEHOLDER, sparkAppId)
+        .replaceAll(SPARK_DRIVER_SVC_PLACEHOLDER, sparkDriverSvc)
+        .replaceAll(KUBERNETES_CONTEXT_PLACEHOLDER, kubernetesContext)
+        .replaceAll(KUBERNETES_NAMESPACE_PLACEHOLDER, kubernetesNamespace)
+        .replaceAll(SPARK_UI_PORT_PLACEHOLDER, sparkUiPort.toString)
+    } catch {
+      case e: Throwable =>
+        // should never happen
+        error("Failed to build spark app url", e)
+        s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort"
+    }
   }
 }
