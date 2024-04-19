@@ -101,7 +101,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
         val engineSvcInformer = client.services()
-          .withLabelSelector(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
