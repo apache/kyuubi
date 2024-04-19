@@ -22,8 +22,7 @@ import scala.collection.JavaConverters._
 import io.fabric8.kubernetes.api.model.{Pod, Service}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 
 object KubernetesApplicationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
@@ -50,6 +49,21 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"appState=${applicationInfo.map(_.state).getOrElse("")}").append("\t")
     sb.append(s"appUrl=${applicationInfo.map(_.url).getOrElse("")}").append("\t")
     sb.append(s"appError=${applicationInfo.map(_.error).getOrElse("")}")
+    info(sb.toString())
+  }
+
+  def audit(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
+    val sb = AUDIT_BUFFER.get()
+    sb.setLength(0)
+    sb.append(s"label=${svc.getSpec.getSelector.get(LABEL_KYUUBI_UNIQUE_KEY)}").append("\t")
+    sb.append(s"context=${kubernetesInfo.context.orNull}").append("\t")
+    sb.append(s"namespace=${kubernetesInfo.namespace.orNull}").append("\t")
+    sb.append(s"svc=${svc.getMetadata.getName}").append("\t")
+    sb.append(s"svcType=${svc.getSpec.getType}").append("\t")
+    val ports = svc.getSpec.getPorts.asScala.map { port =>
+      s"${port.getName}/${port.getPort}"
+    }.mkString(",")
+    sb.append(s"svcPorts=$ports").append("\n")
     info(sb.toString())
   }
 }

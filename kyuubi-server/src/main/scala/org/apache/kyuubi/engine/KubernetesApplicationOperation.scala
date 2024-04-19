@@ -327,9 +327,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     extends ResourceEventHandler[Service] {
 
     override def onAdd(svc: Service): Unit = {
-      if (isSparkEngineSvc(svc)) {
-        updateApplicationUrl(kubernetesInfo, svc)
-      }
+      updateService(kubernetesInfo, svc)
     }
 
     override def onUpdate(oldSvc: Service, newSvc: Service): Unit = {
@@ -344,6 +342,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private def updateService(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
     if (isSparkEngineSvc(svc)) {
       updateApplicationUrl(kubernetesInfo, svc)
+      KubernetesApplicationAuditLogger.audit(kubernetesInfo, svc)
     }
   }
 
