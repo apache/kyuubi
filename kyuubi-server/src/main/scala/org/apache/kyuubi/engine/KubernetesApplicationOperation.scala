@@ -425,11 +425,11 @@ object KubernetesApplicationOperation extends Logging {
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
   val SPARK_UI_PORT_NAME = "spark-ui"
-  val SPARK_APP_ID_PLACEHOLDER = "{{SPARK_APP_ID}}"
-  val SPARK_DRIVER_SVC_PLACEHOLDER = "{{SPARK_DRIVER_SVC}}"
-  val KUBERNETES_NAMESPACE_PLACEHOLDER = "{{KUBERNETES_NAMESPACE}}"
-  val KUBERNETES_CONTEXT_PLACEHOLDER = "{{KUBERNETES_CONTEXT}}"
-  val SPARK_UI_PORT_PLACEHOLDER = "{{SPARK_UI_PORT}}"
+  val SPARK_APP_ID_PLACEHOLDER = "\\{\\{SPARK_APP_ID\\}\\}"
+  val SPARK_DRIVER_SVC_PLACEHOLDER = "\\{\\{SPARK_DRIVER_SVC\\}\\}"
+  val KUBERNETES_NAMESPACE_PLACEHOLDER = "\\{\\{KUBERNETES_NAMESPACE\\}\\}"
+  val KUBERNETES_CONTEXT_PLACEHOLDER = "\\{\\{KUBERNETES_CONTEXT\\}\\}"
+  val SPARK_UI_PORT_PLACEHOLDER = "\\{\\{SPARK_UI_PORT\\}\\}"
 
   def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
@@ -496,7 +496,8 @@ object KubernetesApplicationOperation extends Logging {
       UNKNOWN
   }
 
-  private def buildSparkAppUrl(
+  // Visible for testing
+  private[kyuubi] def buildSparkAppUrl(
       sparkAppUrlPattern: String,
       sparkAppId: String,
       sparkDriverSvc: String,
@@ -508,6 +509,6 @@ object KubernetesApplicationOperation extends Logging {
       .replaceAll(SPARK_DRIVER_SVC_PLACEHOLDER, sparkDriverSvc)
       .replaceAll(KUBERNETES_CONTEXT_PLACEHOLDER, kubernetesContext)
       .replaceAll(KUBERNETES_NAMESPACE_PLACEHOLDER, kubernetesNamespace)
-      .replace(SPARK_UI_PORT_PLACEHOLDER, sparkUiPort.toString)
+      .replaceAll(SPARK_UI_PORT_PLACEHOLDER, sparkUiPort.toString)
   }
 }
