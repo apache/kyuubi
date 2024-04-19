@@ -1286,7 +1286,7 @@ object KyuubiConf {
       .createWithDefault(KubernetesCleanupDriverPodStrategy.NONE.toString)
 
   val KUBERNETES_SPARK_APP_URL_PATTERN: ConfigEntry[String] =
-    buildConf("kyuubi.kubernetes.spark.app.url.pattern")
+    buildConf("kyuubi.kubernetes.spark.appUrlPattern")
       .doc("The pattern to generate the spark on kubernetes application UI URL. " +
         "The pattern should contain placeholders for the application variables. " +
         "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`, " +

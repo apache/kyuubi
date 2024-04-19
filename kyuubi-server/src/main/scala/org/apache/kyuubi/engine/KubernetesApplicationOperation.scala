@@ -425,11 +425,6 @@ object KubernetesApplicationOperation extends Logging {
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
   val SPARK_UI_PORT_NAME = "spark-ui"
-  val SPARK_APP_ID_PLACEHOLDER = "\\{\\{SPARK_APP_ID\\}\\}"
-  val SPARK_DRIVER_SVC_PLACEHOLDER = "\\{\\{SPARK_DRIVER_SVC\\}\\}"
-  val KUBERNETES_NAMESPACE_PLACEHOLDER = "\\{\\{KUBERNETES_NAMESPACE\\}\\}"
-  val KUBERNETES_CONTEXT_PLACEHOLDER = "\\{\\{KUBERNETES_CONTEXT\\}\\}"
-  val SPARK_UI_PORT_PLACEHOLDER = "\\{\\{SPARK_UI_PORT\\}\\}"
 
   def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
@@ -496,7 +491,13 @@ object KubernetesApplicationOperation extends Logging {
       UNKNOWN
   }
 
-  // Visible for testing
+  /**
+   * Replaces all the {{SPARK_APP_ID}} occurrences with the Spark App Id,
+   * {{SPARK_DRIVER_SVC}} occurrences with the Spark Driver Service name,
+   * {{KUBERNETES_CONTEXT}} occurrences with the Kubernetes Context,
+   * {{KUBERNETES_NAMESPACE}} occurrences with the Kubernetes Namespace,
+   * and {{SPARK_UI_PORT}} occurrences with the Spark UI Port.
+   */
   private[kyuubi] def buildSparkAppUrl(
       sparkAppUrlPattern: String,
       sparkAppId: String,
@@ -504,18 +505,11 @@ object KubernetesApplicationOperation extends Logging {
       kubernetesContext: String,
       kubernetesNamespace: String,
       sparkUiPort: Int): String = {
-    try {
-      sparkAppUrlPattern
-        .replaceAll(SPARK_APP_ID_PLACEHOLDER, sparkAppId)
-        .replaceAll(SPARK_DRIVER_SVC_PLACEHOLDER, sparkDriverSvc)
-        .replaceAll(KUBERNETES_CONTEXT_PLACEHOLDER, kubernetesContext)
-        .replaceAll(KUBERNETES_NAMESPACE_PLACEHOLDER, kubernetesNamespace)
-        .replaceAll(SPARK_UI_PORT_PLACEHOLDER, sparkUiPort.toString)
-    } catch {
-      case e: Throwable =>
-        // should never happen
-        error("Failed to build spark app url", e)
-        s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort"
-    }
+    sparkAppUrlPattern
+      .replace("{{SPARK_APP_ID}}", sparkAppId)
+      .replace("{{SPARK_DRIVER_SVC}}", sparkDriverSvc)
+      .replace("{{KUBERNETES_CONTEXT}}", kubernetesContext)
+      .replace("{{KUBERNETES_NAMESPACE}}", kubernetesNamespace)
+      .replace("{{SPARK_UI_PORT}}", sparkUiPort.toString)
   }
 }
