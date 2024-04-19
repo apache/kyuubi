@@ -294,12 +294,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateApplicationState(kubernetesInfo, pod)
-        KubernetesApplicationAuditLogger.audit(
-          kubernetesInfo,
-          pod,
-          appStateSource,
-          appStateContainer)
+        val appInfo = updateApplicationState(kubernetesInfo, pod)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod, appInfo)
       }
     }
 
@@ -309,29 +305,21 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
       if (isSparkEnginePod(pod)) {
-        updateApplicationState(kubernetesInfo, pod)
+        val appInfo = updateApplicationState(kubernetesInfo, pod)
         markApplicationTerminated(pod)
-        KubernetesApplicationAuditLogger.audit(
-          kubernetesInfo,
-          pod,
-          appStateSource,
-          appStateContainer)
+        KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod, appInfo)
       }
     }
   }
 
   private def updatePod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     if (isSparkEnginePod(pod)) {
-      updateApplicationState(kubernetesInfo, pod)
+      val appInfo = updateApplicationState(kubernetesInfo, pod)
       val appState = toApplicationState(pod, appStateSource, appStateContainer)
       if (isTerminated(appState)) {
         markApplicationTerminated(pod)
       }
-      KubernetesApplicationAuditLogger.audit(
-        kubernetesInfo,
-        pod,
-        appStateSource,
-        appStateContainer)
+      KubernetesApplicationAuditLogger.audit(kubernetesInfo, pod, appInfo)
     }
   }
 
@@ -369,7 +357,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     selectors.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && selectors.containsKey(SPARK_APP_ID_LABEL)
   }
 
-  private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+  private def updateApplicationState(
+      kubernetesInfo: KubernetesInfo,
+      pod: Pod): Option[ApplicationInfo] = {
     val (appState, appError) =
       toApplicationStateAndError(pod, appStateSource, appStateContainer)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
@@ -393,6 +383,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             error = appError))
       }
     }
+    Option(appInfoStore.get(kyuubiUniqueKey)).map(_._2)
   }
 
   private def updateApplicationUrl(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
