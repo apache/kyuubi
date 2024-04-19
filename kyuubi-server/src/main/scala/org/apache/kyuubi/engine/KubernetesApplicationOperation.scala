@@ -390,8 +390,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val appUrlPattern = kyuubiConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
         val sparkAppId = svc.getSpec.getSelector.get(SPARK_APP_ID_LABEL)
         val sparkDriverSvc = svc.getMetadata.getName
-        val kubernetesNamespace = kubernetesInfo.context.getOrElse("")
-        val kubernetesContext = kubernetesInfo.namespace.getOrElse("")
+        val kubernetesNamespace = kubernetesInfo.namespace.getOrElse("")
+        val kubernetesContext = kubernetesInfo.context.getOrElse("")
         val appUrl = buildSparkAppUrl(
           appUrlPattern,
           sparkAppId,
