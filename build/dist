@@ -247,7 +247,7 @@ BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
 echo -e "\nBuilding with..."
 # shellcheck disable=SC2145
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
-# "${BUILD_COMMAND[@]}"
+"${BUILD_COMMAND[@]}"
 
 FILTERED_ARGS=()
 # shellcheck disable=SC2045
