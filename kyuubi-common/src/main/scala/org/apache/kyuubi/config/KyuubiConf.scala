@@ -1781,6 +1781,25 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
 
+  val BATCH_INTERNAL_REST_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("kyuubi.batch.internal.rest.client.request.max.attempts")
+      .internal
+      .doc("The internal rest client max attempts number for batch request redirection across" +
+        " Kyuubi instances.")
+      .version("1.10.0")
+      .intConf
+      .createWithDefault(3)
+
+  val BATCH_INTERNAL_REST_CLIENT_REQUEST_ATTEMPT_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.request.attempt.wait")
+      .internal
+      .doc(
+        "The internal rest client wait time between attempts for batch request redirection " +
+          "across Kyuubi instances.")
+      .version("1.10.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
+
   val BATCH_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.check.interval")
       .internal
