@@ -100,11 +100,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         client.pods()
-          .withLabel(LABEL_KYUUBI_UNIQUE_KEY).list().getItems.forEach(updatePod(kubernetesInfo, _))
+          .withLabel(LABEL_KYUUBI_UNIQUE_KEY).list().getItems.forEach(updateEnginePod(
+            kubernetesInfo,
+            _))
         info(s"[$kubernetesInfo] Start Kubernetes Client Pod Informer.")
         val engineSvcInformer = client.services()
           .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
-        client.services().list().getItems.forEach(updateService(kubernetesInfo, _))
+        client.services().list().getItems.forEach(updateEngineSvc(kubernetesInfo, _))
         info(s"[$kubernetesInfo] Start Kubernetes Client Service Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
@@ -304,7 +306,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
-      updatePod(kubernetesInfo, newPod)
+      updateEnginePod(kubernetesInfo, newPod)
     }
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
@@ -320,7 +322,33 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private def updatePod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+  private class SparkEngineSvcEventHandler(kubernetesInfo: KubernetesInfo)
+    extends ResourceEventHandler[Service] {
+
+    override def onAdd(svc: Service): Unit = {
+      updateEngineSvc(kubernetesInfo, svc)
+    }
+
+    override def onUpdate(oldSvc: Service, newSvc: Service): Unit = {
+      updateEngineSvc(kubernetesInfo, newSvc)
+    }
+
+    override def onDelete(svc: Service, deletedFinalStateUnknown: Boolean): Unit = {
+      // do nothing
+    }
+  }
+
+  private def isSparkEnginePod(pod: Pod): Boolean = {
+    val labels = pod.getMetadata.getLabels
+    labels.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && labels.containsKey(SPARK_APP_ID_LABEL)
+  }
+
+  private def isSparkEngineSvc(svc: Service): Boolean = {
+    val selectors = svc.getSpec.getSelector
+    selectors.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && selectors.containsKey(SPARK_APP_ID_LABEL)
+  }
+
+  private def updateEnginePod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     if (isSparkEnginePod(pod)) {
       updateApplicationState(kubernetesInfo, pod)
       val appState = toApplicationState(pod, appStateSource, appStateContainer)
@@ -335,37 +363,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private class SparkEngineSvcEventHandler(kubernetesInfo: KubernetesInfo)
-    extends ResourceEventHandler[Service] {
-
-    override def onAdd(svc: Service): Unit = {
-      updateService(kubernetesInfo, svc)
-    }
-
-    override def onUpdate(oldSvc: Service, newSvc: Service): Unit = {
-      updateService(kubernetesInfo, newSvc)
-    }
-
-    override def onDelete(svc: Service, deletedFinalStateUnknown: Boolean): Unit = {
-      // do nothing
-    }
-  }
-
-  private def updateService(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
+  private def updateEngineSvc(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
     if (isSparkEngineSvc(svc)) {
       updateApplicationUrl(kubernetesInfo, svc)
       KubernetesApplicationAuditLogger.audit(kubernetesInfo, svc)
     }
-  }
-
-  private def isSparkEnginePod(pod: Pod): Boolean = {
-    val labels = pod.getMetadata.getLabels
-    labels.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && labels.containsKey(SPARK_APP_ID_LABEL)
-  }
-
-  private def isSparkEngineSvc(svc: Service): Boolean = {
-    val selectors = svc.getSpec.getSelector
-    selectors.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && selectors.containsKey(SPARK_APP_ID_LABEL)
   }
 
   private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
