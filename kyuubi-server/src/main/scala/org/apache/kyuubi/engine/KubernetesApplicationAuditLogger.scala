@@ -22,7 +22,8 @@ import scala.collection.JavaConverters._
 import io.fabric8.kubernetes.api.model.{Pod, Service}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
 
 object KubernetesApplicationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
@@ -32,7 +33,8 @@ object KubernetesApplicationAuditLogger extends Logging {
   def audit(
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
-      applicationInfo: Option[ApplicationInfo]): Unit = {
+      appStateSource: KubernetesApplicationStateSource,
+      appStateContainer: String): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
     sb.append(s"label=${pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)}").append("\t")
@@ -44,11 +46,11 @@ object KubernetesApplicationAuditLogger extends Logging {
       s"${containerState.getName}->${containerState.getState}"
     }.mkString("[", ",", "]")
     sb.append(s"containers=$containerStatuses").append("\t")
-    sb.append(s"appId=${applicationInfo.map(_.id).getOrElse("")}").append("\t")
-    sb.append(s"appName=${applicationInfo.map(_.name).getOrElse("")}").append("\t")
-    sb.append(s"appState=${applicationInfo.map(_.state).getOrElse("")}").append("\t")
-    sb.append(s"appUrl=${applicationInfo.map(_.url).getOrElse("")}").append("\t")
-    sb.append(s"appError=${applicationInfo.map(_.error).getOrElse("")}")
+    sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
+    val (appState, appError) =
+      toApplicationStateAndError(pod, appStateSource, appStateContainer)
+    sb.append(s"appState=$appState").append("\t")
+    sb.append(s"appError='${appError.getOrElse("")}'")
     info(sb.toString())
   }
 
@@ -59,11 +61,11 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"context=${kubernetesInfo.context.orNull}").append("\t")
     sb.append(s"namespace=${kubernetesInfo.namespace.orNull}").append("\t")
     sb.append(s"svc=${svc.getMetadata.getName}").append("\t")
-    sb.append(s"svcType=${svc.getSpec.getType}").append("\t")
+    sb.append(s"appId=${svc.getSpec.getSelector.get(SPARK_APP_ID_LABEL)}").append("\t")
     val ports = svc.getSpec.getPorts.asScala.map { port =>
       s"${port.getName}/${port.getPort}"
     }.mkString(",")
-    sb.append(s"svcPorts=$ports").append("\n")
+    sb.append(s"svcPorts=$ports")
     info(sb.toString())
   }
 }
