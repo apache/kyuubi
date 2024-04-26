@@ -97,8 +97,9 @@ final class KyuubiTBinaryFrontendService(
 
       respConfiguration.put(KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT, true.toString)
 
-      // KYUUBI-6338: Set default fetch size
-      respConfiguration.put("hive.server2.thrift.resultset.default.fetch.size",
+      // After HIVE-23005, hive driver requires this conf
+      respConfiguration.put(
+        "hive.server2.thrift.resultset.default.fetch.size",
         defaultFetchSize.toString)
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
