@@ -3623,8 +3623,9 @@ object KyuubiConf {
 
   private val HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
     buildConf("hive.server2.thrift.resultset.default.fetch.size")
-      .doc("The number of rows sent in one Fetch RPC call by the server to the client, if not" +
-        " specified by the client. This is a hive server configuration.")
+      .doc("This is a hive server configuration used as a fallback conf" +
+        s" for `${KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE.key}`.")
+      .version("1.9.1")
       .internal
       .serverOnly
       .intConf

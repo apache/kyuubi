@@ -97,7 +97,7 @@ final class KyuubiTBinaryFrontendService(
 
       respConfiguration.put(KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT, true.toString)
 
-      // After HIVE-23005, hive driver requires this conf
+      // HIVE-23005(4.0.0), Hive JDBC driver supposes that server always returns this conf
       respConfiguration.put(
         "hive.server2.thrift.resultset.default.fetch.size",
         defaultFetchSize.toString)
