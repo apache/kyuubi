@@ -1,17 +1,19 @@
-# Original source of this file is https://github.com/cloudera/impyla/blob/master/impala/sasl_compat.py 
+# Original source of this file is https://github.com/cloudera/impyla/blob/master/impala/sasl_compat.py
 # which uses Apache-2.0 license as of 21 May 2023.
-# This code was added to Impyla in 2016 as a compatibility layer to allow use of either python-sasl or pure-sasl 
+# This code was added to Impyla in 2016 as a compatibility layer to allow use of either python-sasl or pure-sasl
 # via PR https://github.com/cloudera/impyla/pull/179
-# Even though thrift_sasl lists pure-sasl as dependency here https://github.com/cloudera/thrift_sasl/blob/master/setup.py#L34 
+# Even though thrift_sasl lists pure-sasl as dependency here https://github.com/cloudera/thrift_sasl/blob/master/setup.py#L34
 # but it still calls functions native to python-sasl in this file https://github.com/cloudera/thrift_sasl/blob/master/thrift_sasl/__init__.py#L82
 # Hence this code is required for the fallback to work.
- 
 
-from puresasl.client import SASLClient, SASLError
+
 from contextlib import contextmanager
 
+from puresasl.client import SASLClient, SASLError
+
+
 @contextmanager
-def error_catcher(self, Exc = Exception):
+def error_catcher(self, Exc=Exception):
     try:
         self.error = None
         yield

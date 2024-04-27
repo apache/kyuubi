@@ -5,42 +5,46 @@ See http://www.python.org/dev/peps/pep-0249/
 Many docstrings in this file are based on the PEP, which is in the public domain.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
 import base64
+import contextlib
 import datetime
+import getpass
+import logging
 import re
+import sys
+from builtins import range
 from decimal import Decimal
 from ssl import CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED, create_default_context
 
-
-from TCLIService import TCLIService
-from TCLIService import constants
-from TCLIService import ttypes
-from pyhive import common
-from pyhive.common import DBAPITypeObject
-# Make all exceptions visible in this module per DB-API
-from pyhive.exc import *  # noqa
-from builtins import range
-import contextlib
-from future.utils import iteritems
-import getpass
-import logging
-import sys
-import thrift.transport.THttpClient
 import thrift.protocol.TBinaryProtocol
+import thrift.transport.THttpClient
 import thrift.transport.TSocket
 import thrift.transport.TTransport
+from future.utils import iteritems
+
+from pyhive import common
+from pyhive.common import DBAPITypeObject
+
+# Make all exceptions visible in this module per DB-API
+from pyhive.exc import (
+    DataError,
+    Error,  # noqa: F401
+    NotSupportedError,
+    OperationalError,
+    ProgrammingError,
+)
+from TCLIService import TCLIService, constants, ttypes
 
 # PEP 249 module globals
-apilevel = '2.0'
+apilevel = "2.0"
 threadsafety = 2  # Threads may share the module and connections.
-paramstyle = 'pyformat'  # Python extended format codes, e.g. ...WHERE name=%(name)s
+paramstyle = "pyformat"  # Python extended format codes, e.g. ...WHERE name=%(name)s
 
 _logger = logging.getLogger(__name__)
 
-_TIMESTAMP_PATTERN = re.compile(r'(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)')
+_TIMESTAMP_PATTERN = re.compile(r"(\d+-\d+-\d+ \d+:\d+:\d+(\.\d{,6})?)")
 
 ssl_cert_parameter_map = {
     "none": CERT_NONE,
@@ -51,14 +55,15 @@ ssl_cert_parameter_map = {
 
 def get_sasl_client(host, sasl_auth, service=None, username=None, password=None):
     import sasl
-    sasl_client = sasl.Client()
-    sasl_client.setAttr('host', host)
 
-    if sasl_auth == 'GSSAPI':
-        sasl_client.setAttr('service', service)
-    elif sasl_auth == 'PLAIN':
-        sasl_client.setAttr('username', username)
-        sasl_client.setAttr('password', password)
+    sasl_client = sasl.Client()
+    sasl_client.setAttr("host", host)
+
+    if sasl_auth == "GSSAPI":
+        sasl_client.setAttr("service", service)
+    elif sasl_auth == "PLAIN":
+        sasl_client.setAttr("username", username)
+        sasl_client.setAttr("password", password)
     else:
         raise ValueError("sasl_auth only supports GSSAPI and PLAIN")
 
@@ -69,10 +74,10 @@ def get_sasl_client(host, sasl_auth, service=None, username=None, password=None)
 def get_pure_sasl_client(host, sasl_auth, service=None, username=None, password=None):
     from pyhive.sasl_compat import PureSASLClient
 
-    if sasl_auth == 'GSSAPI':
-        sasl_kwargs = {'service': service}
-    elif sasl_auth == 'PLAIN':
-        sasl_kwargs = {'username': username, 'password': password}
+    if sasl_auth == "GSSAPI":
+        sasl_kwargs = {"service": service}
+    elif sasl_auth == "PLAIN":
+        sasl_kwargs = {"username": username, "password": password}
     else:
         raise ValueError("sasl_auth only supports GSSAPI and PLAIN")
 
@@ -81,34 +86,44 @@ def get_pure_sasl_client(host, sasl_auth, service=None, username=None, password=
 
 def get_installed_sasl(host, sasl_auth, service=None, username=None, password=None):
     try:
-        return get_sasl_client(host=host, sasl_auth=sasl_auth, service=service, username=username, password=password)
+        return get_sasl_client(
+            host=host,
+            sasl_auth=sasl_auth,
+            service=service,
+            username=username,
+            password=password,
+        )
         # The sasl library is available
     except ImportError:
         # Fallback to pure-sasl library
-        return get_pure_sasl_client(host=host, sasl_auth=sasl_auth, service=service, username=username, password=password)
-    
+        return get_pure_sasl_client(
+            host=host,
+            sasl_auth=sasl_auth,
+            service=service,
+            username=username,
+            password=password,
+        )
+
 
 def _parse_timestamp(value):
     if value:
         match = _TIMESTAMP_PATTERN.match(value)
         if match:
             if match.group(2):
-                format = '%Y-%m-%d %H:%M:%S.%f'
+                format = "%Y-%m-%d %H:%M:%S.%f"
                 # use the pattern to truncate the value
                 value = match.group()
             else:
-                format = '%Y-%m-%d %H:%M:%S'
+                format = "%Y-%m-%d %H:%M:%S"
             value = datetime.datetime.strptime(value, format)
         else:
-            raise Exception(
-                'Cannot convert "{}" into a datetime'.format(value))
+            raise Exception('Cannot convert "{}" into a datetime'.format(value))
     else:
         value = None
     return value
 
 
-TYPES_CONVERTER = {"DECIMAL_TYPE": Decimal,
-                   "TIMESTAMP_TYPE": _parse_timestamp}
+TYPES_CONVERTER = {"DECIMAL_TYPE": Decimal, "TIMESTAMP_TYPE": _parse_timestamp}
 
 
 class HiveParamEscaper(common.ParamEscaper):
@@ -120,14 +135,13 @@ class HiveParamEscaper(common.ParamEscaper):
         # as byte strings. The old version always encodes Unicode as byte strings, which breaks
         # string formatting here.
         if isinstance(item, bytes):
-            item = item.decode('utf-8')
+            item = item.decode("utf-8")
         return "'{}'".format(
-            item
-            .replace('\\', '\\\\')
+            item.replace("\\", "\\\\")
             .replace("'", "\\'")
-            .replace('\r', '\\r')
-            .replace('\n', '\\n')
-            .replace('\t', '\\t')
+            .replace("\r", "\\r")
+            .replace("\n", "\\n")
+            .replace("\t", "\\t")
         )
 
 
@@ -152,14 +166,14 @@ class Connection(object):
         port=None,
         scheme=None,
         username=None,
-        database='default',
+        database="default",
         auth=None,
         configuration=None,
         kerberos_service_name=None,
         password=None,
         check_hostname=None,
         ssl_cert=None,
-        thrift_transport=None
+        thrift_transport=None,
     ):
         """Connect to HiveServer2
 
@@ -184,7 +198,9 @@ class Connection(object):
                 ssl_context = create_default_context()
                 ssl_context.check_hostname = check_hostname == "true"
                 ssl_cert = ssl_cert or "none"
-                ssl_context.verify_mode = ssl_cert_parameter_map.get(ssl_cert, CERT_NONE)
+                ssl_context.verify_mode = ssl_cert_parameter_map.get(
+                    ssl_cert, CERT_NONE
+                )
             thrift_transport = thrift.transport.THttpClient.THttpClient(
                 uri_or_host="{scheme}://{host}:{port}/cliservice/".format(
                     scheme=scheme, host=host, port=port
@@ -203,17 +219,25 @@ class Connection(object):
                     "BASIC, NOSASL, KERBEROS, NONE"
                 )
             host, port, auth, kerberos_service_name, password = (
-                None, None, None, None, None
+                None,
+                None,
+                None,
+                None,
+                None,
             )
 
         username = username or getpass.getuser()
         configuration = configuration or {}
 
-        if (password is not None) != (auth in ('LDAP', 'CUSTOM')):
-            raise ValueError("Password should be set if and only if in LDAP or CUSTOM mode; "
-                             "Remove password or use one of those modes")
-        if (kerberos_service_name is not None) != (auth == 'KERBEROS'):
-            raise ValueError("kerberos_service_name should be set if and only if in KERBEROS mode")
+        if (password is not None) != (auth in ("LDAP", "CUSTOM")):
+            raise ValueError(
+                "Password should be set if and only if in LDAP or CUSTOM mode; "
+                "Remove password or use one of those modes"
+            )
+        if (kerberos_service_name is not None) != (auth == "KERBEROS"):
+            raise ValueError(
+                "kerberos_service_name should be set if and only if in KERBEROS mode"
+            )
         if thrift_transport is not None:
             has_incompatible_arg = (
                 host is not None
@@ -223,8 +247,10 @@ class Connection(object):
                 or password is not None
             )
             if has_incompatible_arg:
-                raise ValueError("thrift_transport cannot be used with "
-                                 "host/port/auth/kerberos_service_name/password")
+                raise ValueError(
+                    "thrift_transport cannot be used with "
+                    "host/port/auth/kerberos_service_name/password"
+                )
 
         if thrift_transport is not None:
             self._transport = thrift_transport
@@ -232,32 +258,43 @@ class Connection(object):
             if port is None:
                 port = 10000
             if auth is None:
-                auth = 'NONE'
+                auth = "NONE"
             socket = thrift.transport.TSocket.TSocket(host, port)
-            if auth == 'NOSASL':
+            if auth == "NOSASL":
                 # NOSASL corresponds to hive.server2.authentication=NOSASL in hive-site.xml
                 self._transport = thrift.transport.TTransport.TBufferedTransport(socket)
-            elif auth in ('LDAP', 'KERBEROS', 'NONE', 'CUSTOM'):
+            elif auth in ("LDAP", "KERBEROS", "NONE", "CUSTOM"):
                 # Defer import so package dependency is optional
                 import thrift_sasl
 
-                if auth == 'KERBEROS':
+                if auth == "KERBEROS":
                     # KERBEROS mode in hive.server2.authentication is GSSAPI in sasl library
-                    sasl_auth = 'GSSAPI'
+                    sasl_auth = "GSSAPI"
                 else:
-                    sasl_auth = 'PLAIN'
+                    sasl_auth = "PLAIN"
                     if password is None:
                         # Password doesn't matter in NONE mode, just needs to be nonempty.
-                        password = 'x'
-                
-                self._transport = thrift_sasl.TSaslClientTransport(lambda: get_installed_sasl(host=host, sasl_auth=sasl_auth, service=kerberos_service_name, username=username, password=password), sasl_auth, socket)
+                        password = "x"
+
+                self._transport = thrift_sasl.TSaslClientTransport(
+                    lambda: get_installed_sasl(
+                        host=host,
+                        sasl_auth=sasl_auth,
+                        service=kerberos_service_name,
+                        username=username,
+                        password=password,
+                    ),
+                    sasl_auth,
+                    socket,
+                )
             else:
                 # All HS2 config options:
                 # https://cwiki.apache.org/confluence/display/Hive/Setting+Up+HiveServer2#SettingUpHiveServer2-Configuration
                 # PAM currently left to end user via thrift_transport option.
                 raise NotImplementedError(
                     "Only NONE, NOSASL, LDAP, KERBEROS, CUSTOM "
-                    "authentication are supported, got {}".format(auth))
+                    "authentication are supported, got {}".format(auth)
+                )
 
         protocol = thrift.protocol.TBinaryProtocol.TBinaryProtocol(self._transport)
         self._client = TCLIService.Client(protocol)
@@ -274,12 +311,17 @@ class Connection(object):
             )
             response = self._client.OpenSession(open_session_req)
             _check_status(response)
-            assert response.sessionHandle is not None, "Expected a session from OpenSession"
+            assert (
+                response.sessionHandle is not None
+            ), "Expected a session from OpenSession"
             self._sessionHandle = response.sessionHandle
-            assert response.serverProtocolVersion == protocol_version, \
-                "Unable to handle protocol version {}".format(response.serverProtocolVersion)
+            assert (
+                response.serverProtocolVersion == protocol_version
+            ), "Unable to handle protocol version {}".format(
+                response.serverProtocolVersion
+            )
             with contextlib.closing(self.cursor()) as cursor:
-                cursor.execute('USE `{}`'.format(database))
+                cursor.execute("USE `{}`".format(database))
         except:
             self._transport.close()
             raise
@@ -316,11 +358,7 @@ class Connection(object):
         auth_header = kerberos.authGSSClientResponse(krb_context)
 
         transport.setCustomHeaders(
-            {
-                "Authorization": "Negotiate {auth_header}".format(
-                    auth_header=auth_header
-                )
-            }
+            {"Authorization": "Negotiate {auth_header}".format(auth_header=auth_header)}
         )
 
     def __enter__(self):
@@ -429,15 +467,27 @@ class Cursor(common.DBAPICursor):
                 primary_type_entry = col.typeDesc.types[0]
                 if primary_type_entry.primitiveEntry is None:
                     # All fancy stuff maps to string
-                    type_code = ttypes.TTypeId._VALUES_TO_NAMES[ttypes.TTypeId.STRING_TYPE]
+                    type_code = ttypes.TTypeId._VALUES_TO_NAMES[
+                        ttypes.TTypeId.STRING_TYPE
+                    ]
                 else:
                     type_id = primary_type_entry.primitiveEntry.type
                     type_code = ttypes.TTypeId._VALUES_TO_NAMES[type_id]
-                self._description.append((
-                    col.columnName.decode('utf-8') if sys.version_info[0] == 2 else col.columnName,
-                    type_code.decode('utf-8') if sys.version_info[0] == 2 else type_code,
-                    None, None, None, None, True
-                ))
+                self._description.append(
+                    (
+                        col.columnName.decode("utf-8")
+                        if sys.version_info[0] == 2
+                        else col.columnName,
+                        type_code.decode("utf-8")
+                        if sys.version_info[0] == 2
+                        else type_code,
+                        None,
+                        None,
+                        None,
+                        None,
+                        True,
+                    )
+                )
         return self._description
 
     def __enter__(self):
@@ -456,7 +506,7 @@ class Cursor(common.DBAPICursor):
         Return values are not defined.
         """
         # backward compatibility with Python < 3.7
-        for kw in ['async', 'async_']:
+        for kw in ["async", "async_"]:
             if kw in kwargs:
                 async_ = kwargs[kw]
                 break
@@ -472,10 +522,11 @@ class Cursor(common.DBAPICursor):
         self._reset_state()
 
         self._state = self._STATE_RUNNING
-        _logger.info('%s', sql)
+        _logger.info("%s", sql)
 
-        req = ttypes.TExecuteStatementReq(self._connection.sessionHandle,
-                                          sql, runAsync=async_)
+        req = ttypes.TExecuteStatementReq(
+            self._connection.sessionHandle, sql, runAsync=async_
+        )
         _logger.debug(req)
         response = self._connection.client.ExecuteStatement(req)
         _check_status(response)
@@ -490,8 +541,12 @@ class Cursor(common.DBAPICursor):
 
     def _fetch_more(self):
         """Send another TFetchResultsReq and update state"""
-        assert(self._state == self._STATE_RUNNING), "Should be running when in _fetch_more"
-        assert(self._operationHandle is not None), "Should have an op handle in _fetch_more"
+        assert (
+            self._state == self._STATE_RUNNING
+        ), "Should be running when in _fetch_more"
+        assert (
+            self._operationHandle is not None
+        ), "Should have an op handle in _fetch_more"
         if not self._operationHandle.hasResultSet:
             raise ProgrammingError("No result set")
         req = ttypes.TFetchResultsReq(
@@ -502,9 +557,11 @@ class Cursor(common.DBAPICursor):
         response = self._connection.client.FetchResults(req)
         _check_status(response)
         schema = self.description
-        assert not response.results.rows, 'expected data in columnar format'
-        columns = [_unwrap_column(col, col_schema[1]) for col, col_schema in
-                   zip(response.results.columns, schema)]
+        assert not response.results.rows, "expected data in columnar format"
+        columns = [
+            _unwrap_column(col, col_schema[1])
+            for col, col_schema in zip(response.results.columns, schema)
+        ]
         new_data = list(zip(*columns))
         self._data += new_data
         # response.hasMoreRows seems to always be False, so we instead check the number of rows
@@ -546,7 +603,9 @@ class Cursor(common.DBAPICursor):
         try:  # Older Hive instances require logs to be retrieved using GetLog
             req = ttypes.TGetLogReq(operationHandle=self._operationHandle)
             logs = self._connection.client.GetLog(req).log.splitlines()
-        except ttypes.TApplicationException as e:  # Otherwise, retrieve logs using newer method
+        except (
+            ttypes.TApplicationException
+        ) as e:  # Otherwise, retrieve logs using newer method
             if e.type != ttypes.TApplicationException.UNKNOWN_METHOD:
                 raise
             logs = []
@@ -555,11 +614,11 @@ class Cursor(common.DBAPICursor):
                     operationHandle=self._operationHandle,
                     orientation=ttypes.TFetchOrientation.FETCH_NEXT,
                     maxRows=self.arraysize,
-                    fetchType=1  # 0: results, 1: logs
+                    fetchType=1,  # 0: results, 1: logs
                 )
                 response = self._connection.client.FetchResults(req)
                 _check_status(response)
-                assert not response.results.rows, 'expected data in columnar format'
+                assert not response.results.rows, "expected data in columnar format"
                 assert len(response.results.columns) == 1, response.results.columns
                 new_logs = _unwrap_column(response.results.columns[0])
                 logs += new_logs

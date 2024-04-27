@@ -5,45 +5,45 @@ https://github.com/zzzeek/sqlalchemy/blob/rel_0_5/lib/sqlalchemy/databases/sqlit
 which is released under the MIT license.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
-import re
-from sqlalchemy import exc
 from sqlalchemy import types
-from sqlalchemy import util
+
 # TODO shouldn't use mysql type
 try:
     from sqlalchemy.databases import mysql
+
     mysql_tinyinteger = mysql.MSTinyInteger
 except ImportError:
     # Required for SQLAlchemy>=2.0
     from sqlalchemy.dialects import mysql
+
     mysql_tinyinteger = mysql.base.MSTinyInteger
-from sqlalchemy.engine import default
-from sqlalchemy.sql import compiler
-from sqlalchemy.sql.compiler import SQLCompiler
 
 from pyhive import trino
-from pyhive.common import UniversalSet
-from pyhive.sqlalchemy_presto import PrestoDialect, PrestoCompiler, PrestoIdentifierPreparer
+from pyhive.sqlalchemy_presto import (
+    PrestoCompiler,
+    PrestoDialect,
+    PrestoIdentifierPreparer,
+)
+
 
 class TrinoIdentifierPreparer(PrestoIdentifierPreparer):
     pass
 
 
 _type_map = {
-    'boolean': types.Boolean,
-    'tinyint': mysql_tinyinteger,
-    'smallint': types.SmallInteger,
-    'integer': types.Integer,
-    'bigint': types.BigInteger,
-    'real': types.Float,
-    'double': types.Float,
-    'varchar': types.String,
-    'timestamp': types.TIMESTAMP,
-    'date': types.DATE,
-    'varbinary': types.VARBINARY,
+    "boolean": types.Boolean,
+    "tinyint": mysql_tinyinteger,
+    "smallint": types.SmallInteger,
+    "integer": types.Integer,
+    "bigint": types.BigInteger,
+    "real": types.Float,
+    "double": types.Float,
+    "varchar": types.String,
+    "timestamp": types.TIMESTAMP,
+    "date": types.DATE,
+    "varbinary": types.VARBINARY,
 }
 
 
@@ -62,23 +62,23 @@ class TrinoTypeCompiler(PrestoCompiler):
         raise ValueError("Trino does not support the DATETIME column type.")
 
     def visit_FLOAT(self, type_, **kw):
-        return 'DOUBLE'
+        return "DOUBLE"
 
     def visit_TEXT(self, type_, **kw):
         if type_.length:
-            return 'VARCHAR({:d})'.format(type_.length)
+            return "VARCHAR({:d})".format(type_.length)
         else:
-            return 'VARCHAR'
+            return "VARCHAR"
 
 
 class TrinoDialect(PrestoDialect):
-    name = 'trino'
+    name = "trino"
     supports_statement_cache = False
 
     @classmethod
     def dbapi(cls):
         return trino
-    
+
     @classmethod
     def import_dbapi(cls):
-        return trino    
+        return trino

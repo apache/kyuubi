@@ -5,23 +5,30 @@ See http://www.python.org/dev/peps/pep-0249/
 Many docstrings in this file are based on the PEP, which is in the public domain.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
+from __future__ import absolute_import, unicode_literals
 
+import base64
+import datetime
+import getpass
+import logging
+import os
 from builtins import object
 from decimal import Decimal
 
-from pyhive import common
-from pyhive.common import DBAPITypeObject
-# Make all exceptions visible in this module per DB-API
-from pyhive.exc import *  # noqa
-import base64
-import getpass
-import datetime
-import logging
 import requests
 from requests.auth import HTTPBasicAuth
-import os
+
+from pyhive import common
+from pyhive.common import DBAPITypeObject
+
+# Make all exceptions visible in this module per DB-API
+from pyhive.exc import (
+    DatabaseError,
+    Error,  # noqa: F401
+    NotSupportedError,
+    OperationalError,
+    ProgrammingError,
+)
 
 try:  # Python 3
     import urllib.parse as urlparse
@@ -30,17 +37,18 @@ except ImportError:  # Python 2
 
 
 # PEP 249 module globals
-apilevel = '2.0'
+apilevel = "2.0"
 threadsafety = 2  # Threads may share the module and connections.
-paramstyle = 'pyformat'  # Python extended format codes, e.g. ...WHERE name=%(name)s
+paramstyle = "pyformat"  # Python extended format codes, e.g. ...WHERE name=%(name)s
 
 _logger = logging.getLogger(__name__)
 
 TYPES_CONVERTER = {
     "decimal": Decimal,
     # As of Presto 0.69, binary data is returned as the varbinary type in base64 format
-    "varbinary": base64.b64decode
+    "varbinary": base64.b64decode,
 }
+
 
 class PrestoParamEscaper(common.ParamEscaper):
     def escape_datetime(self, item, format):
@@ -96,12 +104,28 @@ class Cursor(common.DBAPICursor):
     visible by other cursors or connections.
     """
 
-    def __init__(self, host, port='8080', username=None, principal_username=None, catalog='hive',
-                 schema='default', poll_interval=1, source='pyhive', session_props=None,
-                 protocol='http', password=None, requests_session=None, requests_kwargs=None,
-                 KerberosRemoteServiceName=None, KerberosPrincipal=None,
-                 KerberosConfigPath=None, KerberosKeytabPath=None,
-                 KerberosCredentialCachePath=None, KerberosUseCanonicalHostname=None):
+    def __init__(
+        self,
+        host,
+        port="8080",
+        username=None,
+        principal_username=None,
+        catalog="hive",
+        schema="default",
+        poll_interval=1,
+        source="pyhive",
+        session_props=None,
+        protocol="http",
+        password=None,
+        requests_session=None,
+        requests_kwargs=None,
+        KerberosRemoteServiceName=None,
+        KerberosPrincipal=None,
+        KerberosConfigPath=None,
+        KerberosKeytabPath=None,
+        KerberosCredentialCachePath=None,
+        KerberosUseCanonicalHostname=None,
+    ):
         """
         :param host: hostname to connect to, e.g. ``presto.example.com``
         :param port: int -- port, defaults to 8080
@@ -164,7 +188,7 @@ class Cursor(common.DBAPICursor):
         self._session_props = session_props if session_props is not None else {}
         self.last_query_id = None
 
-        if protocol not in ('http', 'https'):
+        if protocol not in ("http", "https"):
             raise ValueError("Protocol must be http/https, was {!r}".format(protocol))
         self._protocol = protocol
 
@@ -173,33 +197,39 @@ class Cursor(common.DBAPICursor):
         requests_kwargs = dict(requests_kwargs) if requests_kwargs is not None else {}
 
         if KerberosRemoteServiceName is not None:
-            from requests_kerberos import HTTPKerberosAuth, OPTIONAL
+            from requests_kerberos import OPTIONAL, HTTPKerberosAuth
 
             hostname_override = None
-            if KerberosUseCanonicalHostname is not None \
-                    and KerberosUseCanonicalHostname.lower() == 'false':
+            if (
+                KerberosUseCanonicalHostname is not None
+                and KerberosUseCanonicalHostname.lower() == "false"
+            ):
                 hostname_override = host
             if KerberosConfigPath is not None:
-                os.environ['KRB5_CONFIG'] = KerberosConfigPath
+                os.environ["KRB5_CONFIG"] = KerberosConfigPath
             if KerberosKeytabPath is not None:
-                os.environ['KRB5_CLIENT_KTNAME'] = KerberosKeytabPath
+                os.environ["KRB5_CLIENT_KTNAME"] = KerberosKeytabPath
             if KerberosCredentialCachePath is not None:
-                os.environ['KRB5CCNAME'] = KerberosCredentialCachePath
+                os.environ["KRB5CCNAME"] = KerberosCredentialCachePath
 
-            requests_kwargs['auth'] = HTTPKerberosAuth(mutual_authentication=OPTIONAL,
-                                                       principal=KerberosPrincipal,
-                                                       service=KerberosRemoteServiceName,
-                                                       hostname_override=hostname_override)
+            requests_kwargs["auth"] = HTTPKerberosAuth(
+                mutual_authentication=OPTIONAL,
+                principal=KerberosPrincipal,
+                service=KerberosRemoteServiceName,
+                hostname_override=hostname_override,
+            )
 
         else:
-            if password is not None and 'auth' in requests_kwargs:
-                raise ValueError("Cannot use both password and requests_kwargs authentication")
-            for k in ('method', 'url', 'data', 'headers'):
+            if password is not None and "auth" in requests_kwargs:
+                raise ValueError(
+                    "Cannot use both password and requests_kwargs authentication"
+                )
+            for k in ("method", "url", "data", "headers"):
                 if k in requests_kwargs:
                     raise ValueError("Cannot override requests argument {}".format(k))
             if password is not None:
-                requests_kwargs['auth'] = HTTPBasicAuth(username, password)
-                if protocol != 'https':
+                requests_kwargs["auth"] = HTTPBasicAuth(username, password)
+                if protocol != "https":
                     raise ValueError("Protocol must be https when passing a password")
         self._requests_kwargs = requests_kwargs
 
@@ -230,14 +260,14 @@ class Cursor(common.DBAPICursor):
         """
         # Sleep until we're done or we got the columns
         self._fetch_while(
-            lambda: self._columns is None and
-            self._state not in (self._STATE_NONE, self._STATE_FINISHED)
+            lambda: self._columns is None
+            and self._state not in (self._STATE_NONE, self._STATE_FINISHED)
         )
         if self._columns is None:
             return None
         return [
             # name, type_code, display_size, internal_size, precision, scale, null_ok
-            (col['name'], col['type'], None, None, None, None, True)
+            (col["name"], col["type"], None, None, None, None, True)
             for col in self._columns
         ]
 
@@ -247,15 +277,15 @@ class Cursor(common.DBAPICursor):
         Return values are not defined.
         """
         headers = {
-            'X-Presto-Catalog': self._catalog,
-            'X-Presto-Schema': self._schema,
-            'X-Presto-Source': self._source,
-            'X-Presto-User': self._username,
+            "X-Presto-Catalog": self._catalog,
+            "X-Presto-Schema": self._schema,
+            "X-Presto-Source": self._source,
+            "X-Presto-User": self._username,
         }
 
         if self._session_props:
-            headers['X-Presto-Session'] = ','.join(
-                '{}={}'.format(propname, propval)
+            headers["X-Presto-Session"] = ",".join(
+                "{}={}".format(propname, propval)
                 for propname, propval in self._session_props.items()
             )
 
@@ -268,20 +298,30 @@ class Cursor(common.DBAPICursor):
         self._reset_state()
 
         self._state = self._STATE_RUNNING
-        url = urlparse.urlunparse((
-            self._protocol,
-            '{}:{}'.format(self._host, self._port), '/v1/statement', None, None, None))
-        _logger.info('%s', sql)
+        url = urlparse.urlunparse(
+            (
+                self._protocol,
+                "{}:{}".format(self._host, self._port),
+                "/v1/statement",
+                None,
+                None,
+                None,
+            )
+        )
+        _logger.info("%s", sql)
         _logger.debug("Headers: %s", headers)
         response = self._requests_session.post(
-            url, data=sql.encode('utf-8'), headers=headers, **self._requests_kwargs)
+            url, data=sql.encode("utf-8"), headers=headers, **self._requests_kwargs
+        )
         self._process_response(response)
 
     def cancel(self):
         if self._state == self._STATE_NONE:
             raise ProgrammingError("No query yet")
         if self._nextUri is None:
-            assert self._state == self._STATE_FINISHED, "Should be finished if nextUri is None"
+            assert (
+                self._state == self._STATE_FINISHED
+            ), "Should be finished if nextUri is None"
             return
 
         response = self._requests_session.delete(self._nextUri, **self._requests_kwargs)
@@ -304,7 +344,9 @@ class Cursor(common.DBAPICursor):
         if self._state == self._STATE_NONE:
             raise ProgrammingError("No query yet")
         if self._nextUri is None:
-            assert self._state == self._STATE_FINISHED, "Should be finished if nextUri is None"
+            assert (
+                self._state == self._STATE_FINISHED
+            ), "Should be finished if nextUri is None"
             return None
         response = self._requests_session.get(self._nextUri, **self._requests_kwargs)
         self._process_response(response)
@@ -312,7 +354,9 @@ class Cursor(common.DBAPICursor):
 
     def _fetch_more(self):
         """Fetch the next URI and update state"""
-        self._process_response(self._requests_session.get(self._nextUri, **self._requests_kwargs))
+        self._process_response(
+            self._requests_session.get(self._nextUri, **self._requests_kwargs)
+        )
 
     def _process_data(self, rows):
         for i, col in enumerate(self.description):
@@ -333,26 +377,28 @@ class Cursor(common.DBAPICursor):
 
         response_json = response.json()
         _logger.debug("Got response %s", response_json)
-        assert self._state == self._STATE_RUNNING, "Should be running if processing response"
-        self._nextUri = response_json.get('nextUri')
-        self._columns = response_json.get('columns')
-        if 'id' in response_json:
-            self.last_query_id = response_json['id']
-        if 'X-Presto-Clear-Session' in response.headers:
-            propname = response.headers['X-Presto-Clear-Session']
+        assert (
+            self._state == self._STATE_RUNNING
+        ), "Should be running if processing response"
+        self._nextUri = response_json.get("nextUri")
+        self._columns = response_json.get("columns")
+        if "id" in response_json:
+            self.last_query_id = response_json["id"]
+        if "X-Presto-Clear-Session" in response.headers:
+            propname = response.headers["X-Presto-Clear-Session"]
             self._session_props.pop(propname, None)
-        if 'X-Presto-Set-Session' in response.headers:
-            propname, propval = response.headers['X-Presto-Set-Session'].split('=', 1)
+        if "X-Presto-Set-Session" in response.headers:
+            propname, propval = response.headers["X-Presto-Set-Session"].split("=", 1)
             self._session_props[propname] = propval
-        if 'data' in response_json:
+        if "data" in response_json:
             assert self._columns
-            new_data = response_json['data']
+            new_data = response_json["data"]
             self._process_data(new_data)
             self._data += map(tuple, new_data)
-        if 'nextUri' not in response_json:
+        if "nextUri" not in response_json:
             self._state = self._STATE_FINISHED
-        if 'error' in response_json:
-            raise DatabaseError(response_json['error'])
+        if "error" in response_json:
+            raise DatabaseError(response_json["error"])
 
 
 #
@@ -361,7 +407,7 @@ class Cursor(common.DBAPICursor):
 
 
 # See types in presto-main/src/main/java/com/facebook/presto/tuple/TupleInfo.java
-FIXED_INT_64 = DBAPITypeObject(['bigint'])
-VARIABLE_BINARY = DBAPITypeObject(['varchar'])
-DOUBLE = DBAPITypeObject(['double'])
-BOOLEAN = DBAPITypeObject(['boolean'])
+FIXED_INT_64 = DBAPITypeObject(["bigint"])
+VARIABLE_BINARY = DBAPITypeObject(["varchar"])
+DOUBLE = DBAPITypeObject(["double"])
+BOOLEAN = DBAPITypeObject(["boolean"])

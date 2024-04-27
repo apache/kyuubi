@@ -3,20 +3,19 @@
 Many docstrings in this file are based on PEP-249, which is in the public domain.
 """
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from builtins import bytes
-from builtins import int
-from builtins import object
-from builtins import str
-from past.builtins import basestring
-from pyhive import exc
+from __future__ import absolute_import, unicode_literals
+
 import abc
 import collections
-import time
 import datetime
-from future.utils import with_metaclass
+import time
+from builtins import bytes, int, object, str
 from itertools import islice
+
+from future.utils import with_metaclass
+from past.builtins import basestring
+
+from pyhive import exc
 
 try:
     from collections.abc import Iterable
@@ -108,7 +107,9 @@ class DBAPICursor(with_metaclass(abc.ABCMeta, object)):
             raise exc.ProgrammingError("No query yet")
 
         # Sleep until we're done or we have some data to return
-        self._fetch_while(lambda: not self._data and self._state != self._STATE_FINISHED)
+        self._fetch_while(
+            lambda: not self._data and self._state != self._STATE_FINISHED
+        )
 
         if not self._data:
             return None
@@ -217,7 +218,9 @@ class ParamEscaper(object):
         elif isinstance(parameters, (list, tuple)):
             return tuple(self.escape_item(x) for x in parameters)
         else:
-            raise exc.ProgrammingError("Unsupported param format: {}".format(parameters))
+            raise exc.ProgrammingError(
+                "Unsupported param format: {}".format(parameters)
+            )
 
     def escape_number(self, item):
         return item
@@ -228,7 +231,7 @@ class ParamEscaper(object):
         # as byte strings. The old version always encodes Unicode as byte strings, which breaks
         # string formatting here.
         if isinstance(item, bytes):
-            item = item.decode('utf-8')
+            item = item.decode("utf-8")
         # This is good enough when backslashes are literal, newlines are just followed, and the way
         # to escape a single quote is to put two single quotes.
         # (i.e. only special character is single quote)
@@ -236,7 +239,7 @@ class ParamEscaper(object):
 
     def escape_sequence(self, item):
         l = map(str, map(self.escape_item, item))
-        return '(' + ','.join(l) + ')'
+        return "(" + ",".join(l) + ")"
 
     def escape_datetime(self, item, format, cutoff=0):
         dt_str = item.strftime(format)
@@ -245,7 +248,7 @@ class ParamEscaper(object):
 
     def escape_item(self, item):
         if item is None:
-            return 'NULL'
+            return "NULL"
         elif isinstance(item, (int, float)):
             return self.escape_number(item)
         elif isinstance(item, basestring):
@@ -262,5 +265,6 @@ class ParamEscaper(object):
 
 class UniversalSet(object):
     """set containing everything"""
+
     def __contains__(self, item):
         return True
