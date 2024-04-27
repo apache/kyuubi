@@ -62,6 +62,38 @@ function exit_with_usage {
   exit 1
 }
 
+function filter_args() {
+  local filtered_args=()
+  # shellcheck disable=SC2045
+  for arg in "$@"; do
+    # If it is the case of -P scala-2.13
+    if [[ $arg == -P ]]; then
+      echo "Please follow this command example to use the -P parameter: '-Pscala-2.13,spark-3.2'(no space)"
+      exit 1
+    #  the case -Pscala-2.13,spark-2.3 filter scala-*
+    elif [[ $arg =~ -P.*scala.* ]]; then
+      params_string="${arg#-P}"
+      IFS=',' read -r -a params_array <<< "$params_string"
+      # shellcheck disable=SC2045
+      for param in "${params_array[@]}"; do
+          if [[ $param != *scala* ]]; then
+            if [[ -z "$result" ]]; then
+              result="-P$param"
+            else
+              result="$result,$param"
+            fi
+          fi
+      done
+      filtered_args+=("$result")
+    elif [[ $arg =~ -Dscala.binary.version=.* ]]; then
+      continue
+    else
+      filtered_args+=("$arg")
+    fi
+  done
+  echo "${filtered_args[@]}"
+}
+
 
 # Parse arguments
 while (( "$#" )); do
@@ -249,24 +281,19 @@ echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 "${BUILD_COMMAND[@]}"
 
-FILTERED_ARGS=()
-# shellcheck disable=SC2045
-for arg in "$@"; do
-    if [[ $arg != -Pscala* ]]; then
-        FILTERED_ARGS+=("$arg")
-    fi
-done
+FILTERED_ARGS=$(filter_args $@)
+
 # shellcheck disable=SC2050
 if [ "$SCALA_VERSION" = "2.12" ]; then
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT -Pscala-2.13 ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.13 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -Pscala2.13  -pl :kyuubi-spark-sql-engine_2.13 -am)
 else
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT -pl ${FILTERED_ARGS[@]} :kyuubi-spark-sql-engine_2.12 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
 fi
 
 # shellcheck disable=SC2145
 echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
 
-"${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
+ "${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
@@ -415,3 +442,4 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi
+
