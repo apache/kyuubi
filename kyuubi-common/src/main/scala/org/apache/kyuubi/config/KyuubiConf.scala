@@ -2278,7 +2278,7 @@ object KyuubiConf {
 
   val ENGINE_REPORT_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.engine.report.interval")
-      .doc("The check interval for engine report to the server")
+      .doc("The interval for the engine to report metrics when using the ADAPTIVE select policy.")
       .version("1.10.0")
       .timeConf
       .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")

@@ -384,8 +384,8 @@ private[kyuubi] class EngineRef(
 
   private def getAdaptivePoolId(poolSize: Int): Int = {
     val sessionThreshold = conf.get(ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD)
-    val metricsSpace =
-      s"/metrics/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType/$sessionUser"
+    val metricsSpace = Utils.concatEngineMetricsPath(
+      s"/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType/$sessionUser")
     DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
       tryWithLock(client) {
         if (client.pathNonExists(metricsSpace)) {
@@ -409,7 +409,7 @@ private[kyuubi] class EngineRef(
               val candidate = engineMetricsMap.filter(_.contains("poolID"))
                 .minBy { map =>
                   (
-                    map.getOrElse("openSessionCount", sessionThreshold),
+                    map.getOrElse("openSessionCount", 0),
                     map.getOrElse("activeTask", 0))
                 }
               if ((candidate.nonEmpty && candidate("openSessionCount") < sessionThreshold) ||

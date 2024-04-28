@@ -181,7 +181,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val interval = conf.get(ENGINE_REPORT_INTERVAL)
     val engineSpace = conf.get(HA_NAMESPACE)
     val statusTracker = spark.sparkContext.statusTracker
-    val metricsSpace = s"/metrics$engineSpace"
+    val metricsSpace = Utils.concatEngineMetricsPath(engineSpace)
     val report: Runnable = () => {
       if (!shutdown.get) {
         val openSessionCount = backendService.sessionManager.getOpenSessionCount
@@ -198,7 +198,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             client.create(metricsSpace, "PERSISTENT")
           }
           client.setData(
-            s"/metrics$engineSpace",
+            Utils.concatEngineMetricsPath(engineSpace),
             engineMetrics.getBytes)
         }
       }
