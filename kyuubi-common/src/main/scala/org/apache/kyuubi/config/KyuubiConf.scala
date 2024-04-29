@@ -3620,4 +3620,23 @@ object KyuubiConf {
       .version("1.8.1")
       .booleanConf
       .createWithDefault(false)
+
+  private val HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("hive.server2.thrift.resultset.default.fetch.size")
+      .doc("This is a hive server configuration used as a fallback conf" +
+        s" for `kyuubi.server.thrift.resultset.default.fetch.size`.")
+      .version("1.9.1")
+      .internal
+      .serverOnly
+      .intConf
+      .createWithDefault(1000)
+
+  val KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.server.thrift.resultset.default.fetch.size")
+      .doc("The number of rows sent in one Fetch RPC call by the server to the client, if not" +
+        " specified by the client. Respect `hive.server2.thrift.resultset.default.fetch.size`" +
+        " hive conf.")
+      .version("1.9.1")
+      .serverOnly
+      .fallbackConf(HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
 }
