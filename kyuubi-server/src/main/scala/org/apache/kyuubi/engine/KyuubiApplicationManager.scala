@@ -115,7 +115,8 @@ object KyuubiApplicationManager {
   }
 
   private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption(s"flink.${FlinkProcessBuilder.YARN_TAG_KEY}")
+    val originalTag = conf
+      .getOption(s"${FlinkProcessBuilder.FLINK}.${FlinkProcessBuilder.YARN_TAG_KEY}")
       .orElse(conf.getOption(FlinkProcessBuilder.YARN_TAG_KEY))
       .map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")

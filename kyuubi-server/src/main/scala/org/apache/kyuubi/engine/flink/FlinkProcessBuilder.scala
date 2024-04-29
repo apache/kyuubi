@@ -52,7 +52,7 @@ class FlinkProcessBuilder(
   val flinkHome: String = getEngineHome(shortName)
 
   val flinkExecutable: String = {
-    Paths.get(flinkHome, "bin", FLINK_EXEC_FILE).toFile.getCanonicalPath
+    Paths.get(flinkHome, "bin", FLINK).toFile.getCanonicalPath
   }
 
   // flink.execution.target are required in Kyuubi conf currently
@@ -115,7 +115,7 @@ class FlinkProcessBuilder(
           flinkExtraJars += s"$hiveConfFile"
         }
 
-        val customFlinkConf = conf.getAllWithPrefix("flink", "")
+        val customFlinkConf = conf.getAllWithPrefix(FLINK, "")
         // add custom yarn.ship-files
         flinkExtraJars ++= customFlinkConf.get(YARN_SHIP_FILES_KEY)
         val yarnAppName = customFlinkConf.get(YARN_APPLICATION_NAME_KEY)
@@ -220,7 +220,7 @@ class FlinkProcessBuilder(
 }
 
 object FlinkProcessBuilder {
-  final val FLINK_EXEC_FILE = "flink"
+  final val FLINK = "flink"
   final val APP_KEY = "flink.app.name"
   final val YARN_TAG_KEY = "yarn.tags"
   final val YARN_SHIP_FILES_KEY = "yarn.ship-files"

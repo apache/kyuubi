@@ -183,9 +183,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     // scalastyle:off line.size.limit
     val expectedCommands =
       escapePaths(
-        s""".*flink run-application \\\\
+        s"""${builder.flinkExecutable} run-application \\\\
            |\\t-t yarn-application \\\\
-           |\\t-Dyarn.ship-files=.*flink-sql-client.*jar;.*flink-sql-gateway.*jar;.*test-udf.jar;.*hive-site.xml;$customShipFiles \\\\
+           |\\t-Dyarn.ship-files=.*flink-sql-client.*jar;.*flink-sql-gateway.*jar;$tempUdfJar;.*hive-site.xml;$customShipFiles \\\\
            |\\t-Dyarn.application.name=$customAppName \\\\
            |\\t-Dyarn.tags=$customYarnTags,KYUUBI \\\\
            |\\t-Dcontainerized.master.env.FLINK_CONF_DIR=. \\\\
