@@ -517,6 +517,17 @@ object KyuubiConf {
       .serverOnly
       .fallbackConf(FRONTEND_BIND_PORT)
 
+  private val validPortRange: Pattern = ("(\\d+-\\d+)").r.pattern
+
+  val FRONTEND_THRIFT_BINARY_BIND_PORT_RANGE: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.thrift.binary.bind.port.range")
+      .doc("Range of ports of the machine on which to run the thrift frontend service.")
+      .version("1.10.0")
+      .serverOnly
+      .stringConf
+      .checkValue(validPortRange.matcher(_).matches(), "must be valid port range.")
+      .createOptional
+
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +

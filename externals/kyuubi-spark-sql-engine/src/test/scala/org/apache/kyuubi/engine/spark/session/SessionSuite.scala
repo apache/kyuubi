@@ -29,7 +29,8 @@ class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
     Map(
       ENGINE_SHARE_LEVEL.key -> "CONNECTION",
-      ENGINE_SPARK_MAX_INITIAL_WAIT.key -> "0")
+      ENGINE_SPARK_MAX_INITIAL_WAIT.key -> "0",
+      FRONTEND_THRIFT_BINARY_BIND_PORT_RANGE.key -> "8080-8082")
   }
 
   override protected def beforeEach(): Unit = {
@@ -51,5 +52,11 @@ class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
     eventually(Timeout(200.seconds)) {
       assert(engine.getServiceState == STOPPED)
     }
+  }
+
+  test("specify spark engine port with range") {
+    val connectionUrl: String = engine.frontendServices.head.connectionUrl
+    val actualPort = connectionUrl.split(":")(1).toInt
+    assert(actualPort >= 8080 && actualPort <= 8082)
   }
 }

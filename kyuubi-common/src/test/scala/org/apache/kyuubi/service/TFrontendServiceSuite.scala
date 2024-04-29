@@ -588,4 +588,25 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     assert(conf.size === 1)
     assert(conf("session.check.interval") === "10000")
   }
+
+  test("specify server port with range") {
+
+    def newService: TBinaryFrontendService = {
+      new TBinaryFrontendService("DummyThriftBinaryFrontendService") {
+        override val serverable: Serverable = new NoopTBinaryFrontendServer
+        override val discoveryService: Option[Service] = None
+      }
+    }
+    val conf = new KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "127.0.0.1")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT_RANGE, Some("8000-8002"))
+    val service = newService
+    intercept[IllegalStateException](service.connectionUrl)
+
+    service.initialize(conf)
+    // use what user want
+    val actualPort = service.connectionUrl.split(":")(1).toInt
+    assert(actualPort >= 8000 && actualPort <= 8002)
+  }
 }
