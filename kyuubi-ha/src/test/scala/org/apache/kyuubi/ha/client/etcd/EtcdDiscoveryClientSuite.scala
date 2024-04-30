@@ -50,6 +50,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
     if (hasDockerEnv) {
       etcdCluster = new Etcd.Builder()
         .withNodes(2)
+        .withMountedDataDirectory(false)
         .build()
       etcdCluster.start()
       conf = new KyuubiConf()
