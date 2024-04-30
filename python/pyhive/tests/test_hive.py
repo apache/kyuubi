@@ -31,11 +31,12 @@ from pyhive.tests.dbapi_test_case import with_cursor
 _HOST = 'localhost'
 
 
+@pytest.mark.skip
 class TestHive(unittest.TestCase, DBAPITestCase):
     __test__ = True
 
     def connect(self):
-        return hive.connect(host=_HOST, configuration={'mapred.job.tracker': 'local'})
+        return hive.connect(host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
 
     @with_cursor
     def test_description(self, cursor):

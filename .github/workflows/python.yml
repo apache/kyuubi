@@ -53,16 +53,12 @@ jobs:
           java-version: "8"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.3.0
-      - name: Start Containers for Testing
-        run: docker-compose -f python/docker/docker-compose.yml up -d
       - name: Install dependencies
         run: |
           cd python
           ./scripts/install-deps.sh
-          pip install --upgrade pip
-          pip install -e .
-          pip install -r dev_requirements.txt
       - name: Run tests
         run: |
           cd python
+          docker compose -f docker/docker-compose.yml up -d --wait
           pytest -v
