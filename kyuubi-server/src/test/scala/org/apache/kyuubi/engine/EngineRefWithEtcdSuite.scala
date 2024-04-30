@@ -42,6 +42,7 @@ class EngineRefWithEtcdSuite extends EngineRefTests {
   override def beforeAll(): Unit = {
     etcdCluster = new Etcd.Builder()
       .withNodes(1)
+      .withMountedDataDirectory(false)
       .build()
     etcdCluster.start()
     super.beforeAll()
