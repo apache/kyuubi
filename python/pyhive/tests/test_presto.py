@@ -13,6 +13,7 @@ from decimal import Decimal
 
 import requests
 
+import pytest
 from pyhive import exc
 from pyhive import presto
 from pyhive.tests.dbapi_test_case import DBAPITestCase
@@ -231,6 +232,7 @@ class TestPresto(unittest.TestCase, DBAPITestCase):
             ).cursor()
         )
 
+    @pytest.mark.skip(reason='This test requires a proxy server running on localhost:9999')
     def test_requests_kwargs(self):
         connection = presto.connect(
             host=_HOST, port=_PORT, source=self.id(),

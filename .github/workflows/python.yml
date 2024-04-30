@@ -53,6 +53,11 @@ jobs:
           java-version: "8"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3.3.0
+      - name: Start Testing Containers
+        run: |
+          cd python/docker/
+          docker compose up -d --wait
+          docker compose exec hive-server /opt/hive/scripts/make_test_tables.sh
       - name: Install dependencies
         run: |
           cd python
@@ -60,5 +65,4 @@ jobs:
       - name: Run tests
         run: |
           cd python
-          docker compose -f docker/docker-compose.yml up -d --wait
           pytest -v

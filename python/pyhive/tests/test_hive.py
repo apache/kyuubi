@@ -31,7 +31,7 @@ from pyhive.tests.dbapi_test_case import with_cursor
 _HOST = 'localhost'
 
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="Temporary disabled")
 class TestHive(unittest.TestCase, DBAPITestCase):
     __test__ = True
 

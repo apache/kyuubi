@@ -25,7 +25,6 @@ services:
     image: bde2020/hive:2.3.2-postgresql-metastore
     env_file:
       - hadoop-hive.env
-    command: /opt/hive/scripts/make_test_tables.sh
     volumes:
       - ../scripts:/opt/hive/scripts
     environment:
