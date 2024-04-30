@@ -51,9 +51,10 @@ jobs:
         with:
           distribution: "temurin"
           java-version: "8"
-      - uses: hoverkraft-tech/compose-action@v1.5.1
-        with:
-          compose-file: "./python/docker/docker-compose.yml"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.3.0
+      - name: Start Containers for Testing
+        run: docker-compose -f python/docker/docker-compose.yml up -d
       - name: Install dependencies
         run: |
           cd python
