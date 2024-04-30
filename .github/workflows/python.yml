@@ -66,3 +66,7 @@ jobs:
         run: |
           cd python
           pytest -v
+      - name: Tear down Containers
+        run: |
+          cd python/docker/
+          docker compose down --volumes
