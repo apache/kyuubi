@@ -181,7 +181,7 @@ class KyuubiSyncThriftClient private (
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
-    req.setConfiguration(configs.asJava)
+    req.setConfiguration((configs ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
@@ -201,7 +201,8 @@ class KyuubiSyncThriftClient private (
         req.setConfiguration((configs ++ Map(
           KyuubiConf.SESSION_NAME.key -> sessionName,
           KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
-          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "")).asJava)
+          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "",
+          KYUUBI_SESSION_ALIVE_PROBE -> "true")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle

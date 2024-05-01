@@ -122,10 +122,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
-    _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
+    }
+    if (!session.isForAliveProbe) {
+      _latestLogoutTime = System.currentTimeMillis()
     }
     logSessionCountInfo(session, "closed")
     try {
@@ -160,6 +162,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def getOpenSessionCount: Int = handleToSession.size()
+
+  /**
+   * Get the count of active user sessions, which excludes alive probe sessions.
+   */
+  def getActiveUserSessionCount: Int = handleToSession.values().asScala.count(!_.isForAliveProbe)
 
   def allSessions(): Iterable[Session] = handleToSession.values().asScala
 
@@ -341,7 +348,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       val checkTask = new Runnable {
         override def run(): Unit = {
           if (!shutdown && System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
-            getOpenSessionCount <= 0) {
+            getActiveUserSessionCount <= 0) {
             info(s"Idled for more than $idleTimeout ms, terminating")
             stop()
           }
