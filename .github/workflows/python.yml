@@ -46,13 +46,6 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: "temurin"
-          java-version: "8"
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3.3.0
       - name: Start Testing Containers
         run: |
           cd python/docker/
