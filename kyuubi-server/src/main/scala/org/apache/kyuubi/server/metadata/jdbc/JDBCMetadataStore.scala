@@ -259,7 +259,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(METADATA_COLUMNS)
     queryBuilder.append(s" FROM $METADATA_TABLE")
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
-    queryBuilder.append(" ORDER BY key_id ")
+    queryBuilder.append(" ORDER BY key_id DESC ")
     queryBuilder.append(dialect.limitClause(size, from))
     val query = queryBuilder.toString
     JdbcUtils.withConnection { connection =>
