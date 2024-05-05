@@ -28,7 +28,7 @@ import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
@@ -167,6 +167,11 @@ trait ProcBuilder {
   private var logCaptureThread: Thread = _
   @volatile private[kyuubi] var process: Process = _
   @volatile private[kyuubi] var processLaunched: Boolean = false
+
+  // Set engine application manger info conf
+  conf.set(
+    KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO,
+    ApplicationManagerInfo.serialize(appMgrInfo()))
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
