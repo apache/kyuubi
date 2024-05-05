@@ -31,7 +31,7 @@ import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
@@ -279,10 +279,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean,
-      @QueryParam("kubernetesContext") kubernetesContext: String,
-      @QueryParam("kubernetesNamespace") kubernetesNamespace: String,
-      @QueryParam("resourceManager") resourceManager: String): Response = {
+      @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean): Response = {
     val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(activeProxyUser).getOrElse(fe.getRealUser())
@@ -294,10 +291,6 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val responseMsgBuilder = new StringBuilder()
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val appMgrInfo = ApplicationManagerInfo(
-        Option(resourceManager),
-        Option(kubernetesContext),
-        Option(kubernetesNamespace))
       val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace, silent = true)
       engineNodes.foreach { engineNode =>
         val nodePath = s"$engineSpace/${engineNode.nodeName}"
@@ -315,6 +308,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         }
 
         if (forceKill && engineRefId != null) {
+          val appMgrInfo =
+            engineNode.attributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO)
+              .map(ApplicationManagerInfo.deserialize).getOrElse(ApplicationManagerInfo(None))
           val killResponse = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
             .applicationManager.killApplication(appMgrInfo, engineRefId)
           responseMsgBuilder
