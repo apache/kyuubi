@@ -116,7 +116,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     requestObj.setSubresourcesMap(Map("spark.submit.pyFiles" -> "dd.zip").asJava)
     val exampleJarFile =
       Paths.get("/Users/bw/dev/kyuubi/kyuubi-server/src/test/resources/python/app.py").toFile
-    val subResources = List("/Users/bw/dev/playpp/dd.zip").asJava
+    val subResources = List("/Users/bw/dev/kyuubi/kyuubi-server/src/test/resources/dd.zip").asJava
     val batch: Batch =
       batchRestApi.createBatchWithSubResources(requestObj, exampleJarFile, subResources)
 
