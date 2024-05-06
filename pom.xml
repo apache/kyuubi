@@ -68,6 +68,7 @@
         <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
+        <module>externals/kyuubi-spark-connect-engine</module>
         <module>integration-tests</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
