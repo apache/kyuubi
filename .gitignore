@@ -65,6 +65,7 @@ embedded_zookeeper/
 /externals/kyuubi-spark-sql-engine/operation_logs/
 /externals/kyuubi-spark-sql-engine/engine_operation_logs/
 /externals/kyuubi-spark-sql-engine/spark-warehouse/
+/externals/kyuubi-spark-connect-engine/src/main/java/org/apache/kyuubi/engine/spark/connect/grpc/proto
 /work/
 /docs/_build/
 /kyuubi-common/metrics/
