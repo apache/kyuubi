@@ -16,23 +16,18 @@
  */
 package org.apache.kyuubi.engine.spark.connect
 
-import io.grpc.stub.StreamObserver
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
-import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionManager
-import org.apache.kyuubi.service.AbstractBackendService
-import org.apache.kyuubi.session.SessionManager
+import org.apache.kyuubi.service.Serverable
 
-class SparkConnectBackendService(name: String, spark: SparkSession)
-  extends AbstractBackendService(name) {
-  def this(spark: SparkSession) = this(classOf[SparkConnectBackendService].getSimpleName, spark)
-  override def sessionManager: SparkConnectSessionManager = new SparkConnectSessionManager(spark)
+class SparkConnectEngine(spark: SparkSession) extends Serverable("SparkConnectEngine") {
+  override val backendService = new SparkConnectBackendService(spark)
+  override val frontendServices = Seq(new SparkConnectFrontendService(this))
 
-  def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse]): Unit = {
-    sessionManager.getOrCreateSessionHolder(
-      request.getUserContext.getUserId,
-      request.getSessionId,
-      Some(request.getClientObservedServerSideSessionId))
-  }
+  private val shutdown = new AtomicBoolean(false)
+  private val gracefulStopDeregistered = new AtomicBoolean(false)
+
+  override protected def stopServer(): Unit = {}
 }

@@ -14,34 +14,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.spark.connect.operation
+package org.apache.kyuubi.engine.spark.connect.grpc
 
 import java.util
+
+import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
 import io.grpc.stub.StreamObserver
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.connect.grpc.{AbstractGrpcSession, GrpcOperationManager}
 import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
-import org.apache.kyuubi.operation.{Operation, OperationManager}
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.OperationState.{CANCELED, CLOSED, ERROR, FINISHED, UNKNOWN}
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
 
-class SparkConnectOperationManager private (name: String) extends GrpcOperationManager(name) {
+abstract class GrpcOperationManager(name: String) extends AbstractService(name) {
+  final private val handleToOperation = new util.HashMap[OperationHandle, Operation]()
+  def getOperationCount: Int = handleToOperation.size()
+  def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
+  protected def skipOperationLog: Boolean = false
 
-  def this() = this(classOf[SparkConnectOperationManager].getSimpleName)
-
-  private def skipOperationLog: Boolean = false
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
+    super.initialize(conf)
   }
+
   def newConfigOperation(
       session: Session,
       request: ConfigRequest,
-      response: StreamObserver[ConfigResponse]): Operation = {
-    new ConfigOperation(session, request, response)
-  }
+      response: StreamObserver[ConfigResponse]): Operation
 
 }

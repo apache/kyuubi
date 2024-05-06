@@ -34,11 +34,12 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.connect.grpc.proto._
 import org.apache.kyuubi.engine.spark.connect.grpc.proto.SparkConnectServiceGrpc.AsyncService
-import org.apache.kyuubi.service.{AbstractFrontendService, BackendService}
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{AbstractFrontendService, BackendService, Serverable, Service}
 import org.apache.kyuubi.util.NamedThreadFactory
 
-abstract class SparkConnectFrontendService(name: String)
-  extends AbstractFrontendService(name)
+class SparkConnectFrontendService(override val serverable: Serverable)
+  extends AbstractFrontendService("SparkConnectFrontend")
   with AsyncService with BindableService with Runnable
   with Logging {
   private val started = new AtomicBoolean(false)
@@ -51,7 +52,7 @@ abstract class SparkConnectFrontendService(name: String)
   protected lazy val maxInboundMessageSize: Int =
     conf.get(ENGINE_SPARK_CONNECT_GRPC_MAX_INBOUND_MESSAGE_SIZE)
 
-  private def grpcBe: BackendService = be.asInstanceOf[SparkConnectBackendService]
+  private def grpcBe: SparkConnectBackendService = be.asInstanceOf[SparkConnectBackendService]
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -164,8 +165,20 @@ abstract class SparkConnectFrontendService(name: String)
     host + ":" + portNum
   }
 
-  override def executePlan(
-      request: ExecutePlanRequest,
-      responseObserver: StreamObserver[ExecutePlanResponse]): Unit = {}
+  override def config(
+      request: ConfigRequest,
+      responseObserver: StreamObserver[ConfigResponse]): Unit = {
+    grpcBe.config(request, responseObserver)
+  }
 
+  /**
+   * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
+   */
+  override val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
 }

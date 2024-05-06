@@ -19,22 +19,19 @@ package org.apache.kyuubi.engine.spark.connect.session
 import io.grpc.stub.StreamObserver
 import org.apache.spark.sql.SparkSession
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.spark.connect.grpc.AbstractGrpcSession
 import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
 import org.apache.kyuubi.engine.spark.connect.operation.SparkConnectOperationManager
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
 class SparkConnectSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
+    userId: String,
     sessionId: String,
     sessionManager: SessionManager,
     val spark: SparkSession)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractGrpcSession with Logging {
 
   private val operationManager: SparkConnectOperationManager =
     sessionManager.operationManager.asInstanceOf[SparkConnectOperationManager]
@@ -45,4 +42,5 @@ class SparkConnectSessionImpl(
     val operation = operationManager.newConfigOperation(this, request, response)
     runOperation(operation)
   }
+
 }

@@ -32,7 +32,7 @@ abstract class AbstractGrpcBackendService(name: String)
       request: AnalyzePlanRequest,
       responseObserver: StreamObserver[AnalyzePlanResponse])
 
-  def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse])
+  def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse]): Unit
 
   def addArtifacts(
       request: AddArtifactsRequest,
@@ -40,7 +40,7 @@ abstract class AbstractGrpcBackendService(name: String)
 
   def artifactStatus(
       request: ArtifactStatusesRequest,
-      responseObserver: StreamObserver[ArtifactStatusesResponse])
+      responseObserver: StreamObserver[ArtifactStatusesResponse]): Unit
 
   def interrupt(request: InterruptRequest, responseObserver: StreamObserver[InterruptResponse])
 
