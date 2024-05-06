@@ -16,8 +16,12 @@
  */
 package org.apache.kyuubi.engine.spark.connect.session
 
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import io.grpc.stub.StreamObserver
 import org.apache.spark.sql.SparkSession
+
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
+import org.apache.kyuubi.engine.spark.connect.operation.SparkConnectOperationManager
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
@@ -27,10 +31,18 @@ class SparkConnectSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
+    sessionId: String,
     sessionManager: SessionManager,
     val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  private val operationManager: SparkConnectOperationManager =
+    sessionManager.operationManager.asInstanceOf[SparkConnectOperationManager]
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+
+  def config(request: ConfigRequest, response: StreamObserver[ConfigResponse]): Unit = {
+    val operation = operationManager.newConfigOperation(this, request, response)
+    runOperation(operation)
+  }
 }

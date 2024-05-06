@@ -21,16 +21,19 @@ import java.util
 import io.grpc.stub.StreamObserver
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ExecutePlanRequest, ExecutePlanResponse}
+import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class SparkConnectOperationManager private (name: String) extends OperationManager(name) {
 
-  def executePlan(
+  def newConfigOperation(
       session: Session,
-      request: ExecutePlanRequest,
-      responseObserver: StreamObserver[ExecutePlanResponse]): Unit = {}
+      request: ConfigRequest,
+      response: StreamObserver[ConfigResponse]): Operation = {
+    val op = new ConfigOperation(session, request, response)
+    addOperation(op)
+  }
 
   override def newExecuteStatementOperation(
       session: Session,

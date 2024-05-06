@@ -16,13 +16,21 @@
  */
 package org.apache.kyuubi.engine.spark.connect
 
+import io.grpc.stub.StreamObserver
+import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
+import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionManager
 import org.apache.kyuubi.service.AbstractBackendService
 import org.apache.kyuubi.session.SessionManager
 import org.apache.spark.sql.SparkSession
 
 class SparkConnectBackendService(name: String, spark: SparkSession)
   extends AbstractBackendService(name) {
+  override def sessionManager: SparkConnectSessionManager = new SparkConnectSessionManager(spark)
 
-
-  def executePlan(sessionId: String, )
+  def config(request: ConfigRequest,
+             responseObserver: StreamObserver[ConfigResponse]): Unit = {
+    sessionManager.getOrCreateSessionHolder(request.getUserContext.getUserId,
+      request.getSessionId,
+      Some(request.getClientObservedServerSideSessionId))
+  }
 }

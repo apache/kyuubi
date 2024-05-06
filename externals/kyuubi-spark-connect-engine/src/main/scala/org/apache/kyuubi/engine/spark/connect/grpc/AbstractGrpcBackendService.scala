@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.spark.connect.grpc
 
 import io.grpc.stub.StreamObserver
+
 import org.apache.kyuubi.engine.spark.connect.grpc.proto._
 import org.apache.kyuubi.service.AbstractBackendService
 

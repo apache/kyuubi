@@ -16,14 +16,15 @@
  */
 package org.apache.kyuubi.engine.spark.connect.session
 
+import java.util.UUID
+
 import scala.collection.mutable
 
-import io.grpc.stub.StreamObserver
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.engine.spark.connect.grpc.GrpcSessionManager
-import org.apache.kyuubi.engine.spark.connect.grpc.proto._
-import org.apache.kyuubi.engine.spark.connect.holder.{SessionHolder, SessionKey}
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.spark.connect.holder.SessionKey
+import org.apache.kyuubi.engine.spark.connect.operation.SparkConnectOperationManager
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
@@ -33,11 +34,79 @@ class SparkConnectSessionManager private (name: String, spark: SparkSession)
 
   def this(spark: SparkSession) = this(classOf[SparkConnectSessionManager].getSimpleName, spark)
 
-  private lazy val sessionStore = mutable.HashMap[SessionKey, SessionHolder]()
+  private lazy val sessionStore = mutable.HashMap[SessionKey, Session]()
+
+  private val sessionsLock = new Object
 
   override protected def isServer: Boolean = false
 
-  override def operationManager: OperationManager = ???
+  override def operationManager: OperationManager = new SparkConnectOperationManager(spark)
 
-  override protected def createSession(protocol: TProtocolVersion, user: String, password: String, ipAddress: String, conf: Map[String, String]): Session = ???
+  override protected def createSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String]): Session = {
+    throw KyuubiSQLException.featureNotSupported()
+  }
+
+  def getOrCreateSessionHolder(
+      userId: String,
+      sessionId: String,
+      previouslyObservedSessionId: Option[String]): SparkConnectSessionImpl = {
+    val sessionKey = SessionKey(userId, sessionId)
+    val sparkConnectSession = getSparkConnectSession(
+      sessionKey,
+      Some(() => {
+        validateSessionCreate(sessionKey)
+        val sparkConnectSessionImpl = new SparkConnectSessionImpl()
+        sparkConnectSessionImpl
+      }))
+    previouslyObservedSessionId.foreach(sessionId =>
+      validateSessionId(sessionKey, sparkConnectSession.spark.sessionUUID, sessionId))
+    sparkConnectSession
+  }
+
+  private def validateSessionCreate(key: SessionKey): Unit = {
+    try {
+      UUID.fromString(key.sessionId).toString
+    } catch {
+      case _: IllegalArgumentException =>
+        throw KyuubiSQLException(msg = "INVALID_HANDLE.FORMAT")
+    }
+  }
+
+  private def getSparkConnectSession(
+      key: SessionKey,
+      default: Option[() => SparkConnectSessionImpl]): SparkConnectSessionImpl = {
+    sessionsLock.synchronized{
+      val sessionOpt = sessionStore.get(key)
+      val session = sessionOpt match {
+        case Some(e) => e
+        case None =>
+          default match {
+            case Some(callable) =>
+              val session = callable()
+              sessionStore.put(key, session)
+              session
+            case None =>
+              null
+          }
+      }
+      session match {
+        case null => null
+        case s: SparkConnectSessionImpl =>
+          s
+      }
+    }
+  }
+
+  private def validateSessionId(key: SessionKey,
+                                sessionUUID: String,
+                                previouslyObservedSessionId: String): Unit = {
+    if (sessionUUID != previouslyObservedSessionId) {
+      throw KyuubiSQLException("INVALID_HANDLE.SESSION_CHANGED")
+    }
+  }
 }
