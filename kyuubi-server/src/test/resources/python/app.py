@@ -16,7 +16,7 @@ if __name__ == "__main__":
 
     df = spark.createDataFrame(transformed_rdd, IntegerType())
     df.coalesce(1).write.format("csv").option("header", "false").save(
-        "/Users/bw/Downloads/kks"
+        "/Users/bw/Downloads/kks/" + func1()
     )
 
     print(f"Result: {collected}")

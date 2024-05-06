@@ -125,7 +125,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val batchId = batch.getId
     assert(batchId !== null)
 
-    eventually(timeout(5.minutes), interval(1.seconds)) {
+    eventually(timeout(1.minutes), interval(1.seconds)) {
       val batch = batchRestApi.getBatchById(batchId)
       assert(batch.getState == "FINISHED")
     }
