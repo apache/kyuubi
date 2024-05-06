@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.Handle
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -48,6 +49,8 @@ final class KyuubiTBinaryFrontendService(
       None
     }
   }
+
+  private lazy val defaultFetchSize = conf.get(KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     super.initialize(conf)
@@ -93,6 +96,11 @@ final class KyuubiTBinaryFrontendService(
         Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
 
       respConfiguration.put(KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT, true.toString)
+
+      // HIVE-23005(4.0.0), Hive JDBC driver supposes that server always returns this conf
+      respConfiguration.put(
+        "hive.server2.thrift.resultset.default.fetch.size",
+        defaultFetchSize.toString)
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
       resp.setConfiguration(respConfiguration)

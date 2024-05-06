@@ -444,6 +444,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 | kyuubi.server.name                                       | &lt;undefined&gt; | The name of Kyuubi Server.                                                                                                                                                                                                                                              | string   | 1.5.0 |
 | kyuubi.server.periodicGC.interval                        | PT30M             | How often to trigger a garbage collection.                                                                                                                                                                                                                              | duration | 1.7.0 |
 | kyuubi.server.redaction.regex                            | &lt;undefined&gt; | Regex to decide which Kyuubi contain sensitive information. When this regex matches a property key or value, the value is redacted from the various logs.                                                                                                                         || 1.6.0 |
+| kyuubi.server.thrift.resultset.default.fetch.size        | 1000              | The number of rows sent in one Fetch RPC call by the server to the client, if not specified by the client. Respect `hive.server2.thrift.resultset.default.fetch.size` hive conf.                                                                                        | int      | 1.9.1 |
 
 ### Session
 
