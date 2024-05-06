@@ -37,7 +37,7 @@ class SparkConnectOperationManager private (name: String) extends GrpcOperationM
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
   }
-  def newConfigOperation(
+  override def newConfigOperation(
       session: Session,
       request: ConfigRequest,
       response: StreamObserver[ConfigResponse]): Operation = {

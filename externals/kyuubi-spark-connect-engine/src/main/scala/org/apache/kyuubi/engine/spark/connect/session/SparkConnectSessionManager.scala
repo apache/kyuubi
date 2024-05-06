@@ -23,12 +23,13 @@ import scala.collection.mutable
 import org.apache.spark.sql.{SparkSession, SparkSQLUtils}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.spark.connect.holder.SessionKey
+import org.apache.kyuubi.engine.spark.connect.grpc.GrpcOperationManager
 import org.apache.kyuubi.engine.spark.connect.operation.SparkConnectOperationManager
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
+case class SessionKey(userId: String, sessionId: String)
 class SparkConnectSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
@@ -40,8 +41,7 @@ class SparkConnectSessionManager private (name: String, spark: SparkSession)
 
   override protected def isServer: Boolean = false
 
-  override def operationManager: OperationManager =
-    new SparkConnectOperationManager("SparkConnectOperationManager")
+  override def operationManager: OperationManager = new SparkConnectOperationManager()
 
   override protected def createSession(
       protocol: TProtocolVersion,
