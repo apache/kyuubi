@@ -18,10 +18,13 @@
 package org.apache.kyuubi.engine
 
 import java.util.Locale
+
 import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.{FinalApplicationStatus, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
+
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_YARN_SUBMIT_TIMEOUT, YarnUserStrategy}
