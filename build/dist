@@ -62,42 +62,6 @@ function exit_with_usage {
   exit 1
 }
 
-# This function is used to filter the `scala-*` situation
-function filter_args() {
-  local filtered_args=()
-  # shellcheck disable=SC2045
-  for arg in "$@"; do
-    # If it is the case of `-P scala-2.13`
-    if [[ $arg == -P ]]; then
-      echo "Please follow this command example to use the -P parameter: '-Pscala-2.13,spark-3.2'(no space)"
-      exit 1
-    #  the case `-Pscala-2.13,spark-2.3` filter `scala-*`
-    elif [[ $arg =~ -P.*scala.* ]]; then
-      params_string="${arg#-P}"
-      IFS=',' read -r -a params_array <<< "$params_string"
-      # shellcheck disable=SC2045
-      for param in "${params_array[@]}"; do
-          # Excluding the situation of `*scala*`
-          if [[ $param != *scala* ]]; then
-            if [[ -z "$result" ]]; then
-              result="-P$param"
-            else
-              result="$result,$param"
-            fi
-          fi
-      done
-      filtered_args+=("$result")
-    # Excluding the situation of `*scala*`
-    elif [[ $arg =~ -Dscala.binary.version=.* ]]; then
-      continue
-    else
-      filtered_args+=("$arg")
-    fi
-  done
-  echo "${filtered_args[@]}"
-}
-
-
 # Parse arguments
 while (( "$#" )); do
   case $1 in
@@ -284,11 +248,19 @@ echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 "${BUILD_COMMAND[@]}"
 
-FILTERED_ARGS=$(filter_args $@)
+FILTERED_ARGS=()
+# shellcheck disable=SC2045
+for arg in "$@"; do
+    if [[ $arg == *scala-2.12* ]]; then
+        FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
+    elif [[ $arg == *scala-2.13* ]]; then
+        FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
+    fi
+done
 
 # shellcheck disable=SC2050
 if [ "$SCALA_VERSION" = "2.12" ]; then
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -Pscala-2.13  -pl :kyuubi-spark-sql-engine_2.13 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
 else
   EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
 fi
@@ -296,7 +268,7 @@ fi
 # shellcheck disable=SC2145
 echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
 
- "${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
+"${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
