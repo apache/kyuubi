@@ -27,7 +27,7 @@ import org.apache.hadoop.yarn.client.api.YarnClient
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_YARN_SUBMIT_TIMEOUT, YarnUserStrategy}
 import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy._
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
@@ -129,21 +129,22 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       tag: String,
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo = withYarnClient(proxyUser) { yarnClient =>
-    debug(s"Getting application info from Yarn cluster by $tag tag")
+    debug(s"Getting application info from YARN cluster by tag: $tag")
     val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
     if (reports.isEmpty) {
-      debug(s"Application with tag $tag not found")
+      debug(s"Can't find target application from YARN cluster by tag: $tag")
       submitTime match {
         case Some(_submitTime) =>
           val elapsedTime = System.currentTimeMillis - _submitTime
-          if (elapsedTime > submitTimeout) {
-            error(s"Can't find target yarn application by tag: $tag, " +
-              s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")
-            ApplicationInfo.NOT_FOUND
-          } else {
-            warn("Wait for yarn application to be submitted, " +
-              s"elapsed time: ${elapsedTime}ms, return UNKNOWN status")
+          if (elapsedTime < submitTimeout) {
+            info(s"Wait for YARN application[tag: $tag] to be submitted, " +
+              s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
             ApplicationInfo.UNKNOWN
+          } else {
+            error(s"Can't find target application from YARN cluster by tag: $tag, " +
+              s"elapsed time: ${elapsedTime}ms exceeds ${ENGINE_YARN_SUBMIT_TIMEOUT.key}: " +
+              s"${submitTimeout}ms, return ${ApplicationInfo.NOT_FOUND} status")
+            ApplicationInfo.NOT_FOUND
           }
         case _ => ApplicationInfo.NOT_FOUND
       }
@@ -158,7 +159,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
           report.getFinalApplicationStatus),
         url = Option(report.getTrackingUrl),
         error = Option(report.getDiagnostics))
-      debug(s"Successfully got application info by $tag: $info")
+      debug(s"Successfully got application info by tag: $tag. $info")
       info
     }
   }
