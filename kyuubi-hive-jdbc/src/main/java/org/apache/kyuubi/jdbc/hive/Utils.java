@@ -42,7 +42,7 @@ public class Utils {
       Arrays.asList("jdbc:hive2://", "jdbc:kyuubi://");
 
   /** If host is provided, without a port. */
-  static final String DEFAULT_PORT = "10000";
+  static final String DEFAULT_PORT = "10009";
   // To parse the intermediate URI as a Java URI, we'll give a dummy authority(dummyhost:00000).
   // Later, we'll substitute the dummy authority for a resolved authority.
   static final String dummyAuthorityString = "dummyhost:00000";
@@ -381,8 +381,8 @@ public class Utils {
         if (port <= 0) {
           port = Integer.parseInt(Utils.DEFAULT_PORT);
         }
-        connParams.setHost(jdbcBaseURI.getHost());
-        connParams.setPort(jdbcBaseURI.getPort());
+        connParams.setHost(host);
+        connParams.setPort(port);
       }
       // We check for invalid host, port while configuring connParams with configureConnParams()
       authorityStr = connParams.getHost() + ":" + connParams.getPort();
