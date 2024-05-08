@@ -37,7 +37,7 @@ public class SessionData {
   private String kyuubiInstance;
   private String engineId;
   private String sessionName;
-  private int totalOperations;
+  private Integer totalOperations;
 
   public SessionData() {}
 
@@ -55,7 +55,7 @@ public class SessionData {
       String kyuubiInstance,
       String engineId,
       String sessionName,
-      int totalOperations) {
+      Integer totalOperations) {
     this.identifier = identifier;
     this.remoteId = remoteId;
     this.user = user;
@@ -179,11 +179,11 @@ public class SessionData {
     this.sessionName = sessionName;
   }
 
-  public int getTotalOperations() {
+  public Integer getTotalOperations() {
     return totalOperations;
   }
 
-  public void setTotalOperations(int totalOperations) {
+  public void setTotalOperations(Integer totalOperations) {
     this.totalOperations = totalOperations;
   }
 
