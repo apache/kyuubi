@@ -92,7 +92,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   protected def logSessionCountInfo(session: Session, action: String): Unit = {
     info(s"${session.user}'s ${session.getClass.getSimpleName} with" +
       s" ${session.handle}${session.name.map("/" + _).getOrElse("")} is $action," +
-      s" current opening sessions $getOpenSessionCount")
+      s" current opening sessions $getActiveUserSessionCount")
   }
 
   def openSession(
@@ -160,8 +160,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   final protected def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
     handleToSession.put(sessionHandle, session)
   }
-
-  def getOpenSessionCount: Int = handleToSession.size()
 
   /**
    * Get the count of active user sessions, which excludes alive probe sessions.
@@ -310,7 +308,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
     val checkTask = new Runnable {
       override def run(): Unit = {
-        info(s"Checking sessions timeout, current count: $getOpenSessionCount")
+        info(s"Checking sessions timeout, current count: $getActiveUserSessionCount")
         val current = System.currentTimeMillis
         if (!shutdown) {
           for (session <- handleToSession.values().asScala) {

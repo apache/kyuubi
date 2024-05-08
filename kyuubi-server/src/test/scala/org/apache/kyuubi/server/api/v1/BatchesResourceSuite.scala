@@ -525,7 +525,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
     val kyuubiInstance = fe.connectionUrl
 
-    assert(sessionManager.getOpenSessionCount === 0)
+    assert(sessionManager.getActiveUserSessionCount === 0)
     val batchId1 = UUID.randomUUID().toString
     val batchId2 = UUID.randomUUID().toString
 
@@ -585,7 +585,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
-    assert(sessionManager.getOpenSessionCount === 2)
+    assert(sessionManager.getActiveUserSessionCount === 2)
 
     val sessionHandle1 = SessionHandle.fromUUID(batchId1)
     val sessionHandle2 = SessionHandle.fromUUID(batchId2)
