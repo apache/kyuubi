@@ -64,7 +64,9 @@ object ApiUtils extends Logging {
       sessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
       session.sessionType.toString,
       session.connectionUrl,
-      sessionEvent.map(_.engineId).getOrElse(""))
+      sessionEvent.map(_.engineId).getOrElse(""),
+      session.name.getOrElse(""),
+      sessionEvent.map(_.totalOperations).getOrElse(0): Int)
   }
 
   private def operationProgress(operation: KyuubiOperation): OperationProgress = {
