@@ -79,6 +79,7 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   var idx = 0
 
   override def hasNext: Boolean = {
+    if (idx >= iters.size) return false
     val hasNext = iters(idx).hasNext
     if (!hasNext) {
       iters(idx).close()
