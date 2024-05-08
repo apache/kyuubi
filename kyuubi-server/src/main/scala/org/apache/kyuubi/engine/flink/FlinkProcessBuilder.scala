@@ -25,7 +25,7 @@ import scala.collection.mutable
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi._
-import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
@@ -80,8 +80,6 @@ class FlinkProcessBuilder(
 
   override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
-    // unset engine credentials because Flink doesn't support them at the moment
-    conf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     // flink.execution.target are required in Kyuubi conf currently
     executionTarget match {
       case Some("yarn-application") =>
