@@ -42,4 +42,22 @@ class SparkDatasetHelperSuite extends WithSparkSQLEngine {
         spark.sql(collectLimitStatement).queryExecution) === Option(topKThreshold))
     }
   }
+
+  test("is data query language") {
+    var query = "select * from table"
+    assert(SparkDatasetHelper.isDQL(query))
+    query = "(select * from table)"
+    assert(SparkDatasetHelper.isDQL(query))
+    query = "(WITH TEMP_WITH_VIEW AS (SELECT * from tbl_d) SELECT * FROM TEMP_WITH_VIEW)"
+    assert(SparkDatasetHelper.isDQL(query))
+    query = "(WITH TEMP_WITH_VIEW AS (SELECT * from tbl_d)" +
+      " INSERT INTO tbl SELECT * FROM TEMP_WITH_VIEW)"
+    assert(!SparkDatasetHelper.isDQL(query))
+    query = "cache table tbl"
+    assert(!SparkDatasetHelper.isDQL(query))
+    query = "insert into tbl select * from ta"
+    assert(!SparkDatasetHelper.isDQL(query))
+    query = "set"
+    assert(!SparkDatasetHelper.isDQL(query))
+  }
 }
