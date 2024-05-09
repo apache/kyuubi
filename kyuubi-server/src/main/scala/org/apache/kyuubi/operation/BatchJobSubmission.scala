@@ -165,8 +165,16 @@ class BatchJobSubmission(
   private def setStateIfNotCanceled(newState: OperationState): Unit = withLockRequired {
     if (state != CANCELED) {
       setState(newState)
-      applicationId(_applicationInfo).foreach { appId =>
-        session.getSessionEvent.foreach(_.engineId = appId)
+      _applicationInfo.foreach { app =>
+        Option(app.id).filter(_.nonEmpty).foreach { appId =>
+          session.getSessionEvent.foreach(_.engineId = appId)
+        }
+        Option(app.name).filter(_.nonEmpty).foreach { appName =>
+          session.getSessionEvent.foreach(_.engineName = appName)
+        }
+        app.url.filter(_.nonEmpty).foreach { appUrl =>
+          session.getSessionEvent.foreach(_.engineUrl = appUrl)
+        }
       }
       if (newState == RUNNING) {
         session.onEngineOpened()

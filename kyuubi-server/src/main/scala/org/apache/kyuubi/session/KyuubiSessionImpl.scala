@@ -222,6 +222,8 @@ class KyuubiSessionImpl(
         sessionEvent.openedTime = System.currentTimeMillis()
         sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
         _client.engineId.foreach(e => sessionEvent.engineId = e)
+        _client.engineName.foreach(e => sessionEvent.engineName = e)
+        _client.engineUrl.foreach(e => sessionEvent.engineUrl = e)
         EventBus.post(sessionEvent)
       }
     }

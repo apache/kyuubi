@@ -33,6 +33,10 @@ public class KyuubiSessionEvent {
 
   private String engineId;
 
+  private String engineName;
+
+  private String engineUrl;
+
   private String user;
 
   private String clientIp;
@@ -62,6 +66,8 @@ public class KyuubiSessionEvent {
       String sessionName,
       String remoteSessionId,
       String engineId,
+      String engineName,
+      String engineUrl,
       String user,
       String clientIp,
       String serverIp,
@@ -78,6 +84,8 @@ public class KyuubiSessionEvent {
     this.sessionName = sessionName;
     this.remoteSessionId = remoteSessionId;
     this.engineId = engineId;
+    this.engineName = engineName;
+    this.engineUrl = engineUrl;
     this.user = user;
     this.clientIp = clientIp;
     this.serverIp = serverIp;
@@ -106,6 +114,10 @@ public class KyuubiSessionEvent {
     private String remoteSessionId;
 
     private String engineId;
+
+    private String engineName;
+
+    private String engineUrl;
 
     private String user;
 
@@ -157,6 +169,16 @@ public class KyuubiSessionEvent {
 
     public KyuubiSessionEvent.KyuubiSessionEventBuilder engineId(final String engineId) {
       this.engineId = engineId;
+      return this;
+    }
+
+    public KyuubiSessionEvent.KyuubiSessionEventBuilder engineName(final String engineName) {
+      this.engineName = engineName;
+      return this;
+    }
+
+    public KyuubiSessionEvent.KyuubiSessionEventBuilder engineUrl(final String engineUrl) {
+      this.engineUrl = engineUrl;
       return this;
     }
 
@@ -218,6 +240,8 @@ public class KyuubiSessionEvent {
           sessionName,
           remoteSessionId,
           engineId,
+          engineName,
+          engineUrl,
           user,
           clientIp,
           serverIp,
@@ -277,6 +301,22 @@ public class KyuubiSessionEvent {
 
   public void setEngineId(String engineId) {
     this.engineId = engineId;
+  }
+
+  public String getEngineName() {
+    return engineName;
+  }
+
+  public void setEngineName(String engineName) {
+    this.engineName = engineName;
+  }
+
+  public String getEngineUrl() {
+    return engineUrl;
+  }
+
+  public void setEngineUrl(String engineUrl) {
+    this.engineUrl = engineUrl;
   }
 
   public String getUser() {
