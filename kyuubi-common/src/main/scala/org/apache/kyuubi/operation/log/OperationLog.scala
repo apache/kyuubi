@@ -29,9 +29,9 @@ import scala.collection.mutable.ListBuffer
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FetchOrientation}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.operation.log.OperationLog.{toLogRowSet, LOG_EMPTY_ROW_SET}
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
+import org.apache.kyuubi.util.ThriftUtils
 
 object OperationLog extends Logging {
   final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
@@ -81,15 +81,6 @@ object OperationLog extends Logging {
       }
     }.orNull
   }
-
-  private def toLogRowSet(logs: JList[String]): TRowSet = {
-    val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
-    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
-    tRow.addToColumns(tColumn)
-    tRow
-  }
-
-  val LOG_EMPTY_ROW_SET = toLogRowSet(List.empty[String].asJava)
 }
 
 class OperationLog(path: Path) {
@@ -167,6 +158,13 @@ class OperationLog(path: Path) {
       throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
   }
 
+  private def toRowSet(logs: JList[String]): TRowSet = {
+    val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
+    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
+    tRow.addToColumns(tColumn)
+    tRow
+  }
+
   def read(maxRows: Int): TRowSet = synchronized {
     read(FETCH_NEXT, maxRows)
   }
@@ -178,7 +176,7 @@ class OperationLog(path: Path) {
    * @param order   the  fetch orientation of the result, can be FETCH_NEXT, FETCH_FIRST
    */
   def read(order: FetchOrientation = FETCH_NEXT, maxRows: Int): TRowSet = synchronized {
-    if (!initialized) return LOG_EMPTY_ROW_SET
+    if (!initialized) return ThriftUtils.newEmptyRowSet
     if (order != FETCH_NEXT && order != FETCH_FIRST) {
       throw KyuubiSQLException(s"$order in operation log is not supported")
     }
@@ -193,7 +191,7 @@ class OperationLog(path: Path) {
       logs.addAll(extraLogs)
     }
 
-    toLogRowSet(logs)
+    toRowSet(logs)
   }
 
   private def resetReader(): Unit = {
@@ -210,7 +208,7 @@ class OperationLog(path: Path) {
   }
 
   def read(from: Int, size: Int): TRowSet = synchronized {
-    if (!initialized) return LOG_EMPTY_ROW_SET
+    if (!initialized) return ThriftUtils.newEmptyRowSet
     var pos = from
     if (pos < 0) {
       // just fetch forward
@@ -230,7 +228,7 @@ class OperationLog(path: Path) {
     val it = seekableReader.readLine(pos, size)
     val res = it.toList.asJava
     lastSeekReadPos = pos + res.size()
-    toLogRowSet(res)
+    toRowSet(res)
   }
 
   def close(): Unit = synchronized {
