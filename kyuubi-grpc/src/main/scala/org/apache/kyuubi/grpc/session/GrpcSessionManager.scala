@@ -16,12 +16,14 @@
  */
 package org.apache.kyuubi.grpc.session
 
+import java.util.concurrent._
+import scala.concurrent.duration.Duration
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.grpc.operation.GrpcOperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
-
-import java.util.concurrent._
-
 
 abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
@@ -55,6 +57,16 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
       session.open()
       setSession(key, session)
       logSessionCountInfo(session, "opened")
+      key
+    } catch {
+      case e: Exception =>
+        try {
+          session.close()
+        } catch {
+          case t: Throwable =>
+            warn(s"Error closing session for ${key.userId}", t)
+        }
+        throw KyuubiSQLException(e)
     }
   }
 
@@ -62,10 +74,15 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
   protected def shutdownSession(session: GrpcSession): Unit
 
-  protected def closeSession(key: SessionKey): Unit
-
-  protected def close(): Unit
-
+  protected def closeSession(key: SessionKey): Unit = {
+    _latestLogoutTime = System.currentTimeMillis()
+    val session = sessionKeyToSession.remove(key)
+    if (session == null) {
+      throw KyuubiSQLException(s"Invalid $key")
+    }
+    logSessionCountInfo(session, "closed")
+    session.close()
+  }
 
   final protected def setSession(key: SessionKey, session: GrpcSession): Unit = {
     sessionKeyToSession.put(key, session)
@@ -78,4 +95,53 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
   }
 
   def getOpenSessionCount: Int = sessionKeyToSession.size()
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
+    addService(grpcOperationManager)
+
+    val poolSize: Int = {
+      if (isServer) {
+        conf.get(SERVER_EXEC_POOL_SIZE)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SIZE)
+      }
+    }
+
+    val waitQueueSize: Int = {
+      if (isServer) {
+        conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
+      } else {
+        conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+      }
+    }
+    val keepAliveMs: Long = {
+      if (isServer) {
+        conf.get(SERVER_EXEC_KEEPALIVE_TIME)
+      } else {
+        conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+      }
+    }
+
+    execPool = ThreadUtils.newDaemonQueuedThreadPool(
+      poolSize,
+      waitQueueSize,
+      keepAliveMs,
+      s"$name-exec-pool")
+    super.initialize(conf)
+  }
+
+  override def stop(): Unit = synchronized {
+    super.stop()
+    shutdown = true
+    val shutdownTimeout: Long = {
+      if (isServer) {
+        conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      }
+    }
+
+    ThreadUtils.shutdown(execPool, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
+  }
 }

@@ -16,11 +16,18 @@
  */
 package org.apache.kyuubi.grpc.operation
 
+import java.util.concurrent._
+
 import org.apache.kyuubi.service.AbstractService
 
 /**
  * The [[GrpcOperationManager]] manages all the grpc operations during their lifecycle
  */
 abstract class GrpcOperationManager(name: String) extends AbstractService(name) {
+
+  private val keyToOperations = new ConcurrentHashMap[OperationKey, GrpcOperation]
+  private val operationsLock = new Object
+
+  private var lastExecutionTimeMs: Option[Long] = Some(System.currentTimeMillis())
 
 }

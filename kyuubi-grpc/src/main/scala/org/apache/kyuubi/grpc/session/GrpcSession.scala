@@ -16,8 +16,9 @@
  */
 package org.apache.kyuubi.grpc.session
 
-import org.apache.kyuubi.grpc.operation.GrpcOperation
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 
+import java.nio.file.Path
 
 case class SessionKey(userId: String, sessionId: String)
 trait GrpcSession {
@@ -32,15 +33,22 @@ trait GrpcSession {
 
   def sessionManager: GrpcSessionManager
 
-
   def open()
   def close()
 
-
-  def addExecuteOperation(operation: GrpcOperation)
+  def addExecuteOperation(operation: GrpcOperation): OperationKey
   def removeExecuteOperation(operation: GrpcOperation)
-  def getOperation(operationId: String): GrpcOperation
+  def removeAllOperations(): Unit
+
+  def getOperation(operationKey: OperationKey): GrpcOperation
   def interruptAll(): Seq[String]
   def interruptTag(): Seq[String]
   def interruptOperation(operationId: String): Seq[String]
+
+  def addArtifact(
+      remoteRelativePath: Path,
+      serverLocalStagingPath: Path,
+      fragment: Option[String])
+
+  
 }

@@ -18,6 +18,7 @@ package org.apache.kyuubi.grpc.operation
 
 import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.operation.log.OperationLog
+case class OperationKey(userId: String, sessionId: String, operationId: String)
 
 trait GrpcOperation {
   def run(): Unit
