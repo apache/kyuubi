@@ -25,7 +25,7 @@ import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{StatementDefaultContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.StatementDefaultContext
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkSqlParser, SQLExecution}
@@ -252,22 +252,29 @@ object SparkDatasetHelper extends Logging {
       statement: String,
       resultMaxRows: Int,
       minSize: Long,
+      minRows: Long,
       result: DataFrame): Boolean = {
-    if (isCommandExec(result.queryExecution.executedPlan.nodeName) || !isDQL(statement)) {
+    if (isCommandExec(result.queryExecution.executedPlan.nodeName) ||
+      !isDQL(statement) ||
+      (resultMaxRows > 0 && resultMaxRows < minRows)) {
       return false
     }
     val finalLimit = optimizedPlanLimit(result.queryExecution) match {
-      case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
-      case Some(limit) => limit
-      case None => resultMaxRows
+      case Some(limit) if resultMaxRows > 0 => Some(math.min(limit, resultMaxRows))
+      case Some(limit) => Some(limit)
+      case None if resultMaxRows > 0 => Some(resultMaxRows)
+      case _ => None
     }
-    lazy val stats = if (finalLimit > 0) {
-      finalLimit * EstimationUtils.getSizePerRow(
-        result.queryExecution.executedPlan.output)
-    } else {
-      result.queryExecution.optimizedPlan.stats.sizeInBytes
+    if (finalLimit.exists(_ < minRows)) {
+      return false
     }
-    lazy val colSize =
+    val sizeInBytes = result.queryExecution.optimizedPlan.stats.sizeInBytes
+    val stats = finalLimit.map { limit =>
+      val estimateSize =
+        limit * EstimationUtils.getSizePerRow(result.queryExecution.executedPlan.output)
+      estimateSize min sizeInBytes
+    }.getOrElse(sizeInBytes)
+    val colSize =
       if (result == null || result.schema.isEmpty) {
         0
       } else {
