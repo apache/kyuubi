@@ -246,22 +246,33 @@ object SparkDatasetHelper extends Logging {
       case _ => None
     }
 
-  def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
-    if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
+  def shouldSaveResultToFs(
+      resultMaxRows: Int,
+      minSize: Long,
+      minRows: Long,
+      result: DataFrame): Boolean = {
+    if (isCommandExec(result) ||
+      (resultMaxRows > 0 && resultMaxRows < minRows) ||
+      result.queryExecution.optimizedPlan.stats.rowCount.getOrElse(
+        BigInt(Long.MaxValue)) < minRows) {
       return false
     }
-    val finalLimit = optimizedPlanLimit(result.queryExecution) match {
-      case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
-      case Some(limit) => limit
-      case None => resultMaxRows
+    val finalLimit: Option[Long] = optimizedPlanLimit(result.queryExecution) match {
+      case Some(limit) if resultMaxRows > 0 => Some(math.min(limit, resultMaxRows))
+      case Some(limit) => Some(limit)
+      case None if resultMaxRows > 0 => Some(resultMaxRows)
+      case _ => None
     }
-    lazy val stats = if (finalLimit > 0) {
-      finalLimit * EstimationUtils.getSizePerRow(
-        result.queryExecution.executedPlan.output)
-    } else {
-      result.queryExecution.optimizedPlan.stats.sizeInBytes
+    if (finalLimit.exists(_ < minRows)) {
+      return false
     }
-    lazy val colSize =
+    val sizeInBytes = result.queryExecution.optimizedPlan.stats.sizeInBytes
+    val stats = finalLimit.map { limit =>
+      val estimateSize =
+        limit * EstimationUtils.getSizePerRow(result.queryExecution.executedPlan.output)
+      estimateSize min sizeInBytes
+    }.getOrElse(sizeInBytes)
+    val colSize =
       if (result == null || result.schema.isEmpty) {
         0
       } else {
@@ -270,7 +281,8 @@ object SparkDatasetHelper extends Logging {
     minSize > 0 && colSize > 0 && stats >= minSize
   }
 
-  private def isCommandExec(nodeName: String): Boolean = {
+  def isCommandExec(result: DataFrame): Boolean = {
+    val nodeName = result.queryExecution.executedPlan.getClass.getName
     nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
     nodeName == "org.apache.spark.sql.execution.CommandResultExec"
   }
