@@ -259,7 +259,7 @@ object SparkDatasetHelper extends Logging {
       (resultMaxRows > 0 && resultMaxRows < minRows)) {
       return false
     }
-    val finalLimit = optimizedPlanLimit(result.queryExecution) match {
+    val finalLimit: Option[Long] = optimizedPlanLimit(result.queryExecution) match {
       case Some(limit) if resultMaxRows > 0 => Some(math.min(limit, resultMaxRows))
       case Some(limit) => Some(limit)
       case None if resultMaxRows > 0 => Some(resultMaxRows)

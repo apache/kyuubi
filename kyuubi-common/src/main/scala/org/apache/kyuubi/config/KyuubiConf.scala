@@ -2069,7 +2069,7 @@ object KyuubiConf {
   val OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS: ConfigEntry[Long] =
     buildConf("kyuubi.operation.result.saveToFile.minRows")
       .doc("The minRows of Spark result save to file, default value is 10000.")
-      .version("1.9.0")
+      .version("1.9.1")
       .longConf
       .checkValue(_ > 0, "must be positive value")
       .createWithDefault(10000)
