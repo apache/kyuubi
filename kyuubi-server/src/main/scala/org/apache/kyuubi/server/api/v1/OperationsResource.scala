@@ -149,7 +149,11 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         FetchOrientation.withName(fetchOrientation),
         maxRows)
       val rowSet = fetchResultsResp.getResults
-      val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
+      val logRowSet = if (rowSet.getColumns != null) {
+        rowSet.getColumns.get(0).getStringVal.getValues.asScala
+      } else {
+        Seq.empty
+      }
       new OperationLog(logRowSet.asJava, logRowSet.size)
     } catch {
       case e: BadRequestException =>
