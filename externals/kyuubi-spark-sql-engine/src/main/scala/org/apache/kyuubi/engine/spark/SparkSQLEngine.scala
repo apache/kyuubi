@@ -128,7 +128,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       if (!shutdown.get) {
         info(s"Spark engine is de-registering from engine discovery space.")
         frontendServices.flatMap(_.discoveryService).foreach(_.stop())
-        while (backendService.sessionManager.getOpenSessionCount > 0) {
+        while (backendService.sessionManager.getActiveUserSessionCount > 0) {
           Thread.sleep(TimeUnit.SECONDS.toMillis(10))
         }
         info(s"Spark engine has no open session now, terminating.")
@@ -145,12 +145,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     Utils.tryLogNonFatalError {
       ThreadUtils.runInNewThread("spark-engine-failfast-checker") {
         if (!shutdown.get) {
-          while (backendService.sessionManager.getOpenSessionCount <= 0 &&
+          while (backendService.sessionManager.getActiveUserSessionCount <= 0 &&
             System.currentTimeMillis() - startedTime < maxTimeout) {
             info(s"Waiting for the initial connection")
             Thread.sleep(Duration(10, TimeUnit.SECONDS).toMillis)
           }
-          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+          if (backendService.sessionManager.getActiveUserSessionCount <= 0) {
             error(s"Spark engine has been terminated because no incoming connection" +
               s" for more than $maxTimeout ms, de-registering from engine discovery space.")
             assert(currentEngine.isDefined)
@@ -180,7 +180,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
             frontendServices.flatMap(_.discoveryService).foreach(_.stop())
           }
 
-          if (backendService.sessionManager.getOpenSessionCount <= 0) {
+          if (backendService.sessionManager.getActiveUserSessionCount <= 0) {
             info(s"Spark engine has been running for more than $maxLifetime ms" +
               s" and no open session now, terminating.")
             stop()

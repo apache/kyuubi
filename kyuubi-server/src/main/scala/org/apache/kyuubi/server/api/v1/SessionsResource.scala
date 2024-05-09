@@ -109,7 +109,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
-    new SessionOpenCount(sessionManager.getOpenSessionCount)
+    new SessionOpenCount(sessionManager.getActiveUserSessionCount)
   }
 
   @ApiResponse(

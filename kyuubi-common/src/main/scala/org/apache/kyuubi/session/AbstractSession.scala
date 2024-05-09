@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -259,4 +260,7 @@ abstract class AbstractSession(
   override def open(): Unit = {
     OperationLog.createOperationLogRootDirectory(this)
   }
+
+  val isForAliveProbe: Boolean =
+    conf.get(KyuubiReservedKeys.KYUUBI_SESSION_ALIVE_PROBE).exists(_.equalsIgnoreCase("true"))
 }
