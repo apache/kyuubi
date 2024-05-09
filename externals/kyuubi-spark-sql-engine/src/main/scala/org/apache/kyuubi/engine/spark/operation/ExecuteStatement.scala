@@ -174,6 +174,7 @@ class ExecuteStatement(
       val resultSaveEnabled = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
       val resultSaveThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
       if (hasResultSet && resultSaveEnabled && shouldSaveResultToFs(
+          statement,
           resultMaxRows,
           resultSaveThreshold,
           result)) {
