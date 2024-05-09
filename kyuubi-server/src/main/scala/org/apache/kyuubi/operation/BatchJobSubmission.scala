@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -125,6 +126,10 @@ class BatchJobSubmission(
     applicationInfo.filter(_.id != null).map(_.id).orElse(None)
   }
 
+  private def applicationName(applicationInfo: Option[ApplicationInfo]): Option[String] = {
+    applicationInfo.filter(_.name != null).map(_.id).orElse(None)
+  }
+
   private[kyuubi] def killBatchApplication(): KillResponse = {
     applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
   }
@@ -165,8 +170,16 @@ class BatchJobSubmission(
   private def setStateIfNotCanceled(newState: OperationState): Unit = withLockRequired {
     if (state != CANCELED) {
       setState(newState)
-      applicationId(_applicationInfo).foreach { appId =>
-        session.getSessionEvent.foreach(_.engineId = appId)
+      _applicationInfo.foreach { app =>
+        if (StringUtils.isNoneBlank(app.id)) {
+          session.getSessionEvent.foreach(_.engineId = app.id)
+        }
+        if (StringUtils.isNoneBlank(app.name)) {
+          session.getSessionEvent.foreach(_.engineName = app.name)
+        }
+        app.url.foreach { url =>
+          session.getSessionEvent.foreach(_.engineUrl = url)
+        }
       }
       if (newState == RUNNING) {
         session.onEngineOpened()
