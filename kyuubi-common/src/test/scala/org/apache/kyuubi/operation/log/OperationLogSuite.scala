@@ -26,9 +26,9 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
+import org.apache.kyuubi.operation.log.OperationLog.LOG_EMPTY_ROW_SET
 import org.apache.kyuubi.session.NoopSessionManager
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TProtocolVersion, TRowSet}
-import org.apache.kyuubi.util.ThriftUtils
 
 class OperationLogSuite extends KyuubiFunSuite {
 
@@ -149,7 +149,7 @@ class OperationLogSuite extends KyuubiFunSuite {
 
     val log = OperationLog.createOperationLog(session, oHandle)
     val tRowSet = log.read(1)
-    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+    assert(tRowSet == LOG_EMPTY_ROW_SET)
 
     logRoot.delete()
 
@@ -292,7 +292,7 @@ class OperationLogSuite extends KyuubiFunSuite {
     val log = OperationLog.createOperationLog(session, oHandle)
     // It has not been initialized, and returns empty `TRowSet` directly.
     val tRowSet = log.read(1)
-    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+    assert(tRowSet == LOG_EMPTY_ROW_SET)
 
     OperationLog.createOperationLogRootDirectory(session)
     val log1 = OperationLog.createOperationLog(session, oHandle)
@@ -353,7 +353,7 @@ class OperationLogSuite extends KyuubiFunSuite {
 
     val log = OperationLog.createOperationLog(session, oHandle)
     val tRowSet = log.read(1)
-    assert(tRowSet == ThriftUtils.newEmptyRowSet)
+    assert(tRowSet == LOG_EMPTY_ROW_SET)
     // close the operation log without writing
     log.close()
     session.close()
