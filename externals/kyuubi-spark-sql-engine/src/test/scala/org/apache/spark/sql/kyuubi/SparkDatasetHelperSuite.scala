@@ -43,21 +43,14 @@ class SparkDatasetHelperSuite extends WithSparkSQLEngine {
     }
   }
 
-  test("is data query language") {
-    var query = "select * from table"
-    assert(SparkDatasetHelper.isDQL(query))
-    query = "(select * from table)"
-    assert(SparkDatasetHelper.isDQL(query))
-    query = "(WITH TEMP_WITH_VIEW AS (SELECT * from tbl_d) SELECT * FROM TEMP_WITH_VIEW)"
-    assert(SparkDatasetHelper.isDQL(query))
-    query = "(WITH TEMP_WITH_VIEW AS (SELECT * from tbl_d)" +
-      " INSERT INTO tbl SELECT * FROM TEMP_WITH_VIEW)"
-    assert(!SparkDatasetHelper.isDQL(query))
-    query = "cache table tbl"
-    assert(!SparkDatasetHelper.isDQL(query))
-    query = "insert into tbl select * from ta"
-    assert(!SparkDatasetHelper.isDQL(query))
-    query = "set"
-    assert(!SparkDatasetHelper.isDQL(query))
+  test("isCommandExec") {
+    var query = "set"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "explain set"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "show tables"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "select * from VALUES(1),(2),(3),(4) AS t(id)"
+    assert(!SparkDatasetHelper.isCommandExec(spark.sql(query)))
   }
 }

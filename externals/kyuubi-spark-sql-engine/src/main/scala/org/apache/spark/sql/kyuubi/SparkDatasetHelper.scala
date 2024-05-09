@@ -24,11 +24,9 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.StatementDefaultContext
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
-import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkSqlParser, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -249,14 +247,14 @@ object SparkDatasetHelper extends Logging {
     }
 
   def shouldSaveResultToFs(
-      statement: String,
       resultMaxRows: Int,
       minSize: Long,
       minRows: Long,
       result: DataFrame): Boolean = {
-    if (isCommandExec(result.queryExecution.executedPlan.nodeName) ||
-      !isDQL(statement) ||
-      (resultMaxRows > 0 && resultMaxRows < minRows)) {
+    if (isCommandExec(result) ||
+      (resultMaxRows > 0 && resultMaxRows < minRows) ||
+      result.queryExecution.optimizedPlan.stats.rowCount.getOrElse(
+        BigInt(Long.MaxValue)) < minRows) {
       return false
     }
     val finalLimit: Option[Long] = optimizedPlanLimit(result.queryExecution) match {
@@ -283,33 +281,9 @@ object SparkDatasetHelper extends Logging {
     minSize > 0 && colSize > 0 && stats >= minSize
   }
 
-  private def isCommandExec(nodeName: String): Boolean = {
+  def isCommandExec(result: DataFrame): Boolean = {
+    val nodeName = result.queryExecution.executedPlan.getClass.getName
     nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
     nodeName == "org.apache.spark.sql.execution.CommandResultExec"
-  }
-
-  class DQLParser extends SparkSqlParser {
-    override def parse[T](command: String)(toResult: SqlBaseParser => T): T = {
-      super.parse(command)(toResult)
-    }
-
-    def isStatementQuery(statement: String): Boolean = {
-      parse(statement)(_.statement()).isInstanceOf[StatementDefaultContext]
-    }
-  }
-
-  private lazy val parser = new DQLParser()
-
-  /**
-   * Whether is DQL(data query language), including withCte, select, union
-   */
-  def isDQL(statement: String): Boolean = {
-    try {
-      parser.isStatementQuery(statement)
-    } catch {
-      case e: Throwable =>
-        logDebug(s"error checking whether query $statement is DQL: ${e.getMessage}")
-        false
-    }
   }
 }
