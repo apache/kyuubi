@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
-import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -126,10 +125,6 @@ class BatchJobSubmission(
     applicationInfo.filter(_.id != null).map(_.id).orElse(None)
   }
 
-  private def applicationName(applicationInfo: Option[ApplicationInfo]): Option[String] = {
-    applicationInfo.filter(_.name != null).map(_.id).orElse(None)
-  }
-
   private[kyuubi] def killBatchApplication(): KillResponse = {
     applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
   }
@@ -171,14 +166,14 @@ class BatchJobSubmission(
     if (state != CANCELED) {
       setState(newState)
       _applicationInfo.foreach { app =>
-        if (StringUtils.isNoneBlank(app.id)) {
-          session.getSessionEvent.foreach(_.engineId = app.id)
+        Option(app.id).filter(_.nonEmpty).foreach { appId =>
+          session.getSessionEvent.foreach(_.engineId = appId)
         }
-        if (StringUtils.isNoneBlank(app.name)) {
-          session.getSessionEvent.foreach(_.engineName = app.name)
+        Option(app.name).filter(_.nonEmpty).foreach { appName =>
+          session.getSessionEvent.foreach(_.engineName = appName)
         }
-        app.url.foreach { url =>
-          session.getSessionEvent.foreach(_.engineUrl = url)
+        app.url.filter(_.nonEmpty).foreach { appUrl =>
+          session.getSessionEvent.foreach(_.engineUrl = appUrl)
         }
       }
       if (newState == RUNNING) {
