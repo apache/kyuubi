@@ -70,4 +70,6 @@ abstract class KyuubiSession(
     ms.decCount(MetricRegistry.name(CONN_OPEN, user, sessionType.toString))
     ms.decCount(MetricRegistry.name(CONN_OPEN, sessionType.toString))
   }
+
+  override val isForAliveProbe: Boolean = false
 }
