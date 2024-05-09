@@ -293,6 +293,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     // It has not been initialized, and returns empty `TRowSet` directly.
     val tRowSet = log.read(1)
     assert(tRowSet == LOG_EMPTY_ROW_SET)
+    // check the empty rowSet can be read
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.asScala.isEmpty)
 
     OperationLog.createOperationLogRootDirectory(session)
     val log1 = OperationLog.createOperationLog(session, oHandle)
