@@ -41,6 +41,8 @@ object ApiUtils extends Logging {
         .conf(event.conf.asJava)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
+        .engineName(event.engineName)
+        .engineUrl(event.engineUrl)
         .eventTime(event.eventTime)
         .openedTime(event.openedTime)
         .startTime(event.startTime)
