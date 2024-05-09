@@ -36,6 +36,8 @@ public class SessionData {
   private String sessionType;
   private String kyuubiInstance;
   private String engineId;
+  private String engineName;
+  private String engineUrl;
   private String sessionName;
   private Integer totalOperations;
 
@@ -54,6 +56,8 @@ public class SessionData {
       String sessionType,
       String kyuubiInstance,
       String engineId,
+      String engineName,
+      String engineUrl,
       String sessionName,
       Integer totalOperations) {
     this.identifier = identifier;
@@ -68,6 +72,8 @@ public class SessionData {
     this.sessionType = sessionType;
     this.kyuubiInstance = kyuubiInstance;
     this.engineId = engineId;
+    this.engineName = engineName;
+    this.engineUrl = engineUrl;
     this.sessionName = sessionName;
     this.totalOperations = totalOperations;
   }
@@ -169,6 +175,22 @@ public class SessionData {
 
   public void setEngineId(String engineId) {
     this.engineId = engineId;
+  }
+
+  public String getEngineName() {
+    return engineName;
+  }
+
+  public void setEngineName(String engineName) {
+    this.engineName = engineName;
+  }
+
+  public String getEngineUrl() {
+    return engineUrl;
+  }
+
+  public void setEngineUrl(String engineUrl) {
+    this.engineUrl = engineUrl;
   }
 
   public String getSessionName() {

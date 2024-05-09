@@ -65,6 +65,8 @@ object ApiUtils extends Logging {
       session.sessionType.toString,
       session.connectionUrl,
       sessionEvent.map(_.engineId).getOrElse(""),
+      sessionEvent.map(_.engineName).getOrElse(""),
+      sessionEvent.map(_.engineUrl).getOrElse(""),
       session.name.getOrElse(""),
       sessionEvent.map(_.totalOperations).getOrElse(0): Int)
   }
