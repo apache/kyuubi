@@ -25,11 +25,11 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionImpl, Session}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TStatus, TStatusCode}
 import org.apache.kyuubi.sql.plan.command.RunnableCommand
-import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiOperationManager private (name: String) extends OperationManager(name) {
 
@@ -223,7 +223,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
         if (remoteHandle != null) {
           client.fetchResults(remoteHandle, order, maxRows, fetchLog = true)
         } else {
-          ThriftUtils.EMPTY_ROW_SET
+          OperationLog.LOG_EMPTY_ROW_SET
         }
     }
     resp.setResults(rowSet)
