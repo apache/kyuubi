@@ -157,7 +157,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.14.0</hudi.version>
         <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
-        <iceberg.version>1.5.0</iceberg.version>
+        <iceberg.version>1.5.2</iceberg.version>
         <jackson.version>2.15.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
