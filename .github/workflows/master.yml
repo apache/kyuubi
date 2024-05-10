@@ -248,7 +248,7 @@ jobs:
         comment: [ "normal" ]
         include:
           - java: 8
-            hive-archive: '-Dhive.archive.mirror=https://archive.apache.org/dist/hive/hive-2.3.9 -Dhive.archive.name=apache-hive-2.3.9-bin.tar.gz'
+            hive-archive: '-Dhive.archive.mirror=https://archive.apache.org/dist/hive/hive-2.3.10 -Dhive.archive.name=apache-hive-2.3.10-bin.tar.gz'
             comment: 'verify-on-hive-2.3-binary'
           - java: 8
             hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz'
@@ -274,13 +274,6 @@ jobs:
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
-          # Hive 2.3.9 ships Derby 10.10.2.0, which may fail to boostrap on latest JDK 8
-          # https://github.com/apache/hive/pull/4895
-          if [[ "${{ matrix.hive-archive }}" == *apache-hive-2.3.9-bin.tar.gz* ]]; then
-            HIVE_239_LIB="$PWD/externals/kyuubi-download/target/apache-hive-2.3.9-bin/lib"
-            rm $HIVE_239_LIB/derby-*
-            wget https://repo1.maven.org/maven2/org/apache/derby/derby/10.14.2.0/derby-10.14.2.0.jar -P $HIVE_239_LIB
-          fi
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
