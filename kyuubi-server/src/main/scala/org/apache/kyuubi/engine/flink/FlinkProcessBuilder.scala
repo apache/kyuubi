@@ -59,14 +59,31 @@ class FlinkProcessBuilder(
   // flink.execution.target are required in Kyuubi conf currently
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
 
+  private lazy val proxyUserEnable: Boolean = {
+    doAsEnabled && conf.get(ENGINE_FLINK_PROXY_USER_ENABLED) &&
+    conf.getOption(s"flink.$FLINK_SECURITY_KEYTAB_KEY").isEmpty &&
+    conf.getOption(s"flink.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty &&
+    !conf.getOption(s"flink.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").exists(_.toBoolean)
+  }
+
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-  override def env: Map[String, String] = conf.getEnvs +
-    ("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
-      "FLINK_CONF_DIR",
-      s"$flinkHome${File.separator}conf"))
+  override def env: Map[String, String] = {
+    val flinkExtraEnvs = if (proxyUserEnable) {
+      Map(
+        "FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
+          "FLINK_CONF_DIR",
+          s"$flinkHome${File.separator}conf"),
+        FLINK_PROXY_USER_KEY -> proxyUser)
+    } else {
+      Map("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
+        "FLINK_CONF_DIR",
+        s"$flinkHome${File.separator}conf"))
+    }
+    conf.getEnvs ++ flinkExtraEnvs
+  }
 
   override def clusterManager(): Option[String] = {
     executionTarget match {
@@ -125,6 +142,13 @@ class FlinkProcessBuilder(
         buffer += s"-Dyarn.application.name=${yarnAppName.get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
+        if (proxyUserEnable && conf.getOption(
+            s"flink.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").isEmpty) {
+          // FLINK-31109: Flink only supports hadoop proxy user only when delegation tokens fetch
+          // is managed outside. So we need to disable delegation tokens of flink and rely on kyuubi
+          // server to maintain engine's tokens.
+          buffer += s"-D$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY=false"
+        }
 
         hiveConfDirOpt.foreach { _ =>
           buffer += "-Dcontainerized.master.env.HIVE_CONF_DIR=."
@@ -227,4 +251,7 @@ object FlinkProcessBuilder {
 
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
+  final val FLINK_SECURITY_KEYTAB_KEY = "security.kerberos.login.keytab"
+  final val FLINK_SECURITY_PRINCIPAL_KEY = "security.kerberos.login.principal"
+  final val FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY = "security.delegation.tokens.enabled"
 }

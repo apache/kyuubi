@@ -2999,6 +2999,14 @@ object KyuubiConf {
       .version("1.8.1")
       .fallbackConf(ENGINE_INITIALIZE_SQL)
 
+  val ENGINE_FLINK_PROXY_USER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.proxy.user.enabled")
+      .doc("Whether to enable using hadoop proxy user to run flink engine. Only takes effect" +
+        s" in kerberos environment and when `${ENGINE_DO_AS_ENABLED.key}` is set to `true`.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +
