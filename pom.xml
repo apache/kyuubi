@@ -134,7 +134,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <delta.artifact>delta-spark</delta.artifact>
-        <delta.version>3.1.0</delta.version>
+        <delta.version>3.2.0</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -2059,7 +2059,7 @@
             </modules>
             <properties>
                 <delta.artifact>delta-spark</delta.artifact>
-                <delta.version>3.1.0</delta.version>
+                <delta.version>3.2.0</delta.version>
                 <!-- Remove this when Hudi supports Spark 3.5 -->
                 <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.1</spark.version>
