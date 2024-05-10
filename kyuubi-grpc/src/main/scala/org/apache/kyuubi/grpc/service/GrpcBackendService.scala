@@ -32,7 +32,7 @@ trait GrpcBackendService {
   def config(request: ConfigRequest,
              responseObserver: StreamObserver[ConfigResponse])
 
-  def addArtifacts(responseObserver: StreamObserver[AddArtifactsResponse]): StreamObserver[AddArtifactsRequest]
+  def addArtifacts(requestStreamObserver: StreamObserver[AddArtifactsRequest]): StreamObserver[AddArtifactsResponse]
 
   def artifactStatus(request: ArtifactStatusesRequest,
                      responseObserver: StreamObserver[ArtifactStatusesResponse])

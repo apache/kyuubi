@@ -16,7 +16,9 @@
  */
 package org.apache.kyuubi.grpc.session
 
+import io.grpc.stub.StreamObserver
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
+import org.apache.kyuubi.grpc.spark.proto.{AddArtifactsRequest, AddArtifactsResponse, AnalyzePlanRequest, AnalyzePlanResponse, ArtifactStatusesRequest, ArtifactStatusesResponse, ConfigRequest, ConfigResponse, ExecutePlanRequest, ExecutePlanResponse, FetchErrorDetailsRequest, FetchErrorDetailsResponse, InterruptRequest, InterruptResponse, ReattachExecuteRequest, ReleaseExecuteRequest, ReleaseExecuteResponse, ReleaseSessionRequest, ReleaseSessionResponse}
 
 import java.nio.file.Path
 
@@ -45,10 +47,34 @@ trait GrpcSession {
   def interruptTag(): Seq[String]
   def interruptOperation(operationId: String): Seq[String]
 
-  def addArtifact(
-      remoteRelativePath: Path,
-      serverLocalStagingPath: Path,
-      fragment: Option[String])
+  def executePlan(request: ExecutePlanRequest,
+                  responseObserver: StreamObserver[ExecutePlanResponse]): OperationKey
 
-  
+  def analyzePlan(request: AnalyzePlanRequest,
+                  responseObserver: StreamObserver[AnalyzePlanResponse])
+
+  def config(request: ConfigRequest,
+             responseObserver: StreamObserver[ConfigResponse])
+
+  def addArtifacts(responseObserver: StreamObserver[AddArtifactsResponse]): StreamObserver[AddArtifactsRequest]
+
+  def artifactStatus(request: ArtifactStatusesRequest,
+                     responseObserver: StreamObserver[ArtifactStatusesResponse])
+
+  def interrupt(request: InterruptRequest,
+                responseObserver: StreamObserver[InterruptResponse])
+
+  def reattachExecute(request: ReattachExecuteRequest,
+                      responseObserver: StreamObserver[ExecutePlanResponse]): OperationKey
+
+  def releaseExecute(request: ReleaseExecuteRequest,
+                     responseObserver: StreamObserver[ReleaseExecuteResponse])
+
+  def releaseSession(request: ReleaseSessionRequest,
+                     responseObserver: StreamObserver[ReleaseSessionResponse])
+
+  def fetchErrorDetails(request: FetchErrorDetailsRequest,
+                        responseObserver: StreamObserver[FetchErrorDetailsResponse])
+
+
 }

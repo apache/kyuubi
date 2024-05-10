@@ -19,6 +19,8 @@ package org.apache.kyuubi.grpc.service
 import org.apache.kyuubi.service.Service
 
 trait GrpcFrontendService {
+
+
   def connectionUrl: String
 
   val serverable: GrpcSeverable
