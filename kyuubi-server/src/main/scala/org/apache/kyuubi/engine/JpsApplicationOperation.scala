@@ -82,6 +82,7 @@ class JpsApplicationOperation extends ApplicationOperation {
   }
 
   override def killApplicationByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None): KillResponse = {
@@ -89,6 +90,7 @@ class JpsApplicationOperation extends ApplicationOperation {
   }
 
   override def getApplicationInfoByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None,

@@ -100,7 +100,10 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       sessionManager.closeSession(session.handle)
     }
     sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
-      sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
+      sessionManager.applicationManager.killApplication(
+        None,
+        ApplicationManagerInfo(None),
+        batch.getId)
       sessionManager.cleanupMetadata(batch.getId)
     }
   }
@@ -569,7 +572,10 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     var applicationStatus: Option[ApplicationInfo] = None
     eventually(timeout(5.seconds)) {
       applicationStatus =
-        sessionManager.applicationManager.getApplicationInfo(ApplicationManagerInfo(None), batchId2)
+        sessionManager.applicationManager.getApplicationInfo(
+          None,
+          ApplicationManagerInfo(None),
+          batchId2)
       assert(applicationStatus.isDefined)
     }
 

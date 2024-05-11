@@ -237,9 +237,13 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         }
         val engineId = sessionManager.allSessions().head.handle.identifier.toString
         // kill the engine application and wait the engine terminate
-        sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), engineId)
+        sessionManager.applicationManager.killApplication(
+          None,
+          ApplicationManagerInfo(None),
+          engineId)
         eventually(timeout(30.seconds), interval(100.milliseconds)) {
           assert(sessionManager.applicationManager.getApplicationInfo(
+            None,
             ApplicationManagerInfo(None),
             engineId)
             .exists(_.state == ApplicationState.NOT_FOUND))

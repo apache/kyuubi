@@ -95,74 +95,139 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
+  private def withNewYarnClient[T](
+      proxyUser: Option[String],
+      sessionConf: Option[KyuubiConf])(action: YarnClient => T): T = {
+    (sessionConf) match {
+      case Some(sessionConf) =>
+        (proxyUser) match {
+          case Some(user) =>
+            Utils.doAs(user) { () =>
+              var yarnClient: YarnClient = null
+              try {
+                val yarnConf = KyuubiHadoopUtils.newYarnConfiguration(sessionConf)
+                yarnClient = createYarnClient(yarnConf)
+                action(yarnClient)
+              } finally {
+                Utils.tryLogNonFatalError(yarnClient.close())
+              }
+            }
+          case None =>
+            var yarnClient: YarnClient = null
+            try {
+              yarnClient = createAdminYarnClient(sessionConf).get
+              action(yarnClient)
+            } finally {
+              Utils.tryLogNonFatalError(yarnClient.close())
+            }
+        }
+      case None =>
+        withYarnClient(proxyUser)(action)
+    }
+  }
+
+  def createAdminYarnClient(conf: KyuubiConf): Option[YarnClient] = {
+
+    val yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
+
+    def createYarnClientWithCurrentUser(): Option[YarnClient] = {
+      val c = createYarnClient(yarnConf)
+      info(s"Creating admin YARN client with current user: ${Utils.currentUser}.")
+      Some(c);
+    }
+
+    def createYarnClientWithProxyUser(proxyUser: String): Option[YarnClient] =
+      Utils.doAs(proxyUser) { () =>
+        val c = createYarnClient(yarnConf)
+        info(s"Creating admin YARN client with proxy user: $proxyUser.")
+        Some(c);
+      }
+
+    YarnUserStrategy.withName(conf.get(KyuubiConf.YARN_USER_STRATEGY)) match {
+      case NONE =>
+        createYarnClientWithCurrentUser()
+      case ADMIN if conf.get(KyuubiConf.YARN_USER_ADMIN) == Utils.currentUser =>
+        createYarnClientWithCurrentUser()
+      case ADMIN =>
+        createYarnClientWithProxyUser(conf.get(KyuubiConf.YARN_USER_ADMIN))
+      case OWNER =>
+        info("Skip initializing admin YARN client")
+        None
+    }
+  }
+
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean =
     appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))
 
   override def killApplicationByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
-      proxyUser: Option[String] = None): KillResponse = withYarnClient(proxyUser) { yarnClient =>
-    try {
-      val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
-      if (reports.isEmpty) {
-        (false, NOT_FOUND)
-      } else {
-        try {
-          val applicationId = reports.get(0).getApplicationId
-          yarnClient.killApplication(applicationId)
-          (true, s"Succeeded to terminate: $applicationId with $tag")
-        } catch {
-          case e: Exception =>
-            (false, s"Failed to terminate application with $tag, due to ${e.getMessage}")
+      proxyUser: Option[String] = None): KillResponse =
+    withNewYarnClient(proxyUser, sessionConf) { yarnClient =>
+      try {
+        val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
+        if (reports.isEmpty) {
+          (false, NOT_FOUND)
+        } else {
+          try {
+            val applicationId = reports.get(0).getApplicationId
+            yarnClient.killApplication(applicationId)
+            (true, s"Succeeded to terminate: $applicationId with $tag")
+          } catch {
+            case e: Exception =>
+              (false, s"Failed to terminate application with $tag, due to ${e.getMessage}")
+          }
         }
+      } catch {
+        case e: Exception =>
+          (
+            false,
+            s"Failed to get while terminating application with tag $tag, due to ${e.getMessage}")
       }
-    } catch {
-      case e: Exception =>
-        (
-          false,
-          s"Failed to get while terminating application with tag $tag, due to ${e.getMessage}")
     }
-  }
 
   override def getApplicationInfoByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None,
-      submitTime: Option[Long] = None): ApplicationInfo = withYarnClient(proxyUser) { yarnClient =>
-    debug(s"Getting application info from YARN cluster by tag: $tag")
-    val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
-    if (reports.isEmpty) {
-      debug(s"Can't find target application from YARN cluster by tag: $tag")
-      submitTime match {
-        case Some(_submitTime) =>
-          val elapsedTime = System.currentTimeMillis - _submitTime
-          if (elapsedTime < submitTimeout) {
-            info(s"Wait for YARN application[tag: $tag] to be submitted, " +
-              s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
-            ApplicationInfo.UNKNOWN
-          } else {
-            error(s"Can't find target application from YARN cluster by tag: $tag, " +
-              s"elapsed time: ${elapsedTime}ms exceeds ${ENGINE_YARN_SUBMIT_TIMEOUT.key}: " +
-              s"${submitTimeout}ms, return ${ApplicationInfo.NOT_FOUND} status")
-            ApplicationInfo.NOT_FOUND
-          }
-        case _ => ApplicationInfo.NOT_FOUND
+      submitTime: Option[Long] = None): ApplicationInfo =
+    withNewYarnClient(proxyUser, sessionConf) { yarnClient =>
+      debug(s"Getting application info from YARN cluster by tag: $tag")
+      val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
+      if (reports.isEmpty) {
+        debug(s"Can't find target application from YARN cluster by tag: $tag")
+        submitTime match {
+          case Some(_submitTime) =>
+            val elapsedTime = System.currentTimeMillis - _submitTime
+            if (elapsedTime < submitTimeout) {
+              info(s"Wait for YARN application[tag: $tag] to be submitted, " +
+                s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
+              ApplicationInfo.UNKNOWN
+            } else {
+              error(s"Can't find target application from YARN cluster by tag: $tag, " +
+                s"elapsed time: ${elapsedTime}ms exceeds ${ENGINE_YARN_SUBMIT_TIMEOUT.key}: " +
+                s"${submitTimeout}ms, return ${ApplicationInfo.NOT_FOUND} status")
+              ApplicationInfo.NOT_FOUND
+            }
+          case _ => ApplicationInfo.NOT_FOUND
+        }
+      } else {
+        val report = reports.get(0)
+        val info = ApplicationInfo(
+          id = report.getApplicationId.toString,
+          name = report.getName,
+          state = toApplicationState(
+            report.getApplicationId.toString,
+            report.getYarnApplicationState,
+            report.getFinalApplicationStatus),
+          url = Option(report.getTrackingUrl),
+          error = Option(report.getDiagnostics))
+        debug(s"Successfully got application info by tag: $tag. $info")
+        info
       }
-    } else {
-      val report = reports.get(0)
-      val info = ApplicationInfo(
-        id = report.getApplicationId.toString,
-        name = report.getName,
-        state = toApplicationState(
-          report.getApplicationId.toString,
-          report.getYarnApplicationState,
-          report.getFinalApplicationStatus),
-        url = Option(report.getTrackingUrl),
-        error = Option(report.getDiagnostics))
-      debug(s"Successfully got application info by tag: $tag. $info")
-      info
     }
-  }
 
   override def stop(): Unit = adminYarnClient.foreach { yarnClient =>
     Utils.tryLogNonFatalError(yarnClient.stop())

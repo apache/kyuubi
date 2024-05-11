@@ -109,6 +109,7 @@ class BatchJobSubmission(
     }
     val applicationInfo =
       applicationManager.getApplicationInfo(
+        None,
         builder.appMgrInfo(),
         batchId,
         Some(session.user),
@@ -126,7 +127,7 @@ class BatchJobSubmission(
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
-    applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
+    applicationManager.killApplication(None, builder.appMgrInfo(), batchId, Some(session.user))
   }
 
   private val applicationCheckInterval =

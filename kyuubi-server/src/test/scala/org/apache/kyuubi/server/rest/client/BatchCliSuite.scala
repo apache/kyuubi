@@ -104,7 +104,10 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       sessionManager.closeSession(session.handle)
     }
     sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
-      sessionManager.applicationManager.killApplication(ApplicationManagerInfo(None), batch.getId)
+      sessionManager.applicationManager.killApplication(
+        None,
+        ApplicationManagerInfo(None),
+        batch.getId)
       sessionManager.cleanupMetadata(batch.getId)
     }
   }
