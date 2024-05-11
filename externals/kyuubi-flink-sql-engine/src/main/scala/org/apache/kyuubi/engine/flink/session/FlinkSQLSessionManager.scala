@@ -90,12 +90,12 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
         warn(s"Error closing session $sessionHandle", t)
     }
     if (shareLevel == ShareLevel.CONNECTION) {
-      info("Session stopped due to shared level is Connection.")
-      stopSession()
+      info("Flink engine stopped due to session stopped and shared level is CONNECTION.")
+      stopEngine()
     }
   }
 
-  private def stopSession(): Unit = {
+  private def stopEngine(): Unit = {
     FlinkSQLEngine.currentEngine.foreach(_.stop())
   }
 

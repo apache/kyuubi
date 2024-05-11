@@ -172,7 +172,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
     if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
-      info("Session stopped due to shared level is Connection.")
+      info("Hive engine stopped due to session stopped and shared level is CONNECTION.")
       engine.stop()
     }
   }
