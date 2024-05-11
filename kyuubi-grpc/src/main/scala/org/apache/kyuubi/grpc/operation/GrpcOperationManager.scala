@@ -18,6 +18,14 @@ package org.apache.kyuubi.grpc.operation
 
 import java.util.concurrent._
 
+import scala.collection.JavaConverters._
+
+import io.grpc.stub.StreamObserver
+
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.grpc.session.GrpcSession
+import org.apache.kyuubi.grpc.spark.proto._
+import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 
 /**
@@ -29,5 +37,66 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
   private val operationsLock = new Object
 
   private var lastExecutionTimeMs: Option[Long] = Some(System.currentTimeMillis())
+
+  def getOperationCount: Int = keyToOperations.size()
+
+  def allOperations(): Iterable[GrpcOperation] = keyToOperations.values().asScala
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    LogDivertAppender.initialize()
+    super.initialize(conf)
+  }
+
+  def close(opKey: OperationKey)
+
+  def newExecutePlanOperation(
+      session: GrpcSession,
+      request: ExecutePlanRequest,
+      responseObServer: StreamObserver[ExecutePlanResponse]): GrpcOperation
+
+  def newAnalyzePlanOperation(
+      session: GrpcSession,
+      request: AnalyzePlanRequest,
+      responseObserver: StreamObserver[AnalyzePlanResponse]): GrpcOperation
+
+  def newConfigOperation(
+      session: GrpcSession,
+      request: ConfigRequest,
+      responseObserver: StreamObserver[ConfigResponse]): GrpcOperation
+
+  def newAddArtifactsOperation(
+      session: GrpcSession,
+      requestStreamObserver: StreamObserver[AddArtifactsResponse])
+      : (StreamObserver[AddArtifactsRequest], GrpcOperation)
+
+  def newArtifactStatusOperation(
+      session: GrpcSession,
+      request: ArtifactStatusesRequest,
+      responseObserver: StreamObserver[ArtifactStatusesResponse]): GrpcOperation
+
+  def newInterruptOperation(
+      session: GrpcSession,
+      request: InterruptRequest,
+      responseObserver: StreamObserver[InterruptResponse]): GrpcOperation
+
+  def newReattachExecuteOperation(
+      session: GrpcSession,
+      request: ReattachExecuteRequest,
+      responseObserver: StreamObserver[ExecutePlanResponse]): GrpcOperation
+
+  def newReleaseExecuteOperation(
+      session: GrpcSession,
+      request: ReleaseExecuteRequest,
+      responseObserver: StreamObserver[ReleaseExecuteResponse]): GrpcOperation
+
+  def newReleaseSessionOperation(
+      session: GrpcSession,
+      request: ReleaseSessionRequest,
+      responseObserver: StreamObserver[ReleaseSessionResponse]): GrpcOperation
+
+  def newFetchErrorDetailsOperation(
+      session: GrpcSession,
+      request: FetchErrorDetailsRequest,
+      responseObserver: StreamObserver[FetchErrorDetailsResponse]): GrpcOperation
 
 }

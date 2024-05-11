@@ -28,5 +28,5 @@ trait GrpcOperation {
   def getOperationLog: Option[OperationLog]
   def isTimedOut: Boolean
   def getGrpcSession: GrpcSession
-  def operationId: String
+  def operationKey: OperationKey
 }

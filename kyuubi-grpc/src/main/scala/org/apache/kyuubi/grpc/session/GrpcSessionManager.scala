@@ -16,15 +16,14 @@
  */
 package org.apache.kyuubi.grpc.session
 
-import io.grpc.stub.StreamObserver
-
 import java.util.concurrent._
+
 import scala.concurrent.duration.Duration
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.grpc.operation.GrpcOperationManager
-import org.apache.kyuubi.grpc.spark.proto.{AddArtifactsRequest, AddArtifactsResponse}
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
 
@@ -151,8 +150,6 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
         conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
       }
     }
-
-    def addArtifacts(responseObserver: StreamObserver[AddArtifactsResponse]): StreamObserver[AddArtifactsRequest]
 
     ThreadUtils.shutdown(execPool, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
   }
