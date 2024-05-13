@@ -35,6 +35,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object KyuubiHadoopUtils extends Logging {
@@ -43,6 +44,20 @@ object KyuubiHadoopUtils extends Logging {
       conf: KyuubiConf,
       loadDefaults: Boolean = true): Configuration = {
     val hadoopConf = new Configuration(loadDefaults)
+    List("HADOOP_CONF_DIR", "YARN_CONF_DIR").foreach { envKey =>
+      conf.getAllWithPrefix(KYUUBI_ENGINE_ENV_PREFIX, "").get(envKey).foreach { dir =>
+        // 处理异常文件夹不存在等等
+        try {
+          new java.io.File(dir).listFiles.filter(_.getName.endsWith(".xml"))
+            .foreach { file =>
+              hadoopConf.addResource(file.toURI.toURL)
+            }
+        } catch {
+          case e: Exception =>
+            warn(s"Failed to load $envKey from $dir", e)
+        }
+      }
+    }
     conf.getAll
       .foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
