@@ -14,29 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.session
+package org.apache.kyuubi.grpc.service
 
-import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.CompositeService
 
+abstract class AbstractGrpcBackendService(name: String)
+  extends CompositeService(name) with GrpcBackendService {
 
-trait GrpcSession {
-  def sessionKey: SessionKey
-  def name: Option[String]
-
-  def serverSessionId: String
-
-  def createTime: Long
-  def lastAccessTime: Long
-  def lastIdleTime: Long
-
-  def sessionManager: GrpcSessionManager
-
-  def open()
-  def close()
-
-  def removeAllOperations(): Unit
-
-  def getOperation(operationKey: OperationKey): GrpcOperation
-  def interruptOperation(operationId: String): Seq[String]
-
+  override def initialize(conf: KyuubiConf): Unit = {
+    addService(grpcSessionManager)
+    super.initialize(conf)
+  }
 }

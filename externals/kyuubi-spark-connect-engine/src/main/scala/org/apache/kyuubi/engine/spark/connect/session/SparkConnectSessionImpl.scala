@@ -18,29 +18,30 @@ package org.apache.kyuubi.engine.spark.connect.session
 
 import io.grpc.stub.StreamObserver
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
-import org.apache.kyuubi.engine.spark.connect.grpc.AbstractGrpcSession
-import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
 import org.apache.kyuubi.engine.spark.connect.operation.SparkConnectOperationManager
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
+import org.apache.kyuubi.grpc.session.{AbstractGrpcSession, GrpcSessionManager}
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
 class SparkConnectSessionImpl(
-    userId: String,
-    sessionId: String,
-    sessionManager: SessionManager,
-    val spark: SparkSession)
-  extends AbstractGrpcSession with Logging {
+                               userId: String,
+                               sessionId: String,
+                               sessionManager: GrpcSessionManager,
+                               val spark: SparkSession)
+  extends AbstractGrpcSession(userId, sessionId, sessionManager) with Logging {
+  override def name: Option[String] = ???
 
-  private val operationManager: SparkConnectOperationManager =
-    sessionManager.operationManager.asInstanceOf[SparkConnectOperationManager]
-  override val handle: SessionHandle =
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+  override def serverSessionId: String = ???
 
-  def config(request: ConfigRequest, response: StreamObserver[ConfigResponse]): Unit = {
-    val operation = operationManager.newConfigOperation(this, request, response)
-    runOperation(operation)
-  }
+  override def open(): Unit = ???
 
+  override def close(): Unit = ???
+
+  override def removeAllOperations(): Unit = ???
+
+  override def getOperation(operationKey: OperationKey): GrpcOperation = ???
+
+  override def interruptOperation(operationId: String): Seq[String] = ???
 }

@@ -16,48 +16,9 @@
  */
 package org.apache.kyuubi.grpc.service
 
-import io.grpc.stub.StreamObserver
-
-import org.apache.kyuubi.grpc.operation.OperationKey
 import org.apache.kyuubi.grpc.session.GrpcSessionManager
-import org.apache.kyuubi.grpc.spark.proto._
 
 trait GrpcBackendService {
-
-  def executePlan(
-      request: ExecutePlanRequest,
-      responseObserver: StreamObserver[ExecutePlanResponse]): OperationKey
-
-  def analyzePlan(
-      request: AnalyzePlanRequest,
-      responseObserver: StreamObserver[AnalyzePlanResponse])
-
-  def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse])
-
-  def addArtifacts(responseObserver: StreamObserver[AddArtifactsResponse])
-      : StreamObserver[AddArtifactsRequest]
-
-  def artifactStatus(
-      request: ArtifactStatusesRequest,
-      responseObserver: StreamObserver[ArtifactStatusesResponse])
-
-  def interrupt(request: InterruptRequest, responseObserver: StreamObserver[InterruptResponse])
-
-  def reattachExecute(
-      request: ReattachExecuteRequest,
-      responseObserver: StreamObserver[ExecutePlanResponse])
-
-  def releaseExecute(
-      request: ReleaseExecuteRequest,
-      responseObserver: StreamObserver[ReleaseExecuteResponse])
-
-  def releaseSession(
-      request: ReleaseSessionRequest,
-      responseObserver: StreamObserver[ReleaseSessionResponse])
-
-  def fetchErrorDetails(
-      request: FetchErrorDetailsRequest,
-      responseObserver: StreamObserver[FetchErrorDetailsResponse])
 
   def grpcSessionManager: GrpcSessionManager
 }
