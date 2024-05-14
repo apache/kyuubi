@@ -32,12 +32,18 @@ import org.apache.kyuubi.operation.log.OperationLog
  */
 object TrinoStatusPrinter {
 
-  def printFinalInfo(
+  def printStatusInfo(
       client: StatementClient,
       operationLog: OperationLog,
       debug: Boolean = false): Unit = {
     val out = new TrinoConsoleProgressBar(operationLog)
-    val results = client.finalStatusInfo()
+    val results =
+      if (client.isRunning) {
+        client.currentStatusInfo()
+      } else {
+        client.finalStatusInfo()
+      }
+
     val stats = results.getStats
 
     val wallTime = Duration.succinctDuration(stats.getElapsedTimeMillis(), MILLISECONDS)
