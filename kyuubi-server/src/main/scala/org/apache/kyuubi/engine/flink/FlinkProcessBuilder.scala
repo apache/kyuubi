@@ -115,10 +115,15 @@ class FlinkProcessBuilder(
           flinkExtraJars += s"$hiveConfFile"
         }
 
+        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "")
+        // add custom yarn.ship-files
+        flinkExtraJars ++= customFlinkConf.get(YARN_SHIP_FILES_KEY)
+        val yarnAppName = customFlinkConf.get(YARN_APPLICATION_NAME_KEY)
+          .orElse(conf.getOption(APP_KEY))
         buffer += "-t"
         buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
-        buffer += s"-Dyarn.application.name=${conf.getOption(APP_KEY).get}"
+        buffer += s"-Dyarn.application.name=${yarnAppName.get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
@@ -126,8 +131,10 @@ class FlinkProcessBuilder(
           buffer += "-Dcontainerized.master.env.HIVE_CONF_DIR=."
         }
 
-        val customFlinkConf = conf.getAllWithPrefix("flink", "")
-        customFlinkConf.filter(_._1 != "app.name").foreach { case (k, v) =>
+        customFlinkConf.filter { case (k, _) =>
+          !Seq("app.name", YARN_SHIP_FILES_KEY, YARN_APPLICATION_NAME_KEY, YARN_TAG_KEY)
+            .contains(k)
+        }.foreach { case (k, v) =>
           buffer += s"-D$k=$v"
         }
 
@@ -213,8 +220,12 @@ class FlinkProcessBuilder(
 
 object FlinkProcessBuilder {
   final val FLINK_EXEC_FILE = "flink"
+  final val FLINK_CONF_PREFIX = "flink"
   final val APP_KEY = "flink.app.name"
   final val YARN_TAG_KEY = "yarn.tags"
+  final val YARN_SHIP_FILES_KEY = "yarn.ship-files"
+  final val YARN_APPLICATION_NAME_KEY = "yarn.application.name"
+
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
 }
