@@ -167,4 +167,35 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     }
     matchActualAndExpectedApplicationMode(builder)
   }
+
+  test("user configuration takes priority") {
+    val customShipFiles = "testFile1.jar;testFile2.jar"
+    val customAppName = "testAppName"
+    val customYarnTags = "testTag1,testTag2"
+    val builderConf = applicationModeConf
+    builderConf.set("flink.yarn.ship-files", customShipFiles)
+    builderConf.set("flink.yarn.application.name", customAppName)
+    builderConf.set("flink.yarn.tags", customYarnTags)
+    val builder = new FlinkProcessBuilder("test", true, builderConf) {
+      override def env: Map[String, String] = envWithAllHadoop
+    }
+    val actualCommands = builder.toString
+    // scalastyle:off line.size.limit
+    val expectedCommands =
+      escapePaths(
+        s"""${builder.flinkExecutable} run-application \\\\
+           |\\t-t yarn-application \\\\
+           |\\t-Dyarn.ship-files=.*flink-sql-client.*jar;.*flink-sql-gateway.*jar;$tempUdfJar;.*hive-site.xml;$customShipFiles \\\\
+           |\\t-Dyarn.application.name=$customAppName \\\\
+           |\\t-Dyarn.tags=$customYarnTags,KYUUBI \\\\
+           |\\t-Dcontainerized.master.env.FLINK_CONF_DIR=. \\\\
+           |\\t-Dcontainerized.master.env.HIVE_CONF_DIR=. \\\\
+           |\\t-Dexecution.target=yarn-application \\\\
+           |\\t-c org.apache.kyuubi.engine.flink.FlinkSQLEngine .*kyuubi-flink-sql-engine_.*jar""".stripMargin +
+          "(?: \\\\\\n\\t--conf \\S+=\\S+)+")
+    // scalastyle:on line.size.limit
+    val regex = new Regex(expectedCommands)
+    val matcher = regex.pattern.matcher(actualCommands)
+    assert(matcher.matches())
+  }
 }
