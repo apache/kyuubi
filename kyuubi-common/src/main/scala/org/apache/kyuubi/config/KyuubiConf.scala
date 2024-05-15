@@ -1520,6 +1520,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val ENGINE_TRINO_SHOW_PROGRESS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.trino.progress.update.interval")
+      .doc("Update period of progress bar.")
+      .version("1.10.0")
+      .timeConf
+      .checkValue(_ >= 200, "Minimum 200 milliseconds")
+      .createWithDefault(1000)
+
   val ENGINE_HIVE_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.hive.main.resource")
       .doc("The package used to create Hive engine remote job. If it is undefined," +
