@@ -1950,6 +1950,13 @@
             </properties>
         </profile>
 
+        <profile>
+            <id>scala-2.12</id>
+            <properties>
+                <scala.binary.version>2.12</scala.binary.version>
+            </properties>
+        </profile>
+
         <!-- For development only, not generally applicable for all modules -->
         <profile>
             <id>scala-2.13</id>

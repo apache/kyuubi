@@ -426,23 +426,4 @@
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
-    <profiles>
-        <profile>
-            <id>scala-2.12</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <scala.binary.version>2.12</scala.binary.version>
-                <artifactId>kyuubi-spark-sql-engine_${scala.binary.version}</artifactId>
-            </properties>
-        </profile>
-        <profile>
-            <id>scala-2.13</id>
-            <properties>
-                <scala.binary.version>2.13</scala.binary.version>
-                <artifactId>kyuubi-spark-sql-engine_${scala.binary.version}</artifactId>
-            </properties>
-        </profile>
-    </profiles>
 </project>

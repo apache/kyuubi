@@ -62,6 +62,7 @@ function exit_with_usage {
   exit 1
 }
 
+
 # Parse arguments
 while (( "$#" )); do
   case $1 in
@@ -260,9 +261,9 @@ done
 
 # shellcheck disable=SC2050
 if [ "$SCALA_VERSION" = "2.12" ]; then
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
 else
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT  ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
+  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
 fi
 
 # shellcheck disable=SC2145
@@ -417,4 +418,3 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
 fi
-
