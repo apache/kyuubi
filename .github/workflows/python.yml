@@ -63,3 +63,21 @@ jobs:
         run: |
           cd python/docker/
           docker compose down --volumes
+
+  lint-check:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+      - name: Install dependencies
+        run: |
+          cd python
+          ./scripts/install-deps.sh
+      - name: Run lint check
+        run: |
+          cd python
+          ruff format --check .
+          ruff check .
