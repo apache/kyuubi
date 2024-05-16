@@ -32,16 +32,17 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
 
   private val keyToOperations = new ConcurrentHashMap[OperationKey, GrpcOperation]
 
+  protected def skipOperationLog: Boolean = false
   def getOperationCount: Int = keyToOperations.size()
 
   def allOperations(): Iterable[GrpcOperation] = keyToOperations.values().asScala
 
   override def initialize(conf: KyuubiConf): Unit = {
-    LogDivertAppender.initialize()
+    LogDivertAppender.initialize(skipOperationLog)
     super.initialize(conf)
   }
 
-  def close(opKey: OperationKey)
+  def close(opKey: OperationKey): Unit
 
   final def addOperation(grpcOperation: GrpcOperation): GrpcOperation = synchronized {
     keyToOperations.put(grpcOperation.operationKey, grpcOperation)
@@ -69,9 +70,9 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
   }
 
   @throws[KyuubiSQLException]
-  final def cancelOperation(operationKey: OperationKey): Unit = {
+  final def interruptOperation(operationKey: OperationKey): Unit = {
     val operation = getOperation(operationKey)
-    operation.
+    operation.interrupt()
   }
 
 }

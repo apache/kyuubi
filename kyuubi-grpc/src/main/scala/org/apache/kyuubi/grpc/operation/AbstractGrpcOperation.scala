@@ -63,8 +63,21 @@ abstract class AbstractGrpcOperation(session: GrpcSession) extends GrpcOperation
 
   override def close(): Unit
 
-  override def getGrpcSession: GrpcSession = session
+  override def grpcSession: GrpcSession = session
 
   override def operationKey: OperationKey = operationKey
 
+}
+
+object OperationJobTag {
+  def apply(prefix: String, operationKey: OperationKey): String = {
+    s"${prefix}_" +
+      s"User_${operationKey.userId}_" +
+      s"Session_${operationKey.sessionId}_" +
+      s"Operation_${operationKey.operationId}"
+  }
+
+  def unapply(jobTag: String, prefix: String): Option[String] = {
+    if (jobTag.startsWith(prefix)) Some(jobTag) else None
+  }
 }

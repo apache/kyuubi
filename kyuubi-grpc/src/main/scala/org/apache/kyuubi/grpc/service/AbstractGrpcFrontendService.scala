@@ -16,20 +16,19 @@
  */
 package org.apache.kyuubi.grpc.service
 
-import com.google.protobuf.MessageLite
-import io.grpc.MethodDescriptor.PrototypeMarshaller
-import io.grpc._
-import io.grpc.netty.NettyServerBuilder
-import io.grpc.protobuf.lite.ProtoLiteUtils
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST
-import org.apache.kyuubi.service.CompositeService
-import org.apache.kyuubi.util.NamedThreadFactory
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
-
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import com.google.protobuf.MessageLite
+import io.grpc._
+import io.grpc.MethodDescriptor.PrototypeMarshaller
+import io.grpc.netty.NettyServerBuilder
+import io.grpc.protobuf.lite.ProtoLiteUtils
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST, FRONTEND_ADVERTISED_HOST}
+import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.util.NamedThreadFactory
 
 abstract class AbstractGrpcFrontendService(name: String)
   extends CompositeService(name) with GrpcFrontendService with Runnable
@@ -139,7 +138,7 @@ abstract class AbstractGrpcFrontendService(name: String)
   }
 
   override def connectionUrl: String = {
-    val host = (conf.get(ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST), serverHost) match {
+    val host = (conf.get(FRONTEND_ADVERTISED_HOST), serverHost) match {
       case (Some(advertisedHost), _) => advertisedHost
       case (None, Some(h)) => h
       case (None, None) => serverAddr.getHostAddress

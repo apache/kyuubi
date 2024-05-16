@@ -14,20 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.operation
+package org.apache.kyuubi.grpc.client
 
-import org.apache.kyuubi.grpc.events.OperationEventsManager
-import org.apache.kyuubi.grpc.session.GrpcSession
-import org.apache.kyuubi.operation.log.OperationLog
+class SimpleRpcClient {
 
-trait GrpcOperation {
-  def run(): Unit
-  def interrupt(): Unit
-  def close(): Unit
-
-  def getOperationLog: Option[OperationLog]
-  def isTimedOut: Boolean
-  def grpcSession: GrpcSession
-  def operationKey: OperationKey
-  def operationEventsManager: OperationEventsManager
 }

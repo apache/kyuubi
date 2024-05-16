@@ -14,20 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.operation
+package org.apache.kyuubi.grpc.utils
 
-import org.apache.kyuubi.grpc.events.OperationEventsManager
-import org.apache.kyuubi.grpc.session.GrpcSession
-import org.apache.kyuubi.operation.log.OperationLog
+import com.google.protobuf.Message
 
-trait GrpcOperation {
-  def run(): Unit
-  def interrupt(): Unit
-  def close(): Unit
+object ProtoUtils {
 
-  def getOperationLog: Option[OperationLog]
-  def isTimedOut: Boolean
-  def grpcSession: GrpcSession
-  def operationKey: OperationKey
-  def operationEventsManager: OperationEventsManager
+  private val JOB_TAGS_SEP = ','
+  def throwIfInvalidTag(tag: String): Unit = {
+    if (tag == null) {
+      throw new IllegalArgumentException("Tag cannot be null.")
+    }
+    if (tag.contains(JOB_TAGS_SEP)) {
+      throw new IllegalArgumentException(
+        s"Tag cannot contain '$JOB_TAGS_SEP'.")
+    }
+    if (tag.isEmpty) {
+      throw new IllegalArgumentException("Tag cannot be an empty string.")
+    }
+  }
 }

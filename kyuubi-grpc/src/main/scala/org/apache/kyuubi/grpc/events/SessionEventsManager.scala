@@ -14,8 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.session
+package org.apache.kyuubi.grpc.events
 
+import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.grpc.utils.Clock
 
 sealed abstract class SessionStatus(value: Int)
@@ -45,8 +46,7 @@ abstract class SessionEventsManager(session: GrpcSession, clock: Clock) {
     assertStatus(List(SessionStatus.Started), SessionStatus.Closed)
   }
 
-  private def assertStatus(validStatuses: List[SessionStatus],
-                           eventStatus: SessionStatus): Unit = {
+  private def assertStatus(validStatuses: List[SessionStatus], eventStatus: SessionStatus): Unit = {
     if (!validStatuses.contains(status)) {
       throw new IllegalStateException(
         s"""

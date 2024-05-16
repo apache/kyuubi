@@ -17,19 +17,42 @@
 package org.apache.kyuubi.grpc.session
 
 import java.util.concurrent._
-
 import scala.concurrent.duration.Duration
-
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.grpc.operation.GrpcOperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
 
+import java.io.IOException
+import java.nio.file.{Files, Paths}
+
 abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
+
+  protected var _operationLogRoot: Option[String] = None
+
+  def operationLogRoot: Option[String] = _operationLogRoot
+
+  private def initOperationLogRootDir(): Unit = {
+    try {
+      val logRoot = {
+        if (isServer) {
+          conf.get(SERVER_OPERATION_LOG_DIR_ROOT)
+        } else {
+          conf.get(ENGINE_OPERATION_LOG_DIR_ROOT)
+        }
+      }
+      val logPath = Files.createDirectories(Utils.getAbsolutePathFromWork(logRoot))
+      _operationLogRoot = Some(logPath.toString)
+    } catch {
+      case e: IOException =>
+        error(s"Failed to initialize operation log root directory: ${_operationLogRoot}", e)
+        _operationLogRoot = None
+    }
+  }
 
   private val sessionKeyToSession = new ConcurrentHashMap[SessionKey, GrpcSession]
 
@@ -52,7 +75,7 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     getSessionOption(key).getOrElse(throw KyuubiSQLException(s"Invalid key $key"))
   }
 
-  def getSessionOption(key: SessionKey): Option[GrpcSession] = {
+  private def getSessionOption(key: SessionKey): Option[GrpcSession] = {
     Option(sessionKeyToSession.get(key))
   }
   def openSession(
@@ -88,7 +111,23 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
       throw KyuubiSQLException(s"Invalid $key")
     }
     logSessionCountInfo(session, "closed")
-    session.close()
+    try {
+      session.close()
+    } finally {
+      deleteOperationLogSessionDir(key)
+    }
+  }
+
+  private def deleteOperationLogSessionDir(key: SessionKey): Unit = {
+    _operationLogRoot.foreach(logRoot => {
+      val rootPath = Paths.get(logRoot, key.toString)
+      try {
+        Utils.deleteDirectoryRecursively(rootPath.toFile)
+      } catch {
+        case e: IOException =>
+          error(s"Failed to delete session operation log directory ${rootPath.toString}", e)
+      }
+    })
   }
 
   final protected def setSession(key: SessionKey, session: GrpcSession): Unit = {
@@ -103,9 +142,27 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = sessionKeyToSession.size()
 
+  def getExecPoolSize: Int = {
+    assert(execPool != null)
+    execPool.getPoolSize
+  }
+
+  def getActiveCount: Int = {
+    assert(execPool != null)
+    execPool.getActiveCount
+  }
+
+  def getWorkQueueSize: Int = {
+    assert(execPool != null)
+    execPool.getQueue.size()
+  }
+
+
+
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(grpcOperationManager)
+    initOperationLogRootDir()
 
     val poolSize: Int = {
       if (isServer) {

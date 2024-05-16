@@ -17,10 +17,15 @@
 package org.apache.kyuubi.grpc.session
 
 import java.util
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
+
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.grpc.events.SessionEventsManager
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
+import org.apache.kyuubi.grpc.utils.{ProtoUtils, SystemClock}
 
 abstract class AbstractGrpcSession(
     val userId: String,
@@ -33,12 +38,17 @@ abstract class AbstractGrpcSession(
   @volatile private var _lastAccessTime: Long = _createTime
   override def lastAccessTime: Long = _lastAccessTime
 
+  @volatile private var closedTimeMs: Option[Long] = None
+
   @volatile private var _lastIdleTime: Long = _createTime
   override def lastIdleTime: Long = _lastIdleTime
 
   final private val opKeySet = new util.HashSet[OperationKey]
 
   protected def runGrpcOperation(operation: GrpcOperation): OperationKey = {
+    if (closedTimeMs.isDefined) {
+      throw KyuubiSQLException("Cannot build operation because the session is closed")
+    }
     try {
       val opKey = operation.operationKey
       opKeySet.add(opKey)
@@ -62,5 +72,36 @@ abstract class AbstractGrpcSession(
 
   override def closeOperation(operationKey: OperationKey): Unit = {
     sessionManager.grpcOperationManager.closeOperation(operationKey)
+  }
+
+  override def interruptOperation(operationKey: OperationKey): Unit = {
+    sessionManager.grpcOperationManager.interruptOperation(operationKey)
+  }
+
+  override def open(): Unit = {
+    sessionEventsManager.postStarted()
+  }
+
+  override def close(): Unit = {
+    if (closedTimeMs.isDefined) {
+      throw KyuubiSQLException(s"Session ${sessionKey.sessionId} is already closed.")
+    }
+    closedTimeMs = Some(System.currentTimeMillis())
+    sessionEventsManager.postClosed()
+  }
+
+}
+
+object SessionTag {
+  def apply(sessionKey: SessionKey, tag: String, prefix: String): String = {
+    ProtoUtils.throwIfInvalidTag(tag)
+    s"${prefix}_" +
+      s"User_${sessionKey.userId}_" +
+      s"Session_${sessionKey.sessionId}_" +
+      s"Tag_${tag}"
+  }
+
+  def unapply(sessionTag: String, prefix: String): Option[String] = {
+    if (sessionTag.startsWith(prefix)) Some(sessionTag) else None
   }
 }

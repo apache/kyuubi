@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.operation
+package org.apache.kyuubi.grpc.events
 
-import org.apache.kyuubi.grpc.session.{GrpcSession, SessionStatus}
+import org.apache.kyuubi.grpc.operation.GrpcOperation
+import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.grpc.utils.Clock
 
 object OperationEventsManager {
@@ -66,8 +67,7 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
   }
 
   protected def postAnalyzed(analyzedPlan: Option[Any] = None): Unit = {
-    assertStatus(List(OperationStatus.Started, OperationStatus.Analyzed),
-      OperationStatus.Analyzed)
+    assertStatus(List(OperationStatus.Started, OperationStatus.Analyzed), OperationStatus.Analyzed)
   }
 
   protected def postReadyForExecution(): Unit = {
@@ -75,39 +75,43 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
   }
 
   protected def postCanceled(): Unit = {
-    assertStatus(List(
-      OperationStatus.Started,
-      OperationStatus.Analyzed,
-      OperationStatus.ReadyForExecution,
-      OperationStatus.Finished,
-      OperationStatus.Failed),
+    assertStatus(
+      List(
+        OperationStatus.Started,
+        OperationStatus.Analyzed,
+        OperationStatus.ReadyForExecution,
+        OperationStatus.Finished,
+        OperationStatus.Failed),
       OperationStatus.Canceled)
     canceled = Some(true)
   }
 
   protected def postFailed(errorMessage: String): Unit = {
-    assertStatus(List(
-      OperationStatus.Started,
-      OperationStatus.Analyzed,
-      OperationStatus.ReadyForExecution,
-      OperationStatus.Finished),
+    assertStatus(
+      List(
+        OperationStatus.Started,
+        OperationStatus.Analyzed,
+        OperationStatus.ReadyForExecution,
+        OperationStatus.Finished),
       OperationStatus.Failed)
     error = Some(true)
   }
 
   protected def postFinished(producedRowCountOpt: Option[Long] = None): Unit = {
-    assertStatus(List(
-      OperationStatus.Started,
-      OperationStatus.ReadyForExecution),
+    assertStatus(
+      List(
+        OperationStatus.Started,
+        OperationStatus.ReadyForExecution),
       OperationStatus.Finished)
     producedRowCount = producedRowCountOpt
   }
 
   protected def postClosed(): Unit = {
-    assertStatus(List(
-      OperationStatus.Finished,
-      OperationStatus.Failed,
-      OperationStatus.Canceled),
+    assertStatus(
+      List(
+        OperationStatus.Finished,
+        OperationStatus.Failed,
+        OperationStatus.Canceled),
       OperationStatus.Closed)
   }
 
