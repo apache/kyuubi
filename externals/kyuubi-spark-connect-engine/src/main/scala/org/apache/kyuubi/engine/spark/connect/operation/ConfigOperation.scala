@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.connect.operation
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import io.grpc.stub.StreamObserver
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionImpl
 import org.apache.spark.sql.RuntimeConfig
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.grpc.session.{GrpcSession, SessionKey}
@@ -27,7 +28,7 @@ import org.apache.kyuubi.session.Session
 import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse, KeyValue}
 
 class ConfigOperation(
-                       session: GrpcSession,
+                       session: SparkConnectSessionImpl,
                        request: ConfigRequest,
                        responseObserver: StreamObserver[ConfigResponse])
   extends SparkConnectOperation(session) {

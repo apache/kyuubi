@@ -18,7 +18,7 @@ package org.apache.kyuubi.engine.spark.connect.operation
 
 import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionImpl
-import org.apache.kyuubi.grpc.operation.{AbstractGrpcOperation, GrpcOperation}
+import org.apache.kyuubi.grpc.operation.{AbstractGrpcOperation, GrpcOperation, OperationKey}
 import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.operation.{AbstractOperation, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -26,29 +26,37 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TStatus, TStatusCode}
 
-abstract class SparkConnectOperation(session: GrpcSession)
+abstract class SparkConnectOperation(session: SparkConnectSessionImpl)
   extends AbstractGrpcOperation(session) {
 
-  protected val spark: SparkSession = session.asInstanceOf[SparkConnectSessionImpl].spark
+  protected def spark: SparkSession = session.spark
+
+  val operationTag = OperationTag(key)
+
+  // default empty, executePlanOperation will override it
+  protected def sparkSessionTags: Set[String] = Set.empty[String]
+
 
 
   override def beforeRun(): Unit = {
     Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
   }
 
-  override def afterRun(): Unit = {
 
+
+}
+
+object OperationTag {
+  private val prefix = "SparkConnect_OperationTag"
+
+  def apply(key: OperationKey): String = {
+    s"${prefix}_" +
+      s"User_${key.key.userId}_" +
+      s"Session_${key.key.sessionId}_" +
+      s"Operation_${key.identifier}"
   }
 
-  override def cancel(): Unit = {
-
+  def unapply(tag: String): Option[String] = {
+    if (tag.startsWith(prefix)) Some(tag) else None
   }
-
-  override def close(): Unit = {
-
-  }
-
-
-
-
 }

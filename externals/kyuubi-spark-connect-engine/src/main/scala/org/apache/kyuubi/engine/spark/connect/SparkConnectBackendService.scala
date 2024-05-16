@@ -35,10 +35,10 @@ class SparkConnectBackendService(name: String, spark: SparkSession)
       key: SessionKey,
       request: ConfigRequest,
       responseObserver: StreamObserver[ConfigResponse]): Unit = {
-    grpcSessionManager.getSession(key).config(request, responseObserver)
+    getSession(key).config(request, responseObserver)
   }
 
   def getSession(key: SessionKey): SparkConnectSessionImpl = {
-    grpcSessionManager.getOrCreateSession(key)
+    grpcSessionManager.getOrCreateSession(key).asInstanceOf[SparkConnectSessionImpl]
   }
 }

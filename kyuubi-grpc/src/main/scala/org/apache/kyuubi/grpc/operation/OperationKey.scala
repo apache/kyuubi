@@ -20,13 +20,13 @@ import java.util.UUID
 
 import org.apache.kyuubi.grpc.session.SessionKey
 
-case class OperationKey(key: SessionKey, identifier: UUID) {
+case class OperationKey(userId: String, sessionId: String, operationId: String) {
   override def toString: String =
-    s"SessionKey: [$key], OperationId: [$identifier]"
+    s"Session: [{$userId}_{$sessionId}], OperationId: [$operationId]"
 }
 
 object OperationKey {
   def apply(key: SessionKey): OperationKey =
-    new OperationKey(key, UUID.randomUUID())
+    new OperationKey(key.userId, key.sessionId, UUID.randomUUID().toString)
 
 }

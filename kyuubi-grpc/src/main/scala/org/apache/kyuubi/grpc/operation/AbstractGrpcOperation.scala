@@ -25,7 +25,7 @@ import org.apache.kyuubi.grpc.session.GrpcSession
 abstract class AbstractGrpcOperation(session: GrpcSession) extends GrpcOperation with Logging {
   final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
-  protected var key: OperationKey = OperationKey(session.sessionKey)
+  protected def key: OperationKey
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }

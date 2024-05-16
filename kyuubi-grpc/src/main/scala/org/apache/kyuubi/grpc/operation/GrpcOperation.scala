@@ -26,6 +26,7 @@ trait GrpcOperation {
 
   def getOperationLog: Option[OperationLog]
   def isTimedOut: Boolean
-  def getGrpcSession: GrpcSession
+  def grpcSession: GrpcSession
   def operationKey: OperationKey
+  def operationEventsManager: OperationEventsManager
 }

@@ -17,17 +17,17 @@
 package org.apache.kyuubi.engine.spark.connect.operation
 
 import java.util
-
 import io.grpc.stub.StreamObserver
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.connect.grpc.{AbstractGrpcSession, GrpcOperationManager}
-import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
+import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionImpl
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, GrpcOperationManager, OperationKey}
+import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
+import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse}
 
 class SparkConnectOperationManager private (name: String) extends GrpcOperationManager(name) {
 
@@ -37,11 +37,15 @@ class SparkConnectOperationManager private (name: String) extends GrpcOperationM
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
   }
-  override def newConfigOperation(
-      session: Session,
-      request: ConfigRequest,
-      response: StreamObserver[ConfigResponse]): Operation = {
-    new ConfigOperation(session, request, response)
+  def newConfigOperation(
+                          session: SparkConnectSessionImpl,
+                          request: ConfigRequest,
+                          response: StreamObserver[ConfigResponse]): GrpcOperation = {
+    val configOperation = new ConfigOperation(session, request, response)
+    addOperation(configOperation)
   }
 
+  override def close(opKey: OperationKey): Unit = {
+
+  }
 }

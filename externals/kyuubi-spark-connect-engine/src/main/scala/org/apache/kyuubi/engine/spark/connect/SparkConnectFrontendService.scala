@@ -20,6 +20,7 @@ import com.google.protobuf.MessageLite
 import io.grpc.stub.StreamObserver
 import io.grpc.{ServerMethodDefinition, ServerServiceDefinition}
 import org.apache.kyuubi.grpc.service.{AbstractGrpcFrontendService, GrpcSeverable}
+import org.apache.kyuubi.grpc.session.SessionKey
 import org.apache.kyuubi.service.Service
 import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse, SparkConnectServiceGrpc}
 import org.apache.spark.connect.proto.SparkConnectServiceGrpc.AsyncService
@@ -28,6 +29,9 @@ import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 class SparkConnectFrontendService(override val serverable: GrpcSeverable)
   extends AbstractGrpcFrontendService("SparkConnectFrontendService") with AsyncService{
+
+  def sparkBe: SparkConnectBackendService = be.asInstanceOf[SparkConnectBackendService]
+
   override protected def serverHost: Option[String] = {
     Some("localhost")
   }
@@ -47,7 +51,8 @@ class SparkConnectFrontendService(override val serverable: GrpcSeverable)
   }
 
   override def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse]): Unit = {
-    be.grpcSessionManager.
+    val sessionKey = new SessionKey(request.getUserContext.getUserId, request.getSessionId)
+    sparkBe.config(sessionKey,request,responseObserver)
   }
   override val discoveryService: Option[Service] = _
 }

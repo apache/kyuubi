@@ -16,13 +16,13 @@
  */
 package org.apache.kyuubi.engine.spark.connect
 
+import org.apache.kyuubi.grpc.service.GrpcSeverable
+
 import java.util.concurrent.atomic.AtomicBoolean
-
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.service.Serverable
 
-class SparkConnectEngine(spark: SparkSession) extends Serverable("SparkConnectEngine") {
+class SparkConnectEngine(spark: SparkSession) extends GrpcSeverable("SparkConnectEngine") {
   override val backendService = new SparkConnectBackendService(spark)
   override val frontendServices = Seq(new SparkConnectFrontendService(this))
 

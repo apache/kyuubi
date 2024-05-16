@@ -30,6 +30,8 @@ trait GrpcSession {
 
   def sessionManager: GrpcSessionManager
 
+  def sessionEventsManager: SessionEventsManager
+
   def open()
   def close()
 

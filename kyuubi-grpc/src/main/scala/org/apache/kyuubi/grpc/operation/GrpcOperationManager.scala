@@ -68,4 +68,10 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
     operation.close()
   }
 
+  @throws[KyuubiSQLException]
+  final def cancelOperation(operationKey: OperationKey): Unit = {
+    val operation = getOperation(operationKey)
+    operation.
+  }
+
 }
