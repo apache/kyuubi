@@ -46,8 +46,7 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
   def grpcOperationManager: GrpcOperationManager
 
   def getOrCreateSession(
-      key: SessionKey,
-      previouslyObservedSessionId: Option[String]): GrpcSession
+      key: SessionKey): GrpcSession
 
   def getSession(key: SessionKey): GrpcSession = {
     getSessionOption(key).getOrElse(throw KyuubiSQLException(s"Invalid key $key"))
@@ -57,10 +56,9 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     Option(sessionKeyToSession.get(key))
   }
   def openSession(
-      key: SessionKey,
-      previouslyObservedSessionId: Option[String]): SessionKey = {
+      key: SessionKey): SessionKey = {
     info(s"Opening grpc session for ${key.userId}")
-    val session = getOrCreateSession(key, previouslyObservedSessionId)
+    val session = getOrCreateSession(key)
     try {
       val key = session.sessionKey
       session.open()

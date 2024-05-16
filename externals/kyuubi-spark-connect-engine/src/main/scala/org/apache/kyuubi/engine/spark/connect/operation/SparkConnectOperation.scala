@@ -18,55 +18,37 @@ package org.apache.kyuubi.engine.spark.connect.operation
 
 import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionImpl
-import org.apache.kyuubi.grpc.operation.GrpcOperation
+import org.apache.kyuubi.grpc.operation.{AbstractGrpcOperation, GrpcOperation}
+import org.apache.kyuubi.grpc.session.GrpcSession
 import org.apache.kyuubi.operation.{AbstractOperation, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TStatus, TStatusCode}
 
-abstract class SparkConnectOperation(session: Session)
-  extends GrpcOperation(session) {
+abstract class SparkConnectOperation(session: GrpcSession)
+  extends AbstractGrpcOperation(session) {
 
   protected val spark: SparkSession = session.asInstanceOf[SparkConnectSessionImpl].spark
 
-  override def getStatus: OperationStatus = {
-    super.getStatus
+
+  override def beforeRun(): Unit = {
+    Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
   }
 
-  override def cleanup(targetState: OperationState): Unit = {
-    super.cleanup(targetState)
+  override def afterRun(): Unit = {
+
   }
 
-  override def setState(newState: OperationState): Unit = {
-    super.setState(newState)
+  override def cancel(): Unit = {
+
   }
 
-  override def beforeRun(): Unit = {}
+  override def close(): Unit = {
 
-  override def afterRun(): Unit = {}
-
-  override def cancel(): Unit = {}
-
-  override def close(): Unit = {}
-
-  override def shouldRunAsync: Boolean = false
-
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TFetchResultsResp = {
-    super.getNextRowSet(order, rowSetSize)
   }
 
-  override def getResultSetMetadata: TGetResultSetMetadataResp = {
-    val resp = new TGetResultSetMetadataResp
-    resp.setStatus(new TStatus(TStatusCode.ERROR_STATUS))
-    resp
-  }
 
-  override def getNextRowSetInternal(
-      order: FetchOrientation,
-      rowSetSize: Int): TFetchResultsResp = {
-    val resp = new TFetchResultsResp
-    resp.setStatus(new TStatus(TStatusCode.ERROR_STATUS))
-    resp
-  }
+
+
 }

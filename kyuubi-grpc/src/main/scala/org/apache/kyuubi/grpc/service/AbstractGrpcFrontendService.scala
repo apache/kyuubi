@@ -16,25 +16,20 @@
  */
 package org.apache.kyuubi.grpc.service
 
+import com.google.protobuf.MessageLite
+import io.grpc.MethodDescriptor.PrototypeMarshaller
+import io.grpc._
+import io.grpc.netty.NettyServerBuilder
+import io.grpc.protobuf.lite.ProtoLiteUtils
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST
+import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-
-import scala.collection.JavaConverters._
-
-import com.google.protobuf.MessageLite
-import io.grpc._
-import io.grpc.MethodDescriptor.PrototypeMarshaller
-import io.grpc.netty.NettyServerBuilder
-import io.grpc.protobuf.lite.ProtoLiteUtils
-
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST
-import org.apache.kyuubi.grpc.spark.proto._
-import org.apache.kyuubi.grpc.spark.proto.KyuubiSparkConnectServiceGrpc.AsyncService
-import org.apache.kyuubi.service.CompositeService
-import org.apache.kyuubi.util.NamedThreadFactory
 
 abstract class AbstractGrpcFrontendService(name: String)
   extends CompositeService(name) with GrpcFrontendService with Runnable
@@ -71,19 +66,9 @@ abstract class AbstractGrpcFrontendService(name: String)
     super.initialize(conf)
   }
 
-  override def bindService(): ServerServiceDefinition = {
-    val serviceDef = KyuubiSparkConnectServiceGrpc.bindService(this)
-    val builder = ServerServiceDefinition.builder(serviceDef.getServiceDescriptor.getName)
-    serviceDef.getMethods.asScala
-      .asInstanceOf[Iterable[ServerMethodDefinition[MessageLite, MessageLite]]]
-      .foreach(method =>
-        builder.addMethod(
-          methodWithCustomMarshallers(method.getMethodDescriptor),
-          method.getServerCallHandler))
-    builder.build()
-  }
+  override def bindService(): ServerServiceDefinition
 
-  private def methodWithCustomMarshallers(methodDesc: MethodDescriptor[MessageLite, MessageLite])
+  protected def methodWithCustomMarshallers(methodDesc: MethodDescriptor[MessageLite, MessageLite])
       : MethodDescriptor[MessageLite, MessageLite] = {
     // default 1024
     val recursionLimit = 1024

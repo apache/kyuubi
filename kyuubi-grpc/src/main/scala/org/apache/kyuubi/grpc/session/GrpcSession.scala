@@ -18,7 +18,6 @@ package org.apache.kyuubi.grpc.session
 
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 
-
 trait GrpcSession {
   def sessionKey: SessionKey
   def name: Option[String]
@@ -34,9 +33,9 @@ trait GrpcSession {
   def open()
   def close()
 
-  def removeAllOperations(): Unit
+  def removeOperation(operationKey: OperationKey): Unit
 
   def getOperation(operationKey: OperationKey): GrpcOperation
-  def interruptOperation(operationId: String): Seq[String]
+  def closeOperation(operationKey: OperationKey): Unit
 
 }

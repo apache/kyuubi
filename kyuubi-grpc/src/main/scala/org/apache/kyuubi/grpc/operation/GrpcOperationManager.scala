@@ -20,6 +20,7 @@ import java.util.concurrent._
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
@@ -30,9 +31,6 @@ import org.apache.kyuubi.service.AbstractService
 abstract class GrpcOperationManager(name: String) extends AbstractService(name) {
 
   private val keyToOperations = new ConcurrentHashMap[OperationKey, GrpcOperation]
-  private val operationsLock = new Object
-
-  private var lastExecutionTimeMs: Option[Long] = Some(System.currentTimeMillis())
 
   def getOperationCount: Int = keyToOperations.size()
 
@@ -44,5 +42,30 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
   }
 
   def close(opKey: OperationKey)
+
+  final def addOperation(grpcOperation: GrpcOperation): GrpcOperation = synchronized {
+    keyToOperations.put(grpcOperation.operationKey, grpcOperation)
+    grpcOperation
+  }
+
+  @throws[KyuubiSQLException]
+  final def getOperation(operationKey: OperationKey): GrpcOperation = {
+    val operation = synchronized { keyToOperations.get(operationKey) }
+    if (operation == null) throw KyuubiSQLException(s"Invalid $operationKey")
+    operation
+  }
+
+  @throws[KyuubiSQLException]
+  final def removeOperation(operationKey: OperationKey): GrpcOperation = synchronized {
+    val operation = keyToOperations.remove(operationKey)
+    if (operation == null) throw KyuubiSQLException(s"Invalid $operationKey")
+    operation
+  }
+
+  @throws[KyuubiSQLException]
+  final def closeOperation(operationKey: OperationKey): Unit = {
+    val operation = removeOperation(operationKey)
+    operation.close()
+  }
 
 }

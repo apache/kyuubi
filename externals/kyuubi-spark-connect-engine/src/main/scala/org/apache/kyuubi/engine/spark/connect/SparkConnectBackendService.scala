@@ -18,21 +18,27 @@ package org.apache.kyuubi.engine.spark.connect
 
 import io.grpc.stub.StreamObserver
 import org.apache.spark.sql.SparkSession
-
-import org.apache.kyuubi.engine.spark.connect.grpc.proto.{ConfigRequest, ConfigResponse}
-import org.apache.kyuubi.engine.spark.connect.session.SparkConnectSessionManager
-import org.apache.kyuubi.service.AbstractBackendService
-import org.apache.kyuubi.session.SessionManager
+import org.apache.kyuubi.engine.spark.connect.session.{SparkConnectSessionImpl, SparkConnectSessionManager}
+import org.apache.kyuubi.grpc.service.AbstractGrpcBackendService
+import org.apache.kyuubi.grpc.session.SessionKey
+import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse}
 
 class SparkConnectBackendService(name: String, spark: SparkSession)
-  extends AbstractBackendService(name) {
+  extends AbstractGrpcBackendService(name) {
   def this(spark: SparkSession) = this(classOf[SparkConnectBackendService].getSimpleName, spark)
-  override def sessionManager: SparkConnectSessionManager = new SparkConnectSessionManager(spark)
+  override def grpcSessionManager: SparkConnectSessionManager =
+    new SparkConnectSessionManager(name, spark)
 
-  def config(request: ConfigRequest, responseObserver: StreamObserver[ConfigResponse]): Unit = {
-    sessionManager.getOrCreateSessionHolder(
-      request.getUserContext.getUserId,
-      request.getSessionId,
-      Some(request.getClientObservedServerSideSessionId))
+  def sparkSession: SparkSession = spark
+
+  def config(
+      key: SessionKey,
+      request: ConfigRequest,
+      responseObserver: StreamObserver[ConfigResponse]): Unit = {
+    grpcSessionManager.getSession(key).config(request, responseObserver)
+  }
+
+  def getSession(key: SessionKey): SparkConnectSessionImpl = {
+    grpcSessionManager.getOrCreateSession(key)
   }
 }

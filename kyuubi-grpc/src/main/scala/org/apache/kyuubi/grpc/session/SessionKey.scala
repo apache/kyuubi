@@ -14,29 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.kyuubi.grpc.session
 
-syntax = 'proto3';
+import java.util.UUID
 
-import "kyuubi/spark/relations.proto";
-import "kyuubi/spark/expressions.proto";
-option go_package = "internal/generated";
-
-package spark.connect;
-
-option java_multiple_files = true;
-option java_package = "org.apache.kyuubi.grpc.spark.proto";
-
-message ExamplePluginRelation {
-  Relation input = 1;
-  string custom_field = 2;
-
+case class SessionKey(userId: String, sessionId: String) {
+  override def toString: String = s"UserId: [$userId], SessionId: [$sessionId]"
 }
 
-message ExamplePluginExpression {
-  Expression child = 1;
-  string custom_field = 2;
-}
-
-message ExamplePluginCommand {
-  string custom_field = 1;
+object SessionKey {
+  def apply(userId: String): SessionKey = new SessionKey(userId, UUID.randomUUID().toString)
 }

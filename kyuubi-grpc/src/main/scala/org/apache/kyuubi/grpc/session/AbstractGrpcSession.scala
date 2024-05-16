@@ -17,15 +17,15 @@
 package org.apache.kyuubi.grpc.session
 
 import java.util
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 
+import scala.util.Random
+
 abstract class AbstractGrpcSession(
     val userId: String,
-    val sessionId: String,
     val sessionManager: GrpcSessionManager) extends GrpcSession with Logging {
-  override val sessionKey: SessionKey = SessionKey(userId, sessionId)
+  override val sessionKey: SessionKey = SessionKey(userId)
 
   final private val _createTime: Long = System.currentTimeMillis()
   override def createTime: Long = _createTime
@@ -52,4 +52,15 @@ abstract class AbstractGrpcSession(
     }
   }
 
+  override def getOperation(operationKey: OperationKey): GrpcOperation = {
+    sessionManager.grpcOperationManager.getOperation(operationKey)
+  }
+
+  override def removeOperation(operationKey: OperationKey): Unit = {
+    sessionManager.grpcOperationManager.removeOperation(operationKey)
+  }
+
+  override def closeOperation(operationKey: OperationKey): Unit = {
+    sessionManager.grpcOperationManager.closeOperation(operationKey)
+  }
 }
