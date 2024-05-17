@@ -100,9 +100,14 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  protected def removeSession(key: SessionKey): Option[GrpcSession]
+  protected def removeSession(key: SessionKey): Option[GrpcSession] = {
+    val session = sessionKeyToSession.remove(key)
+    Some(session)
+  }
 
-  protected def shutdownSession(session: GrpcSession): Unit
+  protected def shutdownSession(session: GrpcSession): Unit = {
+    session.close()
+  }
 
   protected def closeSession(key: SessionKey): Unit = {
     _latestLogoutTime = System.currentTimeMillis()
