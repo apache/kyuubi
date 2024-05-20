@@ -380,6 +380,10 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.rpc</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>com.google.type</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.type</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>net.bytebuddy</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.net.bytebuddy</shadedPattern>
                         </relocation>
