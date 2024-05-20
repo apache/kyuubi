@@ -27,7 +27,7 @@ import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.fs.Path
-import org.apache.spark.{ui, SparkConf}
+import org.apache.spark.{ui, SPARK_VERSION, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
 import org.apache.spark.sql.SparkSession
@@ -46,7 +46,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.{SemanticVersion, SignalRegister, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -358,11 +358,15 @@ object SparkSQLEngine extends Logging {
         engine.start()
         val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
         val store = new EngineEventsStore(kvStore)
-        ui.EngineTab(
-          Some(engine),
-          SparkContextHelper.getSparkUI(spark.sparkContext),
-          store,
-          kyuubiConf)
+        if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+          warn("Kyuubi UI does not support Spark 4.0 and above yet")
+        } else {
+          ui.EngineTab(
+            Some(engine),
+            SparkContextHelper.getSparkUI(spark.sparkContext),
+            store,
+            kyuubiConf)
+        }
         val event = EngineEvent(engine)
         info(event)
         EventBus.post(event)
