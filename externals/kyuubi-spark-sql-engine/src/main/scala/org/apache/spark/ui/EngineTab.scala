@@ -17,15 +17,20 @@
 
 package org.apache.spark.ui
 
-import javax.servlet.http.HttpServletRequest
-
 import scala.util.control.NonFatal
+
+import net.bytebuddy.ByteBuddy
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy
+import net.bytebuddy.implementation.MethodCall
+import net.bytebuddy.matcher.ElementMatchers.{isConstructor, named}
+import org.apache.spark.SPARK_VERSION
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 /**
@@ -53,49 +58,80 @@ case class EngineTab(
       .getOrElse(0L)
   }
 
+  private val enginePage = new ByteBuddy()
+    .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+    .method(isConstructor).intercept(MethodCall.invokeSuper())
+    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")))
+    .make()
+    .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
+    .getLoaded
+    .getDeclaredConstructor(classOf[EngineTab])
+    .newInstance(this)
+
+  private val engineSessionPage = new ByteBuddy()
+    .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+    .method(isConstructor).intercept(MethodCall.invokeSuper())
+    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")))
+    .make()
+    .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
+    .getLoaded
+    .getDeclaredConstructor(classOf[EngineSessionPage])
+    .newInstance(this)
+
   sparkUI.foreach { ui =>
-    this.attachPage(EnginePage(this))
-    this.attachPage(EngineSessionPage(this))
+    this.attachPage(enginePage)
+    this.attachPage(engineSessionPage)
     ui.attachTab(this)
     Utils.addShutdownHook(() => ui.detachTab(this))
   }
 
   sparkUI.foreach { ui =>
     try {
-      // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
-      // but if we use sbt to build for testing, e.g. docker image, it still uses the vanilla
-      // jetty classes.
       val sparkServletContextHandlerClz = DynClasses.builder()
+        // for official Spark releases and distributions built via Maven
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
+        // for distributions built via Maven built via SBT
         .impl("org.eclipse.jetty.servlet.ServletContextHandler")
         .buildChecked()
       val attachHandlerMethod = DynMethods.builder("attachHandler")
         .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
         .buildChecked(ui)
       val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
-        .impl(
+        .impl( // for Spark 4.0 and later
           "org.apache.spark.ui.JettyUtils",
           classOf[String],
           classOf[String],
-          classOf[HttpServletRequest => Unit],
+          classOf[jakarta.servlet.http.HttpServletRequest => Unit],
+          classOf[String],
+          classOf[Set[String]])
+        .impl( // for Spark 3.5 and before
+          "org.apache.spark.ui.JettyUtils",
+          classOf[String],
+          classOf[String],
+          classOf[javax.servlet.http.HttpServletRequest => Unit],
           classOf[String],
           classOf[Set[String]])
         .buildStaticChecked()
 
-      attachHandlerMethod
-        .invoke(
-          createRedirectHandlerMethod
-            .invoke("/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
+      attachHandlerMethod.invoke {
+        val killHandler = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+          (_: jakarta.servlet.http.HttpServletRequest) => handleKill()
+        } else {
+          (_: javax.servlet.http.HttpServletRequest) => handleKill()
+        }
+        createRedirectHandlerMethod
+          .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+      }
 
-      attachHandlerMethod
-        .invoke(
-          createRedirectHandlerMethod
-            .invoke(
-              "/kyuubi/gracefulstop",
-              "/kyuubi",
-              handleGracefulKillRequest _,
-              "",
-              Set("GET", "POST")))
+      attachHandlerMethod.invoke {
+        val gracefulKillHandler = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+          (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
+        } else {
+          (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
+        }
+        createRedirectHandlerMethod
+          .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
+      }
     } catch {
       case NonFatal(cause) => reportInstallError(cause)
       case cause: NoClassDefFoundError => reportInstallError(cause)
@@ -109,13 +145,13 @@ case class EngineTab(
       cause)
   }
 
-  def handleKillRequest(request: HttpServletRequest): Unit = {
+  def handleKill(): Unit = {
     if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
       engine.get.stop()
     }
   }
 
-  def handleGracefulKillRequest(request: HttpServletRequest): Unit = {
+  def handleGracefulKill(): Unit = {
     if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
       engine.get.gracefulStop()
     }

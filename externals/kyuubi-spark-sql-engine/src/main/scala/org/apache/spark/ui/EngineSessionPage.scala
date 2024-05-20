@@ -17,8 +17,8 @@
 
 package org.apache.spark.ui
 
+import java.lang.{Boolean => JBoolean}
 import java.util.Date
-import javax.servlet.http.HttpServletRequest
 
 import scala.collection.mutable
 import scala.xml.Node
@@ -29,9 +29,10 @@ import org.apache.spark.ui.UIUtils._
 import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
+import org.apache.kyuubi.util.reflect.DynMethods
 
 /** Page for Spark Web UI that shows statistics of jobs running in the engine server */
-case class EngineSessionPage(parent: EngineTab)
+abstract class EngineSessionPage(parent: EngineTab)
   extends WebUIPage("session") with Logging {
   val store = parent.store
 
@@ -39,8 +40,19 @@ case class EngineSessionPage(parent: EngineTab)
   private def headerClasses = Seq("sorttable_alpha", "sorttable_alpha")
   private def propertyRow(kv: (String, String)) = <tr><td>{kv._1}</td><td>{kv._2}</td></tr>
 
+  def invokeRender(req: AnyRef): Seq[Node] = {
+    req match {
+      case javaxReq: javax.servlet.http.HttpServletRequest =>
+        this.render(HttpServletRequestLike.fromJavax(javaxReq))
+      case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
+        this.render(HttpServletRequestLike.fromJakarta(jakartaReq))
+      case unknown =>
+        throw new RuntimeException(s"Unknown class ${unknown.getClass.getName}")
+    }
+  }
+
   /** Render the page */
-  def render(request: HttpServletRequest): Seq[Node] = {
+  def render(request: HttpServletRequestLike): Seq[Node] = {
     val parameterId = request.getParameter("id")
     require(parameterId != null && parameterId.nonEmpty, "Missing id parameter")
 
@@ -98,7 +110,7 @@ case class EngineSessionPage(parent: EngineTab)
         sessionPropertiesTable ++
         generateSQLStatsTable(request, sessionStat.sessionId)
     }
-    UIUtils.headerSparkPage(request, parent.name + " Session", content, parent)
+    SparkUIUtils.headerSparkPage(request, parent.name + " Session", content, parent)
   }
 
   /** Generate basic stats of the engine server */
@@ -128,7 +140,9 @@ case class EngineSessionPage(parent: EngineTab)
     }
 
   /** Generate stats of batch statements of the engine server */
-  private def generateSQLStatsTable(request: HttpServletRequest, sessionID: String): Seq[Node] = {
+  private def generateSQLStatsTable(
+      request: HttpServletRequestLike,
+      sessionID: String): Seq[Node] = {
     val running = new mutable.ArrayBuffer[SparkOperationEvent]()
     val completed = new mutable.ArrayBuffer[SparkOperationEvent]()
     val failed = new mutable.ArrayBuffer[SparkOperationEvent]()
@@ -218,7 +232,7 @@ case class EngineSessionPage(parent: EngineTab)
   }
 
   private def statementStatsTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       sqlTableTag: String,
       parent: EngineTab,
       data: Seq[SparkOperationEvent]): Seq[Node] = {
@@ -231,7 +245,7 @@ case class EngineSessionPage(parent: EngineTab)
         parent,
         data,
         "kyuubi/session",
-        UIUtils.prependBaseUri(request, parent.basePath),
+        SparkUIUtils.prependBaseUri(request, parent.basePath),
         s"${sqlTableTag}").table(sqlTablePage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
