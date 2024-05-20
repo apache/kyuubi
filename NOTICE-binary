@@ -1090,11 +1090,3 @@ decompression for Java, which can be obtained at:
     * license/LICENSE.lz4-java.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/lz4/lz4-java
-
-This product optionally depends on 'Eclipse Collections', the Java collections framework
-ever that brings happiness to your Java development.
-It can be obtained at:
-  * LICENSE:
-    * licenses-binary/LICENSE-EDL1.0.txt (Eclipse Distribution License 1.0 (BSD))
-  * HOMEPAGE:
-    * https://eclipse.dev/collections/index.html
