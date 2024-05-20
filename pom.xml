@@ -159,7 +159,8 @@
         <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
         <iceberg.version>1.5.2</iceberg.version>
         <jackson.version>2.15.4</jackson.version>
-        <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
+        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.39.1</jersey.version>
@@ -775,6 +776,12 @@
             </dependency>
 
             <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet-api.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${jakarta.servlet-api.version}</version>
@@ -790,15 +797,6 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
                 <version>${jetty.version}</version>
-                <exclusions>
-                    <!--
-                      Use `jakarta.servlet-api` instead.
-                      -->
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>javax.servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
