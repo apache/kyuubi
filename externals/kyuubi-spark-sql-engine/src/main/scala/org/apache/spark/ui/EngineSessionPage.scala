@@ -17,7 +17,6 @@
 
 package org.apache.spark.ui
 
-import java.lang.{Boolean => JBoolean}
 import java.util.Date
 
 import scala.collection.mutable
@@ -29,7 +28,6 @@ import org.apache.spark.ui.UIUtils._
 import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
-import org.apache.kyuubi.util.reflect.DynMethods
 
 /** Page for Spark Web UI that shows statistics of jobs running in the engine server */
 abstract class EngineSessionPage(parent: EngineTab)

@@ -60,8 +60,9 @@ case class EngineTab(
 
   private val enginePage = new ByteBuddy()
     .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
-    .method(isConstructor).intercept(MethodCall.invokeSuper())
-    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")))
+    .method(isConstructor()).intercept(MethodCall.invokeSuper())
+    .method(named("render"))
+    .intercept(MethodCall.invoke(named("invokeRender")).withAllArguments())
     .make()
     .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
     .getLoaded
@@ -70,8 +71,8 @@ case class EngineTab(
 
   private val engineSessionPage = new ByteBuddy()
     .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
-    .method(isConstructor).intercept(MethodCall.invokeSuper())
-    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")))
+    .method(isConstructor()).intercept(MethodCall.invokeSuper())
+    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")).withAllArguments())
     .make()
     .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
     .getLoaded
@@ -90,7 +91,7 @@ case class EngineTab(
       val sparkServletContextHandlerClz = DynClasses.builder()
         // for official Spark releases and distributions built via Maven
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
-        // for distributions built via Maven built via SBT
+        // for distributions built via SBT
         .impl("org.eclipse.jetty.servlet.ServletContextHandler")
         .buildChecked()
       val attachHandlerMethod = DynMethods.builder("attachHandler")
