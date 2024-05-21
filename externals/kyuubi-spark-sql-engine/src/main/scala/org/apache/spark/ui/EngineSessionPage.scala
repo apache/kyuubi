@@ -46,7 +46,7 @@ abstract class EngineSessionPage(parent: EngineTab)
     case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
       this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
     case unsupported =>
-      throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
+      throw new IllegalArgumentException(s"Unsupported class ${unsupported.getClass.getName}")
   }
 
   /** Render the page */
