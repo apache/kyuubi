@@ -24,6 +24,7 @@ import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy
 import net.bytebuddy.implementation.MethodCall
 import net.bytebuddy.matcher.ElementMatchers.{isConstructor, named}
 import org.apache.spark.SPARK_VERSION
+import org.apache.spark.util.{Utils => SparkUtils}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -58,26 +59,31 @@ case class EngineTab(
       .getOrElse(0L)
   }
 
-  private val enginePage = new ByteBuddy()
-    .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
-    .method(isConstructor()).intercept(MethodCall.invokeSuper())
-    .method(named("render"))
-    .intercept(MethodCall.invoke(named("invokeRender")).withAllArguments())
-    .make()
-    .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
-    .getLoaded
-    .getDeclaredConstructor(classOf[EngineTab])
-    .newInstance(this)
+  private val enginePage = {
+    val invokeRenderMethod = classOf[EnginePage].getMethod("invokeRender", classOf[AnyRef])
+    new ByteBuddy()
+      .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+      .method(isConstructor()).intercept(MethodCall.invokeSuper())
+      .method(named("render")).intercept(MethodCall.invoke(invokeRenderMethod).withAllArguments())
+      .make()
+      .load(SparkUtils.getContextOrSparkClassLoader)
+      .getLoaded
+      .getDeclaredConstructor(classOf[EngineTab])
+      .newInstance(this)
+  }
 
-  private val engineSessionPage = new ByteBuddy()
-    .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
-    .method(isConstructor()).intercept(MethodCall.invokeSuper())
-    .method(named("render")).intercept(MethodCall.invoke(named("invokeRender")).withAllArguments())
-    .make()
-    .load(org.apache.spark.util.Utils.getContextOrSparkClassLoader)
-    .getLoaded
-    .getDeclaredConstructor(classOf[EngineSessionPage])
-    .newInstance(this)
+  private val engineSessionPage = {
+    val invokeRenderMethod = classOf[EngineSessionPage].getMethod("invokeRender", classOf[AnyRef])
+    new ByteBuddy()
+      .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+      .method(isConstructor()).intercept(MethodCall.invokeSuper())
+      .method(named("render")).intercept(MethodCall.invoke(invokeRenderMethod).withAllArguments())
+      .make()
+      .load(SparkUtils.getContextOrSparkClassLoader)
+      .getLoaded
+      .getDeclaredConstructor(classOf[EngineTab])
+      .newInstance(this)
+  }
 
   sparkUI.foreach { ui =>
     this.attachPage(enginePage)
