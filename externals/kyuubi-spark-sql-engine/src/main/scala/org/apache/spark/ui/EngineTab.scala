@@ -104,41 +104,51 @@ case class EngineTab(
       val attachHandlerMethod = DynMethods.builder("attachHandler")
         .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
         .buildChecked(ui)
-      val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
-        .impl( // for Spark 3.5 and before
-          "org.apache.spark.ui.JettyUtils",
-          classOf[String],
-          classOf[String],
-          classOf[javax.servlet.http.HttpServletRequest => Unit],
-          classOf[String],
-          classOf[Set[String]])
-        .impl( // for Spark 4.0 and later
-          "org.apache.spark.ui.JettyUtils",
-          classOf[String],
-          classOf[String],
-          classOf[jakarta.servlet.http.HttpServletRequest => Unit],
-          classOf[String],
-          classOf[Set[String]])
-        .buildStaticChecked()
 
-      attachHandlerMethod.invoke {
-        val killHandler = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
-          (_: jakarta.servlet.http.HttpServletRequest) => handleKill()
-        } else {
-          (_: javax.servlet.http.HttpServletRequest) => handleKill()
-        }
-        createRedirectHandlerMethod
-          .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
-      }
+      if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+        attachHandlerMethod.invoke {
+          val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+            .impl(
+              JettyUtils.getClass,
+              classOf[String],
+              classOf[String],
+              classOf[jakarta.servlet.http.HttpServletRequest => Unit],
+              classOf[String],
+              classOf[Set[String]])
+            .buildChecked(JettyUtils)
 
-      attachHandlerMethod.invoke {
-        val gracefulKillHandler = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
-          (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
-        } else {
-          (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
+          val killHandler =
+            (_: jakarta.servlet.http.HttpServletRequest) => handleKill()
+          val gracefulKillHandler =
+            (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
+
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
         }
-        createRedirectHandlerMethod
-          .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
+      } else {
+        val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+          .impl(
+            JettyUtils.getClass,
+            classOf[String],
+            classOf[String],
+            classOf[javax.servlet.http.HttpServletRequest => Unit],
+            classOf[String],
+            classOf[Set[String]])
+          .buildChecked(JettyUtils)
+
+        attachHandlerMethod.invoke {
+          val killHandler =
+            (_: javax.servlet.http.HttpServletRequest) => handleKill()
+          val gracefulKillHandler =
+            (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
+
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
+        }
       }
     } catch {
       case NonFatal(cause) => reportInstallError(cause)

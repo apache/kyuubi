@@ -89,8 +89,7 @@ class JavaxHttpServletRequest(req: HttpServletRequest)
 
   override def getPart(s: String): Part = req.getPart(s)
 
-  override def upgrade[T <: HttpUpgradeHandler](aClass: Class[T]): T =
-    req.upgrade(aClass)
+  override def upgrade[T <: HttpUpgradeHandler](aClass: Class[T]): T = req.upgrade(aClass)
 
   override def getAttribute(s: String): AnyRef = req.getAttribute(s)
 
@@ -140,8 +139,7 @@ class JavaxHttpServletRequest(req: HttpServletRequest)
 
   override def isSecure: Boolean = req.isSecure
 
-  override def getRequestDispatcher(s: String): RequestDispatcher =
-    req.getRequestDispatcher(s)
+  override def getRequestDispatcher(s: String): RequestDispatcher = req.getRequestDispatcher(s)
 
   override def getRealPath(s: String): String = req.getRealPath(s)
 

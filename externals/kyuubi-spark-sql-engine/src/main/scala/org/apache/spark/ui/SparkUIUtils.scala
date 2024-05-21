@@ -21,6 +21,9 @@ import java.lang.{Boolean => JBoolean}
 
 import scala.xml.Node
 
+import org.apache.spark.SPARK_VERSION
+
+import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
@@ -33,28 +36,6 @@ object SparkUIUtils {
     UIUtils.formatDuration(ms)
   }
 
-  private lazy val headerSparkPageMethod =
-    DynMethods.builder("headerSparkPage")
-      .impl( // for Spark 3.5 and before
-        UIUtils.getClass,
-        classOf[javax.servlet.http.HttpServletRequest],
-        classOf[String],
-        classOf[() => Seq[Node]],
-        classOf[SparkUITab],
-        classOf[Option[String]],
-        classOf[Boolean],
-        classOf[Boolean])
-      .impl( // for Spark 4.0 and later
-        UIUtils.getClass,
-        classOf[jakarta.servlet.http.HttpServletRequest],
-        classOf[String],
-        classOf[() => Seq[Node]],
-        classOf[SparkUITab],
-        classOf[Option[String]],
-        classOf[Boolean],
-        classOf[Boolean])
-      .buildChecked(UIUtils)
-
   def headerSparkPage(
       request: HttpServletRequestLike,
       title: String,
@@ -63,6 +44,31 @@ object SparkUIUtils {
       helpText: Option[String] = None,
       showVisualization: JBoolean = false,
       useDataTables: JBoolean = false): Seq[Node] = {
+    val headerSparkPageMethod = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+      DynMethods.builder("headerSparkPage")
+        .impl(
+          UIUtils.getClass,
+          classOf[jakarta.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[() => Seq[Node]],
+          classOf[SparkUITab],
+          classOf[Option[String]],
+          classOf[Boolean],
+          classOf[Boolean])
+        .buildChecked(UIUtils)
+    } else {
+      DynMethods.builder("headerSparkPage")
+        .impl(
+          UIUtils.getClass,
+          classOf[javax.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[() => Seq[Node]],
+          classOf[SparkUITab],
+          classOf[Option[String]],
+          classOf[Boolean],
+          classOf[Boolean])
+        .buildChecked(UIUtils)
+    }
     headerSparkPageMethod.invoke[Seq[Node]](
       request,
       title,
@@ -73,25 +79,27 @@ object SparkUIUtils {
       useDataTables)
   }
 
-  private lazy val prependBaseUriMethod =
-    DynMethods.builder("prependBaseUri")
-      .impl( // for Spark 3.5 and before
-        UIUtils.getClass,
-        classOf[javax.servlet.http.HttpServletRequest],
-        classOf[String],
-        classOf[String])
-      .impl( // for Spark 4.0 and later
-        UIUtils.getClass,
-        classOf[jakarta.servlet.http.HttpServletRequest],
-        classOf[String],
-        classOf[String])
-      .buildChecked(UIUtils)
-
   def prependBaseUri(
       request: HttpServletRequestLike,
       basePath: String = "",
       resource: String = ""): String = {
+    val prependBaseUriMethod = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+      DynMethods.builder("prependBaseUri")
+        .impl(
+          UIUtils.getClass,
+          classOf[jakarta.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[String])
+        .buildChecked(UIUtils)
+    } else {
+      DynMethods.builder("prependBaseUri")
+        .impl(
+          UIUtils.getClass,
+          classOf[javax.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[String])
+        .buildChecked(UIUtils)
+    }
     prependBaseUriMethod.invoke[String](request, basePath, resource)
   }
-
 }
