@@ -35,17 +35,15 @@ import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 abstract class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.store
 
-  def dispatchRender(req: AnyRef): Seq[Node] = {
-    req match {
-      case reqLike: HttpServletRequestLike =>
-        this.render0(reqLike)
-      case javaxReq: javax.servlet.http.HttpServletRequest =>
-        this.render0(HttpServletRequestLike.fromJavax(javaxReq))
-      case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
-        this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
-      case unsupported =>
-        throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
-    }
+  def dispatchRender(req: AnyRef): Seq[Node] = req match {
+    case reqLike: HttpServletRequestLike =>
+      this.render0(reqLike)
+    case javaxReq: javax.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJavax(javaxReq))
+    case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
+    case unsupported =>
+      throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
   }
 
   def render0(request: HttpServletRequestLike): Seq[Node] = {

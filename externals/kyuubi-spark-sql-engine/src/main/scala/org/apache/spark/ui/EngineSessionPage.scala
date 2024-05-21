@@ -38,17 +38,15 @@ abstract class EngineSessionPage(parent: EngineTab)
   private def headerClasses = Seq("sorttable_alpha", "sorttable_alpha")
   private def propertyRow(kv: (String, String)) = <tr><td>{kv._1}</td><td>{kv._2}</td></tr>
 
-  def dispatchRender(req: AnyRef): Seq[Node] = {
-    req match {
-      case reqLike: HttpServletRequestLike =>
-        this.render0(reqLike)
-      case javaxReq: javax.servlet.http.HttpServletRequest =>
-        this.render0(HttpServletRequestLike.fromJavax(javaxReq))
-      case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
-        this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
-      case unsupported =>
-        throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
-    }
+  def dispatchRender(req: AnyRef): Seq[Node] = req match {
+    case reqLike: HttpServletRequestLike =>
+      this.render0(reqLike)
+    case javaxReq: javax.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJavax(javaxReq))
+    case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
+    case unsupported =>
+      throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
   }
 
   /** Render the page */
