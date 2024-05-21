@@ -27,8 +27,9 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 class SparkTRowSetGenerator
   extends TRowSetGenerator[StructType, Row, DataType] {
 
-  // reused time formatters in single RowSet generation, see KYUUBI-5811
+  // reused time formatters in single RowSet generation, see KYUUBI #5811
   private val tf = HiveResult.getTimeFormatters
+  private val bf = RowSet.getBinaryFormatter
 
   override def getColumnSizeFromSchemaType(schema: StructType): Int = schema.length
 
@@ -51,6 +52,7 @@ class SparkTRowSetGenerator
       case BinaryType => asByteArrayTColumn(rows, ordinal)
       case _ =>
         val timeFormatters = tf
+        val binaryFormatter = bf
         asStringTColumn(
           rows,
           ordinal,
@@ -58,7 +60,8 @@ class SparkTRowSetGenerator
           (row, ordinal) =>
             RowSet.toHiveString(
               getColumnAs[Any](row, ordinal) -> typ,
-              timeFormatters = timeFormatters))
+              timeFormatters = timeFormatters,
+              binaryFormatter = binaryFormatter))
     }
   }
 
@@ -75,7 +78,11 @@ class SparkTRowSetGenerator
       case _ => asStringTColumnValue(
           row,
           ordinal,
-          rawValue => RowSet.toHiveString(rawValue -> types(ordinal).dataType, timeFormatters = tf))
+          rawValue =>
+            RowSet.toHiveString(
+              rawValue -> types(ordinal).dataType,
+              timeFormatters = tf,
+              binaryFormatter = bf))
     }
   }
 
