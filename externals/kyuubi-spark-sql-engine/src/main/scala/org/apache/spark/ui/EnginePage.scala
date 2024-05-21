@@ -32,21 +32,23 @@ import org.apache.spark.ui.UIUtils._
 import org.apache.kyuubi._
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
-abstract class EnginePage(parent: EngineTab) extends WebUIPage("engine") {
+abstract class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.store
 
-  def invokeRender(req: AnyRef): Seq[Node] = {
+  def dispatchRender(req: AnyRef): Seq[Node] = {
     req match {
+      case reqLike: HttpServletRequestLike =>
+        this.render0(reqLike)
       case javaxReq: javax.servlet.http.HttpServletRequest =>
-        this.render(HttpServletRequestLike.fromJavax(javaxReq))
+        this.render0(HttpServletRequestLike.fromJavax(javaxReq))
       case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
-        this.render(HttpServletRequestLike.fromJakarta(jakartaReq))
+        this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
       case unknown =>
         throw new RuntimeException(s"Unknown class ${unknown.getClass.getName}")
     }
   }
 
-  def render(request: HttpServletRequestLike): Seq[Node] = {
+  def render0(request: HttpServletRequestLike): Seq[Node] = {
     val onlineSession = new mutable.ArrayBuffer[SessionEvent]()
     val closedSession = new mutable.ArrayBuffer[SessionEvent]()
 

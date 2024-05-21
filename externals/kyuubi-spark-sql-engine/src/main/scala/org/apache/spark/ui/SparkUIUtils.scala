@@ -33,59 +33,64 @@ object SparkUIUtils {
     UIUtils.formatDuration(ms)
   }
 
-  def headerSparkPage(
-      request: HttpServletRequestLike,
-      title: String,
-      content: => Seq[Node],
-      activeTab: SparkUITab,
-      helpText: Option[String] = None,
-      showVisualization: JBoolean = false,
-      useDataTables: JBoolean = false): Seq[Node] = {
-    val headerSparkPageMethod = DynMethods.builder("headerSparkPage")
+  private lazy val headerSparkPageMethod =
+    DynMethods.builder("headerSparkPage")
       .impl( // for Spark 4.0 and later
-        "org.apache.spark.ui.UIUtils",
+        UIUtils.getClass,
         classOf[jakarta.servlet.http.HttpServletRequest],
+        classOf[String],
         classOf[() => Seq[Node]],
         classOf[SparkUITab],
         classOf[Option[String]],
         classOf[Boolean],
         classOf[Boolean])
       .impl( // for Spark 3.5 and before
-        "org.apache.spark.ui.UIUtils",
+        UIUtils.getClass,
         classOf[javax.servlet.http.HttpServletRequest],
+        classOf[String],
         classOf[() => Seq[Node]],
         classOf[SparkUITab],
         classOf[Option[String]],
         classOf[Boolean],
         classOf[Boolean])
-      .buildStaticChecked()
+      .buildChecked(UIUtils)
 
+  def headerSparkPage(
+      request: HttpServletRequestLike,
+      title: String,
+      content: Seq[Node],
+      activeTab: SparkUITab,
+      helpText: Option[String] = None,
+      showVisualization: JBoolean = false,
+      useDataTables: JBoolean = false): Seq[Node] = {
     headerSparkPageMethod.invoke[Seq[Node]](
       request,
       title,
-      content,
+      () => content,
       activeTab,
       helpText,
       showVisualization,
       useDataTables)
   }
 
-  def prependBaseUri(
-      request: HttpServletRequestLike,
-      basePath: String = "",
-      resource: String = ""): String = {
-    val prependBaseUriMethod = DynMethods.builder("prependBaseUri")
+  private lazy val prependBaseUriMethod =
+    DynMethods.builder("prependBaseUri")
       .impl( // for Spark 4.0 and later
-        "org.apache.spark.ui.UIUtils",
+        UIUtils.getClass,
         classOf[jakarta.servlet.http.HttpServletRequest],
         classOf[String],
         classOf[String])
       .impl( // for Spark 3.5 and before
-        "org.apache.spark.ui.UIUtils",
+        UIUtils.getClass,
         classOf[javax.servlet.http.HttpServletRequest],
         classOf[String],
         classOf[String])
-      .buildStaticChecked()
+      .buildChecked(UIUtils)
+
+  def prependBaseUri(
+      request: HttpServletRequestLike,
+      basePath: String = "",
+      resource: String = ""): String = {
     prependBaseUriMethod.invoke[String](request, basePath, resource)
   }
 

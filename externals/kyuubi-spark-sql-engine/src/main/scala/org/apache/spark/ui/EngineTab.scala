@@ -20,6 +20,7 @@ package org.apache.spark.ui
 import scala.util.control.NonFatal
 
 import net.bytebuddy.ByteBuddy
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy
 import net.bytebuddy.implementation.MethodCall
 import net.bytebuddy.matcher.ElementMatchers.{isConstructor, named}
@@ -60,26 +61,26 @@ case class EngineTab(
   }
 
   private val enginePage = {
-    val invokeRenderMethod = classOf[EnginePage].getMethod("invokeRender", classOf[AnyRef])
+    val dispatchMethod = classOf[EnginePage].getMethod("dispatchRender", classOf[AnyRef])
     new ByteBuddy()
       .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
       .method(isConstructor()).intercept(MethodCall.invokeSuper())
-      .method(named("render")).intercept(MethodCall.invoke(invokeRenderMethod).withAllArguments())
+      .method(named("render")).intercept(MethodCall.invoke(dispatchMethod).withAllArguments())
       .make()
-      .load(SparkUtils.getContextOrSparkClassLoader)
+      .load(SparkUtils.getContextOrSparkClassLoader, ClassLoadingStrategy.Default.INJECTION)
       .getLoaded
       .getDeclaredConstructor(classOf[EngineTab])
       .newInstance(this)
   }
 
   private val engineSessionPage = {
-    val invokeRenderMethod = classOf[EngineSessionPage].getMethod("invokeRender", classOf[AnyRef])
+    val dispatchMethod = classOf[EngineSessionPage].getMethod("dispatchRender", classOf[AnyRef])
     new ByteBuddy()
       .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
       .method(isConstructor()).intercept(MethodCall.invokeSuper())
-      .method(named("render")).intercept(MethodCall.invoke(invokeRenderMethod).withAllArguments())
+      .method(named("render")).intercept(MethodCall.invoke(dispatchMethod).withAllArguments())
       .make()
-      .load(SparkUtils.getContextOrSparkClassLoader)
+      .load(SparkUtils.getContextOrSparkClassLoader, ClassLoadingStrategy.Default.INJECTION)
       .getLoaded
       .getDeclaredConstructor(classOf[EngineTab])
       .newInstance(this)

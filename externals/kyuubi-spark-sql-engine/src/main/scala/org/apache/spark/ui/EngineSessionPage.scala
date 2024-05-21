@@ -38,19 +38,21 @@ abstract class EngineSessionPage(parent: EngineTab)
   private def headerClasses = Seq("sorttable_alpha", "sorttable_alpha")
   private def propertyRow(kv: (String, String)) = <tr><td>{kv._1}</td><td>{kv._2}</td></tr>
 
-  def invokeRender(req: AnyRef): Seq[Node] = {
+  def dispatchRender(req: AnyRef): Seq[Node] = {
     req match {
+      case reqLike: HttpServletRequestLike =>
+        this.render0(reqLike)
       case javaxReq: javax.servlet.http.HttpServletRequest =>
-        this.render(HttpServletRequestLike.fromJavax(javaxReq))
+        this.render0(HttpServletRequestLike.fromJavax(javaxReq))
       case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
-        this.render(HttpServletRequestLike.fromJakarta(jakartaReq))
+        this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
       case unknown =>
         throw new RuntimeException(s"Unknown class ${unknown.getClass.getName}")
     }
   }
 
   /** Render the page */
-  def render(request: HttpServletRequestLike): Seq[Node] = {
+  def render0(request: HttpServletRequestLike): Seq[Node] = {
     val parameterId = request.getParameter("id")
     require(parameterId != null && parameterId.nonEmpty, "Missing id parameter")
 
