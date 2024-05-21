@@ -64,7 +64,9 @@ class FetchOrcStatement(spark: SparkSession) {
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
-    new IterableFetchIterator[Row](iterRow.toIterable)
+    new IterableFetchIterator[Row](new Iterable[Row] {
+      override def iterator: Iterator[Row] = iterRow
+    })
   }
 
   def close(): Unit = {
