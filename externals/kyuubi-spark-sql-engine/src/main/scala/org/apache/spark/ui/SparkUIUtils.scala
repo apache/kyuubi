@@ -35,18 +35,18 @@ object SparkUIUtils {
 
   private lazy val headerSparkPageMethod =
     DynMethods.builder("headerSparkPage")
-      .impl( // for Spark 4.0 and later
+      .impl( // for Spark 3.5 and before
         UIUtils.getClass,
-        classOf[jakarta.servlet.http.HttpServletRequest],
+        classOf[javax.servlet.http.HttpServletRequest],
         classOf[String],
         classOf[() => Seq[Node]],
         classOf[SparkUITab],
         classOf[Option[String]],
         classOf[Boolean],
         classOf[Boolean])
-      .impl( // for Spark 3.5 and before
+      .impl( // for Spark 4.0 and later
         UIUtils.getClass,
-        classOf[javax.servlet.http.HttpServletRequest],
+        classOf[jakarta.servlet.http.HttpServletRequest],
         classOf[String],
         classOf[() => Seq[Node]],
         classOf[SparkUITab],
@@ -75,14 +75,14 @@ object SparkUIUtils {
 
   private lazy val prependBaseUriMethod =
     DynMethods.builder("prependBaseUri")
-      .impl( // for Spark 4.0 and later
-        UIUtils.getClass,
-        classOf[jakarta.servlet.http.HttpServletRequest],
-        classOf[String],
-        classOf[String])
       .impl( // for Spark 3.5 and before
         UIUtils.getClass,
         classOf[javax.servlet.http.HttpServletRequest],
+        classOf[String],
+        classOf[String])
+      .impl( // for Spark 4.0 and later
+        UIUtils.getClass,
+        classOf[jakarta.servlet.http.HttpServletRequest],
         classOf[String],
         classOf[String])
       .buildChecked(UIUtils)

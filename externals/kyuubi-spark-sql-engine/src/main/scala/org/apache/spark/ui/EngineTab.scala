@@ -105,18 +105,18 @@ case class EngineTab(
         .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
         .buildChecked(ui)
       val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
-        .impl( // for Spark 4.0 and later
-          "org.apache.spark.ui.JettyUtils",
-          classOf[String],
-          classOf[String],
-          classOf[jakarta.servlet.http.HttpServletRequest => Unit],
-          classOf[String],
-          classOf[Set[String]])
         .impl( // for Spark 3.5 and before
           "org.apache.spark.ui.JettyUtils",
           classOf[String],
           classOf[String],
           classOf[javax.servlet.http.HttpServletRequest => Unit],
+          classOf[String],
+          classOf[Set[String]])
+        .impl( // for Spark 4.0 and later
+          "org.apache.spark.ui.JettyUtils",
+          classOf[String],
+          classOf[String],
+          classOf[jakarta.servlet.http.HttpServletRequest => Unit],
           classOf[String],
           classOf[Set[String]])
         .buildStaticChecked()
