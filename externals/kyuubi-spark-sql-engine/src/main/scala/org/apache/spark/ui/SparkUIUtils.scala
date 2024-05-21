@@ -21,9 +21,7 @@ import java.lang.{Boolean => JBoolean}
 
 import scala.xml.Node
 
-import org.apache.spark.SPARK_VERSION
-
-import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
@@ -44,7 +42,7 @@ object SparkUIUtils {
       helpText: Option[String] = None,
       showVisualization: JBoolean = false,
       useDataTables: JBoolean = false): Seq[Node] = {
-    val headerSparkPageMethod = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+    val headerSparkPageMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("headerSparkPage")
         .impl(
           UIUtils.getClass,
@@ -83,7 +81,7 @@ object SparkUIUtils {
       request: HttpServletRequestLike,
       basePath: String = "",
       resource: String = ""): String = {
-    val prependBaseUriMethod = if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+    val prependBaseUriMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("prependBaseUri")
         .impl(
           UIUtils.getClass,

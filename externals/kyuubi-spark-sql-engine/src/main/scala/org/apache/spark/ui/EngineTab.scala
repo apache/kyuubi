@@ -24,15 +24,14 @@ import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
 import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy
 import net.bytebuddy.implementation.MethodCall
 import net.bytebuddy.matcher.ElementMatchers.{isConstructor, named}
-import org.apache.spark.SPARK_VERSION
 import org.apache.spark.util.{Utils => SparkUtils}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
-import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 /**
@@ -105,7 +104,7 @@ case class EngineTab(
         .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
         .buildChecked(ui)
 
-      if (SemanticVersion(SPARK_VERSION) >= "4.0") {
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
         attachHandlerMethod.invoke {
           val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
             .impl(
