@@ -43,8 +43,8 @@ abstract class EnginePage(parent: EngineTab) extends WebUIPage("") {
         this.render0(HttpServletRequestLike.fromJavax(javaxReq))
       case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
         this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
-      case unknown =>
-        throw new RuntimeException(s"Unknown class ${unknown.getClass.getName}")
+      case unsupported =>
+        throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
     }
   }
 
@@ -89,7 +89,6 @@ abstract class EnginePage(parent: EngineTab) extends WebUIPage("") {
           runningSqlStat.toSeq,
           completedSqlStat.toSeq,
           failedSqlStat.toSeq)
-
     SparkUIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 

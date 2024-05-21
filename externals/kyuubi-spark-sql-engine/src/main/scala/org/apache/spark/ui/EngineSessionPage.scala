@@ -46,8 +46,8 @@ abstract class EngineSessionPage(parent: EngineTab)
         this.render0(HttpServletRequestLike.fromJavax(javaxReq))
       case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
         this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
-      case unknown =>
-        throw new RuntimeException(s"Unknown class ${unknown.getClass.getName}")
+      case unsupported =>
+        throw new IllegalArgumentException()(s"Unsupported class ${unsupported.getClass.getName}")
     }
   }
 
