@@ -17,13 +17,21 @@
 
 package org.apache.spark.ui
 
-/**
- * A place to invoke non-public APIs of [[UIUtils]], anything to be added here need to
- * think twice
- */
-object SparkUIUtilsHelper {
+import java.util
 
-  def formatDuration(ms: Long): String = {
-    UIUtils.formatDuration(ms)
+trait HttpServletRequestLike {
+
+  def getParameter(name: String): String
+
+  def getParameterMap: util.Map[String, Array[String]]
+}
+
+object HttpServletRequestLike {
+  def fromJavax(req: javax.servlet.http.HttpServletRequest): JavaxHttpServletRequest = {
+    new JavaxHttpServletRequest(req)
+  }
+
+  def fromJakarta(req: jakarta.servlet.http.HttpServletRequest): JakartaHttpServletRequest = {
+    new JakartaHttpServletRequest(req)
   }
 }
