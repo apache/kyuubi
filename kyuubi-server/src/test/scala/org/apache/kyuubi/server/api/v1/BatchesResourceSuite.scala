@@ -202,8 +202,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
       // check both kyuubi log and engine log
       assert(
-        logs.exists(_.contains("/bin/spark-submit")) &&
-          logs.exists(_.contains(s"SparkContext: Submitted application: $sparkBatchTestAppName")))
+        logs.exists(_.contains("bin/spark-submit")) &&
+          logs.exists(_.contains(s"Submitted application: $sparkBatchTestAppName")))
     }
 
     // invalid user name

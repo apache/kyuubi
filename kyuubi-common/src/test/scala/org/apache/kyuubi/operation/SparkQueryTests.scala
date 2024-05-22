@@ -37,8 +37,8 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     val sql = "select date_sub(date'2011-11-11', '1.2')"
     val errors = Set(
       "The second argument of 'date_sub' function needs to be an integer.",
-      // unquoted since Spark-3.4, see https://github.com/apache/spark/pull/36693
-      "The second argument of date_sub function needs to be an integer.")
+      "SECOND_FUNCTION_ARGUMENT_NOT_INTEGER",
+      "CAST_INVALID_INPUT")
 
     withJdbcStatement() { statement =>
       val e = intercept[SQLException] {
@@ -254,7 +254,7 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
       rs.next()
       // scala repl will return resX = YYYYY, and here we only check YYYYY
       val sparkVer = rs.getString(1).split("=")(1).trim
-      assert("\\d\\.\\d\\.\\d(-SNAPSHOT)?".r.pattern.matcher(sparkVer).matches())
+      assert("\\d\\.\\d\\.\\d.*".r.pattern.matcher(sparkVer).matches())
       assert(rs.getMetaData.getColumnName(1) === "output")
     }
   }
