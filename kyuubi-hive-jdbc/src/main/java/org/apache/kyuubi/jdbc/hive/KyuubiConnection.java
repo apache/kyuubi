@@ -797,8 +797,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
-          byte[] guidBytes = Base64.getUrlDecoder().decode(launchEngineOpHandleGuid);
-          byte[] secretBytes = Base64.getUrlDecoder().decode(launchEngineOpHandleSecret);
+          byte[] guidBytes = Base64.getDecoder().decode(launchEngineOpHandleGuid);
+          byte[] secretBytes = Base64.getDecoder().decode(launchEngineOpHandleSecret);
           THandleIdentifier handleIdentifier =
               new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes));
           launchEngineOpHandle =
