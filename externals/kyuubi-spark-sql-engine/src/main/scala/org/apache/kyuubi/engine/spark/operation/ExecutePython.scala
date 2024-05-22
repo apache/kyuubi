@@ -24,7 +24,6 @@ import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.locks.ReentrantLock
-import javax.ws.rs.core.UriBuilder
 
 import scala.collection.JavaConverters._
 
@@ -304,7 +303,7 @@ object ExecutePython extends Logging {
       archive =>
         var uri = new URI(archive)
         if (uri.getFragment == null) {
-          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT).build()
+          uri = buildURI(uri, DEFAULT_SPARK_PYTHON_ENV_ARCHIVE_FRAGMENT)
         }
         spark.sparkContext.addArchive(uri.toString)
         Paths.get(SparkFiles.get(uri.getFragment), pythonEnvExecPath)
@@ -317,7 +316,7 @@ object ExecutePython extends Logging {
       archive =>
         var uri = new URI(archive)
         if (uri.getFragment == null) {
-          uri = UriBuilder.fromUri(uri).fragment(DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT).build()
+          uri = buildURI(uri, DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
         }
         spark.sparkContext.addArchive(uri.toString)
         Paths.get(SparkFiles.get(uri.getFragment))
