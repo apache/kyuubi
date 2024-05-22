@@ -103,7 +103,7 @@ object SparkDatasetHelper extends Logging {
 
     // an udf to call `RowSet.toHiveString` on complex types(struct/array/map) and timestamp type.
     // TODO: reuse the timeFormatters on greater scale if possible,
-    //  recreating timeFormatters may cause performance issue, see [KYUUBI#5811]
+    //       recreate timeFormatters each time may cause performance issue, see KYUUBI #5811
     val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
@@ -111,22 +111,26 @@ object SparkDatasetHelper extends Logging {
           RowSet.toHiveString(
             (row, st),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, at),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, mt),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, tt),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case _ =>
           throw new UnsupportedOperationException
       }
