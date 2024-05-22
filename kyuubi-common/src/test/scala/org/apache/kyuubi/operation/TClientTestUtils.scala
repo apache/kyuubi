@@ -127,8 +127,8 @@ object TClientTestUtils extends Logging {
       val launchOpHandleOpt =
         if (guid != null && secret != null) {
           val launchHandleId = new THandleIdentifier(
-            ByteBuffer.wrap(Base64.getMimeDecoder.decode(guid)),
-            ByteBuffer.wrap(Base64.getMimeDecoder.decode(secret)))
+            ByteBuffer.wrap(Base64.getUrlDecoder.decode(guid)),
+            ByteBuffer.wrap(Base64.getUrlDecoder.decode(secret)))
           Some(new TOperationHandle(launchHandleId, TOperationType.UNKNOWN, false))
         } else None
 
