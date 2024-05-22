@@ -262,6 +262,11 @@ object SparkSQLEngine extends Logging {
     val rootDir = _sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(_sparkConf))
     val outputDir = Utils.createTempDir(prefix = "repl", root = rootDir)
     _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
+    // SPARK-47911: we must set a value instead of leaving it as None, otherwise, we will get a
+    // "Cannot mutate ReadOnlySQLConf" exception when task calling HiveResult.getBinaryFormatter.
+    // Here we follow the HiveResult.getBinaryFormatter behavior to set it to UTF8 if configuration
+    // is absent to reserve the legacy behavior for compatibility.
+    _sparkConf.setIfMissing("spark.sql.binaryOutputStyle", "UTF8")
     _sparkConf.setIfMissing("spark.master", "local")
     _sparkConf.set(
       "spark.redaction.regex",

@@ -168,7 +168,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, i) =>
         assert(b === RowSet.toHiveString(
           Date.valueOf(s"2018-11-${i + 1}") -> DateType,
-          timeFormatters = HiveResult.getTimeFormatters))
+          timeFormatters = HiveResult.getTimeFormatters,
+          binaryFormatter = RowSet.getBinaryFormatter))
     }
 
     val tsCol = cols.next().getStringVal
@@ -177,7 +178,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, i) => assert(b ===
           RowSet.toHiveString(
             Timestamp.valueOf(s"2018-11-17 13:33:33.$i") -> TimestampType,
-            timeFormatters = HiveResult.getTimeFormatters))
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -191,7 +193,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
           Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq -> ArrayType(DoubleType),
-          timeFormatters = HiveResult.getTimeFormatters))
+          timeFormatters = HiveResult.getTimeFormatters,
+          binaryFormatter = RowSet.getBinaryFormatter))
     }
 
     val mapCol = cols.next().getStringVal
@@ -199,7 +202,8 @@ class RowSetSuite extends KyuubiFunSuite {
       case (b, 11) => assert(b === "NULL")
       case (b, i) => assert(b === RowSet.toHiveString(
           Map(i -> java.lang.Double.valueOf(s"$i.$i")) -> MapType(IntegerType, DoubleType),
-          timeFormatters = HiveResult.getTimeFormatters))
+          timeFormatters = HiveResult.getTimeFormatters,
+          binaryFormatter = RowSet.getBinaryFormatter))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -250,7 +254,8 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r8.get(13).getStringVal.getValue ===
       RowSet.toHiveString(
         Map(7 -> 7.7d) -> MapType(IntegerType, DoubleType),
-        timeFormatters = HiveResult.getTimeFormatters))
+        timeFormatters = HiveResult.getTimeFormatters,
+        binaryFormatter = RowSet.getBinaryFormatter))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
