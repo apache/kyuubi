@@ -65,6 +65,11 @@
         </dependency>
 
         <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
             <scope>provided</scope>
@@ -233,6 +238,7 @@
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
                             <include>dev.failsafe:failsafe</include>
+                            <include>net.bytebuddy:byte-buddy</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
                             <include>io.netty:*</include>
@@ -376,6 +382,10 @@
                         <relocation>
                             <pattern>com.google.type</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.type</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.bytebuddy</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.net.bytebuddy</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
