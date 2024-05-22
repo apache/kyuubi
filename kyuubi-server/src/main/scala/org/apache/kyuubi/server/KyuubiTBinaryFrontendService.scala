@@ -90,10 +90,10 @@ final class KyuubiTBinaryFrontendService(
       val opHandleIdentifier = Handle.toTHandleIdentifier(launchEngineOp.getHandle.identifier)
       respConfiguration.put(
         KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID,
-        Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getGuid))
+        Base64.getEncoder.encodeToString(opHandleIdentifier.getGuid))
       respConfiguration.put(
         KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET,
-        Base64.getMimeEncoder.encodeToString(opHandleIdentifier.getSecret))
+        Base64.getEncoder.encodeToString(opHandleIdentifier.getSecret))
 
       respConfiguration.put(KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT, true.toString)
 

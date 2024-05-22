@@ -196,7 +196,7 @@ object HadoopThriftAuthBridgeServer {
 
     def getPasswd(identifier: KyuubiDelegationTokenIdentifier): Array[Char] = {
       val passwd = secretMgr.retrievePassword(identifier)
-      Base64.getMimeEncoder.encodeToString(passwd).toCharArray
+      Base64.getEncoder.encodeToString(passwd).toCharArray
     }
 
     override def handle(callbacks: Array[Callback]): Unit = {
