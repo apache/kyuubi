@@ -83,8 +83,8 @@ class KyuubiSyncThriftClient private (
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
 
   private def shutdownAsyncRequestExecutor(): Unit = {
-    if (asyncRequestExecutorInitialized) {
-      Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+    if (asyncRequestExecutorInitialized && !asyncRequestExecutor.isShutdown) {
+      ThreadUtils.shutdown(asyncRequestExecutor)
     }
     asyncRequestInterrupted = true
   }
