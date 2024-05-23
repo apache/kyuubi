@@ -23,21 +23,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.grpc.client.SimpleRpcClient
 
 class GrpcSeverableSuite extends KyuubiFunSuite {
-  ignore("GrpcSeverable") {
-    val severable1 = new SimpleGrpcServer()
-    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 0)
-    severable1.initialize(conf)
-    assert(severable1.getStartTime === 0)
-    assert(severable1.getConf === conf)
-    assert(severable1.frontendServices.head.connectionUrl.nonEmpty)
-  }
-
-  test("invalid port") {
-    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 100000)
-    val server = new SimpleGrpcServer
-    server.initialize(conf)
-    server.start()
-  }
 
   test("test openSession") {
     val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 10023)

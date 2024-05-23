@@ -19,7 +19,9 @@ package org.apache.kyuubi.grpc.session
 import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.util.concurrent._
+
 import scala.concurrent.duration.Duration
+
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
