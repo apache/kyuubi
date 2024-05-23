@@ -22,18 +22,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class KerberosAuthenticationManager {
 
-  private static CachingKerberosAuthentication GLOBAL_TGT_CACHE_AUTHENTICATION;
+  private static final Map<String, CachingKerberosAuthentication> TGT_CACHE_AUTHENTICATION_CACHE =
+      new ConcurrentHashMap<>();
 
   private static final Map<String, CachingKerberosAuthentication> KEYTAB_AUTHENTICATION_CACHE =
       new ConcurrentHashMap<>();
 
-  public static synchronized CachingKerberosAuthentication getTgtCacheAuthentication(
-      String ticketCache) {
-    if (GLOBAL_TGT_CACHE_AUTHENTICATION == null) {
-      KerberosAuthentication tgtCacheAuth = new KerberosAuthentication(ticketCache);
-      GLOBAL_TGT_CACHE_AUTHENTICATION = new CachingKerberosAuthentication(tgtCacheAuth);
-    }
-    return GLOBAL_TGT_CACHE_AUTHENTICATION;
+  public static CachingKerberosAuthentication getTgtCacheAuthentication(String ticketCache) {
+    return TGT_CACHE_AUTHENTICATION_CACHE.computeIfAbsent(
+        ticketCache,
+        key -> {
+          KerberosAuthentication tgtCacheAuth = new KerberosAuthentication(ticketCache);
+          return new CachingKerberosAuthentication(tgtCacheAuth);
+        });
   }
 
   public static CachingKerberosAuthentication getKeytabAuthentication(
