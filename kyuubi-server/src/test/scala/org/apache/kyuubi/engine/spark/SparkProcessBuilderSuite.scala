@@ -403,36 +403,43 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       "spark-core_2.13-3.5.0-abc-20230921.jar",
       "spark-core_2.13-3.5.0-xyz-1.2.3.jar",
       "spark-core_2.13-3.5.0.1.jar",
-      "spark-core_2.13.2-3.5.0.jar").foreach { f =>
+      "spark-core_2.13-4.0.0-preview1.jar",
+      "spark-core_2.13-4.0.0.jar").foreach { f =>
       assertResult("2.13")(builder.extractSparkCoreScalaVersion(Seq(f)))
     }
 
     Seq(
       "spark-dummy_2.13-3.5.0.jar",
       "spark-core_2.13-3.5.0.1.zip",
-      "yummy-spark-core_2.13-3.5.0.jar").foreach { f =>
+      "yummy-spark-core_2.13-3.5.0.jar",
+      "spark-core_2.13.2-3.5.0.jar").foreach { f =>
       assertThrows[KyuubiException](builder.extractSparkCoreScalaVersion(Seq(f)))
     }
   }
 
   test("match scala version of spark home") {
-    SCALA_COMPILE_VERSION match {
-      case "2.12" => Seq(
-          "spark-3.2.4-bin-hadoop3.2",
-          "spark-3.2.4-bin-hadoop2.7",
-          "spark-3.4.1-bin-hadoop3")
-          .foreach { sparkHome =>
-            assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
-            assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
-          }
-      case "2.13" => Seq(
-          "spark-3.2.4-bin-hadoop3.2-scala2.13",
-          "spark-3.4.1-bin-hadoop3-scala2.13",
-          "spark-3.5.0-bin-hadoop3-scala2.13")
-          .foreach { sparkHome =>
-            assertMatches(sparkHome, SPARK_HOME_REGEX_SCALA_213)
-            assertNotMatches(sparkHome, SPARK_HOME_REGEX_SCALA_212)
-          }
+    Seq(
+      "spark-3.2.4-bin-hadoop3.2",
+      "spark-3.2.4-bin-hadoop2.7",
+      "spark-3.4.1-bin-hadoop3").foreach { SPARK3_HOME_SCALA_212 =>
+      assertMatches(SPARK3_HOME_SCALA_212, SPARK3_HOME_REGEX_SCALA_212)
+      assertNotMatches(SPARK3_HOME_SCALA_212, SPARK3_HOME_REGEX_SCALA_213)
+      assertNotMatches(SPARK3_HOME_SCALA_212, SPARK4_HOME_REGEX_SCALA_213)
+    }
+    Seq(
+      "spark-3.2.4-bin-hadoop3.2-scala2.13",
+      "spark-3.4.1-bin-hadoop3-scala2.13",
+      "spark-3.5.0-bin-hadoop3-scala2.13").foreach { SPARK3_HOME_SCALA_213 =>
+      assertMatches(SPARK3_HOME_SCALA_213, SPARK3_HOME_REGEX_SCALA_213)
+      assertNotMatches(SPARK3_HOME_SCALA_213, SPARK3_HOME_REGEX_SCALA_212)
+      assertNotMatches(SPARK3_HOME_SCALA_213, SPARK4_HOME_REGEX_SCALA_213)
+    }
+    Seq(
+      "spark-4.0.0-preview1-bin-hadoop3",
+      "spark-4.0.0-bin-hadoop3").foreach { SPARK4_HOME_SCALA_213 =>
+      assertMatches(SPARK4_HOME_SCALA_213, SPARK4_HOME_REGEX_SCALA_213)
+      assertNotMatches(SPARK4_HOME_SCALA_213, SPARK3_HOME_REGEX_SCALA_212)
+      assertNotMatches(SPARK4_HOME_SCALA_213, SPARK3_HOME_REGEX_SCALA_213)
     }
   }
 

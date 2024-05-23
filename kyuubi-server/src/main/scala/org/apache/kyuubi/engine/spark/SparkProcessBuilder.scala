@@ -117,11 +117,11 @@ class SparkProcessBuilder(
   }
 
   override protected lazy val engineHomeDirFilter: FileFilter = file => {
-    val r = SCALA_COMPILE_VERSION match {
-      case "2.12" => SPARK_HOME_REGEX_SCALA_212
-      case "2.13" => SPARK_HOME_REGEX_SCALA_213
+    val patterns = SCALA_COMPILE_VERSION match {
+      case "2.12" => Seq(SPARK3_HOME_REGEX_SCALA_212)
+      case "2.13" => Seq(SPARK3_HOME_REGEX_SCALA_213, SPARK4_HOME_REGEX_SCALA_213)
     }
-    file.isDirectory && r.findFirstMatchIn(file.getName).isDefined
+    file.isDirectory && patterns.exists(_.findFirstMatchIn(file.getName).isDefined)
   }
 
   override protected[kyuubi] lazy val commands: Iterable[String] = {
@@ -364,11 +364,14 @@ object SparkProcessBuilder {
   final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
 
   final private[kyuubi] val SPARK_CORE_SCALA_VERSION_REGEX =
-    """^spark-core_(\d\.\d+).*.jar$""".r
+    """^spark-core_(\d\.\d+)-.*\.jar$""".r
 
-  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_212 =
-    """^spark-\d+\.\d+\.\d+-bin-hadoop\d+(\.\d+)?$""".r
+  final private[kyuubi] val SPARK3_HOME_REGEX_SCALA_212 =
+    """^spark-3\.\d+\.\d+-bin-hadoop\d+(\.\d+)?$""".r
 
-  final private[kyuubi] val SPARK_HOME_REGEX_SCALA_213 =
-    """^spark-\d+\.\d+\.\d+-bin-hadoop\d(\.\d+)?+-scala\d+(\.\d+)?$""".r
+  final private[kyuubi] val SPARK3_HOME_REGEX_SCALA_213 =
+    """^spark-3\.\d+\.\d+-bin-hadoop\d(\.\d+)?+-scala2\.13$""".r
+
+  final private[kyuubi] val SPARK4_HOME_REGEX_SCALA_213 =
+    """^spark-4\.\d+\.\d+(-\w*)?-bin-hadoop\d(\.\d+)?+$""".r
 }
