@@ -83,6 +83,7 @@
         <module>kyuubi-util</module>
         <module>kyuubi-util-scala</module>
         <module>kyuubi-zookeeper</module>
+        <module>kyuubi-grpc</module>
     </modules>
 
     <scm>
