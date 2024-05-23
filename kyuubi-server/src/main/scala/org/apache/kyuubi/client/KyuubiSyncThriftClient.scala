@@ -69,9 +69,12 @@ class KyuubiSyncThriftClient private (
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
-  private lazy val asyncRequestExecutor: ExecutorService =
+  @volatile private var asyncRequestExecutorInitialized: Boolean = false
+  private lazy val asyncRequestExecutor: ExecutorService = {
+    asyncRequestExecutorInitialized = true
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "async-request-executor-" + SessionHandle(_remoteSessionHandle))
+  }
 
   @VisibleForTesting
   @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
@@ -80,7 +83,9 @@ class KyuubiSyncThriftClient private (
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
 
   private def shutdownAsyncRequestExecutor(): Unit = {
-    Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+    if (asyncRequestExecutorInitialized && !asyncRequestExecutor.isShutdown) {
+      ThreadUtils.shutdown(asyncRequestExecutor)
+    }
     asyncRequestInterrupted = true
   }
 
