@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.lang3.StringUtils;
 
 public class KerberosAuthenticationManager {
 
@@ -30,16 +31,11 @@ public class KerberosAuthenticationManager {
       new ConcurrentHashMap<>();
 
   public static CachingKerberosAuthentication getTgtCacheAuthentication(String ticketCache) {
-    final String finalTicketCache;
-    if (StringUtils.isBlank(ticketCache)) {
-      finalTicketCache = System.getenv("KRB5CCNAME");
-    } else {
-      finalTicketCache = ticketCache;
-    }
+    requireNonNull(ticketCache, "ticketCache is null");
     return TGT_CACHE_AUTHENTICATION_CACHE.computeIfAbsent(
-        finalTicketCache,
+        ticketCache,
         key -> {
-          KerberosAuthentication tgtCacheAuth = new KerberosAuthentication(finalTicketCache);
+          KerberosAuthentication tgtCacheAuth = new KerberosAuthentication(ticketCache);
           return new CachingKerberosAuthentication(tgtCacheAuth);
         });
   }
