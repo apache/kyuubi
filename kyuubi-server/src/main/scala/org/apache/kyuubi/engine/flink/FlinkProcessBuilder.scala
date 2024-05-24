@@ -62,9 +62,7 @@ class FlinkProcessBuilder(
   private lazy val proxyUserEnable: Boolean = {
     doAsEnabled && conf.get(ENGINE_FLINK_DOAS_ENABLED) &&
     conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_KEYTAB_KEY").isEmpty &&
-    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty &&
-    !conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").exists(
-      _.toBoolean)
+    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty
   }
 
   override protected def module: String = "kyuubi-flink-sql-engine"
@@ -266,5 +264,4 @@ object FlinkProcessBuilder {
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
   final val FLINK_SECURITY_KEYTAB_KEY = "security.kerberos.login.keytab"
   final val FLINK_SECURITY_PRINCIPAL_KEY = "security.kerberos.login.principal"
-  final val FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY = "security.delegation.tokens.enabled"
 }
