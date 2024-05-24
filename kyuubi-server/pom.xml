@@ -32,9 +32,9 @@
     <dependencyManagement>
         <dependencies>
             <!--
-              We can not manage Jersey dependencies globally because SPARK-47118 (4.0.0) upgrades
-              Jersey from 2 to 3, use an unmatched Jersey versions in modules like Spark SQL engine
-              would fail Spark to start thus abort UT.
+              We can not manage Jersey dependencies globally because SPARK-47118 (4.0.0)
+              upgrades Jersey from 2 to 3, using an unmatched Jersey version in modules
+              like Spark SQL engine would fail Spark to start thus abort UT.
              -->
             <dependency>
                 <groupId>org.glassfish.jersey</groupId>
