@@ -60,10 +60,11 @@ class FlinkProcessBuilder(
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
 
   private lazy val proxyUserEnable: Boolean = {
-    doAsEnabled && conf.get(ENGINE_FLINK_PROXY_USER_ENABLED) &&
-    conf.getOption(s"flink.$FLINK_SECURITY_KEYTAB_KEY").isEmpty &&
-    conf.getOption(s"flink.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty &&
-    !conf.getOption(s"flink.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").exists(_.toBoolean)
+    doAsEnabled && conf.get(ENGINE_FLINK_DOAS_ENABLED) &&
+    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_KEYTAB_KEY").isEmpty &&
+    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty &&
+    !conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").exists(
+      _.toBoolean)
   }
 
   override protected def module: String = "kyuubi-flink-sql-engine"
