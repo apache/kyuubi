@@ -116,6 +116,18 @@ object KyuubiHadoopUtils extends Logging {
     }
   }
 
+  def compareIssueDate(
+      newToken: Token[_ <: TokenIdentifier],
+      oldToken: Token[_ <: TokenIdentifier]): Int = {
+    val newDate = KyuubiHadoopUtils.getTokenIssueDate(newToken)
+    val oldDate = KyuubiHadoopUtils.getTokenIssueDate(oldToken)
+    if (newDate.isDefined && oldDate.isDefined && newDate.get <= oldDate.get) {
+      -1
+    } else {
+      1
+    }
+  }
+
   /**
    * Add a path variable to the given environment map.
    * If the map already contains this key, append the value to the existing value instead.
