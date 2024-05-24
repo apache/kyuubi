@@ -29,6 +29,45 @@
     <name>Kyuubi Project Server</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              We can not manage Jersey dependencies globally because SPARK-47118 (4.0.0)
+              upgrades Jersey from 2 to 3, using an unmatched Jersey version in modules
+              like Spark SQL engine would fail Spark to start thus abort UT.
+             -->
+            <dependency>
+                <groupId>org.glassfish.jersey</groupId>
+                <artifactId>jersey-bom</artifactId>
+                <version>${jersey.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-common</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework</groupId>
+                <artifactId>jersey-test-framework-core</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jakarta.servlet</groupId>
+                        <artifactId>jakarta.servlet-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
