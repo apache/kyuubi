@@ -131,7 +131,26 @@ class FlinkProcessBuilder(
           flinkExtraJars += s"$hiveConfFile"
         }
 
-        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "")
+        val externalProxyUserConf: Map[String, String] = if (proxyUserEnable) {
+          // FLINK-31109: Flink only supports hadoop proxy user when delegation tokens fetch
+          // is managed outside, but disabling `security.delegation.tokens.enabled` will cause
+          // delegation token updates on JobManager not to be passed to TaskManagers.
+          // Based on the solution in
+          // https://github.com/apache/flink/pull/22009#issuecomment-2122226755, we removed
+          // `HadoopModuleFactory` from `security.module.factory.classes` and disabled delegation
+          // token providers (hadoopfs/hbase/HiveServer2) that do not support proxyUser.
+          Map(
+            "security.module.factory.classes" ->
+              ("org.apache.flink.runtime.security.modules.JaasModuleFactory;" +
+                "org.apache.flink.runtime.security.modules.ZookeeperModuleFactory"),
+            "security.delegation.token.provider.hadoopfs.enabled" -> "false",
+            "security.delegation.token.provider.hbase.enabled" -> "false",
+            "security.delegation.token.provider.HiveServer2.enabled" -> "false")
+        } else {
+          Map.empty
+        }
+
+        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "") ++ externalProxyUserConf
         // add custom yarn.ship-files
         flinkExtraJars ++= customFlinkConf.get(YARN_SHIP_FILES_KEY)
         val yarnAppName = customFlinkConf.get(YARN_APPLICATION_NAME_KEY)
@@ -142,13 +161,6 @@ class FlinkProcessBuilder(
         buffer += s"-Dyarn.application.name=${yarnAppName.get}"
         buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
-        if (proxyUserEnable && conf.getOption(
-            s"flink.$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY").isEmpty) {
-          // FLINK-31109: Flink only supports hadoop proxy user only when delegation tokens fetch
-          // is managed outside. So we need to disable delegation tokens of flink and rely on kyuubi
-          // server to maintain engine's tokens.
-          buffer += s"-D$FLINK_SECURITY_DELEGATION_TOKENS_ENABLED_KEY=false"
-        }
 
         hiveConfDirOpt.foreach { _ =>
           buffer += "-Dcontainerized.master.env.HIVE_CONF_DIR=."
