@@ -1618,7 +1618,6 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
