@@ -227,6 +227,7 @@
         <maven.plugin.download.version>1.8.1</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
@@ -1506,6 +1507,21 @@
                 </plugin>
 
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${maven.plugin.flatten.version}</version>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                            <phase>process-resources</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <executions>
@@ -1745,6 +1761,11 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+
             <!-- dump test classpath into a folder -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
