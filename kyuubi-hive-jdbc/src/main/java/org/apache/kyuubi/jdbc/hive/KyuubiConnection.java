@@ -930,7 +930,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       AccessControlContext context = AccessController.getContext();
       return Subject.getSubject(context);
     } else if (isTgtCacheAuthMode()) {
-      String ticketCache = sessConfMap.get(AUTH_KYUUBI_CLIENT_TICKET_CACHE);
+      String ticketCache = sessConfMap.getOrDefault(AUTH_KYUUBI_CLIENT_TICKET_CACHE, "");
       return KerberosAuthenticationManager.getTgtCacheAuthentication(ticketCache).getSubject();
     } else {
       // This should never happen
