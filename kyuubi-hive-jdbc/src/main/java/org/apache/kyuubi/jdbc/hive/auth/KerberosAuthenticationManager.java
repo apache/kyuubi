@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
+import static java.util.Objects.requireNonNull;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -29,6 +31,7 @@ public class KerberosAuthenticationManager {
       new ConcurrentHashMap<>();
 
   public static CachingKerberosAuthentication getTgtCacheAuthentication(String ticketCache) {
+    requireNonNull(ticketCache, "ticketCache is null");
     return TGT_CACHE_AUTHENTICATION_CACHE.computeIfAbsent(
         ticketCache,
         key -> {
