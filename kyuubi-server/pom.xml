@@ -314,13 +314,13 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
+            <artifactId>${iceberg.artifact}</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>io.delta</groupId>
-            <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
+            <artifactId>${delta.artifact}</artifactId>
             <scope>test</scope>
         </dependency>
 
