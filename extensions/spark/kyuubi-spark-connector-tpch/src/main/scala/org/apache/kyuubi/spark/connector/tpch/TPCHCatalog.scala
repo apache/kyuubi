@@ -58,7 +58,7 @@ class TPCHCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
   override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {
     case Array(db) if databases contains db => tables.map(Identifier.of(namespace, _))
-    case _ => throw new NoSuchNamespaceException(namespace.mkString("."))
+    case _ => throw new NoSuchNamespaceException(namespace)
   }
 
   override def loadTable(ident: Identifier): SparkTable = (ident.namespace, ident.name) match {
