@@ -149,7 +149,7 @@ trait ProcBuilder {
     val envs = pb.environment()
     envs.putAll(env.asJava)
     pb.directory(workingDir.toFile)
-    pb.redirectError(engineLog)
+    pb.redirectErrorStream(true)
     pb.redirectOutput(engineLog)
     extraEngineLog.foreach(_.addExtraLog(engineLog.toPath))
     pb
