@@ -87,7 +87,7 @@ spec:
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:
             exec:
-              command: ["/bin/bash", "-c", "bin/kyuubi status"]
+              command: ["/bin/bash", "-c", "$KYUUBI_HOME/bin/kyuubi status"]
             initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
             periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
             timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
