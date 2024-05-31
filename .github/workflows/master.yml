@@ -171,14 +171,17 @@ jobs:
             **/kyuubi-hive-sql-engine.log*
 
   spark-connector-cross-version-test:
-    name: Kyuubi Spark Connector Cross Version Test
+    name: Spark Connector Cross Version Test
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
-      max-parallel: 6
+      max-parallel: 1
       matrix:
         java:
-          - 8
+          - 17
+        scala:
+          - '2.12'
+          - '2.13'
         spark-compile:
             - '3.5'
         spark-runtime:
@@ -204,11 +207,13 @@ jobs:
       - name: Build Kyuubi Spark Hive Connector with Spark-${{ matrix.spark-compile }}
         run: |
           ./build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-spark-connector-hive -am \
-          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark-compile }} -DskipTests
+          -Pjava-${{ matrix.java }} -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-compile }} \
+          -DskipTests
       - name: Test Kyuubi Spark Hive Connector with Spark-${{ matrix.spark-runtime }}
         run: |
           ./build/mvn test ${MVN_OPT} -pl extensions/spark/kyuubi-spark-connector-hive \
-          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark-runtime }} -Pcross-version-test
+          -Pjava-${{ matrix.java }} -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} \
+          -Pcross-version-test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
