@@ -1285,6 +1285,17 @@ object KyuubiConf {
       .stringConf
       .createWithDefault(KubernetesCleanupDriverPodStrategy.NONE.toString)
 
+  val KUBERNETES_SPARK_APP_URL_PATTERN: ConfigEntry[String] =
+    buildConf("kyuubi.kubernetes.spark.appUrlPattern")
+      .doc("The pattern to generate the spark on kubernetes application UI URL. " +
+        "The pattern should contain placeholders for the application variables. " +
+        "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`, " +
+        "`{{KUBERNETES_NAMESPACE}}`, `{{KUBERNETES_CONTEXT}}` and `{{SPARK_UI_PORT}}`.")
+      .version("1.10.0")
+      .stringConf
+      .createWithDefault(
+        "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc:{{SPARK_UI_PORT}}")
+
   object KubernetesCleanupDriverPodStrategy extends Enumeration {
     type KubernetesCleanupDriverPodStrategy = Value
     val NONE, ALL, COMPLETED = Value
@@ -1508,6 +1519,14 @@ object KyuubiConf {
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
+
+  val ENGINE_TRINO_SHOW_PROGRESS_UPDATE_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.trino.progress.update.interval")
+      .doc("Update period of progress bar.")
+      .version("1.10.0")
+      .timeConf
+      .checkValue(_ >= 200, "Minimum 200 milliseconds")
+      .createWithDefault(1000)
 
   val ENGINE_HIVE_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.hive.main.resource")
@@ -1769,6 +1788,25 @@ object KyuubiConf {
         " Kyuubi instances.")
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
+
+  val BATCH_INTERNAL_REST_CLIENT_REQUEST_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("kyuubi.batch.internal.rest.client.request.max.attempts")
+      .internal
+      .doc("The internal rest client max attempts number for batch request redirection across" +
+        " Kyuubi instances.")
+      .version("1.10.0")
+      .intConf
+      .createWithDefault(3)
+
+  val BATCH_INTERNAL_REST_CLIENT_REQUEST_ATTEMPT_WAIT: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.internal.rest.client.request.attempt.wait")
+      .internal
+      .doc(
+        "The internal rest client wait time between attempts for batch request redirection " +
+          "across Kyuubi instances.")
+      .version("1.10.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
 
   val BATCH_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.check.interval")
@@ -2035,6 +2073,14 @@ object KyuubiConf {
       .longConf
       .checkValue(_ > 0, "must be positive value")
       .createWithDefault(200 * 1024 * 1024)
+
+  val OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.result.saveToFile.minRows")
+      .doc("The minRows of Spark result save to file, default value is 10000.")
+      .version("1.9.1")
+      .longConf
+      .checkValue(_ > 0, "must be positive value")
+      .createWithDefault(10000)
 
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.incremental.collect")
@@ -3590,4 +3636,23 @@ object KyuubiConf {
       .version("1.8.1")
       .booleanConf
       .createWithDefault(false)
+
+  private val HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("hive.server2.thrift.resultset.default.fetch.size")
+      .doc("This is a hive server configuration used as a fallback conf" +
+        s" for `kyuubi.server.thrift.resultset.default.fetch.size`.")
+      .version("1.9.1")
+      .internal
+      .serverOnly
+      .intConf
+      .createWithDefault(1000)
+
+  val KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.server.thrift.resultset.default.fetch.size")
+      .doc("The number of rows sent in one Fetch RPC call by the server to the client, if not" +
+        " specified by the client. Respect `hive.server2.thrift.resultset.default.fetch.size`" +
+        " hive conf.")
+      .version("1.9.1")
+      .serverOnly
+      .fallbackConf(HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
 }

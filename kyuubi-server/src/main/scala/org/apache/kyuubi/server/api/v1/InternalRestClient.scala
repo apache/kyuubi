@@ -32,12 +32,17 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
  * @param kyuubiInstance the kyuubi instance host:port.
  * @param socketTimeout the socket timeout for http client.
  * @param connectTimeout the connect timeout for http client.
+ * @param securityEnabled if enable secure access.
+ * @param requestMaxAttempts the request max attempts for http client.
+ * @param requestAttemptWait the request attempt wait for http client.
  */
 class InternalRestClient(
     kyuubiInstance: String,
     socketTimeout: Int,
     connectTimeout: Int,
-    securityEnabled: Boolean) {
+    securityEnabled: Boolean,
+    requestMaxAttempts: Int,
+    requestAttemptWait: Int) {
   if (securityEnabled) {
     require(
       InternalSecurityAccessor.get() != null,
@@ -69,6 +74,8 @@ class InternalRestClient(
       .apiVersion(KyuubiRestClient.ApiVersion.V1)
       .socketTimeout(socketTimeout)
       .connectionTimeout(connectTimeout)
+      .maxAttempts(requestMaxAttempts)
+      .attemptWaitTime(requestAttemptWait)
     if (securityEnabled) {
       builder.authHeaderGenerator(InternalRestClient.internalAuthHeaderGenerator)
     }

@@ -64,7 +64,9 @@ class FetchOrcStatement(spark: SparkSession) {
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
-    new IterableFetchIterator[Row](iterRow.toIterable)
+    new IterableFetchIterator[Row](new Iterable[Row] {
+      override def iterator: Iterator[Row] = iterRow
+    })
   }
 
   def close(): Unit = {
@@ -79,6 +81,7 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   var idx = 0
 
   override def hasNext: Boolean = {
+    if (idx >= iters.size) return false
     val hasNext = iters(idx).hasNext
     if (!hasNext) {
       iters(idx).close()

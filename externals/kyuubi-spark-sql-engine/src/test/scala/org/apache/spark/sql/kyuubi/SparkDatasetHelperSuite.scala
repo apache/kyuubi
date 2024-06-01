@@ -42,4 +42,15 @@ class SparkDatasetHelperSuite extends WithSparkSQLEngine {
         spark.sql(collectLimitStatement).queryExecution) === Option(topKThreshold))
     }
   }
+
+  test("isCommandExec") {
+    var query = "set"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "explain set"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "show tables"
+    assert(SparkDatasetHelper.isCommandExec(spark.sql(query)))
+    query = "select * from VALUES(1),(2),(3),(4) AS t(id)"
+    assert(!SparkDatasetHelper.isCommandExec(spark.sql(query)))
+  }
 }

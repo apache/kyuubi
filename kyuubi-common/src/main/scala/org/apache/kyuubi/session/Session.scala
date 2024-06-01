@@ -93,4 +93,6 @@ trait Session {
       fetchLog: Boolean): TFetchResultsResp
 
   def closeExpiredOperations(): Unit
+
+  def isForAliveProbe: Boolean
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.ui.SparkUIUtilsHelper.formatDuration
+import org.apache.spark.ui.SparkUIUtils.formatDuration
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY

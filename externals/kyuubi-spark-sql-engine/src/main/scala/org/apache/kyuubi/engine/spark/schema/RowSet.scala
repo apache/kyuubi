@@ -17,17 +17,43 @@
 
 package org.apache.kyuubi.engine.spark.schema
 
+import java.lang.{Boolean => JBoolean}
+
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.execution.HiveResult.TimeFormatters
 import org.apache.spark.sql.types._
 
+import org.apache.kyuubi.util.reflect.DynMethods
+
 object RowSet {
+
+  // SPARK-47911 (4.0.0) introduced it
+  type BinaryFormatter = Array[Byte] => String
+
+  def getBinaryFormatter: BinaryFormatter =
+    DynMethods.builder("getBinaryFormatter")
+      .impl(HiveResult.getClass) // for Spark 4.0 and later
+      .orNoop() // for Spark 3.5 and before
+      .buildChecked(HiveResult)
+      .invokeChecked[BinaryFormatter]()
 
   def toHiveString(
       valueAndType: (Any, DataType),
-      nested: Boolean = false,
-      timeFormatters: TimeFormatters): String = {
-    HiveResult.toHiveString(valueAndType, nested, timeFormatters)
-  }
-
+      nested: JBoolean = false,
+      timeFormatters: TimeFormatters,
+      binaryFormatter: BinaryFormatter): String =
+    DynMethods.builder("toHiveString")
+      .impl( // for Spark 3.5 and before
+        HiveResult.getClass,
+        classOf[(Any, DataType)],
+        classOf[Boolean],
+        classOf[TimeFormatters])
+      .impl( // for Spark 4.0 and later
+        HiveResult.getClass,
+        classOf[(Any, DataType)],
+        classOf[Boolean],
+        classOf[TimeFormatters],
+        classOf[BinaryFormatter])
+      .buildChecked(HiveResult)
+      .invokeChecked[String](valueAndType, nested, timeFormatters, binaryFormatter)
 }

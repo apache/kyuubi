@@ -187,7 +187,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("kyuubi #3214: Plan only mode with an incorrect value") {
+  test("KYUUBI #3214: Plan only mode with an incorrect value") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "parse"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parser")
@@ -196,7 +196,11 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         statement.executeQuery(s"set ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=parse")
         val result = statement.executeQuery("select 1")
         assert(result.next())
-        assert(result.getString(1).contains("Project [unresolvedalias(1, None)]"))
+        val plan = result.getString(1)
+        assert {
+          plan.contains("Project [unresolvedalias(1, None)]") ||
+          plan.contains("Project [unresolvedalias(1)]")
+        }
       }
     }
   }

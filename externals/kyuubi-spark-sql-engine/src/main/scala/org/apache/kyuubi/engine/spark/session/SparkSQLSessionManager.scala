@@ -200,12 +200,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       }
     }
     if (shareLevel == ShareLevel.CONNECTION) {
-      info("Session stopped due to shared level is Connection.")
-      stopSession()
+      info("Spark engine stopped due to session stopped and shared level is CONNECTION.")
+      stopEngine()
     }
   }
 
-  private def stopSession(): Unit = {
+  private def stopEngine(): Unit = {
     SparkSQLEngine.currentEngine.foreach(_.stop())
   }
 

@@ -19,7 +19,7 @@ package org.apache.spark.kyuubi
 
 import java.util.UUID
 
-import org.apache.spark.SparkException
+import org.apache.spark.{SparkArithmeticException, SparkException}
 import org.apache.spark.sql.internal.SQLConf.ANSI_ENABLED
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -47,8 +47,10 @@ abstract class SparkSQLEngineDeregisterSuite
     assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
       ServiceState.STARTED)
     (0 until maxJobFailures).foreach { _ =>
-      val e = intercept[SparkException](spark.sql(query).collect())
-      assert(e.getCause.isInstanceOf[ArithmeticException])
+      intercept[Exception](spark.sql(query).collect()) match {
+        case se: SparkException => assert(se.getCause.isInstanceOf[ArithmeticException])
+        case e => assert(e.isInstanceOf[SparkArithmeticException])
+      }
     }
     eventually(timeout(5.seconds), interval(1.second)) {
       assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
@@ -113,12 +115,18 @@ class SparkSQLEngineDeregisterExceptionTTLSuite
     assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
       ServiceState.STARTED)
 
-    intercept[SparkException](spark.sql(query).collect())
+    intercept[Exception](spark.sql(query).collect()) match {
+      case se: SparkException => assert(se.getCause.isInstanceOf[ArithmeticException])
+      case e => assert(e.isInstanceOf[SparkArithmeticException])
+    }
+
     Thread.sleep(deregisterExceptionTTL + 1000)
 
     (0 until maxJobFailures).foreach { _ =>
-      val e = intercept[SparkException](spark.sql(query).collect())
-      assert(e.getCause.isInstanceOf[ArithmeticException])
+      intercept[Exception](spark.sql(query).collect()) match {
+        case se: SparkException => assert(se.getCause.isInstanceOf[ArithmeticException])
+        case e => assert(e.isInstanceOf[SparkArithmeticException])
+      }
     }
     eventually(timeout(5.seconds), interval(1.second)) {
       assert(engine.frontendServices.head.discoveryService.get.getServiceState ===

@@ -287,7 +287,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def start(): Unit = synchronized {
     MetricsSystem.tracing { ms =>
-      ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
+      ms.registerGauge(CONN_OPEN, getActiveUserSessionCount, 0)
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
       ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
