@@ -30,7 +30,7 @@ import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, After, ColumnPosition, DeleteColumn, First, RenameColumn, UpdateColumnComment, UpdateColumnNullability, UpdateColumnPosition, UpdateColumnType}
 import org.apache.spark.sql.execution.command.CommandUtils
 import org.apache.spark.sql.execution.command.CommandUtils.{calculateMultipleLocationSizes, calculateSingleLocationSize}
-import org.apache.spark.sql.execution.datasources.PartitionedFile
+import org.apache.spark.sql.execution.datasources.{PartitionDirectory, PartitionedFile}
 import org.apache.spark.sql.hive.execution.HiveFileFormat
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
@@ -68,8 +68,7 @@ object HiveConnectorUtils extends Logging {
         .build[HiveFileFormat]()
         .newInstance(shimFileSinkDesc)
     } else {
-      throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
-        s"is not supported by Kyuubi spark hive connector.")
+      throw unsupportedSparkVersion()
     }
   }
 
@@ -80,8 +79,7 @@ object HiveConnectorUtils extends Logging {
     } else if (SPARK_RUNTIME_VERSION >= "3.3") {
       invokeAs[String](file, "filePath")
     } else {
-      throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
-        s"is not supported by Kyuubi spark hive connector.")
+      throw unsupportedSparkVersion()
     }
   }
 
@@ -136,9 +134,44 @@ object HiveConnectorUtils extends Logging {
           maxSplitBytes.asInstanceOf[JLong],
           partitionValues)
     } else {
-      throw KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
-        s"is not supported by Kyuubi spark hive connector.")
+      throw unsupportedSparkVersion()
     }
+  }
+
+  def createPartitionDirectory(values: InternalRow, files: Seq[FileStatus]): PartitionDirectory = {
+    if (SPARK_RUNTIME_VERSION >= "3.5") {
+      new DynMethods.Builder("apply")
+        .impl(classOf[PartitionDirectory], classOf[InternalRow], classOf[Array[FileStatus]])
+        .buildChecked()
+        .asStatic()
+        .invoke[PartitionDirectory](values, files.toArray)
+    } else if (SPARK_RUNTIME_VERSION >= "3.3") {
+      new DynMethods.Builder("apply")
+        .impl(classOf[PartitionDirectory], classOf[InternalRow], classOf[Seq[FileStatus]])
+        .buildChecked()
+        .asStatic()
+        .invoke[PartitionDirectory](values, files)
+    } else {
+      throw unsupportedSparkVersion()
+    }
+  }
+
+  def getPartitionFilePath(file: AnyRef): Path = {
+    if (SPARK_RUNTIME_VERSION >= "3.5") {
+      new DynMethods.Builder("getPath")
+        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+        .build()
+        .invoke[Path](file)
+    } else if (SPARK_RUNTIME_VERSION >= "3.3") {
+      file.asInstanceOf[FileStatus].getPath
+    } else {
+      throw unsupportedSparkVersion()
+    }
+  }
+
+  private def unsupportedSparkVersion(): KyuubiHiveConnectorException = {
+    KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
+      "is not supported by Kyuubi spark hive connector.")
   }
 
   def calculateTotalSize(
