@@ -186,6 +186,7 @@ jobs:
             - '3.5'
         spark-runtime:
             - '3.4'
+            - '3.3'
         comment: [ "normal" ]
     env:
       SPARK_LOCAL_IP: localhost
@@ -218,10 +219,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: >-
-            unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}
-            -spark-compile-${{ matrix.spark-compile }}-spark-runtime-${{ matrix.spark-runtime }}
-            -${{ matrix.comment }}
+          name: "unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}\
+            -spark-compile-${{ matrix.spark-compile }}-spark-runtime-${{ matrix.spark-runtime }}\
+            -${{ matrix.comment }}"
           path: |
             **/target/unit-tests.log
 
