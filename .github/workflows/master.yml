@@ -218,7 +218,8 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}\
+          name: |
+            unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}\
             -spark-compile-${{ matrix.spark-compile }}-spark-runtime-${{ matrix.spark-runtime }}\
             -${{ matrix.comment }}
           path: |
