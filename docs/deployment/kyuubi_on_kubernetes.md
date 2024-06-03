@@ -77,8 +77,8 @@ You should create your ServiceAccount(or reuse account with the appropriate priv
 For example, you can create ServiceAccount by following command:
 
 ```shell
-kubectl create serviceAccount kyuubi -n <your namespace>
-kubectl create rolebinding kyuubi-role --role=edit --serviceAccount=<your namespace>:kyuubi --namespace=<your namespace>
+kubectl create serviceaccount kyuubi -n <your namespace>
+kubectl create rolebinding kyuubi-role --role=edit --serviceaccount=<your namespace>:kyuubi --namespace=<your namespace>
 ```
 
 See more related details in [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) and [Configure Service Accounts for Pods](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/).
