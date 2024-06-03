@@ -190,6 +190,9 @@ jobs:
         comment: [ "normal" ]
     env:
       SPARK_LOCAL_IP: localhost
+      TEST_MODULES: "extensions/spark/kyuubi-spark-connector-hive,\
+        extensions/spark/kyuubi-spark-connector-tpcds,\
+        extensions/spark/kyuubi-spark-connector-tpch"
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -205,16 +208,14 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Build Kyuubi Spark Hive Connector with Spark-${{ matrix.spark-compile }}
+      - name: Build Kyuubi Spark Connectors with Spark-${{ matrix.spark-compile }}
         run: |
-          ./build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-spark-connector-hive -am \
-          -Pjava-${{ matrix.java }} -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-compile }} \
-          -DskipTests
-      - name: Test Kyuubi Spark Hive Connector with Spark-${{ matrix.spark-runtime }}
+          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-compile }} -DskipTests
+      - name: Test Kyuubi Spark Connectors with Spark-${{ matrix.spark-runtime }}
         run: |
-          ./build/mvn test ${MVN_OPT} -pl extensions/spark/kyuubi-spark-connector-hive \
-          -Pjava-${{ matrix.java }} -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} \
-          -Pcross-version-test
+          ./build/mvn test ${MVN_OPT} -pl ${TEST_MODULES} -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} -Pcross-version-test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
