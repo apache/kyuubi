@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.nio.file.Paths
 import java.util.concurrent.{ScheduledExecutorService, TimeUnit}
 
 import org.apache.hadoop.fs.Path
@@ -188,10 +187,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       if (getSessionConf(KyuubiConf.OPERATION_RESULT_SAVE_TO_FILE, spark)) {
         val sessionSavePath = getSessionResultSavePath(sessionHandle)
         try {
-          val path = new Path(sessionSavePath)
-          val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
-          if (fs.exists(path)) {
-            fs.delete(path, true)
+          val fs = sessionSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+          if (fs.exists(sessionSavePath)) {
+            fs.delete(sessionSavePath, true)
             info(s"Deleted session result path: $sessionSavePath")
           }
         } catch {
@@ -211,17 +209,17 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   override protected def isServer: Boolean = false
 
-  private[spark] def getEngineResultSavePath(): String = {
-    Paths.get(conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR), engineId).toString
+  private[spark] def getEngineResultSavePath(): Path = {
+    new Path(conf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR), engineId)
   }
 
-  private def getSessionResultSavePath(sessionHandle: SessionHandle): String = {
-    Paths.get(getEngineResultSavePath(), sessionHandle.identifier.toString).toString
+  private def getSessionResultSavePath(sessionHandle: SessionHandle): Path = {
+    new Path(getEngineResultSavePath(), sessionHandle.identifier.toString)
   }
 
   private[spark] def getOperationResultSavePath(
       sessionHandle: SessionHandle,
-      opHandle: OperationHandle): String = {
-    Paths.get(getSessionResultSavePath(sessionHandle), opHandle.identifier.toString).toString
+      opHandle: OperationHandle): Path = {
+    new Path(getSessionResultSavePath(sessionHandle), opHandle.identifier.toString)
   }
 }

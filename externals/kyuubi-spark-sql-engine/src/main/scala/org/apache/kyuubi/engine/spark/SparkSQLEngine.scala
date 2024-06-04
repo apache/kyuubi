@@ -26,7 +26,6 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hadoop.fs.Path
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -92,10 +91,9 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     }
 
     if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val path = new Path(engineSavePath)
-      val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      fs.mkdirs(path)
-      fs.deleteOnExit(path)
+      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+      fs.mkdirs(engineSavePath)
+      fs.deleteOnExit(engineSavePath)
     }
   }
 
@@ -113,10 +111,9 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         Duration(60, TimeUnit.SECONDS))
     })
     try {
-      val path = new Path(engineSavePath)
-      val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      if (fs.exists(path)) {
-        fs.delete(path, true)
+      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+      if (fs.exists(engineSavePath)) {
+        fs.delete(engineSavePath, true)
       }
     } catch {
       case e: Throwable => error(s"Error cleaning engine result save path: $engineSavePath", e)
