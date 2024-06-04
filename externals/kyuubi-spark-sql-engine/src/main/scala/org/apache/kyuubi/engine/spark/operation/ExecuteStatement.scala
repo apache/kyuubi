@@ -49,7 +49,7 @@ class ExecuteStatement(
   override protected def supportProgress: Boolean = true
 
   private var fetchOrcStatement: Option[FetchOrcStatement] = None
-  private var saveFileName: Option[String] = None
+  private var saveFilePath: Option[Path] = None
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("Result", "string")
@@ -71,9 +71,8 @@ class ExecuteStatement(
   override def close(): Unit = {
     super.close()
     fetchOrcStatement.foreach(_.close())
-    saveFileName.foreach { p =>
-      val path = new Path(p)
-      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    saveFilePath.foreach { p =>
+      p.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(p, true)
     }
   }
 
@@ -179,7 +178,7 @@ class ExecuteStatement(
           resultSaveSizeThreshold,
           resultSaveRowsThreshold,
           result)) {
-        saveFileName =
+        saveFilePath =
           Some(
             session.sessionManager.asInstanceOf[SparkSQLSessionManager].getOperationResultSavePath(
               session.handle,
@@ -190,14 +189,14 @@ class ExecuteStatement(
         // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
         if (resultMaxRows > 0) {
           result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", "zstd").format("orc").save(saveFileName.get)
+            .option("compression", "zstd").format("orc").save(saveFilePath.get.toString)
         } else {
           result.toDF(colName: _*).write
-            .option("compression", "zstd").format("orc").save(saveFileName.get)
+            .option("compression", "zstd").format("orc").save(saveFilePath.get.toString)
         }
-        info(s"Save result to ${saveFileName.get}")
+        info(s"Save result to ${saveFilePath.get}")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
-        return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
+        return fetchOrcStatement.get.getIterator(saveFilePath.get.toString, resultSchema)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
