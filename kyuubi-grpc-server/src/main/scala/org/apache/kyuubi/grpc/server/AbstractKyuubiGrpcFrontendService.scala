@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.grpc.server
 
-import io.grpc.{Channel, Grpc, InsecureChannelCredentials, ManagedChannel}
+import io.grpc.ManagedChannel
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.grpc.service.AbstractGrpcFrontendService
 
-abstract class AbstractKyuubiGrpcFrontendService(name: String)
+abstract class AbstractKyuubiGrpcFrontendService(grpcSeverable: KyuubiGrpcSeverable, name: String)
   extends AbstractGrpcFrontendService(name) {
 
-  protected var host = ""
-  protected var port = 0
+  var host = ""
+  var port = 0
 
   def channel: ManagedChannel
 
@@ -38,5 +39,8 @@ abstract class AbstractKyuubiGrpcFrontendService(name: String)
     super.initialize(conf)
   }
 
+  override val serverable: KyuubiGrpcSeverable = grpcSeverable
+
+  def grpcBe: KyuubiGrpcBackendService = be.asInstanceOf[KyuubiGrpcBackendService]
 
 }

@@ -16,28 +16,27 @@
  */
 
 package org.apache.kyuubi.grpc.server
+
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 import com.google.protobuf.MessageLite
 import io.grpc._
-import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse, SparkConnectServiceGrpc}
-import org.sparkproject.connect.grpc.stub.StreamObserver
+import io.grpc.stub.StreamObserver
+import org.apache.spark.connect.proto._
 
-import org.apache.kyuubi.grpc.service.{GrpcBackendService, GrpcFrontendService, GrpcSeverable}
+import org.apache.kyuubi.grpc.session.SessionKey
 import org.apache.kyuubi.service.Service
 
-class KyuubiSparkConnectFrontendService(name: String)
-  extends AbstractKyuubiGrpcFrontendService(name) with SparkConnectServiceGrpc.AsyncService {
+abstract class KyuubiSparkConnectFrontendService(grpcSeverable: KyuubiGrpcSeverable, name: String)
+  extends AbstractKyuubiGrpcFrontendService(grpcSeverable, name)
+  with SparkConnectServiceGrpc.AsyncService {
 
-  lazy val stub = SparkConnectServiceGrpc.newStub(channel.asInstanceOf[Channel])
   override def channel: ManagedChannel = {
     Grpc.newChannelBuilderForAddress(
       host,
       port,
       InsecureChannelCredentials.create()).build()
   }
-
-  override def startEngine(): (String, Int) = {}
 
   override protected def serverHost: Option[String] = Some("localhost")
 
@@ -53,12 +52,13 @@ class KyuubiSparkConnectFrontendService(name: String)
     builder.build()
   }
 
-  override val serverable: GrpcSeverable[_ <: GrpcBackendService, _ <: GrpcFrontendService] = null
   override val discoveryService: Option[Service] = None
 
   override def config(
       request: ConfigRequest,
       responseObserver: StreamObserver[ConfigResponse]): Unit = {
-    super.config(request, responseObserver)
+    val sessionKey = new SessionKey(request.getUserContext.getUserId, request.getSessionId)
+    grpcBe.config(sessionKey, request, responseObserver, channel)
   }
+
 }

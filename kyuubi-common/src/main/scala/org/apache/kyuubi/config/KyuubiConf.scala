@@ -1064,12 +1064,13 @@ object KyuubiConf {
     .transformToLowerCase
     .createWithDefault(SaslQOP.AUTH.toString)
 
-  val GRPC_FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.grpc.frontend.bind.host")
-    .doc("Hostname or IP of the machine on which to run the grpc frontend services.")
-    .version("1.0.0")
-    .serverOnly
-    .stringConf
-    .createOptional
+  val GRPC_FRONTEND_BIND_HOST: OptionalConfigEntry[String] =
+    buildConf("kyuubi.grpc.frontend.bind.host")
+      .doc("Hostname or IP of the machine on which to run the grpc frontend services.")
+      .version("1.0.0")
+      .serverOnly
+      .stringConf
+      .createOptional
 
   val GRPC_FRONTEND_SPARK_CONNECT_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.grpc.frontend.spark.connect.host")

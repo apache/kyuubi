@@ -17,12 +17,25 @@
 
 package org.apache.kyuubi.grpc.server
 
+import io.grpc.ManagedChannel
+import io.grpc.stub.StreamObserver
+import org.apache.spark.connect.proto._
 import org.apache.kyuubi.grpc.service.AbstractGrpcBackendService
-import org.apache.kyuubi.grpc.session.{GrpcSession, GrpcSessionManager}
+import org.apache.kyuubi.grpc.session.{GrpcSessionManager, KyuubiGrpcSession, KyuubiGrpcSessionManager, SessionKey}
 
 class KyuubiGrpcBackendService(name: String) extends AbstractGrpcBackendService(name) {
 
+  def config(
+      sessionKey: SessionKey,
+      request: ConfigRequest,
+      responseObserver: StreamObserver[ConfigResponse],
+      channel: ManagedChannel): Unit = {
+    grpcSessionManager.openSession(sessionKey)
+      .config(request, responseObserver, channel)
+  }
+
   def this() = this(classOf[KyuubiGrpcBackendService].getSimpleName)
 
-  override def grpcSessionManager: GrpcSessionManager[_ <: GrpcSession] = _
+  override def grpcSessionManager: GrpcSessionManager[KyuubiGrpcSession] =
+    new KyuubiGrpcSessionManager()
 }

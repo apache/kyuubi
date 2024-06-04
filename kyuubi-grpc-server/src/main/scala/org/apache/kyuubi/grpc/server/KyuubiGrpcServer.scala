@@ -17,16 +17,13 @@
 
 package org.apache.kyuubi.grpc.server
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.grpc.service.GrpcSeverable
+class KyuubiGrpcServer(name: String)
+  extends KyuubiGrpcSeverable(name) {
+  override val backendService: KyuubiGrpcBackendService = new KyuubiGrpcBackendService()
+  override val frontendServices: Seq[AbstractKyuubiGrpcFrontendService] = Seq.empty
 
-class KyuubiGrpcServer(name: String) extends GrpcSeverable(name) {
-  override val backendService: Nothing = _
-  override val frontendServices: Seq[Nothing] = _
-
-  override protected def stopServer(): Unit = ???
+  def frontendInfo(): (String, Int) = {
+    (frontendServices.head.host, frontendServices.head.port)
+  }
 }
 
-object KyuubiGrpcServer extends Logging{
-
-}
