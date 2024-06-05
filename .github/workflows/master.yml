@@ -56,6 +56,11 @@ jobs:
         exclude-tags: [""]
         comment: ["normal"]
         include:
+          - java: 17
+            spark: '4.0'
+            spark-archive: '-Pscala-2.13'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest'
+            comment: 'normal'
           - java: 8
             spark: '3.5'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
@@ -109,6 +114,9 @@ jobs:
             MVN_OPT="${MVN_OPT} -Pcodecov"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
+          if [[ "${{ matrix.spark }}" == "4.0" ]]; then
+            TEST_MODULES="${TEST_MODULES},!extensions/spark/kyuubi-spark-authz"
+          fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
