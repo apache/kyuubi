@@ -164,6 +164,9 @@
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
         <!-- 6.0.0 requires JDK 11 -->
         <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
+        <javax.ws.rs-api.version>2.1.1</javax.ws.rs-api.version>
+        <!-- 3.1.0 requires JDK 11 -->
+        <jakarta.ws.rs-api.version>3.0.0</jakarta.ws.rs-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.40</jersey.version>
@@ -790,6 +793,18 @@
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${jakarta.servlet-api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>${javax.ws.rs-api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${jakarta.ws.rs-api.version}</version>
             </dependency>
 
             <dependency>

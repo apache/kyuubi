@@ -115,6 +115,11 @@
         </dependency>
 
         <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>com.kstruct</groupId>
             <artifactId>gethostname4j</artifactId>
             <version>${gethostname4j.version}</version>

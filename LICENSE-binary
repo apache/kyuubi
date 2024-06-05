@@ -332,7 +332,7 @@ jakarta.xml.bind:jakarta.xml.bind-api
 Eclipse Public License (EPL) 2.0
 --------------------------------
 jakarta.annotation:jakarta.annotation-api
-jakarta.ws.rs:jakarta.ws.rs-api
+javax.ws.rs:javax.ws.rs-api
 org.glassfish.hk2:hk2-api
 org.glassfish.hk2:hk2-locator
 org.glassfish.hk2:hk2-utils
