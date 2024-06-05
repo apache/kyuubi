@@ -115,7 +115,7 @@ jobs:
           fi
           TEST_MODULES="dev/kyuubi-codecov"
           if [[ "${{ matrix.spark }}" == "4.0" ]]; then
-            TEST_MODULES="${TEST_MODULES},!extensions/spark/kyuubi-spark-authz"
+            TEST_MODULES="${TEST_MODULES},!extensions/spark/kyuubi-spark-authz,!extensions/spark/kyuubi-spark-authz-shaded"
           fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
