@@ -156,7 +156,7 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <hudi.version>0.14.0</hudi.version>
+        <hudi.version>0.15.0</hudi.version>
         <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
         <iceberg.version>1.5.2</iceberg.version>
         <jackson.version>2.15.4</jackson.version>
@@ -2028,8 +2028,6 @@
             <properties>
                 <delta.artifact>delta-spark</delta.artifact>
                 <delta.version>3.2.0</delta.version>
-                <!-- Remove this when Hudi supports Spark 3.5 -->
-                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.1</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>

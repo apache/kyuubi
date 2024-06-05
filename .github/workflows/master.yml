@@ -105,7 +105,7 @@ jobs:
           fi
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
-          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&
