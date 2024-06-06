@@ -44,6 +44,7 @@ import org.apache.spark.sql.internal.StaticSQLConf.{CATALOG_IMPLEMENTATION, GLOB
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 
@@ -147,7 +148,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override val defaultNamespace: Array[String] = Array("default")
 
   override def listTables(namespace: Array[String]): Array[Identifier] =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           catalog
@@ -161,7 +162,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def loadTable(ident: Identifier): Table =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       HiveTable(sparkSession, catalog.getTableMetadata(ident.asTableIdentifier), this)
     }
 
@@ -170,7 +171,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       schema: StructType,
       partitions: Array[Transform],
       properties: util.Map[String, String]): Table =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.TransformHelper
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
@@ -212,7 +213,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def alterTable(ident: Identifier, changes: TableChange*): Table =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       val catalogTable =
         try {
           catalog.getTableMetadata(ident.asTableIdentifier)
@@ -252,7 +253,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def dropTable(ident: Identifier): Boolean =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
         if (loadTable(ident) != null) {
           catalog.dropTable(
@@ -270,7 +271,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       if (tableExists(newIdent)) {
         throw new TableAlreadyExistsException(newIdent)
       }
@@ -287,12 +288,12 @@ class HiveTableCatalog(sparkSession: SparkSession)
   }
 
   override def listNamespaces(): Array[Array[String]] =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       catalog.listDatabases().map(Array(_)).toArray
     }
 
   override def listNamespaces(namespace: Array[String]): Array[Array[String]] =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array() =>
           listNamespaces()
@@ -304,7 +305,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           try {
@@ -322,7 +323,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override def createNamespace(
       namespace: Array[String],
       metadata: util.Map[String, String]): Unit =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) if !catalog.databaseExists(db) =>
           catalog.createDatabase(
@@ -338,7 +339,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           // validate that this catalog's reserved properties are not removed
@@ -378,7 +379,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override def dropNamespace(
       namespace: Array[String],
       cascade: Boolean): Boolean =
-    HiveConnectorUtils.withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) if catalog.databaseExists(db) =>
           catalog.dropDatabase(db, ignoreIfNotExists = false, cascade)

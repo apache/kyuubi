@@ -402,7 +402,13 @@ object HiveConnectorUtils extends Logging {
     new StructType(newFields)
   }
 
-  def withSQLConf[T](pairs: (String, String)*)(f: => T): T = {
+  // This is a fork of Spark's withSQLConf, and we use a different name to avoid linkage
+  // issue on cross-version cases.
+  // For example, SPARK-46227(4.0.0) moves `withSQLConf` from SQLHelper to SQLConfHelper,
+  // classes that extend SQLConfHelper will prefer to linkage super class's method when
+  // compiling with Spark 4.0, then linkage error will happen when run the jar with lower
+  // Spark versions.
+  def withSparkSQLConf[T](pairs: (String, String)*)(f: => T): T = {
     val conf = SQLConf.get
     val (keys, values) = pairs.unzip
     val currentValues = keys.map { key =>

@@ -74,7 +74,7 @@ case class HiveWrite(
   override def description(): String = "Kyuubi-Hive-Connector"
 
   override def toBatch: BatchWrite = {
-    val tmpLocation = HiveWriteHelper.getExternalTmpPath(hadoopConf, tableLocation)
+    val tmpLocation = HiveWriteHelper.getExternalTmpPath(externalCatalog, hadoopConf, tableLocation)
 
     val fileSinkConf = new FileSinkDesc(tmpLocation, tableDesc, false)
     handleCompression(fileSinkConf, hadoopConf)
