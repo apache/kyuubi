@@ -114,9 +114,6 @@ jobs:
             MVN_OPT="${MVN_OPT} -Pcodecov"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
-          if [[ "${{ matrix.spark }}" == "4.0" ]]; then
-            TEST_MODULES="${TEST_MODULES},!extensions/spark/kyuubi-spark-authz"
-          fi
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
