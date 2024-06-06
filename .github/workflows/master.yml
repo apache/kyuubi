@@ -59,7 +59,7 @@ jobs:
           - java: 17
             spark: '4.0'
             spark-archive: '-Pscala-2.13'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest'
+            exclude-tags: ''
             comment: 'normal'
           - java: 8
             spark: '3.5'
