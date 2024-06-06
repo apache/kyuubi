@@ -27,8 +27,6 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.hive.common.FileUtils
 import org.apache.hadoop.hive.ql.exec.TaskRunner
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.catalog.ExternalCatalogWithListener
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, HiveExternalCatalog, HiveVersion}
 
 // scalastyle:off line.size.limit
 /**
@@ -39,45 +37,9 @@ import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{hive, HiveEx
 // scalastyle:on line.size.limit
 object HiveWriteHelper extends Logging {
 
-  private val hiveStagingDir = "hive.exec.stagingdir"
-
-  private val hiveScratchDir = "hive.exec.scratchdir"
-
-  def getExternalTmpPath(
-      externalCatalog: ExternalCatalogWithListener,
-      hadoopConf: Configuration,
-      path: Path): Path = {
-
-    import hive._
-
-    // Before Hive 1.1, when inserting into a table, Hive will create the staging directory under
-    // a common scratch directory. After the writing is finished, Hive will simply empty the table
-    // directory and move the staging directory to it.
-    // After Hive 1.1, Hive will create the staging directory under the table directory, and when
-    // moving staging directory to table directory, Hive will still empty the table directory, but
-    // will exclude the staging directory there.
-    // We have to follow the Hive behavior here, to avoid troubles. For example, if we create
-    // staging directory under the table director for Hive prior to 1.1, the staging directory will
-    // be removed by Hive when Hive is trying to empty the table directory.
-    val hiveVersionsUsingOldExternalTempPath: Set[HiveVersion] = Set(v12, v13, v14, v1_0)
-    val hiveVersionsUsingNewExternalTempPath: Set[HiveVersion] =
-      Set(v1_1, v1_2, v2_0, v2_1, v2_2, v2_3, v3_0, v3_1)
-
-    // Ensure all the supported versions are considered here.
-    assert(hiveVersionsUsingNewExternalTempPath ++ hiveVersionsUsingOldExternalTempPath ==
-      allSupportedHiveVersions)
-
-    val hiveVersion = externalCatalog.unwrapped.asInstanceOf[HiveExternalCatalog].client.version
-    val stagingDir = hadoopConf.get(hiveStagingDir, ".hive-staging")
-    val scratchDir = hadoopConf.get(hiveScratchDir, "/tmp/hive")
-
-    if (hiveVersionsUsingOldExternalTempPath.contains(hiveVersion)) {
-      oldVersionExternalTempPath(path, hadoopConf, scratchDir)
-    } else if (hiveVersionsUsingNewExternalTempPath.contains(hiveVersion)) {
-      newVersionExternalTempPath(path, hadoopConf, stagingDir)
-    } else {
-      throw new IllegalStateException("Unsupported hive version: " + hiveVersion.fullVersion)
-    }
+  def getExternalTmpPath(hadoopConf: Configuration, path: Path): Path = {
+    val stagingDir = hadoopConf.get("hive.exec.stagingdir", ".hive-staging")
+    externalTempPath(path, hadoopConf, stagingDir)
   }
 
   private def executionId: String = {
@@ -86,51 +48,17 @@ object HiveWriteHelper extends Logging {
     "hive_" + format.format(new Date) + "_" + Math.abs(rand.nextLong)
   }
 
-  // Mostly copied from Context.java#getExternalTmpPath of Hive 0.13
-  private def oldVersionExternalTempPath(
-      path: Path,
-      hadoopConf: Configuration,
-      scratchDir: String): Path = {
-    val extURI: URI = path.toUri
-    val scratchPath = new Path(scratchDir, executionId)
-    var dirPath = new Path(
-      extURI.getScheme,
-      extURI.getAuthority,
-      scratchPath.toUri.getPath + "-" + TaskRunner.getTaskRunnerID())
-
-    try {
-      val fs: FileSystem = dirPath.getFileSystem(hadoopConf)
-      dirPath = new Path(fs.makeQualified(dirPath).toString)
-
-      if (!FileUtils.mkdir(fs, dirPath, true, hadoopConf)) {
-        throw cannotCreateStagingDirError(dirPath.toString)
-      }
-      fs.deleteOnExit(dirPath)
-    } catch {
-      case e: IOException =>
-        throw cannotCreateStagingDirError(dirPath.toString, e)
-    }
-    dirPath
-  }
-
   // Mostly copied from Context.java#getExternalTmpPath of Hive 1.2
-  private def newVersionExternalTempPath(
+  private def externalTempPath(
       path: Path,
       hadoopConf: Configuration,
       stagingDir: String): Path = {
     val extURI: URI = path.toUri
     if (extURI.getScheme == "viewfs") {
-      getExtTmpPathRelTo(path, hadoopConf, stagingDir)
+      new Path(getStagingDir(path, hadoopConf, stagingDir), "-ext-10000") // Hive uses 10000
     } else {
       new Path(getExternalScratchDir(extURI, hadoopConf, stagingDir), "-ext-10000")
     }
-  }
-
-  private def getExtTmpPathRelTo(
-      path: Path,
-      hadoopConf: Configuration,
-      stagingDir: String): Path = {
-    new Path(getStagingDir(path, hadoopConf, stagingDir), "-ext-10000") // Hive uses 10000
   }
 
   private def getExternalScratchDir(

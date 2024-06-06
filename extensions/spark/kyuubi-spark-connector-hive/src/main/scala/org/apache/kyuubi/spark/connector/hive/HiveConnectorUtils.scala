@@ -83,7 +83,6 @@ object HiveConnectorUtils extends Logging {
     }
   }
 
-  // SPARK-43039
   def splitFiles(
       sparkSession: SparkSession,
       file: AnyRef,
@@ -92,7 +91,26 @@ object HiveConnectorUtils extends Logging {
       maxSplitBytes: Long,
       partitionValues: InternalRow): Seq[PartitionedFile] = {
 
-    if (SPARK_RUNTIME_VERSION >= "3.5") {
+    if (SPARK_RUNTIME_VERSION >= "4.0") { // SPARK-42821
+      val fileStatusWithMetadataClz = DynClasses.builder()
+        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+        .build()
+      DynMethods
+        .builder("splitFiles")
+        .impl(
+          "org.apache.spark.sql.execution.PartitionedFileUtil",
+          fileStatusWithMetadataClz,
+          classOf[Boolean],
+          classOf[Long],
+          classOf[InternalRow])
+        .build()
+        .invoke[Seq[PartitionedFile]](
+          null,
+          file,
+          isSplitable.asInstanceOf[JBoolean],
+          maxSplitBytes.asInstanceOf[JLong],
+          partitionValues)
+    } else if (SPARK_RUNTIME_VERSION >= "3.5") { // SPARK-43039
       val fileStatusWithMetadataClz = DynClasses.builder()
         .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
         .build()

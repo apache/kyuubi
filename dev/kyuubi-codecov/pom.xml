@@ -231,6 +231,16 @@
             </dependencies>
         </profile>
         <profile>
+            <id>spark-4.0</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>codecov</id>
             <build>
                 <plugins>
