@@ -31,7 +31,8 @@
 
     <properties>
         <gluten.version>1.2.0-SNAPSHOT</gluten.version>
-        <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}-ubuntu_22.04</gluten.artifact.name>
+        <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}</gluten.artifact.name>
+        <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -40,7 +41,15 @@
             <artifactId>${gluten.artifact.name}</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
+            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}-${os.detected.release}_${os.detected.release.version}_${os.detected.arch}-${gluten.version}.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.gluten</groupId>
+            <artifactId>gluten-thirdparty-lib</artifactId>
+            <version>${gluten.version}</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../../gluten/package/target/gluten-thirdparty-lib-${os.detected.release}_${os.detected.release.version}_${os.detected.arch}.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -96,11 +105,26 @@
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- javax.servlet-api is required by Spark 3.x -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+        <extensions>
+            <!-- provides os.detected.classifier (i.e. linux-x86_64, osx-x86_64) property -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${os-maven-plugin.version}</version>
+            </extension>
+        </extensions>
     </build>
 
     <profiles>

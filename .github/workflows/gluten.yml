@@ -23,6 +23,7 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 env:
   MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
@@ -60,19 +61,33 @@ jobs:
         uses: actions/cache@v3
         with:
           path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          key: gluten_package_${{ steps.date.outputs.date }}_with_thirdparty_lib
       - name: Build gluten project
         run: |
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
             git clone https://github.com/oap-project/gluten.git
             cd gluten
             ./dev/buildbundle-veloxbe.sh
+            THIRDPARTY_LIB="./package/target/thirdparty-lib"
+            LINUX_OS=$(. /etc/os-release && echo ${ID})
+            VERSION=$(. /etc/os-release && echo ${VERSION_ID})
+            ARCH=`uname -m`
+            mkdir -p $THIRDPARTY_LIB
+            cp /usr/lib/${ARCH}-linux-gnu/{libre2.so.9,libdouble-conversion.so.3,libidn.so.12,\
+          libglog.so.0,libgflags.so.2.2,libevent-2.1.so.7,libsnappy.so.1,libunwind.so.8,\
+          libcurl.so.4,libxml2.so.2,libgsasl.so.7,libicui18n.so.70,libicuuc.so.70,libnghttp2.so.14,\
+          libldap-2.5.so.0,liblber-2.5.so.0,libntlm.so.0,librtmp.so.1,libsasl2.so.2,libssh.so.4,\
+          libicudata.so.70,libthrift-0.16.0.so} $THIRDPARTY_LIB/
+            cp /usr/local/lib/{libprotobuf.so.32,libboost_context.so.1.84.0,\
+          libboost_regex.so.1.84.0} $THIRDPARTY_LIB/
+            cd $THIRDPARTY_LIB/
+            jar cvf gluten-thirdparty-lib-$LINUX_OS-$VERSION-$ARCH.jar ./
           fi
       - uses: actions/cache@v3
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
           path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          key: gluten_package_${{ steps.date.outputs.date }}_with_thirdparty_lib
 
   gluten-it:
     name: Gluten Integration TPC-H/DS Test
@@ -105,7 +120,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          key: gluten_package_${{ steps.date.outputs.date }}_with_thirdparty_lib
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
