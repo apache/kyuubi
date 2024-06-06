@@ -123,12 +123,6 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-spark-connector-tpcds_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -169,6 +163,16 @@
                     <artifactId>kyuubi-extension-spark-3-2_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -182,6 +186,11 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -207,6 +216,16 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-extension-spark-3-5_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
