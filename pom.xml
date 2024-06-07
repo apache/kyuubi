@@ -238,7 +238,6 @@
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
-        <maven.plugin.surefire.argLine></maven.plugin.surefire.argLine>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
@@ -268,6 +267,26 @@
         <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+
+        <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
 
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
@@ -1413,7 +1432,7 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1441,7 +1460,7 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1892,24 +1911,7 @@
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
-                <maven.plugin.surefire.argLine>-XX:+IgnoreUnrecognizedVMOptions
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                    --add-opens=java.base/java.io=ALL-UNNAMED
-                    --add-opens=java.base/java.net=ALL-UNNAMED
-                    --add-opens=java.base/java.nio=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.action=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.x509=ALL-UNNAMED
-                    --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-                    -Djdk.reflect.useDirectMethodHandle=false
-                    -Dio.netty.tryReflectionSetAccessible=true</maven.plugin.surefire.argLine>
+                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
