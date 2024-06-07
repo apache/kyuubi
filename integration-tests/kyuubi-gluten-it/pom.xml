@@ -49,7 +49,7 @@
             <artifactId>gluten-thirdparty-lib</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/thirdparty-lib/gluten-thirdparty-lib-${os.detected.release}_${os.detected.release.version}_${os.detected.arch}.jar</systemPath>
+            <systemPath>${project.basedir}/../../gluten/package/target/thirdparty-lib/gluten-thirdparty-lib-${os.detected.release}-${os.detected.release.version}-${os.detected.arch}.jar</systemPath>
         </dependency>
 
         <dependency>
