@@ -133,6 +133,7 @@ jobs:
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
+          ls -l -a gluten/package/target/**
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
