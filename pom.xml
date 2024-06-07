@@ -134,7 +134,7 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <delta.artifact>delta-spark</delta.artifact>
+        <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.2.0</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
@@ -156,9 +156,10 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <hudi.version>0.14.0</hudi.version>
-        <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
+        <hudi.version>0.15.0</hudi.version>
+        <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
         <iceberg.version>1.5.2</iceberg.version>
+        <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
         <!-- 6.0.0 requires JDK 11 -->
@@ -182,6 +183,7 @@
         <openai.java.version>0.12.0</openai.java.version>
         <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.7.0-incubating</paimon.version>
+        <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
         <phoenix.version>6.0.0</phoenix.version>
         <postgresql.version>42.7.2</postgresql.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -238,7 +240,6 @@
         <!-- Once we drop support for Java 8, we can consider upgrade the spotless.version to 2.43.0. -->
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
-        <maven.plugin.surefire.argLine></maven.plugin.surefire.argLine>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
@@ -269,6 +270,26 @@
         <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+
+        <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
 
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
@@ -954,13 +975,13 @@
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
+                <artifactId>${iceberg.artifact}</artifactId>
                 <version>${iceberg.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>io.delta</groupId>
-                <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
+                <artifactId>${delta.artifact}</artifactId>
                 <version>${delta.version}</version>
                 <exclusions>
                     <!--
@@ -1188,13 +1209,13 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
+                <artifactId>${hudi.artifact}</artifactId>
                 <version>${hudi.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-spark-${spark.binary.version}</artifactId>
+                <artifactId>${paimon.artifact}</artifactId>
                 <version>${paimon.version}</version>
             </dependency>
         </dependencies>
@@ -1414,7 +1435,7 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1442,7 +1463,7 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1893,24 +1914,7 @@
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
-                <maven.plugin.surefire.argLine>-XX:+IgnoreUnrecognizedVMOptions
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                    --add-opens=java.base/java.io=ALL-UNNAMED
-                    --add-opens=java.base/java.net=ALL-UNNAMED
-                    --add-opens=java.base/java.nio=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.action=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.x509=ALL-UNNAMED
-                    --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-                    -Djdk.reflect.useDirectMethodHandle=false
-                    -Dio.netty.tryReflectionSetAccessible=true</maven.plugin.surefire.argLine>
+                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -2018,7 +2022,7 @@
             <properties>
                 <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
-                <delta.artifact>delta-core</delta.artifact>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <delta.version>2.0.2</delta.version>
                 <!-- Iceberg 1.5.0 removed support for Spark 3.2. apache/iceberg#9295 -->
                 <iceberg.version>1.4.3</iceberg.version>
@@ -2035,10 +2039,10 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.version>2.3.0</delta.version>
-                <delta.artifact>delta-core</delta.artifact>
                 <spark.version>3.3.4</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
+                <delta.version>2.3.0</delta.version>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2050,10 +2054,10 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.artifact>delta-core</delta.artifact>
-                <delta.version>2.4.0</delta.version>
                 <spark.version>3.4.3</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
+                <delta.version>2.4.0</delta.version>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2065,13 +2069,34 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.artifact>delta-spark</delta.artifact>
-                <delta.version>3.2.0</delta.version>
-                <!-- Remove this when Hudi supports Spark 3.5 -->
-                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.1</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
+                <delta.version>3.2.0</delta.version>
+                <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-4.0</id>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <spark.version>4.0.0-preview1</spark.version>
+                <spark.binary.version>4.0</spark.binary.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <!-- TODO: update once Delta support Spark 4.0 -->
+                <delta.version>3.2.0</delta.version>
+                <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
+                <!-- TODO: update once Hudi support Spark 4.0 -->
+                <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
+                <!-- TODO: update once Iceberg support Spark 4.0 -->
+                <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
+                <!-- TODO: update once Paimon support Spark 4.0 -->
+                <paimon.artifact>paimon-spark-3.5</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
 

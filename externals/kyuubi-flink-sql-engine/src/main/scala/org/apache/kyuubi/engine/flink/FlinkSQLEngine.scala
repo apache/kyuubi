@@ -75,7 +75,6 @@ object FlinkSQLEngine extends Logging {
     FlinkEngineUtils.checkFlinkVersion()
 
     try {
-      kyuubiConf.loadFileDefaults()
       Utils.fromCommandLineArgs(args, kyuubiConf)
       val flinkConfDir = sys.env.getOrElse(
         "FLINK_CONF_DIR", {

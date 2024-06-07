@@ -56,6 +56,11 @@ jobs:
         exclude-tags: [""]
         comment: ["normal"]
         include:
+          - java: 17
+            spark: '4.0'
+            spark-archive: '-Pscala-2.13'
+            exclude-tags: ''
+            comment: 'normal'
           - java: 8
             spark: '3.5'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
@@ -71,11 +76,11 @@ jobs:
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.4.3 -Dspark.archive.name=spark-3.4.3-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.4-binary'
-          - java: 21
+          - java: 17
             spark: '3.5'
-            spark-archive: ''
-            exclude-tags: ''
-            comment: 'normal'
+            spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-4.0.0-preview1 -Dspark.archive.name=spark-4.0.0-preview1-bin-hadoop3.tgz'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            comment: 'verify-on-spark-4.0-binary'
         exclude:
           # SPARK-33772: Spark supports JDK 17 since 3.3.0
           - java: 17
@@ -110,7 +115,7 @@ jobs:
           fi
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
-          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} -Pspark-authz-hudi-test ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
+          -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
           matrix.java == 8 &&
@@ -174,6 +179,68 @@ jobs:
             **/kyuubi-spark-batch-submit.log*
             **/kyuubi-jdbc-engine.log*
             **/kyuubi-hive-sql-engine.log*
+
+  spark-connector-cross-version-test:
+    name: Spark Connector Cross Version Test
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        java:
+          - 17
+        scala:
+          - '2.12'
+          - '2.13'
+        spark-compile:
+            - '3.5'
+        spark-runtime:
+            - '3.4'
+            - '3.3'
+        comment: [ "normal" ]
+        include:
+          - java: 17
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.0"
+            comment: "normal"
+    env:
+      SPARK_LOCAL_IP: localhost
+      TEST_MODULES: "extensions/spark/kyuubi-spark-connector-hive,\
+        extensions/spark/kyuubi-spark-connector-tpcds,\
+        extensions/spark/kyuubi-spark-connector-tpch"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free up disk space
+        run: ./.github/scripts/free_disk_space.sh
+      - name: Tune Runner VM
+        uses: ./.github/actions/tune-runner-vm
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: 'maven'
+          check-latest: false
+      - name: Setup Maven
+        uses: ./.github/actions/setup-maven
+      - name: Build Kyuubi Spark Connectors with Spark-${{ matrix.spark-compile }}
+        run: |
+          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-compile }} -DskipTests
+      - name: Test Kyuubi Spark Connectors with Spark-${{ matrix.spark-runtime }}
+        run: |
+          ./build/mvn test ${MVN_OPT} -pl ${TEST_MODULES} -Pjava-${{ matrix.java }} \
+          -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} -Pcross-version-test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: "unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}\
+            -spark-compile-${{ matrix.spark-compile }}-spark-runtime-${{ matrix.spark-runtime }}\
+            -${{ matrix.comment }}"
+          path: |
+            **/target/unit-tests.log
 
   flink-it:
     name: Flink Test
