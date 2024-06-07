@@ -56,6 +56,11 @@ jobs:
         exclude-tags: [""]
         comment: ["normal"]
         include:
+          - java: 17
+            spark: '4.0'
+            spark-archive: '-Pscala-2.13'
+            exclude-tags: ''
+            comment: 'normal'
           - java: 8
             spark: '3.5'
             spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
@@ -193,6 +198,12 @@ jobs:
             - '3.4'
             - '3.3'
         comment: [ "normal" ]
+        include:
+          - java: 17
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.0"
+            comment: "normal"
     env:
       SPARK_LOCAL_IP: localhost
       TEST_MODULES: "extensions/spark/kyuubi-spark-connector-hive,\
