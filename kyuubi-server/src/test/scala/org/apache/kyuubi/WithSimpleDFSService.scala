@@ -26,7 +26,15 @@ trait WithSimpleDFSService extends KyuubiFunSuite {
 
   private var miniDFSService: MiniDFSService = _
 
-  def hadoopConf: Configuration = new Configuration()
+  def hadoopConf: Configuration = {
+    val hdfsConf = new Configuration()
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
+    hdfsConf
+  }
 
   override def beforeAll(): Unit = {
     miniDFSService = new MiniDFSService(hadoopConf)

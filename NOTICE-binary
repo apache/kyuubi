@@ -115,9 +115,6 @@ Copyright 2002-2020 The Apache Software Foundation
 Apache Commons Lang
 Copyright 2001-2020 The Apache Software Foundation
 
-Apache Commons Logging
-Copyright 2003-2013 The Apache Software Foundation
-
 Apache Hadoop
 Copyright 2006 and onwards The Apache Software Foundation.
 
@@ -985,14 +982,6 @@ benchmarking framework, which can be obtained at:
     * license/LICENSE.caliper.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/google/caliper
-
-This product optionally depends on 'Apache Commons Logging', a logging
-framework, which can be obtained at:
-
-  * LICENSE:
-    * license/LICENSE.commons-logging.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * https://commons.apache.org/logging/
 
 This product optionally depends on 'Apache Log4J', a logging framework, which
 can be obtained at:

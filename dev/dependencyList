@@ -31,7 +31,6 @@ checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-lang3/3.13.0//commons-lang3-3.13.0.jar
-commons-logging/1.1.3//commons-logging-1.1.3.jar
 error_prone_annotations/2.20.0//error_prone_annotations-2.20.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
 failureaccess/1.0.1//failureaccess-1.0.1.jar
