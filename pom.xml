@@ -226,7 +226,8 @@
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.8.1</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
-        <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <!-- to support Java 21 -->
+        <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
@@ -1923,24 +1924,6 @@
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
-                <maven.plugin.surefire.argLine>-XX:+IgnoreUnrecognizedVMOptions
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                    --add-opens=java.base/java.io=ALL-UNNAMED
-                    --add-opens=java.base/java.net=ALL-UNNAMED
-                    --add-opens=java.base/java.nio=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.action=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.x509=ALL-UNNAMED
-                    --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-                    -Djdk.reflect.useDirectMethodHandle=false
-                    -Dio.netty.tryReflectionSetAccessible=true</maven.plugin.surefire.argLine>
             </properties>
             <build>
                 <pluginManagement>
