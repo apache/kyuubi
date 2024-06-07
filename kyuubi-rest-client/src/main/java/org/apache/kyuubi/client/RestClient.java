@@ -207,7 +207,7 @@ public class RestClient implements IRestClient {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
       URIBuilder builder = new URIBuilder(url);
 
-      if (MapUtils.isNotEmpty(params)) {
+      if (params == null || params.isEmpty()) {
         for (Map.Entry<String, Object> entry : params.entrySet()) {
           if (entry.getValue() != null) {
             builder.addParameter(entry.getKey(), entry.getValue().toString());
