@@ -45,14 +45,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.gluten</groupId>
-            <artifactId>gluten-thirdparty-lib</artifactId>
-            <version>${gluten.version}</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/thirdparty-lib/gluten-thirdparty-lib-${os.detected.release}-${os.detected.release.version}-${os.detected.arch}.jar</systemPath>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>

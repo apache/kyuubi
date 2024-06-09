@@ -136,6 +136,7 @@ jobs:
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
           ls -l -a gluten/package/target/**
+          echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
