@@ -97,8 +97,6 @@ jobs:
       fail-fast: false
       matrix:
         spark: [ '3.4', '3.3' ]
-    env:
-      LD_LIBRARY_PATH: $(pwd)/gluten/package/target/thirdparty-lib
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -136,7 +134,7 @@ jobs:
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
           ls -l -a gluten/package/target/**
-          echo LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+          export LD_LIBRARY_PATH=$(pwd)/gluten/package/target/thirdparty-lib
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
