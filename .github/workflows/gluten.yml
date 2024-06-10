@@ -80,8 +80,6 @@ jobs:
           libicudata.so.70,libthrift-0.16.0.so} $THIRDPARTY_LIB/
             cp /usr/local/lib/{libprotobuf.so.32,libboost_context.so.1.84.0,\
           libboost_regex.so.1.84.0} $THIRDPARTY_LIB/
-            cd $THIRDPARTY_LIB/
-            jar cvf gluten-thirdparty-lib-$LINUX_OS-$VERSION-$ARCH.jar ./
           fi
       - uses: actions/cache@v3
         if: steps.gluten-cache.outputs.cache-hit != 'true'
@@ -133,7 +131,6 @@ jobs:
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
-          ls -l -a gluten/package/target/**
           export LD_LIBRARY_PATH=$(pwd)/gluten/package/target/thirdparty-lib
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
