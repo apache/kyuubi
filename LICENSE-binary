@@ -209,8 +209,6 @@ Apache License Version 2.0
 --------------------------
 com.zaxxer:HikariCP
 com.google.android:annotations
-commons-lang:commons-lang
-commons-logging:commons-logging
 org.apache.commons:commons-lang3
 com.google.errorprone:error_prone_annotations
 dev.failsafe:failsafe
