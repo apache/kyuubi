@@ -1258,14 +1258,6 @@
     </pluginRepositories>
 
     <build>
-        <extensions>
-            <!-- provides os.detected.classifier (i.e. linux-x86_64, osx-x86_64) property -->
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>${maven.plugin.os.version}</version>
-            </extension>
-        </extensions>
 
         <pluginManagement>
             <plugins>
@@ -1846,6 +1838,14 @@
                 </executions>
             </plugin>
         </plugins>
+        <extensions>
+            <!-- provides os.detected.classifier (i.e. linux-x86_64, osx-x86_64) property -->
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>${maven.plugin.os.version}</version>
+            </extension>
+        </extensions>
     </build>
 
     <profiles>
