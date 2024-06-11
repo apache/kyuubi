@@ -106,6 +106,11 @@ class SparkClusterModeOnKubernetesSuiteBase
     hdfsConf.set("dfs.namenode.servicerpc-bind-host", "0.0.0.0")
     hdfsConf.set("dfs.datanode.hostname", localhostAddress)
     hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
     // spark use 185 as userid in docker
     hdfsConf.set("hadoop.proxyuser.185.groups", "*")
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")

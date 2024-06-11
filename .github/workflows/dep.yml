@@ -48,27 +48,15 @@ jobs:
           check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Check kyuubi modules available
-        id: modules-check
-        run: >-
-          build/mvn dependency:resolve validate
-          -DincludeGroupIds="org.apache.kyuubi" -DincludeScope="compile"
-          -Pfast -Denforcer.skip=false
-          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
-        continue-on-error: true
-      - name: build
+      - name: Install modules
         env:
-          MAVEN_OPTS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
-        if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
-        run: >-
-          build/mvn clean install
-          -Pflink-provided,spark-provided,hive-provided
-          -Dmaven.javadoc.skip=true
-          -Drat.skip=true
-          -Dscalastyle.skip=true
-          -Dspotless.check.skip
-          -DskipTests
-          -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
+          MAVEN_ARGS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
+        run: |
+          build/mvn clean install \
+            -Pflink-provided,spark-provided,hive-provided \
+            -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip \
+            -DskipTests \
+            -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
       - name: Dependency Review

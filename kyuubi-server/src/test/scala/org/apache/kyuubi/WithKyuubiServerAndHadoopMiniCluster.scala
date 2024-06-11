@@ -18,6 +18,7 @@ package org.apache.kyuubi
 
 import java.io.File
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -38,7 +39,13 @@ trait WithKyuubiServerAndHadoopMiniCluster extends KyuubiFunSuite with WithKyuub
   protected var miniYarnService: MiniYarnService = _
 
   override def beforeAll(): Unit = {
-    miniHdfsService = new MiniDFSService()
+    val hdfsConf = new Configuration()
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
+    miniHdfsService = new MiniDFSService(hdfsConf)
     miniHdfsService.initialize(conf)
     miniHdfsService.start()
 
