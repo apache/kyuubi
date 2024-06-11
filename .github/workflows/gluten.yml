@@ -65,7 +65,7 @@ jobs:
       - name: Build gluten project
         run: |
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
-            git clone https://github.com/oap-project/gluten.git
+            git clone https://github.com/apache/incubator-gluten.git gluten
             cd gluten
             ./dev/buildbundle-veloxbe.sh
             THIRDPARTY_LIB="./package/target/thirdparty-lib"
