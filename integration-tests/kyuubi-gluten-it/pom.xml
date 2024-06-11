@@ -32,7 +32,6 @@
     <properties>
         <gluten.version>1.2.0-SNAPSHOT</gluten.version>
         <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}</gluten.artifact.name>
-        <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     </properties>
 
     <dependencies>
@@ -109,14 +108,6 @@
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
-        <extensions>
-            <!-- provides os.detected.classifier (i.e. linux-x86_64, osx-x86_64) property -->
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>${os-maven-plugin.version}</version>
-            </extension>
-        </extensions>
     </build>
 
     <profiles>
