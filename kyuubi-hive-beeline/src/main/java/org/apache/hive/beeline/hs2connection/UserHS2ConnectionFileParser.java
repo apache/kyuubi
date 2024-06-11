@@ -53,6 +53,10 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
   public UserHS2ConnectionFileParser() {
     // file locations to be searched in the correct order
     locations.add(DEFAULT_BEELINE_USER_CONF_LOCATION + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
+    if (System.getenv("KYUUBI_CONF_DIR") != null) {
+      locations.add(
+          System.getenv("KYUUBI_CONF_DIR") + File.separator + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
+    }
     if (System.getenv("HIVE_CONF_DIR") != null) {
       locations.add(
           System.getenv("HIVE_CONF_DIR") + File.separator + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
@@ -76,7 +80,7 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
       log.debug("User connection configuration file not found");
       return props;
     }
-    log.info("Using connection configuration file at " + fileLocation);
+    log.info("Using connection configuration file at {}", fileLocation);
     props.setProperty(HS2ConnectionFileParser.URL_PREFIX_PROPERTY_KEY, "jdbc:hive2://");
     // load the properties from config file
     Configuration conf = new Configuration(false);
