@@ -134,8 +134,8 @@ class FlinkProcessBuilder(
         }
 
         val externalProxyUserConf: Map[String, String] = if (proxyUserEnable) {
-          // FLINK-31109: Flink only supports hadoop proxy user when delegation tokens fetch
-          // is managed outside, but disabling `security.delegation.tokens.enabled` will cause
+          // FLINK-31109 (1.17.0): Flink only supports hadoop proxy user when delegation tokens
+          // fetch is managed outside, but disabling `security.delegation.tokens.enabled` will cause
           // delegation token updates on JobManager not to be passed to TaskManagers.
           // Based on the solution in
           // https://github.com/apache/flink/pull/22009#issuecomment-2122226755, we removed
@@ -274,7 +274,7 @@ class FlinkProcessBuilder(
     super.close(destroyProcess)
     if (tokenTempDir != null) {
       try {
-        Files.deleteIfExists(tokenTempDir)
+        Utils.deleteDirectoryRecursively(tokenTempDir.toFile)
       } catch {
         case e: Throwable => error(s"Error deleting token temp dir: $tokenTempDir", e)
       }
