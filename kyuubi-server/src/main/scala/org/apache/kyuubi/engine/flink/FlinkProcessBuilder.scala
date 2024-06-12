@@ -74,7 +74,7 @@ class FlinkProcessBuilder(
 
   override def env: Map[String, String] = {
     val flinkConfDir =
-      conf.getEnvs.getOrElse( "FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
+      conf.getEnvs.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
     val flinkExtraEnvs = if (proxyUserEnable) {
       Map(
         "FLINK_CONF_DIR" -> flinkConfDir,
