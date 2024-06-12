@@ -73,16 +73,14 @@ class FlinkProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
   override def env: Map[String, String] = {
+    val flinkConfDir =
+      conf.getEnvs.getOrElse( "FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
     val flinkExtraEnvs = if (proxyUserEnable) {
       Map(
-        "FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
-          "FLINK_CONF_DIR",
-          s"$flinkHome${File.separator}conf"),
+        "FLINK_CONF_DIR" -> flinkConfDir,
         FLINK_PROXY_USER_KEY -> proxyUser) ++ generateTokenFile()
     } else {
-      Map("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
-        "FLINK_CONF_DIR",
-        s"$flinkHome${File.separator}conf"))
+      Map("FLINK_CONF_DIR" -> flinkConfDir)
     }
     conf.getEnvs ++ flinkExtraEnvs
   }
