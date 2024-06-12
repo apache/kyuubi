@@ -24,14 +24,17 @@ import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 /**
@@ -75,7 +78,7 @@ class FlinkProcessBuilder(
         "FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
           "FLINK_CONF_DIR",
           s"$flinkHome${File.separator}conf"),
-        FLINK_PROXY_USER_KEY -> proxyUser)
+        FLINK_PROXY_USER_KEY -> proxyUser) ++ generateTokenFile()
     } else {
       Map("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
         "FLINK_CONF_DIR",
@@ -138,13 +141,16 @@ class FlinkProcessBuilder(
           // https://github.com/apache/flink/pull/22009#issuecomment-2122226755, we removed
           // `HadoopModuleFactory` from `security.module.factory.classes` and disabled delegation
           // token providers (hadoopfs/hbase/HiveServer2) that do not support proxyUser.
+          // FLINK-35525: We need to add `yarn.security.appmaster.delegation.token.services=kyuubi`
+          // configuration to pass hdfs token obtained by kyuubi provider to the yarn client.
           Map(
             "security.module.factory.classes" ->
               ("org.apache.flink.runtime.security.modules.JaasModuleFactory;" +
                 "org.apache.flink.runtime.security.modules.ZookeeperModuleFactory"),
             "security.delegation.token.provider.hadoopfs.enabled" -> "false",
             "security.delegation.token.provider.hbase.enabled" -> "false",
-            "security.delegation.token.provider.HiveServer2.enabled" -> "false")
+            "security.delegation.token.provider.HiveServer2.enabled" -> "false",
+            "yarn.security.appmaster.delegation.token.services" -> "kyuubi")
         } else {
           Map.empty
         }
@@ -246,6 +252,32 @@ class FlinkProcessBuilder(
         buffer ++= confKeyValues(conf.getAll)
 
         buffer
+    }
+  }
+
+  @volatile private var tokenTempDir: java.nio.file.Path = _
+  private def generateTokenFile(): Option[(String, String)] = {
+    // We disabled `hadoopfs` token service, which may cause yarn client to miss hdfs token.
+    // So we generate a hadoop token file to pass kyuubi engine tokens to submit process.
+    // TODO: Removed this after FLINK-35525, delegation tokens will be passed by `kyuubi` provider
+    conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
+      val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
+      tokenTempDir = Utils.createTempDir()
+      val file = s"${tokenTempDir.toString}/kyuubi_credentials_${System.currentTimeMillis()}"
+      credentials.writeTokenStorageFile(new Path(s"file://$file"), new Configuration())
+      info(s"Generated hadoop token file: $file")
+      "HADOOP_TOKEN_FILE_LOCATION" -> file
+    }
+  }
+
+  override def close(destroyProcess: Boolean): Unit = {
+    super.close(destroyProcess)
+    if (tokenTempDir != null) {
+      try {
+        Files.deleteIfExists(tokenTempDir)
+      } catch {
+        case e: Throwable => error(s"Error deleting token temp dir: $tokenTempDir", e)
+      }
     }
   }
 
