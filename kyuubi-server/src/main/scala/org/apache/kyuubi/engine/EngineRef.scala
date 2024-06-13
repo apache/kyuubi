@@ -239,16 +239,16 @@ private[kyuubi] class EngineRef(
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
           exitValue = Some(process.exitValue())
-          if (!exitValue.contains(0)) {
+          if (exitValue.contains(0)) {
+            acquiredPermit = false
+            startupProcessSemaphore.foreach(_.release())
+          } else {
             val error = builder.getError
             MetricsSystem.tracing { ms =>
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
             }
             throw error
-          } else {
-            acquiredPermit = false
-            startupProcessSemaphore.foreach(_.release())
           }
         }
 
