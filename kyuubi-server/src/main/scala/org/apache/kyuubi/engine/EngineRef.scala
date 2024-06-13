@@ -246,6 +246,9 @@ private[kyuubi] class EngineRef(
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
             }
             throw error
+          } else {
+            acquiredPermit = false
+            startupProcessSemaphore.foreach(_.release())
           }
         }
 
