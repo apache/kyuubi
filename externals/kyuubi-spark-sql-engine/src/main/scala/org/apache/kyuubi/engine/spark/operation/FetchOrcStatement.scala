@@ -35,6 +35,7 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
 
 class FetchOrcStatement(spark: SparkSession) {
@@ -74,25 +75,32 @@ class FetchOrcStatement(spark: SparkSession) {
   }
 }
 
-class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct] {
-
-  private val iters = fileList.map(x => getOrcFileIterator(x))
+class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct]
+  with Logging {
 
   var idx = 0
+  private var curIter = getNextIter
+
+  private def getNextIter: Option[RecordReaderIterator[OrcStruct]] = {
+    if (idx >= fileList.size) return None
+    val resIter = getOrcFileIterator(fileList(idx))
+    idx = idx + 1
+    Some(resIter)
+  }
 
   override def hasNext: Boolean = {
-    if (idx >= iters.size) return false
-    val hasNext = iters(idx).hasNext
+    if (curIter.isEmpty) return false
+    val hasNext = curIter.get.hasNext
     if (!hasNext) {
-      iters(idx).close()
-      idx += 1
+      curIter.get.close()
+      curIter = getNextIter
       // skip empty file
-      while (idx < iters.size) {
-        if (iters(idx).hasNext) {
+      while (curIter.isDefined) {
+        if (curIter.get.hasNext) {
           return true
         } else {
-          iters(idx).close()
-          idx = idx + 1
+          curIter.get.close()
+          curIter = getNextIter
         }
       }
     }
@@ -100,11 +108,11 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   }
 
   override def next(): OrcStruct = {
-    iters(idx).next()
+    curIter.get.next()
   }
 
   def close(): Unit = {
-    iters.foreach(_.close())
+    curIter.foreach(_.close())
   }
 
   private def getOrcFileIterator(file: LocatedFileStatus): RecordReaderIterator[OrcStruct] = {
