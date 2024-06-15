@@ -33,8 +33,8 @@ concurrency:
 
 env:
   MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
-  KUBERNETES_VERSION: v1.26.1
-  MINIKUBE_VERSION: v1.29.0
+  KUBERNETES_VERSION: v1.30.0
+  MINIKUBE_VERSION: v1.33.1
 
 jobs:
   default:
