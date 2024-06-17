@@ -104,6 +104,7 @@ class ExecuteStatement(
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
+      if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
     }
 
   override protected def runInternal(): Unit = {
