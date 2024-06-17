@@ -63,7 +63,8 @@ class KyuubiSyncThriftClient private (
   private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
-  @volatile private var remoteEngineBroken: Boolean = false
+  @volatile private var _remoteEngineBroken: Boolean = false
+  private[kyuubi] def remoteEngineBroken: Boolean = _remoteEngineBroken
   @volatile private var clientClosedByAliveProbe: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
@@ -111,7 +112,7 @@ class KyuubiSyncThriftClient private (
 
     val task = new Runnable {
       override def run(): Unit = {
-        if (!remoteEngineBroken && !engineConnectionClosed) {
+        if (!_remoteEngineBroken && !engineConnectionClosed) {
           engineAliveProbeClient.foreach { client =>
             val tGetInfoReq = new TGetInfoReq()
             tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
@@ -120,7 +121,7 @@ class KyuubiSyncThriftClient private (
             try {
               client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
               engineLastAlive = System.currentTimeMillis()
-              remoteEngineBroken = false
+              _remoteEngineBroken = false
             } catch {
               case e: Throwable =>
                 val engineIdStr = engineId.getOrElse("")
@@ -129,7 +130,7 @@ class KyuubiSyncThriftClient private (
                 if (now - engineLastAlive > engineAliveTimeout) {
                   error(s"Mark the engine[$engineIdStr] not alive with no recent alive probe" +
                     s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
-                  remoteEngineBroken = true
+                  _remoteEngineBroken = true
                   closeClient()
                 }
             }
@@ -165,7 +166,7 @@ class KyuubiSyncThriftClient private (
 
     val task = asyncRequestExecutor.submit(() => {
       val resp = block
-      remoteEngineBroken = false
+      _remoteEngineBroken = false
       resp
     })
 
