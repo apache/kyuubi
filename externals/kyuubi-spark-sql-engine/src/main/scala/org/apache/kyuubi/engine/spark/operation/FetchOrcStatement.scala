@@ -35,7 +35,6 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.Logging
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
 
 class FetchOrcStatement(spark: SparkSession) {
@@ -75,10 +74,9 @@ class FetchOrcStatement(spark: SparkSession) {
   }
 }
 
-class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct]
-  with Logging {
+class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct] {
 
-  var idx = 0
+  private var idx = 0
   private var curIter = getNextIter
 
   private def getNextIter: Option[RecordReaderIterator[OrcStruct]] = {
