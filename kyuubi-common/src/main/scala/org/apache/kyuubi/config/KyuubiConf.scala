@@ -2761,6 +2761,14 @@ object KyuubiConf {
       .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
+  val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_SKIP_CANCEL_GROUP: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.operation.incremental.collect.skip.cancel.group")
+      .doc("When true, the job group cancellation in executeStatement method " +
+        "will be skipped on incremental collect mode")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.engine.spark.initialize.sql")
       .doc("The initialize sql for Spark session. " +

@@ -28,7 +28,7 @@ import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_SKIP_CANCEL_GROUP, OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -104,7 +104,16 @@ class ExecuteStatement(
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
-      if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
+      if (!spark.sparkContext.isStopped) {
+        if (!incrementalCollect) {
+          spark.sparkContext.cancelJobGroup(statementId)
+        } else {
+          val skipCancellation = getSessionConf(
+            ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_SKIP_CANCEL_GROUP,
+            spark)
+          if (!skipCancellation) spark.sparkContext.cancelJobGroup(statementId)
+        }
+      }
     }
 
   override protected def runInternal(): Unit = {
