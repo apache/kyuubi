@@ -105,13 +105,9 @@ class ExecuteStatement(
     } finally {
       shutdownTimeoutMonitor()
       if (!spark.sparkContext.isStopped) {
-        if (!incrementalCollect) {
+        if (!incrementalCollect ||
+            getSessionConf(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, spark)) {
           spark.sparkContext.cancelJobGroup(statementId)
-        } else {
-          val cancelJobGroup = getSessionConf(
-            ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP,
-            spark)
-          if (cancelJobGroup) spark.sparkContext.cancelJobGroup(statementId)
         }
       }
     }
