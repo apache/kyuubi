@@ -67,19 +67,7 @@ jobs:
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
             git clone https://github.com/apache/incubator-gluten.git gluten
             cd gluten
-            ./dev/buildbundle-veloxbe.sh
-            THIRDPARTY_LIB="./package/target/thirdparty-lib"
-            LINUX_OS=$(. /etc/os-release && echo ${ID})
-            VERSION=$(. /etc/os-release && echo ${VERSION_ID})
-            ARCH=`uname -m`
-            mkdir -p $THIRDPARTY_LIB
-            cp /usr/lib/${ARCH}-linux-gnu/{libre2.so.9,libdouble-conversion.so.3,libidn.so.12,\
-          libglog.so.0,libgflags.so.2.2,libevent-2.1.so.7,libsnappy.so.1,libunwind.so.8,\
-          libcurl.so.4,libxml2.so.2,libgsasl.so.7,libicui18n.so.70,libicuuc.so.70,libnghttp2.so.14,\
-          libldap-2.5.so.0,liblber-2.5.so.0,libntlm.so.0,librtmp.so.1,libsasl2.so.2,libssh.so.4,\
-          libicudata.so.70,libthrift-0.16.0.so} $THIRDPARTY_LIB/
-            cp /usr/local/lib/{libprotobuf.so.32,libboost_context.so.1.84.0,\
-          libboost_regex.so.1.84.0} $THIRDPARTY_LIB/
+            ./dev/package.sh
           fi
       - uses: actions/cache@v3
         if: steps.gluten-cache.outputs.cache-hit != 'true'
