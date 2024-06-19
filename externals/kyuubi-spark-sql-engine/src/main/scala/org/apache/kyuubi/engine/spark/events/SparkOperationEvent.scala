@@ -66,6 +66,7 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
+    @JsonDeserialize(contentAs = classOf[java.lang.Long])
     executionId: Option[Long],
     @JsonDeserialize(contentAs = classOf[java.lang.Long])
     operationRunTime: Option[Long],
