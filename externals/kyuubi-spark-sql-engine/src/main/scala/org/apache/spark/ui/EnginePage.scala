@@ -539,8 +539,8 @@ private class StatementStatsPagedTable(
       <td >
         {formatDuration(event.duration)}
       </td>
-      <td> {formatDuration(event.operationRunTime.getOrElse(0L).toString.toLong)} </td>
-      <td> {formatDuration(event.operationCpuTime.getOrElse(0L).toString.toLong / 1000000)} </td>
+      <td> {formatDuration(event.operationRunTime.getOrElse(0L))} </td>
+      <td> {formatDuration(event.operationCpuTime.getOrElse(0L) / 1000000)} </td>
       <td>
         <span class="description-input">
           {event.statement}
