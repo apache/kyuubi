@@ -2762,8 +2762,8 @@ object KyuubiConf {
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
   val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP: ConfigEntry[Boolean] =
-    buildConf("kyuubi.engine.spark.operation.incremental.collect." +
-      "cancelJobGroupAfterExecutionFinished")
+    buildConf(
+      "kyuubi.engine.spark.operation.incremental.collect.cancelJobGroupAfterExecutionFinished")
       .internal
       .doc("Canceling jobs group that are still running after statement execution finished " +
         "avoids wasting resources. But the cancellation may cause the query fail when using " +
