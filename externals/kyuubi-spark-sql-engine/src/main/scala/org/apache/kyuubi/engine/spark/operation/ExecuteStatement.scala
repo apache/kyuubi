@@ -106,7 +106,7 @@ class ExecuteStatement(
       shutdownTimeoutMonitor()
       if (!spark.sparkContext.isStopped) {
         if (!incrementalCollect ||
-            getSessionConf(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, spark)) {
+          getSessionConf(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, spark)) {
           spark.sparkContext.cancelJobGroup(statementId)
         }
       }
