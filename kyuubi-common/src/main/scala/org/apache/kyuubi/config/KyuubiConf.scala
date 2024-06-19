@@ -2761,13 +2761,16 @@ object KyuubiConf {
       .version("1.10.0")
       .fallbackConf(OPERATION_INCREMENTAL_COLLECT)
 
-  val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_SKIP_CANCEL_GROUP: ConfigEntry[Boolean] =
-    buildConf("kyuubi.engine.spark.operation.incremental.collect.skip.cancel.group")
-      .doc("When true, the job group cancellation in executeStatement method " +
-        "will be skipped on incremental collect mode")
+  val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.operation.incremental.collect." +
+      "cancelJobGroupAfterExecutionFinished")
+      .internal
+      .doc("Canceling jobs group that are still running after statement execution finished " +
+        "avoids wasting resources. But the cancellation may cause the query fail when using " +
+        "incremental collect mode.")
       .version("1.10.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.engine.spark.initialize.sql")
