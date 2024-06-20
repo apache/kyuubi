@@ -66,8 +66,11 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
+    @JsonDeserialize(contentAs = classOf[java.lang.Long])
     executionId: Option[Long],
+    @JsonDeserialize(contentAs = classOf[java.lang.Long])
     operationRunTime: Option[Long],
+    @JsonDeserialize(contentAs = classOf[java.lang.Long])
     operationCpuTime: Option[Long]) extends KyuubiEvent with SparkListenerEvent {
 
   override def partitions: Seq[(String, String)] =
