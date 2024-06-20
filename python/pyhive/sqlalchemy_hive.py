@@ -377,7 +377,17 @@ class HiveDialect(default.DefaultDialect):
         query = 'SHOW TABLES'
         if schema:
             query += ' IN ' + self.identifier_preparer.quote_identifier(schema)
-        return [row[1] for row in connection.execute(text(query))]
+
+        table_names = []
+
+        for row in connection.execute(text(query)):
+            # Hive returns 1 columns
+            if len(row) == 1:
+                table_names.append(row[0])
+            # Kyuubi returns 3 columns
+            elif len(row) == 3:
+                table_names.append(row[1])
+        return table_names
 
     def do_rollback(self, dbapi_connection):
         # No transactions for Hive
