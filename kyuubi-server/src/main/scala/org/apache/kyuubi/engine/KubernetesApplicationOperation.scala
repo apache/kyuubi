@@ -99,9 +99,15 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler(kubernetesInfo))
-        info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
+        client.pods()
+          .withLabel(LABEL_KYUUBI_UNIQUE_KEY).list().getItems.forEach(updateEnginePod(
+            kubernetesInfo,
+            _))
+        info(s"[$kubernetesInfo] Start Kubernetes Client Pod Informer.")
         val engineSvcInformer = client.services()
           .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+        client.services().list().getItems.forEach(updateEngineSvc(kubernetesInfo, _))
+        info(s"[$kubernetesInfo] Start Kubernetes Client Service Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
         client
@@ -300,18 +306,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
-      if (isSparkEnginePod(newPod)) {
-        updateApplicationState(kubernetesInfo, newPod)
-        val appState = toApplicationState(newPod, appStateSource, appStateContainer)
-        if (isTerminated(appState)) {
-          markApplicationTerminated(newPod)
-        }
-        KubernetesApplicationAuditLogger.audit(
-          kubernetesInfo,
-          newPod,
-          appStateSource,
-          appStateContainer)
-      }
+      updateEnginePod(kubernetesInfo, newPod)
     }
 
     override def onDelete(pod: Pod, deletedFinalStateUnknown: Boolean): Unit = {
@@ -331,15 +326,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     extends ResourceEventHandler[Service] {
 
     override def onAdd(svc: Service): Unit = {
-      if (isSparkEngineSvc(svc)) {
-        updateApplicationUrl(kubernetesInfo, svc)
-      }
+      updateEngineSvc(kubernetesInfo, svc)
     }
 
     override def onUpdate(oldSvc: Service, newSvc: Service): Unit = {
-      if (isSparkEngineSvc(newSvc)) {
-        updateApplicationUrl(kubernetesInfo, newSvc)
-      }
+      updateEngineSvc(kubernetesInfo, newSvc)
     }
 
     override def onDelete(svc: Service, deletedFinalStateUnknown: Boolean): Unit = {
@@ -355,6 +346,28 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private def isSparkEngineSvc(svc: Service): Boolean = {
     val selectors = svc.getSpec.getSelector
     selectors.containsKey(LABEL_KYUUBI_UNIQUE_KEY) && selectors.containsKey(SPARK_APP_ID_LABEL)
+  }
+
+  private def updateEnginePod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+    if (isSparkEnginePod(pod)) {
+      updateApplicationState(kubernetesInfo, pod)
+      val appState = toApplicationState(pod, appStateSource, appStateContainer)
+      if (isTerminated(appState)) {
+        markApplicationTerminated(pod)
+      }
+      KubernetesApplicationAuditLogger.audit(
+        kubernetesInfo,
+        pod,
+        appStateSource,
+        appStateContainer)
+    }
+  }
+
+  private def updateEngineSvc(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
+    if (isSparkEngineSvc(svc)) {
+      updateApplicationUrl(kubernetesInfo, svc)
+      KubernetesApplicationAuditLogger.audit(kubernetesInfo, svc)
+    }
   }
 
   private def updateApplicationState(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
