@@ -2660,6 +2660,17 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("yyyy-MM-dd HH:mm:ss.SSS")
 
+  val ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP: ConfigEntry[Boolean] =
+    buildConf(
+      "kyuubi.engine.spark.operation.incremental.collect.cancelJobGroupAfterExecutionFinished")
+      .internal
+      .doc("Canceling jobs group that are still running after statement execution finished " +
+        "avoids wasting resources. But the cancellation may cause the query fail when using " +
+        "incremental collect mode.")
+      .version("1.9.2")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_SESSION_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.engine.spark.initialize.sql")
       .doc("The initialize sql for Spark session. " +
