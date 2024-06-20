@@ -329,7 +329,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     // Auth specific confs
     val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")
     confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
-    if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
+    if (authenticationMethod.contains("KERBEROS")) {
       confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
         conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
     }

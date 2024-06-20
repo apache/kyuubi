@@ -148,7 +148,7 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
   }
 
   private void addKerberos(Properties props) {
-    if ("KERBEROS".equals(conf.get("hive.server2.authentication", "NONE"))) {
+    if (conf.get("hive.server2.authentication", "NONE").contains("KERBEROS")) {
       props.setProperty(
           "principal", conf.get("hive.server2.authentication.kerberos.principal", ""));
     }
