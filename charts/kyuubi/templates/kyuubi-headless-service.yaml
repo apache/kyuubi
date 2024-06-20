@@ -19,8 +19,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Release.Name }}-headless
-  labels:
-    {{- include "kyuubi.labels" $ | nindent 4 }}
+  labels: {{- include "kyuubi.labels" $ | nindent 4 }}
 spec:
   type: ClusterIP
   clusterIP: None
@@ -35,6 +34,4 @@ spec:
       port: {{ .Values.monitoring.prometheus.port }}
       targetPort: {{ .Values.monitoring.prometheus.port }}
     {{- end }}
-  selector:
-    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
-
+  selector: {{- include "kyuubi.selectorLabels" $ | nindent 4 }}

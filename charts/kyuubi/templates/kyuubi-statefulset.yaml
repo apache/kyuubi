@@ -19,12 +19,10 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .Release.Name }}
-  labels:
-    {{- include "kyuubi.labels" . | nindent 4 }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
   selector:
-    matchLabels:
-      {{- include "kyuubi.selectorLabels" . | nindent 6 }}
+    matchLabels: {{- include "kyuubi.selectorLabels" . | nindent 6 }}
   serviceName: {{ .Release.Name }}-headless
   minReadySeconds: {{ .Values.minReadySeconds }}
   replicas: {{ .Values.replicaCount }}
@@ -35,8 +33,7 @@ spec:
   {{- end }}
   template:
     metadata:
-      labels:
-        {{- include "kyuubi.selectorLabels" . | nindent 8 }}
+      labels: {{- include "kyuubi.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
     spec:

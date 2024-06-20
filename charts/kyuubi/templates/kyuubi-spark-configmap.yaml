@@ -19,8 +19,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-spark
-  labels:
-    {{- include "kyuubi.labels" . | nindent 4 }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
 data:
   {{- with .Values.sparkConf.sparkEnv }}
   spark-env.sh: |
