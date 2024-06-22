@@ -129,3 +129,4 @@ jobs:
           name: unit-tests-log-spark-${{ matrix.spark }}-gluten
           path: |
             **/target/unit-tests.log
+            integration-tests/kyuubi-gluten-it/hs_err_pid*.log
