@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 
 import datetime
 import decimal
+import logging
 
 import re
 from sqlalchemy import exc
@@ -39,6 +40,7 @@ from pyhive.common import UniversalSet
 from dateutil.parser import parse
 from decimal import Decimal
 
+_logger = logging.getLogger(__name__)
 
 class HiveStringTypeBase(types.TypeDecorator):
     """Translates strings returned by Thrift into something else"""
@@ -377,7 +379,21 @@ class HiveDialect(default.DefaultDialect):
         query = 'SHOW TABLES'
         if schema:
             query += ' IN ' + self.identifier_preparer.quote_identifier(schema)
-        return [row[0] for row in connection.execute(text(query))]
+
+        table_names = []
+
+        for row in connection.execute(text(query)):
+            # Hive returns 1 columns
+            if len(row) == 1:
+                table_names.append(row[0])
+            # Spark SQL returns 3 columns
+            elif len(row) == 3:
+                table_names.append(row[1])
+            else:
+                _logger.warning("Unexpected number of columns in SHOW TABLES result: {}".format(len(row)))
+                table_names.append('UNKNOWN')
+
+        return table_names
 
     def do_rollback(self, dbapi_connection):
         # No transactions for Hive
