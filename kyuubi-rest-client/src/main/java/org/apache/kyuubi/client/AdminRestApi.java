@@ -89,13 +89,16 @@ public class AdminRestApi {
   }
 
   public List<SessionData> listSessions() {
-    return listSessions(Collections.emptyList());
+    return listSessions(Collections.emptyList(), null);
   }
 
-  public List<SessionData> listSessions(List<String> users) {
+  public List<SessionData> listSessions(List<String> users, String sessionType) {
     Map<String, Object> params = new HashMap<>();
     if (users != null && !users.isEmpty()) {
       params.put("users", String.join(",", users));
+    }
+    if (StringUtils.isNotBlank(sessionType)) {
+      params.put("sessionType", sessionType);
     }
     SessionData[] result =
         this.getClient()
@@ -109,16 +112,20 @@ public class AdminRestApi {
   }
 
   public List<OperationData> listOperations() {
-    return listOperations(Collections.emptyList(), null);
+    return listOperations(Collections.emptyList(), null, null);
   }
 
-  public List<OperationData> listOperations(List<String> users, String sessionHandleStr) {
+  public List<OperationData> listOperations(
+      List<String> users, String sessionHandleStr, String sessionType) {
     Map<String, Object> params = new HashMap<>();
     if (users != null && !users.isEmpty()) {
       params.put("users", String.join(",", users));
     }
     if (StringUtils.isNotBlank(sessionHandleStr)) {
       params.put("sessionHandle", sessionHandleStr);
+    }
+    if (StringUtils.isNotBlank(sessionType)) {
+      params.put("sessionType", sessionType);
     }
     OperationData[] result =
         this.getClient()

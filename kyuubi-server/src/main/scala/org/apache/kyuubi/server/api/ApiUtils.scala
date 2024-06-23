@@ -41,6 +41,8 @@ object ApiUtils extends Logging {
         .conf(event.conf.asJava)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
+        .engineName(event.engineName)
+        .engineUrl(event.engineUrl)
         .eventTime(event.eventTime)
         .openedTime(event.openedTime)
         .startTime(event.startTime)
@@ -64,7 +66,11 @@ object ApiUtils extends Logging {
       sessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
       session.sessionType.toString,
       session.connectionUrl,
-      sessionEvent.map(_.engineId).getOrElse(""))
+      sessionEvent.map(_.engineId).getOrElse(""),
+      sessionEvent.map(_.engineName).getOrElse(""),
+      sessionEvent.map(_.engineUrl).getOrElse(""),
+      session.name.getOrElse(""),
+      sessionEvent.map(_.totalOperations).getOrElse(0): Int)
   }
 
   private def operationProgress(operation: KyuubiOperation): OperationProgress = {

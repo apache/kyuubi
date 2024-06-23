@@ -252,8 +252,8 @@ class MySQLSparkQuerySuite extends WithKyuubiServer with MySQLJDBCTestHelper {
     val sql = "select date_sub(date'2011-11-11', '1.2')"
     val errors = Set(
       "The second argument of 'date_sub' function needs to be an integer.",
-      // unquoted since Spark-3.4, see https://github.com/apache/spark/pull/36693
-      "The second argument of date_sub function needs to be an integer.")
+      "SECOND_FUNCTION_ARGUMENT_NOT_INTEGER",
+      "CAST_INVALID_INPUT")
 
     withJdbcStatement() { statement =>
       val e = intercept[SQLException] {

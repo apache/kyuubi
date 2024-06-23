@@ -103,7 +103,7 @@ object SparkDatasetHelper extends Logging {
 
     // an udf to call `RowSet.toHiveString` on complex types(struct/array/map) and timestamp type.
     // TODO: reuse the timeFormatters on greater scale if possible,
-    //  recreating timeFormatters may cause performance issue, see [KYUUBI#5811]
+    //       recreate timeFormatters each time may cause performance issue, see KYUUBI #5811
     val toHiveStringUDF = udf[String, Row, String]((row, schemaDDL) => {
       val dt = DataType.fromDDL(schemaDDL)
       dt match {
@@ -111,22 +111,26 @@ object SparkDatasetHelper extends Logging {
           RowSet.toHiveString(
             (row, st),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, at: ArrayType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, at),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, mt: MapType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, mt),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case StructType(Array(StructField(_, tt: TimestampType, _, _))) =>
           RowSet.toHiveString(
             (row.toSeq.head, tt),
             nested = true,
-            timeFormatters = HiveResult.getTimeFormatters)
+            timeFormatters = HiveResult.getTimeFormatters,
+            binaryFormatter = RowSet.getBinaryFormatter)
         case _ =>
           throw new UnsupportedOperationException
       }
@@ -246,22 +250,33 @@ object SparkDatasetHelper extends Logging {
       case _ => None
     }
 
-  def shouldSaveResultToFs(resultMaxRows: Int, minSize: Long, result: DataFrame): Boolean = {
-    if (isCommandExec(result.queryExecution.executedPlan.nodeName)) {
+  def shouldSaveResultToFs(
+      resultMaxRows: Int,
+      minSize: Long,
+      minRows: Long,
+      result: DataFrame): Boolean = {
+    if (isCommandExec(result) ||
+      (resultMaxRows > 0 && resultMaxRows < minRows) ||
+      result.queryExecution.optimizedPlan.stats.rowCount.getOrElse(
+        BigInt(Long.MaxValue)) < minRows) {
       return false
     }
-    val finalLimit = optimizedPlanLimit(result.queryExecution) match {
-      case Some(limit) if resultMaxRows > 0 => math.min(limit, resultMaxRows)
-      case Some(limit) => limit
-      case None => resultMaxRows
+    val finalLimit: Option[Long] = optimizedPlanLimit(result.queryExecution) match {
+      case Some(limit) if resultMaxRows > 0 => Some(math.min(limit, resultMaxRows))
+      case Some(limit) => Some(limit)
+      case None if resultMaxRows > 0 => Some(resultMaxRows)
+      case _ => None
     }
-    lazy val stats = if (finalLimit > 0) {
-      finalLimit * EstimationUtils.getSizePerRow(
-        result.queryExecution.executedPlan.output)
-    } else {
-      result.queryExecution.optimizedPlan.stats.sizeInBytes
+    if (finalLimit.exists(_ < minRows)) {
+      return false
     }
-    lazy val colSize =
+    val sizeInBytes = result.queryExecution.optimizedPlan.stats.sizeInBytes
+    val stats = finalLimit.map { limit =>
+      val estimateSize =
+        limit * EstimationUtils.getSizePerRow(result.queryExecution.executedPlan.output)
+      estimateSize min sizeInBytes
+    }.getOrElse(sizeInBytes)
+    val colSize =
       if (result == null || result.schema.isEmpty) {
         0
       } else {
@@ -270,7 +285,8 @@ object SparkDatasetHelper extends Logging {
     minSize > 0 && colSize > 0 && stats >= minSize
   }
 
-  private def isCommandExec(nodeName: String): Boolean = {
+  def isCommandExec(result: DataFrame): Boolean = {
+    val nodeName = result.queryExecution.executedPlan.getClass.getName
     nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
     nodeName == "org.apache.spark.sql.execution.CommandResultExec"
   }

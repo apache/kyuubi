@@ -70,10 +70,10 @@ class TestTrino(TestPresto):
             ('timestamp', 'timestamp', None, None, None, None, True),
             ('binary', 'varbinary', None, None, None, None, True),
             ('array', 'array(integer)', None, None, None, None, True),
-            ('map', 'map(integer,integer)', None, None, None, None, True),
-            ('struct', 'row(a integer,b integer)', None, None, None, None, True),
+            ('map', 'map(integer, integer)', None, None, None, None, True),
+            ('struct', 'row(a integer, b integer)', None, None, None, None, True),
             # ('union', 'varchar', None, None, None, None, True),
-            ('decimal', 'decimal(10,1)', None, None, None, None, True),
+            ('decimal', 'decimal(10, 1)', None, None, None, None, True),
         ])
         rows = cursor.fetchall()
         expected = [(

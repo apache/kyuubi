@@ -63,15 +63,19 @@ class KyuubiSyncThriftClient private (
   private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
 
   @volatile private var _aliveProbeSessionHandle: TSessionHandle = _
-  @volatile private var remoteEngineBroken: Boolean = false
+  @volatile private var _remoteEngineBroken: Boolean = false
+  private[kyuubi] def remoteEngineBroken: Boolean = _remoteEngineBroken
   @volatile private var clientClosedByAliveProbe: Boolean = false
   private val engineAliveProbeClient = engineAliveProbeProtocol.map(new TCLIService.Client(_))
   private var engineAliveThreadPool: ScheduledExecutorService = _
   @volatile private var engineLastAlive: Long = _
 
-  private lazy val asyncRequestExecutor: ExecutorService =
+  @volatile private var asyncRequestExecutorInitialized: Boolean = false
+  private lazy val asyncRequestExecutor: ExecutorService = {
+    asyncRequestExecutorInitialized = true
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "async-request-executor-" + SessionHandle(_remoteSessionHandle))
+  }
 
   @VisibleForTesting
   @volatile private[kyuubi] var asyncRequestInterrupted: Boolean = false
@@ -80,16 +84,35 @@ class KyuubiSyncThriftClient private (
   private[kyuubi] def getEngineAliveProbeProtocol: Option[TProtocol] = engineAliveProbeProtocol
 
   private def shutdownAsyncRequestExecutor(): Unit = {
-    Option(asyncRequestExecutor).filterNot(_.isShutdown).foreach(ThreadUtils.shutdown(_))
+    if (asyncRequestExecutorInitialized && !asyncRequestExecutor.isShutdown) {
+      ThreadUtils.shutdown(asyncRequestExecutor)
+    }
     asyncRequestInterrupted = true
   }
 
   private def startEngineAliveProbe(): Unit = {
     engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
       "engine-alive-probe-" + _aliveProbeSessionHandle)
+
+    def closeClient(): Unit = {
+      warn(s"Removing Clients for ${_remoteSessionHandle}")
+      Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
+        Utils.tryLogNonFatalError {
+          if (tProtocol.getTransport.isOpen) {
+            tProtocol.getTransport.close()
+          }
+        }
+      }
+      clientClosedByAliveProbe = true
+      shutdownAsyncRequestExecutor()
+      Option(engineAliveThreadPool).foreach { pool =>
+        ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
+      }
+    }
+
     val task = new Runnable {
       override def run(): Unit = {
-        if (!remoteEngineBroken && !engineConnectionClosed) {
+        if (!_remoteEngineBroken && !engineConnectionClosed) {
           engineAliveProbeClient.foreach { client =>
             val tGetInfoReq = new TGetInfoReq()
             tGetInfoReq.setSessionHandle(_aliveProbeSessionHandle)
@@ -98,7 +121,7 @@ class KyuubiSyncThriftClient private (
             try {
               client.GetInfo(tGetInfoReq).getInfoValue.getStringValue
               engineLastAlive = System.currentTimeMillis()
-              remoteEngineBroken = false
+              _remoteEngineBroken = false
             } catch {
               case e: Throwable =>
                 val engineIdStr = engineId.getOrElse("")
@@ -107,24 +130,13 @@ class KyuubiSyncThriftClient private (
                 if (now - engineLastAlive > engineAliveTimeout) {
                   error(s"Mark the engine[$engineIdStr] not alive with no recent alive probe" +
                     s" success: ${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms")
-                  remoteEngineBroken = true
+                  _remoteEngineBroken = true
+                  closeClient()
                 }
             }
           }
         } else {
-          warn(s"Removing Clients for ${_remoteSessionHandle}")
-          Seq(protocol).union(engineAliveProbeProtocol.toSeq).foreach { tProtocol =>
-            Utils.tryLogNonFatalError {
-              if (tProtocol.getTransport.isOpen) {
-                tProtocol.getTransport.close()
-              }
-            }
-          }
-          clientClosedByAliveProbe = true
-          shutdownAsyncRequestExecutor()
-          Option(engineAliveThreadPool).foreach { pool =>
-            ThreadUtils.shutdown(pool, Duration(engineAliveProbeInterval, TimeUnit.MILLISECONDS))
-          }
+          closeClient()
         }
       }
     }
@@ -154,7 +166,7 @@ class KyuubiSyncThriftClient private (
 
     val task = asyncRequestExecutor.submit(() => {
       val resp = block
-      remoteEngineBroken = false
+      _remoteEngineBroken = false
       resp
     })
 
@@ -181,7 +193,7 @@ class KyuubiSyncThriftClient private (
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
-    req.setConfiguration(configs.asJava)
+    req.setConfiguration((configs ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
@@ -201,7 +213,8 @@ class KyuubiSyncThriftClient private (
         req.setConfiguration((configs ++ Map(
           KyuubiConf.SESSION_NAME.key -> sessionName,
           KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
-          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "")).asJava)
+          KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "",
+          KYUUBI_SESSION_ALIVE_PROBE -> "true")).asJava)
         val resp = aliveProbeClient.OpenSession(req)
         ThriftUtils.verifyTStatus(resp.getStatus)
         _aliveProbeSessionHandle = resp.getSessionHandle

@@ -17,12 +17,18 @@
 
 package org.apache.spark.ui
 
-import javax.servlet.http.HttpServletRequest
-
 import scala.util.control.NonFatal
+
+import net.bytebuddy.ByteBuddy
+import net.bytebuddy.dynamic.loading.ClassLoadingStrategy
+import net.bytebuddy.dynamic.scaffold.subclass.ConstructorStrategy
+import net.bytebuddy.implementation.MethodCall
+import net.bytebuddy.matcher.ElementMatchers.{isConstructor, named}
+import org.apache.spark.util.{Utils => SparkUtils}
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
@@ -53,49 +59,96 @@ case class EngineTab(
       .getOrElse(0L)
   }
 
+  private val enginePage = {
+    val dispatchMethod = classOf[EnginePage].getMethod("dispatchRender", classOf[AnyRef])
+    new ByteBuddy()
+      .subclass(classOf[EnginePage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+      .method(isConstructor()).intercept(MethodCall.invokeSuper())
+      .method(named("render")).intercept(MethodCall.invoke(dispatchMethod).withAllArguments())
+      .make()
+      .load(SparkUtils.getContextOrSparkClassLoader, ClassLoadingStrategy.Default.INJECTION)
+      .getLoaded
+      .getDeclaredConstructor(classOf[EngineTab])
+      .newInstance(this)
+  }
+
+  private val engineSessionPage = {
+    val dispatchMethod = classOf[EngineSessionPage].getMethod("dispatchRender", classOf[AnyRef])
+    new ByteBuddy()
+      .subclass(classOf[EngineSessionPage], ConstructorStrategy.Default.IMITATE_SUPER_CLASS_PUBLIC)
+      .method(isConstructor()).intercept(MethodCall.invokeSuper())
+      .method(named("render")).intercept(MethodCall.invoke(dispatchMethod).withAllArguments())
+      .make()
+      .load(SparkUtils.getContextOrSparkClassLoader, ClassLoadingStrategy.Default.INJECTION)
+      .getLoaded
+      .getDeclaredConstructor(classOf[EngineTab])
+      .newInstance(this)
+  }
+
   sparkUI.foreach { ui =>
-    this.attachPage(EnginePage(this))
-    this.attachPage(EngineSessionPage(this))
+    this.attachPage(enginePage)
+    this.attachPage(engineSessionPage)
     ui.attachTab(this)
     Utils.addShutdownHook(() => ui.detachTab(this))
   }
 
   sparkUI.foreach { ui =>
     try {
-      // [KYUUBI #3627]: the official spark release uses the shaded and relocated jetty classes,
-      // but if we use sbt to build for testing, e.g. docker image, it still uses the vanilla
-      // jetty classes.
       val sparkServletContextHandlerClz = DynClasses.builder()
+        // for official Spark releases and distributions built via Maven
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
+        // for distributions built via SBT
         .impl("org.eclipse.jetty.servlet.ServletContextHandler")
         .buildChecked()
       val attachHandlerMethod = DynMethods.builder("attachHandler")
         .impl("org.apache.spark.ui.SparkUI", sparkServletContextHandlerClz)
         .buildChecked(ui)
-      val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
-        .impl(
-          "org.apache.spark.ui.JettyUtils",
-          classOf[String],
-          classOf[String],
-          classOf[HttpServletRequest => Unit],
-          classOf[String],
-          classOf[Set[String]])
-        .buildStaticChecked()
 
-      attachHandlerMethod
-        .invoke(
-          createRedirectHandlerMethod
-            .invoke("/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
+      if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+        attachHandlerMethod.invoke {
+          val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+            .impl(
+              JettyUtils.getClass,
+              classOf[String],
+              classOf[String],
+              classOf[jakarta.servlet.http.HttpServletRequest => Unit],
+              classOf[String],
+              classOf[Set[String]])
+            .buildChecked(JettyUtils)
 
-      attachHandlerMethod
-        .invoke(
+          val killHandler =
+            (_: jakarta.servlet.http.HttpServletRequest) => handleKill()
+          val gracefulKillHandler =
+            (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
+
           createRedirectHandlerMethod
-            .invoke(
-              "/kyuubi/gracefulstop",
-              "/kyuubi",
-              handleGracefulKillRequest _,
-              "",
-              Set("GET", "POST")))
+            .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
+        }
+      } else {
+        val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+          .impl(
+            JettyUtils.getClass,
+            classOf[String],
+            classOf[String],
+            classOf[javax.servlet.http.HttpServletRequest => Unit],
+            classOf[String],
+            classOf[Set[String]])
+          .buildChecked(JettyUtils)
+
+        attachHandlerMethod.invoke {
+          val killHandler =
+            (_: javax.servlet.http.HttpServletRequest) => handleKill()
+          val gracefulKillHandler =
+            (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
+
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+          createRedirectHandlerMethod
+            .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
+        }
+      }
     } catch {
       case NonFatal(cause) => reportInstallError(cause)
       case cause: NoClassDefFoundError => reportInstallError(cause)
@@ -109,13 +162,13 @@ case class EngineTab(
       cause)
   }
 
-  def handleKillRequest(request: HttpServletRequest): Unit = {
+  def handleKill(): Unit = {
     if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
       engine.get.stop()
     }
   }
 
-  def handleGracefulKillRequest(request: HttpServletRequest): Unit = {
+  def handleGracefulKill(): Unit = {
     if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
       engine.get.gracefulStop()
     }

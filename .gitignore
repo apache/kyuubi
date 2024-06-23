@@ -58,6 +58,7 @@ spark-warehouse/
 metastore_db
 derby.log
 rest-audit.log
+**/.flattened-pom.xml
 **/dependency-reduced-pom.xml
 metrics/
 /kyuubi-ha/embedded_zookeeper/

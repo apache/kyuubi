@@ -80,22 +80,28 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    try {
-      super.getSessionOption(sessionHandle).foreach { s =>
-        sessionManager.closeSession(s.asInstanceOf[FlinkSessionImpl].fSession.getSessionHandle)
+    super.getSessionOption(sessionHandle).foreach { s =>
+      val internalSessionHandle = s.asInstanceOf[FlinkSessionImpl].fSession.getSessionHandle
+      try {
+        sessionManager.closeSession(internalSessionHandle)
+      } catch {
+        case t: Throwable =>
+          warn(s"Error closing flink internal session $internalSessionHandle", t)
       }
+    }
+    try {
       super.closeSession(sessionHandle)
     } catch {
       case t: Throwable =>
         warn(s"Error closing session $sessionHandle", t)
     }
     if (shareLevel == ShareLevel.CONNECTION) {
-      info("Session stopped due to shared level is Connection.")
-      stopSession()
+      info("Flink engine stopped due to session stopped and shared level is CONNECTION.")
+      stopEngine()
     }
   }
 
-  private def stopSession(): Unit = {
+  private def stopEngine(): Unit = {
     FlinkSQLEngine.currentEngine.foreach(_.stop())
   }
 

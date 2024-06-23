@@ -101,7 +101,7 @@ Switch current database to `tpcds.sf1` and run a query against it.
 .. code-block:: sql
 
    USE tpcds.sf1;
-   SELECT * FROM orders;
+   SELECT * FROM store;
 
 .. _Official Documentation: https://www.tpc.org/tpcds/
 .. _Try Kyuubi: https://try.kyuubi.cloud/

@@ -60,11 +60,11 @@ object KyuubiHadoopUtils extends Logging {
     val byteStream = new ByteArrayOutputStream
     creds.writeTokenStorageToStream(new DataOutputStream(byteStream))
 
-    Base64.getMimeEncoder.encodeToString(byteStream.toByteArray)
+    Base64.getEncoder.encodeToString(byteStream.toByteArray)
   }
 
   def decodeCredentials(newValue: String): Credentials = {
-    val decoded = Base64.getMimeDecoder.decode(newValue)
+    val decoded = Base64.getDecoder.decode(newValue)
 
     val byteStream = new ByteArrayInputStream(decoded)
     val creds = new Credentials()
@@ -113,6 +113,18 @@ object KyuubiHadoopUtils extends Logging {
       case tokenIdent =>
         debug(s"Unsupported TokenIdentifier kind: ${tokenIdent.getKind}")
         None
+    }
+  }
+
+  def compareIssueDate(
+      newToken: Token[_ <: TokenIdentifier],
+      oldToken: Token[_ <: TokenIdentifier]): Int = {
+    val newDate = KyuubiHadoopUtils.getTokenIssueDate(newToken)
+    val oldDate = KyuubiHadoopUtils.getTokenIssueDate(oldToken)
+    if (newDate.isDefined && oldDate.isDefined && newDate.get <= oldDate.get) {
+      -1
+    } else {
+      1
     }
   }
 

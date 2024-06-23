@@ -103,8 +103,8 @@ case class HiveScan(
         } else {
           partition.values
         }
-      partition.files.flatMap { file =>
-        val filePath = file.getPath
+      partition.files.asInstanceOf[Seq[AnyRef]].flatMap { file =>
+        val filePath = HiveConnectorUtils.getPartitionFilePath(file)
         val partFiles = HiveConnectorUtils.splitFiles(
           sparkSession = sparkSession,
           file = file,

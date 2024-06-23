@@ -24,7 +24,6 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -207,7 +206,7 @@ public class RestClient implements IRestClient {
       String url = StringUtils.isNotBlank(path) ? this.baseUrl + "/" + path : this.baseUrl;
       URIBuilder builder = new URIBuilder(url);
 
-      if (MapUtils.isNotEmpty(params)) {
+      if (params != null) {
         for (Map.Entry<String, Object> entry : params.entrySet()) {
           if (entry.getValue() != null) {
             builder.addParameter(entry.getKey(), entry.getValue().toString());

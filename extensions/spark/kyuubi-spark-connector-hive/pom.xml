@@ -92,6 +92,14 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
@@ -108,6 +116,18 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-runtime</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -170,4 +190,45 @@
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
+
+    <profiles>
+        <profile>
+            <id>cross-version-test</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive-local_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                    <scope>system</scope>
+                    <systemPath>${project.basedir}/target/kyuubi-spark-connector-hive_${scala.binary.version}-${project.version}.jar</systemPath>
+                </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <excludeDefaultDirectories>true</excludeDefaultDirectories>
+                            <filesets>
+                                <fileset>
+                                    <directory>target/scala-${scala.binary.version}/classes</directory>
+                                    <includes>**/*.*</includes>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>clean target/scala-${scala.binary.version}/classes</id>
+                                <goals>
+                                    <goal>clean</goal>
+                                </goals>
+                                <phase>process-test-classes</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

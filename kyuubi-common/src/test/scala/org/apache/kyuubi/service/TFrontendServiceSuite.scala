@@ -549,13 +549,13 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
         .getSession(SessionHandle(handle))
         .asInstanceOf[AbstractSession]
       var lastAccessTime = session.lastAccessTime
-      assert(sessionManager.getOpenSessionCount === 1)
+      assert(sessionManager.getActiveUserSessionCount === 1)
       assert(session.lastIdleTime > 0)
 
       val cancelOpReq = new TCancelOperationReq(resp.getOperationHandle)
       val cancelOpResp = client.CancelOperation(cancelOpReq)
       assert(cancelOpResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      assert(sessionManager.getOpenSessionCount === 1)
+      assert(sessionManager.getActiveUserSessionCount === 1)
       assert(session.lastIdleTime === 0)
 
       lastAccessTime = session.lastAccessTime
@@ -569,7 +569,7 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
         assert(session.lastAccessTime > lastAccessTime)
       }
       info("session is terminated")
-      assert(sessionManager.getOpenSessionCount === 0)
+      assert(sessionManager.getActiveUserSessionCount === 0)
     }
   }
 

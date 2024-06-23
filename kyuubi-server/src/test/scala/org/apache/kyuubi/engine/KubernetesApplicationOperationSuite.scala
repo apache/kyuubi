@@ -56,4 +56,44 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     kyuubiConf.unset(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST.key)
     operation.checkKubernetesInfo(KubernetesInfo(None, Some("ns3")))
   }
+
+  test("build spark app url") {
+    val sparkAppUrlPattern1 = "http://{{SPARK_APP_ID}}.ingress.balabala"
+    val sparkAppUrlPattern2 =
+      "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc:{{SPARK_UI_PORT}}"
+    val sparkAppUrlPattern3 =
+      "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc" +
+        ".{{KUBERNETES_CONTEXT}}.k8s.io:{{SPARK_UI_PORT}}"
+
+    val sparkAppId = "spark-123"
+    val sparkDriverSvc = "spark-456-driver-svc"
+    val kubernetesContext = "1"
+    val kubernetesNamespace = "kyuubi"
+    val sparkUiPort = 4040
+
+    assert(KubernetesApplicationOperation.buildSparkAppUrl(
+      sparkAppUrlPattern1,
+      sparkAppId,
+      sparkDriverSvc,
+      kubernetesContext,
+      kubernetesNamespace,
+      sparkUiPort) === s"http://$sparkAppId.ingress.balabala")
+
+    assert(KubernetesApplicationOperation.buildSparkAppUrl(
+      sparkAppUrlPattern2,
+      sparkAppId,
+      sparkDriverSvc,
+      kubernetesContext,
+      kubernetesNamespace,
+      sparkUiPort) === s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort")
+
+    assert(KubernetesApplicationOperation.buildSparkAppUrl(
+      sparkAppUrlPattern3,
+      sparkAppId,
+      sparkDriverSvc,
+      kubernetesContext,
+      kubernetesNamespace,
+      sparkUiPort) ===
+      s"http://$sparkDriverSvc.$kubernetesNamespace.svc.$kubernetesContext.k8s.io:$sparkUiPort")
+  }
 }

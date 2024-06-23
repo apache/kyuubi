@@ -432,6 +432,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val createTime = resultSet.getLong("create_time")
         val engineType = resultSet.getString("engine_type")
         val clusterManager = Option(resultSet.getString("cluster_manager"))
+        val engineOpenTime = resultSet.getLong("engine_open_time")
         val engineId = resultSet.getString("engine_id")
         val engineName = resultSet.getString("engine_name")
         val engineUrl = resultSet.getString("engine_url")
@@ -456,6 +457,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           createTime = createTime,
           engineType = engineType,
           clusterManager = clusterManager,
+          engineOpenTime = engineOpenTime,
           engineId = engineId,
           engineName = engineName,
           engineUrl = engineUrl,
@@ -594,6 +596,7 @@ object JDBCMetadataStore {
     "create_time",
     "engine_type",
     "cluster_manager",
+    "engine_open_time",
     "engine_id",
     "engine_name",
     "engine_url",

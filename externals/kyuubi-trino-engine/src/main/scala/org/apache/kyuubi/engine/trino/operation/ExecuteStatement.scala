@@ -108,10 +108,13 @@ class ExecuteStatement(
   private def executeStatement(trinoStatement: TrinoStatement): Unit = {
     setState(OperationState.RUNNING)
     try {
+      trinoStatement.printStatusInfo()
       schema = trinoStatement.getColumns
       val resultSet = trinoStatement.execute()
       iter =
         if (incrementalCollect) {
+          val hasResult = resultSet.hasNext
+          debug(s"Increment collect mode hasResult: $hasResult")
           info("Execute in incremental collect mode")
           FetchIterator.fromIterator(resultSet)
         } else {

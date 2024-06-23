@@ -44,6 +44,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.AnonymousAuthenticationProviderImpl
+import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -230,6 +231,42 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operations = response.readEntity(classOf[Seq[OperationData]])
     assert(response.getStatus === 200)
     assert(operations.size == 1)
+
+    response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("sessionType", SessionType.INTERACTIVE.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(response.getStatus === 200)
+    assert(sessions.size > 0)
+
+    response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("sessionType", SessionType.BATCH.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(response.getStatus === 200)
+    assert(sessions.size == 0)
+
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("sessionType", SessionType.INTERACTIVE.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(response.getStatus === 200)
+    assert(operations.size > 0)
+
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("sessionType", SessionType.BATCH.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(response.getStatus === 200)
+    assert(operations.size == 0)
   }
 
   test("list/close operations") {

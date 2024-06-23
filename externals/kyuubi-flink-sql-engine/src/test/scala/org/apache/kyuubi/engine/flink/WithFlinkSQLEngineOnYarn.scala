@@ -105,7 +105,14 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
     zkServer.start()
     conf.set(HA_ADDRESSES, zkServer.getConnectString)
 
-    hdfsCluster = new MiniDFSCluster.Builder(new Configuration)
+    val hdfsConf = new Configuration()
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
+
+    hdfsCluster = new MiniDFSCluster.Builder(hdfsConf)
       .numDataNodes(1)
       .checkDataNodeAddrConfig(true)
       .checkDataNodeHostConfig(true)

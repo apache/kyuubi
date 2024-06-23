@@ -64,7 +64,9 @@ class FetchOrcStatement(spark: SparkSession) {
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
-    new IterableFetchIterator[Row](iterRow.toIterable)
+    new IterableFetchIterator[Row](new Iterable[Row] {
+      override def iterator: Iterator[Row] = iterRow
+    })
   }
 
   def close(): Unit = {
@@ -74,22 +76,29 @@ class FetchOrcStatement(spark: SparkSession) {
 
 class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct] {
 
-  private val iters = fileList.map(x => getOrcFileIterator(x))
+  private var idx = 0
+  private var curIter = getNextIter
 
-  var idx = 0
+  private def getNextIter: Option[RecordReaderIterator[OrcStruct]] = {
+    if (idx >= fileList.size) return None
+    val resIter = getOrcFileIterator(fileList(idx))
+    idx = idx + 1
+    Some(resIter)
+  }
 
   override def hasNext: Boolean = {
-    val hasNext = iters(idx).hasNext
+    if (curIter.isEmpty) return false
+    val hasNext = curIter.get.hasNext
     if (!hasNext) {
-      iters(idx).close()
-      idx += 1
+      curIter.get.close()
+      curIter = getNextIter
       // skip empty file
-      while (idx < iters.size) {
-        if (iters(idx).hasNext) {
+      while (curIter.isDefined) {
+        if (curIter.get.hasNext) {
           return true
         } else {
-          iters(idx).close()
-          idx = idx + 1
+          curIter.get.close()
+          curIter = getNextIter
         }
       }
     }
@@ -97,11 +106,11 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   }
 
   override def next(): OrcStruct = {
-    iters(idx).next()
+    curIter.get.next()
   }
 
   def close(): Unit = {
-    iters.foreach(_.close())
+    curIter.foreach(_.close())
   }
 
   private def getOrcFileIterator(file: LocatedFileStatus): RecordReaderIterator[OrcStruct] = {

@@ -5,6 +5,7 @@ from pyhive.sqlalchemy_hive import HiveDate
 from pyhive.sqlalchemy_hive import HiveDecimal
 from pyhive.sqlalchemy_hive import HiveTimestamp
 from sqlalchemy.exc import NoSuchTableError, OperationalError
+import pytest
 from pyhive.tests.sqlalchemy_test_case import SqlAlchemyTestCase
 from pyhive.tests.sqlalchemy_test_case import with_engine_connection
 from sqlalchemy import types

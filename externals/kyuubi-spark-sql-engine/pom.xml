@@ -65,6 +65,23 @@
         </dependency>
 
         <dependency>
+            <groupId>net.bytebuddy</groupId>
+            <artifactId>byte-buddy</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <scope>provided</scope>
@@ -103,6 +120,14 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -130,13 +155,13 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
+            <artifactId>${iceberg.artifact}</artifactId>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>io.delta</groupId>
-            <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
+            <artifactId>${delta.artifact}</artifactId>
             <scope>test</scope>
         </dependency>
 
@@ -221,6 +246,7 @@
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
                             <include>dev.failsafe:failsafe</include>
+                            <include>net.bytebuddy:byte-buddy</include>
                             <include>io.etcd:*</include>
                             <include>io.grpc:*</include>
                             <include>io.netty:*</include>
@@ -364,6 +390,10 @@
                         <relocation>
                             <pattern>com.google.type</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.type</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>net.bytebuddy</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.net.bytebuddy</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>

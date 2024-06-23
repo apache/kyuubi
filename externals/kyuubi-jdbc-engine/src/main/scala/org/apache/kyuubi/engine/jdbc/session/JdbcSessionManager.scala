@@ -55,12 +55,12 @@ class JdbcSessionManager(name: String)
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
     if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
-      info("Session stopped due to shared level is Connection.")
-      stopSession()
+      info("JDBC engine stopped due to session stopped and shared level is CONNECTION.")
+      stopEngine()
     }
   }
 
-  private def stopSession(): Unit = {
+  private def stopEngine(): Unit = {
     JdbcSQLEngine.currentEngine.foreach { engine =>
       engine.selfExited = true
       engine.stop()

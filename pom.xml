@@ -119,13 +119,14 @@
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.8.1</scala-collection-compat.version>
 
-        <arrow.version>15.0.2</arrow.version>
+        <arrow.version>16.0.0</arrow.version>
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
-        <bouncycastle.version>1.77</bouncycastle.version>
+        <byte-buddy.version>1.14.15</byte-buddy.version>
+        <bouncycastle.version>1.78</bouncycastle.version>
         <codahale.metrics.version>4.2.23</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.15</commons-codec.version>
@@ -133,8 +134,8 @@
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
-        <delta.artifact>delta-spark</delta.artifact>
-        <delta.version>3.1.0</delta.version>
+        <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
+        <delta.version>3.2.0</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -155,16 +156,19 @@
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
-        <hudi.version>0.14.0</hudi.version>
-        <hudi.spark.binary.version>${spark.binary.version}</hudi.spark.binary.version>
-        <iceberg.version>1.5.0</iceberg.version>
+        <hudi.version>0.15.0</hudi.version>
+        <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
+        <iceberg.version>1.5.2</iceberg.version>
+        <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
-        <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
+        <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
+        <!-- 6.0.0 requires JDK 11 -->
+        <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
-        <jersey.version>2.39.1</jersey.version>
+        <jersey.version>2.40</jersey.version>
         <jetcd.version>0.7.7</jetcd.version>
-        <jetty.version>9.4.52.v20230823</jetty.version>
+        <jetty.version>9.4.54.v20240208</jetty.version>
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
@@ -179,6 +183,7 @@
         <openai.java.version>0.12.0</openai.java.version>
         <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.7.0-incubating</paimon.version>
+        <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
         <phoenix.version>6.0.0</phoenix.version>
         <postgresql.version>42.7.2</postgresql.version>
         <prometheus.version>0.16.0</prometheus.version>
@@ -224,6 +229,7 @@
         <maven.plugin.download.version>1.8.1</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.6.1</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.scala.version>4.8.0</maven.plugin.scala.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
@@ -232,7 +238,6 @@
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
-        <maven.plugin.surefire.argLine></maven.plugin.surefire.argLine>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
@@ -262,6 +267,26 @@
         <distMgmtSnapshotsId>apache.snapshots.https</distMgmtSnapshotsId>
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
+
+        <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
+            --add-opens=java.base/java.lang=ALL-UNNAMED
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+            --add-opens=java.base/java.io=ALL-UNNAMED
+            --add-opens=java.base/java.net=ALL-UNNAMED
+            --add-opens=java.base/java.nio=ALL-UNNAMED
+            --add-opens=java.base/java.util=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
+            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED
+            --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
+            --add-opens=java.base/sun.security.x509=ALL-UNNAMED
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            -Djdk.reflect.useDirectMethodHandle=false
+            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
 
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
@@ -351,6 +376,10 @@
                     <exclusion>
                         <groupId>org.xerial.snappy</groupId>
                         <artifactId>snappy-java</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -775,169 +804,9 @@
             </dependency>
 
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-all</artifactId>
-                <version>${netty.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-haproxy</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-memcache</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-mqtt</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-redis</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-smtp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-stomp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-codec-xml</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-handler-ssl-ocsp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-resolver-dns-classes-macos</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-resolver-dns-native-macos</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-classes-kqueue</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-native-kqueue</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-rxtx</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-sctp</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-transport-udt</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-buffer</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-dns</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-http2</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec-socks</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-codec</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-common</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler-proxy</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-handler</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver-dns</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-resolver</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-classes-epoll</artifactId>
-                <version>${netty.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-epoll</artifactId>
-                <version>${netty.version}</version>
-                <classifier>linux-aarch_64</classifier>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-epoll</artifactId>
-                <version>${netty.version}</version>
-                <classifier>linux-x86_64</classifier>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-transport-native-unix-common</artifactId>
-                <version>${netty.version}</version>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet-api.version}</version>
             </dependency>
 
             <dependency>
@@ -956,15 +825,6 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
                 <version>${jetty.version}</version>
-                <exclusions>
-                    <!--
-                      Use `jakarta.servlet-api` instead.
-                      -->
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>javax.servlet-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1003,6 +863,12 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.version}</version>
             </dependency>
 
             <dependency>
@@ -1076,38 +942,18 @@
 
             <dependency>
                 <groupId>io.grpc</groupId>
-                <artifactId>grpc-core</artifactId>
+                <artifactId>grpc-bom</artifactId>
                 <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-grpclb</artifactId>
-                <version>${grpc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-netty</artifactId>
-                <version>${grpc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-protobuf</artifactId>
-                <version>${grpc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-stub</artifactId>
-                <version>${grpc.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.grpc</groupId>
-                <artifactId>grpc-util</artifactId>
-                <version>${grpc.version}</version>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -1130,13 +976,13 @@
 
             <dependency>
                 <groupId>org.apache.iceberg</groupId>
-                <artifactId>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</artifactId>
+                <artifactId>${iceberg.artifact}</artifactId>
                 <version>${iceberg.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>io.delta</groupId>
-                <artifactId>${delta.artifact}_${scala.binary.version}</artifactId>
+                <artifactId>${delta.artifact}</artifactId>
                 <version>${delta.version}</version>
                 <exclusions>
                     <!--
@@ -1223,71 +1069,6 @@
                 <groupId>net.sf.supercsv</groupId>
                 <artifactId>super-csv</artifactId>
                 <version>${supercsv.version}</version>
-            </dependency>
-
-            <!-- RESTful service required -->
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-common</artifactId>
-                <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.sun.activation</groupId>
-                        <artifactId>jakarta.activation</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-server</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.containers</groupId>
-                <artifactId>jersey-container-servlet-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.inject</groupId>
-                <artifactId>jersey-hk2</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-multipart</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.test-framework</groupId>
-                <artifactId>jersey-test-framework-core</artifactId>
-                <version>${jersey.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.glassfish.jersey.test-framework.providers</groupId>
-                <artifactId>jersey-test-framework-provider-jetty</artifactId>
-                <version>${jersey.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-util</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-continuation</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1429,13 +1210,13 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>hudi-spark${hudi.spark.binary.version}-bundle_${scala.binary.version}</artifactId>
+                <artifactId>${hudi.artifact}</artifactId>
                 <version>${hudi.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.apache.paimon</groupId>
-                <artifactId>paimon-spark-${spark.binary.version}</artifactId>
+                <artifactId>${paimon.artifact}</artifactId>
                 <version>${paimon.version}</version>
             </dependency>
         </dependencies>
@@ -1594,7 +1375,6 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-Yno-adapted-args</arg>
                             <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
                             <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
                             <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
@@ -1656,7 +1436,7 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1684,7 +1464,7 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${maven.plugin.surefire.argLine}</argLine>
+                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1749,6 +1529,21 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.plugin.shade.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${maven.plugin.flatten.version}</version>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                            <phase>process-resources</phase>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
@@ -1991,6 +1786,11 @@
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+
             <!-- dump test classpath into a folder -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -2115,24 +1915,14 @@
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
-                <maven.plugin.surefire.argLine>-XX:+IgnoreUnrecognizedVMOptions
-                    --add-opens=java.base/java.lang=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
-                    --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
-                    --add-opens=java.base/java.io=ALL-UNNAMED
-                    --add-opens=java.base/java.net=ALL-UNNAMED
-                    --add-opens=java.base/java.nio=ALL-UNNAMED
-                    --add-opens=java.base/java.util=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
-                    --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.ch=ALL-UNNAMED
-                    --add-opens=java.base/sun.nio.cs=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.action=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
-                    --add-opens=java.base/sun.security.x509=ALL-UNNAMED
-                    --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
-                    -Djdk.reflect.useDirectMethodHandle=false
-                    -Dio.netty.tryReflectionSetAccessible=true</maven.plugin.surefire.argLine>
+                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>scala-2.12</id>
+            <properties>
+                <scala.binary.version>2.12</scala.binary.version>
             </properties>
         </profile>
 
@@ -2197,7 +1987,7 @@
             <properties>
                 <spark.version>3.2.4</spark.version>
                 <spark.binary.version>3.2</spark.binary.version>
-                <delta.artifact>delta-core</delta.artifact>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <delta.version>2.0.2</delta.version>
                 <!-- Iceberg 1.5.0 removed support for Spark 3.2. apache/iceberg#9295 -->
                 <iceberg.version>1.4.3</iceberg.version>
@@ -2214,10 +2004,10 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.version>2.3.0</delta.version>
-                <delta.artifact>delta-core</delta.artifact>
                 <spark.version>3.3.4</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
+                <delta.version>2.3.0</delta.version>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2229,10 +2019,10 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.artifact>delta-core</delta.artifact>
-                <delta.version>2.4.0</delta.version>
-                <spark.version>3.4.2</spark.version>
+                <spark.version>3.4.3</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
+                <delta.version>2.4.0</delta.version>
+                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2244,13 +2034,34 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <delta.artifact>delta-spark</delta.artifact>
-                <delta.version>3.1.0</delta.version>
-                <!-- Remove this when Hudi supports Spark 3.5 -->
-                <hudi.spark.binary.version>3.4</hudi.spark.binary.version>
                 <spark.version>3.5.1</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
+                <delta.version>3.2.0</delta.version>
+                <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-4.0</id>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <spark.version>4.0.0-preview1</spark.version>
+                <spark.binary.version>4.0</spark.binary.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <!-- TODO: update once Delta support Spark 4.0 -->
+                <delta.version>3.2.0</delta.version>
+                <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
+                <!-- TODO: update once Hudi support Spark 4.0 -->
+                <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
+                <!-- TODO: update once Iceberg support Spark 4.0 -->
+                <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
+                <!-- TODO: update once Paimon support Spark 4.0 -->
+                <paimon.artifact>paimon-spark-3.5</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
 
@@ -2258,7 +2069,8 @@
             <id>spark-master</id>
             <properties>
                 <spark.version>4.0.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
+                <antlr4.version>4.13.1</antlr4.version>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <repositories>
                 <repository>

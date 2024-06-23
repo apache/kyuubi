@@ -1237,7 +1237,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       val ret2 =
         extractLineage(
           s"insert into table v2_catalog.db.t1 select a," +
-            s"count(distinct(b+c))," +
+            s"count(distinct(cast(b as int)+cast(c as int)))," +
             s"count(distinct(b)) * count(distinct(c))" +
             s"from v2_catalog.db.t2 group by a")
       assert(ret2 == Lineage(

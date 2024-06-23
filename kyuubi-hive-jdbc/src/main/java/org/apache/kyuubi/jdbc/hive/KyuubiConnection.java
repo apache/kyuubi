@@ -797,8 +797,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
-          byte[] guidBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleGuid);
-          byte[] secretBytes = Base64.getMimeDecoder().decode(launchEngineOpHandleSecret);
+          byte[] guidBytes = Base64.getDecoder().decode(launchEngineOpHandleGuid);
+          byte[] secretBytes = Base64.getDecoder().decode(launchEngineOpHandleSecret);
           THandleIdentifier handleIdentifier =
               new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes));
           launchEngineOpHandle =
@@ -930,7 +930,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       AccessControlContext context = AccessController.getContext();
       return Subject.getSubject(context);
     } else if (isTgtCacheAuthMode()) {
-      String ticketCache = sessConfMap.get(AUTH_KYUUBI_CLIENT_TICKET_CACHE);
+      String ticketCache = sessConfMap.getOrDefault(AUTH_KYUUBI_CLIENT_TICKET_CACHE, "");
       return KerberosAuthenticationManager.getTgtCacheAuthentication(ticketCache).getSubject();
     } else {
       // This should never happen
