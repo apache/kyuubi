@@ -33,3 +33,6 @@ the following copyright notice:
 
 Apache Spark
 Copyright 2014 and onwards The Apache Software Foundation.
+
+PyHive
+This project includes code from PyHive originally developed by Dropbox and was donated to Apache/Kyuubi in 2024
