@@ -33,7 +33,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KubernetesInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -325,7 +325,6 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     withDiscoveryClient(conf) { client =>
       engine.getOrCreate(client)
-
       assert(client.pathExists(engineSpace))
       assert(client.getChildren(engineSpace).size == 1)
 
@@ -343,8 +342,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
 
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
-          _.state == ApplicationState.NOT_FOUND))
+        assert(engineMgr.getApplicationInfo(
+          ApplicationManagerInfo(
+            None,
+            KubernetesInfo(None, None)),
+          id)
+          .exists(_.state == ApplicationState.NOT_FOUND))
       }
     }
   }
