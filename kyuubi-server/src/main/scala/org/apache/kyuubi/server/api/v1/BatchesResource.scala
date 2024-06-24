@@ -340,6 +340,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             case e: KyuubiRestException =>
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
               val batchAppStatus = sessionManager.applicationManager.getApplicationInfo(
+                None,
                 metadata.appMgrInfo,
                 batchId,
                 Some(userName),
@@ -477,7 +478,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         batchId: String,
         user: String): KillResponse = {
       val (killed, message) = sessionManager.applicationManager
-        .killApplication(appMgrInfo, batchId, Some(user))
+        .killApplication(None, appMgrInfo, batchId, Some(user))
       info(s"Mark batch[$batchId] closed by ${fe.connectionUrl}")
       sessionManager.updateMetadata(Metadata(identifier = batchId, peerInstanceClosed = true))
       (killed, message)

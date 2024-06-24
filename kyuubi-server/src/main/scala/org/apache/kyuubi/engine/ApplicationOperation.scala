@@ -56,6 +56,7 @@ trait ApplicationOperation {
    * @note For implementations, please suppress exceptions and always return KillResponse
    */
   def killApplicationByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None): KillResponse
@@ -73,6 +74,7 @@ trait ApplicationOperation {
    * @return [[ApplicationInfo]]
    */
   def getApplicationInfoByTag(
+      sessionConf: Option[KyuubiConf],
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None,
