@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.kyuubi.util.JavaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
   public static final String DEFAULT_BEELINE_USER_CONF_LOCATION =
       System.getProperty("user.home")
           + File.separator
-          + (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1 ? "" : ".")
+          + (JavaUtils.isWindows ? "" : ".")
           + "beeline"
           + File.separator;
   public static final String ETC_HIVE_CONF_LOCATION =

@@ -33,7 +33,7 @@ import org.apache.kyuubi.server.mysql._
 import org.apache.kyuubi.server.mysql.NettyUtils._
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
-import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
 
 /**
  * A frontend service implement MySQL protocol.
@@ -64,7 +64,7 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
 
     serverAddr = conf.get(FRONTEND_MYSQL_BIND_HOST)
       .map(InetAddress.getByName)
-      .getOrElse(Utils.findLocalInetAddress)
+      .getOrElse(JavaUtils.findLocalInetAddress)
     port = conf.get(FRONTEND_MYSQL_BIND_PORT)
     val workerThreads = defaultNumThreads(conf.get(FRONTEND_MYSQL_NETTY_WORKER_THREADS))
     val bossGroup = createEventLoop(1, "mysql-netty-boss")

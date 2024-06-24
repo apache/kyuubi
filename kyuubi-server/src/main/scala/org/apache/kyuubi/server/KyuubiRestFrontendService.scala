@@ -37,7 +37,7 @@ import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{JavaUtils, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
@@ -59,13 +59,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
-      if (Utils.isWindows || Utils.isMac) {
+      if (JavaUtils.isWindows || JavaUtils.isMac) {
         warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
         "0.0.0.0"
       } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
-        Utils.findLocalInetAddress.getCanonicalHostName
+        JavaUtils.findLocalInetAddress.getCanonicalHostName
       } else {
-        Utils.findLocalInetAddress.getHostAddress
+        JavaUtils.findLocalInetAddress.getHostAddress
       }
     }
 

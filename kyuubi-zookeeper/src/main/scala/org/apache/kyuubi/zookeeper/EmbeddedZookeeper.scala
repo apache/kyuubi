@@ -25,6 +25,7 @@ import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
 import org.apache.kyuubi.shaded.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
 
 class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
@@ -48,9 +49,9 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
     host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse {
       if (conf.get(ZK_CLIENT_USE_HOSTNAME)) {
-        findLocalInetAddress.getCanonicalHostName
+        JavaUtils.findLocalInetAddress.getCanonicalHostName
       } else {
-        findLocalInetAddress.getHostAddress
+        JavaUtils.findLocalInetAddress.getHostAddress
       }
     }
 

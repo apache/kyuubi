@@ -22,7 +22,7 @@ import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
-import org.apache.kyuubi.Utils.isWindows
+import org.apache.kyuubi.util.JavaUtils
 
 private[kyuubi] case class JettyServer(
     server: Server,
@@ -105,7 +105,7 @@ object JettyServer {
       new HttpConnectionFactory(httpConf))
     connector.setHost(host)
     connector.setPort(port)
-    connector.setReuseAddress(!isWindows)
+    connector.setReuseAddress(!JavaUtils.isWindows)
     connector.setAcceptQueueSize(math.min(connector.getAcceptors, 8))
 
     new JettyServer(server, connector, collection)

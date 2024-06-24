@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.Validator.KUBERNETES_EXECUTOR_POD_NAME_PREFIX
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
@@ -96,7 +97,7 @@ class SparkClientModeOnKubernetesSuite extends SparkClientModeOnKubernetesSuiteB
  */
 class SparkClusterModeOnKubernetesSuiteBase
   extends SparkOnKubernetesSuiteBase with WithSimpleDFSService {
-  private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
+  private val localhostAddress = JavaUtils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 
