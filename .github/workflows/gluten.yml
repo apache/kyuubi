@@ -120,6 +120,8 @@ jobs:
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
           export LD_LIBRARY_PATH=$(pwd)/gluten/package/target/thirdparty-lib
+          # Enable core dumping
+          ulimit -c unlimited
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
@@ -128,5 +130,11 @@ jobs:
         with:
           name: unit-tests-log-spark-${{ matrix.spark }}-gluten
           path: |
-            integration-tests/kyuubi-gluten-it/target/unit-tests.log
+            **/target/unit-tests.log
+      - name: Upload JVM error logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: jvm-error-log-spark-${{ matrix.spark }}-gluten
+          path: |
             integration-tests/kyuubi-gluten-it/*.log
