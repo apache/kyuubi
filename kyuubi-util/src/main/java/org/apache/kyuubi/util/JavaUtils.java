@@ -50,7 +50,7 @@ public class JavaUtils {
     if (address.isLoopbackAddress()) {
       List<NetworkInterface> activeNetworkIFs =
           Collections.list(NetworkInterface.getNetworkInterfaces());
-      if (!System.getProperty("os.name").startsWith("Windows")) {
+      if (!isWindows) {
         Collections.reverse(activeNetworkIFs);
       }
 
