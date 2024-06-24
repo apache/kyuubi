@@ -100,7 +100,8 @@ class SparkTBinaryFrontendService(
     val extraAttributes = conf.get(KyuubiConf.ENGINE_SPARK_REGISTER_ATTRIBUTES).map { attr =>
       attr -> KyuubiSparkUtil.globalSparkContext.getConf.get(attr, "")
     }.toMap
-    val attributes = extraAttributes ++ Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
+    val attributes =
+      super.attributes ++ extraAttributes ++ Map(KYUUBI_ENGINE_ID -> KyuubiSparkUtil.engineId)
     // TODO Support Spark Web UI Enabled SSL
     sc.uiWebUrl match {
       case Some(url) => attributes ++ Map(KYUUBI_ENGINE_URL -> url.split("//").last)
