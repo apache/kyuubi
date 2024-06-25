@@ -331,7 +331,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       val response = webTarget.path("api/v1/admin/engine")
         .queryParam("sharelevel", "USER")
         .queryParam("type", "spark_sql")
-        .queryParam("forceKill", "true")
+        .queryParam("kill", "true")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
         .delete()

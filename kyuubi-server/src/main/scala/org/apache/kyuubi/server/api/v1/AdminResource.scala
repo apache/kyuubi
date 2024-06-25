@@ -279,7 +279,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       @QueryParam("subdomain") subdomain: String,
       @QueryParam("proxyUser") kyuubiProxyUser: String,
       @QueryParam("hive.server2.proxy.user") hs2ProxyUser: String,
-      @QueryParam("forceKill") @DefaultValue("false") forceKill: Boolean): Response = {
+      @QueryParam("kill") @DefaultValue("false") kill: Boolean): Response = {
     val activeProxyUser = Option(kyuubiProxyUser).getOrElse(hs2ProxyUser)
     val userName = if (fe.isAdministrator(fe.getRealUser())) {
       Option(activeProxyUser).getOrElse(fe.getRealUser())
@@ -307,7 +307,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
               s"${e.getMessage}")
         }
 
-        if (forceKill && engineRefId != null) {
+        if (kill && engineRefId != null) {
           val appMgrInfo =
             engineNode.attributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO)
               .map(ApplicationManagerInfo.deserialize).getOrElse(ApplicationManagerInfo(None))
