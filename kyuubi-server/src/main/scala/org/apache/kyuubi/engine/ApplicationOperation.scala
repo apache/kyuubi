@@ -161,13 +161,14 @@ object ApplicationManagerInfo extends Logging {
 
   def deserialize(encodedStr: String): ApplicationManagerInfo = {
     try {
-      info(s"The original string encoded:$encodedStr")
       val json = new String(
         Base64.getDecoder.decode(encodedStr.getBytes),
         StandardCharsets.UTF_8)
       mapper.readValue(json, classOf[ApplicationManagerInfo])
     } catch {
-      case _: Throwable => ApplicationManagerInfo(None)
+      case _: Throwable =>
+        error(s"The original string encoded:$encodedStr")
+        ApplicationManagerInfo(None)
     }
   }
 }
