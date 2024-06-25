@@ -3544,9 +3544,7 @@ object KyuubiConf {
       .version("1.8.0")
       .stringConf
       .toSequence()
-      .createWithDefault(Seq(
-        "spark.driver.memory",
-        "spark.executor.memory"))
+      .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
 
   val ENGINE_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.initialize.sql")
