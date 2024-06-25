@@ -342,11 +342,8 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
 
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(
-          ApplicationManagerInfo(
-            None,
-            KubernetesInfo(None, None)),
-          id)
+        val appMgrInfo = ApplicationManagerInfo(None, KubernetesInfo(None, None))
+        assert(engineMgr.getApplicationInfo(appMgrInfo, id)
           .exists(_.state == ApplicationState.NOT_FOUND))
       }
     }
