@@ -167,7 +167,7 @@ object ApplicationManagerInfo extends Logging {
       mapper.readValue(json, classOf[ApplicationManagerInfo])
     } catch {
       case _: Throwable =>
-        error(s"The original string encoded:$encodedStr")
+        error(s"Fail to desirable the encoded string: $encodedStr")
         ApplicationManagerInfo(None)
     }
   }
