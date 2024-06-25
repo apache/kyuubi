@@ -20,9 +20,22 @@
 package org.apache.kyuubi.util;
 
 import java.io.File;
-import java.net.URISyntaxException;
+import java.net.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JavaUtils {
+
+  private static final Logger LOG = LoggerFactory.getLogger(JavaUtils.class);
+
+  /** Whether the underlying operating system is Windows. */
+  public static final boolean isWindows = System.getProperty("os.name", "").startsWith("Windows");
+
+  /** Whether the underlying operating system is MacOS. */
+  public static final boolean isMac = System.getProperty("os.name", "").startsWith("Mac");
 
   public static String getCodeSourceLocation(Class<?> clazz) {
     try {
@@ -30,5 +43,47 @@ public class JavaUtils {
     } catch (URISyntaxException rethrow) {
       throw new RuntimeException(rethrow);
     }
+  }
+
+  public static InetAddress findLocalInetAddress() throws UnknownHostException, SocketException {
+    InetAddress address = InetAddress.getLocalHost();
+    if (address.isLoopbackAddress()) {
+      List<NetworkInterface> activeNetworkIFs =
+          Collections.list(NetworkInterface.getNetworkInterfaces());
+      if (!isWindows) {
+        Collections.reverse(activeNetworkIFs);
+      }
+
+      for (NetworkInterface ni : activeNetworkIFs) {
+        List<InetAddress> addresses =
+            Collections.list(ni.getInetAddresses()).stream()
+                .filter(addr -> !addr.isLinkLocalAddress() && !addr.isLoopbackAddress())
+                .collect(Collectors.toList());
+
+        if (!addresses.isEmpty()) {
+          InetAddress addr =
+              addresses.stream()
+                  .filter(a -> a instanceof Inet4Address)
+                  .findFirst()
+                  .orElse(addresses.get(0));
+
+          InetAddress strippedAddress = InetAddress.getByAddress(addr.getAddress());
+
+          // We've found an address that looks reasonable!
+          LOG.warn(
+              "{} was resolved to a loopback address: {}, using {}",
+              addr.getHostName(),
+              addr.getHostAddress(),
+              strippedAddress.getHostAddress());
+          return strippedAddress;
+        }
+      }
+
+      LOG.warn(
+          "{} was resolved to a loopback address: {} but we couldn't find any external IP address!",
+          address.getHostName(),
+          address.getHostAddress());
+    }
+    return address;
   }
 }
