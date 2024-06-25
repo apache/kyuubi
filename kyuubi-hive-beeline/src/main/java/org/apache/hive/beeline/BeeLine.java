@@ -1032,14 +1032,10 @@ public class BeeLine implements Closeable {
     // add/override properties found from kyuubi-defaults.conf with user-specific properties
     for (String key : mergedConnectionProperties.stringPropertyNames()) {
       if (serverConnectionProperties.containsKey(key)) {
-        // scalastyle:off line.size.limit
-        // format: off
         debug(
             "Overriding connection url property "
                 + key
                 + " from user connection configuration file");
-        // format: on
-        // scalastyle:on line.size.limit
       }
       serverConnectionProperties.setProperty(key, mergedConnectionProperties.getProperty(key));
     }
