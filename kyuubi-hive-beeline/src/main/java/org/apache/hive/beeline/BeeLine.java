@@ -89,13 +89,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hive.beeline.common.util.ShutdownHookManager;
-import org.apache.hive.beeline.hs2connection.BeelineConfFileParseException;
-import org.apache.hive.beeline.hs2connection.BeelineSiteParseException;
-import org.apache.hive.beeline.hs2connection.BeelineSiteParser;
-import org.apache.hive.beeline.hs2connection.HS2ConnectionFileParser;
-import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
-import org.apache.hive.beeline.hs2connection.HiveSiteHS2ConnectionFileParser;
-import org.apache.hive.beeline.hs2connection.UserHS2ConnectionFileParser;
+import org.apache.hive.beeline.hs2connection.*;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.JdbcUriParseException;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -954,7 +948,6 @@ public class BeeLine implements Closeable {
   /*
    * Attempts to make a connection using default HS2 connection config file if available
    * if there connection is not made return false
-   *
    */
   private boolean defaultBeelineConnect(CommandLine cl) {
     String url;
@@ -972,11 +965,9 @@ public class BeeLine implements Closeable {
   }
 
   private String getDefaultConnectionUrl(CommandLine cl) throws BeelineConfFileParseException {
-    Properties mergedConnectionProperties = new Properties();
     JdbcConnectionParams jdbcConnectionParams = null;
     BeelineSiteParser beelineSiteParser = getUserBeelineSiteParser();
     UserHS2ConnectionFileParser userHS2ConnFileParser = getUserHS2ConnFileParser();
-    Properties userConnectionProperties = new Properties();
 
     if (!userHS2ConnFileParser.configExists() && !beelineSiteParser.configExists()) {
       // nothing to do if there is no user HS2 connection configuration file
@@ -1007,11 +998,13 @@ public class BeeLine implements Closeable {
       }
     }
 
+    Properties userConnectionProperties = new Properties();
     if (userHS2ConnFileParser.configExists()) {
       // get the connection properties from user specific config file
       userConnectionProperties = userHS2ConnFileParser.getConnectionProperties();
     }
 
+    Properties mergedConnectionProperties = userConnectionProperties;
     if (jdbcConnectionParams != null) {
       String userName = cl.getOptionValue("n");
       if (userName != null) {
@@ -1024,25 +1017,30 @@ public class BeeLine implements Closeable {
       mergedConnectionProperties =
           HS2ConnectionFileUtils.mergeUserConnectionPropertiesAndBeelineSite(
               userConnectionProperties, jdbcConnectionParams);
-    } else {
-      mergedConnectionProperties = userConnectionProperties;
     }
 
-    // load the HS2 connection url properties from hive-site.xml if it is present in the classpath
+    Properties serverConnectionProperties = new Properties();
+    KyuubiConfFileParser kyuubiConfFileParser = getKyuubiConfFileParser();
     HS2ConnectionFileParser hiveSiteParser = getHiveSiteHS2ConnectionFileParser();
-    Properties hiveSiteConnectionProperties = hiveSiteParser.getConnectionProperties();
-    // add/override properties found from hive-site with user-specific properties
+    if (kyuubiConfFileParser.configExists()) {
+      // load the Kyuubi connection url properties from kyuubi-defaults.conf if present
+      serverConnectionProperties = kyuubiConfFileParser.getConnectionProperties();
+    } else if (hiveSiteParser.configExists()) {
+      // load the HS2 connection url properties from hive-site.xml if present
+      serverConnectionProperties = hiveSiteParser.getConnectionProperties();
+    }
+    // add/override properties found from kyuubi-defaults.conf with user-specific properties
     for (String key : mergedConnectionProperties.stringPropertyNames()) {
-      if (hiveSiteConnectionProperties.containsKey(key)) {
+      if (serverConnectionProperties.containsKey(key)) {
         debug(
             "Overriding connection url property "
                 + key
                 + " from user connection configuration file");
       }
-      hiveSiteConnectionProperties.setProperty(key, mergedConnectionProperties.getProperty(key));
+      serverConnectionProperties.setProperty(key, mergedConnectionProperties.getProperty(key));
     }
     // return the url based on the aggregated connection properties
-    return HS2ConnectionFileUtils.getUrl(hiveSiteConnectionProperties);
+    return HS2ConnectionFileUtils.getUrl(serverConnectionProperties);
   }
 
   /*
@@ -1067,6 +1065,11 @@ public class BeeLine implements Closeable {
   @VisibleForTesting
   public HS2ConnectionFileParser getHiveSiteHS2ConnectionFileParser() {
     return new HiveSiteHS2ConnectionFileParser();
+  }
+
+  @VisibleForTesting
+  public KyuubiConfFileParser getKyuubiConfFileParser() {
+    return new KyuubiConfFileParser();
   }
 
   int runInit() {
