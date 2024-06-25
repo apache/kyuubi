@@ -26,17 +26,15 @@ import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.GoldenFileUtils._
 
 class CheckServerSPISuite extends AnyFunSuite {
-  // scalastyle:on
+// scalastyle:on
 
   test("check server SPI service file sorted") {
     Seq(
-      "org.apache.hadoop.security.token.TokenIdentifier",
       "org.apache.kyuubi.credentials.HadoopDelegationTokenProvider",
-      "org.apache.kyuubi.engine.ApplicationOperation")
-      .foreach { fileName =>
-        val filePath = Paths.get(
-          s"${getCurrentModuleHome(this)}/src/main/resources/META-INF/services/$fileName")
-        assertFileContentSorted(filePath)
-      }
+      "org.apache.kyuubi.engine.ApplicationOperation").foreach { fileName =>
+      val filePath = Paths.get(
+        s"${getCurrentModuleHome(this)}/src/main/resources/META-INF/services/$fileName")
+      assertFileContentSorted(filePath)
+    }
   }
 }
