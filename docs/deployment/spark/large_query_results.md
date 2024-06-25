@@ -26,10 +26,10 @@ Therefore, for queries with a large result set, the major bottleneck here is the
 has a configuration `spark.driver.maxResultSize` which default value is `1g`, you should enlarge it as well as
 `spark.driver.memory` if you are going to run a query that has result set in several GiB.
 
-You may found that it must set `spark.driver.maxResultSize` to a value larger than `1g` to run a simple query
-`SELECT * FROM table_1g`, this is because the data is serialized in different formats in the HDFS/S3 and the Spark
-memory, generally the persisted data using the columnar formats like Parquet/ORC is much smaller than it occupied
-in memory.
+You may notice that even a simple query `SELECT * FROM table_1g` requires a larger value than `1g` for
+`spark.driver.maxResultSize`, this is because the data is serialized in different formats between the HDFS/S3 and
+the Spark memory, generally the persisted data using the columnar formats like Parquet/ORC is much smaller than
+it occupied in memory.
 
 So what if the result set size is dozens GiB or even hundreds GiB? The following sections may help you.
 
