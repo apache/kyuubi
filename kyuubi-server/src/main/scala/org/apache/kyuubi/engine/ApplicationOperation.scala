@@ -19,8 +19,10 @@ package org.apache.kyuubi.engine
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
