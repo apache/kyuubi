@@ -19,10 +19,9 @@ package org.apache.kyuubi.engine
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-
 import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
@@ -138,7 +137,7 @@ case class ApplicationManagerInfo(
     resourceManager: Option[String],
     kubernetesInfo: KubernetesInfo = KubernetesInfo())
 
-object ApplicationManagerInfo {
+object ApplicationManagerInfo extends Logging {
   final val DEFAULT_KUBERNETES_NAMESPACE = "default"
   val mapper: ObjectMapper = new ObjectMapper()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
@@ -160,6 +159,7 @@ object ApplicationManagerInfo {
 
   def deserialize(encodedStr: String): ApplicationManagerInfo = {
     try {
+      info(s"The original string encoded:$encodedStr")
       val json = new String(
         Base64.getDecoder.decode(encodedStr.getBytes),
         StandardCharsets.UTF_8)
