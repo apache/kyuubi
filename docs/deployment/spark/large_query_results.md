@@ -17,7 +17,7 @@
 
 # Solution for Large Query Results
 
-By default, when you submits a query to Spark SQL engine, the Spark driver calls `collect` to trigger calculation
+By default, when you submit a query to Spark SQL engine, the Spark driver calls `collect` to trigger calculation
 the result RDD and then collect the entire query results of all partitions into memory, the query is marked as
 completed after all partitions data arrived, then the client pulls the result set from the Spark driver through
 the Kyuubi Server in small batches.
