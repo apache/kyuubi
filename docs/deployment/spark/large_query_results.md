@@ -17,8 +17,8 @@
 
 # Solution for Large Query Results
 
-By default, when you submit a query to Spark SQL engine, the Spark driver calls `collect` to trigger calculation
-the result RDD and then collect the entire query results of all partitions into memory, the query is marked as
+By default, when you submit a query to Spark SQL engine, the Spark driver triggers the calculation of the
+result RDD and then collect the entire query results from all partitions into memory, the query is marked as
 completed after all partitions data arrived, then the client pulls the result set from the Spark driver through
 the Kyuubi Server in small batches.
 
@@ -44,7 +44,7 @@ of elements that can be operated on in parallel. The key idea here is to seriali
 The incremental collect changes the gather method from `collect` to `toLocalIterator`. Unlike `collect` to trigger a
 single job to calculate the whole result RDD in parallel and collect the entire result set into memory, `toLocalIterator`
 sequentially submits jobs to calculate and retrieve partitions of RDD. The query is marked as completed once the first
-paritioned of result RDD is retrieved, then client pulls the result set from the Spark driver through the Kyuubi Server
+partition of the result RDD is retrieved, then client pulls the result set from the Spark driver through the Kyuubi Server
 in small batches. After the partition is consumed out, the Spark driver release the memory, then start to calculate
 the next partition, and so on. It significantly reduces the consumption of the Spark driver memory from the whole
 result RDD to the maximum partition.
