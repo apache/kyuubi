@@ -309,7 +309,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
         if (kill && engineRefId != null) {
           val appMgrInfo =
-            engineNode.attributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO)
+            engineNode.attributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY)
               .map(ApplicationManagerInfo.deserialize).getOrElse(ApplicationManagerInfo(None))
           val killResponse = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
             .applicationManager.killApplication(appMgrInfo, engineRefId)

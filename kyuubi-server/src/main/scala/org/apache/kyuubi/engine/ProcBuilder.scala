@@ -171,7 +171,7 @@ trait ProcBuilder {
 
   // Set engine application manger info conf
   conf.set(
-    KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO,
+    KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY,
     ApplicationManagerInfo.serialize(appMgrInfo()))
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
