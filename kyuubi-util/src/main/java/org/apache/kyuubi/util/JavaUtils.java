@@ -86,4 +86,12 @@ public class JavaUtils {
     }
     return address;
   }
+
+  public static boolean isAnyInetAddress(String ipAddress) {
+    if (ipAddress.equals("0.0.0.0")) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 }
