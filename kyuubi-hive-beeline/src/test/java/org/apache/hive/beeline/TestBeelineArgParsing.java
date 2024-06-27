@@ -210,7 +210,7 @@ public class TestBeelineArgParsing {
     Assert.assertTrue(bl.queries.contains("select2"));
   }
 
-  /** Test setting hive conf and hive vars with --hiveconf and --hivevar */
+  /** Test setting hive conf and hive vars with --hiveconf, --hivevar and --conf */
   @Test
   public void testHiveConfAndVars() throws Exception {
     TestBeeline bl = new TestBeeline();
@@ -231,7 +231,11 @@ public class TestBeelineArgParsing {
           "--hivevar",
           "c=cvalue",
           "--hivevar",
-          "d=dvalue"
+          "d=dvalue",
+          "--conf",
+          "e=evalue",
+          "--conf",
+          "f=fvalue"
         };
     Assert.assertEquals(0, bl.initArgs(args));
     Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
@@ -239,6 +243,8 @@ public class TestBeelineArgParsing {
     Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("b").equals("bvalue"));
     Assert.assertTrue(bl.getOpts().getHiveVariables().get("c").equals("cvalue"));
     Assert.assertTrue(bl.getOpts().getHiveVariables().get("d").equals("dvalue"));
+    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("e").equals("evalue"));
+    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("f").equals("fvalue"));
   }
 
   @Test
