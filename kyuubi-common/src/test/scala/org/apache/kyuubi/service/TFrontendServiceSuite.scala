@@ -18,11 +18,8 @@
 package org.apache.kyuubi.service
 
 import java.time.Duration
-
 import scala.collection.JavaConverters._
-
 import org.scalatest.time._
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -30,6 +27,7 @@ import org.apache.kyuubi.operation.{OperationHandle, TClientTestUtils}
 import org.apache.kyuubi.service.TFrontendService.FeServiceServerContext
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.util.JavaUtils
 
 class TFrontendServiceSuite extends KyuubiFunSuite {
 
@@ -113,6 +111,35 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
     service2.initialize(conf2)
     // use ip
     assert(service2.connectionUrl.split("\\.")(0).toInt > 0)
+
+    val service3 = newService
+    val conf3 = KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "0.0.0.0")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME, true)
+    service3.initialize(conf3)
+    // use host
+    val hostName: String = JavaUtils.findLocalInetAddress.getCanonicalHostName
+    assert(service3.connectionUrl.startsWith(hostName))
+
+    val service4 = newService
+    val conf4 = KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "0.0.0.0")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+    service4.initialize(conf4)
+    // use ip
+    val ip: String = JavaUtils.findLocalInetAddress.getHostAddress
+    assert(service4.connectionUrl.startsWith(ip))
+
+    val service5 = newService
+    val conf5 = KyuubiConf()
+      .set(FRONTEND_BIND_HOST.key, "0.0.0.0")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME, true)
+    service5.initialize(conf5)
+    // use host
+    assert(service5.connectionUrl.startsWith(hostName))
   }
 
   test("advertised host") {

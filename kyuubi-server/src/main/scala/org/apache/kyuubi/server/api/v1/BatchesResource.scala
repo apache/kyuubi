@@ -23,17 +23,14 @@ import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
 import javax.ws.rs._
 import javax.ws.rs.core.MediaType
-
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
-
 import io.swagger.v3.oas.annotations.media.{Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
 import org.glassfish.jersey.media.multipart.{FormDataContentDisposition, FormDataParam}
-
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
@@ -48,7 +45,7 @@ import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
-import org.apache.kyuubi.util.JdbcUtils
+import org.apache.kyuubi.util.{JavaUtils, JdbcUtils}
 
 @Tag(name = "Batch")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -248,7 +245,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             KYUUBI_BATCH_ID_KEY -> batchId,
             KYUUBI_BATCH_RESOURCE_UPLOADED_KEY -> isResourceFromUpload.toString,
             KYUUBI_CLIENT_IP_KEY -> ipAddress,
-            KYUUBI_SERVER_IP_KEY -> fe.host,
+            KYUUBI_SERVER_IP_KEY -> {
+              if (JavaUtils.isAnyInetAddress(fe.host)) {
+                JavaUtils.findLocalInetAddress.getHostAddress
+              } else {
+                fe.host
+              }
+            },
             KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
             KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).asJava)
 

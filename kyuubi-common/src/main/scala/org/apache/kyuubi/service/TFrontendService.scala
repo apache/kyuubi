@@ -114,6 +114,12 @@ abstract class TFrontendService(name: String)
     checkInitialized()
     val host = (conf.get(FRONTEND_ADVERTISED_HOST), serverHost) match {
       case (Some(advertisedHost), _) => advertisedHost
+      case (None, Some(h)) if JavaUtils.isAnyInetAddress(h) =>
+        if (conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+          JavaUtils.findLocalInetAddress.getCanonicalHostName
+        } else {
+          JavaUtils.findLocalInetAddress.getHostAddress
+        }
       case (None, Some(h)) => h
       case (None, None) if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
         serverAddr.getCanonicalHostName
@@ -169,7 +175,14 @@ abstract class TFrontendService(name: String)
     val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
     val configuration =
-      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
+      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress,
+        KYUUBI_SERVER_IP_KEY -> {
+          if (JavaUtils.isAnyInetAddress(serverHost.get)) {
+            JavaUtils.findLocalInetAddress.getHostAddress
+          } else {
+            serverAddr.getHostAddress
+          }
+        }) ++
         Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
         Map(
           KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,

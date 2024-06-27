@@ -19,16 +19,13 @@ package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
-
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
-
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
@@ -37,6 +34,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
+import org.apache.kyuubi.util.JavaUtils
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -142,7 +140,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       ipAddress,
       (request.getConfigs.asScala ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
-        KYUUBI_SERVER_IP_KEY -> fe.host,
+        KYUUBI_SERVER_IP_KEY -> {
+          if (JavaUtils.isAnyInetAddress(fe.host)) {
+            JavaUtils.findLocalInetAddress.getHostAddress
+          } else {
+            fe.host
+          }
+        },
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
     new dto.SessionHandle(handle.identifier, fe.connectionUrl)

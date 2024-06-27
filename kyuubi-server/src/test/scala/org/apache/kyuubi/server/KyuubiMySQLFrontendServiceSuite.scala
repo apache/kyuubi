@@ -22,6 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_MYSQL_BIND_HOST, FRONTEND_MYSQL_BIND_PORT}
 import org.apache.kyuubi.service.NoopMySQLFrontendServer
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.util.JavaUtils
 
 class KyuubiMySQLFrontendServiceSuite extends KyuubiFunSuite {
 
@@ -72,5 +73,20 @@ class KyuubiMySQLFrontendServiceSuite extends KyuubiFunSuite {
 
     server2.initialize(conf2)
     assert(server2.frontendServices.head.connectionUrl.startsWith("localhost"))
+
+    val server3 = new NoopMySQLFrontendServer
+    val conf3 = KyuubiConf()
+      .set(FRONTEND_MYSQL_BIND_HOST.key, "0.0.0.0")
+      .set(FRONTEND_MYSQL_BIND_PORT, 0)
+    server3.initialize(conf3)
+
+    val hostName: String = JavaUtils.findLocalInetAddress.getCanonicalHostName
+    assert(server3.frontendServices.head.connectionUrl.startsWith(hostName))
+
+    val server4 = new NoopMySQLFrontendServer
+    val conf4 = KyuubiConf()
+      .set(FRONTEND_MYSQL_BIND_PORT, 0)
+    server4.initialize(conf4)
+    assert(server4.frontendServices.head.connectionUrl.startsWith(hostName))
   }
 }
