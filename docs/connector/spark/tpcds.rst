@@ -32,8 +32,8 @@ Goto `Try Kyuubi`_ to explore TPC-DS data instantly!
 TPC-DS Integration
 ------------------
 
-To enable the integration of kyuubi spark sql engine and TPC-DS through
-Apache Spark Datasource V2 and Catalog APIs, you need to:
+To enable the integration of Kyuubi Spark SQL engine and TPC-DS through
+Spark DataSource V2 API, you need to:
 
 - Referencing the TPC-DS connector :ref:`dependencies<spark-tpcds-deps>`
 - Setting the spark catalog :ref:`configurations<spark-tpcds-conf>`
@@ -43,7 +43,7 @@ Apache Spark Datasource V2 and Catalog APIs, you need to:
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with TPC-DS supported consists of
+The **classpath** of Kyuubi Spark SQL engine with TPC-DS supported consists of
 
 1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution

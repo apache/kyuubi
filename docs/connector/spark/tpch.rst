@@ -32,8 +32,8 @@ Goto `Try Kyuubi`_ to explore TPC-H data instantly!
 TPC-H Integration
 ------------------
 
-To enable the integration of kyuubi spark sql engine and TPC-H through
-Apache Spark Datasource V2 and Catalog APIs, you need to:
+To enable the integration of Kyuubi Spark SQL engine and TPC-H through
+Spark DataSource V2 API, you need to:
 
 - Referencing the TPC-H connector :ref:`dependencies<spark-tpch-deps>`
 - Setting the spark catalog :ref:`configurations<spark-tpch-conf>`
@@ -43,7 +43,7 @@ Apache Spark Datasource V2 and Catalog APIs, you need to:
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with TPC-H supported consists of
+The **classpath** of Kyuubi Spark SQL engine with TPC-H supported consists of
 
 1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution

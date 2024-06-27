@@ -32,18 +32,18 @@ spark to manipulate Iceberg.
 Iceberg Integration
 -------------------
 
-To enable the integration of kyuubi spark sql engine and Iceberg through
-Apache Spark Datasource V2 and Catalog APIs, you need to:
+To enable the integration of Kyuubi Spark SQL engine and Iceberg through
+Spark DataSource V2 API, you need to:
 
 - Referencing the Iceberg :ref:`dependencies<spark-iceberg-deps>`
-- Setting the spark extension and catalog :ref:`configurations<spark-iceberg-conf>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-iceberg-conf>`
 
 .. _spark-iceberg-deps:
 
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with Iceberg supported consists of
+The **classpath** of Kyuubi Spark SQL engine with Iceberg supported consists of
 
 1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
 2. a copy of spark distribution
