@@ -65,13 +65,21 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
+  // deprecated since 1.10
+  @Deprecated
   public String deleteEngine(
       String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+    return this.deleteEngine(engineType, shareLevel, subdomain, hs2ProxyUser, false);
+  }
+
+  public String deleteEngine(
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser, boolean kill) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("kill", kill);
     return this.getClient().delete(API_BASE_PATH + "/engine", params, client.getAuthHeader());
   }
 
