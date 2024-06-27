@@ -64,9 +64,9 @@ spec:
           {{- end }}
           env:
             - name: KYUUBI_CONF_DIR
-              value: {{ .Values.kyuubiConfDir }}
+              value: {{ .Values.kyuubiConf.dir }}
             - name: SPARK_CONF_DIR
-              value: {{ .Values.sparkConfDir }}
+              value: {{ .Values.sparkConf.dir }}
             {{- with .Values.env }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -109,9 +109,9 @@ spec:
           {{- end }}
           volumeMounts:
             - name: conf
-              mountPath: {{ .Values.kyuubiConfDir }}
+              mountPath: {{ .Values.kyuubiConf.dir }}
             - name: conf-spark
-              mountPath: {{ .Values.sparkConfDir }}
+              mountPath: {{ .Values.sparkConf.dir }}
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -120,11 +120,21 @@ spec:
         {{- end }}
       volumes:
         - name: conf
-          configMap:
-            name: {{ .Release.Name }}
+          projected:
+            sources:
+              - configMap:
+                  name: {{ .Release.Name }}
+              {{- with .Values.kyuubiConf.filesFrom }}
+                {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- end }}
         - name: conf-spark
-          configMap:
-            name: {{ .Release.Name }}-spark
+          projected:
+            sources:
+              - configMap:
+                  name: {{ .Release.Name }}-spark
+              {{- with .Values.sparkConf.filesFrom }}
+                {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- end }}
         {{- with .Values.volumes }}
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}

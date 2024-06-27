@@ -145,53 +145,49 @@ server:
       #    clientIP:
       #      timeoutSeconds: 10800
 
-# $KYUUBI_CONF_DIR directory
-kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configuration files
 kyuubiConf:
-  # The value (templated string) is used for kyuubi-env.sh file
-  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
-  kyuubiEnv: ~
-  #  kyuubiEnv: |
-  #    #!/usr/bin/env bash
-  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #    export SPARK_HOME=/opt/spark
-  #    export FLINK_HOME=/opt/flink
-  #    export HIVE_HOME=/opt/hive
+  # $KYUUBI_CONF_DIR directory
+  dir: /opt/kyuubi/conf
+  # Configuration files from the specified keys (file name) and values (file content)
+  files:
+    'kyuubi-defaults.conf': |
+      ## Helm chart dependent configuration
+      kyuubi.kubernetes.namespace={{ .Release.Namespace }}
+      kyuubi.frontend.connection.url.use.hostname=false
+      kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
+      kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
+      kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
+      kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
+      kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
+      # Metrics
+      kyuubi.metrics.enabled={{ .Values.metrics.enabled }}
+      kyuubi.metrics.reporters={{ .Values.metrics.reporters }}
+      kyuubi.metrics.prometheus.port={{ .Values.metrics.prometheusPort }}
 
-  # The value (templated string) is used for kyuubi-defaults.conf file
-  # See https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations for more details
-  kyuubiDefaults: ~
-  #  kyuubiDefaults: |
-  #    kyuubi.authentication=NONE
-  #    kyuubi.frontend.bind.host=10.0.0.1
-  #    kyuubi.engine.type=SPARK_SQL
-  #    kyuubi.engine.share.level=USER
-  #    kyuubi.session.engine.initialize.timeout=PT3M
-  #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
-  #    kyuubi.ha.namespace=kyuubi
+  # Configuration files from the list of existing ConfigMaps and Secrets
+  filesFrom: []
+  #filesFrom:
+  #- configMap:
+  #    name: kyuubi-configs
+  #- secret:
+  #    name: kyuubi-secrets
+  #- secret:
+  #    name: ssl-secrets
+  #    items:
+  #      - key: key-store
+  #        path: certs/keystore.jks
+  #      - key: trust-store
+  #        path: certs/truststore.jks
 
-  # The value (templated string) is used for log4j2.xml file
-  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
-  log4j2: ~
-
-# $SPARK_CONF_DIR directory
-sparkConfDir: /opt/spark/conf
-# Spark configuration files
+# Spark configuration, see https://github.com/apache/spark/tree/master/conf and Spark documentation for more details
 sparkConf:
-  # The value (templated string) is used for spark-env.sh file
-  # See example at https://github.com/apache/spark/blob/master/conf/spark-env.sh.template and Spark documentation for more details
-  sparkEnv: ~
-  #  sparkEnv: |
-  #    #!/usr/bin/env bash
-  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #    export SPARK_LOG_DIR=/opt/spark/logs
-  #    export SPARK_LOG_MAX_FILES=5
-
-  # The value (templated string) is used for spark-defaults.conf file
-  # See example at https://github.com/apache/spark/blob/master/conf/spark-defaults.conf.template and Spark documentation for more details
-  sparkDefaults: ~
-  #  sparkDefaults: |
+  # $SPARK_CONF_DIR directory
+  dir: /opt/spark/conf
+  # Configuration files from the specified keys (file name) and values (file content)
+  files: ~
+  #files:
+  #  'spark-defaults.conf': |
   #    spark.submit.deployMode=cluster
   #    spark.kubernetes.container.image=apache/spark:3.5.0
   #    spark.kubernetes.authenticate.driver.serviceAccountName=spark
@@ -207,13 +203,20 @@ sparkConf:
   #    spark.hadoop.fs.s3a.path.style.access=true
   #    spark.hadoop.fs.s3a.fast.upload=true
 
-  # The value (templated string) is used for log4j2.properties file
-  # See example at https://github.com/apache/spark/blob/master/conf/log4j2.properties.template and Spark documentation for more details
-  log4j2: ~
-
-  # The value (templated string) is used for metrics.properties file
-  # See example at https://github.com/apache/spark/blob/master/conf/metrics.properties.template and Spark documentation for more details
-  metrics: ~
+  # Configuration files from the list of existing ConfigMaps and Secrets
+  filesFrom: []
+  #filesFrom:
+  #- configMap:
+  #    name: spark-configs
+  #- secret:
+  #    name: spark-secrets
+  #- secret:
+  #    name: ssl-secrets
+  #    items:
+  #      - key: key-store
+  #        path: certs/keystore.jks
+  #      - key: trust-store
+  #        path: certs/truststore.jks
 
 # Command to launch Kyuubi server (templated)
 command: ~
