@@ -38,7 +38,7 @@ Options:
   -u <database url>               The JDBC URL to connect to.
   -c <named url>                  The named JDBC URL to connect to,
                                   which should be present in beeline-site.xml
-                                  as the value of beeline.kyuubi.jdbc.url.<namedUrl>.
+                                  as the value of beeline.hs2.jdbc.url.<namedUrl>.
 
   -r                              Reconnect to last saved connect url (in conjunction with !save).
   -n <username>                   The username to connect as.
@@ -75,7 +75,7 @@ Options:
                                   The available options ars [table|vertical|csv2|tsv2|dsv|csv|tsv|json|jsonfile].
                                   Note that csv, and tsv are deprecated, use csv2, tsv2 instead.
 
-  --incremental=[true|false]      Defaults to false. When set to false, the entire result set
+  --incremental=[true|false]      Defaults to true. When set to false, the entire result set
                                   is fetched and buffered before being displayed, yielding optimal
                                   display column sizing. When set to true, result rows are displayed
                                   immediately as they are fetched, yielding lower latency and
