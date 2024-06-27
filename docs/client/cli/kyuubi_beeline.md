@@ -75,7 +75,7 @@ Options:
                                   The available options ars [table|vertical|csv2|tsv2|dsv|csv|tsv|json|jsonfile].
                                   Note that csv, and tsv are deprecated, use csv2, tsv2 instead.
 
-  --incremental=[true|false]      Defaults to false. When set to false, the entire result set
+  --incremental=[true|false]      Defaults to true. When set to false, the entire result set
                                   is fetched and buffered before being displayed, yielding optimal
                                   display column sizing. When set to true, result rows are displayed
                                   immediately as they are fetched, yielding lower latency and
