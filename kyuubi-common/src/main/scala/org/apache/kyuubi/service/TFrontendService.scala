@@ -175,7 +175,8 @@ abstract class TFrontendService(name: String)
     val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
     val configuration =
-      Map(KYUUBI_CLIENT_IP_KEY -> ipAddress,
+      Map(
+        KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> {
           if (JavaUtils.isAnyInetAddress(serverHost.get)) {
             JavaUtils.findLocalInetAddress.getHostAddress

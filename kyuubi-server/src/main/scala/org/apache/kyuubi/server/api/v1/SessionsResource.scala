@@ -19,13 +19,16 @@ package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 import scala.util.control.NonFatal
+
 import io.swagger.v3.oas.annotations.media.{ArraySchema, Content, Schema}
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._

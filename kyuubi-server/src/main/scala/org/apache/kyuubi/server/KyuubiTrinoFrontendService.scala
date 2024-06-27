@@ -65,16 +65,16 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
     conf.get(FRONTEND_ADVERTISED_HOST) match {
       case Some(advertisedHost) => s"$advertisedHost:$port"
       case None => if (JavaUtils.isAnyInetAddress(host)) {
-        var serverHost: String = ""
-        if (conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
-          serverHost = JavaUtils.findLocalInetAddress.getCanonicalHostName
+          var serverHost: String = ""
+          if (conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
+            serverHost = JavaUtils.findLocalInetAddress.getCanonicalHostName
+          } else {
+            serverHost = JavaUtils.findLocalInetAddress.getHostAddress
+          }
+          s"$serverHost:$port"
         } else {
-          serverHost = JavaUtils.findLocalInetAddress.getHostAddress
+          server.getServerUri
         }
-        s"$serverHost:$port"
-      } else {
-        server.getServerUri
-      }
     }
   }
 

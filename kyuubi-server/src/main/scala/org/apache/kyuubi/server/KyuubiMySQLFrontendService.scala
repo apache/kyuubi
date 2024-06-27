@@ -98,11 +98,11 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
     conf.get(FRONTEND_ADVERTISED_HOST) match {
       case Some(advertisedHost) => s"$advertisedHost:$port"
       case None => if (JavaUtils.isAnyInetAddress(bindHost)) {
-        val serverHost: String = JavaUtils.findLocalInetAddress.getCanonicalHostName
-        s"$serverHost:$port"
-      } else {
-        s"${serverAddr.getCanonicalHostName}:$port"
-      }
+          val serverHost: String = JavaUtils.findLocalInetAddress.getCanonicalHostName
+          s"$serverHost:$port"
+        } else {
+          s"${serverAddr.getCanonicalHostName}:$port"
+        }
     }
   }
 

@@ -18,8 +18,11 @@
 package org.apache.kyuubi.service
 
 import java.time.Duration
+
 import scala.collection.JavaConverters._
+
 import org.scalatest.time._
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
