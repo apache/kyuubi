@@ -159,9 +159,7 @@ public class BeeLine implements Closeable {
 
   private static final String HIVE_VAR_PREFIX = "--hivevar";
   private static final String HIVE_CONF_PREFIX = "--hiveconf";
-
   private static final String CONF_PREFIX = "--conf";
-
   private static final String PROP_FILE_PREFIX = "--property-file";
   static final String PASSWD_MASK = "[passwd stripped]";
 
