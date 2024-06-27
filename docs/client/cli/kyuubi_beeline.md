@@ -49,6 +49,7 @@ Options:
   -f <exec file>                  Script file that should be executed.
   -w, --password-file <file>      The password file to read password from.
   --hiveconf property=value       Use value for given property.
+  --conf property=value           Alias of --hiveconf.
   --hivevar name=value            Hive variable name and value.
                                   This is Hive specific settings in which variables
                                   can be set at session level and referenced in Hive
