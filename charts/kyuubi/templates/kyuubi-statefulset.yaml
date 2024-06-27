@@ -39,6 +39,7 @@ spec:
         {{- include "kyuubi.selectorLabels" . | nindent 8 }}
       annotations:
         checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
+        checksum/conf-hadoop: {{ include (print $.Template.BasePath "/kyuubi-configmap-hadoop.yaml") . | sha256sum }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
@@ -65,6 +66,8 @@ spec:
           env:
             - name: KYUUBI_CONF_DIR
               value: {{ .Values.kyuubiConfDir }}
+            - name: HADOOP_CONF_DIR
+              value: {{ .Values.hadoopConfDir }}
             - name: SPARK_CONF_DIR
               value: {{ .Values.sparkConfDir }}
             {{- with .Values.env }}
@@ -110,6 +113,8 @@ spec:
           volumeMounts:
             - name: conf
               mountPath: {{ .Values.kyuubiConfDir }}
+            - name: conf-hadoop
+              mountPath: {{ .Values.hadoopConfDir }}
             - name: conf-spark
               mountPath: {{ .Values.sparkConfDir }}
             {{- with .Values.volumeMounts }}
@@ -122,6 +127,9 @@ spec:
         - name: conf
           configMap:
             name: {{ .Release.Name }}
+        - name: conf-hadoop
+          configMap:
+            name: {{ .Release.Name }}-hadoop
         - name: conf-spark
           configMap:
             name: {{ .Release.Name }}-spark
