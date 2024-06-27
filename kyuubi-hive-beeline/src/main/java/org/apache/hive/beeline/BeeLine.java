@@ -380,12 +380,12 @@ public class BeeLine implements Closeable {
 
     // conf option --conf
     options.addOption(
-            OptionBuilder.withValueSeparator()
-                    .hasArgs(2)
-                    .withArgName("property=value")
-                    .withLongOpt("conf")
-                    .withDescription("Alias of --hiveconf")
-                    .create());
+        OptionBuilder.withValueSeparator()
+            .hasArgs(2)
+            .withArgName("property=value")
+            .withLongOpt("conf")
+            .withDescription("Alias of --hiveconf")
+            .create());
 
     // --property-file <file>
     options.addOption(
