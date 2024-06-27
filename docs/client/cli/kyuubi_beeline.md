@@ -38,7 +38,7 @@ Options:
   -u <database url>               The JDBC URL to connect to.
   -c <named url>                  The named JDBC URL to connect to,
                                   which should be present in beeline-site.xml
-                                  as the value of beeline.kyuubi.jdbc.url.<namedUrl>.
+                                  as the value of beeline.hs2.jdbc.url.<namedUrl>.
 
   -r                              Reconnect to last saved connect url (in conjunction with !save).
   -n <username>                   The username to connect as.
