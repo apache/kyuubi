@@ -123,7 +123,7 @@ Currently, KSCH has not implemented the Parquet/ORC Hive tables read/write optim
 uses Hive SerDe to access Hive tables, so there might be a performance gap compared to the Spark built-in Hive
 datasource, especially due to lack of support for vectorized reading. And you may hit bugs caused by Hive SerDe,
 e.g. ``ParquetHiveSerDe`` can not read Parquet files that decimals are written in int-based format produced by
-Spark Parquet datasource writer with ``spark.sql.parquet.writeLegacyFormat`` being set to ``false``.
+Spark Parquet datasource writer with ``spark.sql.parquet.writeLegacyFormat=false``.
 
 .. _Apache Spark: https://spark.apache.org/
 .. _Maven Central: https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-connector-hive
