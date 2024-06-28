@@ -43,7 +43,8 @@ class KyuubiBatchSession(
     className: String,
     batchArgs: Seq[String],
     metadata: Option[Metadata] = None,
-    fromRecovery: Boolean)
+    fromRecovery: Boolean,
+    subResources: Map[String, String])
   extends KyuubiSession(
     TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1,
     user,
@@ -83,7 +84,7 @@ class KyuubiBatchSession(
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedConf.asJava).asScala).reduce(_ ++ _)
-    if (confOverlay != null) {
+    val conf1 = if (confOverlay != null) {
       val overlayConf = new KyuubiConf(false)
       confOverlay.foreach { case (k, v) => overlayConf.set(k, v) }
       normalizedConf ++ overlayConf.getBatchConf(batchType)
@@ -91,6 +92,8 @@ class KyuubiBatchSession(
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedConf
     }
+    val conf2 = conf1 ++ subResources
+    conf2
   }
 
   override lazy val name: Option[String] =
@@ -109,7 +112,8 @@ class KyuubiBatchSession(
       className,
       optimizedConf,
       batchArgs,
-      metadata)
+      metadata,
+      subResources)
 
   def startupProcessAlive: Boolean = batchJobSubmissionOp.startupProcessAlive
 

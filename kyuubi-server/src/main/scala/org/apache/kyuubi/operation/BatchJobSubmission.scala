@@ -57,7 +57,8 @@ class BatchJobSubmission(
     className: String,
     batchConf: Map[String, String],
     batchArgs: Seq[String],
-    metadata: Option[Metadata])
+    metadata: Option[Metadata],
+    subResources: Map[String, String])
   extends KyuubiApplicationOperation(session) {
   import BatchJobSubmission._
 
@@ -399,6 +400,15 @@ class BatchJobSubmission(
         Files.deleteIfExists(Paths.get(resource))
       } catch {
         case e: Throwable => error(s"Error deleting the uploaded resource: $resource", e)
+      }
+
+      // cleanup sub-resources
+      subResources.values.foreach { subResource =>
+        try {
+          Files.deleteIfExists(Paths.get(subResource))
+        } catch {
+          case e: Throwable => error(s"Error deleting the uploaded sub-resource: $resource", e)
+        }
       }
     }
   }

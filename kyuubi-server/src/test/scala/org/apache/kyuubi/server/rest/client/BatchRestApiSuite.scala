@@ -16,9 +16,10 @@
  */
 
 package org.apache.kyuubi.server.rest.client
-
 import java.nio.file.Paths
 import java.util.Base64
+
+import scala.collection.JavaConverters._
 
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -96,6 +97,38 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
+    basicKyuubiRestClient.close()
+  }
+
+  test("basic batch rest client with uploading resource and subresources") {
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(ldapUser)
+        .password(ldapUserPasswd)
+        .socketTimeout(5 * 60 * 1000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    requestObj.setBatchType("PYSPARK")
+    requestObj.setName("pyspark-test")
+    requestObj.setSubresourcesMap(Map("spark.submit.pyFiles" -> "dd.zip").asJava)
+    val exampleJarFile =
+      Paths.get("/Users/bw/dev/kyuubi/kyuubi-server/src/test/resources/python/app.py").toFile
+    val subResources = List("/Users/bw/dev/kyuubi/kyuubi-server/src/test/resources/dd.zip").asJava
+    val batch: Batch =
+      batchRestApi.createBatchWithSubResources(requestObj, exampleJarFile, subResources)
+
+    assert(batch.getKyuubiInstance === fe.connectionUrl)
+    assert(batch.getBatchType === "PYSPARK")
+    val batchId = batch.getId
+    assert(batchId !== null)
+
+    eventually(timeout(1.minutes), interval(1.seconds)) {
+      val batch = batchRestApi.getBatchById(batchId)
+      assert(batch.getState == "FINISHED")
+    }
     basicKyuubiRestClient.close()
   }
 
