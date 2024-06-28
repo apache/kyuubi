@@ -36,7 +36,7 @@ To enable the integration of Kyuubi Spark SQL engine and TPC-H through
 Spark DataSource V2 API, you need to:
 
 - Referencing the TPC-H connector :ref:`dependencies<spark-tpch-deps>`
-- Setting the spark catalog :ref:`configurations<spark-tpch-conf>`
+- Setting the Spark catalog :ref:`configurations<spark-tpch-conf>`
 
 .. _spark-tpch-deps:
 
