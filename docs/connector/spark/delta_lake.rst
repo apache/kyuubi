@@ -37,7 +37,7 @@ To enable the integration of Kyuubi Spark SQL engine and Delta Lake through
 Spark DataSource V2 API, you need to:
 
 - Referencing the Delta Lake :ref:`dependencies<spark-delta-lake-deps>`
-- Setting the spark extension and catalog :ref:`configurations<spark-delta-lake-conf>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-delta-lake-conf>`
 
 .. _spark-delta-lake-deps:
 

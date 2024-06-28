@@ -39,7 +39,7 @@ To enable the integration of Kyuubi Spark SQL engine and TiDB through
 Spark DataSource V2 API, you need to:
 
 - Referencing the TiSpark :ref:`dependencies<spark-tidb-deps>`
-- Setting the spark extension and catalog :ref:`configurations<spark-tidb-conf>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-tidb-conf>`
 
 .. _spark-tidb-deps:
 
