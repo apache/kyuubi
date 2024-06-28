@@ -36,14 +36,18 @@ Dependencies
 
 The **classpath** of Kyuubi Spark SQL engine with Hive connector supported consists of
 
-1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
-2. a copy of spark distribution
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
+2. a copy of Spark distribution
 3. kyuubi-spark-connector-hive_2.12-\ |release|\ , which can be found in the `Maven Central`_
 
 In order to make the Hive connector packages visible for the runtime classpath of engines, we can use one of these methods:
 
 1. Put the Kyuubi Hive connector packages into ``$SPARK_HOME/jars`` directly
 2. Set ``spark.jars=/path/to/kyuubi-hive-connector``
+
+.. note::
+   Starting from v1.9.2 and v1.10.0, KSHC jars available in the `Maven Central`_ guarantee binary compatibility across
+   Spark versions, namely, Spark 3.3 onwards.
 
 .. _kyuubi-hive-conf:
 

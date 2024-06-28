@@ -45,8 +45,8 @@ Dependencies
 
 The **classpath** of Kyuubi Spark SQL engine with Iceberg supported consists of
 
-1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
-2. a copy of spark distribution
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
+2. a copy of Spark distribution
 3. iceberg-spark-runtime-<spark.version>_<scala.version>-<iceberg.version>.jar (example: iceberg-spark-runtime-3.2_2.12-0.14.0.jar), which can be found in the `Maven Central`_
 
 In order to make the Iceberg packages visible for the runtime classpath of engines, we can use one of these methods:

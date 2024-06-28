@@ -43,7 +43,7 @@ Dependencies
 
 The **classpath** of kyuubi flink sql engine with Iceberg supported consists of
 
-1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of flink distribution
 3. iceberg-flink-runtime-<flink.version>-<iceberg.version>.jar (example: iceberg-flink-runtime-1.14-0.14.0.jar), which can be found in the `Maven Central`_
 
