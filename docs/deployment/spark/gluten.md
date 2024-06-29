@@ -47,7 +47,7 @@ Add gluten jar: `copy /path/to/gluten/package/target/gluten-velox-bundle-spark3.
 Add the following minimal configuration into `spark-defaults.conf`:
 
 ```properties
-spark.plugins=io.glutenproject.GlutenPlugin
+spark.plugins=org.apache.gluten.GlutenPlugin
 spark.memory.offHeap.size=20g
 spark.memory.offHeap.enabled=true
 spark.shuffle.manager=org.apache.spark.shuffle.sort.ColumnarShuffleManager

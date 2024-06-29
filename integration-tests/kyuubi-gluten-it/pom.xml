@@ -31,16 +31,16 @@
 
     <properties>
         <gluten.version>1.2.0-SNAPSHOT</gluten.version>
-        <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}-ubuntu_22.04</gluten.artifact.name>
+        <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}</gluten.artifact.name>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>io.glutenproject</groupId>
+            <groupId>org.apache.gluten</groupId>
             <artifactId>${gluten.artifact.name}</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
+            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}-${os.detected.release}_${os.detected.release.version}_${os.detected.arch}-${gluten.version}.jar</systemPath>
         </dependency>
 
         <dependency>
@@ -52,6 +52,14 @@
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -86,6 +94,13 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- javax.servlet-api is required by Spark 3.x -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
