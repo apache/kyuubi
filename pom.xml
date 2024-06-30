@@ -228,7 +228,6 @@
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.8.1</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
-        <!-- to support Java 21 -->
         <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
@@ -237,7 +236,7 @@
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
-        <!-- TODO: Once we drop support for Java 8, we can consider upgrade the spotless.version to 2.43.0. -->
+        <!-- TODO: Once we drop support for Java 8, we can consider upgrade spotless.version to 2.43.0. -->
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
@@ -257,7 +256,7 @@
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
         <!-- Needed for Spotless style check.
-             TODO: Once we drop support for Java 8, we can consider upgrade the googlejavaformat.version to 1.22.0 and above. -->
+             TODO: Once we drop support for Java 8, we can consider upgrade googlejavaformat.version to 1.22.0 and above. -->
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
@@ -1946,8 +1945,8 @@
                                         <version>1.22.0</version>
                                     </googleJavaFormat>
                                 </java>
-                                <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7) do not support Java 21.
-                                     To build with Java 21, the 'spotless:check' needs to set to `skip`.
+                                <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7) does not match with Java 21.
+                                     To build with Java 21, the spotless.check.skip needs to set to `true`.
                                      Re-evaluate once support for Java 8 is dropped. -->
                                 <skip>true</skip>
                             </configuration>
