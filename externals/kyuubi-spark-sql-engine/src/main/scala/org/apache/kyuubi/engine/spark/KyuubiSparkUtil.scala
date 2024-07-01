@@ -57,9 +57,20 @@ object KyuubiSparkUtil extends Logging {
 
   def engineId: String = globalSparkContext.applicationId
   def engineName: String = globalSparkContext.appName
-  def engineUrl: String = globalSparkContext.getConf.getOption(
-    "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
-    .orElse(globalSparkContext.uiWebUrl).getOrElse("")
+  def engineUrl: String = {
+    val sparkConf = globalSparkContext.getConf
+    sparkConf
+      // scalastyle:off line.size.limit
+      // format: off
+      // for Spark 3.5 or before
+      .getOption("spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+      // for Spark 4.0 or later, see SPARK-48238
+      .orElse(sparkConf.getOption("spark.org.apache.spark.deploy.yarn.AmIpFilter.param.PROXY_URI_BASES"))
+      // format: on
+      // scalastyle:on line.size.limit
+      .orElse(globalSparkContext.uiWebUrl)
+      .getOrElse("")
+  }
   def deployMode: String = {
     if (globalSparkContext.getConf.getBoolean("spark.kubernetes.submitInDriver", false)) {
       "cluster"
