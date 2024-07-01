@@ -28,11 +28,9 @@ import org.apache.kyuubi.engine.spark.operation.ExecutePython.DEFAULT_SPARK_PYTH
 
 
 class KyuubiSparkUtilSuite extends AnyFunSuite {
-  test("get buildedUri URI") {
+  test("get build uri") {
     val uri = new URI("hdfs://a/b/c.zip")
-    // scalastyle:off println
     val buildedUri = buildURI(uri, DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
-    // scalastyle:off println
     assert(buildedUri.getScheme == "hdfs")
     assert(buildedUri.getFragment == DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
     assert(buildedUri.getSchemeSpecificPart == "//a/b/c.zip")
