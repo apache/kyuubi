@@ -124,7 +124,7 @@ object KyuubiSparkUtil extends Logging {
     if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       var uriBuilder = DynMethods.builder("fromUri")
         .impl("jakarta.ws.rs.core.UriBuilder", classOf[URI])
-        .build()
+        .buildStaticChecked()
         .invoke[AnyRef](uri)
 
       uriBuilder = DynMethods.builder("fragment")
@@ -135,11 +135,11 @@ object KyuubiSparkUtil extends Logging {
       DynMethods.builder("build")
         .impl("jakarta.ws.rs.core.UriBuilder")
         .build(uriBuilder)
-        .invoke[URI]()
+        .invoke[URI](Array.empty[Object])
     } else {
       var uriBuilder = DynMethods.builder("fromUri")
         .impl("javax.ws.rs.core.UriBuilder", classOf[URI])
-        .build()
+        .buildStaticChecked
         .invoke[AnyRef](uri)
 
       uriBuilder = DynMethods.builder("fragment")
@@ -148,9 +148,9 @@ object KyuubiSparkUtil extends Logging {
         .invoke[AnyRef](fragment)
 
       DynMethods.builder("build")
-        .impl("javax.ws.rs.core.UriBuilder")
+        .impl("javax.ws.rs.core.UriBuilder", classOf[Array[Object]])
         .build(uriBuilder)
-        .invoke[URI]()
+        .invoke[URI](Array.empty[Object])
     }
   }
 }
