@@ -19,15 +19,11 @@ package org.apache.kyuubi.engine.spark
 
 import java.net.URI
 
-//scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
-
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.buildURI
 import org.apache.kyuubi.engine.spark.operation.ExecutePython.DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT
 
-
-
-class KyuubiSparkUtilSuite extends AnyFunSuite {
+class KyuubiSparkUtilSuite extends KyuubiFunSuite {
   test("get build uri") {
     val uri = new URI("hdfs://a/b/c.zip")
     val buildedUri = buildURI(uri, DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
