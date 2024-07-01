@@ -20,7 +20,6 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ .Release.Name }}
-  labels:
-    {{- include "kyuubi.labels" . | nindent 4 }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
 rules: {{- toYaml .Values.rbac.rules | nindent 2 }}
 {{- end }}

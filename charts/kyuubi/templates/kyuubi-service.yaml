@@ -21,8 +21,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ $.Release.Name }}-{{ $name | kebabcase }}
-  labels:
-    {{- include "kyuubi.labels" $ | nindent 4 }}
+  labels: {{- include "kyuubi.labels" $ | nindent 4 }}
   {{- with $frontend.service.annotations }}
   annotations: {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -35,8 +34,7 @@ spec:
       {{- if and (eq $frontend.service.type "NodePort") ($frontend.service.nodePort) }}
       nodePort: {{ $frontend.service.nodePort }}
       {{- end }}
-  selector:
-    {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
+  selector: {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
   {{- if ($frontend.service.sessionAffinity) }}
   sessionAffinity: {{ $frontend.service.sessionAffinity }}
   {{- end }}
