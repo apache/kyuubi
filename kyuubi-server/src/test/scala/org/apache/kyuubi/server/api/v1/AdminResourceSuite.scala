@@ -33,7 +33,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KubernetesInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -299,6 +299,54 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .get()
     operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
     assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
+  }
+
+  test("force to kill engine - user share level") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine =
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      Utils.currentUser,
+      "default")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("kill", "true")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+        .delete()
+
+      assert(response.getStatus === 200)
+      eventually(timeout(5.seconds), interval(100.milliseconds)) {
+        assert(client.getChildren(engineSpace).isEmpty, s"refId same with $id?")
+      }
+
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        val appMgrInfo = ApplicationManagerInfo(None, KubernetesInfo(None, None))
+        assert(engineMgr.getApplicationInfo(appMgrInfo, id)
+          .exists(_.state == ApplicationState.NOT_FOUND))
+      }
+    }
   }
 
   test("delete engine - user share level") {

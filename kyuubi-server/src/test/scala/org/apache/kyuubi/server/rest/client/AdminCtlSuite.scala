@@ -93,7 +93,7 @@ class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUserPasswd)
     testPrematureExitForAdminControlCli(
       args,
-      s"Engine ${engineSpace} is deleted successfully.")
+      s"Engine ${engineSpace} refId=${id} is deleted successfully.")
 
     args = Array(
       "list",

@@ -17,6 +17,13 @@
 
 package org.apache.kyuubi.engine
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper}
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 
@@ -132,8 +139,11 @@ case class ApplicationManagerInfo(
     resourceManager: Option[String],
     kubernetesInfo: KubernetesInfo = KubernetesInfo())
 
-object ApplicationManagerInfo {
+object ApplicationManagerInfo extends Logging {
   final val DEFAULT_KUBERNETES_NAMESPACE = "default"
+  val mapper: ObjectMapper = new ObjectMapper()
+    .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+    .registerModule(DefaultScalaModule)
 
   def apply(
       resourceManager: Option[String],
@@ -142,5 +152,23 @@ object ApplicationManagerInfo {
     new ApplicationManagerInfo(
       resourceManager,
       KubernetesInfo(kubernetesContext, kubernetesNamespace))
+  }
+
+  def serialize(appMgrInfo: ApplicationManagerInfo): String = {
+    Base64.getEncoder.encodeToString(
+      mapper.writeValueAsString(appMgrInfo).getBytes(StandardCharsets.UTF_8))
+  }
+
+  def deserialize(encodedStr: String): ApplicationManagerInfo = {
+    try {
+      val json = new String(
+        Base64.getDecoder.decode(encodedStr.getBytes),
+        StandardCharsets.UTF_8)
+      mapper.readValue(json, classOf[ApplicationManagerInfo])
+    } catch {
+      case _: Throwable =>
+        error(s"Fail to deserialize the encoded string: $encodedStr")
+        ApplicationManagerInfo(None)
+    }
   }
 }
