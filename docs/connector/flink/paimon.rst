@@ -42,7 +42,7 @@ The **classpath** of kyuubi flink sql engine with Apache Paimon (Incubating) sup
 
 1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of flink distribution
-3. paimon-flink-<version>.jar (example: paimon-flink-1.16-0.4-SNAPSHOT.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Flink`_
+3. paimon-flink-<version>.jar (example: paimon-flink-1.18-0.8.1.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Flink`_
 4. flink-shaded-hadoop-2-uber-<version>.jar, which code can be found in the `Pre-bundled Hadoop Jar`_
 
 In order to make the Apache Paimon (Incubating) packages visible for the runtime classpath of engines, you need to:
