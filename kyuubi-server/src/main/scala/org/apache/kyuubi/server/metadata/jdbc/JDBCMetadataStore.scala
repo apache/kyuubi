@@ -80,7 +80,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   hikariConfig.setPoolName("jdbc-metadata-store-pool")
 
   @VisibleForTesting
-  implicit private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
+  implicit private[kyuubi] val hikariDataSource: HikariDataSource =
+    new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
