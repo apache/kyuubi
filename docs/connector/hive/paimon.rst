@@ -42,7 +42,7 @@ Dependencies
 
 The **classpath** of kyuubi hive sql engine with Iceberg supported consists of
 
-1. kyuubi-hive-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-hive-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of hive distribution
 3. paimon-hive-connector-<hive.binary.version>-<paimon.version>.jar (example: paimon-hive-connector-3.1-0.4-SNAPSHOT.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Hive`_
 

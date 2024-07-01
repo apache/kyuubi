@@ -42,9 +42,9 @@ Dependencies
 
 The **classpath** of kyuubi flink sql engine with Hudi supported consists of
 
-1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of flink distribution
-3. hudi-flink<flink.version>-bundle_<scala.version>-<hudi.version>.jar (example: hudi-flink1.14-bundle_2.12-0.11.1.jar), which can be found in the `Maven Central`_
+3. hudi-flink<flink.version>-bundle-<hudi.version>.jar (example: hudi-flink1.18-bundle-0.15.0.jar), which can be found in the `Maven Central`_
 
 In order to make the Hudi packages visible for the runtime classpath of engines, we can use one of these methods:
 

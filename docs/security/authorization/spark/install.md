@@ -21,12 +21,12 @@
 
 - [Apache Ranger](https://ranger.apache.org/)
 
-  This plugin works as a ranger rest client with Apache Ranger admin server to do privilege check.
+  This plugin works as a ranger rest client with Apache Ranger Admin server to do privilege check.
   Thus, a ranger server need to be installed ahead and available to use.
 
 - Building(optional)
 
-  If your ranger admin or spark distribution is not compatible with the official pre-built [artifact](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-authz) in maven central.
+  If your Ranger Admin or Spark distribution is not compatible with the official pre-built [artifact](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-authz) in maven central.
   You need to [build](build.md) the plugin targeting the spark/ranger you are using by yourself.
 
 ## Install
