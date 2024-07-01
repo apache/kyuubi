@@ -16,38 +16,38 @@
 `Delta Lake`_
 =============
 
-Delta lake is an open-source project that enables building a Lakehouse
+Delta Lake is an open-source project that enables building a Lakehouse
 Architecture on top of existing storage systems such as S3, ADLS, GCS,
 and HDFS.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and
    operation of `Delta Lake`_.
-   For the knowledge about delta lake not mentioned in this article,
+   For the knowledge about Delta Lake not mentioned in this article,
    you can obtain it from its `Official Documentation`_.
 
-By using kyuubi, we can run SQL queries towards delta lake which is more
+By using kyuubi, we can run SQL queries towards Delta Lake which is more
 convenient, easy to understand, and easy to expand than directly using
-spark to manipulate delta lake.
+spark to manipulate Delta Lake.
 
 Delta Lake Integration
 ----------------------
 
-To enable the integration of kyuubi spark sql engine and delta lake through
-Apache Spark Datasource V2 and Catalog APIs, you need to:
+To enable the integration of Kyuubi Spark SQL engine and Delta Lake through
+Spark DataSource V2 API, you need to:
 
-- Referencing the delta lake :ref:`dependencies<spark-delta-lake-deps>`
-- Setting the spark extension and catalog :ref:`configurations<spark-delta-lake-conf>`
+- Referencing the Delta Lake :ref:`dependencies<spark-delta-lake-deps>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-delta-lake-conf>`
 
 .. _spark-delta-lake-deps:
 
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with delta lake supported consists of
+The **classpath** of Kyuubi Spark SQL engine with Delta Lake supported consists of
 
-1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with kyuubi distributions
-2. a copy of spark distribution
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
+2. a copy of Spark distribution
 3. delta-core & delta-storage, which can be found in the `Maven Central`_
 
 In order to make the delta packages visible for the runtime classpath of engines, we can use one of these methods:
@@ -63,7 +63,7 @@ In order to make the delta packages visible for the runtime classpath of engines
 Configurations
 **************
 
-To activate functionality of delta lake, we can set the following configurations:
+To activate functionality of Delta Lake, we can set the following configurations:
 
 .. code-block:: properties
 

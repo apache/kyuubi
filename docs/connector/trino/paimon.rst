@@ -42,7 +42,7 @@ Dependencies
 
 The **classpath** of kyuubi trino sql engine with Apache Paimon (Incubating) supported consists of
 
-1. kyuubi-trino-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
+1. kyuubi-trino-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of trino distribution
 3. paimon-trino-<version>.jar (example: paimon-trino-0.2.jar), which code can be found in the `Source Code`_
 4. flink-shaded-hadoop-2-uber-<version>.jar, which code can be found in the `Pre-bundled Hadoop`_
