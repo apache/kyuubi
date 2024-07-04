@@ -1506,6 +1506,13 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_TRINO_CONNECTION_INSECURE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.trino.connection.insecure.enabled")
+      .doc("Skip certificate validation when connecting with TLS/HTTPS enabled trino cluster")
+      .version("1.9.2")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_TRINO_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.trino.showProgress")
       .doc("When true, show the progress bar and final info in the Trino engine log.")
