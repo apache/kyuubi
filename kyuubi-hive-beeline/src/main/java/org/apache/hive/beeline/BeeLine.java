@@ -159,6 +159,7 @@ public class BeeLine implements Closeable {
 
   private static final String HIVE_VAR_PREFIX = "--hivevar";
   private static final String HIVE_CONF_PREFIX = "--hiveconf";
+  private static final String CONF_PREFIX = "--conf";
   private static final String PROP_FILE_PREFIX = "--property-file";
   static final String PASSWD_MASK = "[passwd stripped]";
 
@@ -375,6 +376,15 @@ public class BeeLine implements Closeable {
             .withArgName("property=value")
             .withLongOpt("hiveconf")
             .withDescription("Use value for given property")
+            .create());
+
+    // conf option --conf
+    options.addOption(
+        OptionBuilder.withValueSeparator()
+            .hasArgs(2)
+            .withArgName("property=value")
+            .withLongOpt("conf")
+            .withDescription("Alias of --hiveconf")
             .create());
 
     // --property-file <file>
@@ -671,7 +681,8 @@ public class BeeLine implements Closeable {
     private boolean isBeeLineOpt(String arg) {
       return arg.startsWith("--")
           && !(HIVE_VAR_PREFIX.equals(arg)
-              || (HIVE_CONF_PREFIX.equals(arg))
+              || HIVE_CONF_PREFIX.equals(arg)
+              || CONF_PREFIX.equals(arg)
               || "--help".equals(arg)
               || PROP_FILE_PREFIX.equals(arg));
     }
@@ -749,6 +760,11 @@ public class BeeLine implements Closeable {
     Properties hiveConfs = cl.getOptionProperties("hiveconf");
     for (String key : hiveConfs.stringPropertyNames()) {
       setHiveConfVar(key, hiveConfs.getProperty(key));
+    }
+
+    Properties confs = cl.getOptionProperties("conf");
+    for (String key : confs.stringPropertyNames()) {
+      setHiveConfVar(key, confs.getProperty(key));
     }
 
     driver = cl.getOptionValue("d");

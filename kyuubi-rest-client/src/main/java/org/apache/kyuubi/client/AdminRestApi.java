@@ -23,8 +23,12 @@ import org.apache.kyuubi.client.api.v1.dto.Engine;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
 import org.apache.kyuubi.client.api.v1.dto.ServerData;
 import org.apache.kyuubi.client.api.v1.dto.SessionData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AdminRestApi {
+  private static final Logger LOG = LoggerFactory.getLogger(AdminRestApi.class);
+
   private KyuubiRestClient client;
 
   private static final String API_BASE_PATH = "admin";
@@ -65,13 +69,25 @@ public class AdminRestApi {
     return this.getClient().post(path, null, client.getAuthHeader());
   }
 
+  /** This method is deprecated since 1.10 */
+  @Deprecated
   public String deleteEngine(
       String engineType, String shareLevel, String subdomain, String hs2ProxyUser) {
+    LOG.warn(
+        "The method `deleteEngine(engineType, shareLevel, subdomain, hs2ProxyUser)` "
+            + "is deprecated since 1.10.0, using "
+            + "`deleteEngine(engineType, shareLevel, subdomain, hs2ProxyUser, kill)` instead.");
+    return this.deleteEngine(engineType, shareLevel, subdomain, hs2ProxyUser, false);
+  }
+
+  public String deleteEngine(
+      String engineType, String shareLevel, String subdomain, String hs2ProxyUser, boolean kill) {
     Map<String, Object> params = new HashMap<>();
     params.put("type", engineType);
     params.put("sharelevel", shareLevel);
     params.put("subdomain", subdomain);
     params.put("hive.server2.proxy.user", hs2ProxyUser);
+    params.put("kill", kill);
     return this.getClient().delete(API_BASE_PATH + "/engine", params, client.getAuthHeader());
   }
 
