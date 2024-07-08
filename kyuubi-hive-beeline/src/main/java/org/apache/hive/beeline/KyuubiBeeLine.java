@@ -218,7 +218,7 @@ public class KyuubiBeeLine extends BeeLine {
     if (!commands.isEmpty()) {
       for (String command : commands) {
         debug(loc("executing-command", command));
-        if (!removeCommentsDispatch(command)) {
+        if (!dispatch(command)) {
           code++;
         }
       }
@@ -282,8 +282,9 @@ public class KyuubiBeeLine extends BeeLine {
     return executionResult;
   }
 
-  // see HIVE-15820: comment at the head of beeline -e only dispatch commands
-  boolean removeCommentsDispatch(String line) {
+  // see HIVE-15820: comment at the head of beeline -e
+  @Override
+  boolean dispatch(String line) {
     return super.dispatch(isPythonMode() ? line : HiveStringUtils.removeComments(line));
   }
 

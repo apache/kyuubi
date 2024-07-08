@@ -95,14 +95,12 @@ public class KyuubiBeeLineTest {
 
   @Test
   public void testKyuubiBeelineComment() {
-    String[] url = new String[] {""};
     KyuubiBeeLine interceptedKyuubiBeeLine =
         new KyuubiBeeLine() {
           @Override
           boolean dispatch(String line) {
             if (line != null && line.startsWith("!connect")) {
               LOG.info("Return true for command: {} to pretend connection is established.", line);
-              url[0] = line;
               return true;
             }
             return super.dispatch(line);
@@ -124,14 +122,12 @@ public class KyuubiBeeLineTest {
     interceptedKyuubiBeeLine.initArgs(
         new String[] {"-u", "dummy_url", "-e", "--comment show database;"});
     assertEquals(0, cmd[0].length());
-    assertEquals("!connect dummy_url '' '' ", url[0]);
 
     // Beeline#exit must be false to execute sql
     interceptedKyuubiBeeLine.setExit(false);
     interceptedKyuubiBeeLine.initArgs(
         new String[] {"-u", "dummy_url", "-e", "--comment\n show database;"});
     assertEquals("show database;", cmd[0]);
-    assertEquals("!connect dummy_url '' '' ", url[0]);
 
     interceptedKyuubiBeeLine.setExit(false);
     interceptedKyuubiBeeLine.initArgs(
@@ -139,12 +135,6 @@ public class KyuubiBeeLineTest {
           "-u", "dummy_url", "-e", "--comment line 1 \n    --comment line 2 \n show database;"
         });
     assertEquals("show database;", cmd[0]);
-
-    interceptedKyuubiBeeLine.setExit(false);
-    interceptedKyuubiBeeLine.initArgs(
-        new String[] {"-u", "dummy--url", "-e", "--comment\n show database;"});
-    assertEquals("show database;", cmd[0]);
-    assertEquals("!connect dummy--url '' '' ", url[0]);
   }
 
   static class BufferPrintStream extends PrintStream {
