@@ -53,6 +53,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     this
   }
 
+  def loadFromArgs(args: Array[String]): KyuubiConf = {
+    Utils.fromCommandLineArgs(args, this)
+    this
+  }
+
   def set[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
     require(entry != null, "entry cannot be null")
     require(value != null, s"value cannot be null for key: ${entry.key}")
