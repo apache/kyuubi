@@ -22,7 +22,7 @@ import org.apache.kyuubi.grpc.events.OperationEventsManager
 import org.apache.kyuubi.grpc.operation.GrpcOperation
 import org.apache.kyuubi.grpc.utils.Clock
 
-class KyuubiGrpcOperationEventsManager (operation: GrpcOperation, clock: Clock)
+class KyuubiGrpcOperationEventsManager(operation: GrpcOperation, clock: Clock)
   extends OperationEventsManager(operation, clock) with Logging {
 
   override def postStarted(): Unit = {

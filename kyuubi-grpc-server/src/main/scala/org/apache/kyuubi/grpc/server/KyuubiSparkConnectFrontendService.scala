@@ -22,10 +22,10 @@ import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import com.google.protobuf.MessageLite
 import io.grpc._
 import io.grpc.stub.StreamObserver
-import org.apache.spark.connect.proto._
 
 import org.apache.kyuubi.grpc.session.SessionKey
 import org.apache.kyuubi.service.Service
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse, SparkConnectServiceGrpc}
 
 abstract class KyuubiSparkConnectFrontendService(grpcSeverable: KyuubiGrpcSeverable, name: String)
   extends AbstractKyuubiGrpcFrontendService(grpcSeverable, name)

@@ -20,12 +20,12 @@ import scala.util.Random
 
 import io.grpc.ManagedChannel
 import io.grpc.stub.StreamObserver
-import org.apache.spark.connect.proto._
 
 import org.apache.kyuubi.grpc.event.KyuubiGrpcSessionEventsManager
 import org.apache.kyuubi.grpc.events.SessionEventsManager
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 import org.apache.kyuubi.grpc.utils.SystemClock
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto._
 
 class KyuubiGrpcSession(
     userId: String,

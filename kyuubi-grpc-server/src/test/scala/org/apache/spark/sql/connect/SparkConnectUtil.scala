@@ -22,7 +22,7 @@ import java.time.Instant
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.connect.service.SparkConnectService
+import org.apache.spark.sql.connect.service._
 
 object SparkConnectUtil {
   def startSparkConnectServer(): (String, Int) = {

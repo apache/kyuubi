@@ -26,4 +26,3 @@ class KyuubiGrpcServer(name: String)
     (frontendServices.head.host, frontendServices.head.port)
   }
 }
-

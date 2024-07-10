@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-
 package org.apache.spark.sql.connect
 
 import org.apache.kyuubi.grpc.server.{KyuubiGrpcSeverable, KyuubiSparkConnectFrontendService}
-import org.apache.kyuubi.grpc.utils.SparkConnectUtil
 
 class TestFrontendService(grpcSeverable: KyuubiGrpcSeverable, name: String)
   extends KyuubiSparkConnectFrontendService(grpcSeverable, name) {

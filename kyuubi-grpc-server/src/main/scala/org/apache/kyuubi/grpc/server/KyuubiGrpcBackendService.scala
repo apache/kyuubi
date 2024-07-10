@@ -19,9 +19,10 @@ package org.apache.kyuubi.grpc.server
 
 import io.grpc.ManagedChannel
 import io.grpc.stub.StreamObserver
-import org.apache.spark.connect.proto._
+
 import org.apache.kyuubi.grpc.service.AbstractGrpcBackendService
 import org.apache.kyuubi.grpc.session.{GrpcSessionManager, KyuubiGrpcSession, KyuubiGrpcSessionManager, SessionKey}
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto._
 
 class KyuubiGrpcBackendService(name: String) extends AbstractGrpcBackendService(name) {
 

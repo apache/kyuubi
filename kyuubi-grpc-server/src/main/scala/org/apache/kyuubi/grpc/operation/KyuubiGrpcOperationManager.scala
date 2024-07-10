@@ -19,10 +19,10 @@ package org.apache.kyuubi.grpc.operation
 
 import io.grpc.ManagedChannel
 import io.grpc.stub.StreamObserver
-import org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse}
 
 import org.apache.kyuubi.grpc.operation.spark.Config
 import org.apache.kyuubi.grpc.session.KyuubiGrpcSession
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto.{ConfigRequest, ConfigResponse}
 
 class KyuubiGrpcOperationManager(name: String) extends GrpcOperationManager(name) {
   def this() = this(classOf[KyuubiGrpcOperationManager].getSimpleName)

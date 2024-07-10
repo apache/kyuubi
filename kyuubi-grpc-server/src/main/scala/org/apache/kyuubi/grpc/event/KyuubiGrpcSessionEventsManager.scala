@@ -22,7 +22,7 @@ import org.apache.kyuubi.grpc.events.SessionEventsManager
 import org.apache.kyuubi.grpc.session.KyuubiGrpcSession
 import org.apache.kyuubi.grpc.utils.Clock
 
-class KyuubiGrpcSessionEventsManager (session: KyuubiGrpcSession, clock: Clock)
+class KyuubiGrpcSessionEventsManager(session: KyuubiGrpcSession, clock: Clock)
   extends SessionEventsManager(session, clock) with Logging {
 
   override def postStarted(): Unit = {

@@ -20,7 +20,7 @@ package org.apache.kyuubi.grpc.session
 import org.apache.kyuubi.grpc.operation.KyuubiGrpcOperationManager
 
 class KyuubiGrpcSessionManager
-  extends GrpcSessionManager[KyuubiGrpcSession] ("KyuubiGrpcSessionManager") {
+  extends GrpcSessionManager[KyuubiGrpcSession]("KyuubiGrpcSessionManager") {
 
   override def isServer: Boolean = true
 

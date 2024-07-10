@@ -18,11 +18,11 @@
 package org.apache.kyuubi.grpc.operation.spark
 
 import io.grpc.ManagedChannel
-import org.apache.spark.connect.proto.SparkConnectServiceGrpc
-import org.apache.spark.connect.proto.SparkConnectServiceGrpc.SparkConnectServiceStub
 
 import org.apache.kyuubi.grpc.operation.KyuubiGrpcOperation
 import org.apache.kyuubi.grpc.session.KyuubiGrpcSession
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto.SparkConnectServiceGrpc
+import org.apache.kyuubi.shade.org.apache.spark.connect.proto.SparkConnectServiceGrpc.SparkConnectServiceStub
 
 abstract class KyuubiSparkGrpcOperation(channel: ManagedChannel, session: KyuubiGrpcSession)
   extends KyuubiGrpcOperation(session) {

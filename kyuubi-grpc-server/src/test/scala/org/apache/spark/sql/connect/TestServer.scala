@@ -22,6 +22,5 @@ import org.apache.kyuubi.grpc.server.{AbstractKyuubiGrpcFrontendService, KyuubiG
 class TestServer(name: String) extends KyuubiGrpcServer(name) {
 
   override val frontendServices: Seq[AbstractKyuubiGrpcFrontendService] = Seq(
-    new TestFrontendService(this, "TestFrontendService")
-  )
+    new TestFrontendService(this, "TestFrontendService"))
 }

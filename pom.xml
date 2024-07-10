@@ -85,6 +85,7 @@
         <module>kyuubi-zookeeper</module>
         <module>kyuubi-grpc</module>
         <module>kyuubi-grpc-server</module>
+        <module>kyuubi-grpc-shade</module>
     </modules>
 
     <scm>
@@ -1281,6 +1282,7 @@
         <repository>
             <releases>
                 <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
             </releases>
             <snapshots>
                 <enabled>false</enabled>
@@ -1296,6 +1298,7 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
+                <updatePolicy>always</updatePolicy>
             </snapshots>
             <id>central</id>
             <name>Maven Repository</name>
