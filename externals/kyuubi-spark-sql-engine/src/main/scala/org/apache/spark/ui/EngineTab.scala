@@ -105,24 +105,26 @@ case class EngineTab(
         .buildChecked(ui)
 
       if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-        attachHandlerMethod.invoke {
-          val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
-            .impl(
-              JettyUtils.getClass,
-              classOf[String],
-              classOf[String],
-              classOf[jakarta.servlet.http.HttpServletRequest => Unit],
-              classOf[String],
-              classOf[Set[String]])
-            .buildChecked(JettyUtils)
+        val createRedirectHandlerMethod = DynMethods.builder("createRedirectHandler")
+          .impl(
+            JettyUtils.getClass,
+            classOf[String],
+            classOf[String],
+            classOf[jakarta.servlet.http.HttpServletRequest => Unit],
+            classOf[String],
+            classOf[Set[String]])
+          .buildChecked(JettyUtils)
 
+        attachHandlerMethod.invoke {
           val killHandler =
             (_: jakarta.servlet.http.HttpServletRequest) => handleKill()
-          val gracefulKillHandler =
-            (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
-
           createRedirectHandlerMethod
             .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+        }
+
+        attachHandlerMethod.invoke {
+          val gracefulKillHandler =
+            (_: jakarta.servlet.http.HttpServletRequest) => handleGracefulKill()
           createRedirectHandlerMethod
             .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
         }
@@ -140,11 +142,14 @@ case class EngineTab(
         attachHandlerMethod.invoke {
           val killHandler =
             (_: javax.servlet.http.HttpServletRequest) => handleKill()
-          val gracefulKillHandler =
-            (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
 
           createRedirectHandlerMethod
             .invoke("/kyuubi/stop", "/kyuubi", killHandler, "", Set("GET", "POST"))
+        }
+
+        attachHandlerMethod.invoke {
+          val gracefulKillHandler =
+            (_: javax.servlet.http.HttpServletRequest) => handleGracefulKill()
           createRedirectHandlerMethod
             .invoke("/kyuubi/gracefulstop", "/kyuubi", gracefulKillHandler, "", Set("GET", "POST"))
         }
