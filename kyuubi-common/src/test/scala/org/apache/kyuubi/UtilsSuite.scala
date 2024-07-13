@@ -18,7 +18,6 @@
 package org.apache.kyuubi
 
 import java.io.{File, IOException}
-import java.net.InetAddress
 import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
@@ -116,15 +115,6 @@ class UtilsSuite extends KyuubiFunSuite {
           assert(Utils.currentUser === "kentyao")
         }
       })
-  }
-
-  test("findLocalInetAddress") {
-    val address = InetAddress.getLocalHost
-    if (!address.isLoopbackAddress) {
-      assert(Utils.findLocalInetAddress === InetAddress.getLocalHost)
-    } else {
-      assert(Utils.findLocalInetAddress !== InetAddress.getLocalHost)
-    }
   }
 
   test("getAbsolutePathFromWork") {

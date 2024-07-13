@@ -25,7 +25,7 @@ import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, PROXY_USER, SESSION_CLOSE_ON_DISCONNECT}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
@@ -36,7 +36,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
 import org.apache.kyuubi.shaded.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.kyuubi.shaded.thrift.transport.TTransport
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{JavaUtils, KyuubiHadoopUtils, NamedThreadFactory}
 
 /**
  * Apache Thrift based hive-service-rpc base class
@@ -53,7 +53,7 @@ abstract class TFrontendService(name: String)
   protected def serverHost: Option[String]
   protected def portNum: Int
   protected lazy val serverAddr: InetAddress =
-    serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
+    serverHost.map(InetAddress.getByName).getOrElse(JavaUtils.findLocalInetAddress)
   protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
   protected lazy val actualPort: Int = serverSocket.getLocalPort
   protected lazy val authFactory: KyuubiAuthenticationFactory =

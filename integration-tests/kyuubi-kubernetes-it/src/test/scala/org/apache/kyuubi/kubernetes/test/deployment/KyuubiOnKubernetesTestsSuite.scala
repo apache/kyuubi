@@ -22,10 +22,11 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.hadoop.net.NetUtils
 
-import org.apache.kyuubi.{Utils, WithSimpleDFSService}
+import org.apache.kyuubi.WithSimpleDFSService
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.kubernetes.test.WithKyuubiServerOnKubernetes
 import org.apache.kyuubi.operation.SparkQueryTests
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
 /**
@@ -109,7 +110,7 @@ class KyuubiOnKubernetesWithClientSparkTestsSuite
  */
 class KyuubiOnKubernetesWithClusterSparkTestsSuite
   extends KyuubiOnKubernetesWithSparkTestsBase with WithSimpleDFSService with SparkQueryTests {
-  private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
+  private val localhostAddress = JavaUtils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 

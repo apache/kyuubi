@@ -15,26 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.engine.spark
 
-import java.nio.file.Paths
+import java.net.URI
 
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.buildURI
+import org.apache.kyuubi.engine.spark.operation.ExecutePython.DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT
 
-import org.apache.kyuubi.util.AssertionUtils._
-import org.apache.kyuubi.util.GoldenFileUtils._
-
-class CheckServerSPISuite extends AnyFunSuite {
-// scalastyle:on
-
-  test("check server SPI service file sorted") {
-    Seq(
-      "org.apache.kyuubi.credentials.HadoopDelegationTokenProvider",
-      "org.apache.kyuubi.engine.ApplicationOperation").foreach { fileName =>
-      val filePath = Paths.get(
-        s"${getCurrentModuleHome(this)}/src/main/resources/META-INF/services/$fileName")
-      assertFileContentSorted(filePath)
-    }
+class KyuubiSparkUtilSuite extends KyuubiFunSuite {
+  test("get build uri") {
+    val uri = new URI("hdfs://a/b/c.zip")
+    val buildedUri = buildURI(uri, DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
+    assert(buildedUri.getScheme == "hdfs")
+    assert(buildedUri.getFragment == DEFAULT_SPARK_PYTHON_HOME_ARCHIVE_FRAGMENT)
+    assert(buildedUri.getSchemeSpecificPart == "//a/b/c.zip")
   }
 }

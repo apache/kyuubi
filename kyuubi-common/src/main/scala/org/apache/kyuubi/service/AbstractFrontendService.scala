@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.service
 
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.service.ServiceState.LATENT
 
 /**
@@ -39,5 +39,9 @@ abstract class AbstractFrontendService(name: String)
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
     super.initialize(conf)
+  }
+
+  override def attributes: Map[String, String] = {
+    conf.getAll.filter(_._1 == KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY)
   }
 }

@@ -29,5 +29,5 @@ Even if you don't use Kyuubi, as a simple Spark user, I'm sure you'll find the n
 
     dynamic_allocation
     aqe
-    incremental_collection
+    large_query_results
     gluten

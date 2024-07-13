@@ -25,8 +25,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import io.airlift.units.Duration
-import io.trino.client.ClientSession
-import io.trino.client.OkHttpUtil
+import io.trino.client.{ClientSession, OkHttpUtil}
 import okhttp3.OkHttpClient
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -37,7 +36,7 @@ import org.apache.kyuubi.engine.trino.{TrinoConf, TrinoContext, TrinoStatement}
 import org.apache.kyuubi.engine.trino.event.TrinoSessionEvent
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_CATALOG, USE_DATABASE}
+import org.apache.kyuubi.session._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class TrinoSessionImpl(
@@ -112,27 +111,31 @@ class TrinoSessionImpl(
   }
 
   private def createHttpClient(): OkHttpClient = {
-    val keystorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PATH)
-    val keystorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD)
-    val keystoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_TYPE)
-    val truststorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PATH)
-    val truststorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD)
-    val truststoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_TYPE)
-
     val serverScheme = clientSession.getServer.getScheme
-
     val builder = new OkHttpClient.Builder()
 
-    OkHttpUtil.setupSsl(
-      builder,
-      Optional.ofNullable(keystorePath.orNull),
-      Optional.ofNullable(keystorePassword.orNull),
-      Optional.ofNullable(keystoreType.orNull),
-      Optional.ofNullable(truststorePath.orNull),
-      Optional.ofNullable(truststorePassword.orNull),
-      Optional.ofNullable(truststoreType.orNull),
-      true)
+    val insecureEnabled = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_INSECURE_ENABLED)
+    if (insecureEnabled) {
+      OkHttpUtil.setupInsecureSsl(builder)
+    } else {
+      val keystorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PATH)
+      val keystorePassword = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD)
+      val keystoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_KEYSTORE_TYPE)
+      val truststorePath = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PATH)
+      val truststorePassword =
+        sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_PASSWORD)
+      val truststoreType = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_TRUSTSTORE_TYPE)
 
+      OkHttpUtil.setupSsl(
+        builder,
+        Optional.ofNullable(keystorePath.orNull),
+        Optional.ofNullable(keystorePassword.orNull),
+        Optional.ofNullable(keystoreType.orNull),
+        Optional.ofNullable(truststorePath.orNull),
+        Optional.ofNullable(truststorePassword.orNull),
+        Optional.ofNullable(truststoreType.orNull),
+        true)
+    }
     sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_PASSWORD).foreach { password =>
       require(
         serverScheme.equalsIgnoreCase("https"),

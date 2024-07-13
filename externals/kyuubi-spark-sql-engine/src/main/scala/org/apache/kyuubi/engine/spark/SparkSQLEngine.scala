@@ -45,7 +45,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -296,7 +296,7 @@ object SparkSQLEngine extends Logging {
 
       if (!isOnK8sClusterMode) {
         // set driver host to ip instead of kyuubi pod name
-        _sparkConf.setIfMissing("spark.driver.host", Utils.findLocalInetAddress.getHostAddress)
+        _sparkConf.setIfMissing("spark.driver.host", JavaUtils.findLocalInetAddress.getHostAddress)
       }
     }
 
