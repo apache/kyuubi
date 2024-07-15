@@ -152,7 +152,7 @@ netty-transport-native-unix-common/4.1.108.Final//netty-transport-native-unix-co
 netty-transport/4.1.108.Final//netty-transport-4.1.108.Final.jar
 okhttp-urlconnection/3.14.9//okhttp-urlconnection-3.14.9.jar
 okhttp/3.12.12//okhttp-3.12.12.jar
-okio/1.17.6//okio-1.17.6.jar
+okio/1.15.0//okio-1.15.0.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 perfmark-api/0.26.0//perfmark-api-0.26.0.jar
