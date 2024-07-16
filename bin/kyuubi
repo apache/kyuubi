@@ -102,7 +102,12 @@ if [[ -n ${YARN_CONF_DIR} ]]; then
   KYUUBI_CLASSPATH="${KYUUBI_CLASSPATH}:${YARN_CONF_DIR}"
 fi
 
-cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS ${@:2}"
+if [[ "$1" =~ ^(start|restart|run|stop|status)$ ]]; then
+    command=$1
+    shift
+fi
+
+cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS $@"
 
 pid="${KYUUBI_PID_DIR}/kyuubi-$USER-$CLASS.pid"
 
@@ -218,7 +223,7 @@ function check_kyuubi() {
   fi
 }
 
-case $1 in
+case $command in
   (start | "")
     start_kyuubi
     ;;
