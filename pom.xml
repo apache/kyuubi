@@ -173,7 +173,7 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
         <kubernetes-client.version>6.13.1</kubernetes-client.version>
-        <kyuubi-relocated.version>0.4.0</kyuubi-relocated.version>
+        <kyuubi-relocated.version>0.4.1</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
@@ -1253,6 +1253,18 @@
             <id>central</id>
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>staging</id>
+            <name>Kyuubi Shaded 0.4.1 RC0</name>
+            <url>https://dist.apache.org/repos/dist/dev/kyuubi/kyuubi-shaded-v0.4.1-rc0/</url>
         </repository>
     </repositories>
 
