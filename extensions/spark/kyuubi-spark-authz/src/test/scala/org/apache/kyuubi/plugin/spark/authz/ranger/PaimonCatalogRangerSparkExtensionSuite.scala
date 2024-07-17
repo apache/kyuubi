@@ -86,14 +86,14 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
       doAs(
         bob, {
-          sql( s"""
-                  |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
-                  |(id int, name string)
-                  |USING paimon
-                  |OPTIONS (
-                  | primaryKey = 'id'
-                  |)
-                  |""".stripMargin)
+          sql(s"""
+                 |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+                 |(id int, name string)
+                 |USING paimon
+                 |OPTIONS (
+                 | primaryKey = 'id'
+                 |)
+                 |""".stripMargin)
           // insert 2 data files
           (0 until 2)
             .foreach(i => sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES ($i, 'name_$i')"))
