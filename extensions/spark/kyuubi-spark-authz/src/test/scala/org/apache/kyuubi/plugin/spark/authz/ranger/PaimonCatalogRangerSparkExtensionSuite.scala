@@ -81,4 +81,27 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       doAs(admin, createTable)
     }
   }
+
+  test("[KYUUBI #6541] SELECT TABLE") {
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
+      doAs(
+        bob, {
+          sql( s"""
+                  |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+                  |(id int, name string)
+                  |USING paimon
+                  |OPTIONS (
+                  | primaryKey = 'id'
+                  |)
+                  |""".stripMargin)
+          // insert 2 data files
+          (0 until 2)
+            .foreach(i => sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES ($i, 'name_$i')"))
+        })
+
+      interceptEndsWith[AccessControlException] {
+        doAs(bob, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1").show)
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+    }
+  }
 }

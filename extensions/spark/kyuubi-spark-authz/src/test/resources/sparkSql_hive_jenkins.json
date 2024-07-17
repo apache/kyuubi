@@ -229,7 +229,7 @@
     "isAuditEnabled" : true,
     "resources" : {
       "database" : {
-        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1" ],
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1", "paimon_ns"],
         "isExcludes" : false,
         "isRecursive" : false
       },
