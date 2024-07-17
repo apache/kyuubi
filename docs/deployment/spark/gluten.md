@@ -18,7 +18,7 @@
 
 # Gluten
 
-[Gluten](https://oap-project.github.io/gluten/) is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries. Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with Spark 3.2/3.3/3.4, are supported. Users can employ the following methods to utilize the Gluten with Velox native libraries.
+[Gluten](https://oap-project.github.io/gluten/) is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries. Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with Spark 3.3/3.4, are supported. Users can employ the following methods to utilize the Gluten with Velox native libraries.
 
 ## Building(with velox Backend)
 
@@ -30,7 +30,7 @@ Git clone gluten project, use gluten build script `buildbundle-veloxbe.sh`, and 
 git clone https://github.com/oap-project/gluten.git
 cd /path/to/gluten
 
-## The script builds two jars for spark 3.2.x, 3.3.x, and 3.4.x.
+## The script builds two jars for spark 3.3.x, and 3.4.x.
 ./dev/buildbundle-veloxbe.sh
 ```
 

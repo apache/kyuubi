@@ -48,7 +48,6 @@ jobs:
           - 8
           - 17
         spark:
-          - '3.2'
           - '3.3'
           - '3.4'
           - '3.5'
@@ -81,10 +80,7 @@ jobs:
             spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-4.0.0-preview1 -Dspark.archive.name=spark-4.0.0-preview1-bin-hadoop3.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-4.0-binary'
-        exclude:
-          # SPARK-33772: Spark supports JDK 17 since 3.3.0
-          - java: 17
-            spark: '3.2'
+
     env:
       SPARK_LOCAL_IP: localhost
     steps:
