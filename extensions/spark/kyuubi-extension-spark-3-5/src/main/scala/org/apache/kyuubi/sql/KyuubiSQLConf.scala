@@ -71,7 +71,7 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
       .doc("When true, we do a rebalance before zorder in case data skew. " +
         "Note that, if the insertion is dynamic partition we will use the partition " +
-        "columns to rebalance. Note that, this config only affects with Spark 3.3.x")
+        "columns to rebalance.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -80,8 +80,7 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.rebalanceZorderColumns.enabled")
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do rebalance before " +
         s"Z-Order. If it's dynamic partition insert, the rebalance expression will include " +
-        s"both partition columns and Z-Order columns. Note that, this config only " +
-        s"affects with Spark 3.3.x")
+        s"both partition columns and Z-Order columns.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -91,7 +90,7 @@ object KyuubiSQLConf {
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do two phase rebalance " +
         s"before Z-Order for the dynamic partition write. The first phase rebalance using " +
         s"dynamic partition column; The second phase rebalance using dynamic partition column + " +
-        s"Z-Order columns. Note that, this config only affects with Spark 3.3.x")
+        s"Z-Order columns.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -99,8 +98,7 @@ object KyuubiSQLConf {
   val ZORDER_USING_ORIGINAL_ORDERING_ENABLED =
     buildConf("spark.sql.optimizer.zorderUsingOriginalOrdering.enabled")
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do sort by " +
-        s"the original ordering i.e. lexicographical order. Note that, this config only " +
-        s"affects with Spark 3.3.x")
+        s"the original ordering i.e. lexicographical order.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
