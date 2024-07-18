@@ -196,20 +196,17 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
             !isPathIdentifier(v2Relation.identifier.get.name(), spark) =>
         val maybeCatalog = v2Relation.catalog.flatMap(catalogPlugin =>
           lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogPlugin))
-
-        val identifierDatabase = {
-          val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
-          maybeIdentifier.flatMap { id =>
-            lookupExtractor[IdentifierTableExtractor].apply(spark, id)
-          } match {
-            case Some(value) => value.database
-            case _ => None
-          }
-        }
         lookupExtractor[TableTableExtractor].apply(spark, v2Relation.table)
           .map { table =>
             val maybeOwner = TableExtractor.getOwner(v2Relation)
-            val maybeDatabase = table.database.orElse(identifierDatabase)
+            val maybeDatabase: Option[String] = table.database match {
+              case Some(x) => Some(x)
+              case None =>
+                val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
+                maybeIdentifier.flatMap { id =>
+                  lookupExtractor[IdentifierTableExtractor].apply(spark, id)
+                }.flatMap(table => table.database)
+            }
             table.copy(catalog = maybeCatalog, database = maybeDatabase, owner = maybeOwner)
           }
       case _ => None
