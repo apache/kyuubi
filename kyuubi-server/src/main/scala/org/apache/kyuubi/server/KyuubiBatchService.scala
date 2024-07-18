@@ -34,7 +34,7 @@ class KyuubiBatchService(
 
   private lazy val restFrontend = server.frontendServices
     .filter(_.isInstanceOf[KyuubiRestFrontendService])
-    .head
+    .head.asInstanceOf[KyuubiRestFrontendService]
 
   private def kyuubiInstance: String = restFrontend.connectionUrl
 
@@ -66,6 +66,7 @@ class KyuubiBatchService(
   override def start(): Unit = {
     assert(running.compareAndSet(false, true))
     val submitTask: Runnable = () => {
+      restFrontend.waitForServerStarted()
       while (running.get) {
         metadataManager.pickBatchForSubmitting(kyuubiInstance) match {
           case None => Thread.sleep(1000)
