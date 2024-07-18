@@ -315,7 +315,8 @@ class KyuubiSessionImpl(
   }
 
   def checkEngineConnectionAlive(): Boolean = {
-    if (Option(client).exists(_.engineConnectionClosed)) return false
+    if (client == null) return true // client has not been initialized
+    if (client.engineConnectionClosed) return false
     !client.remoteEngineBroken
   }
 }
