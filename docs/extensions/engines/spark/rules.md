@@ -43,7 +43,7 @@ And don't worry, Kyuubi will support the new Apache Spark version in the future.
 
 ## Usage
 
-| Kyuubi Spark SQL extension | Supported Spark version(s) | Available since  | EOL   | Bundled in Binary release tarball | Maven profile |
+| Kyuubi Spark SQL extension | Supported Spark version(s) | Available since  |  EOL  | Bundled in Binary release tarball | Maven profile |
 |----------------------------|----------------------------|------------------|-------|-----------------------------------|---------------|
 | kyuubi-extension-spark-3-1 | 3.1.x                      | 1.3.0-incubating | 1.8.0 | 1.3.0-incubating                  | spark-3.1     |
 | kyuubi-extension-spark-3-2 | 3.2.x                      | 1.4.0-incubating | 1.9.0 | 1.4.0-incubating                  | spark-3.2     |
