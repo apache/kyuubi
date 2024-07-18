@@ -99,9 +99,11 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             .foreach(i => sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES ($i, 'name_$i')"))
         })
 
+      doAs(bob, sql(s"SELECT id FROM $catalogV2.$namespace1.$table1").show)
+
       interceptEndsWith[AccessControlException] {
-        doAs(bob, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1").show)
-      }(s"does not have [select] privilege on [$namespace1/$table1]")
+        doAs(someone, sql(s"SELECT id FROM $catalogV2.$namespace1.$table1").show)
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
     }
   }
 }
