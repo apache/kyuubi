@@ -24,7 +24,7 @@ import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorSchedul
 
 import org.apache.kyuubi.util.JavaUtils
 
-private[kyuubi] case class JettyServer(
+private[kyuubi] class JettyServer(
     server: Server,
     connector: ServerConnector,
     rootHandler: ContextHandlerCollection) {
@@ -68,7 +68,7 @@ private[kyuubi] case class JettyServer(
     addHandler(JettyUtils.createRedirectHandler(src, dest))
   }
 
-  def getState: String = server.getState
+  def isStarted: Boolean = server.isStarted
 }
 
 object JettyServer {

@@ -193,19 +193,23 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  def waitForServerStarted(): Unit = {
+    // block until the HTTP server is started, otherwise, we may get
+    // the wrong HTTP server port -1
+    while (!server.isStarted) {
+      info(s"Waiting for $getName's HTTP server getting started")
+      Thread.sleep(1000)
+    }
+  }
+
   override def start(): Unit = synchronized {
     if (!isStarted.get) {
       try {
         server.start()
+        startInternal()
+        waitForServerStarted()
         isStarted.set(true)
         startBatchChecker()
-        startInternal()
-        // block until the HTTP server is started, otherwise, we may get
-        // the wrong HTTP server port -1
-        while (server.getState != "STARTED") {
-          info(s"Waiting for $getName's HTTP server getting started")
-          Thread.sleep(1000)
-        }
         recoverBatchSessions()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
