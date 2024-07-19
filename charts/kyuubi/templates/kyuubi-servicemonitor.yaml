@@ -23,12 +23,10 @@ metadata:
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
     {{- if .Values.serviceMonitor.labels }}
-    {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
+      {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
     {{- end }}
 spec:
   selector:
-    matchLabels:
-      {{- include "kyuubi.selectorLabels" . | nindent 6 }}
-  endpoints:
-    {{- toYaml .Values.serviceMonitor.endpoints | nindent 4 }}
+    matchLabels: {{- include "kyuubi.selectorLabels" . | nindent 6 }}
+  endpoints: {{- toYaml .Values.serviceMonitor.endpoints | nindent 4 }}
 {{- end }}

@@ -20,12 +20,10 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ .Release.Name }}
-  labels:
-    {{- include "kyuubi.labels" . | nindent 4 }}
+  labels: {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
       app: {{ .Release.Name }}
-  podMetricsEndpoints:
-    {{- toYaml .Values.podMonitor.podMetricsEndpoint | nindent 4 }}
+  podMetricsEndpoints: {{- toYaml .Values.podMonitor.podMetricsEndpoint | nindent 4 }}
 {{- end }}
