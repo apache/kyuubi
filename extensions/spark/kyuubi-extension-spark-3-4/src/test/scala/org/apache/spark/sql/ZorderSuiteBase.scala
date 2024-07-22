@@ -640,6 +640,32 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
     }
   }
 
+
+  test("Allow insert zorder after repartition if zorder using local sort") {
+    withTable("t") {
+      sql(
+        """
+          |CREATE TABLE t (c1 int, c2 string) TBLPROPERTIES (
+          |'kyuubi.zorder.enabled'= 'true',
+          |'kyuubi.zorder.cols'= 'c1,c2')
+          |""".stripMargin)
+      withSQLConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "false") {
+        val p1 = sql("INSERT INTO TABLE t SELECT /*+ REPARTITION(1) */* FROM VALUES(1,'a')")
+          .queryExecution.analyzed
+        assert(p1.collect {
+          case sort: Sort if !sort.global => sort
+        }.size == 1)
+      }
+      withSQLConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "true") {
+        val p2 = sql("INSERT INTO TABLE t SELECT /*+ REPARTITION(1) */* FROM VALUES(1,'a')")
+          .queryExecution.analyzed
+        assert(p2.collect {
+          case sort: Sort if !sort.global => sort
+        }.size == 0)
+      }
+    }
+  }
+
   test("fast approach test") {
     Seq[Seq[Any]](
       Seq(1L, 2L),
