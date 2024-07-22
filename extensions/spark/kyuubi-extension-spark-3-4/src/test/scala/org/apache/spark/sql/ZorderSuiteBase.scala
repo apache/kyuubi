@@ -640,7 +640,6 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
     }
   }
 
-
   test("Allow insert zorder after repartition if zorder using local sort") {
     withTable("t") {
       sql(
