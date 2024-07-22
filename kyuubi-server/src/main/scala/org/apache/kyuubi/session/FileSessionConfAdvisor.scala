@@ -51,15 +51,18 @@ object FileSessionConfAdvisor extends Logging {
         reloadInterval,
         TimeUnit.MILLISECONDS)
       .build(new CacheLoader[String, JMap[String, String]] {
-        override def load(profile: String): JMap[String, String] = {
-          val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
-          propsFile match {
-            case None =>
-              error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
-              Collections.emptyMap()
-            case Some(_) =>
-              Utils.getPropertiesFromFile(propsFile).asJava
+        override def load(profiles: String): JMap[String, String] = {
+          val confMap = scala.collection.mutable.Map[String, String]()
+          profiles.split(",").map(_.trim).filter(_.nonEmpty).foreach { profile =>
+            val propsFile = Utils.getPropertiesFile(s"kyuubi-session-$profile.conf")
+            propsFile match {
+              case None =>
+                error("File not found: $KYUUBI_CONF_DIR/" + s"kyuubi-session-$profile.conf")
+              case Some(_) =>
+                confMap ++= Utils.getPropertiesFromFile(propsFile)
+            }
           }
+          confMap.asJava
         }
       })
 }
