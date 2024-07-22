@@ -1442,7 +1442,6 @@
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
@@ -1470,7 +1469,6 @@
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
@@ -1979,27 +1977,8 @@
         </profile>
 
         <profile>
-            <id>spark-3.2</id>
-            <modules>
-                <module>extensions/spark/kyuubi-extension-spark-common</module>
-                <module>extensions/spark/kyuubi-extension-spark-3-2</module>
-            </modules>
-            <properties>
-                <spark.version>3.2.4</spark.version>
-                <spark.binary.version>3.2</spark.binary.version>
-                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
-                <delta.version>2.0.2</delta.version>
-                <!-- Iceberg 1.5.0 removed support for Spark 3.2. apache/iceberg#9295 -->
-                <iceberg.version>1.4.3</iceberg.version>
-                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
             <id>spark-3.3</id>
             <modules>
-                <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-3</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
