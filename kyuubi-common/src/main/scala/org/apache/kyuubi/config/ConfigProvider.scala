@@ -21,12 +21,7 @@ private[kyuubi] class ConfigProvider(conf: java.util.Map[String, String]) {
 
   def get(key: String): Option[String] = {
     if (key.startsWith("kyuubi.")) {
-      val str = conf.get(key)
-      if (str != null && str.trim.nonEmpty) {
-        Option(str)
-      } else {
-        None
-      }
+      Option(conf.get(key))
     } else {
       None
     }
