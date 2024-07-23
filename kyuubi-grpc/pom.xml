@@ -22,7 +22,6 @@
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
         <version>1.10.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>kyuubi-grpc_${scala.binary.version}</artifactId>

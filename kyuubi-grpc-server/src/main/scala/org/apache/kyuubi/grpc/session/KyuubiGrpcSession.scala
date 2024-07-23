@@ -16,6 +16,7 @@
  */
 
 package org.apache.kyuubi.grpc.session
+
 import scala.util.Random
 
 import io.grpc.ManagedChannel

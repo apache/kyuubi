@@ -84,8 +84,8 @@
         <module>kyuubi-util-scala</module>
         <module>kyuubi-zookeeper</module>
         <module>kyuubi-grpc</module>
-        <module>kyuubi-grpc-server</module>
         <module>kyuubi-grpc-shade</module>
+        <module>kyuubi-grpc-server</module>
     </modules>
 
     <scm>

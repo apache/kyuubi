@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.grpc.server
 
-import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 
 import com.google.protobuf.MessageLite
 import io.grpc._

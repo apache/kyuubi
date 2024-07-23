@@ -49,7 +49,7 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.spark:spark-connect-common_2.12</include>
+                            <include>org.apache.spark:spark-connect-common_2.13</include>
                         </includes>
                     </artifactSet>
                     <filters>
