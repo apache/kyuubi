@@ -28,7 +28,11 @@ import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, Inse
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
-trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
+trait ZorderBuilder {
+  def buildZorder(children: Seq[Expression]): ZorderBase
+}
+
+trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
   private val KYUUBI_ZORDER_ENABLED = "kyuubi.zorder.enabled"
   private val KYUUBI_ZORDER_COLS = "kyuubi.zorder.cols"
 
@@ -140,8 +144,8 @@ trait InsertZorderHelper33 extends Rule[LogicalPlan] with ZorderBuilder {
   }
 }
 
-case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
-  extends InsertZorderHelper33 {
+case class InsertZorderBeforeWritingDatasource(session: SparkSession)
+  extends InsertZorderHelper {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
     case insert: InsertIntoHadoopFsRelationCommand
         if insert.query.resolved &&
@@ -172,8 +176,8 @@ case class InsertZorderBeforeWritingDatasource33(session: SparkSession)
   }
 }
 
-case class InsertZorderBeforeWritingHive33(session: SparkSession)
-  extends InsertZorderHelper33 {
+case class InsertZorderBeforeWritingHive(session: SparkSession)
+  extends InsertZorderHelper {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
     case insert: InsertIntoHiveTable
         if insert.query.resolved &&
