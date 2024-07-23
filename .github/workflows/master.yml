@@ -263,7 +263,7 @@ jobs:
             flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.19.1 -Dflink.archive.name=flink-1.19.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.19-binary'
           - java: 8
-            flink: '1.20'
+            flink: '1.17'
             flink-archive: '-Dflink.archive.mirror=https://dist.apache.org/repos/dist/dev/flink/flink-1.20.0-rc1 -Dflink.archive.name=flink-1.20.0-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.20-binary'
     steps:
