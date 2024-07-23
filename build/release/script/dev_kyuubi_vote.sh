@@ -23,89 +23,89 @@ set -e
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
-# release version, e.g. v1.7.0
-release_version=${release_version:-""}
-# release candidate number, e.g. rc2
-release_rc_no=${release_rc_no:-""}
-# previous release candidate number, e.g. rc1, could be empty if it is the first vote
-prev_release_rc_no=${prev_release_rc_no:-""}
-# previous release version, e.g. v1.7.0, this is used to generate change log
-prev_release_version=${prev_release_version:-""}
+# release version, e.g. 1.7.1
+RELEASE_VERSION=${RELEASE_VERSION:-""}
+# release candidate number, e.g. 2
+RELEASE_RC_NO=${RELEASE_RC_NO:-""}
+# previous release candidate number, e.g. 1, could be empty if it is the first vote
+PREV_RELEASE_RC_NO=${PREV_RELEASE_RC_NO:-""}
+# previous release version, e.g. 1.7.0, this is used to generate change log
+PREV_RELEASE_VERSION=${PREV_RELEASE_VERSION:-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
-repo_no=${repo_no:-""}
+REPO_NO=${REPO_NO:-""}
 ################################################
 
-if [[ -z $release_version ]]; then
-  echo "Please input release version"
+if [[ -z $RELEASE_VERSION ]]; then
+  echo "Please input RELEASE_VERSION, e.g. 1.7.1"
   exit 1
 fi
-if [[ -z $release_rc_no ]]; then
-  echo "Please input release rc number"
+if [[ -z $RELEASE_RC_NO ]]; then
+  echo "Please input RELEASE_RC_NO, e.g. 2"
   exit 1
 fi
-if [[ -z $prev_release_version ]]; then
-  echo "Please input prev release version which is used to generate change log"
+if [[ -z $PREV_RELEASE_VERSION ]]; then
+  echo "Please input PREV_RELEASE_VERSION which is used to generate change log, e.g. 1.7.0"
   exit 1
 fi
-if [[ -z $repo_no ]]; then
+if [[ -z $REPO_NO ]]; then
   echo "Please input staging repository number, check it under https://repository.apache.org/content/repositories "
   exit 1
 fi
 
-release_rc_tag=${release_version}-${release_rc_no}
-git_commit_hash=$(git rev-list -n 1 $release_rc_tag)
+RELEASE_RC_TAG=v${RELEASE_VERSION}-rc${RELEASE_RC_NO}
+GIT_COMMIT_HASH=$(git rev-list -n 1 $RELEASE_RC_TAG)
 
-echo "Release version: ${release_version}"
-echo "Release candidate number: ${release_rc_no}"
-echo "Previous release candidate number: ${prev_release_rc_no}"
-echo "Staging repository number: ${repo_no}"
-echo "Release candidate tag: ${release_rc_tag}"
-echo "Release candidate tag commit hash: ${git_commit_hash}"
+echo "Release version: v${RELEASE_VERSION}"
+echo "Release candidate number: RC${RELEASE_RC_NO}"
+echo "Previous release candidate number: RC${PREV_RELEASE_RC_NO}"
+echo "Staging repository number: ${REPO_NO}"
+echo "Release candidate tag: ${RELEASE_RC_TAG}"
+echo "Release candidate tag commit hash: ${GIT_COMMIT_HASH}"
 
-if [[ ! -z "$prev_release_rc_no" ]]; then
-  prev_release_rc_tag=${release_version}-${prev_release_rc_no}
-  change_from_pre_commit="
-The commit list since the ${prev_release_rc_no}:
-https://github.com/apache/kyuubi/compare/${prev_release_rc_tag}...${release_rc_tag}
+if [[ ! -z "$PREV_RELEASE_RC_NO" ]]; then
+  PREV_RELEASE_RC_TAG=v${RELEASE_VERSION}-rc${PREV_RELEASE_RC_NO}
+  CHANGE_FROM_PRE_COMMIT="
+The commit list since the previous RC:
+https://github.com/apache/kyuubi/compare/${PREV_RELEASE_RC_TAG}...${RELEASE_RC_TAG}
 "
 fi
 
 RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
-DEV_VOTE=${RELEASE_TEMP_DIR}/${release_rc_tag}_dev_vote.temp
+DEV_VOTE=${RELEASE_TEMP_DIR}/${RELEASE_RC_TAG}_dev_vote.temp
 
 cat >${DEV_VOTE}<<EOF
-Title: [VOTE] Release Apache Kyuubi ${release_version} ${release_rc_no}
+Title: [VOTE] Release Apache Kyuubi v${RELEASE_VERSION} RC${RELEASE_RC_NO}
 
 Content:
 Hello Apache Kyuubi PMC and Community,
 
 Please vote on releasing the following candidate as
-Apache Kyuubi version ${release_version}.
+Apache Kyuubi v${RELEASE_VERSION}.
 
 The VOTE will remain open for at least 72 hours.
 
-[ ] +1 Release this package as Apache Kyuubi ${release_version}
+[ ] +1 Release this package as Apache Kyuubi v${RELEASE_VERSION}
 [ ] +0
 [ ] -1 Do not release this package because ...
 
 To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/
 
-The tag to be voted on is ${release_rc_tag} (commit ${git_commit_hash}):
-https://github.com/apache/kyuubi/tree/${release_rc_tag}
+The tag to be voted on is ${RELEASE_RC_TAG} (commit ${GIT_COMMIT_HASH}):
+https://github.com/apache/kyuubi/tree/${RELEASE_RC_TAG}
 
 The release files, including signatures, digests, etc. can be found at:
-https://dist.apache.org/repos/dist/dev/kyuubi/${release_rc_tag}/
+https://dist.apache.org/repos/dist/dev/kyuubi/${RELEASE_RC_TAG}/
 
 Signatures used for Kyuubi RCs can be found in this file:
 https://downloads.apache.org/kyuubi/KEYS
 
 The staging repository for this release can be found at:
-https://repository.apache.org/content/repositories/orgapachekyuubi-${repo_no}/
-${change_from_pre_commit}
-The release note is available in:
-https://github.com/apache/kyuubi/compare/${prev_release_version}...${release_rc_tag}
+https://repository.apache.org/content/repositories/orgapachekyuubi-${REPO_NO}/
+${CHANGE_FROM_PRE_COMMIT}
+The commit list since the latest released version:
+https://github.com/apache/kyuubi/compare/v${PREV_RELEASE_VERSION}...${RELEASE_RC_TAG}
 
 Thanks,
 On behalf of Apache Kyuubi community
