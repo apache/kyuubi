@@ -39,7 +39,6 @@ revisionHistoryLimit: 10
 updateStrategy:
   type: RollingUpdate
   rollingUpdate:
-    maxUnavailable: 1
     partition: 0
 
 image:
