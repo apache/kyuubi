@@ -21,7 +21,6 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
