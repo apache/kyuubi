@@ -24,53 +24,45 @@ RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
 # release version, e.g. 1.7.0
-release_version=${release_version:-""}
+RELEASE_VERSION=${RELEASE_VERSION:-""}
 ################################################
 
-if [[ -z $release_version ]]; then
-  echo "Please input release version"
+if [[ -z $RELEASE_VERSION ]]; then
+  echo "Please input release version, e.g. 1.7.0"
   exit 1
 fi
 
-echo "Release version: ${release_version}"
+echo "Release version: ${RELEASE_VERSION}"
 
 RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
-ANNOUNCE=${RELEASE_TEMP_DIR}/${release_version}_announce.temp
+ANNOUNCE=${RELEASE_TEMP_DIR}/v${RELEASE_VERSION}_announce.temp
 
 cat >$ANNOUNCE<<EOF
-Title: [ANNOUNCE] Apache Kyuubi released ${release_version}
+Title: [ANNOUNCE] Apache Kyuubi v${RELEASE_VERSION} is available
 
 Content:
 Hi all,
 
 The Apache Kyuubi community is pleased to announce that
-Apache Kyuubi ${release_version} has been released!
+Apache Kyuubi v${RELEASE_VERSION} has been released!
 
-Apache Kyuubi is a distributed and multi-tenant gateway to provide
-serverless SQL on data warehouses and lakehouses.
+Apache Kyuubi™ is a distributed and multi-tenant gateway to provide
+serverless SQL on Data Warehouses and Lakehouses.
 
-Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface
-for end-users to manipulate large-scale data with pre-programmed and
-extensible Spark SQL engines.
-
-We are aiming to make Kyuubi an "out-of-the-box" tool for data warehouses
-and lakehouses.
-
-This "out-of-the-box" model minimizes the barriers and costs for end-users
-to use Spark at the client side.
-
-At the server-side, Kyuubi server and engine's multi-tenant architecture
-provides the administrators a way to achieve computing resource isolation,
-data security, high availability, high client concurrency, etc.
+Kyuubi builds distributed SQL query engines on top of various kinds of
+modern computing frameworks, e.g., Apache Spark, Apache Flink, Apache
+Doris, Apache Hive, Trino, and StarRocks, etc., to query massive datasets
+distributed over fleets of machines from heterogeneous data sources.
 
 The full release notes and download links are available at:
-Release Notes: https://kyuubi.apache.org/release/${release_version}.html
+Release Notes: https://kyuubi.apache.org/release/${RELEASE_VERSION}.html
 
 To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/
 
 Kyuubi Resources:
+- Documentation: https://kyuubi.readthedocs.io/en/v${RELEASE_VERSION}/
 - Issue: https://github.com/apache/kyuubi/issues
 - Mailing list: dev@kyuubi.apache.org
 

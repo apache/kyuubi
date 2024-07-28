@@ -40,6 +40,7 @@ import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 object KyuubiServer extends Logging {
   private[kyuubi] var kyuubiServer: KyuubiServer = _
   @volatile private[kyuubi] var hadoopConf: Configuration = _
+  private var commandArgs: Array[String] = Array.empty[String]
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
@@ -93,9 +94,11 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
 
+    commandArgs = args
+
     // register conf entries
     JDBCMetadataStoreConf
-    val conf = new KyuubiConf().loadFileDefaults()
+    val conf = createKyuubiConf()
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
   }
@@ -105,13 +108,13 @@ object KyuubiServer extends Logging {
   }
 
   private[kyuubi] def reloadHadoopConf(): Unit = synchronized {
-    val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(new KyuubiConf().loadFileDefaults())
+    val _hadoopConf = KyuubiHadoopUtils.newHadoopConf(createKyuubiConf())
     hadoopConf = _hadoopConf
   }
 
   private[kyuubi] def refreshUserDefaultsConf(): Unit = kyuubiServer.conf.synchronized {
     val existedUserDefaults = kyuubiServer.conf.getAllUserDefaults
-    val refreshedUserDefaults = KyuubiConf().loadFileDefaults().getAllUserDefaults
+    val refreshedUserDefaults = createKyuubiConf().getAllUserDefaults
     refreshConfig("user defaults", existedUserDefaults, refreshedUserDefaults)
   }
 
@@ -119,7 +122,7 @@ object KyuubiServer extends Logging {
     val existedKubernetesConf =
       kyuubiServer.conf.getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
     val refreshedKubernetesConf =
-      KyuubiConf().loadFileDefaults().getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
+      createKyuubiConf().getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
     refreshConfig("kubernetes", existedKubernetesConf, refreshedKubernetesConf)
   }
 
@@ -149,7 +152,7 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshUnlimitedUsers(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val existingUnlimitedUsers = sessionMgr.getUnlimitedUsers
-    sessionMgr.refreshUnlimitedUsers(KyuubiConf().loadFileDefaults())
+    sessionMgr.refreshUnlimitedUsers(createKyuubiConf())
     val refreshedUnlimitedUsers = sessionMgr.getUnlimitedUsers
     info(s"Refreshed unlimited users from $existingUnlimitedUsers to $refreshedUnlimitedUsers")
   }
@@ -157,7 +160,7 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshDenyUsers(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val existingDenyUsers = sessionMgr.getDenyUsers
-    sessionMgr.refreshDenyUsers(KyuubiConf().loadFileDefaults())
+    sessionMgr.refreshDenyUsers(createKyuubiConf())
     val refreshedDenyUsers = sessionMgr.getDenyUsers
     info(s"Refreshed deny users from $existingDenyUsers to $refreshedDenyUsers")
   }
@@ -165,9 +168,13 @@ object KyuubiServer extends Logging {
   private[kyuubi] def refreshDenyIps(): Unit = synchronized {
     val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
     val existingDenyIps = sessionMgr.getDenyIps
-    sessionMgr.refreshDenyIps(KyuubiConf().loadFileDefaults())
+    sessionMgr.refreshDenyIps(createKyuubiConf())
     val refreshedDenyIps = sessionMgr.getDenyIps
     info(s"Refreshed deny client ips from $existingDenyIps to $refreshedDenyIps")
+  }
+
+  private def createKyuubiConf(): KyuubiConf = {
+    KyuubiConf().loadFileDefaults().loadFromArgs(commandArgs)
   }
 }
 

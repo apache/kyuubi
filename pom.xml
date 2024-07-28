@@ -158,7 +158,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.15.0</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.5.2</iceberg.version>
+        <iceberg.version>1.6.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
@@ -172,8 +172,8 @@
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
-        <kubernetes-client.version>6.8.1</kubernetes-client.version>
-        <kyuubi-relocated.version>0.4.0</kyuubi-relocated.version>
+        <kubernetes-client.version>6.13.1</kubernetes-client.version>
+        <kyuubi-relocated.version>0.4.1</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.20.0</log4j.version>
@@ -1444,7 +1444,6 @@
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
@@ -1472,7 +1471,6 @@
                         </environmentVariables>
                         <systemProperties>
                             <log4j.ignoreTCL>true</log4j.ignoreTCL>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <log4j2.configurationFile>src/test/resources/log4j2-test.xml</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
@@ -2017,27 +2015,8 @@
         </profile>
 
         <profile>
-            <id>spark-3.2</id>
-            <modules>
-                <module>extensions/spark/kyuubi-extension-spark-common</module>
-                <module>extensions/spark/kyuubi-extension-spark-3-2</module>
-            </modules>
-            <properties>
-                <spark.version>3.2.4</spark.version>
-                <spark.binary.version>3.2</spark.binary.version>
-                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
-                <delta.version>2.0.2</delta.version>
-                <!-- Iceberg 1.5.0 removed support for Spark 3.2. apache/iceberg#9295 -->
-                <iceberg.version>1.4.3</iceberg.version>
-                <spark.archive.name>spark-${spark.version}-bin-hadoop3.2${spark.archive.scala.suffix}.tgz</spark.archive.name>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
             <id>spark-3.3</id>
             <modules>
-                <module>extensions/spark/kyuubi-extension-spark-common</module>
                 <module>extensions/spark/kyuubi-extension-spark-3-3</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
@@ -2141,7 +2120,7 @@
         <profile>
             <id>flink-1.19</id>
             <properties>
-                <flink.version>1.19.0</flink.version>
+                <flink.version>1.19.1</flink.version>
             </properties>
         </profile>
 
