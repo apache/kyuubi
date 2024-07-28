@@ -56,20 +56,29 @@ jobs:
         id: gluten-cache
         uses: actions/cache@v3
         with:
-          path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          path: gluten/dist/
+          key: gluten_dist_${{ steps.date.outputs.date }}
       - name: Build gluten project
         run: |
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
             git clone https://github.com/oap-project/gluten.git
             cd gluten
-            ./dev/buildbundle-veloxbe.sh
+            ./dev/builddeps-veloxbe.sh
+            rm -rf dist && mkdir -p dist
+            mvn clean package -Pbackends-velox -Prss -Pspark-3.2 -DskipTests
+            cp package/target/gluten-velox-bundle-spark*.jar dist
+            mvn clean package -Pbackends-velox -Prss -Pspark-3.3 -DskipTests
+            cp package/target/gluten-velox-bundle-spark*.jar dist
+            mvn clean package -Pbackends-velox -Prss -Pspark-3.4 -DskipTests
+            cp package/target/gluten-velox-bundle-spark*.jar dist
+            mvn clean package -Pbackends-velox -Prss -Pspark-3.5 -DskipTests
+            cp package/target/gluten-velox-bundle-spark*.jar dist
           fi
       - uses: actions/cache@v3
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
-          path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          path: gluten/dist/
+          key: gluten_dist_${{ steps.date.outputs.date }}
 
   gluten-it:
     name: Gluten Integration TPC-H/DS Test
@@ -78,7 +87,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        spark: [ '3.4', '3.3' ]
+        spark: [ '3.5', '3.4', '3.3' ]
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -101,8 +110,8 @@ jobs:
         id: gluten-cache
         uses: actions/cache@v3
         with:
-          path: gluten/package/target/
-          key: gluten_package_${{ steps.date.outputs.date }}
+          path: gluten/dist/
+          key: gluten_dist_${{ steps.date.outputs.date }}
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
