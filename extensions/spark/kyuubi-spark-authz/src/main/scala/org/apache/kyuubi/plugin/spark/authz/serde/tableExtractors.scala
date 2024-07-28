@@ -199,7 +199,15 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
         lookupExtractor[TableTableExtractor].apply(spark, v2Relation.table)
           .map { table =>
             val maybeOwner = TableExtractor.getOwner(v2Relation)
-            table.copy(catalog = maybeCatalog, owner = maybeOwner)
+            val maybeDatabase: Option[String] = table.database match {
+              case Some(x) => Some(x)
+              case None =>
+                val maybeIdentifier = invokeAs[Option[AnyRef]](v2Relation, "identifier")
+                maybeIdentifier.flatMap { id =>
+                  lookupExtractor[IdentifierTableExtractor].apply(spark, id)
+                }.flatMap(table => table.database)
+            }
+            table.copy(catalog = maybeCatalog, database = maybeDatabase, owner = maybeOwner)
           }
       case _ => None
     }
