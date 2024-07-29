@@ -1336,7 +1336,7 @@ object KyuubiConf {
 
   val ENGINE_ERROR_MAX_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.startup.error.max.size")
-      .doc("During engine bootstrapping, if anderror occurs, using this config to limit" +
+      .doc("During engine bootstrapping, if an error occurs, using this config to limit" +
         " the length of error message(characters).")
       .version("1.1.0")
       .intConf
@@ -3321,7 +3321,7 @@ object KyuubiConf {
         "1.5.0",
         s"Use ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead"),
 
-      // deprected configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
+      // deprecated configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
       DeprecatedConfig(
         "kyuubi.zookeeper.embedded.port",
         "1.2.0",
@@ -3331,7 +3331,7 @@ object KyuubiConf {
         "1.2.0",
         "Use kyuubi.zookeeper.embedded.data.dir instead"),
 
-      // deprected configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
+      // deprecated configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.quorum",
         "1.6.0",
