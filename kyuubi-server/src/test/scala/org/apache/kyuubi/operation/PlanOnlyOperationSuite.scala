@@ -233,8 +233,31 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("KYUUBI #6574: Skip eagerly execute command in physical/execution plan only mode") {
+    withJdbcStatement() { statement =>
+      val table = "test_plan_only"
+      val createTableCommand = s"create table $table(i int)"
+
+      statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${PhysicalMode.name}")
+      val physicalPlan = getOperationPlanWithStatement(statement, createTableCommand)
+      assert(physicalPlan.startsWith("Execute CreateTableCommand") && physicalPlan.contains(table))
+
+      statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${ExecutionMode.name}")
+      val executionPlan = getOperationPlanWithStatement(statement, createTableCommand)
+      assert(executionPlan.startsWith("Execute CreateTableCommand") && physicalPlan.contains(table))
+
+      statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${NoneMode.name}")
+      val e = intercept[KyuubiSQLException](statement.executeQuery(s"select * from $table"))
+      assert(e.getMessage.contains("TABLE_OR_VIEW_NOT_FOUND"))
+    }
+  }
+
   private def getOperationPlanWithStatement(statement: Statement): String = {
-    val resultSet = statement.executeQuery("select 1 where true")
+    getOperationPlanWithStatement(statement, "select 1 where true")
+  }
+
+  private def getOperationPlanWithStatement(statement: Statement, sql: String): String = {
+    val resultSet = statement.executeQuery(sql)
     assert(resultSet.next())
     resultSet.getString(1)
   }
