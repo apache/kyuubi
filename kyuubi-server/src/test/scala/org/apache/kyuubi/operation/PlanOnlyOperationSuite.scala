@@ -236,7 +236,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   test("KYUUBI #6574: Skip eagerly execute command in physical/execution plan only mode") {
     withJdbcStatement() { statement =>
       val table = "test_plan_only"
-      val createTableCommand = s"create table $table(i int)"
+      val createTableCommand = s"create table $table(i int) using parquet"
 
       statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${PhysicalMode.name}")
       val physicalPlan = getOperationPlanWithStatement(statement, createTableCommand)
