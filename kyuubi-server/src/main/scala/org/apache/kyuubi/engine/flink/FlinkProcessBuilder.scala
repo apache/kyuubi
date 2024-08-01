@@ -257,7 +257,8 @@ class FlinkProcessBuilder(
   private def generateTokenFile(): Option[(String, String)] = {
     // We disabled `hadoopfs` token service, which may cause yarn client to miss hdfs token.
     // So we generate a hadoop token file to pass kyuubi engine tokens to submit process.
-    // TODO: Removed this after FLINK-35525, delegation tokens will be passed by `kyuubi` provider
+    // TODO: Removed this after FLINK-35525 (1.20.0), delegation tokens will be passed
+    //  by `kyuubi` provider
     conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
       val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
       tokenTempDir = Utils.createTempDir()
