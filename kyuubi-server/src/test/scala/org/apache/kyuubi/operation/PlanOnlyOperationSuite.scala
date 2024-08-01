@@ -250,7 +250,8 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
       statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${NoneMode.name}")
       val e = intercept[KyuubiSQLException](statement.executeQuery(s"select * from $table"))
-      assert(e.getMessage.contains("TABLE_OR_VIEW_NOT_FOUND"))
+      assert(e.getMessage.contains("TABLE_OR_VIEW_NOT_FOUND")
+        || e.getMessage.contains("Table or view not found"))
     }
   }
 
