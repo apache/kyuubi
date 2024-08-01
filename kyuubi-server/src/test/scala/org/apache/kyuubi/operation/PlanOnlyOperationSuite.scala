@@ -240,11 +240,13 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
       statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${PhysicalMode.name}")
       val physicalPlan = getOperationPlanWithStatement(statement, createTableCommand)
-      assert(physicalPlan.startsWith("Execute CreateTableCommand") && physicalPlan.contains(table))
+      assert(physicalPlan.startsWith("Execute CreateDataSourceTableCommand")
+        && physicalPlan.contains(table))
 
       statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${ExecutionMode.name}")
       val executionPlan = getOperationPlanWithStatement(statement, createTableCommand)
-      assert(executionPlan.startsWith("Execute CreateTableCommand") && physicalPlan.contains(table))
+      assert(executionPlan.startsWith("Execute CreateDataSourceTableCommand")
+        && physicalPlan.contains(table))
 
       statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${NoneMode.name}")
       val e = intercept[KyuubiSQLException](statement.executeQuery(s"select * from $table"))
