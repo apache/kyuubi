@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.Locale
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.kyuubi.SparkUtilsHelper
@@ -28,6 +30,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
+import org.apache.kyuubi.engine.spark.util.PlanOnlyExecutors
 import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
@@ -149,6 +152,9 @@ class PlanOnlyStatement(
         iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
       case LineageMode =>
         val result = parseLineage(spark, plan)
+        iter = new IterableFetchIterator(Seq(Row(result)))
+      case PlanOnlyExecutors(executor) =>
+        val result = executor.execute(spark, plan, style.name.toLowerCase(Locale.ROOT))
         iter = new IterableFetchIterator(Seq(Row(result)))
       case UnknownMode => throw unknownModeError(mode)
       case _ =>
