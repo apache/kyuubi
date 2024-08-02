@@ -30,8 +30,8 @@ and easy to expand than directly using Spark to manipulate Hudi.
 Hudi Integration
 ----------------
 
-To enable the integration of kyuubi spark sql engine and Hudi through
-Catalog APIs, you need to:
+To enable the integration of Kyuubi Spark SQL engine and Hudi through
+Spark DataSource V2 API, you need to:
 
 - Referencing the Hudi :ref:`dependencies<spark-hudi-deps>`
 - Setting the Spark extension and catalog :ref:`configurations<spark-hudi-conf>`
@@ -41,11 +41,11 @@ Catalog APIs, you need to:
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with Hudi supported consists of
+The **classpath** of Kyuubi Spark SQL engine with Hudi supported consists of
 
-1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
-2. a copy of spark distribution
-3. hudi-spark<spark.version>-bundle_<scala.version>-<hudi.version>.jar (example: hudi-spark3.2-bundle_2.12-0.11.1.jar), which can be found in the `Maven Central`_
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
+2. a copy of Spark distribution
+3. hudi-spark<spark.version>-bundle_<scala.version>-<hudi.version>.jar (example: hudi-spark3.5-bundle_2.12:0.15.0.jar), which can be found in the `Maven Central`_
 
 In order to make the Hudi packages visible for the runtime classpath of engines, we can use one of these methods:
 
@@ -61,14 +61,11 @@ To activate functionality of Hudi, we can set the following configurations:
 
 .. code-block:: properties
 
-   # Spark 3.2
+   # Spark 3.2 to 3.5
    spark.serializer=org.apache.spark.serializer.KryoSerializer
+   spark.kryo.registrator=org.apache.spark.HoodieSparkKryoRegistrar
    spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
    spark.sql.catalog.spark_catalog=org.apache.spark.sql.hudi.catalog.HoodieCatalog
-
-   # Spark 3.1
-   spark.serializer=org.apache.spark.serializer.KryoSerializer
-   spark.sql.extensions=org.apache.spark.sql.hudi.HoodieSparkSessionExtension
 
 Hudi Operations
 ---------------

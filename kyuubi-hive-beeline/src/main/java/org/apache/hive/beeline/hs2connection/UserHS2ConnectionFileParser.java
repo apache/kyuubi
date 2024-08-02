@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.kyuubi.util.JavaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,7 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
   public static final String DEFAULT_BEELINE_USER_CONF_LOCATION =
       System.getProperty("user.home")
           + File.separator
-          + (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1 ? "" : ".")
+          + (JavaUtils.isWindows ? "" : ".")
           + "beeline"
           + File.separator;
   public static final String ETC_HIVE_CONF_LOCATION =
@@ -52,6 +53,10 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
   public UserHS2ConnectionFileParser() {
     // file locations to be searched in the correct order
     locations.add(DEFAULT_BEELINE_USER_CONF_LOCATION + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
+    if (System.getenv("KYUUBI_CONF_DIR") != null) {
+      locations.add(
+          System.getenv("KYUUBI_CONF_DIR") + File.separator + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
+    }
     if (System.getenv("HIVE_CONF_DIR") != null) {
       locations.add(
           System.getenv("HIVE_CONF_DIR") + File.separator + DEFAULT_CONNECTION_CONFIG_FILE_NAME);
@@ -75,7 +80,7 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
       log.debug("User connection configuration file not found");
       return props;
     }
-    log.info("Using connection configuration file at " + fileLocation);
+    log.info("Using connection configuration file at {}", fileLocation);
     props.setProperty(HS2ConnectionFileParser.URL_PREFIX_PROPERTY_KEY, "jdbc:hive2://");
     // load the properties from config file
     Configuration conf = new Configuration(false);

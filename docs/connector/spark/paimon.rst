@@ -30,21 +30,22 @@ spark to manipulate Apache Paimon (Incubating).
 Apache Paimon (Incubating) Integration
 -------------------
 
-To enable the integration of kyuubi spark sql engine and Apache Paimon (Incubating), you need to set the following configurations:
+To enable the integration of Kyuubi Spark SQL engine and Apache Paimon (Incubating) through
+Spark DataSource V2 API, you need to:
 
 - Referencing the Apache Paimon (Incubating) :ref:`dependencies<spark-paimon-deps>`
-- Setting the spark extension and catalog :ref:`configurations<spark-paimon-conf>`
+- Setting the Spark extension and catalog :ref:`configurations<spark-paimon-conf>`
 
 .. _spark-paimon-deps:
 
 Dependencies
 ************
 
-The **classpath** of kyuubi spark sql engine with Apache Paimon (Incubating) consists of
+The **classpath** of Kyuubi Spark SQL engine with Apache Paimon (Incubating) consists of
 
-1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with Kyuubi distributions
-2. a copy of spark distribution
-3. paimon-spark-<version>.jar (example: paimon-spark-3.3-0.4-20230323.002035-5.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Spark3`_
+1. kyuubi-spark-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
+2. a copy of Spark distribution
+3. paimon-spark-<version>.jar (example: paimon-spark-3.5-0.8.1.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Spark3`_
 
 In order to make the Apache Paimon (Incubating) packages visible for the runtime classpath of engines, we can use one of these methods:
 

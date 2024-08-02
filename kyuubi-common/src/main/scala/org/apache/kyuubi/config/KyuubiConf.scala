@@ -53,6 +53,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     this
   }
 
+  def loadFromArgs(args: Array[String]): KyuubiConf = {
+    Utils.fromCommandLineArgs(args, this)
+    this
+  }
+
   def set[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
     require(entry != null, "entry cannot be null")
     require(value != null, s"value cannot be null for key: ${entry.key}")
@@ -1331,7 +1336,7 @@ object KyuubiConf {
 
   val ENGINE_ERROR_MAX_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.startup.error.max.size")
-      .doc("During engine bootstrapping, if anderror occurs, using this config to limit" +
+      .doc("During engine bootstrapping, if an error occurs, using this config to limit" +
         " the length of error message(characters).")
       .version("1.1.0")
       .intConf
@@ -1505,6 +1510,13 @@ object KyuubiConf {
       .version("1.8.0")
       .stringConf
       .createOptional
+
+  val ENGINE_TRINO_CONNECTION_INSECURE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.trino.connection.insecure.enabled")
+      .doc("Skip certificate validation when connecting with TLS/HTTPS enabled trino cluster")
+      .version("1.9.2")
+      .booleanConf
+      .createWithDefault(false)
 
   val ENGINE_TRINO_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.trino.showProgress")
@@ -3309,7 +3321,7 @@ object KyuubiConf {
         "1.5.0",
         s"Use ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead"),
 
-      // deprected configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
+      // deprecated configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
       DeprecatedConfig(
         "kyuubi.zookeeper.embedded.port",
         "1.2.0",
@@ -3319,7 +3331,7 @@ object KyuubiConf {
         "1.2.0",
         "Use kyuubi.zookeeper.embedded.data.dir instead"),
 
-      // deprected configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
+      // deprecated configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.quorum",
         "1.6.0",

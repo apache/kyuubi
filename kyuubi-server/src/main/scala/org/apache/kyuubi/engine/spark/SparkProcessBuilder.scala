@@ -37,7 +37,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{KubernetesUtils, Validator}
+import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, Validator}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
@@ -359,7 +359,8 @@ object SparkProcessBuilder {
   final private[spark] val PRINCIPAL = "spark.kerberos.principal"
   final private[spark] val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  final private val SPARK_SUBMIT_FILE =
+    if (JavaUtils.isWindows) "spark-submit.cmd" else "spark-submit"
   final private val SPARK_CONF_DIR = "SPARK_CONF_DIR"
   final private val SPARK_CONF_FILE_NAME = "spark-defaults.conf"
 

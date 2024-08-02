@@ -45,6 +45,15 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.getOption("spark.kyuubi.yes").get === "no")
   }
 
+  test("load config from --conf arguments") {
+    val conf = KyuubiConf()
+    assert(conf.get(KINIT_MAX_ATTEMPTS) === 10)
+
+    val args: Array[String] = Array("--conf", "kyuubi.kinit.max.attempts=15")
+    conf.loadFromArgs(args)
+    assert(conf.get(KINIT_MAX_ATTEMPTS) === 15)
+  }
+
   test("set and unset conf") {
     val conf = new KyuubiConf(false)
 

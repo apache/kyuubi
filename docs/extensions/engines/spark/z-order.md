@@ -78,8 +78,6 @@ This feature is inside Kyuubi extension, so you should apply the extension to Sp
 - add extension jar: `copy $KYUUBI_HOME/extension/kyuubi-extension-spark-3-5* $SPARK_HOME/jars/`
 - add config into `spark-defaults.conf`: `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
 
-Due to the extension, z-order only works with Spark 3.2 and higher version.
-
 ### Optimize history data
 
 If you want to optimize the history data of a table, the `OPTIMIZE ...` syntax is good to go. Due to Spark SQL doesn't support read and overwrite same datasource table, the syntax can only support to optimize Hive table.

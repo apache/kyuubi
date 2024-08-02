@@ -173,7 +173,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     name = "all - database, udf",
     description = "Policy for all - database, udf",
     resources = Map(
-      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1),
+      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1, paimonNamespace),
       allTableRes,
       allColumnRes),
     policyItems = List(

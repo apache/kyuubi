@@ -37,7 +37,7 @@ import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{JavaUtils, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
@@ -59,13 +59,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
-      if (Utils.isWindows || Utils.isMac) {
+      if (JavaUtils.isWindows || JavaUtils.isMac) {
         warn(s"Kyuubi Server run in Windows or Mac environment, binding $getName to 0.0.0.0")
         "0.0.0.0"
       } else if (conf.get(KyuubiConf.FRONTEND_CONNECTION_URL_USE_HOSTNAME)) {
-        Utils.findLocalInetAddress.getCanonicalHostName
+        JavaUtils.findLocalInetAddress.getCanonicalHostName
       } else {
-        Utils.findLocalInetAddress.getHostAddress
+        JavaUtils.findLocalInetAddress.getHostAddress
       }
     }
 
@@ -193,19 +193,23 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  def waitForServerStarted(): Unit = {
+    // block until the HTTP server is started, otherwise, we may get
+    // the wrong HTTP server port -1
+    while (!server.isStarted) {
+      info(s"Waiting for $getName's HTTP server getting started")
+      Thread.sleep(1000)
+    }
+  }
+
   override def start(): Unit = synchronized {
     if (!isStarted.get) {
       try {
         server.start()
+        startInternal()
+        waitForServerStarted()
         isStarted.set(true)
         startBatchChecker()
-        startInternal()
-        // block until the HTTP server is started, otherwise, we may get
-        // the wrong HTTP server port -1
-        while (server.getState != "STARTED") {
-          info(s"Waiting for $getName's HTTP server getting started")
-          Thread.sleep(1000)
-        }
         recoverBatchSessions()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)

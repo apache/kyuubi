@@ -176,19 +176,9 @@ known_translations_file.close()
 # Keep track of warnings to tell the user at the end
 warnings = []
 
-# Mapping from the invalid author name to its associated tickets
-# E.g. pan3793 -> set("[KYUUBI #1234]", "[KYUUBI #1235]")
-invalid_authors = {}
-
-# Populate a map that groups issues and components by author
-# It takes the form: Author Name -> set()
-# For instance,
-# {
-#   'Cheng Pan' -> set('[KYUUBI #1234]', '[KYUUBI #1235]'),
-#   'Fu Chen' -> set('[KYUUBI #2345]')
-# }
-#
-author_info = {}
+# The author name that needs to translate
+invalid_authors = set()
+authors = set()
 print("\n=========================== Compiling contributor list ===========================")
 for commit in effective_commits:
     _hash = commit.get_hash()
@@ -204,21 +194,8 @@ for commit in effective_commits:
         # with all associated issues so we can translate it later
         author = capitalize_author(author)
     else:
-        if author not in invalid_authors:
-            invalid_authors[author] = set()
-        for issue in issues:
-            invalid_authors[author].add(issue)
-    # Populate or merge an issue into author_info[author]
-    def populate(issues):
-        if author not in author_info:
-            author_info[author] = set()
-        for issue in issues:
-            author_info[author].add(issue)
-    # Find issues associated with this commit
-    try:
-        populate(issues)
-    except Exception as e:
-        print("Unexpected error:", e)
+        invalid_authors.add(author)
+    authors.add(author)
     print("  Processed commit %s authored by %s on %s" % (_hash, author, date))
 print("==================================================================================\n")
 
@@ -232,17 +209,14 @@ commits_file.close()
 print("Commits list is successfully written to %s!" % commits_file_name)
 
 # Write to contributors file ordered by author names
-# Each line takes the format " * Author Name -- tickets"
-# e.g. * Cheng Pan -- [KYUUBI #1234][KYUUBI #1235]
-# e.g. * Fu Chen   -- [KYUUBI #2345]
+# Each line takes the format " * Author Name"
+# e.g. * Cheng Pan
+# e.g. * Fu Chen
 contributors_file = open(os.path.join(release_dir, contributors_file_name), "w")
-authors = list(author_info.keys())
-authors.sort(key=lambda author: author.split(" ")[-1])
-author_max_len = max(len(author) for author in authors)
+sorted_authors = list(authors)
+sorted_authors.sort(key=lambda author: author.split(" ")[-1])
 for author in authors:
-    contribution = "".join(author_info[author])
-    line = ("* {:<%s}" % author_max_len).format(author) + " -- " + contribution
-    contributors_file.write(line + "\n")
+    contributors_file.write("* %s\n" % author)
 contributors_file.close()
 print("Contributors list is successfully written to %s!" % contributors_file_name)
 

@@ -18,6 +18,7 @@ Get Started
 
 .. image:: https://img.shields.io/github/issues/apache/kyuubi/kind:documentation?color=green&logo=gfi&logoColor=red&style=for-the-badge
    :alt: GitHub issues by-label
+   :target: `Documentation Issues`_
 
 
 Trivial Fixes
@@ -115,3 +116,4 @@ If you don't have time to fix the doc issue and submit a pull request on your ow
 .. _Build and verify: build.html
 .. _Create A Pull Request: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request
 .. _reporting a document issue: https://github.com/apache/kyuubi/issues/new/choose
+.. _Documentation Issues: https://github.com/apache/kyuubi/issues?q=is%3Aopen+is%3Aissue+label%3Akind%3Adocumentation

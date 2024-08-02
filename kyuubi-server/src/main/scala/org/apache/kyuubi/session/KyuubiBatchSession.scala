@@ -93,6 +93,10 @@ class KyuubiBatchSession(
     }
   }
 
+  optimizedConf.foreach {
+    case (key, value) => sessionConf.set(key, value)
+  }
+
   override lazy val name: Option[String] =
     batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
 
