@@ -1945,7 +1945,7 @@
                                 </java>
                                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7) does not match with Java 21.
                                      To build with Java 21, the spotless.check.skip needs to set to `true`.
-                                     Re-evaluate once support for Java 8 is dropped. -->
+                                     Re-evaluate once we dropped support for Java 8. -->
                                 <skip>true</skip>
                             </configuration>
                         </plugin>
