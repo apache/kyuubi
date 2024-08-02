@@ -359,8 +359,8 @@ class BatchJobSubmission(
       }
 
       try {
-        killMessage = killBatchApplication()
         builder.close(true)
+        killMessage = killBatchApplication()
         cleanupUploadedResourceIfNeeded()
       } finally {
         if (state == OperationState.INITIALIZED) {
