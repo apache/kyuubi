@@ -22,20 +22,19 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 
 public interface PlanOnlyExecutor {
 
-    String mode();
+  String mode();
 
-    default String execute(SparkSession spark, LogicalPlan parsedPlan) {
-        return execute(spark, parsedPlan, "plain");
-    }
+  default String execute(SparkSession spark, LogicalPlan parsedPlan) {
+    return execute(spark, parsedPlan, "plain");
+  }
 
-    /**
-     * execute the parsed plan with plan only mode
-     *
-     * @param spark       the spark session
-     * @param parsedPlan  the parsed plan
-     * @param style       the style of the result (plain or json)
-     * @return the result in the specified style
-     */
-    String execute(SparkSession spark, LogicalPlan parsedPlan, String style);
-
+  /**
+   * execute the parsed plan with plan only mode
+   *
+   * @param spark the spark session
+   * @param parsedPlan the parsed plan
+   * @param style the style of the result (plain or json)
+   * @return the result in the specified style
+   */
+  String execute(SparkSession spark, LogicalPlan parsedPlan, String style);
 }
