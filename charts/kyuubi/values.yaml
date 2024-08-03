@@ -145,12 +145,6 @@ server:
       #    clientIP:
       #      timeoutSeconds: 10800
 
-monitoring:
-  # Exposes metrics in Prometheus format
-  prometheus:
-    enabled: true
-    port: 10019
-
 # $KYUUBI_CONF_DIR directory
 kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configuration files
@@ -279,31 +273,34 @@ affinity: {}
 # Kyuubi pods security context
 securityContext: {}
 
-# Monitoring Kyuubi - Server Metrics
-# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
-metricsReporters: ~
+# Metrics configuration
+metrics:
+  # Enable metrics system, used for 'kyuubi.metrics.enabled' property
+  enabled: true
+  # A comma-separated list of metrics reporters, used for 'kyuubi.metrics.reporters' property
+  reporters: PROMETHEUS
+  # Prometheus port, used for 'kyuubi.metrics.prometheus.port' property
+  prometheusPort: 10019
 
-# Prometheus pod monitor
-podMonitor:
-  # If enabled, podMonitor for operator's pod will be created
-  enabled: false
-  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
-  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
-  podMetricsEndpoint: []
+  # PodMonitor by Prometheus Operator
+  podMonitor:
+    # Enable PodMonitor creation
+    enabled: false
+    # List of pod endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
+    podMetricsEndpoints: []
 
-# Prometheus service monitor
-serviceMonitor:
-  # If enabled, ServiceMonitor resources for Prometheus Operator are created
-  enabled: false
-  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
-  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
-  endpoints: []
-  # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
-  labels: {}
+  # ServiceMonitor by Prometheus Operator
+  serviceMonitor:
+    # Enable ServiceMonitor creation
+    enabled: false
+    # List of service endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
+    endpoints: []
+    # Additional labels to be used to make ServiceMonitor discovered by Prometheus
+    labels: {}
 
-# Rules for the Prometheus Operator
-prometheusRule:
-  # If enabled, a PrometheusRule resource for Prometheus Operator is created
-  enabled: false
-  # Contents of Prometheus rules file
-  groups: []
+  # PrometheusRule by Prometheus Operator
+  prometheusRule:
+    # Enable PrometheusRule creation
+    enabled: false
+    # Content of Prometheus rule file
+    groups: []
