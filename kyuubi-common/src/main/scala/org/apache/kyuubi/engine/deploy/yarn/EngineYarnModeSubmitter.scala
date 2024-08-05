@@ -27,6 +27,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.fs.permission.FsPermission
@@ -145,7 +146,8 @@ abstract class EngineYarnModeSubmitter extends Logging {
 
     val javaOpts = ListBuffer[String]()
 
-    val javaOptions = kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_JAVA_OPTIONS)
+    val javaOptions =
+      kyuubiConf.get(ENGINE_DEPLOY_YARN_MODE_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       javaOpts += javaOptions.get
     }
