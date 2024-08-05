@@ -538,12 +538,10 @@ object TableCommands {
   val InsertIntoHiveTable = {
     val cmd = "org.apache.spark.sql.hive.execution.InsertIntoHiveTable"
     val actionTypeDesc = overwriteActionTypeDesc
-    val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc = TableDesc(
       "table",
       classOf[CatalogTableTableExtractor],
-      Some(columnDesc),
-      Some(actionTypeDesc))
+      actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
   }
@@ -557,11 +555,9 @@ object TableCommands {
   val InsertIntoHadoopFsRelationCommand = {
     val cmd = "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand"
     val actionTypeDesc = ActionTypeDesc("mode", classOf[SaveModeActionTypeExtractor])
-    val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
     val tableDesc = TableDesc(
       "catalogTable",
       classOf[CatalogTableOptionTableExtractor],
-      Some(columnDesc),
       actionTypeDesc = Some(actionTypeDesc))
     val queryDesc = queryQueryDesc
     TableCommandSpec(cmd, Seq(tableDesc), queryDescs = Seq(queryDesc))
