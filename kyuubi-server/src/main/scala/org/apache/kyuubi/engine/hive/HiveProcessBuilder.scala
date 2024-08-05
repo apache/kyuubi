@@ -23,6 +23,7 @@ import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -58,7 +59,7 @@ class HiveProcessBuilder(
 
     val memory = conf.get(ENGINE_HIVE_MEMORY)
     buffer += s"-Xmx$memory"
-    val javaOptions = conf.get(ENGINE_HIVE_JAVA_OPTIONS)
+    val javaOptions = conf.get(ENGINE_HIVE_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       buffer += javaOptions.get
     }
