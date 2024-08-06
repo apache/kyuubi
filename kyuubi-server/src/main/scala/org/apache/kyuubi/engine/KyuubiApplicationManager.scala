@@ -133,7 +133,8 @@ object KyuubiApplicationManager {
   }
 
   private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {
-    val localDirAllowList = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
+    val localDirAllowList =
+      conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST) ++ Seq(uploadWorkDir.toUri.getPath)
     if (localDirAllowList.nonEmpty) {
       val uri =
         try {
