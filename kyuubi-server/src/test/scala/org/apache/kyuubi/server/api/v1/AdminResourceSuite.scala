@@ -391,9 +391,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
 
       // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id).exists(
           _.state == ApplicationState.NOT_FOUND))
       }
     }
@@ -443,9 +443,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       }
 
       // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id).exists(
           _.state == ApplicationState.NOT_FOUND))
       }
     }
@@ -601,9 +601,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(engines(0).getSubdomain == "default")
 
       // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id).exists(
           _.state == ApplicationState.NOT_FOUND))
       }
     }
@@ -653,9 +653,9 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(engines(0).getSubdomain == "default")
 
       // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id).exists(
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id).exists(
           _.state == ApplicationState.NOT_FOUND))
       }
     }
@@ -730,12 +730,12 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(result1.size == 1)
 
       // kill the engine application
-      engineMgr.killApplication(ApplicationManagerInfo(None), id1)
-      engineMgr.killApplication(ApplicationManagerInfo(None), id2)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id1)
+      engineMgr.killApplication(None, ApplicationManagerInfo(None), id2)
       eventually(timeout(30.seconds), interval(100.milliseconds)) {
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id1)
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id1)
           .exists(_.state == ApplicationState.NOT_FOUND))
-        assert(engineMgr.getApplicationInfo(ApplicationManagerInfo(None), id2)
+        assert(engineMgr.getApplicationInfo(None, ApplicationManagerInfo(None), id2)
           .exists(_.state == ApplicationState.NOT_FOUND))
       }
     }
