@@ -36,6 +36,7 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
@@ -97,7 +98,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       this,
       userConf,
       userConf.get(ENGINE_DO_AS_ENABLED),
-      parser)
+      parser,
+      tempFileManager = kyuubiServer.tempFileManager)
   }
 
   override def openSession(

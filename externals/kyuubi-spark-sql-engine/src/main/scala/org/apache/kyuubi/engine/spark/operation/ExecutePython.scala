@@ -43,6 +43,7 @@ import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, Operati
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.FileExpirationUtils.deleteFileOnExit
 import org.apache.kyuubi.util.reflect.DynFields
 
 class ExecutePython(
@@ -398,7 +399,7 @@ object ExecutePython extends Logging {
     val source = getClass.getClassLoader.getResourceAsStream(s"python/$pyfile")
 
     val file = new File(pythonPath.toFile, pyfile)
-    file.deleteOnExit()
+    deleteFileOnExit(file.toPath)
 
     val sink = new FileOutputStream(file)
     val buf = new Array[Byte](1024)

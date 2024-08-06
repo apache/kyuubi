@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.TempFileManager
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
@@ -50,7 +51,8 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf,
     doAsEnabled: Boolean,
-    parser: KyuubiParser)
+    parser: KyuubiParser,
+    tempFileManager: TempFileManager)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
@@ -117,6 +119,8 @@ class KyuubiSessionImpl(
 
     // we should call super.open before running launch engine operation
     super.open()
+
+    Option(tempFileManager).foreach(_.addDirToExpiration(operationalLogRootDir.orNull))
 
     runOperation(launchEngineOp)
   }

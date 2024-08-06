@@ -38,6 +38,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+import org.apache.kyuubi.util.FileExpirationUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 object Utils extends Logging {
@@ -138,6 +139,10 @@ object Utils extends Logging {
    * Delete a directory recursively.
    */
   def deleteDirectoryRecursively(f: File, ignoreException: Boolean = true): Unit = {
+    if (f == null || !f.exists()) {
+      return
+    }
+
     if (f.isDirectory) {
       val files = f.listFiles
       if (files != null && files.nonEmpty) {
@@ -211,9 +216,8 @@ object Utils extends Logging {
       } finally {
         source.close()
       }
-      val file = filePath.toFile
-      file.deleteOnExit()
-      file
+      FileExpirationUtils.deleteFileOnExit(filePath)
+      filePath.toFile
     } catch {
       case e: Exception =>
         error(

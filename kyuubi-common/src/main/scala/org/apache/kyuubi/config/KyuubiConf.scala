@@ -3113,6 +3113,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
+  val SERVER_STALE_FILE_EXPIRATION_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.stale.file.expiration.interval")
+      .doc("How often to trigger a file expiration clean-up for stale files")
+      .version("1.10.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("P7D")
+
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -259,8 +260,10 @@ abstract class AbstractSession(
     }
   }
 
+  protected var operationalLogRootDir: Option[Path] = None
+
   override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(this)
+    operationalLogRootDir = Option(OperationLog.createOperationLogRootDirectory(this))
   }
 
   val isForAliveProbe: Boolean =
