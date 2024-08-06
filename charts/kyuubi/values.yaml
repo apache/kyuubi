@@ -150,20 +150,11 @@ kyuubiConf:
   # $KYUUBI_CONF_DIR directory
   dir: /opt/kyuubi/conf
   # Configuration files from the specified keys (file name) and values (file content)
-  files:
-    'kyuubi-defaults.conf': |
-      ## Helm chart dependent configuration
-      kyuubi.kubernetes.namespace={{ .Release.Namespace }}
-      kyuubi.frontend.connection.url.use.hostname=false
-      kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
-      kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
-      kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
-      kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
-      kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
-      # Metrics
-      kyuubi.metrics.enabled={{ .Values.metrics.enabled }}
-      kyuubi.metrics.reporters={{ .Values.metrics.reporters }}
-      kyuubi.metrics.prometheus.port={{ .Values.metrics.prometheusPort }}
+  files: []
+  #files:
+  #  'kyuubi-defaults.conf': |
+  #    kyuubi.authentication=NONE
+  #    kyuubi.engine.share.level=USER
 
   # Configuration files from the list of existing ConfigMaps and Secrets
   filesFrom: []

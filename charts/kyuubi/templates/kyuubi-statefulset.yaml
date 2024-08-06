@@ -59,8 +59,22 @@ spec:
           {{- with .Values.command }}
           command: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
-          {{- with .Values.args }}
+          {{- if .Values.args }}
           args: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- else }}
+          args:
+            - ./bin/kyuubi
+            - run
+            - --conf kyuubi.kubernetes.namespace={{ .Release.Namespace }}
+            - --conf kyuubi.frontend.connection.url.use.hostname=false
+            - --conf kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
+            - --conf kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
+            - --conf kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
+            - --conf kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
+            - --conf kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
+            - --conf kyuubi.metrics.enabled={{ .Values.metrics.enabled }}
+            - --conf kyuubi.metrics.reporters={{ .Values.metrics.reporters }}
+            - --conf kyuubi.metrics.prometheus.port={{ .Values.metrics.prometheusPort }}
           {{- end }}
           env:
             - name: KYUUBI_CONF_DIR
