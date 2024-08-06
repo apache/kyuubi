@@ -50,7 +50,8 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf,
     doAsEnabled: Boolean,
-    parser: KyuubiParser)
+    parser: KyuubiParser,
+    fileCleanupService: FileCleanupService)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
@@ -117,6 +118,10 @@ class KyuubiSessionImpl(
 
     // we should call super.open before running launch engine operation
     super.open()
+
+    if (fileCleanupService != null) {
+      fileCleanupService.addDirToExpiration(operationalLogRootDir.get)
+    }
 
     runOperation(launchEngineOp)
   }

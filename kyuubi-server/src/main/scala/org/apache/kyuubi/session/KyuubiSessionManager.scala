@@ -53,6 +53,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
   val applicationManager = new KyuubiApplicationManager()
 
+  val fileCleanupService = new FileCleanupService()
+  fileCleanupService.initialize(conf)
+
   // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
   // so we initialize it only when Kyuubi starts with the REST frontend.
   lazy val metadataManager: Option[MetadataManager] =
@@ -88,7 +91,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val userConf = this.getConf.getUserDefaults(user)
-    new KyuubiSessionImpl(
+    val session = new KyuubiSessionImpl(
       protocol,
       user,
       password,
@@ -97,7 +100,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       this,
       userConf,
       userConf.get(ENGINE_DO_AS_ENABLED),
-      parser)
+      parser,
+      fileCleanupService)
+
+    session
   }
 
   override def openSession(

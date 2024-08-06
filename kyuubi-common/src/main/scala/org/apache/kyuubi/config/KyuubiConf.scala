@@ -3079,6 +3079,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
+  val SERVER_FILE_PERIODIC_CLEANUP_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.server.file.periodic.cleanup.interval")
+      .doc("How often to trigger a file expiration clean-up")
+      .version("1.10.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("P7D")
+
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +
