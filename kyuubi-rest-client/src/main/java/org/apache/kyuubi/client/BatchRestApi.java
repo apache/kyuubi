@@ -58,8 +58,14 @@ public class BatchRestApi {
     extraResources.stream()
         .distinct()
         .filter(StringUtils::isNotBlank)
-        .map(path -> Paths.get(path).toFile())
-        .filter(File::exists)
+        .map(
+            path -> {
+              File file = Paths.get(path).toFile();
+              if (!file.exists()) {
+                throw new RuntimeException("File not existed, path: " + path);
+              }
+              return file;
+            })
         .forEach(
             file ->
                 multiPartMap.put(
