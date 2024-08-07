@@ -30,7 +30,10 @@ echo_build_properties() {
   echo kyuubi_hadoop_version="$7"
   echo kyuubi_flink_version="$8"
   echo kyuubi_trino_version="$9"
-  echo user="$USER"
+  # if for some reason the shell doesn't have $USER defined
+  # (e.g., ssh'd in to execute a command)
+  # let's get the effective username and use that
+  echo user="${USER:-$(id -nu)}"
   echo revision=$(git rev-parse HEAD)
   echo revision_time=$(git show -s --format=%ci HEAD)
   echo branch=$(git rev-parse --abbrev-ref HEAD)
