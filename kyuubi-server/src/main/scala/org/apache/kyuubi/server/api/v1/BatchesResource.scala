@@ -546,13 +546,19 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       resourceFileName: String,
       formDataMultiPartOpt: Option[FormDataMultiPart]): Option[JPath] = {
     val uploadFileFolderPath = batchResourceUploadFolderPath(batchId)
-    handleUploadingResourceFile(
-      request,
-      resourceFileInputStream,
-      resourceFileName,
-      uploadFileFolderPath)
-    handleUploadingExtraResourcesFiles(request, formDataMultiPartOpt, uploadFileFolderPath)
-    Some(uploadFileFolderPath)
+    try {
+      handleUploadingResourceFile(
+        request,
+        resourceFileInputStream,
+        resourceFileName,
+        uploadFileFolderPath)
+      handleUploadingExtraResourcesFiles(request, formDataMultiPartOpt, uploadFileFolderPath)
+      Some(uploadFileFolderPath)
+    } catch {
+      case e: Exception =>
+        Utils.deleteDirectoryRecursively(uploadFileFolderPath.toFile)
+        throw e
+    }
   }
 
   private def handleUploadingResourceFile(
