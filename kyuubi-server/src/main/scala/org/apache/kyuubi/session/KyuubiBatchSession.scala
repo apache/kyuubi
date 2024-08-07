@@ -145,7 +145,7 @@ class KyuubiBatchSession(
       batchType,
       optimizedConf,
       sessionManager.getConf)
-    if (resource != SparkProcessBuilder.INTERNAL_RESOURCE && !isResourceUploaded) {
+    if (resource != SparkProcessBuilder.INTERNAL_RESOURCE) {
       KyuubiApplicationManager.checkApplicationAccessPath(resource, sessionManager.getConf)
     }
   }
