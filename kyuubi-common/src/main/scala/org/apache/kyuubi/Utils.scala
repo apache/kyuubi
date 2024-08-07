@@ -149,7 +149,7 @@ object Utils extends Logging {
     } catch {
       case e: Exception =>
         if (ignoreException) {
-          warn(s"ignored the exception when deleting file: ${f.toPath}")
+          warn(s"ignored the exception when deleting file: ${f.toPath}", e)
         } else {
           throw e
         }
