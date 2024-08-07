@@ -137,12 +137,23 @@ object Utils extends Logging {
   /**
    * Delete a directory recursively.
    */
-  def deleteDirectoryRecursively(f: File): Boolean = {
-    if (f.isDirectory) f.listFiles match {
-      case files: Array[File] => files.foreach(deleteDirectoryRecursively)
-      case _ =>
+  def deleteDirectoryRecursively(f: File, ignoreException: Boolean = true): Unit = {
+    if (f.isDirectory) {
+      val files = f.listFiles
+      if (files != null && files.nonEmpty) {
+        files.foreach(deleteDirectoryRecursively(_, ignoreException))
+      }
     }
-    f.delete()
+    try {
+      f.delete()
+    } catch {
+      case e: Exception =>
+        if (ignoreException) {
+          warn(s"Ignoring the exception in deleting file, path: ${f.toPath}", e)
+        } else {
+          throw e
+        }
+    }
   }
 
   /**

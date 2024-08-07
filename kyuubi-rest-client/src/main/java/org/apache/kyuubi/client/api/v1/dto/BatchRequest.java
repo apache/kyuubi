@@ -31,6 +31,7 @@ public class BatchRequest {
   private String name;
   private Map<String, String> conf = Collections.emptyMap();
   private List<String> args = Collections.emptyList();
+  private Map<String, String> extraResourcesMap = Collections.emptyMap();
 
   public BatchRequest() {}
 
@@ -110,6 +111,14 @@ public class BatchRequest {
     this.args = args;
   }
 
+  public Map<String, String> getExtraResourcesMap() {
+    return extraResourcesMap;
+  }
+
+  public void setExtraResourcesMap(Map<String, String> extraResourcesMap) {
+    this.extraResourcesMap = extraResourcesMap;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -120,13 +129,20 @@ public class BatchRequest {
         && Objects.equals(getClassName(), that.getClassName())
         && Objects.equals(getName(), that.getName())
         && Objects.equals(getConf(), that.getConf())
-        && Objects.equals(getArgs(), that.getArgs());
+        && Objects.equals(getArgs(), that.getArgs())
+        && Objects.equals(getExtraResourcesMap(), that.getExtraResourcesMap());
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        getBatchType(), getResource(), getClassName(), getName(), getConf(), getArgs());
+        getBatchType(),
+        getResource(),
+        getClassName(),
+        getName(),
+        getConf(),
+        getArgs(),
+        getExtraResourcesMap());
   }
 
   @Override
