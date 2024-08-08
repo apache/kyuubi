@@ -203,6 +203,17 @@ class KyuubiOperationPerUserSuite
   }
 
   test("scala NPE issue with hdfs jar") {
+    val dfsJarPath = prepareHdfsJar
+    withJdbcStatement() { statement =>
+      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+      statement.executeQuery(s"add jar $dfsJarPath")
+      val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
+      rs.next()
+      assert(rs.getString(1) === "3")
+    }
+  }
+
+  private def prepareHdfsJar: Path = {
     val jarDir = Utils.createTempDir().toFile
     val udfCode =
       """
@@ -225,12 +236,44 @@ class KyuubiOperationPerUserSuite
     val localPath = new Path(jarFile.getAbsolutePath)
     val dfsJarPath = new Path(dfsJarDir, "test-function.jar")
     FileUtil.copy(localFs, localPath, dfs, dfsJarPath, false, false, hadoopConf)
-    withJdbcStatement() { statement =>
-      val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
-      statement.executeQuery(s"add jar $dfsJarPath")
-      val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
-      rs.next()
-      assert(rs.getString(1) === "3")
+    dfsJarPath
+  }
+
+  test("support scala mode resource isolation") {
+    val dfsJarPath = prepareHdfsJar
+    withSessionConf()(
+      Map(
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "resource_isolation",
+        "spark.sql.catalogImplementation" -> "hive"))(
+      Map.empty) {
+      var r1: String = null
+      var exception: Exception = null
+
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+          kyuubiStatement.executeQuery(s"add jar $dfsJarPath")
+          val rs = kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
+          rs.next()
+          r1 = rs.getString(1)
+        }
+      }.start()
+
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val kyuubiStatement = statement.asInstanceOf[KyuubiStatement]
+          exception = intercept[Exception] {
+            kyuubiStatement.executeScala("println(test.utils.Math.add(1,2))")
+          }
+        }
+      }.start()
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null && exception != null)
+      }
+
+      assert(r1 === "3")
+      assert(exception.getMessage.contains("not found: value test"))
     }
   }
 

@@ -25,7 +25,9 @@ import scala.tools.nsc.interpreter.Results.{Error, Incomplete, Success}
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkFiles
+import org.apache.spark.kyuubi.SparkJobArtifactHelper
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.hive.HiveClientHelper
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -90,13 +92,14 @@ class ExecuteScala(
           warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
         }
         val replUrls = repl.classLoader.getParent.asInstanceOf[URLClassLoader].getURLs
-        spark.sharedState.jarClassLoader.getURLs.filterNot(replUrls.contains).foreach { jar =>
+        val root = new File(SparkFiles.getRootDirectory(), session.handle.identifier.toString)
+        HiveClientHelper.getLoadedClasses(spark).filterNot(replUrls.contains).foreach { jar =>
           try {
             if ("file".equals(jar.toURI.getScheme)) {
               repl.addUrlsToClassPath(jar)
             } else {
               spark.sparkContext.addFile(jar.toString)
-              val localJarFile = new File(SparkFiles.get(new Path(jar.toURI.getPath).getName))
+              val localJarFile = new File(root, new Path(jar.toURI.getPath).getName)
               val localJarUrl = localJarFile.toURI.toURL
               if (!replUrls.contains(localJarUrl)) {
                 repl.addUrlsToClassPath(localJarUrl)
@@ -140,7 +143,9 @@ class ExecuteScala(
       val asyncOperation = new Runnable {
         override def run(): Unit = {
           OperationLog.setCurrentOperationLog(operationLog)
-          executeScala()
+          withSessionArtifactState {
+            executeScala()
+          }
         }
       }
 
@@ -157,7 +162,15 @@ class ExecuteScala(
           throw ke
       }
     } else {
-      executeScala()
+      withSessionArtifactState {
+        executeScala()
+      }
+    }
+  }
+
+  private def withSessionArtifactState(f: => Unit): Unit = {
+    SparkJobArtifactHelper.withActiveJobArtifactState(session.handle) {
+      f
     }
   }
 }
