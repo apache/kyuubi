@@ -29,6 +29,11 @@
     <name>Kyuubi Test Flink SQL IT</name>
     <url>https://kyuubi.apache.org/</url>
 
+    <!-- Keep Flink Engine with Scala-2.12. -->
+    <properties>
+        <scala.binary.version>2.12</scala.binary.version>
+    </properties>
+
     <dependencies>
 
         <dependency>

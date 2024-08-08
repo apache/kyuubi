@@ -79,6 +79,9 @@ class FlinkProcessBuilder(
     ApplicationManagerInfo(clusterManager())
   }
 
+  // Let the flink engine Scala binary version be fixed at 2.12
+  override protected val engineScalaBinaryVersion: String = "2.12"
+
   override protected val commands: Iterable[String] = {
     KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
     // flink.execution.target are required in Kyuubi conf currently
