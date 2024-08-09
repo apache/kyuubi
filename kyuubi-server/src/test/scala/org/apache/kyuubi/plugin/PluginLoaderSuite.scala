@@ -73,13 +73,15 @@ class PluginLoaderSuite extends KyuubiFunSuite {
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterABConf.get("kyuubi.ha.namespace") == "kyuubi-ns-b")
     assert(clusterABConf.get("kyuubi.zk.ha.namespace") == null)
-    assert(clusterABConf.size() == 5)
+    assert(clusterABConf.get("kyuubi.engineEnv.HIVE_DIR") == "/opt/hive_conf_dir")
+    assert(clusterABConf.size() == 6)
 
     val clusterABConfFromCache =
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterABConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-b")
     assert(clusterABConfFromCache.get("kyuubi.zk.ha.namespace") == null)
-    assert(clusterABConfFromCache.size() == 5)
+    assert(clusterABConf.get("kyuubi.engineEnv.HIVE_DIR") == "/opt/hive_conf_dir")
+    assert(clusterABConfFromCache.size() == 6)
   }
 
   test("SessionConfAdvisor - multi class") {
