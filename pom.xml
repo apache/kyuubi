@@ -1362,8 +1362,6 @@
                                 <version>${maven.plugin.silencer.version}</version>
                             </compilerPlugin>
                         </compilerPlugins>
-                        <!-- only skipping `scala:doc-jar` -->
-                        <skip>${maven.scaladoc.skip}</skip>
                     </configuration>
                     <executions>
                         <execution>
@@ -1390,6 +1388,9 @@
                                 <goal>doc-jar</goal>
                             </goals>
                             <phase>verify</phase>
+                            <configuration>
+                                <skip>${maven.scaladoc.skip}</skip>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
@@ -1917,48 +1918,6 @@
                 <scala.version>2.13.8</scala.version>
                 <spark.archive.scala.suffix>-scala${scala.binary.version}</spark.archive.scala.suffix>
             </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>net.alchim31.maven</groupId>
-                            <artifactId>scala-maven-plugin</artifactId>
-                            <configuration>
-                                <scalaVersion>${scala.version}</scalaVersion>
-                                <recompileMode>incremental</recompileMode>
-                                <args>
-                                    <arg>-unchecked</arg>
-                                    <arg>-deprecation</arg>
-                                    <arg>-feature</arg>
-                                    <arg>-explaintypes</arg>
-                                    <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
-                                    <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
-                                    <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
-                                    <arg>-Xfatal-warnings</arg>
-                                    <arg>-Ywarn-unused:imports</arg>
-                                </args>
-                                <jvmArgs>
-                                    <jvmArg>-Xms1024m</jvmArg>
-                                    <jvmArg>-Xmx1024m</jvmArg>
-                                    <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
-                                </jvmArgs>
-                                <javacArgs>
-                                    <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
-                                </javacArgs>
-                                <compilerPlugins>
-                                    <compilerPlugin>
-                                        <groupId>com.github.ghik</groupId>
-                                        <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                        <version>${maven.plugin.silencer.version}</version>
-                                    </compilerPlugin>
-                                </compilerPlugins>
-                                <!-- only skipping `scala:doc-jar` -->
-                                <skip>${maven.scaladoc.skip}</skip>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-            </build>
         </profile>
 
         <profile>
