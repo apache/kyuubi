@@ -244,7 +244,8 @@
              we should skip upgrading until MSOURCES-141 gets fixed. -->
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
 
-        <maven.scaladoc.skip>false</maven.scaladoc.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+        <maven.scaladoc.skip>true</maven.scaladoc.skip>
         <maven.scalastyle.skip>false</maven.scalastyle.skip>
         <!-- Needed for consistent times -->
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
@@ -2120,8 +2121,6 @@
             <id>fast</id>
             <properties>
                 <enforcer.skip>true</enforcer.skip>
-                <maven.javadoc.skip>true</maven.javadoc.skip>
-                <maven.scaladoc.skip>true</maven.scaladoc.skip>
                 <maven.scalastyle.skip>true</maven.scalastyle.skip>
                 <rat.skip>true</rat.skip>
                 <skipTests>true</skipTests>
@@ -2161,6 +2160,10 @@
 
         <profile>
             <id>apache-release</id>
+            <properties>
+                <maven.javadoc.skip>false</maven.javadoc.skip>
+                <maven.scaladoc.skip>false</maven.scaladoc.skip>
+            </properties>
             <build>
                 <plugins>
                     <!-- Prevent the source-release-assembly execution defined in the Apache parent POM
