@@ -57,9 +57,9 @@ class GetFunctions(
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
         .flatMap { c =>
           val catalog = catalogManager.getCatalog(c).get()
-          filterPattern(catalog.listDatabases().asScala, schemaPattern)
+          filterPattern(catalog.listDatabases().asScala.toSeq, schemaPattern)
             .flatMap { d =>
-              filterPattern(catalog.listFunctions(d).asScala, functionPattern)
+              filterPattern(catalog.listFunctions(d).asScala.toSeq, functionPattern)
                 .map { f =>
                   Row.of(
                     c,
