@@ -42,6 +42,7 @@ import org.apache.kyuubi.engine.spark.util.JsonUtils
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.FileExpirationUtils.deleteFileOnExit
 
 class ExecutePython(
     session: Session,
@@ -373,7 +374,7 @@ object ExecutePython extends Logging {
     val source = getClass.getClassLoader.getResourceAsStream(s"python/$pyfile")
 
     val file = new File(pythonPath.toFile, pyfile)
-    file.deleteOnExit()
+    deleteFileOnExit(file.toPath)
 
     val sink = new FileOutputStream(file)
     val buf = new Array[Byte](1024)

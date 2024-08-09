@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.file.Path
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -36,6 +38,8 @@ abstract class AbstractSession(
     val conf: Map[String, String],
     val sessionManager: SessionManager) extends Session with Logging {
   override val handle: SessionHandle = SessionHandle()
+
+  var operationalLogRootDir: Option[Path] = None
 
   def clientIpAddress: String = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
   protected def logSessionInfo(msg: String): Unit = info(s"[$user:$clientIpAddress] $handle - $msg")
@@ -258,7 +262,7 @@ abstract class AbstractSession(
   }
 
   override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(this)
+    operationalLogRootDir = Option(OperationLog.createOperationLogRootDirectory(this))
   }
 
   val isForAliveProbe: Boolean =
