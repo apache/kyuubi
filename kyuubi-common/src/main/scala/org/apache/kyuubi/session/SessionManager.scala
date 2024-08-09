@@ -58,6 +58,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           conf.get(ENGINE_OPERATION_LOG_DIR_ROOT)
         }
       val logPath = Files.createDirectories(Utils.getAbsolutePathFromWork(logRoot))
+      logPath.toFile.deleteOnExit()
       _operationLogRoot = Some(logPath.toString)
     } catch {
       case e: IOException =>

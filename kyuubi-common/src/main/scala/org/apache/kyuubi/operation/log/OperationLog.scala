@@ -56,7 +56,6 @@ object OperationLog extends Logging {
       val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
       try {
         Files.createDirectories(path)
-        path.toFile.deleteOnExit()
       } catch {
         case e: IOException =>
           error(s"Failed to create operation log root directory: $path", e)
