@@ -41,7 +41,7 @@ class GetSchemas(session: Session, catalogName: String, schema: String)
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
         .flatMap { c =>
           val catalog = catalogManager.getCatalog(c).get()
-          filterPattern(catalog.listDatabases().asScala, schemaPattern)
+          filterPattern(catalog.listDatabases().asScala.toSeq, schemaPattern)
             .map { d => Row.of(d, c) }
         }.toArray
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
