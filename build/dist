@@ -314,7 +314,7 @@ for jar in $(ls "$DISTDIR/jars/"); do
 done
 
 # Copy flink engines
-cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine_2.12-${VERSION}.jar" "$DISTDIR/externals/engines/flink/"
+cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/flink/"
 
 # Copy spark engines
 # shellcheck disable=SC2045

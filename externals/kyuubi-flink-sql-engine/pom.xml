@@ -30,12 +30,6 @@
     <name>Kyuubi Project Engine Flink SQL</name>
     <url>https://kyuubi.apache.org/</url>
 
-    <!-- Keep Flink Engine with Scala-2.12. -->
-    <properties>
-        <scala.version>2.12.18</scala.version>
-        <scala.binary.version>2.12</scala.binary.version>
-    </properties>
-
     <dependencies>
         <!-- kyuubi -->
         <dependency>
@@ -270,43 +264,6 @@
                         <phase>test-compile</phase>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <configuration>
-                    <scalaVersion>${scala.version}</scalaVersion>
-                    <recompileMode>incremental</recompileMode>
-                    <args>
-                        <arg>-unchecked</arg>
-                        <arg>-deprecation</arg>
-                        <arg>-feature</arg>
-                        <arg>-explaintypes</arg>
-                        <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
-                        <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
-                        <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
-                        <arg>-Xfatal-warnings</arg>
-                        <arg>-Ywarn-unused:imports</arg>
-                    </args>
-                    <jvmArgs>
-                        <jvmArg>-Xms1024m</jvmArg>
-                        <jvmArg>-Xmx1024m</jvmArg>
-                        <jvmArg>-XX:ReservedCodeCacheSize=512M</jvmArg>
-                    </jvmArgs>
-                    <javacArgs>
-                        <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
-                    </javacArgs>
-                    <compilerPlugins>
-                        <compilerPlugin>
-                            <groupId>com.github.ghik</groupId>
-                            <artifactId>silencer-plugin_${scala.version}</artifactId>
-                            <version>${maven.plugin.silencer.version}</version>
-                        </compilerPlugin>
-                    </compilerPlugins>
-                    <!-- only skipping `scala:doc-jar` -->
-                    <skip>${maven.scaladoc.skip}</skip>
-                </configuration>
             </plugin>
         </plugins>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
