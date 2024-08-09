@@ -257,7 +257,7 @@
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
         <!-- Needed for Spotless style check.
-             TODO: Once we drop support for Java 8, we can consider upgrade googlejavaformat.version to 1.22.0 and above. -->
+             TODO: Once we drop support for Java 8, we can consider upgrade googlejavaformat.version to 1.22.0 or above. -->
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
