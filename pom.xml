@@ -1990,8 +1990,7 @@
                 <spark.version>4.0.0-preview1</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <!-- TODO: update once Delta support Spark 4.0 -->
-                <delta.version>3.2.0</delta.version>
+                <delta.version>4.0.0rc1</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <!-- TODO: update once Hudi support Spark 4.0 -->
                 <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
@@ -1999,7 +1998,7 @@
                 <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
                 <!-- TODO: update once Paimon support Spark 4.0 -->
                 <paimon.artifact>paimon-spark-3.5</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
