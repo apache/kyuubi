@@ -60,6 +60,7 @@
         <module>extensions/spark/kyuubi-spark-connector-common</module>
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
+        <module>extensions/spark/kyuubi-spark-engine-plugin</module>
         <module>extensions/spark/kyuubi-spark-lineage</module>
         <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
