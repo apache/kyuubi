@@ -1359,15 +1359,16 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
+  val SESSION_CONF_PROFILE: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.profile")
       .doc("Specify a profile to load session-level configurations from " +
-        "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
+        "multiple `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf` files. " +
         "This configuration will be ignored if the file does not exist. " +
         "This configuration only takes effect when `kyuubi.session.conf.advisor` " +
         "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
       .version("1.7.0")
       .stringConf
+      .toSequence()
       .createOptional
 
   val SESSION_CONF_FILE_RELOAD_INTERVAL: ConfigEntry[Long] =

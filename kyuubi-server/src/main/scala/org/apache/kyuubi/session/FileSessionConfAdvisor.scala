@@ -33,11 +33,15 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(
       user: String,
       sessionConf: JMap[String, String]): JMap[String, String] = {
-    val profile: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
-    profile match {
+    val profiles: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
+    profiles match {
       case null => Collections.emptyMap()
       case _ =>
-        sessionConfCache.get(profile)
+        val confMap = scala.collection.mutable.Map[String, String]()
+        profiles.split(",").map(_.trim).filter(_.nonEmpty).foreach { profile =>
+          confMap ++= sessionConfCache.get(profile).asScala
+        }
+        confMap.asJava
     }
   }
 }
