@@ -1853,6 +1853,10 @@
                                 <enforceBytecodeVersion>
                                     <maxJdkVersion>${java.version}</maxJdkVersion>
                                     <ignoredScopes>test</ignoredScopes>
+                                    <ignoredScopes>provided</ignoredScopes>
+                                    <ignoreClasses>
+                                        <ignoreClass>org.jline.terminal.impl.ffm.*</ignoreClass>
+                                    </ignoreClasses>
                                 </enforceBytecodeVersion>
                             </rules>
                             <fail>true</fail>
