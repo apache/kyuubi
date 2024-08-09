@@ -85,6 +85,14 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val REMOVE_CUSTOMIZE_REPARTITION_BEFORE_INSERT =
+    buildConf("spark.sql.optimizer.removeCustomizeRepartitionBeforeWriting")
+      .doc("When true, we will remove user customize repartition before writing. " +
+        "So that we can reduce one shuffle when rebalance insert before zorder.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val TWO_PHASE_REBALANCE_BEFORE_ZORDER =
     buildConf("spark.sql.optimizer.twoPhaseRebalanceBeforeZorder.enabled")
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do two phase rebalance " +
