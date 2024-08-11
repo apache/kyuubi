@@ -99,5 +99,7 @@ class TestSqlAlchemyPresto(unittest.TestCase, SqlAlchemyTestCase):
         if sqlalchemy_version >= 1.4:
             insp = sqlalchemy.inspect(engine)
             self.assertFalse(insp.has_table("THIS_TABLE_DOSE_NOT_EXIST"))
+            self.assertFalse(insp.has_table("THIS_TABLE_DOSE_dot_exist"))
         else:
             self.assertFalse(Table('THIS_TABLE_DOSE_NOT_EXIST', MetaData(bind=engine)).exists())
+            self.assertFalse(Table('THIS_TABLE_DOSE_dot_exits', MetaData(bind=engine)).exists())
