@@ -28,16 +28,13 @@ if [ "$CI" ]; then
   export MAVEN_CLI_OPTS="--no-transfer-progress --errors --fail-fast"
 fi
 
-# Installs any application tarball given a URL, the expected tarball name,
-# and, optionally, a checkable binary path to determine if the binary has
-# already been installed
+# Installs any application tarball given a URL, the expected tarball name
 ## Arg1 - URL
 ## Arg2 - Tarball Name
-## Arg3 - Checkable Binary
+## Arg3 - URL query string
 install_app() {
-  local remote_tarball="$1/$2$4"
+  local remote_tarball="$1/$2$3"
   local local_tarball="${_DIR}/$2"
-  local binary="${_DIR}/$3"
 
   # setup `curl` and `wget` silent options if we're running on Jenkins
   local curl_opts="-L"
@@ -92,7 +89,6 @@ install_mvn() {
       install_app \
         "${APACHE_MIRROR}/${FILE_PATH}" \
         "${MVN_TARBALL}" \
-        "apache-maven-${MVN_VERSION}/bin/mvn" \
         "${MIRROR_URL_QUERY}"
 
       MVN_BIN="${_DIR}/apache-maven-${MVN_VERSION}/bin/mvn"
