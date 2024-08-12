@@ -50,12 +50,12 @@ class PluginLoaderSuite extends KyuubiFunSuite {
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(emptyConfig.isEmpty)
 
-    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "non.exists")
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, Seq("non.exists"))
     val nonExistsConfig =
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(nonExistsConfig.isEmpty)
 
-    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, Seq("cluster-a"))
     val clusterAConf =
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterAConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
@@ -67,6 +67,21 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(clusterAConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
     assert(clusterAConfFromCache.get("kyuubi.zk.ha.namespace") == null)
     assert(clusterAConfFromCache.size() == 5)
+
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, Seq("cluster-a", "cluster-b"))
+    val clusterABConf =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
+    assert(clusterABConf.get("kyuubi.ha.namespace") == "kyuubi-ns-b")
+    assert(clusterABConf.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusterABConf.get("kyuubi.engineEnv.HIVE_DIR") == "/opt/hive_conf_dir")
+    assert(clusterABConf.size() == 6)
+
+    val clusterABConfFromCache =
+      advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
+    assert(clusterABConfFromCache.get("kyuubi.ha.namespace") == "kyuubi-ns-b")
+    assert(clusterABConfFromCache.get("kyuubi.zk.ha.namespace") == null)
+    assert(clusterABConf.get("kyuubi.engineEnv.HIVE_DIR") == "/opt/hive_conf_dir")
+    assert(clusterABConfFromCache.size() == 6)
   }
 
   test("SessionConfAdvisor - multi class") {
@@ -75,7 +90,7 @@ class PluginLoaderSuite extends KyuubiFunSuite {
       KyuubiConf.SESSION_CONF_ADVISOR,
       Seq(classOf[FileSessionConfAdvisor].getName, classOf[TestSessionConfAdvisor].getName))
     val advisor = PluginLoader.loadSessionConfAdvisor(conf)
-    conf.set(KyuubiConf.SESSION_CONF_PROFILE, "cluster-a")
+    conf.set(KyuubiConf.SESSION_CONF_PROFILE, Seq("cluster-a"))
     val clusterAConf =
       advisor.map(_.getConfOverlay("chris", conf.getAll.asJava).asScala).reduce(_ ++ _).asJava
     assert(clusterAConf.get("kyuubi.ha.namespace") == "kyuubi-ns-a")
