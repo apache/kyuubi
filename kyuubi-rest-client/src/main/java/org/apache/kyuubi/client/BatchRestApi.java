@@ -18,8 +18,9 @@
 package org.apache.kyuubi.client;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
+import java.nio.file.Paths;
+import java.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.client.api.v1.dto.*;
 import org.apache.kyuubi.client.util.JsonUtils;
 import org.apache.kyuubi.client.util.VersionUtils;
@@ -46,10 +47,29 @@ public class BatchRestApi {
   }
 
   public Batch createBatch(BatchRequest request, File resourceFile) {
+    return createBatch(request, resourceFile, Collections.emptyList());
+  }
+
+  public Batch createBatch(BatchRequest request, File resourceFile, List<String> extraResources) {
     setClientVersion(request);
     Map<String, MultiPart> multiPartMap = new HashMap<>();
     multiPartMap.put("batchRequest", new MultiPart(MultiPart.MultiPartType.JSON, request));
     multiPartMap.put("resourceFile", new MultiPart(MultiPart.MultiPartType.FILE, resourceFile));
+    extraResources.stream()
+        .distinct()
+        .filter(StringUtils::isNotBlank)
+        .map(
+            path -> {
+              File file = Paths.get(path).toFile();
+              if (!file.exists()) {
+                throw new RuntimeException("File not existed, path: " + path);
+              }
+              return file;
+            })
+        .forEach(
+            file ->
+                multiPartMap.put(
+                    file.getName(), new MultiPart(MultiPart.MultiPartType.FILE, file)));
     return this.getClient().post(API_BASE_PATH, multiPartMap, Batch.class, client.getAuthHeader());
   }
 

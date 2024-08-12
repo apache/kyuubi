@@ -23,6 +23,8 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_MEMORY}
@@ -93,7 +95,7 @@ class JdbcYarnModeProcessBuilder(
   private def jarFiles(isClasspath: Boolean): util.LinkedHashSet[String] = {
     val jarEntries = new util.LinkedHashSet[String]
     mainResource.foreach(jarEntries.add)
-    val javaOptions = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
+    val javaOptions = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH).filter(StringUtils.isNotBlank(_))
     if (isClasspath) {
       javaOptions.foreach(jarEntries.add)
     }

@@ -35,6 +35,11 @@ if [[ "$*" = *--help ]] || [[ "$*" = *-h ]]; then
   exit 0
 fi
 
+# if for some reason the shell doesn't have $USER defined
+# (e.g., ssh'd in to execute a command)
+# let's get the effective username and use that
+USER=${USER:-$(id -nu)}
+
 function kyuubi_logo() {
   source ${KYUUBI_HOME}/bin/kyuubi-logo
 }
