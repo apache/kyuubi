@@ -143,7 +143,7 @@ class PrestoDialect(default.DefaultDialect):
                 else None
             )
             regex = r"Table\ \'.*{}\'\ does\ not\ exist".format(re.escape(table_name))
-            if msg and re.search(regex, msg):
+            if msg and re.search(regex, msg, re.IGNORECASE):
                 raise exc.NoSuchTableError(table_name)
             else:
                 raise

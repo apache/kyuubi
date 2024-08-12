@@ -1336,7 +1336,7 @@ object KyuubiConf {
 
   val ENGINE_ERROR_MAX_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.startup.error.max.size")
-      .doc("During engine bootstrapping, if anderror occurs, using this config to limit" +
+      .doc("During engine bootstrapping, if an error occurs, using this config to limit" +
         " the length of error message(characters).")
       .version("1.1.0")
       .intConf
@@ -1359,15 +1359,16 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val SESSION_CONF_PROFILE: OptionalConfigEntry[String] =
+  val SESSION_CONF_PROFILE: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.profile")
       .doc("Specify a profile to load session-level configurations from " +
-        "`$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf`. " +
+        "multiple `$KYUUBI_CONF_DIR/kyuubi-session-<profile>.conf` files. " +
         "This configuration will be ignored if the file does not exist. " +
         "This configuration only takes effect when `kyuubi.session.conf.advisor` " +
         "is set as `org.apache.kyuubi.session.FileSessionConfAdvisor`.")
       .version("1.7.0")
       .stringConf
+      .toSequence()
       .createOptional
 
   val SESSION_CONF_FILE_RELOAD_INTERVAL: ConfigEntry[Long] =
@@ -3321,7 +3322,7 @@ object KyuubiConf {
         "1.5.0",
         s"Use ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead"),
 
-      // deprected configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
+      // deprecated configs of [[org.apache.kyuubi.zookeeper.ZookeeperConf]]
       DeprecatedConfig(
         "kyuubi.zookeeper.embedded.port",
         "1.2.0",
@@ -3331,7 +3332,7 @@ object KyuubiConf {
         "1.2.0",
         "Use kyuubi.zookeeper.embedded.data.dir instead"),
 
-      // deprected configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
+      // deprecated configs of [[org.apache.kyuubi.ha.HighAvailabilityConf]]
       DeprecatedConfig(
         "kyuubi.ha.zookeeper.quorum",
         "1.6.0",

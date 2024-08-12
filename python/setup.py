@@ -1,22 +1,7 @@
 #!/usr/bin/env python
 
 from setuptools import setup
-from setuptools.command.test import test as TestCommand
 import pyhive
-import sys
-
-
-class PyTest(TestCommand):
-    def finalize_options(self):
-        TestCommand.finalize_options(self)
-        self.test_args = []
-        self.test_suite = True
-
-    def run_tests(self):
-        # import here, cause outside the eggs aren't loaded
-        import pytest
-        errno = pytest.main(self.test_args)
-        sys.exit(errno)
 
 
 with open('README.rst') as readme:
@@ -62,7 +47,6 @@ setup(
         'sqlalchemy>=1.3.0',
         'thrift>=0.10.0',
     ],
-    cmdclass={'test': PyTest},
     package_data={
         '': ['*.rst'],
     },

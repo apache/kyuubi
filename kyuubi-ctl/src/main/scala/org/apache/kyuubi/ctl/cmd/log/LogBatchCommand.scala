@@ -20,6 +20,8 @@ import java.util.{Map => JMap}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.client.BatchRestApi
 import org.apache.kyuubi.client.api.v1.dto.{Batch, OperationLog}
 import org.apache.kyuubi.client.util.BatchUtils
@@ -50,6 +52,7 @@ class LogBatchCommand(
 
       var done = false
       var batch = this.batch.getOrElse(batchRestApi.getBatchById(batchId))
+      var appState = this.batch.map(_.getAppState).orNull
       val kyuubiInstance = batch.getKyuubiInstance
 
       withKyuubiInstanceRestClient(kyuubiRestClient, kyuubiInstance) { kyuubiInstanceRestClient =>
@@ -85,6 +88,11 @@ class LogBatchCommand(
               Option(batch).foreach { batch =>
                 info(s"Application report for ${batch.getAppId} (state: ${batch.getAppState})," +
                   s" batch id: $batchId (state: ${batch.getState})")
+                if (appState != batch.getAppState && StringUtils.isNotBlank(batch.getAppId)) {
+                  appState = batch.getAppState
+                  val appDetails = Render.buildBatchAppInfo(batch).mkString("\t ", "\n\t ", "")
+                  info(appDetails)
+                }
               }
             }
             Thread.sleep(conf.get(CTL_BATCH_LOG_QUERY_INTERVAL))

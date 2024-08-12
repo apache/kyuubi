@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KyuubiException, Logging, SCALA_COMPILE_VERSION, Utils}
@@ -71,7 +72,7 @@ class JdbcProcessBuilder(
     val memory = conf.get(ENGINE_JDBC_MEMORY)
     buffer += s"-Xmx$memory"
 
-    val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS)
+    val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     javaOptions.foreach(buffer += _)
 
     val classpathEntries = new mutable.LinkedHashSet[String]

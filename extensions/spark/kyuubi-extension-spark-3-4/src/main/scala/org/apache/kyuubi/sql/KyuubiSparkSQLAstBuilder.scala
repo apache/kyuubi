@@ -131,14 +131,30 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
 
   override def visitMultipartIdentifier(ctx: MultipartIdentifierContext): Seq[String] =
     withOrigin(ctx) {
-      ctx.parts.asScala.map(_.getText).toSeq
+      ctx.parts.asScala.map(typedVisit[String]).toSeq
     }
+
+  override def visitIdentifier(ctx: IdentifierContext): String = {
+    withOrigin(ctx) {
+      ctx.strictIdentifier() match {
+        case quotedContext: QuotedIdentifierAlternativeContext =>
+          typedVisit[String](quotedContext)
+        case _ => ctx.getText
+      }
+    }
+  }
+
+  override def visitQuotedIdentifier(ctx: QuotedIdentifierContext): String = {
+    withOrigin(ctx) {
+      ctx.BACKQUOTED_IDENTIFIER().getText.stripPrefix("`").stripSuffix("`").replace("``", "`")
+    }
+  }
 
   override def visitZorderClause(ctx: ZorderClauseContext): Seq[UnresolvedAttribute] =
     withOrigin(ctx) {
       val res = ListBuffer[UnresolvedAttribute]()
       ctx.multipartIdentifier().forEach { identifier =>
-        res += UnresolvedAttribute(identifier.parts.asScala.map(_.getText).toSeq)
+        res += UnresolvedAttribute(identifier.parts.asScala.map(typedVisit[String]).toSeq)
       }
       res.toSeq
     }

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.nio.file.{Files, Paths}
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -395,11 +394,7 @@ class BatchJobSubmission(
 
   private def cleanupUploadedResourceIfNeeded(): Unit = {
     if (session.isResourceUploaded) {
-      try {
-        Files.deleteIfExists(Paths.get(resource))
-      } catch {
-        case e: Throwable => error(s"Error deleting the uploaded resource: $resource", e)
-      }
+      Utils.deleteDirectoryRecursively(session.resourceUploadFolderPath.toFile)
     }
   }
 }

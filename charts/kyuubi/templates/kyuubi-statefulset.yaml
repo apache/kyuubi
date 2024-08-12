@@ -80,9 +80,9 @@ spec:
               containerPort: {{ $frontend.port }}
             {{- end }}
             {{- end }}
-            {{- if .Values.monitoring.prometheus.enabled }}
+            {{- if and .Values.metrics.enabled (.Values.metrics.reporters | nospace | splitList "," | has "PROMETHEUS") }}
             - name: prometheus
-              containerPort: {{ .Values.monitoring.prometheus.port }}
+              containerPort: {{ .Values.metrics.prometheusPort }}
             {{- end }}
           {{- if .Values.livenessProbe.enabled }}
           livenessProbe:

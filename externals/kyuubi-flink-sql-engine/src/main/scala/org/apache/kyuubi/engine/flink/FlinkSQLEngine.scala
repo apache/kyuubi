@@ -91,6 +91,7 @@ object FlinkSQLEngine extends Logging {
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
+          .toMap
       flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)

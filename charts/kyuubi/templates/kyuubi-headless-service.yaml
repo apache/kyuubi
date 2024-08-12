@@ -30,11 +30,10 @@ spec:
       port: {{ tpl $frontend.service.port $ }}
       targetPort: {{ $frontend.port }}
     {{- end }}
-    {{- if .Values.monitoring.prometheus.enabled }}
+    {{- if and .Values.metrics.enabled (.Values.metrics.reporters | nospace | splitList "," | has "PROMETHEUS") }}
     - name: prometheus
-      port: {{ .Values.monitoring.prometheus.port }}
-      targetPort: {{ .Values.monitoring.prometheus.port }}
+      port: {{ .Values.metrics.prometheusPort }}
+      targetPort: prometheus
     {{- end }}
   selector:
     {{- include "kyuubi.selectorLabels" $ | nindent 4 }}
-

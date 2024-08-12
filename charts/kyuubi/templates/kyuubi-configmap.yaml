@@ -37,8 +37,9 @@ data:
     kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
 
     # Kyuubi Metrics
-    kyuubi.metrics.enabled={{ .Values.monitoring.prometheus.enabled }}
-    kyuubi.metrics.reporters={{ .Values.metricsReporters }}
+    kyuubi.metrics.enabled={{ .Values.metrics.enabled }}
+    kyuubi.metrics.reporters={{ .Values.metrics.reporters }}
+    kyuubi.metrics.prometheus.port={{ .Values.metrics.prometheusPort }}
 
     ## User provided Kyuubi configurations
     {{- with .Values.kyuubiConf.kyuubiDefaults }}
