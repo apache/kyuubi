@@ -847,17 +847,19 @@ object KyuubiConf {
 
   val AUTHENTICATION_CUSTOM_BASIC_CLASS: ConfigEntry[Option[String]] =
     buildConf("kyuubi.authentication.custom.basic.class")
-      .doc("User-defined Basic authentication implementation of " +
-        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
-      .version("1.6.0")
+      .doc("User-defined authentication implementation of " +
+        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider " +
+        "for http basic authentication")
+      .version("1.10.0")
       .serverOnly
       .fallbackConf(AUTHENTICATION_CUSTOM_CLASS)
 
   val AUTHENTICATION_CUSTOM_BEARER_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.bearer.class")
-      .doc("User-defined Token authentication implementation of " +
-        "org.apache.kyuubi.service.authentication.TokenAuthenticationProvider")
-      .version("1.6.0")
+      .doc("User-defined authentication implementation of " +
+        "org.apache.kyuubi.service.authentication.TokenAuthenticationProvider " +
+        "for http bearer authentication")
+      .version("1.10.0")
       .serverOnly
       .stringConf
       .createOptional
