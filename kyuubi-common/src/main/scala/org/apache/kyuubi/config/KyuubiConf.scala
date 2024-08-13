@@ -845,7 +845,7 @@ object KyuubiConf {
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.class")
       .doc("User-defined authentication implementation of " +
-        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider" +
+        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider " +
         "or org.apache.kyuubi.service.authentication.TokenAuthenticationProvider")
       .version("1.3.0")
       .serverOnly
