@@ -17,12 +17,20 @@
 
 package org.apache.kyuubi.service.authentication
 
-class EngineSecureAuthenticationProviderImpl extends PasswdAuthenticationProvider
-  with TokenAuthenticationProvider {
-  override def authenticate(user: String, password: String): Unit = {
-    InternalSecurityAccessor.get().authToken(password)
-  }
-  override def authenticate(token: String): Unit = {
-    InternalSecurityAccessor.get().authToken(token)
-  }
+import javax.security.sasl.AuthenticationException
+
+trait TokenAuthenticationProvider {
+
+  /**
+   * The authenticate method is called by the Kyuubi Server authentication layer
+   * to authenticate users for their requests.
+   * If the token is to be granted, return nothing/throw nothing.
+   * When the token is to be disallowed, throw an appropriate [[AuthenticationException]].
+   *
+   * @param token The token received over the connection request
+   *
+   * @throws AuthenticationException When the token is found to be invalid by the implementation
+   */
+  @throws[AuthenticationException]
+  def authenticate(token: String): Unit
 }

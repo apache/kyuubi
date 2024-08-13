@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
-import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
+import org.apache.kyuubi.service.authentication.AuthTypes.{CUSTOM, KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
@@ -57,16 +57,24 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   private[kyuubi] def initAuthHandlers(): Unit = {
     val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
+    val bearerTokenEnabled = authTypes.contains(AuthTypes.BEARER)
+    val customEnabled = authTypes.contains(CUSTOM)
     val basicAuthTypeOpt = {
       if (authTypes == Set(NOSASL)) {
         authTypes.headOption
       } else {
-        authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL)).headOption
+        authTypes.filterNot(_.equals(KERBEROS)).filterNot(_.equals(NOSASL))
+          .filterNot(_.equals(AuthTypes.BEARER)).headOption
       }
     }
     if (spnegoKerberosEnabled) {
       val kerberosHandler = new KerberosAuthenticationHandler
       addAuthHandler(kerberosHandler)
+    }
+    if (bearerTokenEnabled && !customEnabled) {
+      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
+      val bearerHandler = new BearerAuthenticationHandler(className.get)
+      addAuthHandler(bearerHandler)
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
       val basicHandler = new BasicAuthenticationHandler(basicAuthType)

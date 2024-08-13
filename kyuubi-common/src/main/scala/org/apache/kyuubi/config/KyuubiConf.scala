@@ -802,6 +802,7 @@ object KyuubiConf {
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
+      " <li>BEARER: BEARER Token authentication.</li>" +
       " <li>CUSTOM: User-defined authentication.</li>" +
       " <li>JDBC: JDBC query authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li>" +
@@ -823,6 +824,11 @@ object KyuubiConf {
       "          <li><code>KERBEROS</code></li>" +
       "        </ul>" +
       "      </li>" +
+      "      <li>SASL/OAUTHBEARER" +
+      "        <ul>" +
+      "          <li><code>BEARER</code></li>" +
+      "        </ul>" +
+      "      </li>" +
       "    </ul>" +
       "  </li>" +
       "</ul>" +
@@ -839,7 +845,8 @@ object KyuubiConf {
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.class")
       .doc("User-defined authentication implementation of " +
-        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
+        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider" +
+        "or org.apache.kyuubi.service.authentication.TokenAuthenticationProvider")
       .version("1.3.0")
       .serverOnly
       .stringConf

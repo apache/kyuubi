@@ -22,13 +22,21 @@ import javax.security.sasl.AuthenticationException
 import org.apache.kyuubi.Logging
 
 class UserDefineAuthenticationProviderImpl()
-  extends PasswdAuthenticationProvider with Logging {
+  extends PasswdAuthenticationProvider with TokenAuthenticationProvider with Logging {
 
   override def authenticate(user: String, password: String): Unit = {
     if (user == "user" && password == "password") {
       info(s"Success log in of user: $user")
     } else {
       throw new AuthenticationException("Username or password is not valid!")
+    }
+  }
+
+  override def authenticate(token: String): Unit = {
+    if (token == "token") {
+      info(s"Success authentication of token: $token")
+    } else {
+      throw new AuthenticationException("Token is not valid!")
     }
   }
 }

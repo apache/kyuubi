@@ -17,7 +17,8 @@ Configure Kyuubi to use Custom Authentication
 =============================================
 
 Besides the `builtin authentication`_ methods, kyuubi supports custom
-authentication implementations of `org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider`.
+authentication implementations of `org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider`
+or `org.apache.kyuubi.service.authentication.TokenAuthenticationProvider`.
 
 .. code-block:: scala
 

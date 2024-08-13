@@ -20,8 +20,12 @@ package org.apache.kyuubi.service.authentication
 /**
  * This authentication provider allows any combination of username and password.
  */
-class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider {
+class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider
+  with TokenAuthenticationProvider {
   override def authenticate(user: String, password: String): Unit = {
+    // no-op authentication
+  }
+  override def authenticate(token: String): Unit = {
     // no-op authentication
   }
 }
