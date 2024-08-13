@@ -223,8 +223,8 @@ function kill_kyuubi() {
     kill -9 $TARGET_ID
     kyuubi_logo
     echo "Bye!"
-    else
-      echo "no $CLASS to stop"
+  else
+    echo "no $CLASS to stop"
   fi
 }
 
