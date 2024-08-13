@@ -39,18 +39,6 @@ object AuthenticationProviderFactory {
     }
   }
 
-  @throws[AuthenticationException]
-  def getTokenAuthenticationProvider(
-      providerClass: String,
-      conf: KyuubiConf,
-      isServer: Boolean = true): TokenAuthenticationProvider = {
-    if (isServer) {
-      getTokenAuthenticationProviderForServer(providerClass, conf)
-    } else {
-      getTokenAuthenticationProviderForEngine(conf)
-    }
-  }
-
   private def getAuthenticationProviderForServer(
       method: AuthMethod,
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
@@ -67,26 +55,33 @@ object AuthenticationProviderFactory {
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 
-  private def getTokenAuthenticationProviderForServer(
+  def getBasicAuthenticationProvider(
+      method: AuthMethod,
+      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
+    case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
+    case AuthMethods.CUSTOM =>
+      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
+      if (className.isEmpty) {
+        throw new AuthenticationException(
+          "authentication.custom.basic.class must be set when auth method was CUSTOM.")
+      }
+      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
+    case _ => throw new AuthenticationException("Not a valid authentication method")
+  }
+
+  def getTokenAuthenticationProvider(
       providerClass: String,
       conf: KyuubiConf): TokenAuthenticationProvider = {
     if (providerClass.isEmpty) {
       throw new AuthenticationException(
-        "authentication.custom.class must be set when auth method was BEARER.")
+        "authentication.custom.bearer.class must be set when auth method was BEARER.")
     }
     ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
   }
 
   private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
-    if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
-      new EngineSecureAuthenticationProviderImpl
-    } else {
-      new AnonymousAuthenticationProviderImpl
-    }
-  }
-
-  private def getTokenAuthenticationProviderForEngine(conf: KyuubiConf)
-      : TokenAuthenticationProvider = {
     if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
       new EngineSecureAuthenticationProviderImpl
     } else {

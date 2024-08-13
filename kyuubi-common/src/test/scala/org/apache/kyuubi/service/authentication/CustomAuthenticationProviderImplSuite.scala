@@ -48,10 +48,10 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
     val e1 = intercept[AuthenticationException](
       getTokenAuthenticationProvider("", conf))
     assert(e1.getMessage.contains(
-      "authentication.custom.class must be set when auth method was BEARER."))
+      "authentication.custom.bearer.class must be set when auth method was BEARER."))
 
     conf.set(
-      KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+      KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS,
       classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
     val p1 = getTokenAuthenticationProvider(
       classOf[UserDefineAuthenticationProviderImpl].getCanonicalName,
