@@ -217,15 +217,15 @@ function stop_kyuubi() {
 }
 
 function kill_kyuubi() {
-    if [ -f ${pid} ]; then
-      TARGET_ID="$(cat "$pid")"
-      echo "Stopping $CLASS forcefully."
-      kill -9 $TARGET_ID
-      kyuubi_logo
-      echo "Bye!"
-      else
-        echo "no $CLASS to stop"
-    fi
+  if [ -f ${pid} ]; then
+    TARGET_ID="$(cat "$pid")"
+    echo "Stopping $CLASS forcefully."
+    kill -9 $TARGET_ID
+    kyuubi_logo
+    echo "Bye!"
+    else
+      echo "no $CLASS to stop"
+  fi
 }
 
 function check_kyuubi() {
