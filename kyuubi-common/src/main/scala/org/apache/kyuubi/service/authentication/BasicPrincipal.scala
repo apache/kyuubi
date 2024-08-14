@@ -18,20 +18,19 @@
 package org.apache.kyuubi.service.authentication
 
 import java.security.Principal
-import javax.security.sasl.AuthenticationException
+import java.util.Objects
 
-trait TokenAuthenticationProvider {
+class BasicPrincipal(val name: String) extends Principal{
+  require(name != null, "Principal name cannot be null")
 
-  /**
-   * The authenticate method is called by the Kyuubi Server authentication layer
-   * to authenticate users for their requests.
-   * If the token is to be granted, return nothing/throw nothing.
-   * When the token is to be disallowed, throw an appropriate [[AuthenticationException]].
-   *
-   * @param credential The token received over the connection request
-   *
-   * @throws AuthenticationException When the token is found to be invalid by the implementation
-   */
-  @throws[AuthenticationException]
-  def authenticate(credential: TokenCredential): Principal
+  override def getName: String = name
+
+  override def toString: String = name
+
+  override def equals(o: Any): Boolean = o match {
+    case that: BasicPrincipal => name == that.name
+    case _ => false
+  }
+
+  override def hashCode: Int = Objects.hashCode(name)
 }

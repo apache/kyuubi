@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.server.http.authentication
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
+
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
-import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthenticationProviderFactory, TokenAuthenticationProvider}
+import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthenticationProviderFactory, DefaultTokenCredential, TokenAuthenticationProvider}
 
 class BearerAuthenticationHandler(providerClass: String)
   extends AuthenticationHandler with Logging {
@@ -70,18 +71,16 @@ class BearerAuthenticationHandler(providerClass: String)
       request: HttpServletRequest,
       response: HttpServletResponse): String = {
     var principal: String = null
-    val inputToken = Option(getAuthorization(request))
-      .map(a => Base64.getDecoder.decode(a.getBytes()))
-      .getOrElse(Array.empty[Byte])
+    val inputToken = getAuthorization(request)
 
-    if (!allowAnonymous && inputToken.isEmpty) {
+    if (!allowAnonymous && StringUtils.isBlank(inputToken)) {
       response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)
       response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
     } else {
-      val credential = new String(inputToken, StandardCharsets.UTF_8)
+      val credential = DefaultTokenCredential(inputToken, HttpAuthUtils.getCredentialExtraInfo)
       principal = AuthenticationProviderFactory
         .getTokenAuthenticationProvider(providerClass, conf)
-        .authenticate(credential).toString
+        .authenticate(credential).getName
       response.setStatus(HttpServletResponse.SC_OK)
     }
     principal

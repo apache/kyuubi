@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.security.Principal
+
 /**
  * This authentication provider allows any combination of username and password.
  */
@@ -25,7 +27,8 @@ class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider
   override def authenticate(user: String, password: String): Unit = {
     // no-op authentication
   }
-  override def authenticate(token: String): Unit = {
+  override def authenticate(credential: TokenCredential): Principal = {
     // no-op authentication
+    new BasicPrincipal("anonymous")
   }
 }

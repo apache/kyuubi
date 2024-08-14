@@ -26,7 +26,8 @@ class AnonymousAuthenticationProviderImplSuite extends KyuubiFunSuite {
   }
 
   test("testAuthenticateToken") {
-    new AnonymousAuthenticationProviderImpl().authenticate("token")
+    new AnonymousAuthenticationProviderImpl()
+      .authenticate(DefaultTokenCredential("test", Map.empty))
   }
 
 }

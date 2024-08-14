@@ -19,6 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.util.ClassUtils
@@ -65,7 +67,7 @@ object AuthenticationProviderFactory {
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
       if (className.isEmpty) {
         throw new AuthenticationException(
-          "authentication.custom.basic.class must be set when auth method was CUSTOM.")
+          "authentication.custom.basic.class must be set for basic token authentication.")
       }
       ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
@@ -74,9 +76,9 @@ object AuthenticationProviderFactory {
   def getTokenAuthenticationProvider(
       providerClass: String,
       conf: KyuubiConf): TokenAuthenticationProvider = {
-    if (providerClass.isEmpty) {
+    if (StringUtils.isBlank(providerClass)) {
       throw new AuthenticationException(
-        "authentication.custom.bearer.class must be set when auth method was BEARER.")
+        "authentication.custom.bearer.class must be set for bearer token authentication.")
     }
     ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
   }

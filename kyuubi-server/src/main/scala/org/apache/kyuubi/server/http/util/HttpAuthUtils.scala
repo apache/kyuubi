@@ -25,6 +25,8 @@ import java.util.{Base64, StringTokenizer}
 import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.service.authentication.Credential
 
 object HttpAuthUtils extends Logging {
   // HTTP header used by the server endpoint during an authentication sequence.
@@ -38,6 +40,7 @@ object HttpAuthUtils extends Logging {
   val BASIC = "Basic"
   // HTTP header prefix used during the Basic authentication sequence.
   val DIGEST = "Digest"
+  val CLIENT_IP_KEY: String = "clientIp"
 
   // RFC 7617: The 'Basic' HTTP Authentication Scheme
   def basicAuthorizationHeader(userId: String, password: String = "none"): String =
@@ -107,5 +110,12 @@ object HttpAuthUtils extends Logging {
       map.put(key, value)
     }
     map
+  }
+
+  def getCredentialExtraInfo: Map[String, String] = {
+    Map(Credential.CLIENT_IP_KEY ->
+      Option(
+        AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()).getOrElse(
+        AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.get()))
   }
 }
