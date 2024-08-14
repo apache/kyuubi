@@ -27,9 +27,14 @@ class BasicPrincipal(val name: String) extends Principal {
 
   override def toString: String = name
 
-  override def equals(o: Any): Boolean = o match {
-    case that: BasicPrincipal => name == that.name
-    case _ => false
+  override def equals(o: Any): Boolean = {
+    if (this == o) {
+      true
+    } else if (o == null || getClass != o.getClass) {
+      false
+    } else {
+      Objects.equals(name, o.asInstanceOf[BasicPrincipal].name)
+    }
   }
 
   override def hashCode: Int = Objects.hashCode(name)

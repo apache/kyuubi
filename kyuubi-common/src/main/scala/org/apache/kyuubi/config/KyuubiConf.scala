@@ -849,7 +849,7 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.custom.basic.class")
       .doc("User-defined authentication implementation of " +
         "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider " +
-        "for http basic authentication")
+        "for http basic authentication.")
       .version("1.10.0")
       .serverOnly
       .fallbackConf(AUTHENTICATION_CUSTOM_CLASS)
@@ -858,7 +858,7 @@ object KyuubiConf {
     buildConf("kyuubi.authentication.custom.bearer.class")
       .doc("User-defined authentication implementation of " +
         "org.apache.kyuubi.service.authentication.TokenAuthenticationProvider " +
-        "for http bearer authentication")
+        "for http bearer authentication.")
       .version("1.10.0")
       .serverOnly
       .stringConf

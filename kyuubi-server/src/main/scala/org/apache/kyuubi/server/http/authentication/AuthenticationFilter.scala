@@ -70,14 +70,12 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
       if (basicAuthType.equals(CUSTOM)) {
-        val basicClassName = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
-        val bearerClassName = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS)
-        if (basicClassName.isDefined) {
-          val basicHandler = new BasicAuthenticationHandler(basicAuthType)
+        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS).foreach { _ =>
+          val basicHandler = new BasicAuthenticationHandler(CUSTOM)
           addAuthHandler(basicHandler)
         }
-        if (bearerClassName.isDefined) {
-          val bearerHandler = new BearerAuthenticationHandler(bearerClassName.get)
+        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS).foreach { bearerClassName =>
+          val bearerHandler = new BearerAuthenticationHandler(bearerClassName)
           addAuthHandler(bearerHandler)
         }
       } else {

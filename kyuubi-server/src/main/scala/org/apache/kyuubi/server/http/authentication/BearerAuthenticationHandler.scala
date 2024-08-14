@@ -79,7 +79,7 @@ class BearerAuthenticationHandler(providerClass: String)
     } else {
       val credential = DefaultTokenCredential(inputToken, HttpAuthUtils.getCredentialExtraInfo)
       principal = AuthenticationProviderFactory
-        .getTokenAuthenticationProvider(providerClass, conf)
+        .getHttpBearerAuthenticationProvider(providerClass, conf)
         .authenticate(credential).getName
       response.setStatus(HttpServletResponse.SC_OK)
     }

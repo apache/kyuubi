@@ -21,7 +21,7 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.{getAuthenticationProvider, getTokenAuthenticationProvider}
+import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.{getAuthenticationProvider, getHttpBearerAuthenticationProvider}
 
 class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
   test("Test user defined authentication") {
@@ -42,18 +42,18 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
     p1.authenticate("user", "password")
   }
 
-  test("Test user defined token authentication") {
+  test("Test user defined http bearer authentication") {
     val conf = KyuubiConf()
 
     val e1 = intercept[AuthenticationException](
-      getTokenAuthenticationProvider("", conf))
+      getHttpBearerAuthenticationProvider("", conf))
     assert(e1.getMessage.contains(
-      "authentication.custom.bearer.class must be set for bearer token authentication."))
+      "authentication.custom.bearer.class must be set for http bearer authentication."))
 
     conf.set(
       KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS,
       classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-    val p1 = getTokenAuthenticationProvider(
+    val p1 = getHttpBearerAuthenticationProvider(
       classOf[UserDefineAuthenticationProviderImpl].getCanonicalName,
       conf)
     val credential = DefaultTokenCredential("test", Map.empty)

@@ -17,6 +17,16 @@
 
 package org.apache.kyuubi.service.authentication
 
+trait TokenCredential {
+  def token: String
+  def extraInfo: Map[String, String]
+}
+
+case class DefaultTokenCredential(
+    token: String,
+    override val extraInfo: Map[String, String] = Map.empty)
+  extends TokenCredential
+
 object Credential {
   val CLIENT_IP_KEY: String = "clientIp"
 }

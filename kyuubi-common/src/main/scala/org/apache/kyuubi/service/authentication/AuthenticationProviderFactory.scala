@@ -57,7 +57,15 @@ object AuthenticationProviderFactory {
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 
-  def getBasicAuthenticationProvider(
+  private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
+    if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
+      new EngineSecureAuthenticationProviderImpl
+    } else {
+      new AnonymousAuthenticationProviderImpl
+    }
+  }
+
+  def getHttpBasicAuthenticationProvider(
       method: AuthMethod,
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
@@ -67,27 +75,19 @@ object AuthenticationProviderFactory {
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
       if (className.isEmpty) {
         throw new AuthenticationException(
-          "authentication.custom.basic.class must be set for basic token authentication.")
+          "authentication.custom.basic.class must be set for http basic authentication.")
       }
       ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 
-  def getTokenAuthenticationProvider(
+  def getHttpBearerAuthenticationProvider(
       providerClass: String,
       conf: KyuubiConf): TokenAuthenticationProvider = {
     if (StringUtils.isBlank(providerClass)) {
       throw new AuthenticationException(
-        "authentication.custom.bearer.class must be set for bearer token authentication.")
+        "authentication.custom.bearer.class must be set for http bearer authentication.")
     }
     ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
-  }
-
-  private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
-    if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
-      new EngineSecureAuthenticationProviderImpl
-    } else {
-      new AnonymousAuthenticationProviderImpl
-    }
   }
 }
