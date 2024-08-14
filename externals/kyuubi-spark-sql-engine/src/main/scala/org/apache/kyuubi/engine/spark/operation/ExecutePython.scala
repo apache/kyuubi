@@ -40,6 +40,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYU
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.util.JsonUtils
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -171,6 +172,15 @@ class ExecutePython(
       }
     }
   }
+
+  override def cleanup(targetState: OperationState): Unit = {
+    if (!isTerminalState(state)) {
+      logger.info(s"Staring to cancel python code: $statement")
+      worker.cancel()
+    }
+    super.cleanup(targetState)
+  }
+
 }
 
 case class SessionPythonWorker(
@@ -224,6 +234,20 @@ case class SessionPythonWorker(
     errorReader.interrupt()
     pythonWorkerMonitor.interrupt()
     workerProcess.destroy()
+  }
+
+  def cancel(): Unit = {
+    val field = workerProcess.getClass.getDeclaredField("pid")
+    field.setAccessible(true)
+    val pid = field.getLong(workerProcess)
+    // sends a SIGINT (interrupt) signal, similar to Ctrl-C
+    val builder = new ProcessBuilder(Seq("kill", "-2", pid.toString).asJava)
+    val process = builder.start()
+    val exitCode = process.waitFor()
+    process.destroy()
+    if (exitCode != 0) {
+      throw new RuntimeException(s"python code cancel failed: $exitCode")
+    }
   }
 }
 
