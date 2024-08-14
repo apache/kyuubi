@@ -418,7 +418,7 @@ jobs:
           # passthrough CI into build container
           build-args: |
             CI=${CI}
-            MVN_ARG=--flink-provided --hive-provided -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests
+            MVN_ARG=--flink-provided --hive-provided
           context: .
           file: build/Dockerfile.CI
           load: true
