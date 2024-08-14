@@ -25,7 +25,7 @@ import java.util.{Base64, StringTokenizer}
 import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
+import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, AuthSchemes}
 import org.apache.kyuubi.service.authentication.Credential
 
 object HttpAuthUtils extends Logging {
@@ -46,6 +46,8 @@ object HttpAuthUtils extends Logging {
     "BASIC " + new String(
       Base64.getEncoder.encode(s"$userId:$password".getBytes()),
       StandardCharsets.UTF_8)
+
+  def bearerAuthorizationHeader(token: String): String = AuthSchemes.BEARER + " " + token
 
   private val COOKIE_ATTR_SEPARATOR = "&"
   private val COOKIE_CLIENT_USER_NAME = "cu"

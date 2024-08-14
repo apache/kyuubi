@@ -26,12 +26,12 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.RestClientTestHelper
+import org.apache.kyuubi.{RestClientTestHelper, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.server.http.util.HttpAuthUtils._
-import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
+import org.apache.kyuubi.service.authentication.{InternalSecurityAccessor, UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
 import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
@@ -180,5 +180,68 @@ class KyuubiRestAuthenticationSuite extends RestClientTestHelper {
       .get()
 
     assert(HttpServletResponse.SC_UNAUTHORIZED == response.getStatus)
+  }
+}
+
+class KyuubiRestCustomAuthenticationTest extends RestFrontendTestHelper {
+
+  override protected lazy val conf: KyuubiConf = {
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("CUSTOM"))
+      .set(
+        KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(
+        KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(KyuubiConf.ENGINE_SECURITY_ENABLED.key, "true")
+      .set(KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER.key, "simple")
+      .set(KyuubiConf.SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key, "_KYUUBI_REST_")
+    conf
+  }
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+    InternalSecurityAccessor.initialize(conf, true)
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+  }
+
+  test("test with valid CUSTOM http bearer authorization") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(
+        AUTHORIZATION_HEADER,
+        bearerAuthorizationHeader(UserDefineTokenAuthenticationProviderImpl.VALID_TOKEN))
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+
+  test("test with invalid CUSTOM http bearer authorization") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, bearerAuthorizationHeader("bad token"))
+      .get()
+
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
+  }
+
+  test("test with valid CUSTOM http basic authorization") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("user", "password"))
+      .get()
+
+    assert(HttpServletResponse.SC_OK == response.getStatus)
+  }
+
+  test("test with invalid CUSTOM http basic authorization") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("test", "test"))
+      .get()
+
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
   }
 }
