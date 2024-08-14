@@ -40,7 +40,6 @@ object HttpAuthUtils extends Logging {
   val BASIC = "Basic"
   // HTTP header prefix used during the Basic authentication sequence.
   val DIGEST = "Digest"
-  val CLIENT_IP_KEY: String = "clientIp"
 
   // RFC 7617: The 'Basic' HTTP Authentication Scheme
   def basicAuthorizationHeader(userId: String, password: String = "none"): String =
