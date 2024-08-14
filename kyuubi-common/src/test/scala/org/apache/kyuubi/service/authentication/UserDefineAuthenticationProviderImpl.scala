@@ -35,9 +35,9 @@ class UserDefineAuthenticationProviderImpl()
   }
 
   override def authenticate(credential: TokenCredential): Principal = {
-    val clientIp = credential.extraInfo().get(Credential.CLIENT_IP_KEY)
+    val clientIp = credential.extraInfo.get(Credential.CLIENT_IP_KEY)
     if (credential.token == VALID_TOKEN) {
-      info(s"Success log in of token: ${credential.token()} with clientIp: $clientIp")
+      info(s"Success log in of token: ${credential.token} with clientIp: $clientIp")
       new BasicPrincipal("test")
     } else {
       throw new AuthenticationException("Token is not valid!")

@@ -20,7 +20,7 @@ package org.apache.kyuubi.service.authentication
 import java.security.Principal
 import java.util.Objects
 
-class BasicPrincipal(val name: String) extends Principal{
+class BasicPrincipal(val name: String) extends Principal {
   require(name != null, "Principal name cannot be null")
 
   override def getName: String = name

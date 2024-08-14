@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 trait TokenCredential {
-  def token(): String
+  def token: String
 
-  def extraInfo(): Map[String, String]
+  def extraInfo: Map[String, String]
 }
