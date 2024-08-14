@@ -563,7 +563,11 @@ private class StatementStatsPagedTable(
     }
       </td>
       {
-      if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage) else <td></td>
+      event.exception match {
+        case Some(e) =>
+          errorMessageCell(Option(e.getMessage).getOrElse(Utils.stringifyException(e)))
+        case _ => <td></td>
+      }
     }
     </tr>
   }
