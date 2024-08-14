@@ -61,7 +61,11 @@ class SparkProcessBuilder(
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
   }
 
-  override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+  override def mainClass: String = if (conf.get(FRONTEND_PROTOCOLS) == Seq("GRPC")) {
+    "org.apache.kyuubi.engine.spark.SparkGrpcEngine"
+  } else {
+    "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+  }
 
   /**
    * Add `spark.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT

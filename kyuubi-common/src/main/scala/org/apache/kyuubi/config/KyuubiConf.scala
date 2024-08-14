@@ -405,7 +405,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO, GRPC = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -417,6 +417,7 @@ object KyuubiConf {
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
         " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
+        " <li>GRPC - Spark Connect compatible gRPC protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
@@ -425,7 +426,8 @@ object KyuubiConf {
       .checkValues(FrontendProtocols)
       .createWithDefault(Seq(
         FrontendProtocols.THRIFT_BINARY.toString,
-        FrontendProtocols.REST.toString))
+        FrontendProtocols.REST.toString,
+        FrontendProtocols.GRPC.toString))
 
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("kyuubi.frontend.bind.host")
     .doc("Hostname or IP of the machine on which to run the frontend services.")
@@ -657,7 +659,7 @@ object KyuubiConf {
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
       .version("1.0.0")
       .intConf
-      .createWithDefault(104857600)
+      .createWithDefault(100 * 1024 * 1024)
 
   val FRONTEND_THRIFT_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.max.message.size")
@@ -809,6 +811,28 @@ object KyuubiConf {
       .version("1.6.0")
       .stringConf
       .createWithDefault("X-Real-IP")
+
+  val FRONTEND_GRPC_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.grpc.bind.host")
+      .doc("Hostname or IP of the machine on which to run the gRPC frontend service.")
+      .version("2.0.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_GRPC_BIND_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.grpc.bind.port")
+      .doc("Port of the machine on which to run the gRPC frontend service.")
+      .version("2.0.0")
+      .serverOnly
+      .intConf
+      .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .createWithDefault(10999)
+
+  val FRONTEND_GRPC_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.grpc.max.message.size")
+      .doc("Maximum message size in bytes a gRPC frontend service are allowed.")
+      .version("2.0.0")
+      .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
 
   val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("kyuubi.authentication")
     .doc("A comma-separated list of client authentication types." +

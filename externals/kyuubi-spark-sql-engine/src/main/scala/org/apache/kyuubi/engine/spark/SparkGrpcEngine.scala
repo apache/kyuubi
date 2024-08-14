@@ -17,56 +17,42 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.Instant
-import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
 
-import com.google.common.annotations.VisibleForTesting
-import org.apache.spark.{ui, SparkConf}
-import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
-import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
+import org.apache.spark.SparkConf
+import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_URL
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
-import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
-import org.apache.kyuubi.events.EventBus
+import org.apache.kyuubi.engine.spark.SparkGrpcEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
-class SparkSQLEngine(val spark: SparkSession) extends Serverable("SparkSQLEngine") {
+class SparkGrpcEngine(spark: SparkSession) extends Serverable("SparkGrpcEngine") {
 
-  override val backendService = new SparkSQLBackendService(spark)
-  override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
+  override val backendService = new SparkGrpcBackendService(spark)
+  override val frontendServices = Seq(new SparkGrpcFrontendService(this))
 
   private val shutdown = new AtomicBoolean(false)
   private val gracefulStopDeregistered = new AtomicBoolean(false)
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
-  private lazy val engineSavePath =
-    backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
-    val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
-    val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
-    spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }
 
@@ -89,12 +75,6 @@ class SparkSQLEngine(val spark: SparkSession) extends Serverable("SparkSQLEngine
       maxInitTimeout > 0) {
       startFastFailChecker(maxInitTimeout)
     }
-
-    if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      fs.mkdirs(engineSavePath)
-      fs.deleteOnExit(engineSavePath)
-    }
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -110,14 +90,6 @@ class SparkSQLEngine(val spark: SparkSession) extends Serverable("SparkSQLEngine
         exec,
         Duration(60, TimeUnit.SECONDS))
     })
-    try {
-      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      if (fs.exists(engineSavePath)) {
-        fs.delete(engineSavePath, true)
-      }
-    } catch {
-      case e: Throwable => error(s"Error cleaning engine result save path: $engineSavePath", e)
-    }
   }
 
   def gracefulStop(): Unit = if (gracefulStopDeregistered.compareAndSet(false, true)) {
@@ -214,7 +186,7 @@ class SparkSQLEngine(val spark: SparkSession) extends Serverable("SparkSQLEngine
   }
 }
 
-object SparkSQLEngine extends Logging {
+object SparkGrpcEngine extends Logging {
 
   private var _sparkConf: SparkConf = _
 
@@ -222,7 +194,7 @@ object SparkSQLEngine extends Logging {
 
   def kyuubiConf: KyuubiConf = _kyuubiConf
 
-  var currentEngine: Option[SparkSQLEngine] = None
+  var currentEngine: Option[SparkGrpcEngine] = None
 
   private lazy val user = currentUser
 
@@ -237,73 +209,16 @@ object SparkSQLEngine extends Logging {
   SignalRegister.registerLogger(logger)
   setupConf()
 
-  /**
-   * get the SparkSession by the session identifier, it was used for the initial PySpark session
-   * now, see
-   * externals/kyuubi-spark-sql-engine/src/main/resources/python/kyuubi_util.py::get_spark_session
-   * for details
-   */
-  def getSparkSession(uuid: String): SparkSession = {
-    assert(currentEngine.isDefined)
-    currentEngine.get
-      .backendService
-      .sessionManager
-      .getSession(SessionHandle.fromUUID(uuid))
-      .asInstanceOf[SparkSessionImpl]
-      .spark
-  }
-
   def setupConf(): Unit = {
     _sparkConf = new SparkConf()
     _kyuubiConf = KyuubiConf()
-    val rootDir = _sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(_sparkConf))
-    val outputDir = Utils.createTempDir(prefix = "repl", root = rootDir)
-    _sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
-    // SPARK-47911: we must set a value instead of leaving it as None, otherwise, we will get a
-    // "Cannot mutate ReadOnlySQLConf" exception when task calling HiveResult.getBinaryFormatter.
-    // Here we follow the HiveResult.getBinaryFormatter behavior to set it to UTF8 if configuration
-    // is absent to reserve the legacy behavior for compatibility.
-    _sparkConf.setIfMissing("spark.sql.binaryOutputStyle", "UTF8")
     _sparkConf.setIfMissing("spark.master", "local")
-    _sparkConf.set(
-      "spark.redaction.regex",
-      _sparkConf.get("spark.redaction.regex", "(?i)secret|password|token|access[.]key")
-        + "|zookeeper.auth.digest")
-    // register the repl's output dir with the file server.
-    // see also `spark.repl.classdir`
-    _sparkConf.set("spark.repl.class.outputDir", outputDir.toFile.getAbsolutePath)
-    _sparkConf.setIfMissing(
-      "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
-      "20")
 
-    val appName = s"kyuubi_${user}_spark_${Instant.now}"
-    _sparkConf.setIfMissing("spark.app.name", appName)
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     _sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
     kyuubiConf.setIfMissing(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
-
-    if (Utils.isOnK8s) {
-      kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
-
-      // https://github.com/apache/kyuubi/issues/3385
-      // Set unset executor pod prefix to prevent kubernetes pod length limit error
-      // due to the long app name
-      _sparkConf.setIfMissing(
-        "spark.kubernetes.executor.podNamePrefix",
-        generateExecutorPodNamePrefixForK8s(user))
-
-      if (!isOnK8sClusterMode) {
-        // set driver host to ip instead of kyuubi pod name
-        _sparkConf.setIfMissing("spark.driver.host", JavaUtils.findLocalInetAddress.getHostAddress)
-      }
-    }
-
-    // Set web ui port 0 to avoid port conflicts during non-k8s cluster mode
-    if (!isOnK8sClusterMode) {
-      _sparkConf.setIfMissing("spark.ui.port", "0")
-    }
 
     // Pass kyuubi config from spark with `spark.kyuubi`
     val sparkToKyuubiPrefix = "spark.kyuubi."
@@ -319,15 +234,10 @@ object SparkSQLEngine extends Logging {
   }
 
   def createSpark(): SparkSession = {
-    val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     _sparkConf.set(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}", "")
 
     val session = SparkSession.builder.config(_sparkConf).getOrCreate
-
-    engineCredentials.filter(_.nonEmpty).foreach { credentials =>
-      SparkTBinaryFrontendService.renewDelegationToken(session.sparkContext, credentials)
-    }
 
     KyuubiSparkUtil.initializeSparkSession(
       session,
@@ -338,142 +248,61 @@ object SparkSQLEngine extends Logging {
   }
 
   def startEngine(spark: SparkSession): Unit = {
-    currentEngine = Some(new SparkSQLEngine(spark))
+    currentEngine = Some(new SparkGrpcEngine(spark))
     currentEngine.foreach { engine =>
       try {
-        // start event logging ahead so that we can capture all statuses
-        initLoggerEventHandler(kyuubiConf)
-      } catch {
-        case NonFatal(e) =>
-          // Don't block the main process if the `LoggerEventHandler` failed to start
-          warn(s"Failed to initialize LoggerEventHandler: ${e.getMessage}", e)
-      }
-
-      try {
         engine.initialize(kyuubiConf)
-        EventBus.post(EngineEvent(engine))
       } catch {
         case t: Throwable =>
-          throw new KyuubiException(s"Failed to initialize SparkSQLEngine: ${t.getMessage}", t)
+          throw new KyuubiException(s"Failed to initialize SparkGrpcEngine: ${t.getMessage}", t)
       }
       try {
         engine.start()
-        val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
-        val store = new EngineEventsStore(kvStore)
-        ui.EngineTab(
-          Some(engine),
-          SparkContextHelper.getSparkUI(spark.sparkContext),
-          store,
-          kyuubiConf)
-        val event = EngineEvent(engine)
-        info(event)
-        EventBus.post(event)
       } catch {
         case t: Throwable =>
-          throw new KyuubiException(s"Failed to start SparkSQLEngine: ${t.getMessage}", t)
+          throw new KyuubiException(s"Failed to start SparkGrpcEngine: ${t.getMessage}", t)
       }
       // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
       addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 2)
     }
-
-    def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-      val sparkEventRegister = new SparkEventHandlerRegister(spark)
-      sparkEventRegister.registerEventLoggers(conf)
-    }
   }
 
   def main(args: Array[String]): Unit = {
-    if (KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION === "3.2") {
-      warn("The support for Spark 3.2 is deprecated, and will be removed in the next version.")
+    if (KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION < "4.0") {
+      throw new IllegalStateException(s"SparkGrocEngine requires Spark 4.0, " +
+        s"but ${KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION} is detected")
     }
-    val startedTime = System.currentTimeMillis()
-    val submitTime = kyuubiConf.getOption(KYUUBI_ENGINE_SUBMIT_TIME_KEY) match {
-      case Some(t) => t.toLong
-      case _ => startedTime
-    }
-    val initTimeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
-    val totalInitTime = startedTime - submitTime
-    if (totalInitTime > initTimeout) {
-      throw new KyuubiException(s"The total engine initialization time ($totalInitTime ms)" +
-        s" exceeds ${ENGINE_INIT_TIMEOUT.key} ($initTimeout ms)," +
-        s" and submitted at $submitTime.")
-    } else {
-      var spark: SparkSession = null
+    var spark: SparkSession = null
+    try {
+      spark = createSpark()
+      sparkSessionCreated.set(true)
       try {
-        startInitTimeoutChecker(submitTime, initTimeout)
-        spark = createSpark()
-        sparkSessionCreated.set(true)
-        try {
-          startEngine(spark)
-          // blocking main thread
-          countDownLatch.await()
-        } catch {
-          case e: KyuubiException =>
-            currentEngine match {
-              case Some(engine) =>
-                engine.stop()
-                val event = EngineEvent(engine)
-                  .copy(endTime = System.currentTimeMillis(), diagnostic = e.getMessage)
-                EventBus.post(event)
-                error(event, e)
-              case _ => error("Current SparkSQLEngine is not created.")
-            }
-            throw e
-
-        }
+        startEngine(spark)
+        // blocking main thread
+        countDownLatch.await()
       } catch {
-        case i: InterruptedException if !sparkSessionCreated.get =>
-          val msg =
-            s"The Engine main thread was interrupted, possibly due to `createSpark` timeout." +
-              s" The `${ENGINE_INIT_TIMEOUT.key}` is ($initTimeout ms) " +
-              s" and submitted at $submitTime."
-          error(msg, i)
-          throw new InterruptedException(msg)
-        case e: KyuubiException => throw e
-        case t: Throwable =>
-          error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
-          throw t
-      } finally {
-        if (spark != null) {
-          spark.stop()
-        }
+        case e: KyuubiException =>
+          currentEngine match {
+            case Some(engine) =>
+              engine.stop()
+              error("SparkGrpcEngine stopped abnormally", e)
+            case _ => error("Current SparkGrpcEngine is not created.")
+          }
+          throw e
       }
-    }
-  }
-
-  private def startInitTimeoutChecker(startTime: Long, timeout: Long): Unit = {
-    val mainThread = Thread.currentThread()
-    val checker = new Thread(
-      () => {
-        while (System.currentTimeMillis() - startTime < timeout && !sparkSessionCreated.get()) {
-          Thread.sleep(500)
-        }
-        if (!sparkSessionCreated.get()) {
-          mainThread.interrupt()
-        }
-      },
-      "CreateSparkTimeoutChecker")
-    checker.setDaemon(true)
-    checker.start()
-  }
-
-  private def isOnK8sClusterMode: Boolean = {
-    // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
-    Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
-  }
-
-  @VisibleForTesting
-  def generateExecutorPodNamePrefixForK8s(userName: String): String = {
-    val resolvedUserName =
-      userName.trim.toLowerCase(Locale.ROOT)
-        .replaceAll("[^a-z0-9\\-]", "-")
-        .replaceAll("-+", "-")
-        .replaceAll("^-", "")
-    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
-    if (podNamePrefixWithUser.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
-      podNamePrefixWithUser
-    } else {
-      s"kyuubi-${UUID.randomUUID()}"
+    } catch {
+      case i: InterruptedException if !sparkSessionCreated.get =>
+        val msg = "The Engine main thread was interrupted, possibly due to `createSpark` timeout."
+        error(msg, i)
+        throw new InterruptedException(msg)
+      case e: KyuubiException => throw e
+      case t: Throwable =>
+        error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+        throw t
+    } finally {
+      if (spark != null) {
+        spark.stop()
+      }
     }
   }
 }

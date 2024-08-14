@@ -19,9 +19,9 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.session.KyuubiSessionImpl
+import org.apache.kyuubi.session.{KyuubiGrpcSession, KyuubiSession, KyuubiSessionImpl}
 
-class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
+class LaunchEngine(session: KyuubiSession, override val shouldRunAsync: Boolean)
   extends KyuubiApplicationOperation(session) {
 
   private lazy val _operationLog: OperationLog =
@@ -57,7 +57,12 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
-        session.openEngineSession(getOperationLog)
+        session match {
+          case thriftSession: KyuubiSessionImpl =>
+            thriftSession.openEngineSession(getOperationLog)
+          case grpcSession: KyuubiGrpcSession =>
+            grpcSession.openEngineSession(getOperationLog)
+        }
         setState(OperationState.FINISHED)
       } catch onError()
     }
@@ -69,8 +74,11 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
-  override protected def applicationInfoMap: Option[Map[String, String]] = {
-    super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId) }
+  override protected def applicationInfoMap: Option[Map[String, String]] = session match {
+    case thriftSession: KyuubiSessionImpl =>
+      super.applicationInfoMap.map { _ + ("refId" -> thriftSession.engine.getEngineRefId) }
+    case grpcSession: KyuubiGrpcSession =>
+      super.applicationInfoMap.map { _ + ("refId" -> grpcSession.engine.getEngineRefId) }
   }
 
 }
