@@ -700,6 +700,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val FRONTEND_JETTY_SEND_VERSION_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.jetty.sendVersion.enabled")
+      .doc("Whether to send Jetty version in HTTP response.")
+      .version("1.9.3")
+      .booleanConf
+      .createWithDefault(true)
+
   val FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.thrift.http.cookie.auth.enabled")
       .doc("When true, Kyuubi in HTTP transport mode, " +
