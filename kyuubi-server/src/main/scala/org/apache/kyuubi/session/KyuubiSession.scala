@@ -31,7 +31,7 @@ abstract class KyuubiSession(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: KyuubiSessionManager)
+    sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   val sessionType: SessionType

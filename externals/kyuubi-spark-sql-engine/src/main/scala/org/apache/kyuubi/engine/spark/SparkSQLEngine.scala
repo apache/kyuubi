@@ -48,7 +48,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
-case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
+class SparkSQLEngine(val spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
