@@ -39,7 +39,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
-import org.apache.kyuubi.server.http.util.SessionManager
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
@@ -268,13 +268,15 @@ final class KyuubiTHttpFrontendService(
   }
 
   override protected def getIpAddress: String = {
-    Option(SessionManager.getProxyHttpHeaderIpAddress).getOrElse(SessionManager.getIpAddress)
+    Option(AuthenticationFilter.getUserProxyHeaderIpAddress).getOrElse(
+      AuthenticationFilter.getUserIpAddress)
   }
 
   override protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
-    val realUser = getShortName(Option(SessionManager.getUserName).getOrElse(req.getUsername))
+    val realUser = getShortName(Option(AuthenticationFilter.getUserName)
+      .getOrElse(req.getUsername))
     // using the remote ip address instead of that in proxy http header for authentication
-    val ipAddress: String = SessionManager.getIpAddress
+    val ipAddress: String = AuthenticationFilter.getUserIpAddress
     val sessionUser: String = if (req.getConfiguration == null) {
       realUser
     } else {
