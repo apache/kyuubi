@@ -105,8 +105,17 @@ class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
           "BasicAuth",
           new SecurityScheme()
             .`type`(SecurityScheme.Type.HTTP)
-            .scheme("Basic")))
-      .addSecurityItem(new SecurityRequirement().addList("BasicAuth"))
+            .scheme("Basic"))
+        .addSecuritySchemes(
+          "BearerAuth",
+          new SecurityScheme()
+            .`type`(SecurityScheme.Type.HTTP)
+            .scheme("Bearer")
+            .bearerFormat("JWT")))
+      .addSecurityItem(new SecurityRequirement()
+        .addList("BasicAuth")
+        .addList("BearerAuth"))
+
   }
 }
 
