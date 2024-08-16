@@ -14,13 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.spark.plugin;
+package org.apache.kyuubi.engine.spark.operation.planonly
 
-import org.apache.spark.sql.SparkSession;
+import java.util.Locale
 
-public interface PlanOnlyExecutor {
+import org.apache.kyuubi.engine.spark.plugin.SQLStringifyPlugin
+import org.apache.kyuubi.util.reflect.ReflectUtils
 
-  String mode();
+object SQLStringifyPlugins {
 
-  String execute(SparkSession spark, String statement);
+  private lazy val plugins: Map[String, SQLStringifyPlugin] = {
+    ReflectUtils.loadFromServiceLoader[SQLStringifyPlugin]()
+      .map(e => e.mode().toLowerCase(Locale.ROOT) -> e).toMap
+  }
+
+  def unapply(mode: String): Option[SQLStringifyPlugin] = {
+    plugins.get(mode.toLowerCase(Locale.ROOT))
+  }
+
 }

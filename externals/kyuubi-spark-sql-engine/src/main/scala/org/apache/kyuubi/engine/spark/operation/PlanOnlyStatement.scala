@@ -28,7 +28,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
-import org.apache.kyuubi.engine.spark.operation.planonly.PlanOnlyExecutors
+import org.apache.kyuubi.engine.spark.operation.planonly.SQLStringifyPlugins
 import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
@@ -81,8 +81,9 @@ class PlanOnlyStatement(
 
             case plan =>
               // TODO: remove style configuration, keep only mode configuration
-              (mode, style) match {
-                case (PlanOnlyExecutors(executor), _) => executor.execute(spark, statement)
+              (mode.name, style) match {
+                case (SQLStringifyPlugins(stringifyPlugin), _) =>
+                  stringifyPlugin.toString(spark, statement)
                 case (_, PlainStyle) => explainWithPlainStyle(plan)
                 case (_, JsonStyle) => explainWithJsonStyle(plan)
                 case (_, UnknownStyle) => unknownStyleError(style)

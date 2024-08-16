@@ -14,25 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.spark.operation.planonly
+package org.apache.kyuubi.engine.spark.plugin;
 
-import java.util.Locale
+import org.apache.spark.sql.SparkSession;
 
-import org.apache.kyuubi.engine.spark.plugin.PlanOnlyExecutor
-import org.apache.kyuubi.operation.PlanOnlyMode
-import org.apache.kyuubi.util.reflect.ReflectUtils
+public interface SQLStringifyPlugin {
 
-object PlanOnlyExecutors {
+  String mode();
 
-  private lazy val executors: Map[String, PlanOnlyExecutor] = {
-    ReflectUtils.loadFromServiceLoader[PlanOnlyExecutor]()
-      .map(e => e.mode().toLowerCase(Locale.ROOT) -> e).toMap
-  }
-
-  def getExecutor(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = {
-    executors.get(mode.name.toLowerCase(Locale.ROOT))
-  }
-
-  def unapply(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = getExecutor(mode)
-
+  String toString(SparkSession spark, String statement);
 }
