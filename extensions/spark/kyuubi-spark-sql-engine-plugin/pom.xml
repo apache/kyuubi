@@ -25,9 +25,9 @@
         <relativePath>../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-spark-engine-plugin</artifactId>
+    <artifactId>kyuubi-spark-sql-engine-plugin</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Spark Engine Plugin</name>
+    <name>Kyuubi Project Spark SQL Engine Plugin</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>

@@ -14,18 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.kyuubi.engine.spark.plugin;
 
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
-import org.apache.spark.sql.execution.SparkPlan;
+import org.apache.spark.sql.SparkSession;
 
-public interface SparkPlans {
+public interface PlanOnlyExecutor {
 
-    LogicalPlan parsedPlan();
-    LogicalPlan analyzedPlan();
-    LogicalPlan optimizedPlan();
-    SparkPlan sparkPlan();
-    SparkPlan executedPlan();
+  String mode();
 
+  String execute(SparkSession spark, String statement);
 }
