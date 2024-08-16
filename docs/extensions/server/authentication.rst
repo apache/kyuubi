@@ -17,7 +17,8 @@ Configure Kyuubi to use Custom Authentication
 =============================================
 
 Besides the `builtin authentication`_ methods, kyuubi supports custom
-authentication implementations of `org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider`.
+authentication implementations of `org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider`
+and `org.apache.kyuubi.service.authentication.TokenAuthenticationProvider`.
 
 .. code-block:: scala
 
@@ -58,7 +59,7 @@ To create custom Authenticator class derived from the above interface, we need t
       <scope>provided</scope>
    </dependency>
 
-- Implement PasswdAuthenticationProvider - `Sample Code`_
+- Implement PasswdAuthenticationProvider or TokenAuthenticationProvider - `Sample Code`_
 
 
 Enable Custom Authentication
@@ -75,6 +76,8 @@ To enable the custom authentication method, we need to
 
    kyuubi.authentication=CUSTOM
    kyuubi.authentication.custom.class=YourAuthenticationProvider
+   kyuubi.authentication.custom.basic.class=YourBasicAuthenticationProvider
+   kyuubi.authentication.custom.bearer.class=YourBearerAuthenticationProvider
 
 - Restart all the kyuubi server instances
 

@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
-import org.apache.kyuubi.service.authentication.AuthTypes.{KERBEROS, NOSASL}
+import org.apache.kyuubi.service.authentication.AuthTypes.{CUSTOM, KERBEROS, NOSASL}
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
@@ -69,8 +69,19 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
       addAuthHandler(kerberosHandler)
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
-      val basicHandler = new BasicAuthenticationHandler(basicAuthType)
-      addAuthHandler(basicHandler)
+      if (basicAuthType.equals(CUSTOM)) {
+        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS).foreach { _ =>
+          val basicHandler = new BasicAuthenticationHandler(CUSTOM)
+          addAuthHandler(basicHandler)
+        }
+        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS).foreach { bearerClassName =>
+          val bearerHandler = new BearerAuthenticationHandler(bearerClassName)
+          addAuthHandler(bearerHandler)
+        }
+      } else {
+        val basicHandler = new BasicAuthenticationHandler(basicAuthType)
+        addAuthHandler(basicHandler)
+      }
     }
     if (InternalSecurityAccessor.get() != null) {
       val internalHandler = new KyuubiInternalAuthenticationHandler

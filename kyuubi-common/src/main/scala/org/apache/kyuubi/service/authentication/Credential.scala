@@ -17,18 +17,16 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.security.Principal
+trait TokenCredential {
+  def token: String
+  def extraInfo: Map[String, String]
+}
 
-/**
- * This authentication provider allows any combination of username and password.
- */
-class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider
-  with TokenAuthenticationProvider {
-  override def authenticate(user: String, password: String): Unit = {
-    // no-op authentication
-  }
-  override def authenticate(credential: TokenCredential): Principal = {
-    // no-op authentication
-    new BasicPrincipal("anonymous")
-  }
+case class DefaultTokenCredential(
+    token: String,
+    override val extraInfo: Map[String, String] = Map.empty)
+  extends TokenCredential
+
+object Credential {
+  val CLIENT_IP_KEY: String = "clientIp"
 }
