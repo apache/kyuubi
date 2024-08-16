@@ -45,10 +45,10 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
   test("Test user defined http bearer authentication") {
     val conf = KyuubiConf()
 
-    val e1 = intercept[AuthenticationException](
+    val e1 = intercept[IllegalArgumentException](
       getHttpBearerAuthenticationProvider("", conf))
     assert(e1.getMessage.contains(
-      "authentication.custom.bearer.class must be set for http bearer authentication."))
+      "kyuubi.authentication.custom.bearer.class must be set for http bearer authentication."))
 
     conf.set(
       KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS,
