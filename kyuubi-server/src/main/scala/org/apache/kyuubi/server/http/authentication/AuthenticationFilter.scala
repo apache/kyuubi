@@ -143,6 +143,8 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
         HTTP_CLIENT_IP_ADDRESS.remove()
         HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
         HTTP_AUTH_TYPE.remove()
+        HTTP_CLIENT_PROXY_USER_NAME.remove()
+        HTTP_FORWARDED_ADDRESSES.remove()
         httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage)
     } finally {
       AuthenticationAuditLogger.audit(httpRequest, httpResponse)
@@ -189,12 +191,22 @@ object AuthenticationFilter {
   final val HTTP_AUTH_TYPE = new ThreadLocal[String]() {
     override protected def initialValue(): String = null
   }
+  final val HTTP_CLIENT_PROXY_USER_NAME = new ThreadLocal[String]() {
+    override protected def initialValue(): String = null
+  }
+  final val HTTP_FORWARDED_ADDRESSES = new ThreadLocal[List[String]] {
+    override protected def initialValue: List[String] = List.empty
+  }
 
   def getUserIpAddress: String = HTTP_CLIENT_IP_ADDRESS.get
 
   def getUserProxyHeaderIpAddress: String = HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()
 
+  def getForwardedAddresses: List[String] = HTTP_FORWARDED_ADDRESSES.get
+
   def getUserName: String = HTTP_CLIENT_USER_NAME.get
+
+  def getProxyUserName: String = HTTP_CLIENT_PROXY_USER_NAME.get
 
   def getAuthType: String = HTTP_AUTH_TYPE.get()
 }

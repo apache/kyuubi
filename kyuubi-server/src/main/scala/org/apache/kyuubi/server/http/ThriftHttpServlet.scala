@@ -30,7 +30,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
 import org.apache.kyuubi.server.http.authentication.{AuthenticationAuditLogger, AuthenticationFilter}
-import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils, SessionManager}
+import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.shaded.thrift.TProcessor
@@ -105,6 +105,8 @@ class ThriftHttpServlet(
       AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.set(request.getRemoteAddr)
       AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
         request.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
+      Option(request.getHeader(X_FORWARDED_FOR_HEADER)).map(_.split(",").toList).foreach(
+        AuthenticationFilter.HTTP_FORWARDED_ADDRESSES.set)
 
       // If the cookie based authentication is not enabled or the request does not have a valid
       // cookie, use authentication depending on the server setup.
@@ -115,17 +117,9 @@ class ThriftHttpServlet(
       require(clientUserName != null, "No valid authorization provided")
       // Set the thread local username to be used for doAs if true
       AuthenticationFilter.HTTP_CLIENT_USER_NAME.set(clientUserName)
-
       // find proxy user if any from query param
-      val doAsQueryParam = getDoAsQueryParam(request.getQueryString)
-      if (doAsQueryParam != null) SessionManager.setProxyUserName(doAsQueryParam)
-
-      val forwarded_for = request.getHeader(X_FORWARDED_FOR_HEADER)
-      if (forwarded_for != null) {
-        debug(X_FORWARDED_FOR_HEADER + ":" + forwarded_for)
-        val forwardedAddresses = forwarded_for.split(",").toList
-        SessionManager.setForwardedAddresses(forwardedAddresses)
-      } else SessionManager.setForwardedAddresses(List.empty[String])
+      AuthenticationFilter.HTTP_CLIENT_PROXY_USER_NAME.set(
+        getDoAsQueryParam(request.getQueryString))
 
       // Generate new cookie and add it to the response
       if (requireNewCookie && !authFactory.saslDisabled) {
@@ -150,9 +144,12 @@ class ThriftHttpServlet(
         throw e
     } finally {
       AuthenticationAuditLogger.audit(request, response)
-      // Clear the thread locals
-      SessionManager.clearProxyUserName()
-      SessionManager.clearForwardedAddresses()
+      AuthenticationFilter.HTTP_CLIENT_USER_NAME.remove()
+      AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
+      AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
+      AuthenticationFilter.HTTP_AUTH_TYPE.remove()
+      AuthenticationFilter.HTTP_CLIENT_PROXY_USER_NAME.remove()
+      AuthenticationFilter.HTTP_FORWARDED_ADDRESSES.remove()
     }
   }
 

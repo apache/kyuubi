@@ -81,6 +81,8 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
             AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
             AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
             AuthenticationFilter.HTTP_AUTH_TYPE.remove()
+            AuthenticationFilter.HTTP_CLIENT_PROXY_USER_NAME.remove()
+            AuthenticationFilter.HTTP_FORWARDED_ADDRESSES.remove()
           }
         }
 

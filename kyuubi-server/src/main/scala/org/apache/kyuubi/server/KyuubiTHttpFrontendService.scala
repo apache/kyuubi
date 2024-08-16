@@ -22,6 +22,8 @@ import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 import javax.security.sasl.AuthenticationException
 import javax.servlet.{ServletContextEvent, ServletContextListener}
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.conf.Configuration
 import org.eclipse.jetty.http.HttpMethod
@@ -270,6 +272,21 @@ final class KyuubiTHttpFrontendService(
   override protected def getIpAddress: String = {
     Option(AuthenticationFilter.getUserProxyHeaderIpAddress).getOrElse(
       AuthenticationFilter.getUserIpAddress)
+  }
+
+  override protected def getProxyUser(
+      sessionConf: java.util.Map[String, String],
+      ipAddress: String,
+      realUser: String): String = {
+    Option(AuthenticationFilter.getProxyUserName) match {
+      case Some(proxyUser) =>
+        val proxyUserConf = Map(PROXY_USER.key -> proxyUser)
+        super.getProxyUser(
+          (sessionConf.asScala ++ proxyUserConf).asJava,
+          ipAddress,
+          realUser)
+      case None => super.getProxyUser(sessionConf, ipAddress, realUser)
+    }
   }
 
   override protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
