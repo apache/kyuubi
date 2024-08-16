@@ -27,10 +27,10 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
   test("Test user defined authentication") {
     val conf = KyuubiConf()
 
-    val e1 = intercept[AuthenticationException](
+    val e1 = intercept[IllegalArgumentException](
       getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf))
     assert(e1.getMessage.contains(
-      "authentication.custom.class must be set when auth method was CUSTOM."))
+      "kyuubi.authentication.custom.class must be set when auth method was CUSTOM."))
 
     conf.set(
       KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,

@@ -49,10 +49,9 @@ object AuthenticationProviderFactory {
     case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
-      if (className.isEmpty) {
-        throw new AuthenticationException(
-          "authentication.custom.class must be set when auth method was CUSTOM.")
-      }
+      require(
+        className.nonEmpty,
+        "kyuubi.authentication.custom.class must be set when auth method was CUSTOM.")
       ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
