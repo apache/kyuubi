@@ -73,10 +73,9 @@ object AuthenticationProviderFactory {
     case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
-      if (className.isEmpty) {
-        throw new AuthenticationException(
-          "authentication.custom.basic.class must be set for http basic authentication.")
-      }
+      require(
+        className.nonEmpty,
+        "kyuubi.authentication.custom.basic.class must be set for http basic authentication.")
       ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
@@ -84,10 +83,9 @@ object AuthenticationProviderFactory {
   def getHttpBearerAuthenticationProvider(
       providerClass: String,
       conf: KyuubiConf): TokenAuthenticationProvider = {
-    if (StringUtils.isBlank(providerClass)) {
-      throw new AuthenticationException(
-        "authentication.custom.bearer.class must be set for http bearer authentication.")
-    }
+    require(
+      !StringUtils.isBlank(providerClass),
+      "kyuubi.authentication.custom.bearer.class must be set for http bearer authentication.")
     ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
   }
 }
