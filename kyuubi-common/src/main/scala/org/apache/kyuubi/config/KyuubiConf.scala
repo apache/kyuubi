@@ -871,6 +871,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER: ConfigEntry[String] =
+    buildConf("kyuubi.authentication.custom.http.bearer.header")
+      .doc("Http header for http bearer authentication in thrift protocol.")
+      .version("1.10.0")
+      .serverOnly
+      .stringConf
+      .createWithDefault("BearerAuthentication")
+
   val AUTHENTICATION_LDAP_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.url")
       .doc("SPACE character separated LDAP connection URL(s).")

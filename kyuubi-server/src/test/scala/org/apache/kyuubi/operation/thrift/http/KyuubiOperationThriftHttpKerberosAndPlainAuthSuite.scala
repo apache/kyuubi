@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation.thrift.http
 
+import java.sql.{DriverManager, SQLException}
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -49,7 +51,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
     UserGroupInformation.setConfiguration(config)
     assert(UserGroupInformation.isSecurityEnabled)
 
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
+    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM", "LDAP"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
@@ -57,11 +59,38 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
       .set(
         KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(
+        KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
       .set(KyuubiConf.SERVER_SPNEGO_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_SPNEGO_PRINCIPAL, testSpnegoPrincipal)
   }
 
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/default;transportMode=http;" +
-      s"httpPath=cliservice"
+      s"httpPath=cliservice;http.header.BearerAuthentication=Bearer%20token"
+
+  test("test with valid CUSTOM http bearer authentication") {
+    val conn = DriverManager.getConnection(getJdbcUrl)
+    try {
+      val statement = conn.createStatement()
+      val resultSet = statement.executeQuery("select engine_name()")
+      assert(resultSet.next())
+      assert(resultSet.getString(1).nonEmpty)
+    } finally {
+      conn.close()
+    }
+  }
+
+  test("test with invalid CUSTOM http bearer authentication") {
+    intercept[SQLException] {
+      val conn = DriverManager.getConnection(getJdbcUrl + "bad")
+      try {
+        val statement = conn.createStatement()
+        statement.executeQuery("select engine_name()")
+      } finally {
+        conn.close()
+      }
+    }
+  }
 }
