@@ -15,25 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.util
+package org.apache.kyuubi.engine.spark.plugin;
 
-import java.util.Locale
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
+import org.apache.spark.sql.execution.SparkPlan;
 
-import org.apache.kyuubi.engine.spark.plugin.PlanOnlyExecutor
-import org.apache.kyuubi.operation.PlanOnlyMode
-import org.apache.kyuubi.util.reflect.ReflectUtils
+public interface SparkPlans {
 
-object PlanOnlyExecutors {
-
-  private lazy val executors: Map[String, PlanOnlyExecutor] = {
-    ReflectUtils.loadFromServiceLoader[PlanOnlyExecutor]()
-      .map(e => e.mode().toLowerCase(Locale.ROOT) -> e).toMap
-  }
-
-  def getExecutor(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = {
-    executors.get(mode.name.toLowerCase(Locale.ROOT))
-  }
-
-  def unapply(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = getExecutor(mode)
+    LogicalPlan parsedPlan();
+    LogicalPlan analyzedPlan();
+    LogicalPlan optimizedPlan();
+    SparkPlan sparkPlan();
+    SparkPlan executedPlan();
 
 }

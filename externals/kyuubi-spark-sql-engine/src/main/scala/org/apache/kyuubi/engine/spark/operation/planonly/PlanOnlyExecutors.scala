@@ -14,22 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.spark.plugin;
+package org.apache.kyuubi.engine.spark.operation.planonly
 
-public interface PlanOnlyExecutor {
+import java.util.Locale
 
-  String mode();
+import org.apache.kyuubi.engine.spark.plugin.PlanOnlyExecutor
+import org.apache.kyuubi.operation.PlanOnlyMode
+import org.apache.kyuubi.util.reflect.ReflectUtils
 
-  default String execute(SparkPlans plans) {
-    return execute(plans, "plain");
+object PlanOnlyExecutors {
+
+  private lazy val executors: Map[String, PlanOnlyExecutor] = {
+    ReflectUtils.loadFromServiceLoader[PlanOnlyExecutor]()
+      .map(e => e.mode().toLowerCase(Locale.ROOT) -> e).toMap
   }
 
-  /**
-   * execute the parsed plan with plan only mode
-   *
-   * @param plans the spark plans
-   * @param style the style of the result (plain or json)
-   * @return the result in the specified style
-   */
-  String execute(SparkPlans plans, String style);
+  def getExecutor(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = {
+    executors.get(mode.name.toLowerCase(Locale.ROOT))
+  }
+
+  def unapply(mode: PlanOnlyMode): Option[PlanOnlyExecutor] = getExecutor(mode)
+
 }
