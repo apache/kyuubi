@@ -61,7 +61,7 @@ class BearerAuthenticationHandler(providerClass: String)
   }
 
   override def getAuthorization(request: HttpServletRequest): String = {
-    // Due to HIVE-22655, pass bearer token via a customized header for thrift protocol
+    // Due to HIVE-22655, pass bearer token via a customized header for ThriftHttp protocol
     var authHeader: String = request.getHeader(
       conf.get(AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER))
     if (authHeader == null || authHeader.isEmpty) {

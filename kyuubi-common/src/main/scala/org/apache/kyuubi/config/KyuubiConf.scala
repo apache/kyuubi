@@ -873,7 +873,7 @@ object KyuubiConf {
 
   val AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER: ConfigEntry[String] =
     buildConf("kyuubi.authentication.custom.http.bearer.header")
-      .doc("Http header for http bearer authentication in thrift protocol.")
+      .doc("Http header for http bearer authentication in ThriftHttp protocol.")
       .version("1.10.0")
       .serverOnly
       .stringConf

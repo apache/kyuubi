@@ -274,7 +274,7 @@ class ThriftHttpServlet(
   }
 
   private def authenticate(request: HttpServletRequest, response: HttpServletResponse): String = {
-    // Due to HIVE-22655, pass bearer token via a customized header for thrift protocol
+    // Due to HIVE-22655, pass bearer token via a customized header for ThriftHttp protocol
     var authorization = request.getHeader(
       conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER))
     if (authorization == null || authorization.isEmpty) {
