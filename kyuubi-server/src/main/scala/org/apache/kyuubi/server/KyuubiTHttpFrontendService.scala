@@ -101,8 +101,10 @@ final class KyuubiTHttpFrontendService(
       // Configure header size
       val requestHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE)
       val responseHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
+      val jettySendVersionEnabled = conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
       httpConf.setRequestHeaderSize(requestHeaderSize)
       httpConf.setResponseHeaderSize(responseHeaderSize)
+      httpConf.setSendServerVersion(jettySendVersionEnabled)
       val connectionFactory = new HttpConnectionFactory(httpConf)
 
       val useSsl = conf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
