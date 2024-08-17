@@ -51,6 +51,7 @@ public class JdbcConnectionParams {
   public static final String AUTH_KYUUBI_CLIENT_KEYTAB = "kyuubiClientKeytab";
   public static final String AUTH_KYUUBI_CLIENT_TICKET_CACHE = "kyuubiClientTicketCache";
   public static final String AUTH_PASSWD = "password";
+  public static final String AUTH_BEARER_TOKEN = "bearerToken";
   public static final String AUTH_KERBEROS_AUTH_TYPE = "kerberosAuthType";
   public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_KEYTAB = "fromKeytab";
   public static final String AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT = "fromSubject";

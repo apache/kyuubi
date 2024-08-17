@@ -446,19 +446,34 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (!isSaslAuthMode()) {
       requestInterceptor = null;
     } else if (isPlainSaslAuthMode()) {
-      /*
-       * Add an interceptor to pass username/password in the header. In https mode, the entire
-       * information is encrypted
-       */
-      requestInterceptor =
-          new HttpBasicAuthInterceptor(
-              getUserName(),
-              getPassword(),
-              cookieStore,
-              cookieName,
-              useSsl,
-              additionalHttpHeaders,
-              customCookies);
+      if (isBearerAuthMode()) {
+        /*
+         * Add an interceptor to pass bearer token in the header. In https mode, the entire
+         * information is encrypted
+         */
+        requestInterceptor =
+            new HttpBearerAuthInterceptor(
+                getBearerToken(),
+                cookieStore,
+                cookieName,
+                useSsl,
+                additionalHttpHeaders,
+                customCookies);
+      } else {
+        /*
+         * Add an interceptor to pass username/password in the header. In https mode, the entire
+         * information is encrypted
+         */
+        requestInterceptor =
+            new HttpBasicAuthInterceptor(
+                getUserName(),
+                getPassword(),
+                cookieStore,
+                cookieName,
+                useSsl,
+                additionalHttpHeaders,
+                customCookies);
+      }
     } else {
       // Configure http client for kerberos-based authentication
       Subject subject = createSubject();
@@ -825,6 +840,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return getSessionValue(AUTH_PASSWD, ANONYMOUS_PASSWD);
   }
 
+  /** @return bearerToken from sessConfMap */
+  private String getBearerToken() {
+    return getSessionValue(AUTH_BEARER_TOKEN, "");
+  }
+
   private boolean isCookieEnabled() {
     return !"false".equalsIgnoreCase(sessConfMap.get(COOKIE_AUTH));
   }
@@ -915,6 +935,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isPlainSaslAuthMode() {
     return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
+  }
+
+  private boolean isBearerAuthMode() {
+    return isSaslAuthMode() && hasSessionValue(AUTH_BEARER_TOKEN);
   }
 
   private boolean isKerberosAuthMode() {
