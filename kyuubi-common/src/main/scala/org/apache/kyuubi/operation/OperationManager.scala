@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -36,7 +38,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
  */
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
-  final private val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
+  final private val handleToOperation = new ConcurrentHashMap[OperationHandle, Operation]()
 
   protected def skipOperationLog: Boolean = false
 
