@@ -17,14 +17,12 @@
 
 package org.apache.kyuubi.server.http.authentication
 
-import javax.security.sasl.AuthenticationException
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
 import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
@@ -61,23 +59,11 @@ class BearerAuthenticationHandler(providerClass: String)
   }
 
   override def getAuthorization(request: HttpServletRequest): String = {
-    // Due to HIVE-22655, pass bearer token via a customized header for ThriftHttp protocol
-    var authHeader: String = request.getHeader(
-      conf.get(AUTHENTICATION_CUSTOM_HTTP_BEARER_HEADER))
-    if (authHeader == null || authHeader.isEmpty) {
-      authHeader = request.getHeader(AUTHORIZATION_HEADER)
-      if (allowAnonymous && (authHeader == null || authHeader.isEmpty)) {
-        ""
-      } else {
-        super.getAuthorization(request)
-      }
+    val authHeader = request.getHeader(AUTHORIZATION_HEADER)
+    if (allowAnonymous && (authHeader == null || authHeader.isEmpty)) {
+      ""
     } else {
-      val authorization = authHeader.substring(authScheme.toString.length).trim
-      if (authorization == null || authorization.isEmpty) {
-        throw new AuthenticationException(
-          "Authorization header received from the client does not contain any data.")
-      }
-      authorization
+      super.getAuthorization(request)
     }
   }
 
