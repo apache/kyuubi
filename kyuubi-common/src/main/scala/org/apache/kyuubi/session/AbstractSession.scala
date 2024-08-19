@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -59,7 +61,7 @@ abstract class AbstractSession(
 
   override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
 
-  final private val opHandleSet = new java.util.HashSet[OperationHandle]
+  final private val opHandleSet = ConcurrentHashMap.newKeySet[OperationHandle]()
 
   private def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {
