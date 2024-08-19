@@ -18,8 +18,6 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
-import org.apache.kyuubi.session.KyuubiSession
 
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
@@ -45,7 +43,7 @@ import org.apache.kyuubi.session.KyuubiSession
  * @param kyuubiInstance the parent session connection url
  * @param metrics the operation metrics
  */
-case class KyuubiOperationEvent private (
+case class KyuubiOperationEvent(
     statementId: String,
     remoteId: String,
     statement: String,
@@ -66,31 +64,4 @@ case class KyuubiOperationEvent private (
   // created.
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
-}
-
-object KyuubiOperationEvent {
-
-  /**
-   * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
-   */
-  def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
-    val session = operation.getSession.asInstanceOf[KyuubiSession]
-    val status = operation.getStatus
-    new KyuubiOperationEvent(
-      operation.statementId,
-      Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
-      operation.statement,
-      operation.shouldRunAsync,
-      status.state.name(),
-      status.lastModified,
-      status.create,
-      status.start,
-      status.completed,
-      status.exception,
-      session.handle.identifier.toString,
-      session.user,
-      session.sessionType.toString,
-      session.connectionUrl,
-      operation.metrics)
-  }
 }
