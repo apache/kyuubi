@@ -25,10 +25,11 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.operation.KyuubiOperationKerberosAndPlainAuthSuite
-import org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl
+import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
 
 class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   extends KyuubiOperationKerberosAndPlainAuthSuite {
+  private val validToken = UserDefineTokenAuthenticationProviderImpl.VALID_TOKEN
   override def beforeAll(): Unit = {
     super.beforeAll()
     Thread.sleep(3000)
@@ -42,6 +43,12 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
 
   override protected def kerberosTgtJdbcUrlUsingAlias: String =
     jdbcUrl.stripSuffix(";") + s";kyuubiServerPrincipal=$testSpnegoPrincipal"
+
+  protected def JdbcUrlWithValidBearerToken: String =
+    jdbcUrl.stripSuffix(";") + s";bearerToken=$validToken"
+
+  protected def JdbcUrlWithInvalidBearerToken: String =
+    jdbcUrl.stripSuffix(";") + s";bearerToken=invalidToken"
 
   override protected lazy val conf: KyuubiConf = {
     val config = new Configuration()
@@ -68,10 +75,10 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
 
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/default;transportMode=http;" +
-      s"httpPath=cliservice;http.header.BearerAuthentication=Bearer%20token"
+      s"httpPath=cliservice"
 
   test("test with valid CUSTOM http bearer authentication") {
-    val conn = DriverManager.getConnection(getJdbcUrl)
+    val conn = DriverManager.getConnection(JdbcUrlWithValidBearerToken)
     try {
       val statement = conn.createStatement()
       val resultSet = statement.executeQuery("select engine_name()")
@@ -84,7 +91,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
 
   test("test with invalid CUSTOM http bearer authentication") {
     intercept[SQLException] {
-      val conn = DriverManager.getConnection(getJdbcUrl + "bad")
+      val conn = DriverManager.getConnection(JdbcUrlWithInvalidBearerToken)
       try {
         val statement = conn.createStatement()
         statement.executeQuery("select engine_name()")
