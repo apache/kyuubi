@@ -49,7 +49,6 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
   protected def ldapAuthEnabled = nonKerberosAuth.contains(AuthTypes.LDAP)
   protected def customAuthEnabled = nonKerberosAuth.contains(AuthTypes.CUSTOM)
 
-
   override def beforeAll(): Unit = {
     super.beforeAll()
   }
