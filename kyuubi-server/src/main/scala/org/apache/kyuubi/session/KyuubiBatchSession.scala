@@ -82,8 +82,8 @@ class KyuubiBatchSession(
   override val normalizedConf: Map[String, String] =
     sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
-  private[kyuubi] def resourceUploadFolderPath: Path =
-    BatchesResource.batchResourceUploadFolderPath(batchJobSubmissionOp.batchId)
+  private[kyuubi] lazy val resourceUploadFolderPath: Path =
+    BatchesResource.batchResourceUploadFolderPath(handle.identifier.toString)
 
   val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
