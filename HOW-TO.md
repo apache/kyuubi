@@ -15,6 +15,15 @@
 - limitations under the License.
 -->
 
+Kyuubi Connect
+==============
+
+### Source Code under development
+
+```
+git clone https://github.com/pan3793/kyuubi.git -b kyuubi-next kyuubi-next
+```
+
 ### Requirements
 
 - `JAVA_HOME` points to Java 17
@@ -24,6 +33,7 @@
 
 #### Run within IDEA
 
+- Run `build/mvn clean install -DskipTests` to build the project and produce the Spark engine jar
 - Run `kyuubi-server/src/main/scala/org/apache/kyuubi/server/KyuubiServer.scala` using IDEA
 
 You can set `SPARK_HOME`, `KYUUBI_CONF_DIR` in the Run/Debug Configuration Dialog
@@ -35,7 +45,7 @@ You can set `SPARK_HOME`, `KYUUBI_CONF_DIR` in the Run/Debug Configuration Dialo
 ```
 build/dist
 cd dist
-bin/kyuubi run
+bin/kyuubi run --conf kyuubi.frontend.grpc.bind.port=10999
 ```
 
 The gRPC service listens 10999 by default.
@@ -54,4 +64,24 @@ PySpark Connect client (Requires: Python >=3.9)
 ```
 pip install pyspark-connect==4.0.0.dev1
 pyspark --remote sc://H27212-MAC-01.local:10999 --user_id chengpan --user_name chengpan
+```
+
+Run examples
+```
+Welcome to
+      ____              __
+     / __/__  ___ _____/ /__
+    _\ \/ _ \/ _ `/ __/  '_/
+   /___/ .__/\_,_/_/ /_/\_\   version 4.0.0-SNAPSHOT
+      /_/
+
+Type in expressions to have them evaluated.
+Spark session available as 'spark'.
+
+scala> spark.sql("select 1").show()
++---+
+|  1|
++---+
+|  1|
++---+
 ```
