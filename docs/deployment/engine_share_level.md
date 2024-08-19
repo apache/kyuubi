@@ -157,7 +157,7 @@ Here is an example to configure `HadoopGroupProvider` to use LDAP-based group ma
 </property>
 ```
 2. Use the applicable instructions to re-start the HDFS NameNode and the YARN ResourceManager.
-3. Verify LDAP group mapping by running the **hdfs groups** command. This command will fetch groups from LDAP for the current user. Note that with LDAP group mapping configured, the HDFS permissions can leverage groups defined in LDAP for access control.
+3. Verify LDAP group mapping by running the `hdfs groups` command. This command will fetch groups from LDAP for the current user. Note that with LDAP group mapping configured, the HDFS permissions can leverage groups defined in LDAP for access control.
 
 **Tips for authorization in GROUP share level**:
 
