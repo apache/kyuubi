@@ -545,7 +545,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       resourceFileInputStream: InputStream,
       resourceFileName: String,
       formDataMultiPartOpt: Option[FormDataMultiPart]): Option[JPath] = {
-    val uploadFileFolderPath = batchResourceUploadFolderPath(batchId)
+    val uploadFileFolderPath = KyuubiApplicationManager.sessionUploadFolderPath(batchId)
     try {
       handleUploadingResourceFile(
         request,
@@ -642,6 +642,8 @@ object BatchesResource {
     Option(batchState).exists(bt => VALID_BATCH_STATES.contains(bt.toUpperCase(Locale.ROOT)))
   }
 
-  def batchResourceUploadFolderPath(batchId: String): JPath =
-    KyuubiApplicationManager.uploadWorkDir.resolve(s"batch-$batchId")
+  def batchResourceUploadFolderPath(sessionId: String): JPath = {
+    require(StringUtils.isNotBlank(sessionId))
+    KyuubiApplicationManager.uploadWorkDir.resolve(sessionId)
+  }
 }
