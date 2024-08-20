@@ -33,7 +33,7 @@ import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE, ENGINE_SPARK_PYTHON_MAGIC_ENABLED}
 import org.apache.kyuubi.config.KyuubiConf.EngineSparkOutputMode.{AUTO, EngineSparkOutputMode, NOTEBOOK}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
@@ -177,7 +177,7 @@ class ExecutePython(
   override def cleanup(targetState: OperationState): Unit = {
     if (!isTerminalState(state)) {
       info(s"Staring to cancel python code: $statement")
-      worker.cancel()
+      worker.interrupt()
     }
     super.cleanup(targetState)
   }
@@ -236,7 +236,7 @@ case class SessionPythonWorker(
     workerProcess.destroy()
   }
 
-  def cancel(): Unit = {
+  def interrupt(): Unit = {
     val pid = DynFields.builder()
       .hiddenImpl(workerProcess.getClass, "pid")
       .build[java.lang.Integer](workerProcess)
@@ -247,8 +247,7 @@ case class SessionPythonWorker(
     val exitCode = process.waitFor()
     process.destroy()
     if (exitCode != 0) {
-      throw new KyuubiException(
-        s"Process ${builder.command().asScala.mkString("`", " ", "`")} exit with value: $exitCode")
+      error(s"Process `${builder.command().asScala.mkString(" ")}` exit with value: $exitCode")
     }
   }
 }
