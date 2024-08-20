@@ -75,7 +75,7 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
       } else {
         "#" + jdbcVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
       }
-    jdbcUrl + sessionConfStr + jdbcConfStr + jdbcVarsStr
+    jdbcUrl.stripSuffix(";") + ";" + sessionConfStr + jdbcConfStr + jdbcVarsStr
   }
 
   def withThriftClient[T](f: TCLIService.Iface => T): T = {
