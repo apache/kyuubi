@@ -545,7 +545,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       resourceFileInputStream: InputStream,
       resourceFileName: String,
       formDataMultiPartOpt: Option[FormDataMultiPart]): Option[JPath] = {
-    val uploadFileFolderPath = batchResourceUploadFolderPath(batchId)
+    val uploadFileFolderPath = KyuubiApplicationManager.sessionUploadFolderPath(batchId)
     try {
       handleUploadingResourceFile(
         request,
