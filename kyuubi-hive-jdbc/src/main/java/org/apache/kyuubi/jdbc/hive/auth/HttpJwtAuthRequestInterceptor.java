@@ -18,30 +18,30 @@
 package org.apache.kyuubi.jdbc.hive.auth;
 
 import java.util.Map;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpRequest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.protocol.HttpContext;
 
-public class HttpBearerAuthInterceptor extends HttpRequestInterceptorBase {
-  String bearerToken;
+/**
+ * This implements the logic to intercept the HTTP requests from the Hive Jdbc connection and adds
+ * JWT auth header.
+ */
+public class HttpJwtAuthRequestInterceptor extends HttpRequestInterceptorBase {
+  private final String signedJwt;
 
-  public HttpBearerAuthInterceptor(
-      String bearerToken,
+  public HttpJwtAuthRequestInterceptor(
+      String signedJwt,
       CookieStore cookieStore,
       String cn,
       boolean isSSL,
       Map<String, String> additionalHeaders,
       Map<String, String> customCookies) {
     super(cookieStore, cn, isSSL, additionalHeaders, customCookies);
-    this.bearerToken = bearerToken;
+    this.signedJwt = signedJwt;
   }
 
   @Override
-  protected void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext)
-      throws Exception {
-    if (StringUtils.isNotBlank(bearerToken)) {
-      httpRequest.addHeader(HttpAuthUtils.AUTHORIZATION, HttpAuthUtils.BEARER + " " + bearerToken);
-    }
+  protected void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext) {
+    httpRequest.addHeader(HttpAuthUtils.AUTHORIZATION, HttpAuthUtils.BEARER + " " + signedJwt);
   }
 }

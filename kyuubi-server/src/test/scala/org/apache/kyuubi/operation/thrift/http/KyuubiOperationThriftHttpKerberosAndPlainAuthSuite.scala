@@ -72,7 +72,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
       s"httpPath=cliservice;"
 
   test("test with valid CUSTOM http bearer authentication") {
-    withSessionConf(Map(JdbcConnectionParams.AUTH_BEARER_TOKEN
+    withSessionConf(Map(JdbcConnectionParams.AUTH_TYPE_JWT_KEY
       -> UserDefineTokenAuthenticationProviderImpl.VALID_TOKEN))()() {
       val conn = DriverManager.getConnection(jdbcUrlWithConf)
       try {
@@ -87,7 +87,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   }
 
   test("test with invalid CUSTOM http bearer authentication") {
-    withSessionConf(Map(JdbcConnectionParams.AUTH_BEARER_TOKEN -> "badToken"))()() {
+    withSessionConf(Map(JdbcConnectionParams.AUTH_TYPE_JWT_KEY -> "badToken"))()() {
       intercept[SQLException] {
         val conn = DriverManager.getConnection(jdbcUrlWithConf)
         try {

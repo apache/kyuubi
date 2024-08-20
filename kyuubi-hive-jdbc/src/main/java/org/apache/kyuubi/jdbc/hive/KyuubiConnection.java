@@ -21,6 +21,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
 
+import com.google.common.base.Preconditions;
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -446,19 +447,18 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (!isSaslAuthMode()) {
       requestInterceptor = null;
     } else if (isPlainSaslAuthMode()) {
-      if (isBearerAuthMode()) {
+      if (isJwtAuthMode()) {
+        final String signedJwt = getJWT();
+        Preconditions.checkArgument(
+            signedJwt != null && !signedJwt.isEmpty(),
+            "For jwt auth mode," + " a signed jwt must be provided");
         /*
-         * Add an interceptor to pass bearer token in the header. In https mode, the entire
+         * Add an interceptor to pass jwt token in the header. In https mode, the entire
          * information is encrypted
          */
         requestInterceptor =
-            new HttpBearerAuthInterceptor(
-                getBearerToken(),
-                cookieStore,
-                cookieName,
-                useSsl,
-                additionalHttpHeaders,
-                customCookies);
+            new HttpJwtAuthRequestInterceptor(
+                signedJwt, cookieStore, cookieName, useSsl, additionalHttpHeaders, customCookies);
       } else {
         /*
          * Add an interceptor to pass username/password in the header. In https mode, the entire
@@ -594,6 +594,38 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       }
     }
     return httpClientBuilder.build();
+  }
+
+  private String getJWT() {
+    String jwtCredential = getJWTStringFromSession();
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      jwtCredential = getJWTStringFromEnv();
+    }
+    return jwtCredential;
+  }
+
+  private String getJWTStringFromEnv() {
+    String jwtCredential = System.getenv(JdbcConnectionParams.AUTH_JWT_ENV);
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      LOG.debug("No JWT is specified in env variable {}", JdbcConnectionParams.AUTH_JWT_ENV);
+    } else {
+      int startIndex = Math.max(0, jwtCredential.length() - 7);
+      String lastSevenChars = jwtCredential.substring(startIndex);
+      LOG.debug("Fetched JWT (ends with {}) from the env.", lastSevenChars);
+    }
+    return jwtCredential;
+  }
+
+  private String getJWTStringFromSession() {
+    String jwtCredential = sessConfMap.get(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      LOG.debug("No JWT is specified in connection string.");
+    } else {
+      int startIndex = Math.max(0, jwtCredential.length() - 7);
+      String lastSevenChars = jwtCredential.substring(startIndex);
+      LOG.debug("Fetched JWT (ends with {}) from the session.", lastSevenChars);
+    }
+    return jwtCredential;
   }
 
   /** Create underlying SSL or non-SSL transport */
@@ -840,11 +872,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return getSessionValue(AUTH_PASSWD, ANONYMOUS_PASSWD);
   }
 
-  /** @return bearerToken from sessConfMap */
-  private String getBearerToken() {
-    return getSessionValue(AUTH_BEARER_TOKEN, "");
-  }
-
   private boolean isCookieEnabled() {
     return !"false".equalsIgnoreCase(sessConfMap.get(COOKIE_AUTH));
   }
@@ -937,8 +964,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
   }
 
-  private boolean isBearerAuthMode() {
-    return isSaslAuthMode() && hasSessionValue(AUTH_BEARER_TOKEN);
+  private boolean isJwtAuthMode() {
+    return JdbcConnectionParams.AUTH_TYPE_JWT.equalsIgnoreCase(
+            sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))
+        || sessConfMap.containsKey(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
   }
 
   private boolean isKerberosAuthMode() {
