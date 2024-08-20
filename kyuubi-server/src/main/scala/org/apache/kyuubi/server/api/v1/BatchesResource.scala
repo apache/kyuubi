@@ -642,6 +642,8 @@ object BatchesResource {
     Option(batchState).exists(bt => VALID_BATCH_STATES.contains(bt.toUpperCase(Locale.ROOT)))
   }
 
-  def batchResourceUploadFolderPath(batchId: String): JPath =
-    KyuubiApplicationManager.uploadWorkDir.resolve(s"batch-$batchId")
+  def batchResourceUploadFolderPath(sessionId: String): JPath = {
+    require(StringUtils.isNotBlank(sessionId))
+    KyuubiApplicationManager.uploadWorkDir.resolve(sessionId)
+  }
 }
