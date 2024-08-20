@@ -207,7 +207,7 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("Support python cancel") {
+  test("Support to cancel Spark python operation") {
     checkPythonRuntimeAndVersion()
     withMultipleConnectionJdbcStatement()({ stmt =>
       val statement = stmt.asInstanceOf[KyuubiStatement]

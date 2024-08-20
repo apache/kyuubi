@@ -33,7 +33,7 @@ import org.apache.spark.api.python.KyuubiPythonGatewayServer
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_PYTHON_ENV_ARCHIVE, ENGINE_SPARK_PYTHON_ENV_ARCHIVE_EXEC_PATH, ENGINE_SPARK_PYTHON_HOME_ARCHIVE, ENGINE_SPARK_PYTHON_MAGIC_ENABLED}
 import org.apache.kyuubi.config.KyuubiConf.EngineSparkOutputMode.{AUTO, EngineSparkOutputMode, NOTEBOOK}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
@@ -43,6 +43,7 @@ import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, Operati
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.reflect.DynFields
 
 class ExecutePython(
     session: Session,
@@ -175,12 +176,11 @@ class ExecutePython(
 
   override def cleanup(targetState: OperationState): Unit = {
     if (!isTerminalState(state)) {
-      logger.info(s"Staring to cancel python code: $statement")
+      info(s"Staring to cancel python code: $statement")
       worker.cancel()
     }
     super.cleanup(targetState)
   }
-
 }
 
 case class SessionPythonWorker(
@@ -237,16 +237,18 @@ case class SessionPythonWorker(
   }
 
   def cancel(): Unit = {
-    val field = workerProcess.getClass.getDeclaredField("pid")
-    field.setAccessible(true)
-    val pid = field.getLong(workerProcess)
+    val pid = DynFields.builder()
+      .hiddenImpl(workerProcess.getClass, "pid")
+      .build[java.lang.Integer](workerProcess)
+      .get()
     // sends a SIGINT (interrupt) signal, similar to Ctrl-C
     val builder = new ProcessBuilder(Seq("kill", "-2", pid.toString).asJava)
     val process = builder.start()
     val exitCode = process.waitFor()
     process.destroy()
     if (exitCode != 0) {
-      throw new RuntimeException(s"python code cancel failed: $exitCode")
+      throw new KyuubiException(
+        s"Process ${builder.command().asScala.mkString("`", " ", "`")} exit with value: $exitCode")
     }
   }
 }
