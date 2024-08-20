@@ -69,12 +69,12 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
 
   override protected def getJdbcUrl: String =
     s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/default;transportMode=http;" +
-      s"httpPath=cliservice;"
+      s"httpPath=cliservice"
 
   test("test with valid CUSTOM http bearer authentication") {
     withSessionConf(Map(JdbcConnectionParams.AUTH_BEARER_TOKEN
       -> UserDefineTokenAuthenticationProviderImpl.VALID_TOKEN))()() {
-      val conn = DriverManager.getConnection(jdbcUrlWithConf)
+      val conn = DriverManager.getConnection(jdbcUrlWithConf(getJdbcUrl + ";"))
       try {
         val statement = conn.createStatement()
         val resultSet = statement.executeQuery("select engine_name()")
@@ -89,7 +89,7 @@ class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   test("test with invalid CUSTOM http bearer authentication") {
     withSessionConf(Map(JdbcConnectionParams.AUTH_BEARER_TOKEN -> "badToken"))()() {
       intercept[SQLException] {
-        val conn = DriverManager.getConnection(jdbcUrlWithConf)
+        val conn = DriverManager.getConnection(jdbcUrlWithConf(getJdbcUrl + ";"))
         try {
           val statement = conn.createStatement()
           statement.executeQuery("select engine_name()")
