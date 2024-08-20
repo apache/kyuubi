@@ -207,6 +207,41 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("Support to cancel Spark python operation") {
+    checkPythonRuntimeAndVersion()
+    withMultipleConnectionJdbcStatement()({ stmt =>
+      val statement = stmt.asInstanceOf[KyuubiStatement]
+      statement.executeQuery("SET kyuubi.operation.language=PYTHON")
+      val code1 =
+        """
+          |i = 0
+          |i
+          |""".stripMargin
+      val resultSet1 = statement.executeQuery(code1)
+      assert(resultSet1.next())
+      assert(resultSet1.getString("status") === "ok")
+      assert(resultSet1.getString("output") === "0")
+      val code2 =
+        """
+          |import time
+          |while True:
+          |   i +=1
+          |   time.sleep(1)
+          |""".stripMargin
+      statement.executeAsync(code2)
+      statement.cancel()
+
+      val code3 =
+        """
+          |i
+          |""".stripMargin
+      val resultSet3 = statement.executeQuery(code3)
+      assert(resultSet3.next())
+      assert(resultSet3.getString("status") === "ok")
+      assert(resultSet3.getString("output").toInt > 0)
+    })
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {
