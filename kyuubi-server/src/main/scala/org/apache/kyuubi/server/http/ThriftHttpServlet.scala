@@ -80,6 +80,7 @@ class ThriftHttpServlet(
   override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = {
     var clientUserName: String = null
     var requireNewCookie: Boolean = false
+    var doAuth: Boolean = false
     try {
       if (conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_XSRF_FILTER_ENABLED)) {
         val continueProcessing = doXsrfFilter(request, response)
@@ -111,6 +112,7 @@ class ThriftHttpServlet(
       // If the cookie based authentication is not enabled or the request does not have a valid
       // cookie, use authentication depending on the server setup.
       if (clientUserName == null) {
+        doAuth = true
         clientUserName = authenticate(request, response)
       }
 
@@ -143,7 +145,7 @@ class ThriftHttpServlet(
         error("Error: ", e)
         throw e
     } finally {
-      AuthenticationAuditLogger.audit(request, response)
+      if (doAuth) AuthenticationAuditLogger.audit(request, response)
       AuthenticationFilter.HTTP_CLIENT_USER_NAME.remove()
       AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.remove()
       AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.remove()
@@ -275,8 +277,10 @@ class ThriftHttpServlet(
 
   private def authenticate(request: HttpServletRequest, response: HttpServletResponse): String = {
     val authorization = request.getHeader(AUTHORIZATION_HEADER)
-    authenticationFilter.getMatchedHandler(authorization).map(
-      _.authenticate(request, response)).orNull
+    authenticationFilter.getMatchedHandler(authorization).map { authHandler =>
+      AuthenticationFilter.HTTP_AUTH_TYPE.set(authHandler.authScheme.toString)
+      authHandler.authenticate(request, response)
+    }.orNull
   }
 
   private def getDoAsQueryParam(queryString: String): String = {
