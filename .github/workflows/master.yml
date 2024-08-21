@@ -357,6 +357,7 @@ jobs:
             rm $HIVE_2310_LIB/avatica-1.8.0.jar
             mv avatica-1.8.0-patched.jar $HIVE_2310_LIB/
             cd ..
+            rm -rf avatica-1.8.0-unpack
           fi
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
