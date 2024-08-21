@@ -346,7 +346,7 @@ jobs:
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
-          # Hive 2.3.10 ships avatica 1.8.0, which contains un-relocated old Jackson 2.x classes
+          # unpack avatica-1.8.0.jar and delete Jackson classes to workaround CALCITE-1224
           if [[ "${{ matrix.hive-archive }}" == *apache-hive-2.3.10-bin.tar.gz* ]]; then
             HIVE_2310_LIB="$PWD/externals/kyuubi-download/target/apache-hive-2.3.10-bin/lib"
             mkdir avatica-1.8.0-unpack
