@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -41,7 +42,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
  */
 trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
 
-object TableExtractor {
+object TableExtractor extends Logging {
   val tableExtractors: Map[String, TableExtractor] = {
     loadExtractorsToMap[TableExtractor]
   }
@@ -53,13 +54,14 @@ object TableExtractor {
    */
   def getOwner(v: AnyRef): Option[String] = {
     try {
-
       // org.apache.spark.sql.connector.catalog.Table
       val table = invokeAs[AnyRef](v, "table")
       val properties = invokeAs[JMap[String, String]](table, "properties").asScala
       properties.get("owner")
     } catch {
-      case _: Throwable => None
+      case e: Throwable =>
+        logError("Extract owner from table failed.", e)
+        None
     }
   }
 
@@ -74,7 +76,9 @@ object TableExtractor {
       getOwner(table)
     } catch {
       // Exception may occur due to invalid reflection or table not found
-      case _: Throwable => None
+      case e: Throwable =>
+        logError("Extract owner from table failed.", e)
+        None
     }
   }
 }
@@ -93,7 +97,9 @@ class TableIdentifierTableExtractor extends TableExtractor {
           val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
           Option(catalogTable.owner).filter(_.nonEmpty)
         } catch {
-          case _: Throwable => None
+          case _: Throwable =>
+            logError("Extract owner from table failed.", e)
+            None
         }
       Some(Table(None, identifier.database, identifier.table, owner))
     }
