@@ -346,6 +346,19 @@ jobs:
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
+          # unpack avatica-1.8.0.jar and delete Jackson classes to workaround CALCITE-1224
+          if [[ "${{ matrix.hive-archive }}" == *apache-hive-2.3.10-bin.tar.gz* ]]; then
+            HIVE_2310_LIB="$PWD/externals/kyuubi-download/target/apache-hive-2.3.10-bin/lib"
+            mkdir avatica-1.8.0-unpack
+            cd avatica-1.8.0-unpack
+            jar xf $HIVE_2310_LIB/avatica-1.8.0.jar
+            rm -rf com/fasterxml/jackson org/slf4j
+            jar cf avatica-1.8.0-patched.jar .
+            rm $HIVE_2310_LIB/avatica-1.8.0.jar
+            mv avatica-1.8.0-patched.jar $HIVE_2310_LIB/
+            cd ..
+            rm -rf avatica-1.8.0-unpack
+          fi
           ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
