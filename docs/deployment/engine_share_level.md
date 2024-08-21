@@ -111,7 +111,7 @@ The mechanisms of `SparkContext`, `SparkSession` and TTL works similarly to USER
 Here is an example to configure `HadoopGroupProvider` to use LDAP-based group mapping.
 1. Add the properties shown in the example below to the `core-site.xml` file. You will need to provide the value for the bind user, the bind password, and other properties specific to your LDAP instance, and make sure that object class, user, and group filters match the values specified in your LDAP instance.
 
-```
+```xml
 <property
   <name>hadoop.security.group.mapping</name>
   <value>org.apache.hadoop.security.LdapGroupsMapping</value>
