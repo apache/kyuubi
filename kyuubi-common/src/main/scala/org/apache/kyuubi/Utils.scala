@@ -38,7 +38,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
-import org.apache.kyuubi.util.FileExpirationUtils
+import org.apache.kyuubi.util.TempFileCleanupUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 object Utils extends Logging {
@@ -169,7 +169,7 @@ object Utils extends Logging {
       prefix: String = "kyuubi",
       root: String = System.getProperty("java.io.tmpdir")): Path = {
     val dir = createDirectory(root, prefix)
-    dir.toFile.deleteOnExit()
+    TempFileCleanupUtils.deleteOnExit(dir)
     dir
   }
 
@@ -216,7 +216,7 @@ object Utils extends Logging {
       } finally {
         source.close()
       }
-      FileExpirationUtils.deleteFileOnExit(filePath)
+      TempFileCleanupUtils.deleteOnExit(filePath)
       filePath.toFile
     } catch {
       case e: Exception =>

@@ -17,41 +17,54 @@
 
 package org.apache.kyuubi.util
 
+import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util
 import java.util.Collections
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.collection.convert.ImplicitConversions.`collection asJava`
+import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.kyuubi.Utils
 
-object FileExpirationUtils {
+object TempFileCleanupUtils {
+  private lazy val deleteTargets: mutable.Set[String] =
+    Collections.synchronizedSet(new util.HashSet[String]).asScala
+
   private lazy val isCleanupShutdownHookInstalled = {
-    addFilesCleanupOnExitShutdownHook()
+    installFilesCleanupOnExitShutdownHook()
     new AtomicBoolean(true)
   }
 
-  private lazy val files: util.Set[String] =
-    Collections.synchronizedSet(new util.LinkedHashSet[String]())
-
-  private def addFilesCleanupOnExitShutdownHook(): Unit = {
+  private def installFilesCleanupOnExitShutdownHook(): Unit = {
     Utils.addShutdownHook(() => {
-      new util.LinkedHashSet(files)
-        .forEach(pathStr => Utils.deleteDirectoryRecursively(Paths.get(pathStr).toFile))
-      files.clear()
+      deleteTargets.foreach { pathStr =>
+        try {
+          Utils.deleteDirectoryRecursively(Paths.get(pathStr).toFile)
+        } catch {
+          case _: Exception =>
+        }
+      }
+      deleteTargets.clear()
     })
   }
 
-  def deleteFileOnExit(path: Path): Unit = {
-    if (path != null) {
-      isCleanupShutdownHookInstalled.get()
-      files.add(path.toString)
-    }
+  def deleteOnExit(file: File): Unit = {
+    require(file != null)
+    deleteOnExit(file.toPath)
   }
 
-  def removeFromFileList(paths: String*): Unit = {
-    files.removeAll(paths)
+  def deleteOnExit(path: Path): Unit = {
+    require(path != null)
+    isCleanupShutdownHookInstalled.get()
+    deleteTargets.add(path.toString)
+  }
+
+  def cancelDeleteOnExit(path: Path): Unit = {
+    require(path != null)
+    isCleanupShutdownHookInstalled.get()
+    deleteTargets.remove(path.toString)
   }
 
 }

@@ -31,7 +31,7 @@ import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, Fe
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
-import org.apache.kyuubi.util.{FileExpirationUtils, ThriftUtils}
+import org.apache.kyuubi.util.{TempFileCleanupUtils, ThriftUtils}
 
 object OperationLog extends Logging {
   final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
@@ -58,7 +58,7 @@ object OperationLog extends Logging {
       val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
       try {
         Files.createDirectories(path)
-        FileExpirationUtils.deleteFileOnExit(path)
+        TempFileCleanupUtils.deleteOnExit(path)
         path
       } catch {
         case e: IOException =>

@@ -44,6 +44,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KillResponse, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
@@ -568,6 +569,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       uploadFileFolderPath: JPath): Unit = {
     try {
       val tempFile = Utils.writeToTempFile(inputStream, uploadFileFolderPath, fileName)
+      kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
       request.setResource(tempFile.getPath)
     } catch {
       case e: Exception =>
@@ -599,10 +601,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             val tempFilePaths = fileParts.map { filePart =>
               val fileName = filePart.getContentDisposition.getFileName
               try {
-                Utils.writeToTempFile(
+                val tempFile = Utils.writeToTempFile(
                   filePart.getValueAs(classOf[InputStream]),
                   uploadFileFolderPath,
-                  fileName).getPath
+                  fileName)
+                kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
+                tempFile.getPath
               } catch {
                 case e: Exception =>
                   throw new RuntimeException(

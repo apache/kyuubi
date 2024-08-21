@@ -26,26 +26,26 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.Utils.writeToTempFile
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SERVER_STALE_FILE_EXPIRATION_INTERVAL
 
-class TempFileManagerSuite extends WithKyuubiServer {
-  private val expirationInterval = 100
+class TempFileServiceSuite extends WithKyuubiServer {
+  private val expirationInMs = 100
 
-  override protected val conf: KyuubiConf = KyuubiConf().set(
-    KyuubiConf.SERVER_STALE_FILE_EXPIRATION_INTERVAL,
-    Duration.ofMillis(expirationInterval).toMillis)
+  override protected val conf: KyuubiConf = KyuubiConf()
+    .set(SERVER_STALE_FILE_EXPIRATION_INTERVAL, Duration.ofMillis(expirationInMs).toMillis)
 
   test("file cleaned up after expiration") {
-    val tempFileManager = KyuubiServer.kyuubiServer.tempFileManager
+    val tempFileService = KyuubiServer.kyuubiServer.tempFileService
     (0 until 3).map { i =>
       val dir = Utils.createTempDir()
       writeToTempFile(new ByteArrayInputStream(s"$i".getBytes()), dir, s"$i.txt")
       dir.toFile
     }.map { dirFile =>
       assert(dirFile.exists())
-      tempFileManager.addDirToExpiration(dirFile.toPath)
+      tempFileService.addPathToExpiration(dirFile.toPath)
       dirFile
     }.foreach { f =>
-      eventually(Timeout((expirationInterval * 2).millis)) {
+      eventually(Timeout((expirationInMs * 2).millis)) {
         assert(!f.exists())
       }
     }

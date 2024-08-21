@@ -15,37 +15,37 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server
+package org.apache.kyuubi.service
 
-import java.nio.file.Path
-import java.util.concurrent.{Executors, TimeUnit}
+import java.nio.file.{Path, Paths}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.AbstractService
-import org.apache.kyuubi.util.FileExpirationUtils
+import org.apache.kyuubi.service.TempFileService.tempFileCounter
+import org.apache.kyuubi.util.{TempFileCleanupUtils, ThreadUtils}
 
-class TempFileManager(name: String) extends AbstractService(name) {
-  def this() = this(classOf[TempFileManager].getSimpleName)
+class TempFileService(name: String) extends AbstractService(name) {
+  def this() = this(classOf[TempFileService].getSimpleName)
 
-  private lazy val fileCounter = new AtomicLong(0)
-  final private var expiringFiles: Cache[String, Path] = _
-  private lazy val cleanupScheduler = Executors.newScheduledThreadPool(1)
+  final private var expiringFiles: Cache[String, String] = _
+  private lazy val cleanupScheduler =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-cleanup-scheduler")
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)
     val interval = conf.get(KyuubiConf.SERVER_STALE_FILE_EXPIRATION_INTERVAL)
     expiringFiles = CacheBuilder.newBuilder()
       .expireAfterWrite(interval, TimeUnit.MILLISECONDS)
-      .removalListener((notification: RemovalNotification[String, Path]) => {
-        val path = notification.getValue
-        FileExpirationUtils.removeFromFileList(path.toString)
-        Utils.deleteDirectoryRecursively(path.toFile)
+      .removalListener((notification: RemovalNotification[String, String]) => {
+        val pathStr = notification.getValue
+        debug(s"Remove expired temp file: $pathStr")
+        cleanupFilePath(pathStr)
       })
-      .build[String, Path]()
+      .build[String, String]()
 
     cleanupScheduler.scheduleAtFixedRate(
       () => expiringFiles.cleanUp(),
@@ -55,8 +55,18 @@ class TempFileManager(name: String) extends AbstractService(name) {
   }
 
   override def stop(): Unit = {
-    expiringFiles.invalidateAll()
+    expiringFiles.asMap().values().forEach(cleanupFilePath)
     super.stop()
+  }
+
+  private def cleanupFilePath(pathStr: String): Unit = {
+    try {
+      val path = Paths.get(pathStr)
+      TempFileCleanupUtils.cancelDeleteOnExit(path)
+      Utils.deleteDirectoryRecursively(path.toFile)
+    } catch {
+      case e: Throwable => error(s"Failed to delete file $pathStr", e)
+    }
   }
 
   /**
@@ -64,12 +74,18 @@ class TempFileManager(name: String) extends AbstractService(name) {
    * ensuring the path will be deleted
    * either after duration
    * or on the JVM exit
+   *
    * @param path the path of file or directory
    */
-  def addDirToExpiration(path: Path): Unit = {
-    if (path != null) {
-      expiringFiles.put(s"${fileCounter.incrementAndGet()}-${System.currentTimeMillis()}", path)
-      FileExpirationUtils.deleteFileOnExit(path)
-    }
+  def addPathToExpiration(path: Path): Unit = {
+    require(path != null)
+    expiringFiles.put(
+      s"${tempFileCounter.incrementAndGet()}-${System.currentTimeMillis()}",
+      path.toString)
+    TempFileCleanupUtils.deleteOnExit(path)
   }
+}
+
+object TempFileService {
+  private lazy val tempFileCounter = new AtomicLong(0)
 }

@@ -39,6 +39,7 @@ import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor
 import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.service.TempFileService
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
@@ -72,6 +73,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
+  def tempFileService: TempFileService = kyuubiServer.tempFileService
+
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(applicationManager)
@@ -98,8 +101,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       this,
       userConf,
       userConf.get(ENGINE_DO_AS_ENABLED),
-      parser,
-      tempFileManager = kyuubiServer.tempFileManager)
+      parser)
   }
 
   override def openSession(
