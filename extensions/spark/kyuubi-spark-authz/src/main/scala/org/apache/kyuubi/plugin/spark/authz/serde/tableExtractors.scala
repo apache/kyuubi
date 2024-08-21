@@ -21,6 +21,7 @@ import java.util.{LinkedHashMap, Map => JMap}
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -28,7 +29,6 @@ import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.internal.Logging
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -40,7 +40,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
  * A trait for extracting database and table as string tuple
  * from the give object whose class type is define by `key`.
  */
-trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
+trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor with Logging
 
 object TableExtractor extends Logging {
   val tableExtractors: Map[String, TableExtractor] = {
@@ -60,7 +60,7 @@ object TableExtractor extends Logging {
       properties.get("owner")
     } catch {
       case e: Throwable =>
-        logError("Extract owner from table failed.", e)
+        logDebug("Extract owner from table failed.", e)
         None
     }
   }
@@ -77,7 +77,7 @@ object TableExtractor extends Logging {
     } catch {
       // Exception may occur due to invalid reflection or table not found
       case e: Throwable =>
-        logError("Extract owner from table failed.", e)
+        logDebug("Extract owner from table failed.", e)
         None
     }
   }
@@ -97,8 +97,8 @@ class TableIdentifierTableExtractor extends TableExtractor {
           val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
           Option(catalogTable.owner).filter(_.nonEmpty)
         } catch {
-          case _: Throwable =>
-            logError("Extract owner from table failed.", e)
+          case e: Throwable =>
+            logDebug("Extract owner from table failed.", e)
             None
         }
       Some(Table(None, identifier.database, identifier.table, owner))
