@@ -52,10 +52,15 @@ object TableExtractor {
    * @return owner
    */
   def getOwner(v: AnyRef): Option[String] = {
-    // org.apache.spark.sql.connector.catalog.Table
-    val table = invokeAs[AnyRef](v, "table")
-    val properties = invokeAs[JMap[String, String]](table, "properties").asScala
-    properties.get("owner")
+    try {
+
+      // org.apache.spark.sql.connector.catalog.Table
+      val table = invokeAs[AnyRef](v, "table")
+      val properties = invokeAs[JMap[String, String]](table, "properties").asScala
+      properties.get("owner")
+    } catch {
+      case _: Throwable => None
+    }
   }
 
   def getOwner(spark: SparkSession, catalogName: String, tableIdent: AnyRef): Option[String] = {
@@ -69,7 +74,7 @@ object TableExtractor {
       getOwner(table)
     } catch {
       // Exception may occur due to invalid reflection or table not found
-      case _: Exception => None
+      case _: Throwable => None
     }
   }
 }
@@ -88,7 +93,7 @@ class TableIdentifierTableExtractor extends TableExtractor {
           val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
           Option(catalogTable.owner).filter(_.nonEmpty)
         } catch {
-          case _: Exception => None
+          case _: Throwable => None
         }
       Some(Table(None, identifier.database, identifier.table, owner))
     }
