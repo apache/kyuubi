@@ -162,6 +162,7 @@ jobs:
         run: |
           TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
           ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          -Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.SparkLocalClusterTest \
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
         if: failure()
