@@ -93,6 +93,10 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.sun.ws.rs.ext</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>javax.ws.rs</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.javax.ws.rs</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>com.kstruct.gethostname4j</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.kstruct.gethostname4j</shadedPattern>
                         </relocation>
