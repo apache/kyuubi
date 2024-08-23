@@ -55,7 +55,7 @@ jobs:
         exclude-tags: [""]
         comment: ["normal"]
         include:
-          - java: 17
+          - java: 21
             spark: '4.0'
             spark-archive: '-Pscala-2.13'
             exclude-tags: ''

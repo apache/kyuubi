@@ -236,6 +236,7 @@
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
+        <!-- TODO: Once we drop support for Java 8, we can consider upgrade spotless.version to 2.43.0. -->
         <maven.plugin.spotless.version>2.30.0</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
@@ -255,7 +256,8 @@
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
 
-        <!-- Needed for Spotless style check-->
+        <!-- Needed for Spotless style check.
+             TODO: Once we drop support for Java 8, we can consider upgrade googlejavaformat.version to 1.22.0 or above. -->
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
@@ -1924,6 +1926,25 @@
                 <maven.compiler.target></maven.compiler.target>
                 <maven.compiler.release>${java.version}</maven.compiler.release>
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java-21</id>
+            <activation>
+                <jdk>21</jdk>
+            </activation>
+            <properties>
+                <java.version>21</java.version>
+                <maven.compiler.source></maven.compiler.source>
+                <maven.compiler.target></maven.compiler.target>
+                <maven.compiler.release>${java.version}</maven.compiler.release>
+                <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
+                           does not support Java 21, but new version produces different outputs.
+                           Re-evaluate once we dropped support for Java 8. -->
+                <maven.plugin.spotless.version>2.43.0</maven.plugin.spotless.version>
+                <spotless.check.skip>true</spotless.check.skip>
+                <spotless.java.googlejavaformat.version>1.22.0</spotless.java.googlejavaformat.version>
             </properties>
         </profile>
 
