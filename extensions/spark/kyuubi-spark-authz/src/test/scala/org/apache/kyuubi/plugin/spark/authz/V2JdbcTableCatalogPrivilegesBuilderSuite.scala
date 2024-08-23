@@ -24,6 +24,7 @@ import org.scalatest.Outcome
 
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.serde._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 
 class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
@@ -41,9 +42,7 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
   override def beforeAll(): Unit = {
     spark.conf.set(s"spark.sql.catalog.$catalogV2", v2JdbcTableCatalogClassName)
     spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
-    spark.conf.set(
-      s"spark.sql.catalog.$catalogV2.driver",
-      "org.apache.derby.jdbc.AutoloadedDriver")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.driver", derbyJdbcDriverClass)
     super.beforeAll()
   }
 

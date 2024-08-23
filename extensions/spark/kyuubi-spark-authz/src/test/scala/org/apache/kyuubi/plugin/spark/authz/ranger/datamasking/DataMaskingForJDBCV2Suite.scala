@@ -24,16 +24,15 @@ import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
   override protected val extraSparkConf: SparkConf = {
     new SparkConf()
       .set("spark.sql.defaultCatalog", "testcat")
       .set("spark.sql.catalog.testcat", v2JdbcTableCatalogClassName)
-      .set(s"spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
-      .set(
-        s"spark.sql.catalog.testcat.driver",
-        "org.apache.derby.jdbc.AutoloadedDriver")
+      .set("spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
+      .set("spark.sql.catalog.testcat.driver", derbyJdbcDriverClass)
   }
 
   override protected val catalogImpl: String = "in-memory"

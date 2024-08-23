@@ -88,10 +88,18 @@ private[authz] object AuthZUtils {
   lazy val isSparkV33OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.3"
   lazy val isSparkV34OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.4"
   lazy val isSparkV35OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.5"
+  lazy val isSparkV40OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "4.0"
 
   lazy val SCALA_RUNTIME_VERSION: SemanticVersion =
     SemanticVersion(scala.util.Properties.versionNumberString)
   lazy val isScalaV213: Boolean = SCALA_RUNTIME_VERSION >= "2.13"
+
+  def derbyJdbcDriverClass: String = if (isSparkV40OrGreater) {
+    // SPARK-46257 (Spark 4.0.0) moves to Derby 10.16
+    "org.apache.derby.iapi.jdbc.AutoloadedDriver"
+  } else {
+    "org.apache.derby.jdbc.AutoloadedDriver"
+  }
 
   def quoteIfNeeded(part: String): String = {
     if (part.matches("[a-zA-Z0-9_]+") && !part.matches("\\d+")) {
