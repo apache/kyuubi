@@ -241,7 +241,7 @@
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.13</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.17</maven.plugin.silencer.version>
         <!-- MSOURCES-121 breaks creating source artifacts for shaded modules,
              we should skip upgrading until MSOURCES-141 gets fixed. -->
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
@@ -1853,6 +1853,14 @@
                                 <enforceBytecodeVersion>
                                     <maxJdkVersion>${java.version}</maxJdkVersion>
                                     <ignoredScopes>test</ignoredScopes>
+                                    <ignoreClasses>
+                                        <!--
+                                          The package `org.jline.terminal.impl.ffm.*` contains some class files
+                                          that are not compatible with JDK17 (only JDK21 is supported).
+                                          However, it will not cause problems for use. See: https://github.com/scala/bug/issues/12994
+                                        -->
+                                        <ignoreClass>org.jline.terminal.impl.ffm.*</ignoreClass>
+                                    </ignoreClasses>
                                 </enforceBytecodeVersion>
                             </rules>
                             <fail>true</fail>
@@ -1931,7 +1939,7 @@
             <id>scala-2.13</id>
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
-                <scala.version>2.13.8</scala.version>
+                <scala.version>2.13.14</scala.version>
                 <spark.archive.scala.suffix>-scala${scala.binary.version}</spark.archive.scala.suffix>
             </properties>
         </profile>
