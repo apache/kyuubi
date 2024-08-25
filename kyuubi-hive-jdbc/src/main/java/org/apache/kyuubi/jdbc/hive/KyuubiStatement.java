@@ -589,7 +589,6 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
      * client might end up using executeAsync and then call this to check if the query run is
      * finished.
      */
-    waitForOperationToComplete();
     long numModifiedRows = -1L;
     TGetOperationStatusResp resp = waitForOperationToComplete();
     if (resp != null && resp.isSetNumModifiedRows()) {
