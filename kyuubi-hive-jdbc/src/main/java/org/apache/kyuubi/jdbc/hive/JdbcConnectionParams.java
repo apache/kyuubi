@@ -97,6 +97,7 @@ public class JdbcConnectionParams {
 
   static final String CONNECT_TIMEOUT = "connectTimeout";
   static final String SOCKET_TIMEOUT = "socketTimeout";
+  static final String THRIFT_CLIENT_MAX_MESSAGE_SIZE = "thrift.client.max.message.size";
 
   // We support ways to specify application name modeled after some existing DBs, since
   // there's no standard approach.
