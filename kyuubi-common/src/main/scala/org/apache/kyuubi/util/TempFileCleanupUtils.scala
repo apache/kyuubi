@@ -21,6 +21,7 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util
 import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
@@ -29,8 +30,7 @@ import scala.collection.mutable
 import org.apache.kyuubi.Utils
 
 object TempFileCleanupUtils {
-  private lazy val deleteTargets: mutable.Set[String] =
-    Collections.synchronizedSet(new util.HashSet[String]).asScala
+  private lazy val deleteTargets = ConcurrentHashMap.newKeySet[String]()
 
   private lazy val isCleanupShutdownHookInstalled = {
     installFilesCleanupOnExitShutdownHook()
@@ -39,7 +39,7 @@ object TempFileCleanupUtils {
 
   private def installFilesCleanupOnExitShutdownHook(): Unit = {
     Utils.addShutdownHook(() => {
-      deleteTargets.foreach { pathStr =>
+      deleteTargets.forEach { pathStr =>
         try {
           Utils.deleteDirectoryRecursively(Paths.get(pathStr).toFile)
         } catch {
