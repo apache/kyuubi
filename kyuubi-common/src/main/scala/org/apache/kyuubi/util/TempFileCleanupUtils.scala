@@ -19,13 +19,8 @@ package org.apache.kyuubi.util
 
 import java.io.File
 import java.nio.file.{Path, Paths}
-import java.util
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.kyuubi.Utils
 
