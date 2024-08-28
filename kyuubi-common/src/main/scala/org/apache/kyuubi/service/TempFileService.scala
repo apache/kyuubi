@@ -37,9 +37,9 @@ class TempFileService(name: String) extends AbstractService(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)
-    val interval = conf.get(KyuubiConf.SERVER_STALE_FILE_EXPIRATION_INTERVAL)
+    val expireTimeInMs = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME)
     expiringFiles = CacheBuilder.newBuilder()
-      .expireAfterWrite(interval, TimeUnit.MILLISECONDS)
+      .expireAfterWrite(expireTimeInMs, TimeUnit.MILLISECONDS)
       .removalListener((notification: RemovalNotification[String, String]) => {
         val pathStr = notification.getValue
         debug(s"Remove expired temp file: $pathStr")
@@ -50,7 +50,7 @@ class TempFileService(name: String) extends AbstractService(name) {
     cleanupScheduler.scheduleAtFixedRate(
       () => expiringFiles.cleanUp(),
       0,
-      Math.max(interval / 10, 100),
+      Math.max(expireTimeInMs / 10, 100),
       TimeUnit.MILLISECONDS)
   }
 

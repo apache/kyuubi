@@ -3113,9 +3113,9 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
-  val SERVER_STALE_FILE_EXPIRATION_INTERVAL: ConfigEntry[Long] =
-    buildConf("kyuubi.server.stale.file.expiration.interval")
-      .doc("How often to trigger a file expiration clean-up for stale files")
+  val SERVER_TEMP_FILE_EXPIRE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.server.tempFile.expireTime")
+      .doc("Expiration timout for cleanup server-side temporary files, e.g. operation logs.")
       .version("1.10.0")
       .serverOnly
       .timeConf

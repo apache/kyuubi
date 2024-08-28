@@ -26,13 +26,13 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.Utils.writeToTempFile
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SERVER_STALE_FILE_EXPIRATION_INTERVAL
+import org.apache.kyuubi.config.KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME
 
 class TempFileServiceSuite extends WithKyuubiServer {
   private val expirationInMs = 100
 
   override protected val conf: KyuubiConf = KyuubiConf()
-    .set(SERVER_STALE_FILE_EXPIRATION_INTERVAL, Duration.ofMillis(expirationInMs).toMillis)
+    .set(SERVER_TEMP_FILE_EXPIRE_TIME, Duration.ofMillis(expirationInMs).toMillis)
 
   test("file cleaned up after expiration") {
     val tempFileService = KyuubiServer.kyuubiServer.tempFileService

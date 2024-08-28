@@ -50,7 +50,7 @@ object OperationLog extends Logging {
 
   /**
    * The operation log root directory, this directory will be deleted
-   * either after the duration of `kyuubi.server.stale.file.expiration.interval`
+   * either after the duration of `kyuubi.server.tempFile.expireTime`
    * or when JVM exit.
    */
   def createOperationLogRootDirectory(session: Session): Path = {
