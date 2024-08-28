@@ -569,7 +569,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       uploadFileFolderPath: JPath): Unit = {
     try {
       val tempFile = Utils.writeToTempFile(inputStream, uploadFileFolderPath, fileName)
-      kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
+      fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
       request.setResource(tempFile.getPath)
     } catch {
       case e: Exception =>
@@ -605,7 +605,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                   filePart.getValueAs(classOf[InputStream]),
                   uploadFileFolderPath,
                   fileName)
-                kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
+                fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
                 tempFile.getPath
               } catch {
                 case e: Exception =>

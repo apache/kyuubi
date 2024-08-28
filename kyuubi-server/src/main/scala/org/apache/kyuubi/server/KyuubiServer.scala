@@ -202,8 +202,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
-  final var tempFileService: TempFileService = _
-
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
@@ -211,18 +209,10 @@ class KyuubiServer(name: String) extends Serverable(name) {
     val periodicGCService = new PeriodicGCService
     addService(periodicGCService)
 
-    tempFileService = new TempFileService
-    addService(tempFileService)
-
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
 
-    if (conf.isRESTEnabled && conf.get(BATCH_SUBMITTER_ENABLED)) {
-      addService(new KyuubiBatchService(
-        this,
-        backendService.sessionManager.asInstanceOf[KyuubiSessionManager]))
-    }
     super.initialize(conf)
 
     initLoggerEventHandler(conf)

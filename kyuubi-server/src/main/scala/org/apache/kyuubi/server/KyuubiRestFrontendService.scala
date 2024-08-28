@@ -57,6 +57,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
 
+  private[kyuubi] lazy val batchService: Option[KyuubiBatchService] =
+    if (conf.get(BATCH_SUBMITTER_ENABLED)) {
+      Some(new KyuubiBatchService(this, sessionManager))
+    } else {
+      None
+    }
+
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
       if (JavaUtils.isWindows || JavaUtils.isMac) {
@@ -92,6 +99,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
       conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT),
       conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
+    batchService.foreach(addService)
     super.initialize(conf)
   }
 

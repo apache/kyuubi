@@ -73,12 +73,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
-  def tempFileService: TempFileService = kyuubiServer.tempFileService
+  val tempFileService = new TempFileService()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(applicationManager)
     addService(credentialsManager)
+    addService(tempFileService)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
     initEngineStartupProcessSemaphore(conf)
