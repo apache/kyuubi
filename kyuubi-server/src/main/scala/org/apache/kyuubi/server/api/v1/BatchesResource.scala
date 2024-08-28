@@ -68,7 +68,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(ENGINE_SECURITY_ENABLED)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
-    KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
+    fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
     reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
   }
 
