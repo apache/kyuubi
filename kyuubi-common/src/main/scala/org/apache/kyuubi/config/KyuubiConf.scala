@@ -3119,7 +3119,7 @@ object KyuubiConf {
       .version("1.10.0")
       .serverOnly
       .timeConf
-      .createWithDefaultString("P7D")
+      .createWithDefaultString("P14D")
 
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
