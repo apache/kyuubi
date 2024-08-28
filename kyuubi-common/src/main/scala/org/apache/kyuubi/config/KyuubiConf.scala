@@ -3113,6 +3113,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT30M")
 
+  val SERVER_TEMP_FILE_EXPIRE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.server.tempFile.expireTime")
+      .doc("Expiration timout for cleanup server-side temporary files, e.g. operation logs.")
+      .version("1.10.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("P14D")
+
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +

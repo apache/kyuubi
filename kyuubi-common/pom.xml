@@ -124,6 +124,11 @@
         </dependency>
 
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-util-scala_${scala.binary.version}</artifactId>
             <version>${project.version}</version>

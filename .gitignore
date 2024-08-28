@@ -67,6 +67,7 @@ embedded_zookeeper/
 /externals/kyuubi-spark-sql-engine/engine_operation_logs/
 /externals/kyuubi-spark-sql-engine/spark-warehouse/
 /work/
+/upload/
 /docs/_build/
 /kyuubi-common/metrics/
 /kyuubi-server/metrics/

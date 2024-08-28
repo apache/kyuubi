@@ -118,6 +118,8 @@ class KyuubiSessionImpl(
     // we should call super.open before running launch engine operation
     super.open()
 
+    sessionManager.tempFileService.addPathToExpiration(operationalLogRootDir.get)
+
     runOperation(launchEngineOp)
   }
 
