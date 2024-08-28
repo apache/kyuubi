@@ -3121,6 +3121,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("P14D")
 
+  val SERVER_TEMP_FILE_EXPIRE_MAX_COUNT: ConfigEntry[Int] =
+    buildConf("kyuubi.server.tempFile.maxCount")
+      .doc("The upper threshold size of server-side temporary file paths to cleanup")
+      .version("1.10.0")
+      .serverOnly
+      .intConf
+      .createWithDefault(10000)
+
   val SERVER_ADMINISTRATORS: ConfigEntry[Set[String]] =
     buildConf("kyuubi.server.administrators")
       .doc("Comma-separated list of Kyuubi service administrators. " +

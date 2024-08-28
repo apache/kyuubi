@@ -40,6 +40,7 @@ class TempFileService(name: String) extends AbstractService(name) {
     val expireTimeInMs = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME)
     expiringFiles = CacheBuilder.newBuilder()
       .expireAfterWrite(expireTimeInMs, TimeUnit.MILLISECONDS)
+      .maximumSize(conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_MAX_COUNT))
       .removalListener((notification: RemovalNotification[String, String]) => {
         val pathStr = notification.getValue
         debug(s"Remove expired temp file: $pathStr")
@@ -84,6 +85,12 @@ class TempFileService(name: String) extends AbstractService(name) {
       path.toString)
     TempFileCleanupUtils.deleteOnExit(path)
   }
+
+  /**
+   * get the current size of the expiration list
+   * @return
+   */
+  def currentSize(): Long = expiringFiles.size()
 }
 
 object TempFileService {

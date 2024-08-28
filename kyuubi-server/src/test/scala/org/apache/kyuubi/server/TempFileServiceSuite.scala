@@ -26,14 +26,16 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.Utils.writeToTempFile
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_TEMP_FILE_EXPIRE_MAX_COUNT, SERVER_TEMP_FILE_EXPIRE_TIME}
 import org.apache.kyuubi.session.KyuubiSessionManager
 
 class TempFileServiceSuite extends WithKyuubiServer {
   private val expirationInMs = 100
+  private val tempFilesMaxCount = 3
 
   override protected val conf: KyuubiConf = KyuubiConf()
     .set(SERVER_TEMP_FILE_EXPIRE_TIME, Duration.ofMillis(expirationInMs).toMillis)
+    .set(SERVER_TEMP_FILE_EXPIRE_MAX_COUNT, tempFilesMaxCount)
 
   test("file cleaned up after expiration") {
     val tempFileService =
@@ -51,5 +53,21 @@ class TempFileServiceSuite extends WithKyuubiServer {
         assert(!f.exists())
       }
     }
+  }
+
+  test("temp files cleaned up when exceeding max count") {
+    val tempFileService =
+      server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager].tempFileService
+    (0 until tempFilesMaxCount * 2).map { i =>
+      val dir = Utils.createTempDir()
+      writeToTempFile(new ByteArrayInputStream(s"$i".getBytes()), dir, s"$i.txt")
+      dir.toFile
+    }.foreach { dirFile =>
+      assert(dirFile.exists())
+      tempFileService.addPathToExpiration(dirFile.toPath)
+      dirFile
+    }
+
+    assertResult(tempFilesMaxCount)(tempFileService.currentSize())
   }
 }
