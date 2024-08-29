@@ -71,7 +71,8 @@ private[kyuubi] class EngineRef(
   private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
   // Server-side engine pool size threshold
-  private val poolThreshold: Int = engineManager.getConf.get(ENGINE_POOL_SIZE_THRESHOLD)
+  private val poolThreshold: Int =
+    Option(engineManager).map(_.getConf).getOrElse(KyuubiConf()).get(ENGINE_POOL_SIZE_THRESHOLD)
 
   private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
 
