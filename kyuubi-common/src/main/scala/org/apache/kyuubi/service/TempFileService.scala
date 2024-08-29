@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server
+package org.apache.kyuubi.service
 
 import java.nio.file.{Path, Paths}
 import java.util.concurrent.TimeUnit
@@ -25,7 +25,7 @@ import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.service.TempFileService.tempFileCounter
 import org.apache.kyuubi.util.{TempFileCleanupUtils, ThreadUtils}
 
 class TempFileService(name: String) extends AbstractService(name) {
@@ -80,7 +80,7 @@ class TempFileService(name: String) extends AbstractService(name) {
   def addPathToExpiration(path: Path): Unit = {
     require(path != null)
     expiringFiles.put(
-      s"${TempFileService.tempFileCounter.incrementAndGet()}-${System.currentTimeMillis()}",
+      s"${tempFileCounter.incrementAndGet()}-${System.currentTimeMillis()}",
       path.toString)
     TempFileCleanupUtils.deleteOnExit(path)
   }
