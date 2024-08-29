@@ -36,7 +36,6 @@ import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
-import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.TempFileService
@@ -73,12 +72,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
-  def tempFileService: TempFileService = kyuubiServer.tempFileService
+  val tempFileService = new TempFileService()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(applicationManager)
     addService(credentialsManager)
+    addService(tempFileService)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
     initEngineStartupProcessSemaphore(conf)

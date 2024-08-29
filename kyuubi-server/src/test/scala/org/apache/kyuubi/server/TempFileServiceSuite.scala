@@ -27,6 +27,7 @@ import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.Utils.writeToTempFile
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME
+import org.apache.kyuubi.session.KyuubiSessionManager
 
 class TempFileServiceSuite extends WithKyuubiServer {
   private val expirationInMs = 100
@@ -35,7 +36,8 @@ class TempFileServiceSuite extends WithKyuubiServer {
     .set(SERVER_TEMP_FILE_EXPIRE_TIME, Duration.ofMillis(expirationInMs).toMillis)
 
   test("file cleaned up after expiration") {
-    val tempFileService = KyuubiServer.kyuubiServer.tempFileService
+    val tempFileService =
+      server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager].tempFileService
     (0 until 3).map { i =>
       val dir = Utils.createTempDir()
       writeToTempFile(new ByteArrayInputStream(s"$i".getBytes()), dir, s"$i.txt")

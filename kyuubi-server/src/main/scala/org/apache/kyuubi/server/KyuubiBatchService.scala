@@ -23,18 +23,14 @@ import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.service.{AbstractService, Serverable}
+import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.ThreadUtils
 
 class KyuubiBatchService(
-    server: Serverable,
+    restFrontend: KyuubiRestFrontendService,
     sessionManager: KyuubiSessionManager)
   extends AbstractService(classOf[KyuubiBatchService].getSimpleName) {
-
-  private lazy val restFrontend = server.frontendServices
-    .filter(_.isInstanceOf[KyuubiRestFrontendService])
-    .head.asInstanceOf[KyuubiRestFrontendService]
 
   private def kyuubiInstance: String = restFrontend.connectionUrl
 

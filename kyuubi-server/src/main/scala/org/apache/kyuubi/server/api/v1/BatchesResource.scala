@@ -43,8 +43,6 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KillResponse, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
-import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
 import org.apache.kyuubi.server.metadata.MetadataManager
@@ -68,7 +66,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(ENGINE_SECURITY_ENABLED)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
-    KyuubiServer.kyuubiServer.getConf.get(BATCH_SUBMITTER_ENABLED) &&
+    fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
     reqConf.getOrElse(BATCH_IMPL_VERSION.key, fe.getConf.get(BATCH_IMPL_VERSION)) == "2"
   }
 
@@ -511,7 +509,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else if (batchV2Enabled(metadata.requestConf) && metadata.state == "INITIALIZED" &&
           // there is a chance that metadata is outdated, then `cancelUnscheduledBatch` fails
           // and returns false
-          batchService.get.cancelUnscheduledBatch(batchId)) {
+          fe.batchService.get.cancelUnscheduledBatch(batchId)) {
           new CloseBatchResponse(true, s"Unscheduled batch $batchId is canceled.")
         } else if (batchV2Enabled(metadata.requestConf) && metadata.kyuubiInstance == null) {
           // code goes here indicates metadata is outdated, recursively calls itself to refresh
@@ -569,7 +567,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       uploadFileFolderPath: JPath): Unit = {
     try {
       val tempFile = Utils.writeToTempFile(inputStream, uploadFileFolderPath, fileName)
-      kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
+      fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
       request.setResource(tempFile.getPath)
     } catch {
       case e: Exception =>
@@ -605,7 +603,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                   filePart.getValueAs(classOf[InputStream]),
                   uploadFileFolderPath,
                   fileName)
-                kyuubiServer.tempFileService.addPathToExpiration(tempFile.toPath)
+                fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
                 tempFile.getPath
               } catch {
                 case e: Exception =>

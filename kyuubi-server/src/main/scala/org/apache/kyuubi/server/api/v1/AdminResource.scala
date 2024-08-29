@@ -461,7 +461,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new NotAllowedException(
         s"$userName is not allowed to count the batches")
     }
-    val batchCount = batchService
+    val batchCount = fe.batchService
       .map(_.countBatch(batchType, Option(batchUser), Option(batchState)))
       .getOrElse(0)
     new Count(batchCount)
