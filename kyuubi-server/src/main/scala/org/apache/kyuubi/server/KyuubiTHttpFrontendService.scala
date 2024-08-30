@@ -228,7 +228,7 @@ final class KyuubiTHttpFrontendService(
     super.initialize(conf)
   }
 
-  // same as KyuubiTBinaryFrontendService, to return launch engine op handle
+  /** Same as KyuubiTBinaryFrontendService, to return launch engine op handle. */
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
     debug(req.toString)
     info("Client protocol version: " + req.getClient_protocol)
