@@ -50,7 +50,8 @@ class ListBatchCommand(cliConfig: CliConfig) extends Command[GetBatchesResponse]
         batchOpts.createTime,
         batchOpts.endTime,
         if (batchOpts.from < 0) 0 else batchOpts.from,
-        batchOpts.size)
+        batchOpts.size,
+        batchOpts.desc)
     }
   }
 

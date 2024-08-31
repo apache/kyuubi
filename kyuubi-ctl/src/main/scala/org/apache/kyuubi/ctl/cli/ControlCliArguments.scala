@@ -117,6 +117,7 @@ class ControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
            |  endTime                 ${cliConfig.batchOpts.endTime}
            |  from                    ${cliConfig.batchOpts.from}
            |  size                    ${cliConfig.batchOpts.size}
+           |  desc                    ${cliConfig.batchOpts.desc}
         """.stripMargin
       case ControlObject.SERVER =>
         s"""Parsed arguments:
