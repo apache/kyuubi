@@ -71,7 +71,8 @@ case class BatchOpts(
     endTime: Long = 0,
     from: Int = -1,
     size: Int = 100,
-    waitCompletion: Boolean = true)
+    waitCompletion: Boolean = true,
+    desc: Boolean = false)
 
 case class EngineOpts(
     user: String = null,
