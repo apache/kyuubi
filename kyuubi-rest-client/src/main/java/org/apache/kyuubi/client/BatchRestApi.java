@@ -98,6 +98,20 @@ public class BatchRestApi {
       Long endTime,
       int from,
       int size) {
+    return listBatches(
+        batchType, batchUser, batchState, batchName, createTime, endTime, from, size, false);
+  }
+
+  public GetBatchesResponse listBatches(
+      String batchType,
+      String batchUser,
+      String batchState,
+      String batchName,
+      Long createTime,
+      Long endTime,
+      int from,
+      int size,
+      boolean desc) {
     Map<String, Object> params = new HashMap<>();
     params.put("batchType", batchType);
     params.put("batchUser", batchUser);
@@ -111,6 +125,7 @@ public class BatchRestApi {
     }
     params.put("from", from);
     params.put("size", size);
+    params.put("desc", desc);
     return this.getClient()
         .get(API_BASE_PATH, params, GetBatchesResponse.class, client.getAuthHeader());
   }

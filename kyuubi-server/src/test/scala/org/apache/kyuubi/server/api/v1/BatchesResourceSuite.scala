@@ -472,6 +472,25 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(response7.getStatus === 500)
+
+    val response8 = webTarget.path("api/v1/batches")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .queryParam("desc", "false")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    val firstBatch = response8.readEntity(classOf[GetBatchesResponse]).getBatches.get(0)
+
+    val response9 = webTarget.path("api/v1/batches")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .queryParam("desc", "true")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    val lastBatch = response9.readEntity(classOf[GetBatchesResponse]).getBatches.get(0)
+    assert(firstBatch.getCreateTime < lastBatch.getCreateTime)
   }
 
   test("negative request") {

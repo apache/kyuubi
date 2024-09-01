@@ -332,15 +332,16 @@ Returns all the batches.
 
 #### Request Parameters
 
-| Name       | Description                                                                                         | Type   |
-|:-----------|:----------------------------------------------------------------------------------------------------|:-------|
-| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String |
-| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String |
-| batchUser  | The user name that created the batch                                                                | String |
-| createTime | Return the batch that created after this timestamp                                                  | Long   |
-| endTime    | Return the batch that ended before this timestamp                                                   | Long   |
-| from       | The start index to fetch batches                                                                    | Int    |
-| size       | Number of batches to fetch, 100 by default                                                          | Int    |
+| Name       | Description                                                                                         | Type    |
+|:-----------|:----------------------------------------------------------------------------------------------------|:--------|
+| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String  |
+| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String  |
+| batchUser  | The user name that created the batch                                                                | String  |
+| createTime | Return the batch that created after this timestamp                                                  | Long    |
+| endTime    | Return the batch that ended before this timestamp                                                   | Long    |
+| from       | The start index to fetch batches                                                                    | Int     |
+| size       | Number of batches to fetch, 100 by default                                                          | Int     |
+| desc       | List the batches in descending order, false by default.                                             | Boolean |
 
 #### Response Body
 

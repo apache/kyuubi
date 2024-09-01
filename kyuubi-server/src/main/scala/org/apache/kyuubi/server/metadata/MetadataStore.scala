@@ -57,9 +57,14 @@ trait MetadataStore extends Closeable {
    * @param filter the metadata filter conditions.
    * @param from the metadata offset.
    * @param size the size to get.
+   * @param desc the order of metadata list.
    * @return selected metadata list.
    */
-  def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata]
+  def getMetadataList(
+      filter: MetadataFilter,
+      from: Int,
+      size: Int,
+      desc: Boolean = false): Seq[Metadata]
 
   /**
    * Count the metadata list with filter conditions.

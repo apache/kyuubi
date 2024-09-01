@@ -134,8 +134,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
       .filter(_.sessionType == SessionType.BATCH)
   }
 
-  def getBatches(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size)).map(
+  def getBatches(
+      filter: MetadataFilter,
+      from: Int,
+      size: Int,
+      desc: Boolean = false): Seq[Batch] = {
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, desc)).map(
       buildBatch)
   }
 

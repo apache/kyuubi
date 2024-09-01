@@ -394,7 +394,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       @QueryParam("createTime") createTime: Long,
       @QueryParam("endTime") endTime: Long,
       @QueryParam("from") from: Int,
-      @QueryParam("size") @DefaultValue("100") size: Int): GetBatchesResponse = {
+      @QueryParam("size") @DefaultValue("100") size: Int,
+      @QueryParam("desc") @DefaultValue("false") desc: Boolean): GetBatchesResponse = {
     require(
       createTime >= 0 && endTime >= 0 && (endTime == 0 || createTime <= endTime),
       "Invalid time range")
@@ -412,7 +413,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       requestName = batchName,
       createTime = createTime,
       endTime = endTime)
-    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size)
+    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size, desc)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
