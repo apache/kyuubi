@@ -392,7 +392,7 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 
 | Name         | Description                                                                                       | Media Type       |
 |:-------------|:--------------------------------------------------------------------------------------------------|:-----------------|
-| batchRequest | The batch request in JSON format as request body requried in [POST /batches](#post-batches)       | application/json |
+| batchRequest | The batch request in JSON format as request body required in [POST /batches](#post-batches)       | application/json |
 | resourceFile | The resource to upload and execute, which will be cached on server and cleaned up after execution | File             |
 
 #### Response Body
