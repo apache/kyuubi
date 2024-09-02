@@ -21,7 +21,6 @@ import java.nio.file.{Path, Paths}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
-import com.google.common.annotations.VisibleForTesting
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 
 import org.apache.kyuubi.Utils
