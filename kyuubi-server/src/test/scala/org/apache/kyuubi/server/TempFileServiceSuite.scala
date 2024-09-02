@@ -68,6 +68,6 @@ class TempFileServiceSuite extends WithKyuubiServer {
       dirFile
     }
 
-    assertResult(tempFilesMaxCount)(tempFileService.currentSize())
+    assertResult(tempFilesMaxCount)(tempFileService.remainedExpiringFilesCount())
   }
 }

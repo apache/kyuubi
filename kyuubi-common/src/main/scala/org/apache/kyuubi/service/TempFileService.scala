@@ -21,6 +21,7 @@ import java.nio.file.{Path, Paths}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 
 import org.apache.kyuubi.Utils
@@ -34,6 +35,8 @@ class TempFileService(name: String) extends AbstractService(name) {
   final private var expiringFiles: Cache[String, String] = _
   private lazy val cleanupScheduler =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-cleanup-scheduler")
+
+  def remainedExpiringFilesCount(): Long = expiringFiles.size()
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)
@@ -86,11 +89,6 @@ class TempFileService(name: String) extends AbstractService(name) {
     TempFileCleanupUtils.deleteOnExit(path)
   }
 
-  /**
-   * get the current size of the expiration list
-   * @return
-   */
-  def currentSize(): Long = expiringFiles.size()
 }
 
 object TempFileService {
