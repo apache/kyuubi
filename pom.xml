@@ -113,7 +113,7 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <maven.version>3.8.8</maven.version>
+        <maven.version>3.9.9</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.18</scala.version>
