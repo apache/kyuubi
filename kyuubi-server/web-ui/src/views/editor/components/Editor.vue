@@ -165,7 +165,6 @@
     handleResizerDrag()
   })
 
-  // 设置 SQL 编辑器和查询结果区域的高度
   function setEditorAndResultHeights(
     sqlEditorHeight: number,
     queryResultHeight: number
@@ -174,7 +173,6 @@
     queryResult.value.style.height = `${queryResultHeight}px`
   }
 
-  // 最大化查询结果区域
   function maximizeQueryResultTab(): void {
     showQueryDetail.value = true
     const sqlEditorHeight = sqlEditorMinHeight
@@ -183,7 +181,6 @@
     setEditorAndResultHeights(sqlEditorHeight, queryResultHeight)
   }
 
-  // 最小化查询结果区域
   function minimizeQueryResultTab(): void {
     showQueryDetail.value = false
     const sqlEditorHeight =
@@ -191,7 +188,6 @@
     setEditorAndResultHeights(sqlEditorHeight, 0)
   }
 
-  // 处理分隔条的拖动事件
   function handleResizerDrag(): void {
     const onMouseDown = (event: MouseEvent): void => {
       const initialMouseY = event.clientY
