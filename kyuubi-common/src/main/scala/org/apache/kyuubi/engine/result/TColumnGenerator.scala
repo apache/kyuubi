@@ -34,8 +34,7 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     val ret = new JArrayList[T](rowSize)
     val nulls = new JBitSet()
     var idx = 0
-    while (idx < rowSize) {
-      val row = rows(idx)
+    rows.foreach { row =>
       val isNull = isColumnNullAt(row, ordinal)
       if (isNull) {
         nulls.set(idx, true)
