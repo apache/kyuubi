@@ -3119,7 +3119,7 @@ object KyuubiConf {
       .version("1.10.0")
       .serverOnly
       .timeConf
-      .createWithDefaultString("P14D")
+      .createWithDefaultString("P30D")
 
   val SERVER_TEMP_FILE_EXPIRE_MAX_COUNT: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.tempFile.maxCount")
