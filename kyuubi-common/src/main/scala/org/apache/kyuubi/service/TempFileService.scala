@@ -35,17 +35,23 @@ class TempFileService(name: String) extends AbstractService(name) {
   private lazy val cleanupScheduler =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-cleanup-scheduler")
 
+  def remainedExpiringFilesCount(): Long = expiringFiles.size()
+
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)
     val expireTimeInMs = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME)
-    expiringFiles = CacheBuilder.newBuilder()
-      .expireAfterWrite(expireTimeInMs, TimeUnit.MILLISECONDS)
-      .removalListener((notification: RemovalNotification[String, String]) => {
-        val pathStr = notification.getValue
-        debug(s"Remove expired temp file: $pathStr")
-        cleanupFilePath(pathStr)
-      })
-      .build[String, String]()
+    val maxCountOpt = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_MAX_COUNT)
+    expiringFiles = {
+      val builder = CacheBuilder.newBuilder()
+        .expireAfterWrite(expireTimeInMs, TimeUnit.MILLISECONDS)
+        .removalListener((notification: RemovalNotification[String, String]) => {
+          val pathStr = notification.getValue
+          debug(s"Remove expired temp file: $pathStr")
+          cleanupFilePath(pathStr)
+        })
+      maxCountOpt.foreach(builder.maximumSize(_))
+      builder.build()
+    }
 
     cleanupScheduler.scheduleAtFixedRate(
       () => expiringFiles.cleanUp(),
@@ -84,6 +90,7 @@ class TempFileService(name: String) extends AbstractService(name) {
       path.toString)
     TempFileCleanupUtils.deleteOnExit(path)
   }
+
 }
 
 object TempFileService {
