@@ -377,7 +377,21 @@ class BatchJobSubmission(
             // we can not change state safely
             killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
           } else if (!isTerminalState(state)) {
-            // failed to kill, the kill message is enough
+            _applicationInfo = currentApplicationInfo()
+            _applicationInfo.map(_.state) match {
+              case Some(ApplicationState.FINISHED) =>
+                setState(OperationState.FINISHED)
+                updateBatchMetadata()
+              case Some(ApplicationState.FAILED) =>
+                setState(OperationState.ERROR)
+                updateBatchMetadata()
+              case Some(ApplicationState.UNKNOWN) |
+                  Some(ApplicationState.NOT_FOUND) |
+                  Some(ApplicationState.KILLED) =>
+                setState(OperationState.CANCELED)
+                updateBatchMetadata()
+              case _ => // failed to kill, the kill message is enough
+            }
           }
         }
       }
