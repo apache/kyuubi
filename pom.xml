@@ -266,7 +266,7 @@
         <spotless.python.includes></spotless.python.includes>
         <spotless.python.black.version>22.3.0</spotless.python.black.version>
         <!-- Please also update .scalafmt.conf when you change it here -->
-        <spotless.scala.scalafmt.version>3.7.5</spotless.scala.scalafmt.version>
+        <spotless.scala.scalafmt.version>3.8.6</spotless.scala.scalafmt.version>
 
         <distMgmtReleaseId>apache.releases.https</distMgmtReleaseId>
         <distMgmtReleaseName>Apache Release Distribution Repository</distMgmtReleaseName>
