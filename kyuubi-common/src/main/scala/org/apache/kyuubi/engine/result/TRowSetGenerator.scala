@@ -86,16 +86,12 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
   def toColumnBasedSetInParallel(rows: Seq[RowT], schema: SchemaT): TRowSet = {
     implicit val ec: ExecutionContextExecutor = tColumnParallelGenerator
 
-    val columnIndexSeq = 0 until getColumnSizeFromSchemaType(schema)
-    val tColumnsFutures = columnIndexSeq.map { colIdx =>
-      Future {
-        (colIdx, toTColumn(rows, colIdx, getColumnType(schema, colIdx)))
+    val tColumnsFutures = (0 until getColumnSizeFromSchemaType(schema))
+      .map { index =>
+        Future(index, toTColumn(rows, index, getColumnType(schema, index)))
       }
-    }
     val tColumns = Await.result(Future.sequence(tColumnsFutures), Duration.Inf)
-      .sortBy(_._1)
-      .map(_._2)
-      .asJava
+      .sortBy(_._1).map(_._2).asJava
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rows.length))
     tRowSet.setColumns(tColumns)
     tRowSet

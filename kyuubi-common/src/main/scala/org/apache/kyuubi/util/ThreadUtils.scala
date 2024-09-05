@@ -64,7 +64,7 @@ object ThreadUtils extends Logging {
   }
 
   def newForkJoinPool(
-      nThreads: Int = Runtime.getRuntime.availableProcessors,
+      nThreads: Int = Runtime.getRuntime.availableProcessors * 2,
       prefix: String): ForkJoinPool = {
     val threadFactory = new ForkJoinWorkerThreadFactory {
       override def newThread(pool: ForkJoinPool): ForkJoinWorkerThread = {
