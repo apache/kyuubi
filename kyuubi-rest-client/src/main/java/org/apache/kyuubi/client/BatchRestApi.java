@@ -77,9 +77,9 @@ public class BatchRestApi {
     return getBatchById(batchId, Collections.emptyMap());
   }
 
-  public Batch getBatchById(String batchId, Map<String, String> additionalHeaders) {
+  public Batch getBatchById(String batchId, Map<String, String> headers) {
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
-    return this.getClient().get(path, null, Batch.class, client.getAuthHeader(), additionalHeaders);
+    return this.getClient().get(path, null, Batch.class, client.getAuthHeader(), headers);
   }
 
   public GetBatchesResponse listBatches(
@@ -139,14 +139,13 @@ public class BatchRestApi {
   }
 
   public OperationLog getBatchLocalLog(
-      String batchId, int from, int size, Map<String, String> additionalHeaders) {
+      String batchId, int from, int size, Map<String, String> headers) {
     Map<String, Object> params = new HashMap<>();
     params.put("from", from);
     params.put("size", size);
 
     String path = String.format("%s/%s/localLog", API_BASE_PATH, batchId);
-    return this.getClient()
-        .get(path, params, OperationLog.class, client.getAuthHeader(), additionalHeaders);
+    return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader(), headers);
   }
 
   /**
@@ -169,10 +168,10 @@ public class BatchRestApi {
     return deleteBatch(batchId, Collections.emptyMap());
   }
 
-  public CloseBatchResponse deleteBatch(String batchId, Map<String, String> additionalHeaders) {
+  public CloseBatchResponse deleteBatch(String batchId, Map<String, String> headers) {
     String path = String.format("%s/%s", API_BASE_PATH, batchId);
     return this.getClient()
-        .delete(path, null, CloseBatchResponse.class, client.getAuthHeader(), additionalHeaders);
+        .delete(path, null, CloseBatchResponse.class, client.getAuthHeader(), headers);
   }
 
   private IRestClient getClient() {

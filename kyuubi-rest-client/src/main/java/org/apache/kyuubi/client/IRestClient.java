@@ -28,28 +28,21 @@ public interface IRestClient extends AutoCloseable {
       Map<String, Object> params,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders);
+      Map<String, String> headers);
 
   default <T> T get(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     return get(path, params, type, authHeader, Collections.emptyMap());
   }
 
   String get(
-      String path,
-      Map<String, Object> params,
-      String authHeader,
-      Map<String, String> additionalHeaders);
+      String path, Map<String, Object> params, String authHeader, Map<String, String> headers);
 
   default String get(String path, Map<String, Object> params, String authHeader) {
     return get(path, params, authHeader, Collections.emptyMap());
   }
 
   <T> T post(
-      String path,
-      String body,
-      Class<T> type,
-      String authHeader,
-      Map<String, String> additionalHeaders);
+      String path, String body, Class<T> type, String authHeader, Map<String, String> headers);
 
   default <T> T post(String path, String body, Class<T> type, String authHeader) {
     return post(path, body, type, authHeader, Collections.emptyMap());
@@ -60,31 +53,27 @@ public interface IRestClient extends AutoCloseable {
       Map<String, MultiPart> multiPartMap,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders);
+      Map<String, String> headers);
 
   default <T> T post(
       String path, Map<String, MultiPart> multiPartMap, Class<T> type, String authHeader) {
     return post(path, multiPartMap, type, authHeader, Collections.emptyMap());
   }
 
-  String post(String path, String body, String authHeader, Map<String, String> additionalHeaders);
+  String post(String path, String body, String authHeader, Map<String, String> headers);
 
   default String post(String path, String body, String authHeader) {
     return post(path, body, authHeader, Collections.emptyMap());
   }
 
   <T> T put(
-      String path,
-      String body,
-      Class<T> type,
-      String authHeader,
-      Map<String, String> additionalHeaders);
+      String path, String body, Class<T> type, String authHeader, Map<String, String> headers);
 
   default <T> T put(String path, String body, Class<T> type, String authHeader) {
     return put(path, body, type, authHeader, Collections.emptyMap());
   }
 
-  String put(String path, String body, String authHeader, Map<String, String> additionalHeaders);
+  String put(String path, String body, String authHeader, Map<String, String> headers);
 
   default String put(String path, String body, String authHeader) {
     return put(path, body, authHeader, Collections.emptyMap());
@@ -95,17 +84,14 @@ public interface IRestClient extends AutoCloseable {
       Map<String, Object> params,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders);
+      Map<String, String> headers);
 
   default <T> T delete(String path, Map<String, Object> params, Class<T> type, String authHeader) {
     return delete(path, params, type, authHeader, Collections.emptyMap());
   }
 
   String delete(
-      String path,
-      Map<String, Object> params,
-      String authHeader,
-      Map<String, String> additionalHeaders);
+      String path, Map<String, Object> params, String authHeader, Map<String, String> headers);
 
   default String delete(String path, Map<String, Object> params, String authHeader) {
     return delete(path, params, authHeader, Collections.emptyMap());

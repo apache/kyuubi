@@ -75,39 +75,31 @@ public class RestClient implements IRestClient {
       Map<String, Object> params,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders) {
-    String responseJson = get(path, params, authHeader, additionalHeaders);
+      Map<String, String> headers) {
+    String responseJson = get(path, params, authHeader, headers);
     return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
   public String get(
-      String path,
-      Map<String, Object> params,
-      String authHeader,
-      Map<String, String> additionalHeaders) {
-    return doRequest(buildURI(path, params), authHeader, RequestBuilder.get(), additionalHeaders);
+      String path, Map<String, Object> params, String authHeader, Map<String, String> headers) {
+    return doRequest(buildURI(path, params), authHeader, RequestBuilder.get(), headers);
   }
 
   @Override
   public <T> T post(
-      String path,
-      String body,
-      Class<T> type,
-      String authHeader,
-      Map<String, String> additionalHeaders) {
-    String responseJson = post(path, body, authHeader, additionalHeaders);
+      String path, String body, Class<T> type, String authHeader, Map<String, String> headers) {
+    String responseJson = post(path, body, authHeader, headers);
     return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
-  public String post(
-      String path, String body, String authHeader, Map<String, String> additionalHeaders) {
+  public String post(String path, String body, String authHeader, Map<String, String> headers) {
     RequestBuilder postRequestBuilder = RequestBuilder.post();
     if (body != null) {
       postRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     }
-    return doRequest(buildURI(path), authHeader, postRequestBuilder, additionalHeaders);
+    return doRequest(buildURI(path), authHeader, postRequestBuilder, headers);
   }
 
   @Override
@@ -116,7 +108,7 @@ public class RestClient implements IRestClient {
       Map<String, MultiPart> multiPartMap,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders) {
+      Map<String, String> headers) {
     MultipartEntityBuilder entityBuilder =
         MultipartEntityBuilder.create().setCharset(StandardCharsets.UTF_8);
     multiPartMap.forEach(
@@ -141,30 +133,24 @@ public class RestClient implements IRestClient {
     RequestBuilder postRequestBuilder = RequestBuilder.post(buildURI(path));
     postRequestBuilder.setHeader(httpEntity.getContentType());
     postRequestBuilder.setEntity(httpEntity);
-    String responseJson =
-        doRequest(buildURI(path), authHeader, postRequestBuilder, additionalHeaders);
+    String responseJson = doRequest(buildURI(path), authHeader, postRequestBuilder, headers);
     return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
   public <T> T put(
-      String path,
-      String body,
-      Class<T> type,
-      String authHeader,
-      Map<String, String> additionalHeaders) {
-    String responseJson = put(path, body, authHeader, additionalHeaders);
+      String path, String body, Class<T> type, String authHeader, Map<String, String> headers) {
+    String responseJson = put(path, body, authHeader, headers);
     return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
-  public String put(
-      String path, String body, String authHeader, Map<String, String> additionalHeaders) {
+  public String put(String path, String body, String authHeader, Map<String, String> headers) {
     RequestBuilder putRequestBuilder = RequestBuilder.put();
     if (body != null) {
       putRequestBuilder.setEntity(new StringEntity(body, StandardCharsets.UTF_8));
     }
-    return doRequest(buildURI(path), authHeader, putRequestBuilder, additionalHeaders);
+    return doRequest(buildURI(path), authHeader, putRequestBuilder, headers);
   }
 
   @Override
@@ -173,33 +159,26 @@ public class RestClient implements IRestClient {
       Map<String, Object> params,
       Class<T> type,
       String authHeader,
-      Map<String, String> additionalHeaders) {
-    String responseJson = delete(path, params, authHeader, additionalHeaders);
+      Map<String, String> headers) {
+    String responseJson = delete(path, params, authHeader, headers);
     return JsonUtils.fromJson(responseJson, type);
   }
 
   @Override
   public String delete(
-      String path,
-      Map<String, Object> params,
-      String authHeader,
-      Map<String, String> additionalHeaders) {
-    return doRequest(
-        buildURI(path, params), authHeader, RequestBuilder.delete(), additionalHeaders);
+      String path, Map<String, Object> params, String authHeader, Map<String, String> headers) {
+    return doRequest(buildURI(path, params), authHeader, RequestBuilder.delete(), headers);
   }
 
   private String doRequest(
-      URI uri,
-      String authHeader,
-      RequestBuilder requestBuilder,
-      Map<String, String> additionalHeaders) {
+      URI uri, String authHeader, RequestBuilder requestBuilder, Map<String, String> headers) {
     String response;
     try {
       if (requestBuilder.getFirstHeader(HttpHeaders.CONTENT_TYPE) == null) {
         requestBuilder.setHeader(
             HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
       }
-      additionalHeaders.forEach(requestBuilder::setHeader);
+      headers.forEach(requestBuilder::setHeader);
       if (StringUtils.isNotBlank(authHeader)) {
         requestBuilder.setHeader(HttpHeaders.AUTHORIZATION, authHeader);
       }
