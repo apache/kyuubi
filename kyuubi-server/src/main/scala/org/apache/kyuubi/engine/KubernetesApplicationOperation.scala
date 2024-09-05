@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.util.Locale
-import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -68,6 +68,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
+
+  private var cleanupCanceledAppPodExecutor: ThreadPoolExecutor = _
 
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
@@ -131,27 +133,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             case COMPLETED => !ApplicationState.isFailed(notification.getValue)
           }
           if (shouldDelete) {
-            val podName = removed.name
-            try {
-              val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
-              val deleted = if (podName == null) {
-                !kubernetesClient.pods()
-                  .withLabel(LABEL_KYUUBI_UNIQUE_KEY, appLabel)
-                  .delete().isEmpty
-              } else {
-                !kubernetesClient.pods().withName(podName).delete().isEmpty
-              }
-              if (deleted) {
-                info(s"[$kubernetesInfo] Operation of delete pod $podName with" +
-                  s" ${toLabel(appLabel)} is completed.")
-              } else {
-                warn(s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(appLabel)}.")
-              }
-            } catch {
-              case NonFatal(e) => error(
-                  s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(appLabel)}",
-                  e)
-            }
+            deletePod(kubernetesInfo, removed.name, appLabel)
           }
           info(s"Remove terminated application $removed with ${toLabel(appLabel)}")
         }
@@ -175,6 +157,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupDriverPodCheckInterval,
       cleanupDriverPodCheckInterval,
       TimeUnit.MILLISECONDS)
+    cleanupCanceledAppPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
+      "cleanup-canceled-app-pod-thread")
   }
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
@@ -296,6 +280,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           pod,
           appStateSource,
           appStateContainer)
+        cleanupCanceledAppPodExecutor.submit(new Runnable {
+          override def run(): Unit = {
+            val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+          }
+        })
       }
     }
 
@@ -414,6 +403,32 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupTerminatedAppInfoTrigger.put(
         key,
         toApplicationState(pod, appStateSource, appStateContainer))
+    }
+  }
+
+  private def deletePod(
+      kubernetesInfo: KubernetesInfo,
+      podName: String,
+      podLabelUniqueKey: String): Unit = {
+    try {
+      val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
+      val deleted = if (podName == null) {
+        !kubernetesClient.pods()
+          .withLabel(LABEL_KYUUBI_UNIQUE_KEY, podLabelUniqueKey)
+          .delete().isEmpty
+      } else {
+        !kubernetesClient.pods().withName(podName).delete().isEmpty
+      }
+      if (deleted) {
+        info(s"[$kubernetesInfo] Operation of delete pod $podName with" +
+          s" ${toLabel(podLabelUniqueKey)} is completed.")
+      } else {
+        warn(s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(podLabelUniqueKey)}.")
+      }
+    } catch {
+      case NonFatal(e) => error(
+          s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(podLabelUniqueKey)}",
+          e)
     }
   }
 }
