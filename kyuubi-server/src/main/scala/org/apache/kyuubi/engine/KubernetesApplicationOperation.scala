@@ -286,25 +286,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           pod,
           appStateSource,
           appStateContainer)
-        if (kyuubiConf.isRESTEnabled) {
-          cleanupCanceledAppPodExecutor.submit(new Runnable {
-            override def run(): Unit = Utils.tryLogNonFatalError {
-              val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
-              val batch = metadataManager.flatMap(_.getBatchSessionMetadata(kyuubiUniqueKey))
-              if (batch.map(_.state).map(OperationState.withName)
-                  .exists(_ == OperationState.CANCELED)) {
-                warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is canceled, " +
-                  s"try to delete the pod ${pod.getMetadata.getName}")
-                deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
-              }
-            }
-          })
-        }
+        checkPodAppCanceled(kubernetesInfo, pod)
       }
     }
 
     override def onUpdate(oldPod: Pod, newPod: Pod): Unit = {
       if (isSparkEnginePod(newPod)) {
+        val kyuubiUniqueKey = newPod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+        val firstUpdate = appInfoStore.get(kyuubiUniqueKey) == null
         updateApplicationState(kubernetesInfo, newPod)
         val appState = toApplicationState(newPod, appStateSource, appStateContainer)
         if (isTerminated(appState)) {
@@ -315,6 +304,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           newPod,
           appStateSource,
           appStateContainer)
+        if (firstUpdate) {
+          checkPodAppCanceled(kubernetesInfo, newPod)
+        }
       }
     }
 
@@ -444,6 +436,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       case NonFatal(e) => error(
           s"[$kubernetesInfo] Failed to delete pod $podName with ${toLabel(podLabelUniqueKey)}",
           e)
+    }
+  }
+
+  private def checkPodAppCanceled(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+    if (kyuubiConf.isRESTEnabled) {
+      cleanupCanceledAppPodExecutor.submit(new Runnable {
+        override def run(): Unit = Utils.tryLogNonFatalError {
+          val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+          val batch = metadataManager.flatMap(_.getBatchSessionMetadata(kyuubiUniqueKey))
+          if (batch.map(_.state).map(OperationState.withName)
+              .exists(_ == OperationState.CANCELED)) {
+            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is canceled, " +
+              s"try to delete the pod ${pod.getMetadata.getName}")
+            deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
+          }
+        }
+      })
     }
   }
 }
