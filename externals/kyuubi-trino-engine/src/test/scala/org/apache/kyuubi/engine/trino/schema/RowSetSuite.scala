@@ -346,10 +346,10 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to TRowset in parallel") {
     TProtocolVersion.values().foreach { proto =>
-      val set1 =
-        new TrinoTRowSetGenerator().toTRowSet(rows, schema, proto, isExecuteInParallel = false)
-      val set2 =
-        new TrinoTRowSetGenerator().toTRowSet(rows, schema, proto, isExecuteInParallel = true)
+      val set1 = new TrinoTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = false)
+      val set2 = new TrinoTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = true)
       assert(set1 == set2)
     }
   }

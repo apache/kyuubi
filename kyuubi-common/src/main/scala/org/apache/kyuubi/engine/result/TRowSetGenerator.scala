@@ -45,11 +45,7 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
       toRowBasedSet(rows, schema)
     } else {
-      if (isExecuteInParallel) {
-        toColumnBasedSetInParallel(rows, schema)
-      } else {
-        toColumnBasedSet(rows, schema)
-      }
+      toColumnBasedSet(rows, schema, isExecuteInParallel)
     }
   }
 
@@ -68,32 +64,21 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
+  def toColumnBasedSet(
+      rows: Seq[RowT],
+      schema: SchemaT,
+      toColumnBasedSetInParallel: Boolean = false): TRowSet = {
     val rowSize = rows.length
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rowSize))
-    var i = 0
-    val columnSize = getColumnSizeFromSchemaType(schema)
-    val tColumns = new JArrayList[TColumn](columnSize)
-    while (i < columnSize) {
-      val tColumn = toTColumn(rows, i, getColumnType(schema, i))
-      tColumns.add(tColumn)
-      i += 1
+    val columnIdRange = (0 until getColumnSizeFromSchemaType(schema))
+    val tColumns = if (toColumnBasedSetInParallel) {
+      implicit val ec: ExecutionContextExecutor = tColumnParallelGenerator
+      val futures = columnIdRange.map(i => Future(i, toTColumn(rows, i, getColumnType(schema, i))))
+      Await.result(Future.sequence(futures), Duration.Inf).sortBy(_._1).map(_._2)
+    } else {
+      columnIdRange.map(i => toTColumn(rows, i, getColumnType(schema, i)))
     }
-    tRowSet.setColumns(tColumns)
-    tRowSet
-  }
-
-  def toColumnBasedSetInParallel(rows: Seq[RowT], schema: SchemaT): TRowSet = {
-    implicit val ec: ExecutionContextExecutor = tColumnParallelGenerator
-
-    val tColumnsFutures = (0 until getColumnSizeFromSchemaType(schema))
-      .map { index =>
-        Future(index, toTColumn(rows, index, getColumnType(schema, index)))
-      }
-    val tColumns = Await.result(Future.sequence(tColumnsFutures), Duration.Inf)
-      .sortBy(_._1).map(_._2).asJava
-    val tRowSet = new TRowSet(0, new JArrayList[TRow](rows.length))
-    tRowSet.setColumns(tColumns)
+    tRowSet.setColumns(tColumns.asJava)
     tRowSet
   }
 }
