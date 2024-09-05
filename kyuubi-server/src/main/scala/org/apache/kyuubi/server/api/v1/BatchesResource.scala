@@ -76,6 +76,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       kyuubiInstance =>
         new InternalRestClient(
           kyuubiInstance,
+          fe.getConf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER),
           internalSocketTimeout,
           internalConnectTimeout,
           internalSecurityEnabled,

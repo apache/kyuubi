@@ -19,6 +19,8 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.Base64
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, CloseBatchResponse, OperationLog}
 import org.apache.kyuubi.client.auth.AuthHeaderGenerator
@@ -38,6 +40,7 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
  */
 class InternalRestClient(
     kyuubiInstance: String,
+    proxyClientIpHeader: String,
     socketTimeout: Int,
     connectTimeout: Int,
     securityEnabled: Boolean,
@@ -53,9 +56,7 @@ class InternalRestClient(
 
   def getBatch(user: String, clientIp: String, batchId: String): Batch = {
     withAuthUser(user) {
-      withProxyClientIp(clientIp) {
-        internalBatchRestApi.getBatchById(batchId)
-      }
+      internalBatchRestApi.getBatchById(batchId, Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 
@@ -66,17 +67,17 @@ class InternalRestClient(
       from: Int,
       size: Int): OperationLog = {
     withAuthUser(user) {
-      withProxyClientIp(clientIp) {
-        internalBatchRestApi.getBatchLocalLog(batchId, from, size)
-      }
+      internalBatchRestApi.getBatchLocalLog(
+        batchId,
+        from,
+        size,
+        Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 
   def deleteBatch(user: String, clientIp: String, batchId: String): CloseBatchResponse = {
     withAuthUser(user) {
-      withProxyClientIp(clientIp) {
-        internalBatchRestApi.deleteBatch(batchId)
-      }
+      internalBatchRestApi.deleteBatch(batchId, Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 
@@ -101,22 +102,10 @@ class InternalRestClient(
       InternalRestClient.AUTH_USER.remove()
     }
   }
-
-  private def withProxyClientIp[T](clientIp: String)(f: => T): T = {
-    try {
-      InternalRestClient.PROXY_CLIENT_IP.set(clientIp)
-      f
-    } finally {
-      InternalRestClient.PROXY_CLIENT_IP.remove()
-    }
-  }
 }
 
 object InternalRestClient {
   final val AUTH_USER = new ThreadLocal[String]() {
-    override def initialValue(): String = null
-  }
-  final val PROXY_CLIENT_IP = new ThreadLocal[String]() {
     override def initialValue(): String = null
   }
 
