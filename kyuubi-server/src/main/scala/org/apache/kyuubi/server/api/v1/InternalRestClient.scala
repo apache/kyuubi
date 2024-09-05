@@ -51,21 +51,32 @@ class InternalRestClient(
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
 
-  def getBatch(user: String, batchId: String): Batch = {
+  def getBatch(user: String, clientIp: String, batchId: String): Batch = {
     withAuthUser(user) {
-      internalBatchRestApi.getBatchById(batchId)
+      withProxyClientIp(clientIp) {
+        internalBatchRestApi.getBatchById(batchId)
+      }
     }
   }
 
-  def getBatchLocalLog(user: String, batchId: String, from: Int, size: Int): OperationLog = {
+  def getBatchLocalLog(
+      user: String,
+      clientIp: String,
+      batchId: String,
+      from: Int,
+      size: Int): OperationLog = {
     withAuthUser(user) {
-      internalBatchRestApi.getBatchLocalLog(batchId, from, size)
+      withProxyClientIp(clientIp) {
+        internalBatchRestApi.getBatchLocalLog(batchId, from, size)
+      }
     }
   }
 
-  def deleteBatch(user: String, batchId: String): CloseBatchResponse = {
+  def deleteBatch(user: String, clientIp: String, batchId: String): CloseBatchResponse = {
     withAuthUser(user) {
-      internalBatchRestApi.deleteBatch(batchId)
+      withProxyClientIp(clientIp) {
+        internalBatchRestApi.deleteBatch(batchId)
+      }
     }
   }
 
@@ -90,10 +101,22 @@ class InternalRestClient(
       InternalRestClient.AUTH_USER.remove()
     }
   }
+
+  private def withProxyClientIp[T](clientIp: String)(f: => T): T = {
+    try {
+      InternalRestClient.PROXY_CLIENT_IP.set(clientIp)
+      f
+    } finally {
+      InternalRestClient.PROXY_CLIENT_IP.remove()
+    }
+  }
 }
 
 object InternalRestClient {
   final val AUTH_USER = new ThreadLocal[String]() {
+    override def initialValue(): String = null
+  }
+  final val PROXY_CLIENT_IP = new ThreadLocal[String]() {
     override def initialValue(): String = null
   }
 
