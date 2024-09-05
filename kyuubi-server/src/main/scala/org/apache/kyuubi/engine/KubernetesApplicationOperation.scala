@@ -35,6 +35,9 @@ import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, Ku
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KubernetesUtils, ThreadUtils}
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -75,6 +78,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     checkKubernetesInfo(kubernetesInfo)
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
+
+  private lazy val metadataManager = KyuubiServer.kyuubiServer.backendService
+    .sessionManager.asInstanceOf[KyuubiSessionManager].metadataManager
 
   // Visible for testing
   private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
@@ -280,11 +286,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           pod,
           appStateSource,
           appStateContainer)
-        cleanupCanceledAppPodExecutor.submit(new Runnable {
-          override def run(): Unit = {
-            val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
-          }
-        })
+        if (kyuubiConf.isRESTEnabled) {
+          cleanupCanceledAppPodExecutor.submit(new Runnable {
+            override def run(): Unit = Utils.tryLogNonFatalError {
+              val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+              val batch = metadataManager.flatMap(_.getBatchSessionMetadata(kyuubiUniqueKey))
+              if (batch.map(_.state).map(OperationState.withName)
+                  .exists(_ == OperationState.CANCELED)) {
+                warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is canceled, " +
+                  s"try to delete the pod ${pod.getMetadata.getName}")
+                deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
+              }
+            }
+          })
+        }
       }
     }
 
