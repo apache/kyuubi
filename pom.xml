@@ -133,7 +133,6 @@
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.2.0</delta.version>
@@ -446,12 +445,6 @@
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
             </dependency>
 
             <dependency>
