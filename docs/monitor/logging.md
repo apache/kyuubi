@@ -147,7 +147,7 @@ Please refer to Apache Spark online documentation [Configuring Logging](https://
 The engine logs are located differently based on the deploy mode and the cluster manager.
 When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-spark-sql-engine.log.${num}`.
 Different session users have different folders to group all live and historical engine logs.
-Each engine will have exactl one engine log.
+Each engine will have exactly one engine log.
 When using `cluster` deploy mode, the local engine logs only contain very little information, the main parts of engine logs are on the remote driver side, e.g. for YARN cluster, they are in ApplicationMasters' log.
 
 ## Logs of Flink SQL Engine
