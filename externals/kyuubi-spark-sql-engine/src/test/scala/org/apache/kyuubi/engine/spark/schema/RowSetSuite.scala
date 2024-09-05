@@ -17,18 +17,20 @@
 
 package org.apache.kyuubi.engine.spark.schema
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.sql.{Date, Timestamp}
+import java.time.{Instant, LocalDate}
+
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.sql.{Date, Timestamp}
-import java.time.{Instant, LocalDate}
-import scala.collection.JavaConverters._
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 class RowSetSuite extends KyuubiFunSuite {
 
