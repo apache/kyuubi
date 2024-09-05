@@ -72,7 +72,7 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rowSize))
     val columnIdRange = (0 until getColumnSizeFromSchemaType(schema))
     val tColumns = if (toColumnBasedSetInParallel) {
-      implicit val ec: ExecutionContextExecutor = tColumnParallelGenerator
+      implicit val ec: ExecutionContextExecutor = tColumnParallelExecutionContext
       val futures = columnIdRange.map(i => Future(i, toTColumn(rows, i, getColumnType(schema, i))))
       Await.result(Future.sequence(futures), Duration.Inf).sortBy(_._1).map(_._2)
     } else {
@@ -84,6 +84,6 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
 }
 
 object TRowSetGenerator {
-  private lazy val tColumnParallelGenerator = ExecutionContext.fromExecutor(
+  private lazy val tColumnParallelExecutionContext = ExecutionContext.fromExecutor(
     ThreadUtils.newForkJoinPool(prefix = "tcolumn-parallel-generator"))
 }
