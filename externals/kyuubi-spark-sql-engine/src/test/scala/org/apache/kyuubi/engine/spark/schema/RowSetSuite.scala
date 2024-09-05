@@ -17,20 +17,18 @@
 
 package org.apache.kyuubi.engine.spark.schema
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.sql.{Date, Timestamp}
-import java.time.{Instant, LocalDate}
-
-import scala.collection.JavaConverters._
-
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.sql.{Date, Timestamp}
+import java.time.{Instant, LocalDate}
+import scala.collection.JavaConverters._
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -282,5 +280,29 @@ class RowSetSuite extends KyuubiFunSuite {
         .toTRowSet(rows, schema, proto, isExecuteInParallel = true)
       assert(set1 == set2)
     }
+  }
+
+  test("to TRowset in parallel with benchmark result") {
+    // scalastyle:off println
+    List(TProtocolVersion.values().last).foreach { proto =>
+      println("row count: " + rows.size)
+      println("column count: " + rows.head.length)
+
+      val time1 = System.currentTimeMillis()
+      val set1 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = false)
+
+      val time2 = System.currentTimeMillis()
+      println("Time cost for non parallel execution: " + (time2 - time1) + "ms")
+
+      val set2 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = true)
+
+      val time3 = System.currentTimeMillis()
+      println("Time cost for parallel execution: " + (time3 - time2) + "ms")
+
+      assert(set1 == set2)
+    }
+    // scalastyle:on println
   }
 }
