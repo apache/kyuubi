@@ -83,7 +83,8 @@ class PlanOnlyStatement(
               // TODO: remove style configuration, keep only mode configuration
               (mode.name, style) match {
                 case (SQLStringifyPlugins(stringifyPlugin), _) =>
-                  stringifyPlugin.toString(spark, statement)
+                  val result = stringifyPlugin.toString(spark, statement)
+                  iter = new IterableFetchIterator(Seq(Row(result)))
                 case (_, PlainStyle) => explainWithPlainStyle(plan)
                 case (_, JsonStyle) => explainWithJsonStyle(plan)
                 case (_, UnknownStyle) => unknownStyleError(style)
