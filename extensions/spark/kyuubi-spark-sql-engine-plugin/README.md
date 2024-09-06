@@ -76,7 +76,7 @@ Create a `org.apache.kyuubi.engine.spark.plugin.SQLStringifyPlugin` file in `src
 org.apache.kyuubi.custom.CustomSQLStringifyPlugin
 ```
 
-Package the custom plugin jar, and put it into `$SPARK_HOME/jars` directory.
+Package the custom plugin jar, and set `spark.jars=/path/to/custom-plugin-jar`.
 
 Enjoy your custom plugin with Kyuubi Spark SQL Engine:
 
