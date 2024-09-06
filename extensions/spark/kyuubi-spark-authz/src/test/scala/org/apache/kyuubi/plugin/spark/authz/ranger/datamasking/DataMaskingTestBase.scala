@@ -17,14 +17,16 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
+import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
 
 import scala.util.Try
 
-// scalastyle:off
+import com.google.common.hash.Hashing
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.scalatest.BeforeAndAfterAll
+// scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -93,8 +95,12 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("simple query with a user has mask rules") {
-    val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
+    val result = Seq(Row(
+      Hashing.md5().hashString("1", StandardCharsets.UTF_8).toString,
+      "xxxxx",
+      "worlx",
+      Timestamp.valueOf("2018-01-01 00:00:00"),
+      "Xorld"))
     checkAnswer(
       bob,
       "SELECT value1, value2, value3, value4, value5 FROM default.src " +
