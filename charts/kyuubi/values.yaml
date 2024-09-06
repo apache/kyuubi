@@ -304,3 +304,11 @@ metrics:
     enabled: false
     # Content of Prometheus rule file
     groups: []
+
+
+# Kyuubi lifecycle
+lifecycle:
+  preStop:
+    exec:
+      command: /opt/kyuubi/bin/kyuubi-ctl delete server --host $(hostname -I) --port "10009"
+
