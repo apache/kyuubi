@@ -48,7 +48,8 @@ class SubmitBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
     batch = logBatchCommand.doRun()
 
     if (BatchUtils.isTerminalState(batch.getState) && !BatchUtils.isFinishedState(batch.getState)) {
-      error(s"Batch ${batch.getId} failed: ${JsonUtils.toJson(batch)}")
+      error(s"Batch ${batch.getId} failed:")
+      error(Render.renderBatchInfo(batch))
       throw ControlCliException(1)
     }
 
