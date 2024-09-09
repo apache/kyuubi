@@ -111,7 +111,6 @@ jobs:
         uses: github/super-linter/slim@v7
         env:
           CREATE_LOG_FILE: true
-          ERROR_ON_MISSING_EXEC_BIT: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IGNORE_GENERATED_FILES: true
           IGNORE_GITIGNORED_FILES: true
