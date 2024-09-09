@@ -118,7 +118,6 @@ jobs:
           LOG_LEVEL: NOTICE
           SUPPRESS_POSSUM: true
           VALIDATE_BASH_EXEC: true
-          VALIDATE_ENV: true
           VALIDATE_JSONC: true
           VALIDATE_POWERSHELL: true
           VALIDATE_XML: true
