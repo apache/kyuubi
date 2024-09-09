@@ -74,6 +74,15 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   override def getOperationLog: Option[OperationLog] = None
 
+  override def withOperationLog(f: => Unit): Unit = {
+    try {
+      getOperationLog.foreach(OperationLog.setCurrentOperationLog)
+      f
+    } finally {
+      OperationLog.removeCurrentOperationLog()
+    }
+  }
+
   OperationAuditLogger.audit(this, OperationState.INITIALIZED)
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _
