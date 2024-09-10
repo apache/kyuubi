@@ -3728,4 +3728,11 @@ object KyuubiConf {
       .version("1.9.1")
       .serverOnly
       .fallbackConf(HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
+
+  val PYTHON_WORKER_MAX_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("python.worker.max.pool.size")
+      .doc("Set maximum quantity of python worker pool")
+      .version("1.10.0")
+      .intConf
+      .createWithDefault(1)
 }
