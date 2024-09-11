@@ -22,7 +22,7 @@ import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.util.UUID
 
 import com.fasterxml.jackson.annotation.JsonInclude.Include
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper, SerializationFeature}
 import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -57,6 +57,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
   final private val mapper: ObjectMapper = JsonMapper.builder()
     .addModule(DefaultScalaModule)
     .serializationInclusion(Include.NON_NULL)
+    .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
     .build()
 
   test("check ranger policy file") {

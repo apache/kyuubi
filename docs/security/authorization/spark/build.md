@@ -83,6 +83,7 @@ The available `ranger.version`s are shown in the following table.
 
 | Ranger Version | Supported |                                          Remark                                           |
 |:--------------:|:---------:|:-----------------------------------------------------------------------------------------:|
+|     2.5.x      |     √     |                                             -                                             |
 |     2.4.x      |     √     |                                             -                                             |
 |     2.3.x      |     √     |                                             -                                             |
 |     2.2.x      |     √     |                                             -                                             |
