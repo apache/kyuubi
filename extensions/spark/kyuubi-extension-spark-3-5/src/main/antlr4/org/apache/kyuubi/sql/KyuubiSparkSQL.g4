@@ -51,6 +51,10 @@ singleStatement
 
 statement
     : OPTIMIZE multipartIdentifier whereClause? zorderClause        #optimizeZorder
+    | COMPACT TABLE multipartIdentifier
+              (INTO targetFileSize=INTEGER_VALUE FILE_SIZE_UNIT_LITERAL)?
+               (action=compactAction)?                              #compactTable
+    | RECOVER COMPACT TABLE multipartIdentifier                     #recoverCompactTable
     | .*?                                                           #passThrough
     ;
 
@@ -62,6 +66,9 @@ zorderClause
     : ZORDER BY order+=multipartIdentifier (',' order+=multipartIdentifier)*
     ;
 
+compactAction
+    : CLEANUP | RETAIN | LIST
+    ;
 // We don't have an expression rule in our grammar here, so we just grab the tokens and defer
 // parsing them to later.
 predicateToken
@@ -101,6 +108,12 @@ nonReserved
     | ZORDER
     ;
 
+COMPACT: 'COMPACT';
+INTO: 'INTO';
+RECOVER: 'RECOVER';
+CLEANUP: 'CLEANUP';
+RETAIN:'RETAIN';
+LIST:'LIST';
 AND: 'AND';
 BY: 'BY';
 FALSE: 'FALSE';
@@ -115,7 +128,9 @@ WHERE: 'WHERE';
 ZORDER: 'ZORDER';
 
 MINUS: '-';
-
+FILE_SIZE_UNIT_LITERAL:
+    'M' | 'MB'
+    ;
 BIGINT_LITERAL
     : DIGIT+ 'L'
     ;
