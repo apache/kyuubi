@@ -50,12 +50,12 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
   protected var isMergeMetadata: Boolean = _
 
   def initialize(
-                  partitionIndex: Int,
-                  jobId: String,
-                  groupId: Int,
-                  location: String,
-                  serializableConfiguration: SerializableConfiguration,
-                  isMergeMetadata: Boolean): Unit = {
+      partitionIndex: Int,
+      jobId: String,
+      groupId: Int,
+      location: String,
+      serializableConfiguration: SerializableConfiguration,
+      isMergeMetadata: Boolean): Unit = {
     this.partitionIndex = partitionIndex
     this.jobId = jobId
     this.groupId = groupId
@@ -80,9 +80,9 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
   }
 
   private def mergeGroup(
-                          fileSystem: FileSystem,
-                          subGroupId: Int,
-                          smallFiles: List[MergingFile]): Try[(HadoopPath, Long)] = Try {
+      fileSystem: FileSystem,
+      subGroupId: Int,
+      smallFiles: List[MergingFile]): Try[(HadoopPath, Long)] = Try {
     val stagingDir = CompactTableUtils.getStagingDir(location, jobId)
     val locationPath = new HadoopPath(location)
     val mergedFileName = s"${getMergedFilePrefix(groupId, subGroupId)}.$getMergedFileNameExtension"
@@ -123,9 +123,9 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
   protected def hadoopConf: Configuration = serializableConfiguration.value
 
   protected def mergeFiles(
-                            fileSystem: FileSystem,
-                            smallFiles: List[MergingFile],
-                            mergedFileInStaging: HadoopPath): Try[HadoopPath]
+      fileSystem: FileSystem,
+      smallFiles: List[MergingFile],
+      mergedFileInStaging: HadoopPath): Try[HadoopPath]
 
   protected def getMergedFileNameExtension: String
 

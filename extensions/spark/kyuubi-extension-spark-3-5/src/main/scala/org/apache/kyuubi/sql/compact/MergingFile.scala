@@ -43,13 +43,13 @@ object MergingFilePartition {
 }
 
 case class MergingFilePartition(
-                                 groupId: Int,
-                                 location: String,
-                                 dataSource: String,
-                                 codec: Option[String],
-                                 smallFiles: Seq[MergingFile],
-                                 // system wide variable
-                                 index: Int = -1) extends Partition {
+    groupId: Int,
+    location: String,
+    dataSource: String,
+    codec: Option[String],
+    smallFiles: Seq[MergingFile],
+    // system wide variable
+    index: Int = -1) extends Partition {
   override def toString: String = s"MergingFilePartition(index=$index,groupId=$groupId" +
     s"location $location,data source $dataSource,codec $codec," +
     s"small files ${smallFiles.mkString("[", ",", "]")})"

@@ -40,8 +40,8 @@ object CompactTableUtils {
     getCompactDataDir(tableStorage, Seq.empty)
 
   def getCompactDataDir(
-                         tableStorage: CatalogStorageFormat,
-                         partitionStorage: Seq[CatalogStorageFormat]): Seq[String] = {
+      tableStorage: CatalogStorageFormat,
+      partitionStorage: Seq[CatalogStorageFormat]): Seq[String] = {
     (partitionStorage.flatMap(_.locationUri), tableStorage.locationUri) match {
       case (partUri, _) if partUri.nonEmpty => partUri.map(_.toString)
       case (partUri, Some(tableUri)) if partUri.isEmpty => Seq(tableUri.toString)
@@ -53,7 +53,7 @@ object CompactTableUtils {
     case Seq(tbl) => TableIdentifier.apply(tbl)
     case Seq(db, tbl) => TableIdentifier.apply(tbl, Some(db))
     case _ => throw new KyuubiSQLExtensionException(
-      "only support session catalog table, please use db.table instead")
+        "only support session catalog table, please use db.table instead")
   }
 
   def getCodecFromFilePath(filePath: HadoopPath, hadoopConf: Configuration): Option[String] = {

@@ -40,11 +40,11 @@ case class SmallFileListExec(child: SparkPlan) extends LeafExecNode {
     child.execute().mapPartitionsWithIndex { (partIndex, iterator) =>
       iterator.map(CatalystTypeConverters.convertToScala(_, structType)).map {
         case Row(
-        groupId: Int,
-        location: String,
-        dataSource: String,
-        codec,
-        smallFileNameAndLength: mutable.WrappedArray[_]) =>
+              groupId: Int,
+              location: String,
+              dataSource: String,
+              codec,
+              smallFileNameAndLength: mutable.WrappedArray[_]) =>
           val codecOption = Option(codec).map(_.toString)
 
           MergingFilePartition(

@@ -36,8 +36,8 @@ import org.apache.kyuubi.sql.zorder.{OptimizeZorderStatement, Zorder}
 class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQLConfHelper {
 
   def buildOptimizeStatement(
-                              unparsedPredicateOptimize: UnparsedPredicateOptimize,
-                              parseExpression: String => Expression): LogicalPlan = {
+      unparsedPredicateOptimize: UnparsedPredicateOptimize,
+      parseExpression: String => Expression): LogicalPlan = {
 
     val UnparsedPredicateOptimize(tableIdent, tablePredicate, orderExpr) =
       unparsedPredicateOptimize
@@ -107,7 +107,7 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
   }
 
   override def visitOptimizeZorder(
-                                    ctx: OptimizeZorderContext): UnparsedPredicateOptimize = withOrigin(ctx) {
+      ctx: OptimizeZorderContext): UnparsedPredicateOptimize = withOrigin(ctx) {
     val tableIdent = multiPart(ctx.multipartIdentifier())
 
     val predicate = Option(ctx.whereClause())
@@ -137,7 +137,7 @@ class KyuubiSparkSQLAstBuilder extends KyuubiSparkSQLBaseVisitor[AnyRef] with SQ
     }
 
   override def visitRecoverCompactTable(ctx: RecoverCompactTableContext)
-  : RecoverCompactTableStatement = withOrigin(ctx) {
+      : RecoverCompactTableStatement = withOrigin(ctx) {
     val tableParts = visitMultipartIdentifier(ctx.multipartIdentifier())
     RecoverCompactTableStatement(tableParts)
   }
@@ -195,11 +195,11 @@ trait UnparsedExpressionLogicalPlan extends LogicalPlan {
   override def children: Seq[LogicalPlan] = throw new UnsupportedOperationException()
 
   protected def withNewChildrenInternal(
-                                         newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
+      newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
     throw new UnsupportedOperationException()
 }
 
 case class UnparsedPredicateOptimize(
-                                      tableIdent: Seq[String],
-                                      tablePredicate: Option[String],
-                                      orderExpr: Expression) extends UnparsedExpressionLogicalPlan {}
+    tableIdent: Seq[String],
+    tablePredicate: Option[String],
+    orderExpr: Expression) extends UnparsedExpressionLogicalPlan {}

@@ -25,9 +25,9 @@ import org.apache.spark.sql.execution.datasources.{HadoopFsRelation, LogicalRela
 case class CompactTableSparkStrategy(sparkSession: SparkSession) extends SparkStrategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case smallFileCollect@SmallFileCollect(
-      LogicalRelation(hadoopFsRelation: HadoopFsRelation, output, Some(catalogTable), _),
-      targetSizeInBytes) =>
+      case smallFileCollect @ SmallFileCollect(
+            LogicalRelation(hadoopFsRelation: HadoopFsRelation, output, Some(catalogTable), _),
+            targetSizeInBytes) =>
         SmallFileCollectExec(
           hadoopFsRelation,
           smallFileCollect.output,

@@ -16,10 +16,10 @@
  */
 package org.apache.spark.sql
 
+import scala.util.Random
+
 import org.apache.kyuubi.sql.SparkKyuubiSparkSQLParser
 import org.apache.kyuubi.sql.compact.{CompactTableOptions, CompactTableStatement, RecoverCompactTableStatement}
-
-import scala.util.Random
 
 class CompactTableParserSuite extends KyuubiSparkSQLExtensionTest {
 

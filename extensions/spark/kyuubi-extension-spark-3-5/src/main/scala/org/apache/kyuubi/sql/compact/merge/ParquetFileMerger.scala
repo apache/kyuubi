@@ -35,9 +35,9 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
   extends AbstractFileMerger(dataSource, codec) {
 
   override protected def mergeFiles(
-                                     fileSystem: FileSystem,
-                                     smallFiles: List[MergingFile],
-                                     mergedFileInStaging: HadoopPath): Try[HadoopPath] = Try {
+      fileSystem: FileSystem,
+      smallFiles: List[MergingFile],
+      mergedFileInStaging: HadoopPath): Try[HadoopPath] = Try {
     val smallFilePaths = smallFiles.map(r => new HadoopPath(location, r.name))
 
     val metadataFiles = if (isMergeMetadata) smallFilePaths else smallFilePaths.take(1)

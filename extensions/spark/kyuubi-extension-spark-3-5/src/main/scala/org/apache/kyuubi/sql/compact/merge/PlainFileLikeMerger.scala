@@ -27,9 +27,9 @@ import org.apache.kyuubi.sql.compact.{CompressionCodecsWrapper, MergingFile}
 class PlainFileLikeMerger(dataSource: String, codec: Option[String])
   extends AbstractFileMerger(dataSource, codec) {
   override protected def mergeFiles(
-                                     fileSystem: FileSystem,
-                                     smallFiles: List[MergingFile],
-                                     mergedFileInStaging: HadoopPath): Try[HadoopPath] = Try {
+      fileSystem: FileSystem,
+      smallFiles: List[MergingFile],
+      mergedFileInStaging: HadoopPath): Try[HadoopPath] = Try {
     val smallFilePaths = smallFiles.map(r => new HadoopPath(location, r.name))
     val fos = fileSystem.create(mergedFileInStaging, false)
     try {

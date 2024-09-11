@@ -40,9 +40,9 @@ object ParquetFileWriterWrapper {
   mergeInfoField.setAccessible(true)
 
   def mergeInto(
-                 toMerge: FileMetaData,
-                 mergedMetadata: GlobalMetaData,
-                 strict: Boolean): GlobalMetaData = {
+      toMerge: FileMetaData,
+      mergedMetadata: GlobalMetaData,
+      strict: Boolean): GlobalMetaData = {
     mergeInfoField.invoke(
       null,
       toMerge.asInstanceOf[AnyRef],

@@ -24,9 +24,9 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.types.StructType
 
 class FileMergingRDD(
-                      @transient private val sparkSession: SparkSession,
-                      val dataSchema: StructType,
-                      val filePartitions: Array[MergingFilePartition])
+    @transient private val sparkSession: SparkSession,
+    val dataSchema: StructType,
+    val filePartitions: Array[MergingFilePartition])
   extends RDD[InternalRow](sparkSession.sparkContext, Nil) {
 
   // TODO: 参考PartitionedFileUtil.splitFiles实现getPreferredLocations

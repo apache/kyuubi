@@ -60,14 +60,14 @@ object CompactTableOptions {
 }
 
 case class CompactTable(
-                         child: LogicalPlan,
-                         targetSizeInBytes: Option[Long],
-                         options: CompactTableOption) extends LeafCommand
+    child: LogicalPlan,
+    targetSizeInBytes: Option[Long],
+    options: CompactTableOption) extends LeafCommand
 
 case class CompactTableStatement(
-                                  tableParts: Seq[String],
-                                  targetSizeInMB: Option[Long],
-                                  options: CompactTableOption) extends LeafParsedStatement
+    tableParts: Seq[String],
+    targetSizeInMB: Option[Long],
+    options: CompactTableOption) extends LeafParsedStatement
 
 case class RecoverCompactTableStatement(tableParts: Seq[String])
   extends LeafParsedStatement

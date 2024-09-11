@@ -24,8 +24,8 @@ import org.apache.spark.sql.execution.command.LeafRunnableCommand
 import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
 
 case class RecoverCompactTableCommand(
-                                       tableIdentifier: Seq[String],
-                                       originalFileLocations: Seq[String]) extends LeafRunnableCommand {
+    tableIdentifier: Seq[String],
+    originalFileLocations: Seq[String]) extends LeafRunnableCommand {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val fileSystem = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
 
@@ -81,7 +81,7 @@ case class RecoverCompactTableCommand(
           new PathFilter {
             override def accept(path: HadoopPath): Boolean = {
               path.getName.startsWith(AbstractFileMerger.mergedFilePrefix) &&
-                !path.getName.endsWith(AbstractFileMerger.mergedFileProcessingSuffix)
+              !path.getName.endsWith(AbstractFileMerger.mergedFileProcessingSuffix)
             }
           }).foreach { mergedFile =>
           if (!fileSystem.delete(mergedFile.getPath, false)) {

@@ -17,18 +17,20 @@
 
 package org.apache.kyuubi.sql.compact
 
-import org.apache.kyuubi.sql.compact.merge.{AbstractFileMerger, FileMergerFactory}
+import java.text.SimpleDateFormat
+
+import scala.collection.mutable
+import scala.util.{Failure, Success}
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 import org.apache.spark.util.SerializableConfiguration
 
-import java.text.SimpleDateFormat
-import scala.collection.mutable
-import scala.util.{Failure, Success}
+import org.apache.kyuubi.sql.compact.merge.{AbstractFileMerger, FileMergerFactory}
 
 /**
  * SmallFileCollectExec把小文件分组后，由SmallFileMergeExec进行最终的merge
@@ -50,11 +52,11 @@ case class SmallFileMergeExec(child: SparkPlan) extends LeafExecNode {
 
       iterator.map(CatalystTypeConverters.convertToScala(_, structType)).map {
         case Row(
-        groupId: Int,
-        location: String,
-        dataSource: String,
-        codec,
-        smallFileNameAndLength: mutable.WrappedArray[_]) =>
+              groupId: Int,
+              location: String,
+              dataSource: String,
+              codec,
+              smallFileNameAndLength: mutable.WrappedArray[_]) =>
           val smallFiles = smallFileNameAndLength.map {
             case Row(subGroupId: Int, name: String, length: Long) =>
               MergingFile(subGroupId, name, length)

@@ -32,12 +32,12 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
         RecoverCompactTable(UnresolvedRelation(CompactTableUtils.getTableIdentifier(tableParts)))
 
       case RecoverCompactTable(SubqueryAlias(
-      _,
-      relation@LogicalRelation(
-      baseRelation: HadoopFsRelation,
-      _,
-      Some(catalogTable),
-      _))) =>
+            _,
+            relation @ LogicalRelation(
+              baseRelation: HadoopFsRelation,
+              _,
+              Some(catalogTable),
+              _))) =>
         val originalFileLocation = CompactTableUtils.getCompactDataDir(catalogTable.storage)
         RecoverCompactTableCommand(
           Seq(CompactTable.mergedFilesCachedTableName),
@@ -49,15 +49,15 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
           targetSize,
           options)
       case CompactTable(
-      SubqueryAlias(
-      _,
-      logicalRelation@LogicalRelation(
-      baseRelation: HadoopFsRelation,
-      _,
-      Some(catalogTable),
-      _)),
-      targetSizeInBytes,
-      options) =>
+            SubqueryAlias(
+              _,
+              logicalRelation @ LogicalRelation(
+                baseRelation: HadoopFsRelation,
+                _,
+                Some(catalogTable),
+                _)),
+            targetSizeInBytes,
+            options) =>
         createCacheCommand(
           logicalRelation,
           catalogTable,
@@ -66,9 +66,9 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
           Some(baseRelation))
 
       case CompactTable(
-      SubqueryAlias(_, hiveTableRelation: HiveTableRelation),
-      targetSizeInBytes,
-      options) =>
+            SubqueryAlias(_, hiveTableRelation: HiveTableRelation),
+            targetSizeInBytes,
+            options) =>
         // TODO: 参考RelationConversions把HiveTableRelation转换成LogicalRelation
         createCacheCommand(
           hiveTableRelation,
@@ -79,11 +79,11 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
     }
 
   private def createCacheCommand(
-                                  relation: LeafNode,
-                                  catalogTable: CatalogTable,
-                                  targetSizeInBytes: Option[Long],
-                                  options: CompactTableOption,
-                                  baseRelation: Option[HadoopFsRelation] = None): CachePerformanceViewCommand = {
+      relation: LeafNode,
+      catalogTable: CatalogTable,
+      targetSizeInBytes: Option[Long],
+      options: CompactTableOption,
+      baseRelation: Option[HadoopFsRelation] = None): CachePerformanceViewCommand = {
 
     val smallFileCollect = SmallFileCollect(relation, targetSizeInBytes)
     val repartitionByExpression =

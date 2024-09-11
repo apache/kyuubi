@@ -25,10 +25,10 @@ import org.apache.spark.sql.execution.command.{DropTableCommand, LeafRunnableCom
 import org.apache.spark.sql.execution.datasources.v2.CacheTableExec
 
 case class CachePerformanceViewCommand(
-                                        tableIdentifier: Seq[String],
-                                        performancePlan: LogicalPlan,
-                                        originalFileLocations: Seq[String],
-                                        options: CompactTableOption) extends LeafRunnableCommand {
+    tableIdentifier: Seq[String],
+    performancePlan: LogicalPlan,
+    originalFileLocations: Seq[String],
+    options: CompactTableOption) extends LeafRunnableCommand {
 
   override def innerChildren: Seq[QueryPlan[_]] = Seq(performancePlan)
 

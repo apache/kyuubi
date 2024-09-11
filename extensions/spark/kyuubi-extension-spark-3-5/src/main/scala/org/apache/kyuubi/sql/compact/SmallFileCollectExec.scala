@@ -37,10 +37,10 @@ import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
  * array of file location & size in bytes, need to be appended to the smallest file
  */
 case class SmallFileCollectExec(
-                                 baseRelation: HadoopFsRelation,
-                                 output: Seq[Attribute],
-                                 catalogTable: CatalogTable,
-                                 targetSizeInBytes: Option[Long]) extends LeafExecNode {
+    baseRelation: HadoopFsRelation,
+    output: Seq[Attribute],
+    catalogTable: CatalogTable,
+    targetSizeInBytes: Option[Long]) extends LeafExecNode {
 
   private val dataSource = baseRelation.fileFormat.asInstanceOf[DataSourceRegister].shortName()
 
@@ -120,26 +120,26 @@ case class SmallFileCollectExec(
       sparkContext.hadoopConfiguration)
 
   private def getSmallFiles(
-                             fs: FileSystem,
-                             location: HadoopPath,
-                             fileSizeInBytes: Long): Array[MergingFile] = {
+      fs: FileSystem,
+      location: HadoopPath,
+      fileSizeInBytes: Long): Array[MergingFile] = {
     fs.listStatus(
-        location,
-        new PathFilter {
-          override def accept(path: HadoopPath): Boolean = {
-            val pathName = path.getName
-            !(pathName.startsWith(".") || pathName.startsWith("_") || pathName.startsWith(
-              AbstractFileMerger.mergingFilePrefix) || pathName.startsWith(
-              AbstractFileMerger.mergedFilePrefix))
-          }
-        }).filter(_.getLen < fileSizeInBytes)
+      location,
+      new PathFilter {
+        override def accept(path: HadoopPath): Boolean = {
+          val pathName = path.getName
+          !(pathName.startsWith(".") || pathName.startsWith("_") || pathName.startsWith(
+            AbstractFileMerger.mergingFilePrefix) || pathName.startsWith(
+            AbstractFileMerger.mergedFilePrefix))
+        }
+      }).filter(_.getLen < fileSizeInBytes)
       .map(file => MergingFile(0, file.getPath.getName, file.getLen))
       .sortBy(_.length)
   }
 
   private def aggregateSmallFile(
-                                  sortedSmallFiles: Array[MergingFile],
-                                  targetFileSizeInBytes: Long): List[Seq[MergingFile]] = {
+      sortedSmallFiles: Array[MergingFile],
+      targetFileSizeInBytes: Long): List[Seq[MergingFile]] = {
     var groupedFiles: List[Seq[MergingFile]] = List.empty
     var start = 0
     var end = sortedSmallFiles.length
