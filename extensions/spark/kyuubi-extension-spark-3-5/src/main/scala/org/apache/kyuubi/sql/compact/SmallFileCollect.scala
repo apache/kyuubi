@@ -18,10 +18,10 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryParsedStatement}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
 case class SmallFileCollect(child: LogicalPlan, targetSizeInBytes: Option[Long])
-  extends UnaryParsedStatement {
+  extends UnaryNode {
 
   override def verboseString(maxFields: Int): String = s"SmallFileCollect [${output.mkString(",")}]"
 

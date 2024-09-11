@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.sql.compact
 
+import org.apache.spark.sql.catalyst.analysis.UnresolvedUnaryNode
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafCommand, LeafParsedStatement, LogicalPlan}
 import org.apache.spark.sql.types._
@@ -62,7 +63,11 @@ object CompactTableOptions {
 case class CompactTable(
     child: LogicalPlan,
     targetSizeInBytes: Option[Long],
-    options: CompactTableOption) extends LeafCommand
+    options: CompactTableOption) extends UnresolvedUnaryNode {
+  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    CompactTable(newChild, targetSizeInBytes, options)
+  }
+}
 
 case class CompactTableStatement(
     tableParts: Seq[String],

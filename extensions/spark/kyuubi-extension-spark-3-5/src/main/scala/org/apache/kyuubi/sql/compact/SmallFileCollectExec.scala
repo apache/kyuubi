@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.sql.compact
 
-import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath, PathFilter}
+import org.apache.hadoop.fs.{FileSystem, PathFilter, Path => HadoopPath}
+import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
 import org.apache.spark.network.util.JavaUtils
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -26,8 +27,6 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.LeafExecNode
 import org.apache.spark.sql.execution.datasources.HadoopFsRelation
 import org.apache.spark.sql.sources.DataSourceRegister
-
-import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
 
 /**
  * aggregate small files to groups, sum of file size in each group
@@ -44,7 +43,7 @@ case class SmallFileCollectExec(
 
   private val dataSource = baseRelation.fileFormat.asInstanceOf[DataSourceRegister].shortName()
 
-  override def nodeName: String = "SmallFileCollectExec"
+  // override def nodeName: String = "SmallFileCollectExec"
 
   override protected def doExecute(): RDD[InternalRow] = {
     val fileSizeInBytesThreshold =

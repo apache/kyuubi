@@ -18,10 +18,10 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryParsedStatement}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-case class SmallFileMerge(child: LogicalPlan, noMerge: Boolean) extends UnaryParsedStatement {
-  override def verboseString(maxFields: Int): String = s"SmallFileMerge [${output.mkString(",")}]"
+case class SmallFileMerge(child: LogicalPlan, noMerge: Boolean) extends UnaryNode {
+  // override def verboseString(maxFields: Int): String = s"SmallFileMerge [${output.mkString(",")}]"
 
   override def output: Seq[Attribute] = child.output
 

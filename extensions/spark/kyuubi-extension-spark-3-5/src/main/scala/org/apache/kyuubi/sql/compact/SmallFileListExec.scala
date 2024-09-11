@@ -17,21 +17,21 @@
 
 package org.apache.kyuubi.sql.compact
 
-import scala.collection.mutable
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
-import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
+import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
+
+import scala.collection.mutable
 
 /**
  * SmallFileCollectExec把小文件分组后，由SmallFileMergeExec进行最终的merge
  * 文件的commit过程可以参考InsertOverWriteTable
  * 需要注意其依赖关系，以便进行必要的shuffle
  */
-case class SmallFileListExec(child: SparkPlan) extends LeafExecNode {
+case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
 
   override def nodeName: String = "SmallFileListExec"
 
@@ -63,4 +63,8 @@ case class SmallFileListExec(child: SparkPlan) extends LeafExecNode {
   }
 
   override def output: Seq[Attribute] = child.output
+
+  override protected def withNewChildInternal(newChild: SparkPlan): SparkPlan = {
+    SmallFileListExec(newChild)
+  }
 }
