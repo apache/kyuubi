@@ -17,7 +17,7 @@
 package org.apache.kyuubi.ctl.cmd.submit
 
 import org.apache.kyuubi.client.api.v1.dto.Batch
-import org.apache.kyuubi.client.util.{BatchUtils, JsonUtils}
+import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.ctl.ControlCliException
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.create.CreateBatchCommand
