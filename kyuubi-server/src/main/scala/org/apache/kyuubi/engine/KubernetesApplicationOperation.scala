@@ -451,6 +451,7 @@ object KubernetesApplicationOperation extends Logging {
       .map(_.getState)
       .map(containerStateToApplicationState)
 
+    // When the pod app state is terminated, the container app state will be ignored
     val applicationState = if (ApplicationState.isTerminated(podAppState)) {
       podAppState
     } else {
