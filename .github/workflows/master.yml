@@ -106,7 +106,7 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.5" && "${{ matrix.spark-archive }}" == "" ]]; then
-            MAVEN_ARGS="${MAVEN_ARGS} -Pcodecov -Dmaven.javadoc.skip=false -Dmaven.scaladoc.skip=false"
+            export MAVEN_ARGS="${MAVEN_ARGS} -Pcodecov -Dmaven.javadoc.skip=false -Dmaven.scaladoc.skip=false"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
           ./build/mvn clean install -pl ${TEST_MODULES} -am \
