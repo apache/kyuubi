@@ -23,8 +23,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 case class SmallFileCollect(child: LogicalPlan, targetSizeInBytes: Option[Long])
   extends UnaryNode {
 
-  override def verboseString(maxFields: Int): String = s"SmallFileCollect [${output.mkString(",")}]"
-
   override def output: Seq[Attribute] = CompactTable.smallFileCollectOutputAttribute
 
   override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =

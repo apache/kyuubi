@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.io.compress._
 
-object CompressionCodecsWrapper {
+object CompressionCodecsUtil {
 
   private val codec2Class = Map(
     "bzip2" -> classOf[BZip2Codec].getName,

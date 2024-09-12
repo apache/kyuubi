@@ -29,7 +29,7 @@ object CompactTableUtils {
   private var compressionCodecs: Option[CompressionCodecFactory] = None
 
   def getStagingDir(path: String, jobId: String): HadoopPath = {
-    new HadoopPath(getCompactStagingDir(path), s".spark-staging-$jobId")
+    new HadoopPath(getCompactStagingDir(path), s".spark-compact-staging-$jobId")
   }
 
   def getCompactStagingDir(tableLocation: String): HadoopPath = {
@@ -50,8 +50,8 @@ object CompactTableUtils {
   }
 
   def getTableIdentifier(tableIdent: Seq[String]): TableIdentifier = tableIdent match {
-    case Seq(tbl) => TableIdentifier.apply(tbl)
-    case Seq(db, tbl) => TableIdentifier.apply(tbl, Some(db))
+    case Seq(tbl) => TableIdentifier(tbl)
+    case Seq(db, tbl) => TableIdentifier(tbl, Some(db))
     case _ => throw new KyuubiSQLExtensionException(
         "only support session catalog table, please use db.table instead")
   }
@@ -64,7 +64,7 @@ object CompactTableUtils {
       new HadoopPath(filePath.getName.dropRight(8))
     } else filePath
     compressionCodecs.flatMap { codecs =>
-      CompressionCodecsWrapper.class2ShortName(
+      CompressionCodecsUtil.class2ShortName(
         Option(codecs.getCodec(parquetCompatible)).map(_.getClass.getName)
           .getOrElse("no codec in file path"))
     }

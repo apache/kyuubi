@@ -55,9 +55,9 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
     s"small_file_table_${Random.alphanumeric.take(10).mkString}"
   }
 
-  def getTableSource(): String = "csv"
+  def getTableSource(): String
 
-  def getTableCodec(): Option[String] = None
+  def getTableCodec(): Option[String]
 
   def getDataFiles(tableMetadata: CatalogTable): Seq[File] =
     getFiles(tableMetadata, "part-")
@@ -71,10 +71,13 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
         && f.getName.endsWith(suffix))
   }
 
-  def getDataFileSuffix(): String = ".csv"
+  def getDataFileSuffix(): String
 
   def getMergedDataFiles(tableMetadata: CatalogTable): Seq[File] =
     getFiles(tableMetadata, AbstractFileMerger.mergedFilePrefix + "-")
+
+  private def getAllFiles(tableMetadata: CatalogTable): Seq[File] =
+    new File(tableMetadata.location).listFiles()
 
   test("generate random table") {
     val messageCountPerFile = Random.nextInt(10000) + 1000
@@ -84,10 +87,8 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
     withTable(tableName) {
       val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
       val files = getDataFiles(tableMetadata)
+      getAllFiles(tableMetadata).foreach(f => logInfo("all file: " + f.getAbsolutePath))
       assert(files.length == fileCount)
-      sql(s"select * from $tableName").collect().foreach { r =>
-        logInfo(s"records $r")
-      }
       val messageCount = sql(s"select count(1) from ${tableName}").collect().head.getLong(0)
       assert(messageCount == messageCountPerFile * fileCount)
     }

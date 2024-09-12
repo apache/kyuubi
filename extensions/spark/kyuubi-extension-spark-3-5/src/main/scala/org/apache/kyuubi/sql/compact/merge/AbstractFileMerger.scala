@@ -67,9 +67,11 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
   def merge(smallFiles: List[MergingFile]): Try[Array[MergingFile]] = Try {
     val fileSystem: FileSystem = FileSystem.get(hadoopConf)
 
-    smallFiles.foreach { merging =>
-      log.info(
-        s"merging files jobId $jobId, partition id $partitionIndex,group id $groupId,$merging")
+    if (log.isDebugEnabled()) {
+      smallFiles.foreach { merging =>
+        log.debug(
+          s"merging files jobId $jobId, partition id $partitionIndex,group id $groupId,$merging")
+      }
     }
 
     smallFiles.groupBy(_.subGroupId).map { case (subGroupId, fileGroup) =>
@@ -89,10 +91,10 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
     val mergedFileInStaging =
       new HadoopPath(stagingDir, mergedFileName + AbstractFileMerger.mergedFileProcessingSuffix)
     val targetMergedFile = new HadoopPath(locationPath, mergedFileName)
-    log.info(s"prepare to merge $dataSource files to $mergedFileInStaging")
+    log.debug(s"prepare to merge $dataSource files to $mergedFileInStaging")
     mergeFiles(fileSystem, smallFiles, mergedFileInStaging).get
     val mergingFilePrefix = getMergingFilePrefix(groupId, subGroupId)
-    log.info(s"prepare to add prefix ${mergingFilePrefix} to small files")
+    log.debug(s"prepare to add prefix ${mergingFilePrefix} to small files")
     val stagingSmallFiles = smallFiles.map(_.name).map { fileName =>
       val smallFile = new HadoopPath(location, fileName)
       val newFileName = s"$mergingFilePrefix-$fileName"
@@ -102,7 +104,7 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
       }
       smallFileNewPath
     }
-    log.info(s"move file $mergedFileInStaging to $targetMergedFile")
+    log.debug(s"move file $mergedFileInStaging to $targetMergedFile")
     if (fileSystem.exists(targetMergedFile)) {
       throw MergeFileException(s"file already exists $targetMergedFile")
     }
@@ -110,7 +112,7 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
       throw MergeFileException(s"failed to rename $mergedFileInStaging to $targetMergedFile")
     }
 
-    log.info(s"move small files to $stagingDir")
+    log.debug(s"move small files to $stagingDir")
     stagingSmallFiles.foreach { smallFilePath =>
       val stagingFile = new HadoopPath(stagingDir, smallFilePath.getName)
       if (!fileSystem.rename(smallFilePath, stagingFile)) {

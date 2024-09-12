@@ -44,18 +44,14 @@ case class SmallFileCollectExec(
 
   private val dataSource = baseRelation.fileFormat.asInstanceOf[DataSourceRegister].shortName()
 
-  // override def nodeName: String = "SmallFileCollectExec"
-
   override protected def doExecute(): RDD[InternalRow] = {
     val fileSizeInBytesThreshold =
-      targetSizeInBytes.getOrElse(JavaUtils.byteStringAsBytes(session.sqlContext.getConf(
-        CompactTable.mergeFileSizeKey,
-        "256MB")))
-    log.info(s"target merged file size in bytes $fileSizeInBytesThreshold")
+      targetSizeInBytes.getOrElse(JavaUtils.byteStringAsBytes("256MB"))
+    log.debug(s"target merged file size in bytes $fileSizeInBytesThreshold")
 
     val smallFileLocations =
       CompactTableUtils.getCompactDataDir(catalogTable.storage)
-    log.info(s"merge file data in ${smallFileLocations.mkString("[", ",", "]")}")
+    log.debug(s"merge file data in ${smallFileLocations.mkString("[", ",", "]")}")
     val fileSystem = FileSystem.get(sparkContext.hadoopConfiguration)
 
     smallFileLocations.foreach { dataPath =>
@@ -68,7 +64,7 @@ case class SmallFileCollectExec(
     }
 
     val shuffleNum = session.sqlContext.getConf("spark.sql.shuffle.partitions").toInt
-    log.info(s"target shuffle num $shuffleNum")
+    log.debug(s"target shuffle num $shuffleNum")
     val smallFileAndLocs = smallFileLocations.flatMap { loc =>
       val smallFiles = getSmallFiles(fileSystem, new HadoopPath(loc), fileSizeInBytesThreshold)
       if (smallFiles.nonEmpty) {

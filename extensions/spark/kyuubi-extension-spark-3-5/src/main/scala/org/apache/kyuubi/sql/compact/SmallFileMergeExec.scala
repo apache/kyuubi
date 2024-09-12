@@ -32,14 +32,7 @@ import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.kyuubi.sql.compact.merge.{AbstractFileMerger, FileMergerFactory}
 
-/**
- * SmallFileCollectExec把小文件分组后，由SmallFileMergeExec进行最终的merge
- * 文件的commit过程可以参考InsertOverWriteTable
- * 需要注意其依赖关系，以便进行必要的shuffle
- */
 case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
-
-  override def nodeName: String = "SmallFileMergeExec"
 
   override protected def doExecute(): RDD[InternalRow] = {
     val structType = DataTypeUtils.fromAttributes(output)

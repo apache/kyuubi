@@ -29,7 +29,6 @@ class FileMergingRDD(
     val filePartitions: Array[MergingFilePartition])
   extends RDD[InternalRow](sparkSession.sparkContext, Nil) {
 
-  // TODO: 参考PartitionedFileUtil.splitFiles实现getPreferredLocations
   override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val onePartition = split.asInstanceOf[MergingFilePartition]
     new Iterator[InternalRow] with AutoCloseable {

@@ -22,7 +22,7 @@ import scala.util.Try
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
 import org.apache.hadoop.io.IOUtils
 
-import org.apache.kyuubi.sql.compact.{CompressionCodecsWrapper, MergingFile}
+import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
 
 class PlainFileLikeMerger(dataSource: String, codec: Option[String])
   extends AbstractFileMerger(dataSource, codec) {
@@ -33,9 +33,7 @@ class PlainFileLikeMerger(dataSource: String, codec: Option[String])
     val smallFilePaths = smallFiles.map(r => new HadoopPath(location, r.name))
     val fos = fileSystem.create(mergedFileInStaging, false)
     try {
-      // refer to org.apache.hadoop.fs.shell.CopyCommands.AppendToFile
       smallFilePaths.foreach { f =>
-        log.info(s"copying file $f")
         val is = fileSystem.open(f)
         IOUtils.copyBytes(is, fos, hadoopConf, false)
         IOUtils.closeStream(is)
@@ -47,6 +45,6 @@ class PlainFileLikeMerger(dataSource: String, codec: Option[String])
   }
 
   override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsWrapper.getCodecExtension)
+    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
       .map(e => s"$dataSource.$e").getOrElse(dataSource)
 }

@@ -35,7 +35,7 @@ case class RecoverCompactTableCommand(
 
       if (fileSystem.exists(compactStagingDir)) {
         fileSystem.listStatus(compactStagingDir).foreach { subFolder =>
-          log.info(s"delete processing merged files under $subFolder")
+          log.debug(s"delete processing merged files under $subFolder")
           fileSystem.listStatus(
             subFolder.getPath,
             new PathFilter {
@@ -48,7 +48,7 @@ case class RecoverCompactTableCommand(
             }
           }
 
-          log.info(s"recover merging files under $subFolder")
+          log.debug(s"recover merging files under $subFolder")
 
           fileSystem.listStatus(
             subFolder.getPath,
@@ -68,14 +68,14 @@ case class RecoverCompactTableCommand(
           if (!fileSystem.delete(subFolder.getPath, false)) {
             throw RecoverFileException(s"failed to delete sub folder $subFolder")
           }
-          log.info(s"delete sub folder $subFolder")
+          log.debug(s"delete sub folder $subFolder")
         }
         if (!fileSystem.delete(compactStagingDir, false)) {
           throw RecoverFileException(s"failed to delete .compact folder $compactStagingDir")
         }
-        log.info(s"delete .compact folder $compactStagingDir")
+        log.debug(s"delete .compact folder $compactStagingDir")
 
-        log.info(s"delete merged files under $originalFileLocation")
+        log.debug(s"delete merged files under $originalFileLocation")
         fileSystem.listStatus(
           dataPath,
           new PathFilter {
@@ -89,10 +89,10 @@ case class RecoverCompactTableCommand(
           }
         }
       } else {
-        log.info(s"no .compact folder found skip to recover $originalFileLocation")
+        log.debug(s"no .compact folder found skip to recover $originalFileLocation")
       }
     }
-    log.warn("all files recovered")
+    log.debug("all files recovered")
     Seq.empty
   }
 }

@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafParsedStatement, Logical
 import org.apache.spark.sql.types._
 
 object CompactTable {
-  val fileLocAndSizeStructArrayType: ArrayType =
+  private val fileLocAndSizeStructArrayType: ArrayType =
     DataTypes.createArrayType(DataTypes.createStructType(Array(
       DataTypes.createStructField("sub_group_id", IntegerType, false),
       DataTypes.createStructField("name", StringType, false),
@@ -40,7 +40,6 @@ object CompactTable {
     .map(field => AttributeReference(field.name, field.dataType, field.nullable)())
 
   val mergedFilesCachedTableName = "v_merged_files"
-  val mergeFileSizeKey = "spark.sql.compact.file.size"
   val mergeMetadataKey = "spark.sql.compact.parquet.metadata.merge"
 }
 

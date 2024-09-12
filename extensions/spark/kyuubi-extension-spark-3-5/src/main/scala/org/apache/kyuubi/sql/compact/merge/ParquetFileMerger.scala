@@ -30,7 +30,7 @@ import org.apache.parquet.hadoop.util.{HadoopInputFile, HadoopOutputFile}
 import org.apache.spark.sql.SparkInternalExplorer
 
 import org.apache.kyuubi.sql.ParquetFileWriterWrapper
-import org.apache.kyuubi.sql.compact.{CompressionCodecsWrapper, MergingFile}
+import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
 
 class ParquetFileMerger(dataSource: String, codec: Option[String])
   extends AbstractFileMerger(dataSource, codec) {
@@ -42,7 +42,7 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
     val smallFilePaths = smallFiles.map(r => new HadoopPath(location, r.name))
 
     val metadataFiles = if (isMergeMetadata) smallFilePaths else smallFilePaths.take(1)
-    log.info(s"merge metadata of files ${metadataFiles.length}")
+    log.debug(s"merge metadata of files ${metadataFiles.length}")
     val mergedMetadata = mergeMetadata(metadataFiles)
     val writer = new ParquetFileWriter(
       HadoopOutputFile.fromPath(mergedFileInStaging, hadoopConf),
@@ -53,7 +53,7 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
       ParquetProperties.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH,
       ParquetProperties.DEFAULT_STATISTICS_TRUNCATE_LENGTH,
       ParquetProperties.DEFAULT_PAGE_WRITE_CHECKSUM_ENABLED)
-    log.info(
+    log.debug(
       s"begin to merge parquet files to $mergedFileInStaging from ${smallFilePaths.length} files")
 
     writer.start()
@@ -62,7 +62,7 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
     }
     writer.end(mergedMetadata.getKeyValueMetaData)
 
-    log.info(s"finish to merge parquet files to $mergedFileInStaging")
+    log.debug(s"finish to merge parquet files to $mergedFileInStaging")
 
     mergedFileInStaging
   }
@@ -85,6 +85,6 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
   }
 
   override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsWrapper.getCodecExtension)
+    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
       .map(e => s"$e.parquet").getOrElse("parquet")
 }

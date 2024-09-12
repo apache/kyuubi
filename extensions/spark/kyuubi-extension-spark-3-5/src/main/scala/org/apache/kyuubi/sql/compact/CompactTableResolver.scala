@@ -33,8 +33,8 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
 
       case RecoverCompactTable(SubqueryAlias(
             _,
-            relation @ LogicalRelation(
-              baseRelation: HadoopFsRelation,
+            LogicalRelation(
+              _: HadoopFsRelation,
               _,
               Some(catalogTable),
               _))) =>
@@ -49,7 +49,7 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
             SubqueryAlias(
               _,
               logicalRelation @ LogicalRelation(
-                baseRelation: HadoopFsRelation,
+                _: HadoopFsRelation,
                 _,
                 Some(catalogTable),
                 _)),
@@ -59,14 +59,12 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
           logicalRelation,
           catalogTable,
           targetSizeInBytes,
-          options,
-          Some(baseRelation))
+          options)
 
       case CompactTable(
             SubqueryAlias(_, hiveTableRelation: HiveTableRelation),
             targetSizeInBytes,
             options) =>
-        // TODO: 参考RelationConversions把HiveTableRelation转换成LogicalRelation
         createCacheCommand(
           hiveTableRelation,
           hiveTableRelation.tableMeta,
@@ -79,8 +77,7 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
       relation: LeafNode,
       catalogTable: CatalogTable,
       targetSizeInBytes: Option[Long],
-      options: CompactTableOption,
-      baseRelation: Option[HadoopFsRelation] = None): CachePerformanceViewCommand = {
+      options: CompactTableOption): CachePerformanceViewCommand = {
 
     val smallFileCollect = SmallFileCollect(relation, targetSizeInBytes)
     val repartitionByExpression =

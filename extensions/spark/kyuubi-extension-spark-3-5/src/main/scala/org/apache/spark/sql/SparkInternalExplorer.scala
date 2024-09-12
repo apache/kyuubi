@@ -31,7 +31,7 @@ object SparkInternalExplorer {
   def ofRows(sparkSession: SparkSession, logicalPlan: LogicalPlan): DataFrame =
     Dataset.ofRows(sparkSession, logicalPlan)
 
-  case class CacheTableAsSelectExec2(tempViewName: String, query: LogicalPlan)
+  case class CacheTableAsSelectExec(tempViewName: String, query: LogicalPlan)
     extends BaseCacheTableExec {
     override lazy val relationName: String = tempViewName
     override lazy val planToCache: LogicalPlan = {
@@ -42,8 +42,8 @@ object SparkInternalExplorer {
         properties = Map.empty,
         originalText = None,
         plan = query,
-        allowExisting = false,
-        replace = false,
+        allowExisting = true,
+        replace = true,
         viewType = LocalTempView,
         isAnalyzed = true,
         referredTempFunctions = Seq.empty).run(session)

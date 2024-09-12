@@ -26,7 +26,7 @@ case class CompactTableSparkStrategy(sparkSession: SparkSession) extends SparkSt
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
       case smallFileCollect @ SmallFileCollect(
-            LogicalRelation(hadoopFsRelation: HadoopFsRelation, output, Some(catalogTable), _),
+            LogicalRelation(hadoopFsRelation: HadoopFsRelation, _, Some(catalogTable), _),
             targetSizeInBytes) =>
         SmallFileCollectExec(
           hadoopFsRelation,

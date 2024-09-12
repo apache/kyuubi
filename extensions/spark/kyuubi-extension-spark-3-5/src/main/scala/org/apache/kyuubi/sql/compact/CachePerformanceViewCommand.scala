@@ -47,7 +47,7 @@ case class CachePerformanceViewCommand(
     }
 
     val cacheTableCommand =
-      SparkInternalExplorer.CacheTableAsSelectExec2(tableIdentifier.head, performancePlan)
+      SparkInternalExplorer.CacheTableAsSelectExec(tableIdentifier.head, performancePlan)
 
     // this result always empty
     cacheTableCommand.run()

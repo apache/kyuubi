@@ -29,7 +29,6 @@ case class MergingFile(subGroupId: Int, name: String, length: Long) {
 }
 
 object MergingFilePartition {
-  // https://issues.apache.org/jira/browse/SPARK-37621
   private def toInternalRow(part: MergingFilePartition): InternalRow = {
     val projection = UnsafeProjection.create(CompactTable.smallFileCollectOutput)
     projection(InternalRow(
@@ -48,7 +47,6 @@ case class MergingFilePartition(
     dataSource: String,
     codec: Option[String],
     smallFiles: Seq[MergingFile],
-    // system wide variable
     index: Int = -1) extends Partition {
   override def toString: String = s"MergingFilePartition(index=$index,groupId=$groupId" +
     s"location $location,data source $dataSource,codec $codec," +

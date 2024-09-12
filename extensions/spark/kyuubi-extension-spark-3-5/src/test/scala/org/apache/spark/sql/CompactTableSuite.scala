@@ -40,3 +40,15 @@ class CompactSnappyParquetTableSuiteBase extends CompactTablSuiteBase {
   override def getTableCodec(): Option[String] = Some("snappy")
   override def getDataFileSuffix(): String = ".snappy.parquet"
 }
+
+class CompactAvroTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "avro"
+  override def getTableCodec(): Option[String] = None
+  override def getDataFileSuffix(): String = ".avro"
+}
+
+class CompactGzAvroTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "avro"
+  override def getTableCodec(): Option[String] = Some("snappy")
+  override def getDataFileSuffix(): String = ".avro"
+}
