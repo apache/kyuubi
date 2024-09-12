@@ -22,7 +22,7 @@ on:
     - cron: 0 4 * * *
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
 
 jobs:
   gluten-build:
@@ -115,8 +115,8 @@ jobs:
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
