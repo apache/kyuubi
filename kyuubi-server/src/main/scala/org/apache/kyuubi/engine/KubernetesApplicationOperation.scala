@@ -445,20 +445,32 @@ object KubernetesApplicationOperation extends Logging {
           .find(cs => appStateContainer.equalsIgnoreCase(cs.getName))
       case KubernetesApplicationStateSource.POD => None
     }
-    val applicationState = containerStatusToBuildAppState
+
+    val podAppState = podStateToApplicationState(pod.getStatus.getPhase)
+    val containerAppState = containerStatusToBuildAppState
       .map(_.getState)
       .map(containerStateToApplicationState)
-      .getOrElse(podStateToApplicationState(pod.getStatus.getPhase))
-    val applicationError = if (ApplicationState.isFailed(applicationState)) {
-      val errorMap = containerStatusToBuildAppState.map { cs =>
-        Map("Pod" -> podName, "Container" -> appStateContainer, "ContainerStatus" -> cs)
-      }.getOrElse {
-        Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
-      }
-      Some(JsonUtils.toPrettyJson(errorMap.asJava))
+
+    val applicationState = if (ApplicationState.isTerminated(podAppState)) {
+      podAppState
     } else {
-      None
+      containerAppState.getOrElse(podAppState)
     }
+    val applicationError =
+      if (ApplicationState.isFailed(applicationState)) {
+        val errorMap = containerStatusToBuildAppState.map { cs =>
+          Map(
+            "Pod" -> podName,
+            "PodStatus" -> pod.getStatus,
+            "Container" -> appStateContainer,
+            "ContainerStatus" -> cs)
+        }.getOrElse {
+          Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
+        }
+        Some(JsonUtils.toPrettyJson(errorMap.asJava))
+      } else {
+        None
+      }
     applicationState -> applicationError
   }
 
