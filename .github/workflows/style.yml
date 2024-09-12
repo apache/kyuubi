@@ -64,7 +64,7 @@ jobs:
         # for more details, please visit: https://github.com/actions/toolkit/issues/399#issuecomment-666147717
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: |
-          MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true"
+          export MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true"
           build/mvn clean install -Pflink-provided,hive-provided,spark-provided,tpcds
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -Pspark-3.3
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
