@@ -22,10 +22,11 @@ import java.util
 import scala.util.Try
 
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
+import org.apache.parquet.column.ParquetProperties
 import org.apache.parquet.format.converter.ParquetMetadataConverter
-import org.apache.parquet.hadoop.{ParquetFileReader, ParquetFileWriter}
+import org.apache.parquet.hadoop.{ParquetFileReader, ParquetFileWriter, ParquetWriter}
 import org.apache.parquet.hadoop.metadata.{BlockMetaData, FileMetaData, GlobalMetaData, ParquetMetadata}
-import org.apache.parquet.hadoop.util.HadoopInputFile
+import org.apache.parquet.hadoop.util.{HadoopInputFile, HadoopOutputFile}
 import org.apache.spark.sql.SparkInternalExplorer
 
 import org.apache.kyuubi.sql.ParquetFileWriterWrapper
@@ -43,12 +44,15 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
     val metadataFiles = if (isMergeMetadata) smallFilePaths else smallFilePaths.take(1)
     log.info(s"merge metadata of files ${metadataFiles.length}")
     val mergedMetadata = mergeMetadata(metadataFiles)
-    // ParquetOutputFormat.MAX_PADDING_BYTES,ParquetOutputFormat.BLOCK_SIZE
     val writer = new ParquetFileWriter(
-      hadoopConf,
+      HadoopOutputFile.fromPath(mergedFileInStaging, hadoopConf),
       mergedMetadata.getSchema,
-      mergedFileInStaging,
-      ParquetFileWriter.Mode.CREATE)
+      ParquetFileWriter.Mode.CREATE,
+      ParquetWriter.DEFAULT_BLOCK_SIZE,
+      ParquetWriter.MAX_PADDING_SIZE_DEFAULT,
+      ParquetProperties.DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH,
+      ParquetProperties.DEFAULT_STATISTICS_TRUNCATE_LENGTH,
+      ParquetProperties.DEFAULT_PAGE_WRITE_CHECKSUM_ENABLED)
     log.info(
       s"begin to merge parquet files to $mergedFileInStaging from ${smallFilePaths.length} files")
 

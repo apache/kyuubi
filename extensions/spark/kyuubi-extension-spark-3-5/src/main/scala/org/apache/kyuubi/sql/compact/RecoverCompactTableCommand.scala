@@ -19,17 +19,17 @@ package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath, PathFilter}
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.LeafRunnableCommand
 
 import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
 
 case class RecoverCompactTableCommand(
-    tableIdentifier: Seq[String],
-    originalFileLocations: Seq[String]) extends LeafRunnableCommand {
+    catalogTable: CatalogTable) extends LeafRunnableCommand {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val fileSystem = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
 
-    originalFileLocations.foreach { originalFileLocation =>
+    CompactTableUtils.getCompactDataDir(catalogTable.storage).foreach { originalFileLocation =>
       val dataPath = new HadoopPath(originalFileLocation)
       val compactStagingDir = CompactTableUtils.getCompactStagingDir(originalFileLocation)
 

@@ -38,10 +38,7 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
               _,
               Some(catalogTable),
               _))) =>
-        val originalFileLocation = CompactTableUtils.getCompactDataDir(catalogTable.storage)
-        RecoverCompactTableCommand(
-          Seq(CompactTable.mergedFilesCachedTableName),
-          originalFileLocation)
+        RecoverCompactTableCommand(catalogTable)
 
       case CompactTableStatement(tableParts, targetSize, options) =>
         CompactTable(
