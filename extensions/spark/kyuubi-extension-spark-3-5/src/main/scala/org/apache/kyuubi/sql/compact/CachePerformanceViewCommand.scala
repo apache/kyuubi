@@ -18,11 +18,10 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{Row, SparkInternalExplorer, SparkSession}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{DropTableCommand, LeafRunnableCommand}
-import org.apache.spark.sql.execution.datasources.v2.CacheTableExec
 
 case class CachePerformanceViewCommand(
     tableIdentifier: Seq[String],
@@ -46,8 +45,10 @@ case class CachePerformanceViewCommand(
       sparkSession.sparkContext.getConf.set("spark.speculation", "false")
       log.warn("set spark.speculation to false")
     }
+
     val cacheTableCommand =
-      CacheTableExec(performancePlan, tableIdentifier, isLazy = false, Map.empty)
+      SparkInternalExplorer.CacheTableAsSelectExec2(tableIdentifier.head, performancePlan)
+
     // this result always empty
     cacheTableCommand.run()
 

@@ -7,12 +7,19 @@ done, it create a temporary view to query the compacted file details.
 
 ### syntax
 
+#### compact table
+
 ```sparksql
 compact table table_name [INTO ${targetFileSize} ${targetFileSizeUnit} ] [ cleanup | retain | list ]
 -- targetFileSizeUnit can be 'b','k','m','g','t','p'
 -- cleanup means cleaning compact staging folders, which contains original small files, default behavior
 -- retain means retaining compact staging folders, for testing, and we can recover with the staging data
 -- list means this command only get the merging result, and don't run actually
+```
+#### recover table
+```sparksql
+corecover mpact table table_name
+-- recover the compacted table, and restore the small files from staging to the original location
 ```
 
 ### example

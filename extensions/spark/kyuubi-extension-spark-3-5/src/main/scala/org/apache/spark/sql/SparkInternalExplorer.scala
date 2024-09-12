@@ -17,9 +17,46 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.LocalTempView
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.command.CreateViewCommand
+import org.apache.spark.sql.execution.datasources.v2.BaseCacheTableExec
 import org.apache.spark.util.ThreadUtils
 
 object SparkInternalExplorer {
   def parmap[I, O](in: Seq[I], prefix: String, maxThreads: Int)(f: I => O): Seq[O] =
     ThreadUtils.parmap(in, prefix, maxThreads)(f)
+
+  def ofRows(sparkSession: SparkSession, logicalPlan: LogicalPlan): DataFrame =
+    Dataset.ofRows(sparkSession, logicalPlan)
+
+  case class CacheTableAsSelectExec2(tempViewName: String, query: LogicalPlan)
+    extends BaseCacheTableExec {
+    override lazy val relationName: String = tempViewName
+    override lazy val planToCache: LogicalPlan = {
+      CreateViewCommand(
+        name = TableIdentifier(tempViewName),
+        userSpecifiedColumns = Nil,
+        comment = None,
+        properties = Map.empty,
+        originalText = None,
+        plan = query,
+        allowExisting = false,
+        replace = false,
+        viewType = LocalTempView,
+        isAnalyzed = true,
+        referredTempFunctions = Seq.empty).run(session)
+
+      dataFrameForCachedPlan.logicalPlan
+    }
+    override lazy val dataFrameForCachedPlan: DataFrame = {
+      session.table(tempViewName)
+    }
+
+    override def isLazy: Boolean = false
+
+    override def options: Map[String, String] = Map.empty
+  }
+
 }
