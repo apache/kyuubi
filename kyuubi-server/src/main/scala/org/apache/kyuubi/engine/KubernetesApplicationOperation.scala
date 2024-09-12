@@ -79,7 +79,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
-  private lazy val metadataManager = KyuubiServer.kyuubiServer.backendService
+  private def metadataManager = KyuubiServer.kyuubiServer.backendService
     .sessionManager.asInstanceOf[KyuubiSessionManager].metadataManager
 
   // Visible for testing
