@@ -75,7 +75,8 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
       .show()
 
     0 until fileCount foreach { i =>
-      logInfo(s"inserting data into table ranges between ${i * messageCountPerFile} and $messageCountPerFile")
+      logInfo(s"inserting data into table ranges between " +
+        s"${i * messageCountPerFile} and $messageCountPerFile")
 
       sql(s"""insert into $tableName
         select /*+ COALESCE(1) */id, java_method('java.util.UUID', 'randomUUID')
