@@ -17,15 +17,15 @@
 
 package org.apache.kyuubi.sql.compact
 
-import scala.collection.mutable
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
 import org.apache.spark.sql.catalyst.CatalystTypeConverters.createToScalaConverter
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
+
+import scala.collection.mutable
 
 case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
 
