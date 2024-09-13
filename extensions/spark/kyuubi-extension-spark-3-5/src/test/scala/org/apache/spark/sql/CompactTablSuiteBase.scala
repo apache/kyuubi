@@ -29,6 +29,41 @@ import org.apache.kyuubi.sql.compact.CompactTable
 import org.apache.kyuubi.sql.compact.merge.AbstractFileMerger
 
 trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
+  def getTableSource(): String
+
+  def getTableCodec(): Option[String]
+
+  def getDataFiles(tableMetadata: CatalogTable): Seq[File] =
+    getFiles(tableMetadata, "part-")
+
+  private def getFiles(tableMetadata: CatalogTable, prefix: String): Seq[File] = {
+    val location = tableMetadata.location
+    val files = new File(location).listFiles()
+    val suffix = getDataFileSuffix()
+    files.filter(f =>
+      f.getName.startsWith(prefix)
+        && f.getName.endsWith(suffix))
+  }
+
+  def getDataFileSuffix(): String
+
+  def getMergingFiles(tableMetadata: CatalogTable): Seq[File] =
+    new File(tableMetadata.location.getPath + File.separator + ".compact").listFiles().flatMap(
+      _.listFiles()).filter(_.getName.startsWith(AbstractFileMerger.mergingFilePrefix + "-"))
+
+  def getMergedDataFiles(tableMetadata: CatalogTable): Seq[File] =
+    getFiles(tableMetadata, AbstractFileMerger.mergedFilePrefix + "-")
+
+  def withRandomTable(f: (String, Int, Int) => Unit)(implicit
+      messageCountPerFile: Int = Random.nextInt(10000) + 1000,
+      fileCount: Int = Random.nextInt(100) + 10): Unit = {
+    val tableName =
+      generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
+    withTable(tableName) {
+      f(tableName, messageCountPerFile, fileCount)
+    }
+  }
+
   def generateRandomTable(
       tableSource: String,
       messageCountPerFile: Int,
@@ -55,36 +90,11 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
     s"small_file_table_${Random.alphanumeric.take(10).mkString}"
   }
 
-  def getTableSource(): String
-
-  def getTableCodec(): Option[String]
-
-  def getDataFiles(tableMetadata: CatalogTable): Seq[File] =
-    getFiles(tableMetadata, "part-")
-
-  private def getFiles(tableMetadata: CatalogTable, prefix: String): Seq[File] = {
-    val location = tableMetadata.location
-    val files = new File(location).listFiles()
-    val suffix = getDataFileSuffix()
-    files.filter(f =>
-      f.getName.startsWith(prefix)
-        && f.getName.endsWith(suffix))
-  }
-
-  def getDataFileSuffix(): String
-
-  def getMergedDataFiles(tableMetadata: CatalogTable): Seq[File] =
-    getFiles(tableMetadata, AbstractFileMerger.mergedFilePrefix + "-")
-
   private def getAllFiles(tableMetadata: CatalogTable): Seq[File] =
     new File(tableMetadata.location).listFiles()
 
   test("generate random table") {
-    val messageCountPerFile = Random.nextInt(10000) + 1000
-    val fileCount = Random.nextInt(100) + 10
-    val tableName =
-      generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
-    withTable(tableName) {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
       val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
       val files = getDataFiles(tableMetadata)
       getAllFiles(tableMetadata).foreach(f => logInfo("all file: " + f.getAbsolutePath))
@@ -94,12 +104,8 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
     }
   }
 
-  test(s"merge table") {
-    val messageCountPerFile = Random.nextInt(10000) + 1000
-    val fileCount = Random.nextInt(100) + 10
-    val tableName =
-      generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
-    withTable(tableName) {
+  test(s"compact table") {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
       val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
       val files = getDataFiles(tableMetadata)
       assert(files.length == fileCount)
@@ -118,13 +124,9 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
   }
 
   test(s"validating records") {
-    val messageCountPerFile = Random.nextInt(1000) + 100
-    val fileCount = 2
-    val tableName =
-      generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
-    withTable(tableName) {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
       val records =
-        sql(s"select * from $tableName").collect().map(r => (r.getInt(0), r.getString(1)))
+        sql(s"select * from $tableName").collect().map(r => r.getInt(0) -> r.getString(1)).toMap
 
       records.foreach { r =>
         logInfo("records: " + r)
@@ -133,24 +135,18 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
       sql(s"compact table $tableName").show()
       sql(s"refresh table $tableName").show()
       val mergedRecords =
-        sql(s"select * from $tableName").collect().map(r => (r.getInt(0), r.getString(1)))
+        sql(s"select * from $tableName").collect().map(r => r.getInt(0) -> r.getString(1)).toMap
 
       mergedRecords.foreach { r =>
         logInfo("merged records: " + r)
       }
-      assert(records.length == mergedRecords.length)
-      records.foreach { r =>
-        assert(r._2 == mergedRecords(r._1)._2)
-      }
+      assert(records.size == mergedRecords.size)
+      assert(records == mergedRecords)
     }
   }
 
   test(s"result view") {
-    val messageCountPerFile = Random.nextInt(1000) + 100
-    val fileCount = 2
-    val tableName =
-      generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
-    withTable(tableName) {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
       sql(s"compact table $tableName").show()
       val viewOpt = spark.sessionState.catalog.getTempView(
         CompactTable.mergedFilesCachedTableName)
@@ -162,6 +158,7 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
       result.foreach { r =>
         logInfo("result: " + r)
       }
+      assert(result.head.getString(2) == getTableSource())
       val mergedFileName =
         result.head.getList(4).get(0).asInstanceOf[GenericRowWithSchema].getString(1)
       val mergedTableMetadata =
@@ -169,7 +166,61 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
       val mergedFile = getMergedDataFiles(mergedTableMetadata).head
       assert(mergedFileName == mergedFile.getName)
 
+    }(Random.nextInt(1000) + 100, 2)
+  }
+
+  test("compact table list") {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
+      val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val files = getDataFiles(tableMetadata)
+      assert(files.length == fileCount)
+
+      sql(s"compact table $tableName list").show()
+      val mergedTableMetadata =
+        spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val mergedFiles = getMergedDataFiles(mergedTableMetadata)
+      assert(mergedFiles.isEmpty)
+      sql(s"select * from ${CompactTable.mergedFilesCachedTableName}").show(truncate = false)
+      val result = sql(s"select * from ${CompactTable.mergedFilesCachedTableName}").collect()
+      assert(result.length == 1)
+      assert(result.head.getString(2) == getTableSource())
     }
   }
 
+  test("compact table retain") {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
+      val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val files = getDataFiles(tableMetadata)
+      assert(files.length == fileCount)
+
+      sql(s"compact table $tableName retain").show()
+      val mergedTableMetadata =
+        spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val mergedFiles = getMergedDataFiles(mergedTableMetadata)
+      assert(mergedFiles.length == 1)
+
+      val allFile = getMergingFiles(tableMetadata)
+      assert(allFile.length == fileCount)
+    }
+  }
+
+  test("recover compact table") {
+    withRandomTable { (tableName, messageCountPerFile, fileCount) =>
+      val tableMetadata = spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val files = getDataFiles(tableMetadata)
+      assert(files.length == fileCount)
+
+      sql(s"compact table $tableName retain").show()
+      val mergedTableMetadata =
+        spark.sessionState.catalog.getTableMetadata(TableIdentifier(tableName))
+      val mergedFiles = getMergedDataFiles(mergedTableMetadata)
+      assert(mergedFiles.length == 1)
+      sql(s"recover compact table $tableName").show()
+      val recoveredFiles = getDataFiles(tableMetadata)
+      assert(recoveredFiles.length == files.length)
+      files.foreach { f =>
+        assert(recoveredFiles.exists(_.getName == f.getName))
+      }
+    }
+  }
 }
