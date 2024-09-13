@@ -25,6 +25,7 @@ import scala.util.{Failure, Success}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
+import org.apache.spark.sql.catalyst.CatalystTypeConverters.createToScalaConverter
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
@@ -43,7 +44,8 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
       val jobId = new SimpleDateFormat("yyyyMMdd-HHmmss").format(
         System.currentTimeMillis()) + s"-${partIndex}"
 
-      iterator.map(CatalystTypeConverters.convertToScala(_, structType)).map {
+      val converter = createToScalaConverter(structType)
+      iterator.map(converter).map {
         case Row(
               groupId: Int,
               location: String,

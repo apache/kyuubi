@@ -22,6 +22,7 @@ import scala.collection.mutable
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
+import org.apache.spark.sql.catalyst.CatalystTypeConverters.createToScalaConverter
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
@@ -31,7 +32,9 @@ case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
   override protected def doExecute(): RDD[InternalRow] = {
     val structType = DataTypeUtils.fromAttributes(output)
     child.execute().mapPartitionsWithIndex { (partIndex, iterator) =>
-      iterator.map(CatalystTypeConverters.convertToScala(_, structType)).map {
+      val converter = createToScalaConverter(structType)
+
+      iterator.map(converter).map {
         case Row(
               groupId: Int,
               location: String,
