@@ -18,6 +18,8 @@ package org.apache.spark.sql
 
 import scala.util.Random
 
+import org.apache.spark.sql.catalyst.parser.ParseException
+
 import org.apache.kyuubi.sql.SparkKyuubiSparkSQLParser
 import org.apache.kyuubi.sql.compact.{CompactTableOptions, CompactTableStatement, RecoverCompactTableStatement}
 
@@ -44,6 +46,50 @@ class CompactTableParserSuite extends KyuubiSparkSQLExtensionTest {
     assert(compactTableStatement.tableParts === Seq("db1", "t1"))
     assert(compactTableStatement.targetSizeInMB === Some(targetSize))
     assert(CompactTableOptions.CleanupStagingFolder === compactTableStatement.options)
+  }
+
+  test("parse compact table statement with unsupported target size unit") {
+    val targetSize = new Random(1).nextInt(256) + 1
+    val parser = new SparkKyuubiSparkSQLParser(spark.sessionState.sqlParser)
+    parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} M")
+    parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} MB")
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} B")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} K")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} KB")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} G")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} GB")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} T")
+    }
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} TB")
+    }
+  }
+
+  test("parse compact table statement with unsupported action") {
+    val targetSize = new Random(1).nextInt(256) + 1
+    val parser = new SparkKyuubiSparkSQLParser(spark.sessionState.sqlParser)
+
+    assertThrows[ParseException] {
+      parser.parsePlan(s"COMPACT TABLE db1.t1 INTO ${targetSize} M ${Random.alphanumeric.take(10)}")
+    }
   }
 
   test("parse compact table statement with retain options") {
