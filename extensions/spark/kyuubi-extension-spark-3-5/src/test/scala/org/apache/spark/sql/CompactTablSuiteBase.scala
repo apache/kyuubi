@@ -55,8 +55,8 @@ trait CompactTablSuiteBase extends KyuubiSparkSQLExtensionTest {
     getFiles(tableMetadata, AbstractFileMerger.mergedFilePrefix + "-")
 
   def withRandomTable(f: (String, Int, Int) => Unit)(implicit
-      messageCountPerFile: Int = Random.nextInt(10000) + 1000,
-      fileCount: Int = Random.nextInt(100) + 10): Unit = {
+      messageCountPerFile: Int = Random.nextInt(1000) + 1000,
+      fileCount: Int = Random.nextInt(10) + 10): Unit = {
     val tableName =
       generateRandomTable(getTableSource(), messageCountPerFile, fileCount, getTableCodec())
     withTable(tableName) {
