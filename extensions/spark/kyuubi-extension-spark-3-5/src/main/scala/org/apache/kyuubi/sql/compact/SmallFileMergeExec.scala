@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.sql.compact
 
-import org.apache.kyuubi.sql.compact.merge.{AbstractFileMerger, FileMergerFactory}
+import java.text.SimpleDateFormat
+
+import scala.collection.mutable
+import scala.util.{Failure, Success}
+
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.CatalystTypeConverters.createToScalaConverter
@@ -27,9 +31,7 @@ import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.util.SerializableConfiguration
 
-import java.text.SimpleDateFormat
-import scala.collection.mutable
-import scala.util.{Failure, Success}
+import org.apache.kyuubi.sql.compact.merge.{AbstractFileMerger, FileMergerFactory}
 
 case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
 
