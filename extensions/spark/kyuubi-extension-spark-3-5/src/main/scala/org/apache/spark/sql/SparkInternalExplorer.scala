@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.internal.config.{ConfigEntry, SPECULATION_ENABLED}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.LocalTempView
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -25,6 +26,8 @@ import org.apache.spark.sql.execution.datasources.v2.BaseCacheTableExec
 import org.apache.spark.util.ThreadUtils
 
 object SparkInternalExplorer {
+
+  val SPECULATION_ENABLED_SYNONYM: ConfigEntry[Boolean] = SPECULATION_ENABLED
   def parmap[I, O](in: Seq[I], prefix: String, maxThreads: Int)(f: I => O): Seq[O] =
     ThreadUtils.parmap(in, prefix, maxThreads)(f)
 

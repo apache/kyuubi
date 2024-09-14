@@ -40,9 +40,13 @@ case class CachePerformanceViewCommand(
     dropViewCommand.run(sparkSession)
 
     val speculation =
-      sparkSession.sparkContext.getConf.getBoolean("spark.speculation", defaultValue = false)
+      sparkSession.sparkContext.getConf.getBoolean(
+        SparkInternalExplorer.SPECULATION_ENABLED_SYNONYM.key,
+        defaultValue = false)
     if (speculation) {
-      sparkSession.sparkContext.getConf.set("spark.speculation", "false")
+      sparkSession.sparkContext.getConf.set(
+        SparkInternalExplorer.SPECULATION_ENABLED_SYNONYM.key,
+        "false")
       log.warn("set spark.speculation to false")
     }
 
@@ -61,7 +65,9 @@ case class CachePerformanceViewCommand(
 
     }
     if (speculation) {
-      sparkSession.sparkContext.getConf.set("spark.speculation", "true")
+      sparkSession.sparkContext.getConf.set(
+        SparkInternalExplorer.SPECULATION_ENABLED_SYNONYM.key,
+        "true")
       log.warn("rollback spark.speculation to true")
     }
     Seq.empty[Row]
