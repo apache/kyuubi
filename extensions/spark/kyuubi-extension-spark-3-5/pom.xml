@@ -103,7 +103,6 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-avro_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
-            <!-- Change this to match your Spark version -->
             <scope>test</scope>
         </dependency>
 

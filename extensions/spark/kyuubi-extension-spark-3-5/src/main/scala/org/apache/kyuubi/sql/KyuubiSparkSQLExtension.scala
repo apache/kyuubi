@@ -27,7 +27,7 @@ import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, KyuubiUnsupporte
 /**
  * Depend on Spark SQL Extension framework, we can use this extension follow steps
  *   1. move this jar into $SPARK_HOME/jars
- *      2. add config into `spark-defaults.conf`: `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
+ *   2. add config into `spark-defaults.conf`: `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
  */
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
