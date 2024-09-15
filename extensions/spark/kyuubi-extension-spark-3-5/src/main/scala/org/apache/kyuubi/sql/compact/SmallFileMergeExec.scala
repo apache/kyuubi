@@ -19,7 +19,6 @@ package org.apache.kyuubi.sql.compact
 
 import java.text.SimpleDateFormat
 
-import scala.collection.mutable
 import scala.util.{Failure, Success}
 
 import org.apache.spark.rdd.RDD
@@ -51,7 +50,7 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
               location: String,
               dataSource: String,
               codec,
-              smallFileNameAndLength: mutable.Seq[_]) =>
+              smallFileNameAndLength: Iterable[_]) =>
           val smallFiles = smallFileNameAndLength.map {
             case Row(subGroupId: Int, name: String, length: Long) =>
               MergingFile(subGroupId, name, length)
@@ -74,8 +73,6 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
               MergingFilePartition(groupId, location, dataSource, codecOption, mergedFile)
                 .toInternalRow
           }
-        case unknown =>
-          throw new IllegalArgumentException(s"Unexpected row: $unknown, class ${unknown.getClass}")
       }
     }
   }

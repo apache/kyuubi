@@ -17,13 +17,11 @@
 
 package org.apache.kyuubi.sql.compact
 
-import scala.collection.mutable
-
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.CatalystTypeConverters.createToScalaConverter
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, GenericRowWithSchema}
 import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 
@@ -40,7 +38,7 @@ case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
               location: String,
               dataSource: String,
               codec,
-              smallFileNameAndLength: mutable.Seq[_]) =>
+              smallFileNameAndLength: Iterable[_]) =>
           val codecOption = Option(codec).map(_.toString)
 
           MergingFilePartition(
@@ -53,8 +51,6 @@ case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
                 MergingFile(subGroupId, name, length)
             }.toList)
             .toInternalRow
-        case unknown =>
-          throw new IllegalArgumentException(s"Unexpected row: $unknown, class ${unknown.getClass}")
       }
     }
   }
