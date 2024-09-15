@@ -29,15 +29,17 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.compact._
 
 class CompactTableResolverStrategySuite extends KyuubiSparkSQLExtensionTest {
-  def getRandomTableName(): String = {
-    s"small_file_table_${Random.alphanumeric.take(10).mkString}"
+
+  def createRandomTable(): String = {
+    val tableName = s"small_file_table_${Random.alphanumeric.take(10).mkString}"
+    spark.sql(s"CREATE TABLE ${tableName} (key INT, val_str STRING) USING csv").show()
+    tableName
   }
 
   test("compact table execution plan") {
-    val tableName = getRandomTableName()
+    val tableName = createRandomTable()
     withTable(tableName) {
       withSQLConf(SQLConf.CASE_SENSITIVE.key -> "true") {
-        spark.sql(s"CREATE TABLE ${tableName} (a INT, b STRING) USING parquet").show()
         val result = spark.sql(s"compact table ${tableName}")
         result.show()
         val groupId = CompactTable.smallFileCollectOutputAttribute.head
@@ -116,10 +118,9 @@ class CompactTableResolverStrategySuite extends KyuubiSparkSQLExtensionTest {
   }
 
   test("recover compact table execution plan") {
-    val tableName = getRandomTableName()
+    val tableName = createRandomTable()
     withTable(tableName) {
       withSQLConf(SQLConf.CASE_SENSITIVE.key -> "true") {
-        spark.sql(s"CREATE TABLE ${tableName} (a INT, b STRING) USING parquet").show()
         val result = spark.sql(s"recover compact table ${tableName}")
         result.show()
         result.queryExecution.analyzed match {
