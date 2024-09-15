@@ -74,6 +74,8 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
               MergingFilePartition(groupId, location, dataSource, codecOption, mergedFile)
                 .toInternalRow
           }
+        case unknown =>
+          throw new IllegalArgumentException(s"Unexpected row: $unknown, class ${unknown.getClass}")
       }
     }
   }
