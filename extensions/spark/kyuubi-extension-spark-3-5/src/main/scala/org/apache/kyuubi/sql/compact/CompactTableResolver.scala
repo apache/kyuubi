@@ -18,6 +18,7 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.spark.internal.Logging
+import org.apache.spark.network.util.ByteUnit
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
@@ -40,10 +41,10 @@ case class CompactTableResolver(sparkSession: SparkSession) extends Rule[Logical
               _))) =>
         RecoverCompactTableCommand(catalogTable)
 
-      case CompactTableStatement(tableParts, targetSize, options) =>
+      case CompactTableStatement(tableParts, targetSizeInMB, options) =>
         CompactTable(
           UnresolvedRelation(CompactTableUtils.getTableIdentifier(tableParts)),
-          targetSize,
+          targetSizeInMB.map(ByteUnit.MiB.toBytes),
           options)
       case CompactTable(
             SubqueryAlias(
