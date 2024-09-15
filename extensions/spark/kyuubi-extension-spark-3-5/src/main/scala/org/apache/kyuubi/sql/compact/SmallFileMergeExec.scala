@@ -51,7 +51,7 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
               location: String,
               dataSource: String,
               codec,
-              smallFileNameAndLength: mutable.WrappedArray[_]) =>
+              smallFileNameAndLength: mutable.Seq[_]) =>
           val smallFiles = smallFileNameAndLength.map {
             case Row(subGroupId: Int, name: String, length: Long) =>
               MergingFile(subGroupId, name, length)

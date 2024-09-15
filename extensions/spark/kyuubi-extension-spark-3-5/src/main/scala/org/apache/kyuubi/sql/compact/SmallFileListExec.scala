@@ -40,7 +40,7 @@ case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
               location: String,
               dataSource: String,
               codec,
-              smallFileNameAndLength: mutable.WrappedArray[_]) =>
+              smallFileNameAndLength: mutable.Seq[_]) =>
           val codecOption = Option(codec).map(_.toString)
 
           MergingFilePartition(
