@@ -501,12 +501,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
       val userName = fe.getSessionUser(batchSession.user)
       val ipAddress = fe.getIpAddress
-      sessionManager.closeSession(batchSession.handle)
-      val (killed, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       batchSession.batchJobSubmissionOp.withOperationLog {
         warn(s"Received kill batch request from $userName/$ipAddress")
-        warn(s"Kill batch response: killed: $killed, msg: $msg.")
       }
+      sessionManager.closeSession(batchSession.handle)
+      val (killed, msg) = batchSession.batchJobSubmissionOp.getKillMessage
       new CloseBatchResponse(killed, msg)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
