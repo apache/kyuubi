@@ -20,9 +20,10 @@ package org.apache.kyuubi.sql.compact
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path => HadoopPath}
 import org.apache.hadoop.io.compress.CompressionCodecFactory
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
+
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object CompactTableUtils {
   private var compressionCodecs: Option[CompressionCodecFactory] = None
