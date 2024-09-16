@@ -23,12 +23,6 @@ import org.apache.parquet.hadoop.ParquetFileWriter
 import org.apache.parquet.hadoop.metadata.{FileMetaData, GlobalMetaData}
 
 object ParquetFileWriterWrapper {
-  // Caused by: java.lang.IllegalAccessError: tried to access method
-  // org.apache.parquet.hadoop.ParquetFileWriter.mergeInto(
-  // Lorg/apache/parquet/hadoop/metadata/FileMetaData;
-  // Lorg/apache/parquet/hadoop/metadata/GlobalMetaData;Z)
-  // Lorg/apache/parquet/hadoop/metadata/GlobalMetaData;
-  // from class org.apache.parquet.hadoop.ParquetFileWriterWrapper$
 
   val mergeInfoField: Method = classOf[ParquetFileWriter]
     .getDeclaredMethod(
