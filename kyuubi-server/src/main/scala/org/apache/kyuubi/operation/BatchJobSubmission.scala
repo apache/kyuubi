@@ -349,55 +349,54 @@ class BatchJobSubmission(
     if (!isClosedOrCanceled) {
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
 
-      try {
-        // fast fail
-        if (isTerminalState(state)) {
-          killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-          builder.close(true)
-          cleanupUploadedResourceIfNeeded()
-          return
-        }
+      // fast fail
+      if (isTerminalState(state)) {
+        killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+        withOperationLog(warn(s"Kill batch response: $killMessage."))
+        builder.close(true)
+        cleanupUploadedResourceIfNeeded()
+        return
+      }
 
-        try {
-          killMessage = killBatchApplication()
-          builder.close(true)
-          cleanupUploadedResourceIfNeeded()
-        } finally {
-          if (state == OperationState.INITIALIZED) {
-            // if state is INITIALIZED, it means that the batch submission has not started to run,
-            // set the state to CANCELED manually and regardless of kill result
+      try {
+        killMessage = killBatchApplication()
+        withOperationLog(warn(s"Kill batch response: $killMessage."))
+        builder.close(true)
+        cleanupUploadedResourceIfNeeded()
+      } finally {
+        if (state == OperationState.INITIALIZED) {
+          // if state is INITIALIZED, it means that the batch submission has not started to run, set
+          // the state to CANCELED manually and regardless of kill result
+          setState(OperationState.CANCELED)
+          updateBatchMetadata()
+        } else {
+          if (killMessage._1 && !isTerminalState(state)) {
+            // kill success and we can change state safely
+            // note that, the batch operation state should never be closed
             setState(OperationState.CANCELED)
             updateBatchMetadata()
-          } else {
-            if (killMessage._1 && !isTerminalState(state)) {
-              // kill success and we can change state safely
-              // note that, the batch operation state should never be closed
-              setState(OperationState.CANCELED)
-              updateBatchMetadata()
-            } else if (killMessage._1) {
-              // we can not change state safely
-              killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-            } else if (!isTerminalState(state)) {
-              _applicationInfo = currentApplicationInfo()
-              _applicationInfo.map(_.state) match {
-                case Some(ApplicationState.FINISHED) =>
-                  setState(OperationState.FINISHED)
-                  updateBatchMetadata()
-                case Some(ApplicationState.FAILED) =>
-                  setState(OperationState.ERROR)
-                  updateBatchMetadata()
-                case Some(ApplicationState.UNKNOWN) |
-                    Some(ApplicationState.NOT_FOUND) |
-                    Some(ApplicationState.KILLED) =>
-                  setState(OperationState.CANCELED)
-                  updateBatchMetadata()
-                case _ => // failed to kill, the kill message is enough
-              }
+          } else if (killMessage._1) {
+            // we can not change state safely
+            killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
+            withOperationLog(warn(s"Kill batch response: $killMessage."))
+          } else if (!isTerminalState(state)) {
+            _applicationInfo = currentApplicationInfo()
+            _applicationInfo.map(_.state) match {
+              case Some(ApplicationState.FINISHED) =>
+                setState(OperationState.FINISHED)
+                updateBatchMetadata()
+              case Some(ApplicationState.FAILED) =>
+                setState(OperationState.ERROR)
+                updateBatchMetadata()
+              case Some(ApplicationState.UNKNOWN) |
+                  Some(ApplicationState.NOT_FOUND) |
+                  Some(ApplicationState.KILLED) =>
+                setState(OperationState.CANCELED)
+                updateBatchMetadata()
+              case _ => // failed to kill, the kill message is enough
             }
           }
         }
-      } finally {
-        withOperationLog(warn(s"Kill batch response: $killMessage."))
       }
     }
   })
