@@ -20,10 +20,9 @@ package org.apache.kyuubi.sql.compact
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path => HadoopPath}
 import org.apache.hadoop.io.compress.CompressionCodecFactory
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
-
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object CompactTableUtils {
   private var compressionCodecs: Option[CompressionCodecFactory] = None
@@ -68,9 +67,12 @@ object CompactTableUtils {
     if (compressionCodecs.isEmpty) {
       compressionCodecs = Some(new CompressionCodecFactory(hadoopConf))
     }
-    val parquetCompatible = if (filePath.getName.endsWith(".parquet")) {
-      new HadoopPath(filePath.getName.dropRight(8))
-    } else filePath
+    val parquetCompatible =
+      if (filePath.getName.endsWith(".parquet")) {
+        new HadoopPath(filePath.getName.dropRight(8))
+      } else if (filePath.getName.endsWith(".orc")) {
+        new HadoopPath(filePath.getName.dropRight(4))
+      } else filePath
     compressionCodecs.flatMap { codecs =>
       CompressionCodecsUtil.class2ShortName(
         Option(codecs.getCodec(parquetCompatible)).map(_.getClass.getName)
