@@ -125,7 +125,10 @@ class BatchJobSubmission(
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
-    applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
+    val (killed, msg) =
+      applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
+    withOperationLog(warn(s"Kill batch response: killed: $killed, msg: $msg."))
+    (killed, msg)
   }
 
   private val applicationCheckInterval =
@@ -352,7 +355,6 @@ class BatchJobSubmission(
       // fast fail
       if (isTerminalState(state)) {
         killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-        withOperationLog(warn(s"Kill batch response: $killMessage."))
         builder.close(true)
         cleanupUploadedResourceIfNeeded()
         return
@@ -360,7 +362,6 @@ class BatchJobSubmission(
 
       try {
         killMessage = killBatchApplication()
-        withOperationLog(warn(s"Kill batch response: $killMessage."))
         builder.close(true)
         cleanupUploadedResourceIfNeeded()
       } finally {
@@ -378,7 +379,6 @@ class BatchJobSubmission(
           } else if (killMessage._1) {
             // we can not change state safely
             killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
-            withOperationLog(warn(s"Kill batch response: $killMessage."))
           } else if (!isTerminalState(state)) {
             _applicationInfo = currentApplicationInfo()
             _applicationInfo.map(_.state) match {
