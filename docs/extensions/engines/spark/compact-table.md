@@ -57,12 +57,12 @@ select * from v_merged_files;
 
 ## Supported table format
 
-| Table Format |   Codec    | Supported |
+| Table Format | Codec      | Supported |
 |--------------|------------|-----------|
 | parquet      | all codecs | Y         |
 | avro         | snappy     | Y         |
-| json         | gzip       | Y         |
-| csv          | gzip       | Y         |
-| text         | gzip       | Y         |
+| json         | gzip,bzip2 | Y         |
+| csv          | gzip,bzip2 | Y         |
+| text         | gzip,bzip2 | Y         |
 | orc          | snappy     | Y         |
 

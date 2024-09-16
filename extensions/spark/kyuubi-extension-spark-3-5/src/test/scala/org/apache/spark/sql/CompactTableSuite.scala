@@ -29,6 +29,12 @@ class CompactGzJsonTableSuiteBase extends CompactTablSuiteBase {
   override def getDataFileSuffix(): String = ".json.gz"
 }
 
+class CompactBzipJsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = Some("bzip2")
+  override def getDataFileSuffix(): String = ".json.bz2"
+}
+
 class CompactCsvTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "csv"
   override def getTableCodec(): Option[String] = None
@@ -39,6 +45,12 @@ class CompactGzCsvTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "csv"
   override def getTableCodec(): Option[String] = Some("gzip")
   override def getDataFileSuffix(): String = ".csv.gz"
+}
+
+class CompactBzipCsvTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "csv"
+  override def getTableCodec(): Option[String] = Some("bzip2")
+  override def getDataFileSuffix(): String = ".csv.bz2"
 }
 
 class CompactParquetTableSuiteBase extends CompactTablSuiteBase {
