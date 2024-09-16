@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.sql.compact.merge
 
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
 import scala.util.Try
 
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
 import org.apache.orc.OrcFile
 
-import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
+import org.apache.kyuubi.sql.compact.{CompactTableUtils, CompressionCodecsUtil, MergingFile}
 
 class OrcFileMerger(dataSource: String, codec: Option[String])
   extends AbstractFileMerger(dataSource, codec) {
@@ -34,7 +33,10 @@ class OrcFileMerger(dataSource: String, codec: Option[String])
     val smallFilePaths = smallFiles.map(r => new HadoopPath(location, r.name))
     val writerOptions = OrcFile.writerOptions(hadoopConf)
     val mergedFiles =
-      OrcFile.mergeFiles(mergedFileInStaging, writerOptions, smallFilePaths.asJava)
+      OrcFile.mergeFiles(
+        mergedFileInStaging,
+        writerOptions,
+        CompactTableUtils.toJavaList(smallFilePaths))
 
     if (smallFilePaths.length != mergedFiles.size) {
       val unMergedFiles = smallFilePaths.filterNot(mergedFiles.contains)

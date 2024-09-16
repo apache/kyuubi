@@ -28,6 +28,14 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 object CompactTableUtils {
   private var compressionCodecs: Option[CompressionCodecFactory] = None
 
+  def toJavaList[A](it: List[A]): java.util.List[A] = {
+    val javaList = new java.util.ArrayList[A](it.size)
+    it.indices foreach { i =>
+      javaList.add(it(i))
+    }
+    javaList
+  }
+
   def getStagingDir(path: String, jobId: String): HadoopPath = {
     new HadoopPath(getCompactStagingDir(path), s".spark-compact-staging-$jobId")
   }
