@@ -64,3 +64,15 @@ class CompactSnappyAvroTableSuiteBase extends CompactTablSuiteBase {
   override def getTableCodec(): Option[String] = Some("snappy")
   override def getDataFileSuffix(): String = ".avro"
 }
+
+class CompactOrcTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "orc"
+  override def getTableCodec(): Option[String] = None
+  override def getDataFileSuffix(): String = ".orc"
+}
+
+class CompactSnappyOrcTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "orc"
+  override def getTableCodec(): Option[String] = Some("snappy")
+  override def getDataFileSuffix(): String = ".snappy.orc"
+}

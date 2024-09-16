@@ -38,6 +38,8 @@ object FileMergerFactory extends Logging {
         new PlainFileLikeMerger(dataSource, codec)
       case ("avro", _) =>
         new AvroFileMerger(dataSource, codec)
+      case ("orc", _) =>
+        new OrcFileMerger(dataSource, codec)
       case other =>
         throw UnSupportedTableException(s"compact table doesn't support this format $other")
     }

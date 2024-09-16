@@ -64,5 +64,5 @@ select * from v_merged_files;
 | json         | gzip       | Y         |
 | csv          | gzip       | Y         |
 | text         | gzip       | Y         |
-| orc          | n/a        | N         |
+| orc          | snappy     | Y         |
 
