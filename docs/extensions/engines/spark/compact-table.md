@@ -57,7 +57,7 @@ select * from v_merged_files;
 
 ## Supported table format
 
-| Table Format | Codec      | Supported |
+| Table Format |   Codec    | Supported |
 |--------------|------------|-----------|
 | parquet      | all codecs | Y         |
 | avro         | snappy     | Y         |
