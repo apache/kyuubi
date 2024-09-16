@@ -17,6 +17,18 @@
 
 package org.apache.spark.sql
 
+class CompactJsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = None
+  override def getDataFileSuffix(): String = ".json"
+}
+
+class CompactGzJsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = Some("gzip")
+  override def getDataFileSuffix(): String = ".json.gz"
+}
+
 class CompactCsvTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "csv"
   override def getTableCodec(): Option[String] = None
@@ -47,7 +59,7 @@ class CompactAvroTableSuiteBase extends CompactTablSuiteBase {
   override def getDataFileSuffix(): String = ".avro"
 }
 
-class CompactGzAvroTableSuiteBase extends CompactTablSuiteBase {
+class CompactSnappyAvroTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "avro"
   override def getTableCodec(): Option[String] = Some("snappy")
   override def getDataFileSuffix(): String = ".avro"
