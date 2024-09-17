@@ -1215,6 +1215,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>${paimon.artifact}</artifactId>
                 <version>${paimon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1250,6 +1256,18 @@
             <id>central</id>
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>staging</id>
+            <name>Staging Repo</name>
+            <url>https://repository.apache.org/content/repositories/orgapachespark-1468/</url>
         </repository>
     </repositories>
 
@@ -2010,7 +2028,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>4.0.0-preview1</spark.version>
+                <spark.version>4.0.0-preview2</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0rc1</delta.version>
@@ -2022,6 +2040,7 @@
                 <!-- TODO: update once Paimon support Spark 4.0 -->
                 <paimon.artifact>paimon-spark-3.5</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.0.0-preview2-rc1-bin</spark.archive.mirror>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
