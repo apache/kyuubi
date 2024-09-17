@@ -63,7 +63,8 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
       sql(s"DROP NAMESPACE $catalogName.unknown")
     }.getMessage
     assert(message.contains(s"'unknown' not found") ||
-      message.contains(s"The schema `unknown` cannot be found"))
+      message.contains(s"The schema `unknown` cannot be found") ||
+      message.contains("SCHEMA_NOT_FOUND"))
   }
 
   test("drop non-empty namespace with a non-cascading mode") {

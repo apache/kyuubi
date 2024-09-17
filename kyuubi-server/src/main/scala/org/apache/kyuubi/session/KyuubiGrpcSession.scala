@@ -55,7 +55,6 @@ class KyuubiGrpcSession(
   }
 
   sessionConf.set(FRONTEND_PROTOCOLS, Seq("GRPC"))
-  sessionConf.set("spark.jars.packages", "org.apache.spark:spark-connect_2.13:4.0.0-preview1")
 
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,

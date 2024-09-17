@@ -27,7 +27,7 @@ git clone https://github.com/pan3793/kyuubi.git -b kyuubi-next kyuubi-next
 ### Requirements
 
 - `JAVA_HOME` points to Java 17
-- `SPARK_HOME` points to `/path/of/spark-4.0.0-preview1-bin-hadoop3`
+- `SPARK_HOME` points to `/path/of/spark-4.0.0-preview2-bin-hadoop3`
 
 ### Run
 
@@ -52,17 +52,15 @@ The gRPC service listens 10999 by default.
 
 ### Connect to Kyuubi Connect
 
-Spark Connect Scala client(use the latest `spark-shell` as example)
+Spark Connect Scala client (Requires: Java 17, Spark 4.0.0-preview2)
 ```
-git clone git@github.com:apache/spark.git
-cd spark
-build/sbt package -Phive
-SPARK_PREPEND_CLASSES=1 bin/spark-shell --remote sc://H27212-MAC-01.local:10999 --user_id chengpan --user_name chengpan
+cd /path/of/spark-4.0.0-preview2-bin-hadoop3
+bin/spark-shell --remote sc://H27212-MAC-01.local:10999 --user_id chengpan --user_name chengpan
 ```
 
 PySpark Connect client (Requires: Python >=3.9)
 ```
-pip install pyspark-connect==4.0.0.dev1
+pip install pyspark-connect==4.0.0.dev2
 pyspark --remote sc://H27212-MAC-01.local:10999 --user_id chengpan --user_name chengpan
 ```
 
@@ -72,7 +70,7 @@ Welcome to
       ____              __
      / __/__  ___ _____/ /__
     _\ \/ _ \/ _ `/ __/  '_/
-   /___/ .__/\_,_/_/ /_/\_\   version 4.0.0-SNAPSHOT
+   /___/ .__/\_,_/_/ /_/\_\   version 4.0.0-preview2
       /_/
 
 Type in expressions to have them evaluated.
