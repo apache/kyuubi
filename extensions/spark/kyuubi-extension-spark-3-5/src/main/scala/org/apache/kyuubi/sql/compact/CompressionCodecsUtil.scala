@@ -17,28 +17,16 @@
 
 package org.apache.kyuubi.sql.compact
 
-import org.apache.hadoop.io.compress._
-
 object CompressionCodecsUtil {
-
-  private val codec2Class = Map(
-    "bzip2" -> classOf[BZip2Codec].getName,
-    "deflate" -> classOf[DeflateCodec].getName,
-    "gzip" -> classOf[GzipCodec].getName,
-    "lz4" -> classOf[Lz4Codec].getName,
-    "snappy" -> classOf[SnappyCodec].getName)
-
-  private val class2Codec = codec2Class
-    .map(r => (r._2, r._1))
 
   private val codec2Extension = Map(
     "bzip2" -> "bz2",
     "deflate" -> "deflate",
     "gzip" -> "gz",
     "lz4" -> "lz4",
-    "snappy" -> "snappy")
-
-  def class2ShortName(className: String): Option[String] = class2Codec.get(className)
+    "zlib" -> "zlib",
+    "snappy" -> "snappy",
+    "zstd" -> "zstd")
 
   def getCodecExtension(codec: String): Option[String] = codec2Extension.get(codec)
 }

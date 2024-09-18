@@ -22,10 +22,10 @@ import scala.util.Try
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
 import org.apache.hadoop.io.IOUtils
 
-import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
+import org.apache.kyuubi.sql.compact.MergingFile
 
 class PlainFileLikeMerger(dataSource: String, codec: Option[String])
-  extends AbstractFileMerger(dataSource, codec) {
+  extends AbstractFileMerger(dataSource, codec, true) {
   override protected def mergeFiles(
       fileSystem: FileSystem,
       smallFiles: List[MergingFile],
@@ -43,8 +43,4 @@ class PlainFileLikeMerger(dataSource: String, codec: Option[String])
     }
     mergedFileInStaging
   }
-
-  override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
-      .map(e => s"$dataSource.$e").getOrElse(dataSource)
 }

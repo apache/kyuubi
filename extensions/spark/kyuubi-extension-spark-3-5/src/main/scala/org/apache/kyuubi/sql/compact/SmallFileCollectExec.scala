@@ -68,10 +68,10 @@ case class SmallFileCollectExec(
     val smallFileAndLocs = smallFileLocations.flatMap { loc =>
       val smallFiles = getSmallFiles(fileSystem, new HadoopPath(loc), fileSizeInBytesThreshold)
       if (smallFiles.nonEmpty) {
-        val codec = getCodecFromFile(smallFiles.head.name)
+        val codecExt = getCodecExtFromFile(smallFiles.head.name)
         val neededMergeFileGroups = aggregateSmallFile(smallFiles, fileSizeInBytesThreshold)
           .map { group =>
-            MergingFilePartition(-1, loc, dataSource, codec, group)
+            MergingFilePartition(-1, loc, dataSource, codecExt, group)
           }
 
         val groupNum = neededMergeFileGroups.length
@@ -95,7 +95,7 @@ case class SmallFileCollectExec(
             val newGroup = groups.zipWithIndex.map { case (group, subIndex) =>
               group.smallFiles.map(_.copy(subGroupId = subIndex))
             }
-            MergingFilePartition(-1, loc, dataSource, codec, newGroup.flatten)
+            MergingFilePartition(-1, loc, dataSource, codecExt, newGroup.flatten)
           }.toList
         regroupSmallFileAndLocs
       } else {
@@ -110,8 +110,8 @@ case class SmallFileCollectExec(
       smallFileAndLocs)
   }
 
-  private def getCodecFromFile(filePath: String): Option[String] =
-    CompactTableUtils.getCodecFromFilePath(
+  private def getCodecExtFromFile(filePath: String): Option[String] =
+    CompactTableUtils.getCodecExtFromFilePath(
       new HadoopPath(filePath),
       sparkContext.hadoopConfiguration)
 

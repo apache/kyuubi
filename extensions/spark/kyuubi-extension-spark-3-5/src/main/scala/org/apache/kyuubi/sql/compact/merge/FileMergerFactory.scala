@@ -26,20 +26,16 @@ object FileMergerFactory extends Logging {
     (dataSource, codec) match {
       case ("parquet", _) =>
         new ParquetFileMerger(dataSource, codec)
-      case ("text", None) =>
-        new PlainFileLikeMerger(dataSource, codec)
-      case ("text", Some("gzip")) =>
-        new PlainFileLikeMerger(dataSource, codec)
-      case ("text", Some("bzip2")) =>
+      case ("avro", _) =>
+        new AvroFileMerger(dataSource, codec)
+      case ("orc", _) =>
+        new OrcFileMerger(dataSource, codec)
+      case ("text", _) =>
         new PlainFileLikeMerger(dataSource, codec)
       case ("csv", _) =>
         new PlainFileLikeMerger(dataSource, codec)
       case ("json", _) =>
         new PlainFileLikeMerger(dataSource, codec)
-      case ("avro", _) =>
-        new AvroFileMerger(dataSource, codec)
-      case ("orc", _) =>
-        new OrcFileMerger(dataSource, codec)
       case other =>
         throw UnSupportedTableException(s"compact table doesn't support this format $other")
     }

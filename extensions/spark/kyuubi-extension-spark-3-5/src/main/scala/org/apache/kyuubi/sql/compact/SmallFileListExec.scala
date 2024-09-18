@@ -37,15 +37,15 @@ case class SmallFileListExec(child: SparkPlan) extends UnaryExecNode {
               groupId: Int,
               location: String,
               dataSource: String,
-              codec,
+              codecExt,
               smallFileNameAndLength: Iterable[_]) =>
-          val codecOption = Option(codec).map(_.toString)
+          val codecExtOption = Option(codecExt).map(_.toString)
 
           MergingFilePartition(
             groupId,
             location,
             dataSource,
-            codecOption,
+            codecExtOption,
             smallFileNameAndLength.map {
               case Row(subGroupId: Int, name: String, length: Long) =>
                 MergingFile(subGroupId, name, length)

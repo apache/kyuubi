@@ -19,14 +19,12 @@ package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{Path => HadoopPath}
-import org.apache.hadoop.io.compress.CompressionCodecFactory
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogStorageFormat
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object CompactTableUtils {
-  private var compressionCodecs: Option[CompressionCodecFactory] = None
 
   def toJavaList[A](it: List[A]): java.util.List[A] = {
     val javaList = new java.util.ArrayList[A](it.size)
@@ -64,20 +62,23 @@ object CompactTableUtils {
         "only support session catalog table, please use db.table instead")
   }
 
-  def getCodecFromFilePath(filePath: HadoopPath, hadoopConf: Configuration): Option[String] = {
-    if (compressionCodecs.isEmpty) {
-      compressionCodecs = Some(new CompressionCodecFactory(hadoopConf))
+  def getCodecExtFromFilePath(filePath: HadoopPath, hadoopConf: Configuration): Option[String] =
+    filePath.getName.split("\\.", 3) match {
+      case Array(_, codecExt, "parquet") =>
+        Some(codecExt)
+      case Array(_, codecExt, "orc") =>
+        Some(codecExt)
+      case Array(_, "parquet") =>
+        None
+      case Array(_, "orc") =>
+        None
+      case Array(_, _, codecExt) =>
+        Some(codecExt)
+      case Array(_, _) =>
+        None
+      case _ => None
     }
-    val parquetCompatible =
-      if (filePath.getName.endsWith(".parquet")) {
-        new HadoopPath(filePath.getName.dropRight(8))
-      } else if (filePath.getName.endsWith(".orc")) {
-        new HadoopPath(filePath.getName.dropRight(4))
-      } else filePath
-    compressionCodecs.flatMap { codecs =>
-      CompressionCodecsUtil.class2ShortName(
-        Option(codecs.getCodec(parquetCompatible)).map(_.getClass.getName)
-          .getOrElse("no codec in file path"))
-    }
-  }
+
+  def getExtFromFilePath(filePath: String): String =
+    filePath.split("\\.", 3).tail.mkString(".")
 }

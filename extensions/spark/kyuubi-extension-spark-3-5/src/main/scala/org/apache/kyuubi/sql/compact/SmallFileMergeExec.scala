@@ -49,15 +49,15 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
               groupId: Int,
               location: String,
               dataSource: String,
-              codec,
+              codecExt,
               smallFileNameAndLength: Iterable[_]) =>
           val smallFiles = smallFileNameAndLength.map {
             case Row(subGroupId: Int, name: String, length: Long) =>
               MergingFile(subGroupId, name, length)
           }.toList
 
-          val codecOption = Option(codec).map(_.toString)
-          val merger: AbstractFileMerger = FileMergerFactory.create(dataSource, codecOption)
+          val codecExtOption = Option(codecExt).map(_.toString)
+          val merger: AbstractFileMerger = FileMergerFactory.create(dataSource, codecExtOption)
 
           merger.initialize(
             partIndex,
@@ -70,7 +70,7 @@ case class SmallFileMergeExec(child: SparkPlan) extends UnaryExecNode {
             case Failure(exception) =>
               throw exception
             case Success(mergedFile) =>
-              MergingFilePartition(groupId, location, dataSource, codecOption, mergedFile)
+              MergingFilePartition(groupId, location, dataSource, codecExtOption, mergedFile)
                 .toInternalRow
           }
       }

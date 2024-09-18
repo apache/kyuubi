@@ -23,6 +23,24 @@ class CompactJsonTableSuiteBase extends CompactTablSuiteBase {
   override def getDataFileSuffix(): String = ".json"
 }
 
+class CompactDeflateJsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = Some("deflate")
+  override def getDataFileSuffix(): String = ".json.deflate"
+}
+
+class CompactLz4JsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = Some("lz4")
+  override def getDataFileSuffix(): String = ".json.lz4"
+}
+
+class CompactSnappyJsonTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "json"
+  override def getTableCodec(): Option[String] = Some("snappy")
+  override def getDataFileSuffix(): String = ".json.snappy"
+}
+
 class CompactGzJsonTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "json"
   override def getTableCodec(): Option[String] = Some("gzip")
@@ -65,6 +83,12 @@ class CompactSnappyParquetTableSuiteBase extends CompactTablSuiteBase {
   override def getDataFileSuffix(): String = ".snappy.parquet"
 }
 
+class CompactZstdParquetTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "parquet"
+  override def getTableCodec(): Option[String] = Some("zstd")
+  override def getDataFileSuffix(): String = ".zstd.parquet"
+}
+
 class CompactAvroTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "avro"
   override def getTableCodec(): Option[String] = None
@@ -83,8 +107,26 @@ class CompactOrcTableSuiteBase extends CompactTablSuiteBase {
   override def getDataFileSuffix(): String = ".orc"
 }
 
+class CompactLz4OrcTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "orc"
+  override def getTableCodec(): Option[String] = Some("lz4")
+  override def getDataFileSuffix(): String = ".lz4.orc"
+}
+
+class CompactZlibOrcTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "orc"
+  override def getTableCodec(): Option[String] = Some("zlib")
+  override def getDataFileSuffix(): String = ".zlib.orc"
+}
+
 class CompactSnappyOrcTableSuiteBase extends CompactTablSuiteBase {
   override def getTableSource(): String = "orc"
   override def getTableCodec(): Option[String] = Some("snappy")
   override def getDataFileSuffix(): String = ".snappy.orc"
+}
+
+class CompactZstdOrcTableSuiteBase extends CompactTablSuiteBase {
+  override def getTableSource(): String = "orc"
+  override def getTableCodec(): Option[String] = Some("zstd")
+  override def getDataFileSuffix(): String = ".zstd.orc"
 }

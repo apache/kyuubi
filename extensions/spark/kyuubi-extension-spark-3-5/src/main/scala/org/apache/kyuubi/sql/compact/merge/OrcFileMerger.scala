@@ -22,10 +22,10 @@ import scala.util.Try
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
 import org.apache.orc.OrcFile
 
-import org.apache.kyuubi.sql.compact.{CompactTableUtils, CompressionCodecsUtil, MergingFile}
+import org.apache.kyuubi.sql.compact.{CompactTableUtils, MergingFile}
 
 class OrcFileMerger(dataSource: String, codec: Option[String])
-  extends AbstractFileMerger(dataSource, codec) {
+  extends AbstractFileMerger(dataSource, codec, false) {
   override protected def mergeFiles(
       fileSystem: FileSystem,
       smallFiles: List[MergingFile],
@@ -45,8 +45,4 @@ class OrcFileMerger(dataSource: String, codec: Option[String])
     }
     mergedFileInStaging
   }
-
-  override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
-      .map(e => s"$e.orc").getOrElse("orc")
 }

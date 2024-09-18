@@ -39,7 +39,11 @@ object AbstractFileMerger {
     s"$mergedFilePrefix-$groupId-$subGroupId"
 }
 
-abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) extends Logging
+abstract class AbstractFileMerger(
+    dataSource: String,
+    codec: Option[String],
+    fileLevelCodec: Boolean)
+  extends Logging
   with Serializable {
 
   protected var partitionIndex: Int = _
@@ -87,7 +91,8 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
       smallFiles: List[MergingFile]): Try[(HadoopPath, Long)] = Try {
     val stagingDir = CompactTableUtils.getStagingDir(location, jobId)
     val locationPath = new HadoopPath(location)
-    val mergedFileName = s"${getMergedFilePrefix(groupId, subGroupId)}.$getMergedFileNameExtension"
+    val fileExt = CompactTableUtils.getExtFromFilePath(smallFiles.head.name)
+    val mergedFileName = s"${getMergedFilePrefix(groupId, subGroupId)}.$fileExt"
     val mergedFileInStaging =
       new HadoopPath(stagingDir, mergedFileName + AbstractFileMerger.mergedFileProcessingSuffix)
     val targetMergedFile = new HadoopPath(locationPath, mergedFileName)
@@ -129,6 +134,10 @@ abstract class AbstractFileMerger(dataSource: String, codec: Option[String]) ext
       smallFiles: List[MergingFile],
       mergedFileInStaging: HadoopPath): Try[HadoopPath]
 
-  protected def getMergedFileNameExtension: String
+//  protected def getMergedFileNameExtension: String = codec
+//    .flatMap(CompressionCodecsUtil.getCodecExtension)
+//    .map(ext =>
+//      if (fileLevelCodec) s"$dataSource.$ext"
+//      else s"$ext.$dataSource").getOrElse(dataSource)
 
 }

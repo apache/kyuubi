@@ -26,10 +26,10 @@ import org.apache.avro.mapred.FsInput
 import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
 import org.apache.hadoop.io.IOUtils
 
-import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
+import org.apache.kyuubi.sql.compact.MergingFile
 
 class AvroFileMerger(dataSource: String, codec: Option[String])
-  extends AbstractFileMerger(dataSource, codec) {
+  extends AbstractFileMerger(dataSource, codec, false) {
   override protected def mergeFiles(
       fileSystem: FileSystem,
       smallFiles: List[MergingFile],
@@ -63,8 +63,4 @@ class AvroFileMerger(dataSource: String, codec: Option[String])
     avroReader.close()
     schema
   }
-
-  override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
-      .map(e => s"$e.avro").getOrElse("avro")
 }

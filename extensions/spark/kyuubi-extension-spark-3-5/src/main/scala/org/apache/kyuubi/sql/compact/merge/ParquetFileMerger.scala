@@ -30,10 +30,10 @@ import org.apache.parquet.hadoop.util.{HadoopInputFile, HadoopOutputFile}
 import org.apache.spark.sql.SparkInternalExplorer
 
 import org.apache.kyuubi.sql.ParquetFileWriterWrapper
-import org.apache.kyuubi.sql.compact.{CompressionCodecsUtil, MergingFile}
+import org.apache.kyuubi.sql.compact.MergingFile
 
 class ParquetFileMerger(dataSource: String, codec: Option[String])
-  extends AbstractFileMerger(dataSource, codec) {
+  extends AbstractFileMerger(dataSource, codec, false) {
 
   override protected def mergeFiles(
       fileSystem: FileSystem,
@@ -84,7 +84,4 @@ class ParquetFileMerger(dataSource: String, codec: Option[String])
     new ParquetMetadata(globalMetaData.merge(), blocks).getFileMetaData
   }
 
-  override protected def getMergedFileNameExtension: String =
-    codec.flatMap(CompressionCodecsUtil.getCodecExtension)
-      .map(e => s"$e.parquet").getOrElse("parquet")
 }

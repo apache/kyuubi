@@ -35,7 +35,7 @@ object MergingFilePartition {
       part.groupId,
       UTF8String.fromString(part.location),
       UTF8String.fromString(part.dataSource),
-      UTF8String.fromString(part.codec.orNull),
+      UTF8String.fromString(part.codecExt.orNull),
       ArrayData.toArrayData(part.smallFiles.map(f =>
         InternalRow(f.subGroupId, UTF8String.fromString(f.name), f.length)))))
   }
@@ -45,11 +45,11 @@ case class MergingFilePartition(
     groupId: Int,
     location: String,
     dataSource: String,
-    codec: Option[String],
+    codecExt: Option[String],
     smallFiles: Seq[MergingFile],
     index: Int = -1) extends Partition {
   override def toString: String = s"MergingFilePartition(index=$index,groupId=$groupId" +
-    s"location $location,data source $dataSource,codec $codec," +
+    s"location $location,data source $dataSource,codec ext $codecExt," +
     s"small files ${smallFiles.mkString("[", ",", "]")})"
 
   def toInternalRow: InternalRow = MergingFilePartition.toInternalRow(this)
