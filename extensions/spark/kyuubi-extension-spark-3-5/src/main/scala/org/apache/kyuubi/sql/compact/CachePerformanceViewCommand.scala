@@ -18,10 +18,10 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.fs.FileSystem
-import org.apache.spark.sql.{Row, SparkInternalExplorer, SparkSession}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{DropTableCommand, LeafRunnableCommand}
+import org.apache.spark.sql.{Row, SparkInternalExplorer, SparkSession}
 
 case class CachePerformanceViewCommand(
     tableIdentifier: Seq[String],
@@ -49,26 +49,28 @@ case class CachePerformanceViewCommand(
         "false")
       log.warn("set spark.speculation to false")
     }
+    try {
+      val cacheTableCommand =
+        SparkInternalExplorer.CacheTableAsSelectExec(tableIdentifier.head, performancePlan)
 
-    val cacheTableCommand =
-      SparkInternalExplorer.CacheTableAsSelectExec(tableIdentifier.head, performancePlan)
+      // this result always empty
+      cacheTableCommand.run()
 
-    // this result always empty
-    cacheTableCommand.run()
+      if (options == CompactTableOptions.CleanupStagingFolder) {
+        val fileSystem = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
+        originalFileLocations.foreach { originalFileLocation =>
+          val compactStagingDir = CompactTableUtils.getCompactStagingDir(originalFileLocation)
+          fileSystem.delete(compactStagingDir, true)
+        }
 
-    if (options == CompactTableOptions.CleanupStagingFolder) {
-      val fileSystem = FileSystem.get(sparkSession.sparkContext.hadoopConfiguration)
-      originalFileLocations.foreach { originalFileLocation =>
-        val compactStagingDir = CompactTableUtils.getCompactStagingDir(originalFileLocation)
-        fileSystem.delete(compactStagingDir, true)
       }
-
-    }
-    if (speculation) {
-      sparkSession.sparkContext.getConf.set(
-        SparkInternalExplorer.SPECULATION_ENABLED_SYNONYM.key,
-        "true")
-      log.warn("rollback spark.speculation to true")
+    } finally {
+      if (speculation) {
+        sparkSession.sparkContext.getConf.set(
+          SparkInternalExplorer.SPECULATION_ENABLED_SYNONYM.key,
+          "true")
+        log.warn("rollback spark.speculation to true")
+      }
     }
     Seq.empty[Row]
   }
