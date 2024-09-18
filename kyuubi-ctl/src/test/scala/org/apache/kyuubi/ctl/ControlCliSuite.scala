@@ -20,7 +20,9 @@ package org.apache.kyuubi.ctl
 import java.util.concurrent.atomic.AtomicInteger
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
+import org.apache.kyuubi.client.api.v1.dto.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.wrapConfKeyWithUserDefaults
 import org.apache.kyuubi.ctl.cli.{ControlCli, ControlCliArguments}
 import org.apache.kyuubi.ctl.util.{CtlUtils, Render}
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
@@ -532,5 +534,37 @@ class ControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     assert(CtlUtils.getZkEngineNamespaceAndSubdomain(
       scArgs5.command.conf,
       scArgs5.command.normalizedCliConfig) === expected5)
+  }
+
+  test("test render server configs") {
+    val entries = Seq(
+      new ConfigEntry("kyuubi.abc", "abc"),
+      new ConfigEntry("kyuubi.def", "true"),
+      new ConfigEntry("kyuubi.ghi", "12.34"),
+      new ConfigEntry("kyuubi.jkl", null),
+      new ConfigEntry(wrapConfKeyWithUserDefaults("bowen", "kyuubi.mno"), "Hello World!"))
+    val renderedInfo = Render.renderConfigsInfo(entries)
+    // scalastyle:off
+    val expected = {
+      """
+        |      Server Configs List (total 5)      
+        |╔════════════════════════╤══════════════╗
+        |║ Key                    │ Value        ║
+        |╠════════════════════════╪══════════════╣
+        |║ kyuubi.abc             │ abc          ║
+        |╟────────────────────────┼──────────────╢
+        |║ kyuubi.def             │ true         ║
+        |╟────────────────────────┼──────────────╢
+        |║ kyuubi.ghi             │ 12.34        ║
+        |╟────────────────────────┼──────────────╢
+        |║ kyuubi.jkl             │ N/A          ║
+        |╟────────────────────────┼──────────────╢
+        |║ ___bowen___.kyuubi.mno │ Hello World! ║
+        |╚════════════════════════╧══════════════╝
+        |5 row(s)
+        |""".stripMargin
+    }
+    // scalastyle:on
+    assertResult(expected)(renderedInfo)
   }
 }

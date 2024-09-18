@@ -39,6 +39,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.server.KyuubiServer.kyuubiServer
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle}
 
@@ -320,6 +321,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     }
 
     Response.ok(responseMsgBuilder.toString()).build()
+  }
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "list kyuubi server configs")
+  @GET
+  @Path("config")
+  def listConfigs(): Seq[ConfigEntry] = {
+    kyuubiServer.getConf.getAll.map(entry => new ConfigEntry(entry._1, entry._2)).toSeq
   }
 
   @ApiResponse(

@@ -64,6 +64,7 @@ object AdminCommandLine extends CommonCommandLine {
         .text("\tList information about resources.")
         .action((_, c) => c.copy(action = ControlAction.LIST))
         .children(
+          configCmd(builder).text("\tList all the server configs"),
           engineCmd(builder).text("\tList all the engine nodes for a user"),
           serverCmd(builder).text("\tList all the server nodes")))
 
@@ -98,6 +99,11 @@ object AdminCommandLine extends CommonCommandLine {
   private def serverCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
     import builder._
     cmd("server").action((_, c) => c.copy(resource = ControlObject.SERVER))
+  }
+
+  private def configCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {
+    import builder._
+    cmd("config").action((_, c) => c.copy(resource = ControlObject.CONFIG))
   }
 
   private def refreshConfigCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {

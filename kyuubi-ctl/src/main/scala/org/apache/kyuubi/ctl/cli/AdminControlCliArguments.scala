@@ -22,7 +22,7 @@ import scopt.OParser
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.ctl.cmd.Command
 import org.apache.kyuubi.ctl.cmd.delete.AdminDeleteEngineCommand
-import org.apache.kyuubi.ctl.cmd.list.{AdminListEngineCommand, AdminListServerCommand}
+import org.apache.kyuubi.ctl.cmd.list.{AdminListConfigCommand, AdminListEngineCommand, AdminListServerCommand}
 import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommand
 import org.apache.kyuubi.ctl.opt.{AdminCommandLine, CliConfig, ControlAction, ControlObject}
 
@@ -36,6 +36,7 @@ class AdminControlCliArguments(args: Seq[String], env: Map[String, String] = sys
   override protected def getCommand(cliConfig: CliConfig): Command[_] = {
     cliConfig.action match {
       case ControlAction.LIST => cliConfig.resource match {
+          case ControlObject.CONFIG => new AdminListConfigCommand(cliConfig)
           case ControlObject.ENGINE => new AdminListEngineCommand(cliConfig)
           case ControlObject.SERVER => new AdminListServerCommand(cliConfig)
           case _ => throw new KyuubiException(s"Invalid resource: ${cliConfig.resource}")
