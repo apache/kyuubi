@@ -1349,7 +1349,9 @@ object KyuubiConf {
   val KUBERNETES_APPLICATION_STATE_SOURCE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.application.state.source")
       .doc("The source to retrieve the application state from. The valid values are " +
-        "pod and container. If the source is container and there is container inside the pod " +
+        "pod and container. When the pod is in a terminated state, the container state" +
+        " will be ignored, and the application state will be determined based on the pod state." +
+        " If the source is container and there is container inside the pod " +
         s"with the name of ${KUBERNETES_APPLICATION_STATE_CONTAINER.key}, the application state " +
         s"will be from the matched container state. " +
         s"Otherwise, the application state will be from the pod state.")

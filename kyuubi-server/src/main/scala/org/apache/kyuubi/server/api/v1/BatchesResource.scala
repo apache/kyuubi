@@ -76,6 +76,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       kyuubiInstance =>
         new InternalRestClient(
           kyuubiInstance,
+          fe.getConf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER),
           internalSocketTimeout,
           internalConnectTimeout,
           internalSecurityEnabled,
@@ -347,7 +348,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } else {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
-            internalRestClient.getBatch(userName, batchId)
+            internalRestClient.getBatch(userName, fe.getIpAddress, batchId)
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting get batch[$batchId] to ${metadata.kyuubiInstance}", e)
@@ -458,7 +459,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           new OperationLog(dummyLogs, dummyLogs.size)
         } else if (fe.connectionUrl != metadata.kyuubiInstance) {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
-          internalRestClient.getBatchLocalLog(userName, batchId, from, size)
+          internalRestClient.getBatchLocalLog(userName, fe.getIpAddress, batchId, from, size)
         } else if (batchV2Enabled(metadata.requestConf) &&
           // in batch v2 impl, the operation state is changed from PENDING to RUNNING
           // before being added to SessionManager.
@@ -498,9 +499,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
     val sessionHandle = formatSessionHandle(batchId)
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-      fe.getSessionUser(batchSession.user)
+      val userName = fe.getSessionUser(batchSession.user)
+      val ipAddress = fe.getIpAddress
       sessionManager.closeSession(batchSession.handle)
       val (killed, msg) = batchSession.batchJobSubmissionOp.getKillMessage
+      batchSession.batchJobSubmissionOp.withOperationLog {
+        warn(s"Received kill batch request from $userName/$ipAddress")
+        warn(s"Kill batch response: killed: $killed, msg: $msg.")
+      }
       new CloseBatchResponse(killed, msg)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
@@ -520,7 +526,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           info(s"Redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}")
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
-            internalRestClient.deleteBatch(metadata.username, batchId)
+            internalRestClient.deleteBatch(metadata.username, fe.getIpAddress, batchId)
           } catch {
             case e: KyuubiRestException =>
               error(s"Error redirecting delete batch[$batchId] to ${metadata.kyuubiInstance}", e)
