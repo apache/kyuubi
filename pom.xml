@@ -1184,6 +1184,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>paimon-spark-${spark.binary.version}</artifactId>
                 <version>${paimon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
