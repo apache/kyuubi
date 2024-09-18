@@ -29,10 +29,6 @@ class SetCurrentDatabase(session: Session, database: String)
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-  }
-
   override protected def runInternal(): Unit = {
     try {
       spark.sessionState.catalogManager.setCurrentNamespace(Array(database))

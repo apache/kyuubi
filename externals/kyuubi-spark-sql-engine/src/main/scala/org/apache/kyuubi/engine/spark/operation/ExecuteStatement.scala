@@ -50,13 +50,6 @@ class ExecuteStatement(
 
   private var fetchOrcStatement: Option[FetchOrcStatement] = None
   private var saveFilePath: Option[Path] = None
-  override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
-      new StructType().add("Result", "string")
-    } else {
-      result.schema
-    }
-  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)

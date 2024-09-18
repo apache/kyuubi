@@ -29,10 +29,6 @@ class SetCurrentCatalog(session: Session, catalog: String) extends SparkOperatio
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-  }
-
   override protected def runInternal(): Unit = {
     try {
       SparkCatalogUtils.setCurrentCatalog(spark, catalog)
