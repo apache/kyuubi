@@ -310,4 +310,4 @@ metrics:
 lifecycle:
   preStop:
     exec:
-      command: /opt/kyuubi/bin/kyuubi-ctl delete server --host $(hostname -I) --port "10009"
+      command: [/opt/kyuubi/bin/kyuubi-ctl delete server --host $(hostname -I) --port "10009"]
