@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.compact.merge
 
 import scala.util.Try
 
-import org.apache.hadoop.fs.{FileSystem, Path => HadoopPath}
+import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path => HadoopPath}
 import org.apache.hadoop.io.IOUtils
 
 import org.apache.kyuubi.sql.compact.MergingFile
@@ -34,9 +34,13 @@ class PlainFileLikeMerger(dataSource: String, codec: Option[String])
     val fos = fileSystem.create(mergedFileInStaging, false)
     try {
       smallFilePaths.foreach { f =>
-        val is = fileSystem.open(f)
-        IOUtils.copyBytes(is, fos, hadoopConf, false)
-        IOUtils.closeStream(is)
+        var is: FSDataInputStream = null
+        try {
+          is = fileSystem.open(f)
+          IOUtils.copyBytes(is, fos, hadoopConf, false)
+        } finally {
+          IOUtils.closeStream(is)
+        }
       }
     } finally {
       IOUtils.closeStream(fos)
