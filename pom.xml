@@ -1215,6 +1215,12 @@
                 <groupId>org.apache.paimon</groupId>
                 <artifactId>${paimon.artifact}</artifactId>
                 <version>${paimon.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
