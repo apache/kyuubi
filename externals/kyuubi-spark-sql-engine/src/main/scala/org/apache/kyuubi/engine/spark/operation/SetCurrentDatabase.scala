@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.types.StructType
-
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
