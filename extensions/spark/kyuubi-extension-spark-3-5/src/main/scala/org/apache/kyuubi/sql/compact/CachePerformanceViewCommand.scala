@@ -18,10 +18,10 @@
 package org.apache.kyuubi.sql.compact
 
 import org.apache.hadoop.fs.FileSystem
+import org.apache.spark.sql.{Row, SparkInternalExplorer, SparkSession}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{DropTableCommand, LeafRunnableCommand}
-import org.apache.spark.sql.{Row, SparkInternalExplorer, SparkSession}
 
 case class CachePerformanceViewCommand(
     tableIdentifier: Seq[String],
