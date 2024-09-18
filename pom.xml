@@ -2027,6 +2027,7 @@
                 <spark.version>4.0.0-preview2</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
+                <!-- TODO: update once Delta support Spark 4.0.0-preview2 -->
                 <delta.version>4.0.0rc1</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <!-- TODO: update once Hudi support Spark 4.0 -->
@@ -2035,7 +2036,7 @@
                 <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
                 <!-- TODO: update once Paimon support Spark 4.0 -->
                 <paimon.artifact>paimon-spark-3.5</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.0.0-preview2-rc1-bin</spark.archive.mirror>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
