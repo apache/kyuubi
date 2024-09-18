@@ -63,7 +63,6 @@ class TrinoStatement(
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("Trino-Status-Printer", false)
   private var lastStats: OptionalDouble = OptionalDouble.empty()
 
-
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(dataProcessingPoolSize))
 
