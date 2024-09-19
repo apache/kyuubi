@@ -127,6 +127,7 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
+      trinoStatement.stopPrinter()
       shutdownTimeoutMonitor()
     }
   }

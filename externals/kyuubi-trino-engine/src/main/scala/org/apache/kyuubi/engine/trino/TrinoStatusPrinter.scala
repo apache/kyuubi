@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.trino
 
+import java.util.OptionalDouble
 import java.util.concurrent.TimeUnit._
 
 import io.airlift.units.DataSize
@@ -35,7 +36,8 @@ object TrinoStatusPrinter {
   def printStatusInfo(
       client: StatementClient,
       operationLog: OperationLog,
-      debug: Boolean = false): Unit = {
+      debug: Boolean = false,
+      lastStats: OptionalDouble = null): OptionalDouble = {
     val out = new TrinoConsoleProgressBar(operationLog)
     val results =
       if (client.isRunning) {
@@ -46,11 +48,16 @@ object TrinoStatusPrinter {
 
     val stats = results.getStats
 
+    if (lastStats != null &&
+      stats.getProgressPercentage.equals(lastStats)) {
+      return lastStats
+    }
+
     val wallTime = Duration.succinctDuration(stats.getElapsedTimeMillis(), MILLISECONDS)
 
     val nodes = stats.getNodes
     if ((nodes == 0) || (stats.getTotalSplits == 0)) {
-      return
+      return stats.getProgressPercentage
     }
 
     // Query 12, FINISHED, 1 node
@@ -122,6 +129,7 @@ object TrinoStatusPrinter {
       s"[${formatCountRate(stats.getProcessedRows(), wallTime, false)} rows/s, " +
       s"${formatDataRate(DataSize.ofBytes(stats.getProcessedBytes()), wallTime, true)}]"
     out.printLine(statsLine)
+    stats.getProgressPercentage
   }
 
   def percentage(count: Double, total: Double): Int = {
