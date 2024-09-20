@@ -18,8 +18,12 @@ package org.apache.kyuubi.engine.jdbc
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL}
-import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.{KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL
+}
+import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter.{
+  KYUUBI_ENGINE_DEPLOY_YARN_MODE_HADOOP_CONF_KEY, KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY
+}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
 
 class JdbcYarnModeProcessBuilderSuite extends KyuubiFunSuite {

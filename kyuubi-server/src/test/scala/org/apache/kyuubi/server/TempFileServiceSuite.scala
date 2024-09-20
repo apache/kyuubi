@@ -26,7 +26,9 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.Utils.writeToTempFile
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{SERVER_TEMP_FILE_EXPIRE_MAX_COUNT, SERVER_TEMP_FILE_EXPIRE_TIME}
+import org.apache.kyuubi.config.KyuubiConf.{
+  SERVER_TEMP_FILE_EXPIRE_MAX_COUNT, SERVER_TEMP_FILE_EXPIRE_TIME
+}
 import org.apache.kyuubi.session.KyuubiSessionManager
 
 class TempFileServiceSuite extends WithKyuubiServer {

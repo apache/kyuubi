@@ -28,7 +28,10 @@ import io.trino.tpcds.row.generator.RowGenerator
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, RebaseDateTime}
-import org.apache.spark.sql.types.{CharType, DateType, Decimal, DecimalType, IntegerType, LongType, StringType, StructType, VarcharType}
+import org.apache.spark.sql.types.{
+  CharType, DateType, Decimal, DecimalType, IntegerType, LongType, StringType, StructType,
+  VarcharType
+}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.spark.connector.tpcds.KyuubiResultsIterator.{FALSE_STRING, TRUE_STRING}

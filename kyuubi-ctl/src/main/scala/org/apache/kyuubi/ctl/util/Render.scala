@@ -19,7 +19,9 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{
+  Batch, Engine, GetBatchesResponse, ServerData, SessionData
+}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 

@@ -22,7 +22,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
 import org.apache.kyuubi.shaded.curator.framework.imps.CuratorFrameworkState
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
-import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS, ZK_DATA_DIR, ZK_DATA_LOG_DIR}
+import org.apache.kyuubi.zookeeper.ZookeeperConf.{
+  ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS, ZK_DATA_DIR, ZK_DATA_LOG_DIR
+}
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {
   private var zkServer: EmbeddedZookeeper = _

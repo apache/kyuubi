@@ -20,7 +20,9 @@ package org.apache.kyuubi.engine.spark.operation
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
+import org.apache.hadoop.hdfs.security.token.delegation.{
+  DelegationTokenIdentifier => HDFSTokenIdent
+}
 import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier => HiveTokenIdent}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}

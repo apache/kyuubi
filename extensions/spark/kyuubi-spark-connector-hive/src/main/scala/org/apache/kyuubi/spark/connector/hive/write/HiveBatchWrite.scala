@@ -27,13 +27,17 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
-import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage}
+import org.apache.spark.sql.connector.write.{
+  BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage
+}
 import org.apache.spark.sql.execution.datasources.{WriteJobDescription, WriteTaskResult}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.toSQLValue
 import org.apache.spark.sql.types.StringType
 
-import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException}
+import org.apache.kyuubi.spark.connector.hive.{
+  HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException
+}
 
 class HiveBatchWrite(
     sparkSession: SparkSession,

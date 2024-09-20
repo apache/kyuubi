@@ -19,19 +19,30 @@ package org.apache.spark.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, EqualTo, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
+import org.apache.spark.sql.catalyst.analysis.{
+  UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar
+}
+import org.apache.spark.sql.catalyst.expressions.{
+  Alias, Ascending, AttributeReference, EqualTo, Expression, ExpressionEvalHelper, Literal,
+  NullsLast, SortOrder
+}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, OneRowRelation, Project, Sort}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  Filter, LogicalPlan, OneRowRelation, Project, Sort
+}
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
-import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
+import org.apache.spark.sql.hive.execution.{
+  CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand
+}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, OptimizeZorderStatement, Zorder, ZorderBytesUtils}
+import org.apache.kyuubi.sql.zorder.{
+  OptimizeZorderCommandBase, OptimizeZorderStatement, Zorder, ZorderBytesUtils
+}
 
 trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {

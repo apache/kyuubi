@@ -27,10 +27,14 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
 import org.apache.kyuubi.engine.hive.util.HiveRpcUtils
-import org.apache.kyuubi.operation.{AbstractOperation, FetchOrientation, OperationState, OperationStatus}
+import org.apache.kyuubi.operation.{
+  AbstractOperation, FetchOrientation, OperationState, OperationStatus
+}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TFetchResultsResp, TGetResultSetMetadataResp
+}
 
 abstract class HiveOperation(session: Session) extends AbstractOperation(session) {
 

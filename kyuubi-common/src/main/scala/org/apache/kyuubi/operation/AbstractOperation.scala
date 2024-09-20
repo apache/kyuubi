@@ -31,7 +31,10 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus,
+  TStatusCode
+}
 import org.apache.kyuubi.util.ThreadUtils
 
 abstract class AbstractOperation(session: Session) extends Operation with Logging {

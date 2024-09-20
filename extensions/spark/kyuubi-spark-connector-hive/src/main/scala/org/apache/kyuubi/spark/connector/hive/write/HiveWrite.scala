@@ -37,7 +37,9 @@ import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, Wr
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
 import org.apache.spark.sql.hive.execution.HiveOptions
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, StructTypeHelper}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{
+  HiveClientImpl, StructTypeHelper
+}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 

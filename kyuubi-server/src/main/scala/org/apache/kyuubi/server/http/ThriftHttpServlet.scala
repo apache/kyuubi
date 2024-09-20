@@ -29,7 +29,9 @@ import scala.collection.mutable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
-import org.apache.kyuubi.server.http.authentication.{AuthenticationAuditLogger, AuthenticationFilter}
+import org.apache.kyuubi.server.http.authentication.{
+  AuthenticationAuditLogger, AuthenticationFilter
+}
 import org.apache.kyuubi.server.http.util.{CookieSigner, HttpAuthUtils}
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory

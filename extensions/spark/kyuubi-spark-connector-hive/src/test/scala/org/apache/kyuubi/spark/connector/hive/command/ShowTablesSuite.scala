@@ -19,7 +19,9 @@ package org.apache.kyuubi.spark.connector.hive.command
 
 import org.apache.spark.sql.Row
 
-import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{
+  V1_COMMAND_VERSION, V2_COMMAND_VERSION
+}
 
 trait ShowTablesSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "SHOW TABLES"

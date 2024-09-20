@@ -25,7 +25,9 @@ import org.apache.kyuubi.engine.trino.event.TrinoOperationEvent
 import org.apache.kyuubi.engine.trino.schema.TrinoTRowSetGenerator
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation.{
+  FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation
+}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TFetchResultsResp

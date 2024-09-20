@@ -26,7 +26,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams
 import org.apache.kyuubi.operation.KyuubiOperationKerberosAndPlainAuthSuite
-import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
+import org.apache.kyuubi.service.authentication.{
+  UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl
+}
 
 class KyuubiOperationThriftHttpKerberosAndPlainAuthSuite
   extends KyuubiOperationKerberosAndPlainAuthSuite {

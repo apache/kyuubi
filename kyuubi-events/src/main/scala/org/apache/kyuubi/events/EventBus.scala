@@ -24,7 +24,10 @@ import scala.util.Try
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ASYNC_EVENT_HANDLER_KEEPALIVE_TIME, ASYNC_EVENT_HANDLER_POLL_SIZE, ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ASYNC_EVENT_HANDLER_KEEPALIVE_TIME, ASYNC_EVENT_HANDLER_POLL_SIZE,
+  ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE
+}
 import org.apache.kyuubi.events.handler.EventHandler
 import org.apache.kyuubi.util.ThreadUtils
 

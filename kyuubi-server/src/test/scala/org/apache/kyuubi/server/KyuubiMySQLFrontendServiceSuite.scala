@@ -19,7 +19,9 @@ package org.apache.kyuubi.server
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_ADVERTISED_HOST, FRONTEND_MYSQL_BIND_HOST, FRONTEND_MYSQL_BIND_PORT}
+import org.apache.kyuubi.config.KyuubiConf.{
+  FRONTEND_ADVERTISED_HOST, FRONTEND_MYSQL_BIND_HOST, FRONTEND_MYSQL_BIND_PORT
+}
 import org.apache.kyuubi.service.NoopMySQLFrontendServer
 import org.apache.kyuubi.service.ServiceState._
 

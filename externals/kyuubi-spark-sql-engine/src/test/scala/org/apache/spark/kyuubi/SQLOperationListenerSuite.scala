@@ -25,7 +25,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_SPARK_LISTENER_ENABLED
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TOperationHandle
+}
 
 class SQLOperationListenerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 

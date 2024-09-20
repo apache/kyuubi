@@ -21,7 +21,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
-import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{
+  OperationData, OperationProgress, ServerData, SessionData
+}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession

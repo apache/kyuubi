@@ -23,7 +23,9 @@ import java.util.UUID
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineLocal}
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.operation.{AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode}
+import org.apache.kyuubi.operation.{
+  AnalyzeMode, ExecutionMode, HiveJDBCTestHelper, ParseMode, PhysicalMode
+}
 
 class PlanOnlyOperationSuite extends WithFlinkSQLEngineLocal
   with HiveJDBCTestHelper with WithDiscoveryFlinkSQLEngine {

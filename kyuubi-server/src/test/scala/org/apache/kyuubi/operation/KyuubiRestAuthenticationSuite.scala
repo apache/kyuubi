@@ -31,7 +31,10 @@ import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, Ses
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
 import org.apache.kyuubi.server.http.util.HttpAuthUtils._
-import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor, UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
+import org.apache.kyuubi.service.authentication.{
+  AuthTypes, InternalSecurityAccessor, UserDefineAuthenticationProviderImpl,
+  UserDefineTokenAuthenticationProviderImpl
+}
 import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {

@@ -18,7 +18,9 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedFunctionName, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.plans.logical.{DropFunction, DropNamespace, LogicalPlan, NoopCommand, UncacheTable}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  DropFunction, DropNamespace, LogicalPlan, NoopCommand, UncacheTable
+}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropTableCommand}
 

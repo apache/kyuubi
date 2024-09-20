@@ -24,7 +24,9 @@ import org.apache.kyuubi.engine.flink.FlinkTBinaryFrontendService.renewDelegatio
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 import org.apache.kyuubi.service.TFrontendService.OK_STATUS
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TRenewDelegationTokenReq, TRenewDelegationTokenResp
+}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class FlinkTBinaryFrontendService(

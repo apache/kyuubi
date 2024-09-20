@@ -28,7 +28,10 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE, KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME, KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE, KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME,
+  KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX
+}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf

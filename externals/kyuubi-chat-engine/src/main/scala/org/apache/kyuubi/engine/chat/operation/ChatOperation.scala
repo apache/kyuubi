@@ -21,7 +21,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.chat.schema.{ChatTRowSetGenerator, SchemaHelper}
 import org.apache.kyuubi.engine.chat.schema.ChatTRowSetGenerator.COL_STRING_TYPE
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation.{
+  FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation
+}
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 

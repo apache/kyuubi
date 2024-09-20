@@ -19,10 +19,16 @@ package org.apache.kyuubi.sql
 
 import scala.annotation.tailrec
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, UnaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{
+  Alias, Attribute, AttributeSet, Expression, NamedExpression, UnaryExpression
+}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
-import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftAnti, LeftOuter, LeftSemi, RightOuter}
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Generate, LogicalPlan, Project, Sort, SubqueryAlias, View, Window}
+import org.apache.spark.sql.catalyst.plans.{
+  FullOuter, Inner, LeftAnti, LeftOuter, LeftSemi, RightOuter
+}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  Aggregate, Filter, Generate, LogicalPlan, Project, Sort, SubqueryAlias, View, Window
+}
 
 /**
  * Infer the columns for Rebalance and Sort to improve the compression ratio.

@@ -20,7 +20,9 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_SPARK_EVENT_LOGGERS}
-import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
+import org.apache.kyuubi.engine.spark.events.handler.{
+  SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler
+}
 import org.apache.kyuubi.events.{EventHandlerRegister, KyuubiEvent}
 import org.apache.kyuubi.events.handler.EventHandler
 

@@ -18,7 +18,9 @@ package org.apache.kyuubi.it.hive.operation
 
 import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServerAndHadoopMiniCluster}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_IDLE_TIMEOUT, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME
+}
 import org.apache.kyuubi.engine.deploy.DeployMode
 
 class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests

@@ -27,9 +27,14 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
 import org.apache.spark.sql.connector.catalog.TableChange
-import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, After, ColumnPosition, DeleteColumn, First, RenameColumn, UpdateColumnComment, UpdateColumnNullability, UpdateColumnPosition, UpdateColumnType}
+import org.apache.spark.sql.connector.catalog.TableChange.{
+  AddColumn, After, ColumnPosition, DeleteColumn, First, RenameColumn, UpdateColumnComment,
+  UpdateColumnNullability, UpdateColumnPosition, UpdateColumnType
+}
 import org.apache.spark.sql.execution.command.CommandUtils
-import org.apache.spark.sql.execution.command.CommandUtils.{calculateMultipleLocationSizes, calculateSingleLocationSize}
+import org.apache.spark.sql.execution.command.CommandUtils.{
+  calculateMultipleLocationSizes, calculateSingleLocationSize
+}
 import org.apache.spark.sql.execution.datasources.{PartitionDirectory, PartitionedFile}
 import org.apache.spark.sql.hive.execution.HiveFileFormat
 import org.apache.spark.sql.internal.SQLConf

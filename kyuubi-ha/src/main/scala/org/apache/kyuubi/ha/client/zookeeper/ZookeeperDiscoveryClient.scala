@@ -29,16 +29,24 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{
+  HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS
+}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, ServiceDiscovery, ServiceNodeInfo}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
+import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{
+  buildZookeeperClient, getGracefulStopThreadDelay
+}
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework
-import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
+import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.{
+  AtomicValue, DistributedAtomicInteger
+}
 import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.kyuubi.shaded.curator.framework.recipes.nodes.PersistentNode
 import org.apache.kyuubi.shaded.curator.framework.state.{ConnectionState, ConnectionStateListener}
-import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
+import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState.{
+  CONNECTED, LOST, RECONNECTED
+}
 import org.apache.kyuubi.shaded.curator.retry.RetryForever
 import org.apache.kyuubi.shaded.curator.utils.ZKPaths
 import org.apache.kyuubi.shaded.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}

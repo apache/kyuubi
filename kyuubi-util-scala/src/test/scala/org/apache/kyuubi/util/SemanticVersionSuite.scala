@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.util
 // scalastyle:off
-
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.util.AssertionUtils._

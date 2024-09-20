@@ -24,7 +24,9 @@ import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 
-import org.apache.flink.configuration.{Configuration, DeploymentOptions, GlobalConfiguration, PipelineOptions}
+import org.apache.flink.configuration.{
+  Configuration, DeploymentOptions, GlobalConfiguration, PipelineOptions
+}
 import org.apache.flink.table.api.TableEnvironment
 import org.apache.flink.table.gateway.api.config.SqlGatewayServiceConfigOptions
 import org.apache.flink.table.gateway.service.context.DefaultContext

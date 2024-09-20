@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.events
 
-import org.apache.kyuubi.{BUILD_DATE => P_BUILD_DATE, BUILD_USER => P_BUILD_USER, REPO_URL => P_REPO_URL, _}
+import org.apache.kyuubi.{
+  BUILD_DATE => P_BUILD_DATE, BUILD_USER => P_BUILD_USER, REPO_URL => P_REPO_URL, _
+}
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
 

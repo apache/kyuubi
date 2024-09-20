@@ -26,7 +26,9 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KerberizedTestHelper, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.{AuthTypes, UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.service.authentication.{
+  AuthTypes, UserDefineAuthenticationProviderImpl, WithLdapServer
+}
 
 class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with KerberizedTestHelper
   with WithLdapServer with HiveJDBCTestHelper {

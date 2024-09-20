@@ -27,7 +27,9 @@ import org.apache.spark.sql.SparkListenerExtensionTest
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.dispatcher.{OperationLineageKyuubiEvent, OperationLineageSparkEvent}
+import org.apache.kyuubi.plugin.lineage.dispatcher.{
+  OperationLineageKyuubiEvent, OperationLineageSparkEvent
+}
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 class OperationLineageEventSuite extends KyuubiFunSuite with SparkListenerExtensionTest {

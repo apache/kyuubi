@@ -24,7 +24,9 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.{LeafExecNode, SparkPlan}
 
 import org.apache.kyuubi.plugin.spark.authz.{ObjectType, OperationType}
-import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin}
+import org.apache.kyuubi.plugin.spark.authz.ranger.{
+  AccessRequest, AccessResource, AccessType, SparkRangerAdminPlugin
+}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 
 trait FilteredShowObjectsExec extends LeafExecNode {

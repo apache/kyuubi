@@ -20,7 +20,10 @@ package org.apache.kyuubi.events
 import scala.collection.JavaConverters._
 
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser}
-import com.fasterxml.jackson.databind.{DeserializationContext, JsonDeserializer, JsonNode, JsonSerializer, ObjectMapper, SerializerProvider}
+import com.fasterxml.jackson.databind.{
+  DeserializationContext, JsonDeserializer, JsonNode, JsonSerializer, ObjectMapper,
+  SerializerProvider
+}
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
 object JsonProtocol {
