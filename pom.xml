@@ -1253,18 +1253,6 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
-
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>staging</id>
-            <name>Staging Repo</name>
-            <url>https://repository.apache.org/content/repositories/orgapachespark-1468/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -2037,7 +2025,6 @@
                 <!-- TODO: update once Paimon support Spark 4.0 -->
                 <paimon.artifact>paimon-spark-3.5</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.0.0-preview2-rc1-bin</spark.archive.mirror>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
