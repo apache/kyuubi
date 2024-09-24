@@ -252,9 +252,9 @@ private[kyuubi] class EngineRef(
         }
 
         if (started + timeout <= System.currentTimeMillis()) {
+          builder.close(true)
           val killMessage =
             engineManager.killApplication(builder.appMgrInfo(), engineRefId, Some(appUser))
-          builder.close(true)
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout ms, you can modify ${ENGINE_INIT_TIMEOUT.key} to change it) to" +
