@@ -19,8 +19,12 @@ package org.apache.kyuubi.engine.result
 import java.util.{ArrayList => JArrayList}
 
 import scala.collection.JavaConverters._
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
 
+import org.apache.kyuubi.engine.result.TRowSetGenerator._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.util.ThreadUtils
 
 trait TRowSetGenerator[SchemaT, RowT, ColumnT]
   extends TColumnValueGenerator[RowT] with TColumnGenerator[RowT] {
@@ -33,11 +37,15 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
 
   def toTColumnValue(row: RowT, ordinal: Int, types: SchemaT): TColumnValue
 
-  def toTRowSet(rows: Seq[RowT], schema: SchemaT, protocolVersion: TProtocolVersion): TRowSet = {
+  def toTRowSet(
+      rows: Seq[RowT],
+      schema: SchemaT,
+      protocolVersion: TProtocolVersion,
+      isExecuteInParallel: Boolean = false): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
       toRowBasedSet(rows, schema)
     } else {
-      toColumnBasedSet(rows, schema)
+      toColumnBasedSet(rows, schema, isExecuteInParallel)
     }
   }
 
@@ -56,18 +64,26 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
+  def toColumnBasedSet(
+      rows: Seq[RowT],
+      schema: SchemaT,
+      toColumnBasedSetInParallel: Boolean = false): TRowSet = {
     val rowSize = rows.length
     val tRowSet = new TRowSet(0, new JArrayList[TRow](rowSize))
-    var i = 0
-    val columnSize = getColumnSizeFromSchemaType(schema)
-    val tColumns = new JArrayList[TColumn](columnSize)
-    while (i < columnSize) {
-      val tColumn = toTColumn(rows, i, getColumnType(schema, i))
-      tColumns.add(tColumn)
-      i += 1
+    val columnIdRange = (0 until getColumnSizeFromSchemaType(schema))
+    val tColumns = if (toColumnBasedSetInParallel) {
+      implicit val ec: ExecutionContextExecutor = tColumnParallelExecutionContext
+      val futures = columnIdRange.map(i => Future(i, toTColumn(rows, i, getColumnType(schema, i))))
+      Await.result(Future.sequence(futures), Duration.Inf).sortBy(_._1).map(_._2)
+    } else {
+      columnIdRange.map(i => toTColumn(rows, i, getColumnType(schema, i)))
     }
-    tRowSet.setColumns(tColumns)
+    tRowSet.setColumns(tColumns.asJava)
     tRowSet
   }
+}
+
+object TRowSetGenerator {
+  private lazy val tColumnParallelExecutionContext = ExecutionContext.fromExecutor(
+    ThreadUtils.newForkJoinPool(prefix = "tcolumn-parallel-generator"))
 }
