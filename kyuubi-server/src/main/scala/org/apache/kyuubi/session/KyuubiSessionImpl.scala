@@ -281,7 +281,16 @@ class KyuubiSessionImpl(
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
-      if (_client != null) _client.closeSession()
+      if (_client != null) {
+        _client.closeSession()
+      } else {
+        Option(launchEngineOp).foreach { op =>
+          if (op.getBackgroundHandle != null) {
+            logSessionInfo(s"Abort background engine launch task due to session closed")
+            op.getBackgroundHandle.cancel(true)
+          }
+        }
+      }
     } finally {
       openSessionError.foreach { _ => if (engine != null) engine.close() }
       sessionEvent.endTime = System.currentTimeMillis()
