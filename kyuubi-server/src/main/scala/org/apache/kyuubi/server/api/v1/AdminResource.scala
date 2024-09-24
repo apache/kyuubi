@@ -333,8 +333,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val ipAddress = fe.getIpAddress
     info(s"Received listing the server configs request from $userName/$ipAddress")
     if (!fe.isAdministrator(userName)) {
-      throw new NotAllowedException(
-        s"$userName is not allowed to list the server configs")
+      throw new NotAllowedException(s"$userName is not allowed to list the server configs")
     }
     kyuubiServer.getConf.getAll.map(entry => new ConfigEntry(entry._1, entry._2)).toSeq
   }
