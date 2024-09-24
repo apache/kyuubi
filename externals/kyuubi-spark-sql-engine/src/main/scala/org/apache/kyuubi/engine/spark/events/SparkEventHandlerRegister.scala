@@ -22,7 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_SPARK_EVENT_LOGGERS}
 import org.apache.kyuubi.engine.spark.events.handler.{SparkHistoryLoggingEventHandler, SparkJsonLoggingEventHandler}
 import org.apache.kyuubi.events.{EventHandlerRegister, KyuubiEvent}
-import org.apache.kyuubi.events.handler.EventHandler
+import org.apache.kyuubi.events.handler.{EventHandler, HttpLoggingEventHandler}
 
 class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegister {
 
@@ -40,6 +40,11 @@ class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegiste
       ENGINE_EVENT_JSON_LOG_PATH,
       spark.sparkContext.hadoopConfiguration,
       kyuubiConf)
+  }
+
+  override protected def createHttpEventHandler(kyuubiConf: KyuubiConf)
+      : EventHandler[KyuubiEvent] = {
+    HttpLoggingEventHandler(ENGINE_SPARK_EVENT_LOGGERS, kyuubiConf)
   }
 
   override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
