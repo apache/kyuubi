@@ -49,6 +49,9 @@ abstract class TBinaryFrontendService(name: String)
     conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
   final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
+  final protected lazy val portRange: Option[String] =
+    conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT_RANGE)
+
   protected var server: Option[TServer] = None
   private var _actualPort: Int = _
   override protected lazy val actualPort: Int = _actualPort
@@ -97,7 +100,11 @@ abstract class TBinaryFrontendService(name: String)
             disallowedSslProtocols,
             includeCipherSuites)
         } else {
-          new TServerSocket(new ServerSocket(portNum, -1, serverAddr))
+          if (portRange.isDefined) {
+            new TServerSocket(new ServerSocket(randomPickPortFromRange(), -1, serverAddr))
+          } else {
+            new TServerSocket(new ServerSocket(portNum, -1, serverAddr))
+          }
         }
       _actualPort = tServerSocket.getServerSocket.getLocalPort
       val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
@@ -123,6 +130,14 @@ abstract class TBinaryFrontendService(name: String)
     }
     super.initialize(conf)
   }
+
+  private def randomPickPortFromRange(): Int = {
+    val portRanges: Array[String] = portRange.get.split("-")
+    val lowerPort: Int = portRanges(0).toInt
+    val upperPort: Int = portRanges(1).toInt
+    math.floor(lowerPort + math.ceil((upperPort - lowerPort) * (math.random()))).toInt
+  }
+
 
   private def getServerSSLSocket(
       keyStorePath: String,
