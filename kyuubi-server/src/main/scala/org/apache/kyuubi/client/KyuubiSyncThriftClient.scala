@@ -431,13 +431,21 @@ class KyuubiSyncThriftClient private (
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
+    fetchResp(operationHandle, orientation, maxRows, fetchLog).getResults
+  }
+
+  def fetchResp(
+      operationHandle: TOperationHandle,
+      orientation: FetchOrientation,
+      maxRows: Int,
+      fetchLog: Boolean): TFetchResultsResp = {
     val or = FetchOrientation.toTFetchOrientation(orientation)
     val req = new TFetchResultsReq(operationHandle, or, maxRows)
     val fetchType = if (fetchLog) 1.toShort else 0.toShort
     req.setFetchType(fetchType)
     val resp = withLockAcquiredAsyncRequest(FetchResults(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
-    resp.getResults
+    resp
   }
 
   def sendCredentials(encodedCredentials: String): Unit = {
