@@ -50,6 +50,6 @@ jobs:
         run: |
           cd ./kyuubi-server/web-ui
           npm install pnpm@${PNPM_VERSION} -g
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run coverage
           pnpm run build
