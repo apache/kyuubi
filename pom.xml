@@ -218,7 +218,7 @@
         <!-- webui -->
         <webui.skip>true</webui.skip>
         <node.version>v20.17.0</node.version>
-        <pnpm.version>v9.11</pnpm.version>
+        <pnpm.version>v9.11.0</pnpm.version>
 
         <hive.jdbc.artifact>kyuubi-hive-jdbc</hive.jdbc.artifact>
 
