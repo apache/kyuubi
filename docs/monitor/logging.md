@@ -27,7 +27,7 @@ In general, there are mainly three components in the Kyuubi architecture that wi
 
 In addition, a Kyuubi deployment for production usually relies on some other external systems.
 For example, both Kyuubi servers and engines will use [Apache Zookeeper](https://zookeeper.apache.org/) for service discovery.
-The instructions for external system loggings will not be included in this article.
+The instructions for external system logging will not be included in this article.
 
 ## Logs of Kyuubi Server
 
