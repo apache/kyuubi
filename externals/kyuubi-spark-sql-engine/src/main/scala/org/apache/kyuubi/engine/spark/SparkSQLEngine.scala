@@ -39,6 +39,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KE
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
+import org.apache.kyuubi.engine.spark.operation.PythonWorkerPool
 import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -68,6 +69,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
     spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
+    PythonWorkerPool.init(spark, conf)
   }
 
   override def start(): Unit = {
