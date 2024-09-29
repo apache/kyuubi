@@ -30,7 +30,9 @@ import org.glassfish.jersey.servlet.ServletContainer
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.server.KyuubiTrinoFrontendService
-import org.apache.kyuubi.server.trino.api.{ApiRequestContext, FrontendServiceContext, TrinoServerConfig}
+import org.apache.kyuubi.server.trino.api.{
+  ApiRequestContext, FrontendServiceContext, TrinoServerConfig
+}
 
 @Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {

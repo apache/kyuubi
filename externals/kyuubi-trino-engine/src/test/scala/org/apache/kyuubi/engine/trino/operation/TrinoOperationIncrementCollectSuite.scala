@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.trino.operation
 
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_TRINO_CONNECTION_CATALOG, ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT
+}
 
 class TrinoOperationIncrementCollectSuite extends TrinoOperationSuite {
   override def withKyuubiConf: Map[String, String] = Map(

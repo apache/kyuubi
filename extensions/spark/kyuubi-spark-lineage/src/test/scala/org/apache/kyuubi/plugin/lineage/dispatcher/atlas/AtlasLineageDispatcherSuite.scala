@@ -24,7 +24,9 @@ import scala.collection.JavaConverters._
 import org.apache.atlas.model.instance.{AtlasEntity, AtlasObjectId}
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.SparkConf
-import org.apache.spark.kyuubi.lineage.LineageConf.{DEFAULT_CATALOG, DISPATCHERS, SKIP_PARSING_PERMANENT_VIEW_ENABLED}
+import org.apache.spark.kyuubi.lineage.LineageConf.{
+  DEFAULT_CATALOG, DISPATCHERS, SKIP_PARSING_PERMANENT_VIEW_ENABLED
+}
 import org.apache.spark.kyuubi.lineage.SparkContextHelper
 import org.apache.spark.sql.SparkListenerExtensionTest
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -32,7 +34,9 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.{buildColumnQualifiedName, buildTableQualifiedName, COLUMN_LINEAGE_TYPE, PROCESS_TYPE}
+import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.{
+  buildColumnQualifiedName, buildTableQualifiedName, COLUMN_LINEAGE_TYPE, PROCESS_TYPE
+}
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExtensionTest {

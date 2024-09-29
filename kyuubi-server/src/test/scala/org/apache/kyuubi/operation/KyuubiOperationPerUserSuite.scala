@@ -29,7 +29,9 @@ import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode
+}
 import org.apache.kyuubi.util.SemanticVersion
 import org.apache.kyuubi.zookeeper.ZookeeperConf
 

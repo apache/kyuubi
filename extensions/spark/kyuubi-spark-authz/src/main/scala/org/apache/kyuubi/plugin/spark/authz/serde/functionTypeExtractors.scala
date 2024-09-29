@@ -22,7 +22,9 @@ import org.apache.spark.sql.catalyst.FunctionIdentifier
 import org.apache.spark.sql.catalyst.catalog.SessionCatalog
 
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionExtractor.buildFunctionFromQualifiedName
-import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.{FunctionType, PERMANENT, SYSTEM, TEMP}
+import org.apache.kyuubi.plugin.spark.authz.serde.FunctionType.{
+  FunctionType, PERMANENT, SYSTEM, TEMP
+}
 import org.apache.kyuubi.plugin.spark.authz.serde.FunctionTypeExtractor.getFunctionType
 
 object FunctionType extends Enumeration {

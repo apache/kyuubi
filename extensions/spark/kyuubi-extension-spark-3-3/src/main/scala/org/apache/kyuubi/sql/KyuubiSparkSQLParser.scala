@@ -23,7 +23,9 @@ import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.{ParseErrorListener, ParseException, ParserInterface, PostProcessor}
+import org.apache.spark.sql.catalyst.parser.{
+  ParseErrorListener, ParseException, ParserInterface, PostProcessor
+}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.types.{DataType, StructType}

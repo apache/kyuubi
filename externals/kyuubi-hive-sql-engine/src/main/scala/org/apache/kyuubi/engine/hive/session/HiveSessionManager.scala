@@ -28,7 +28,9 @@ import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hive.service.cli.{SessionHandle => ImportedSessionHandle}
 import org.apache.hive.service.cli.session.{HiveSessionImpl => ImportedHiveSessionImpl}
-import org.apache.hive.service.cli.session.{HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI}
+import org.apache.hive.service.cli.session.{
+  HiveSessionImplwithUGI => ImportedHiveSessionImplwithUGI
+}
 import org.apache.hive.service.cli.session.{SessionManager => ImportedHiveSessionManager}
 import org.apache.hive.service.cli.session.HiveSessionProxy
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion => HiveTProtocolVersion}

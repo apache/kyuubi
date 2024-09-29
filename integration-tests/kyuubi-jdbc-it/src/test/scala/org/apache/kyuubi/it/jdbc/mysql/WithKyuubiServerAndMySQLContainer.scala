@@ -21,7 +21,9 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME
+}
 import org.apache.kyuubi.engine.jdbc.mysql.WithMySQLEngine
 import org.apache.kyuubi.util.JavaUtils
 

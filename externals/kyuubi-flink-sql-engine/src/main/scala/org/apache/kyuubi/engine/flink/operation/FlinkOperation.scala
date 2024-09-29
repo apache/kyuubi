@@ -34,10 +34,14 @@ import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.{FlinkTRowSetGenerator, RowSet}
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
+import org.apache.kyuubi.operation.FetchOrientation.{
+  FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation
+}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TFetchResultsResp, TGetResultSetMetadataResp, TTableSchema
+}
 
 abstract class FlinkOperation(session: Session) extends AbstractOperation(session) {
 

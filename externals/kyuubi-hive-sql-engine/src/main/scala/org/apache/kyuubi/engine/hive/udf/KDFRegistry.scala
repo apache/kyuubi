@@ -23,7 +23,9 @@ import org.apache.hadoop.hive.ql.exec.{FunctionRegistry, UDFArgumentLengthExcept
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.hive.ql.udf.generic.GenericUDF
 import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector
-import org.apache.hadoop.hive.serde2.objectinspector.primitive.{PrimitiveObjectInspectorFactory, StringObjectInspector}
+import org.apache.hadoop.hive.serde2.objectinspector.primitive.{
+  PrimitiveObjectInspectorFactory, StringObjectInspector
+}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}

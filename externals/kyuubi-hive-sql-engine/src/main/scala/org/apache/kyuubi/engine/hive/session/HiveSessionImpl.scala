@@ -30,7 +30,9 @@ import org.apache.kyuubi.engine.hive.udf.KDFRegistry
 import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TGetInfoType, TGetInfoValue, TProtocolVersion
+}
 import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
 
 class HiveSessionImpl(

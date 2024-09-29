@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.hive
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY
+}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder._
 
 class HiveProcessBuilderSuite extends KyuubiFunSuite {

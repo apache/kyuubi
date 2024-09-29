@@ -25,7 +25,10 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnDesc, TFetchResultsResp, TGetResultSetMetadataResp, TPrimitiveTypeEntry, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TColumn, TColumnDesc, TFetchResultsResp, TGetResultSetMetadataResp, TPrimitiveTypeEntry,
+  TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId
+}
 import org.apache.kyuubi.util.ThriftUtils
 
 class NoopOperation(session: Session, shouldFail: Boolean = false)

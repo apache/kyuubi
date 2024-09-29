@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SESSION_SPARK_INITIALIZE_SQL, ENGINE_SPARK_INITIALIZE_SQL}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_SESSION_SPARK_INITIALIZE_SQL, ENGINE_SPARK_INITIALIZE_SQL
+}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class InitializeSQLSuite extends WithKyuubiServer with HiveJDBCTestHelper {

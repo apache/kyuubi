@@ -22,7 +22,9 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN
+}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.util.SignUtils
 

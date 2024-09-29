@@ -16,7 +16,10 @@
  */
 
 package org.apache.kyuubi.engine.result
-import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Long => JLong, Short => JShort}
+import java.lang.{
+  Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Long => JLong,
+  Short => JShort
+}
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, BitSet => JBitSet, List => JList}
 

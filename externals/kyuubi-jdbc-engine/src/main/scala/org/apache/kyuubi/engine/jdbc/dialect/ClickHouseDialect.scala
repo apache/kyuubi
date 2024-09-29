@@ -25,7 +25,9 @@ import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.jdbc.clickhouse.{ClickHouseSchemaHelper, ClickHouseTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEMA, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{
+  COLUMN_NAME, TABLE_CATALOG, TABLE_NAME, TABLE_SCHEMA, TABLE_TYPE
+}
 import org.apache.kyuubi.session.Session
 
 class ClickHouseDialect extends JdbcDialect {

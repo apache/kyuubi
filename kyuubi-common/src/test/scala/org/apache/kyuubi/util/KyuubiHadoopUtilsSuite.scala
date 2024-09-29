@@ -23,7 +23,9 @@ import java.util.stream.StreamSupport
 import scala.util.Random
 
 import org.apache.hadoop.hdfs.security.token.block.BlockTokenIdentifier
-import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
+import org.apache.hadoop.hdfs.security.token.delegation.{
+  DelegationTokenIdentifier => HDFSTokenIdent
+}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.Credentials
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}

@@ -21,7 +21,9 @@ import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{DataMaskingStage0Marker, DataMaskingStage1Marker}
+import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{
+  DataMaskingStage0Marker, DataMaskingStage1Marker
+}
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.RowFilterMarker
 
 object RuleEliminateMarker extends Rule[LogicalPlan] {

@@ -20,7 +20,10 @@ package org.apache.kyuubi.parser.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.{KyuubiTreeNode, PassThroughNode}
-import org.apache.kyuubi.sql.plan.trino.{Deallocate, ExecuteForPreparing, GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{
+  Deallocate, ExecuteForPreparing, GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables,
+  GetTableTypes, GetTypeInfo
+}
 
 class KyuubiTrinoFeParserSuite extends KyuubiFunSuite {
   val parser = new KyuubiTrinoFeParser()

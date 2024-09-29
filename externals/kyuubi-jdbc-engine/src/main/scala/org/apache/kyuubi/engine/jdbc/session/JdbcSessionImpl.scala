@@ -27,7 +27,9 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TGetInfoType, TGetInfoValue, TProtocolVersion
+}
 
 class JdbcSessionImpl(
     protocol: TProtocolVersion,

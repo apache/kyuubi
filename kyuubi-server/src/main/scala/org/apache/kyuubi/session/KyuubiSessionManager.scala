@@ -29,7 +29,9 @@ import org.apache.kyuubi.client.api.v1.dto.{Batch, BatchRequest}
 import org.apache.kyuubi.client.util.BatchUtils.KYUUBI_BATCH_ID_KEY
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_BATCH_PRIORITY, KYUUBI_SESSION_REAL_USER_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_BATCH_PRIORITY, KYUUBI_SESSION_REAL_USER_KEY
+}
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._

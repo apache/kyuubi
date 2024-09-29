@@ -23,9 +23,13 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.ctl.{opt, KyuubiOEffectSetup}
 import org.apache.kyuubi.ctl.cmd._
 import org.apache.kyuubi.ctl.cmd.create.{CreateBatchCommand, CreateServerCommand}
-import org.apache.kyuubi.ctl.cmd.delete.{DeleteBatchCommand, DeleteEngineCommand, DeleteServerCommand}
+import org.apache.kyuubi.ctl.cmd.delete.{
+  DeleteBatchCommand, DeleteEngineCommand, DeleteServerCommand
+}
 import org.apache.kyuubi.ctl.cmd.get.{GetBatchCommand, GetEngineCommand, GetServerCommand}
-import org.apache.kyuubi.ctl.cmd.list.{ListBatchCommand, ListEngineCommand, ListServerCommand, ListSessionCommand}
+import org.apache.kyuubi.ctl.cmd.list.{
+  ListBatchCommand, ListEngineCommand, ListServerCommand, ListSessionCommand
+}
 import org.apache.kyuubi.ctl.cmd.log.LogBatchCommand
 import org.apache.kyuubi.ctl.cmd.submit.SubmitBatchCommand
 import org.apache.kyuubi.ctl.opt.{CliConfig, CommandLine, ControlAction, ControlObject}

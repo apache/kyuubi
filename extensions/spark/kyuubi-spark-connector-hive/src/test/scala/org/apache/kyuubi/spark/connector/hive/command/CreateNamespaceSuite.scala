@@ -26,7 +26,9 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.connector.catalog.SupportsNamespaces
 import org.apache.spark.sql.internal.SQLConf
 
-import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{
+  V1_COMMAND_VERSION, V2_COMMAND_VERSION
+}
 
 trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
   override protected def command: String = "CREATE NAMESPACE"

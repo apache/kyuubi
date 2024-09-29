@@ -36,7 +36,9 @@ import io.trino.client.QueryResults
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.jdbc.hive.Utils
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.trino.api.{ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, Slug, TrinoContext}
+import org.apache.kyuubi.server.trino.api.{
+  ApiRequestContext, KyuubiTrinoOperationTranslator, Query, QueryId, Slug, TrinoContext
+}
 import org.apache.kyuubi.server.trino.api.Slug.Context.{EXECUTING_QUERY, QUEUED_QUERY}
 import org.apache.kyuubi.server.trino.api.v1.dto.Ok
 import org.apache.kyuubi.service.BackendService

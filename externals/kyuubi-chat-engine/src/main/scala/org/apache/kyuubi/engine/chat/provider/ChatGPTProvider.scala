@@ -28,7 +28,9 @@ import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import com.theokanning.openai.OpenAiApi
 import com.theokanning.openai.completion.chat.{ChatCompletionRequest, ChatMessage, ChatMessageRole}
 import com.theokanning.openai.service.OpenAiService
-import com.theokanning.openai.service.OpenAiService.{defaultClient, defaultObjectMapper, defaultRetrofit}
+import com.theokanning.openai.service.OpenAiService.{
+  defaultClient, defaultObjectMapper, defaultRetrofit
+}
 
 import org.apache.kyuubi.config.KyuubiConf
 

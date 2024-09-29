@@ -21,7 +21,9 @@ import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
-import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
+import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{
+  V1_COMMAND_VERSION, V2_COMMAND_VERSION
+}
 import org.apache.kyuubi.util.AssertionUtils.interceptContains
 
 trait DropNamespaceSuiteBase extends DDLCommandTestUtils {

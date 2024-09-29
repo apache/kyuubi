@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.engine.hive.util
 
-import org.apache.hive.service.rpc.thrift.{TFetchOrientation => HiveTFetchOrientation, THandleIdentifier => HiveTHandleIdentifier, TProtocolVersion => HiveTProtocolVersion, TRowSet => HiveTRowSet, TSessionHandle => HiveTSessionHandle, TTableSchema => HiveTTableSchema}
+import org.apache.hive.service.rpc.thrift.{
+  TFetchOrientation => HiveTFetchOrientation, THandleIdentifier => HiveTHandleIdentifier,
+  TProtocolVersion => HiveTProtocolVersion, TRowSet => HiveTRowSet,
+  TSessionHandle => HiveTSessionHandle, TTableSchema => HiveTTableSchema
+}
 import org.apache.thrift.protocol.{TCompactProtocol => HiveTCompactProtocol}
 import org.apache.thrift.transport.{TMemoryBuffer => HiveTMemoryBuffer}
 

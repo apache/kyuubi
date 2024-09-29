@@ -31,7 +31,9 @@ import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.api.{ApiRequestContext, EngineUIProxyServlet, FrontendServiceContext, OpenAPIConfig}
+import org.apache.kyuubi.server.api.{
+  ApiRequestContext, EngineUIProxyServlet, FrontendServiceContext, OpenAPIConfig
+}
 
 @Path("/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {

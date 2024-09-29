@@ -19,7 +19,9 @@ package org.apache.kyuubi.events
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
-import org.apache.kyuubi.events.handler.{CustomEventHandlerProvider, EventHandler, EventHandlerLoader}
+import org.apache.kyuubi.events.handler.{
+  CustomEventHandlerProvider, EventHandler, EventHandlerLoader
+}
 
 class CustomEventHandlerSuite extends KyuubiFunSuite {
 

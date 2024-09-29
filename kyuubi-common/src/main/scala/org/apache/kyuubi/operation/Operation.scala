@@ -22,7 +22,9 @@ import java.util.concurrent.Future
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TFetchResultsResp, TGetResultSetMetadataResp
+}
 
 trait Operation {
 

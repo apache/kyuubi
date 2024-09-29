@@ -22,7 +22,9 @@ import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExch
 import org.apache.spark.sql.hive.HiveUtils.CONVERT_METASTORE_PARQUET
 import org.apache.spark.sql.internal.SQLConf._
 
-import org.apache.kyuubi.sql.KyuubiSQLConf.{DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM}
+import org.apache.kyuubi.sql.KyuubiSQLConf.{
+  DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM
+}
 
 class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
 

@@ -20,7 +20,10 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.WithKyuubiServerAndHadoopMiniCluster
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX,
+  KYUUBI_HOME
+}
 import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.jdbc.mysql.MySQLOperationSuite
 

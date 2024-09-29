@@ -23,7 +23,9 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.Utils.{addShutdownHook, JDBC_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_DEPLOY_MODE, ENGINE_JDBC_INITIALIZE_SQL, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_DEPLOY_MODE, ENGINE_JDBC_INITIALIZE_SQL, ENGINE_KEYTAB, ENGINE_PRINCIPAL
+}
 import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.jdbc.JdbcSQLEngine.currentEngine
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils

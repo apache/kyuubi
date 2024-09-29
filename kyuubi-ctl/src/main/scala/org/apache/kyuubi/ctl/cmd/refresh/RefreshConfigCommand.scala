@@ -21,7 +21,9 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.client.AdminRestApi
 import org.apache.kyuubi.ctl.RestClientFactory.withKyuubiRestClient
 import org.apache.kyuubi.ctl.cmd.AdminCtlCommand
-import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType.{DENY_IPS, DENY_USERS, HADOOP_CONF, KUBERNETES_CONF, UNLIMITED_USERS, USER_DEFAULTS_CONF}
+import org.apache.kyuubi.ctl.cmd.refresh.RefreshConfigCommandConfigType.{
+  DENY_IPS, DENY_USERS, HADOOP_CONF, KUBERNETES_CONF, UNLIMITED_USERS, USER_DEFAULTS_CONF
+}
 import org.apache.kyuubi.ctl.opt.CliConfig
 import org.apache.kyuubi.ctl.util.{Tabulator, Validator}
 

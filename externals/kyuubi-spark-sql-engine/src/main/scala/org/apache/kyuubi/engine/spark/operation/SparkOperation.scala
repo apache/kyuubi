@@ -29,20 +29,32 @@ import org.apache.spark.ui.SparkUIUtils.formatDuration
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode,
+  OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED
+}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN,
+  KYUUBI_STATEMENT_ID_KEY
+}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
-import org.apache.kyuubi.engine.spark.schema.{SchemaHelper, SparkArrowTRowSetGenerator, SparkTRowSetGenerator}
+import org.apache.kyuubi.engine.spark.schema.{
+  SchemaHelper, SparkArrowTRowSetGenerator, SparkTRowSetGenerator
+}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.events.EventBus
-import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState, OperationStatus}
+import org.apache.kyuubi.operation.{
+  AbstractOperation, FetchIterator, OperationState, OperationStatus
+}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TRowSet
+}
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class SparkOperation(session: Session)

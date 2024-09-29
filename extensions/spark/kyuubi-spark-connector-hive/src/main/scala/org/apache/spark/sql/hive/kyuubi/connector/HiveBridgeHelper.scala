@@ -23,7 +23,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
-import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, Transform}
+import org.apache.spark.sql.connector.expressions.{
+  BucketTransform, FieldReference, IdentityTransform, Transform
+}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
 import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
 

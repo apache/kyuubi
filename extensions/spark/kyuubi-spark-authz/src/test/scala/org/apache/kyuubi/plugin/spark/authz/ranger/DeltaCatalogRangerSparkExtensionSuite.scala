@@ -25,7 +25,9 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{isSparkV32OrGreater, isSparkV35OrGreater}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{
+  isSparkV32OrGreater, isSparkV35OrGreater
+}
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 

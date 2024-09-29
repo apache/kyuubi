@@ -34,7 +34,9 @@ import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
-import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
+import org.apache.kyuubi.session.{
+  KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType
+}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 /**

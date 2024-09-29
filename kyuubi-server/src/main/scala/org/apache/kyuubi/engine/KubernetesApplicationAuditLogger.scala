@@ -23,7 +23,9 @@ import io.fabric8.kubernetes.api.model.Pod
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{
+  toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL
+}
 
 object KubernetesApplicationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {

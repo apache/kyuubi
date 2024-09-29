@@ -21,7 +21,9 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.{getAuthenticationProvider, getHttpBearerAuthenticationProvider}
+import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.{
+  getAuthenticationProvider, getHttpBearerAuthenticationProvider
+}
 
 class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
   test("Test user defined authentication") {

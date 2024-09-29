@@ -44,7 +44,13 @@ import io.trino.tpcds.generator.WebPageGeneratorColumn._
 import io.trino.tpcds.generator.WebReturnsGeneratorColumn._
 import io.trino.tpcds.generator.WebSalesGeneratorColumn._
 import io.trino.tpcds.generator.WebSiteGeneratorColumn._
-import io.trino.tpcds.row.{CallCenterRow, CatalogPageRow, CatalogReturnsRow, CatalogSalesRow, CustomerAddressRow, CustomerDemographicsRow, CustomerRow, DateDimRow, DbgenVersionRow, HouseholdDemographicsRow, IncomeBandRow, InventoryRow, ItemRow, PromotionRow, ReasonRow, ShipModeRow, StoreReturnsRow, StoreRow, StoreSalesRow, TableRow, TableRowWithNulls, TimeDimRow, WarehouseRow, WebPageRow, WebReturnsRow, WebSalesRow, WebSiteRow}
+import io.trino.tpcds.row.{
+  CallCenterRow, CatalogPageRow, CatalogReturnsRow, CatalogSalesRow, CustomerAddressRow,
+  CustomerDemographicsRow, CustomerRow, DateDimRow, DbgenVersionRow, HouseholdDemographicsRow,
+  IncomeBandRow, InventoryRow, ItemRow, PromotionRow, ReasonRow, ShipModeRow, StoreReturnsRow,
+  StoreRow, StoreSalesRow, TableRow, TableRowWithNulls, TimeDimRow, WarehouseRow, WebPageRow,
+  WebReturnsRow, WebSalesRow, WebSiteRow
+}
 
 import org.apache.kyuubi.spark.connector.tpcds.row.KyuubiTPCDSTableRowWithNullsUtils._
 import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}

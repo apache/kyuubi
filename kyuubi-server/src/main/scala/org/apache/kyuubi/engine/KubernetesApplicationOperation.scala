@@ -18,7 +18,9 @@
 package org.apache.kyuubi.engine
 
 import java.util.Locale
-import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{
+  ConcurrentHashMap, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit
+}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -31,10 +33,14 @@ import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndex
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.client.util.JsonUtils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, KubernetesCleanupDriverPodStrategy}
+import org.apache.kyuubi.config.KyuubiConf.{
+  KubernetesApplicationStateSource, KubernetesCleanupDriverPodStrategy
+}
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
-import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.ApplicationState.{
+  isTerminated, ApplicationState, FAILED, FINISHED, NOT_FOUND, PENDING, RUNNING, UNKNOWN
+}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSessionManager

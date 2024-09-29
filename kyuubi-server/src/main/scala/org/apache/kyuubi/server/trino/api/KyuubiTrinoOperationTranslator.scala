@@ -24,7 +24,9 @@ import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.sql.parser.trino.KyuubiTrinoFeParser
 import org.apache.kyuubi.sql.plan.PassThroughNode
-import org.apache.kyuubi.sql.plan.trino.{GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo}
+import org.apache.kyuubi.sql.plan.trino.{
+  GetCatalogs, GetColumns, GetPrimaryKeys, GetSchemas, GetTables, GetTableTypes, GetTypeInfo
+}
 
 class KyuubiTrinoOperationTranslator(backendService: BackendService) {
   lazy val parser = new KyuubiTrinoFeParser()

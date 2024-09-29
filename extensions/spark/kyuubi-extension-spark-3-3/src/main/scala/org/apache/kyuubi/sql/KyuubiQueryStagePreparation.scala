@@ -23,7 +23,9 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.adaptive.QueryStageExec
 import org.apache.spark.sql.execution.command.{ResetCommand, SetCommand}
-import org.apache.spark.sql.execution.exchange.{BroadcastExchangeLike, ReusedExchangeExec, ShuffleExchangeLike}
+import org.apache.spark.sql.execution.exchange.{
+  BroadcastExchangeLike, ReusedExchangeExec, ShuffleExchangeLike
+}
 import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._

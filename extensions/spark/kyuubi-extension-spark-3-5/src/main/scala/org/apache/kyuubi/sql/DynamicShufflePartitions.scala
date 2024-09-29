@@ -17,15 +17,21 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, RangePartitioning, RoundRobinPartitioning}
+import org.apache.spark.sql.catalyst.plans.physical.{
+  HashPartitioning, RangePartitioning, RoundRobinPartitioning
+}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{FileSourceScanExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.ShuffleQueryStageExec
-import org.apache.spark.sql.execution.exchange.{REPARTITION_BY_NUM, ShuffleExchangeExec, ValidateRequirements}
+import org.apache.spark.sql.execution.exchange.{
+  REPARTITION_BY_NUM, ShuffleExchangeExec, ValidateRequirements
+}
 import org.apache.spark.sql.hive.HiveSparkPlanHelper.HiveTableScanExec
 import org.apache.spark.sql.internal.SQLConf._
 
-import org.apache.kyuubi.sql.KyuubiSQLConf.{DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM}
+import org.apache.kyuubi.sql.KyuubiSQLConf.{
+  DYNAMIC_SHUFFLE_PARTITIONS, DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM
+}
 
 /**
  * Dynamically adjust the number of shuffle partitions according to the input data size

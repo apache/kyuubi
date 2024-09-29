@@ -27,7 +27,9 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.kyuubi.shaded.thrift.TProcessorFactory
-import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
+import org.apache.kyuubi.shaded.thrift.transport.{
+  TSaslServerTransport, TTransportException, TTransportFactory
+}
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 

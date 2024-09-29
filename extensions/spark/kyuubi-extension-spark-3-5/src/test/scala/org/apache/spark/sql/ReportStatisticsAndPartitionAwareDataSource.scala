@@ -19,10 +19,14 @@ package org.apache.spark.sql
 
 import java.util.OptionalLong
 
-import org.apache.spark.sql.connector.{RangeInputPartition, SimpleBatchTable, SimpleScanBuilder, SimpleWritableDataSource}
+import org.apache.spark.sql.connector.{
+  RangeInputPartition, SimpleBatchTable, SimpleScanBuilder, SimpleWritableDataSource
+}
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.{Expressions, FieldReference, Transform}
-import org.apache.spark.sql.connector.read.{InputPartition, ScanBuilder, Statistics, SupportsReportPartitioning, SupportsReportStatistics}
+import org.apache.spark.sql.connector.read.{
+  InputPartition, ScanBuilder, Statistics, SupportsReportPartitioning, SupportsReportStatistics
+}
 import org.apache.spark.sql.connector.read.partitioning.{KeyGroupedPartitioning, Partitioning}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 

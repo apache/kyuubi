@@ -20,7 +20,9 @@ import java.sql.{Connection, Driver, DriverManager}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_JDBC_CONNECTION_PROVIDER, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DRIVER_CLASS
+}
 import org.apache.kyuubi.util.reflect.DynClasses
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 

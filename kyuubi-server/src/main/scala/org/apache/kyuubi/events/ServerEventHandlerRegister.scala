@@ -20,7 +20,9 @@ import java.net.InetAddress
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.events.handler.{EventHandler, ServerJsonLoggingEventHandler, ServerKafkaLoggingEventHandler}
+import org.apache.kyuubi.events.handler.{
+  EventHandler, ServerJsonLoggingEventHandler, ServerKafkaLoggingEventHandler
+}
 import org.apache.kyuubi.events.handler.ServerKafkaLoggingEventHandler.KAFKA_SERVER_EVENT_HANDLER_PREFIX
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 

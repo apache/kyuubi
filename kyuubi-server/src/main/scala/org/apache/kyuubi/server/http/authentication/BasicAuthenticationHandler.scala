@@ -24,7 +24,9 @@ import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{
+  AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER
+}
 import org.apache.kyuubi.service.authentication.{AuthenticationProviderFactory, AuthMethods}
 import org.apache.kyuubi.service.authentication.AuthTypes._
 

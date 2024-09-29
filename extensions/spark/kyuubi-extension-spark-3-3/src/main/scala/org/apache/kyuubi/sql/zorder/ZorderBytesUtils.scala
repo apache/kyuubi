@@ -19,7 +19,10 @@ package org.apache.kyuubi.sql.zorder
 
 import java.lang.{Double => jDouble, Float => jFloat}
 
-import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.types.{
+  BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType,
+  IntegerType, LongType, ShortType, StringType, TimestampType
+}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException

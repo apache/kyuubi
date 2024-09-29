@@ -18,7 +18,9 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, CommandResult, LogicalPlan, Union, WithCTE}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  Aggregate, CommandResult, LogicalPlan, Union, WithCTE
+}
 import org.apache.spark.sql.execution.command.DataWritingCommand
 
 case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMaxOutputRowsBase {

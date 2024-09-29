@@ -26,7 +26,9 @@ import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.ldap.{DirSearch, DirSearchFactory, LdapSearchFactory}
+import org.apache.kyuubi.service.authentication.ldap.{
+  DirSearch, DirSearchFactory, LdapSearchFactory
+}
 import org.apache.kyuubi.service.authentication.ldap.LdapUtils.getUserName
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {

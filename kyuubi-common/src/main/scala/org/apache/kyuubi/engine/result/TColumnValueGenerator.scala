@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.result
 
-import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Long => JLong, Short => JShort}
+import java.lang.{
+  Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Long => JLong,
+  Short => JShort
+}
 
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 

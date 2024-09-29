@@ -26,8 +26,13 @@ import scala.util.matching.Regex
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_APP_MGR_INFO_KEY, KYUUBI_ENGINE_CREDENTIALS_KEY}
+import org.apache.kyuubi.config.KyuubiConf.{
+  ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS,
+  ENGINE_FLINK_MEMORY
+}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{
+  KYUUBI_ENGINE_APP_MGR_INFO_KEY, KYUUBI_ENGINE_CREDENTIALS_KEY
+}
 import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.engine.ApplicationManagerInfo.serialize
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._

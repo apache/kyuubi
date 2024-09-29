@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.jdbc.doris
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetInfoReq, TGetInfoType, TStatusCode}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{
+  TExecuteStatementReq, TFetchResultsReq, TGetInfoReq, TGetInfoType, TStatusCode
+}
 
 class OperationWithEngineSuite extends DorisOperationSuite with HiveJDBCTestHelper {
 

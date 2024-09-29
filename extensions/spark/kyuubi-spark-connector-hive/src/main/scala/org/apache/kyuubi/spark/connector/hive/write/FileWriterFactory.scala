@@ -25,7 +25,9 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory}
-import org.apache.spark.sql.execution.datasources.{DynamicPartitionDataSingleWriter, SingleDirectoryDataWriter, WriteJobDescription}
+import org.apache.spark.sql.execution.datasources.{
+  DynamicPartitionDataSingleWriter, SingleDirectoryDataWriter, WriteJobDescription
+}
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.SparkHadoopWriterUtils
 
 /**

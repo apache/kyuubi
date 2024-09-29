@@ -21,7 +21,9 @@ import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics, View}
+import org.apache.spark.sql.catalyst.plans.logical.{
+  LeafNode, LogicalPlan, Project, Statistics, View
+}
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)

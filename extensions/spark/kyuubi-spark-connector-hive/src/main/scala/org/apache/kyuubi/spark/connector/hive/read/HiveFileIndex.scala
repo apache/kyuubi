@@ -25,13 +25,19 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{expressions, InternalRow}
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, BoundReference, Expression, Predicate}
+import org.apache.spark.sql.catalyst.catalog.{
+  CatalogTable, CatalogTablePartition, ExternalCatalogUtils
+}
+import org.apache.spark.sql.catalyst.expressions.{
+  AttributeReference, BoundReference, Expression, Predicate
+}
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException}
+import org.apache.kyuubi.spark.connector.hive.{
+  HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException
+}
 
 class HiveCatalogFileIndex(
     sparkSession: SparkSession,
