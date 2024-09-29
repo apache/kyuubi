@@ -52,15 +52,15 @@ spark.plugins=org.apache.spark.kyuubi.jvm.quake.SparkJVMQuakePlugin
 
 ## Additional Configurations
 
-|                   Name                   |       Default Value       |                            Description                             |
-|------------------------------------------|---------------------------|--------------------------------------------------------------------|
-| spark.driver.jvmQuake.enabled            | false                     | when true, enable driver jvmQuake                                  |
-| spark.executor.jvmQuake.enabled          | false                     | when true, enable executor jvmQuake                                |
+|                   Name                   |       Default Value       |                            Description                            |
+|------------------------------------------|---------------------------|-------------------------------------------------------------------|
+| spark.driver.jvmQuake.enabled            | false                     | when true, enable driver jvmQuake                                 |
+| spark.executor.jvmQuake.enabled          | false                     | when true, enable executor jvmQuake                               |
 | spark.driver.jvmQuake.heapDump.enabled   | false                     | when true, enable jvm heap dump when jvmQuake reach the threshold |
 | spark.executor.jvmQuake.heapDump.enabled | false                     | when true, enable jvm heap dump when jvmQuake reach the threshold |
-| spark.jvmQuake.killThreshold             | 200                       | The number of seconds to kill process                              |
-| spark.jvmQuake.exitCode                  | 502                       | The exit code of kill process                                      |
-| spark.jvmQuake.heapDumpPath              | /tmp/spark_jvm_quake/apps | The path of heap dump                                              |
-| spark.jvmQuake.checkInterval             | 3                         | The number of seconds to check jvmQuake                            |
-| spark.jvmQuake.runTimeWeight             | 1.0                       | The weight of rum time                                             |
+| spark.jvmQuake.killThreshold             | 200                       | The number of seconds to kill process                             |
+| spark.jvmQuake.exitCode                  | 502                       | The exit code of kill process                                     |
+| spark.jvmQuake.heapDumpPath              | /tmp/spark_jvm_quake/apps | The path of heap dump                                             |
+| spark.jvmQuake.checkInterval             | 3                         | The number of seconds to check jvmQuake                           |
+| spark.jvmQuake.runTimeWeight             | 1.0                       | The weight of rum time                                            |
 
