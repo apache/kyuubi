@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
+import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, RemoveRepartitionBeforeInsertInto, ResolveZorder}
 
 class KyuubiSparkSQLCommonExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
@@ -32,6 +32,7 @@ object KyuubiSparkSQLCommonExtension {
     // inject zorder parser and related rules
     extensions.injectParser { case (_, parser) => new SparkKyuubiSparkSQLParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
+    extensions.injectResolutionRule(RemoveRepartitionBeforeInsertInto)
 
     // Note that:
     // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive

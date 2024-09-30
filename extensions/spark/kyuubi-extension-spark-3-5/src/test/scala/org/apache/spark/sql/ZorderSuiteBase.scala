@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, EqualTo, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, OneRowRelation, Project, Sort}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, OneRowRelation, Project, RebalancePartitions, Repartition, Sort}
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
@@ -660,6 +660,53 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
           .queryExecution.analyzed
         assert(p2.collect {
           case sort: Sort if !sort.global => sort
+        }.size == 0)
+      }
+    }
+  }
+
+  test("Check remove user specify repartition as expected") {
+    withTable("t") {
+      sql(
+        """
+          |CREATE TABLE t (c1 int, c2 string) TBLPROPERTIES (
+          |'kyuubi.zorder.enabled'= 'true',
+          |'kyuubi.zorder.cols'= 'c1,c2')
+          |""".stripMargin)
+      withSQLConf(
+        KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "true",
+        KyuubiSQLConf.REMOVE_CUSTOMIZE_REPARTITION_BEFORE_INSERT.key -> "false") {
+        val p1 = sql("INSERT INTO TABLE t SELECT /*+ REPARTITION(1) */ * FROM VALUES(1,'a')")
+          .queryExecution.analyzed
+        assert(p1.collect {
+          case sort: Sort if sort.global => sort
+        }.size == 0)
+      }
+      withSQLConf(
+        KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "true",
+        KyuubiSQLConf.REMOVE_CUSTOMIZE_REPARTITION_BEFORE_INSERT.key -> "true") {
+        val p2 = sql("INSERT INTO TABLE t SELECT /*+ REPARTITION(1) */ * FROM VALUES(1,'a')")
+          .queryExecution.analyzed
+        // After removing repartition, global sort can insert zorder
+        assert(p2.collect {
+          case sort: Sort if sort.global => sort
+        }.size == 1)
+      }
+      withSQLConf(
+        KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "false",
+        KyuubiSQLConf.REMOVE_CUSTOMIZE_REPARTITION_BEFORE_INSERT.key -> "true",
+        KyuubiSQLConf.REBALANCE_BEFORE_ZORDER.key -> "true") {
+        val p3 = sql("INSERT INTO TABLE t SELECT /*+ REPARTITION(1) */ * FROM VALUES(1,'a')")
+          .queryExecution.analyzed
+        assert(p3.collect {
+          case sort: Sort if !sort.global => sort
+        }.size == 1)
+        assert(p3.collect {
+          case rebalance: RebalancePartitions => rebalance
+        }.size == 1)
+        // After removing repartition, insert rebalance before zorder can reduce one shuffle
+        assert(p3.collect {
+          case repartition: Repartition => repartition
         }.size == 0)
       }
     }
