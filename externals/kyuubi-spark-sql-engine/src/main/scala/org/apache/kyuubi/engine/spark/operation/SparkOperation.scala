@@ -60,7 +60,15 @@ abstract class SparkOperation(session: Session)
 
   protected var result: DataFrame = _
 
-  protected def resultSchema: StructType
+  protected def resultSchema: StructType = {
+    if (!hasResultSet) {
+      new StructType()
+    } else if (result == null || result.schema.isEmpty) {
+      new StructType().add("Result", "string")
+    } else {
+      result.schema
+    }
+  }
 
   override def redactedStatement: String =
     redact(spark.sessionState.conf.stringRedactionPattern, statement)

@@ -61,10 +61,10 @@ class ExecuteScala(
   override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
+    if (result == null) {
       new StructType().add("output", "string")
     } else {
-      result.schema
+      super.resultSchema
     }
   }
 
