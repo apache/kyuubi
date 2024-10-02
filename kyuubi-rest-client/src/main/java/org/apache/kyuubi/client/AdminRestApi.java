@@ -19,10 +19,7 @@ package org.apache.kyuubi.client;
 
 import java.util.*;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.kyuubi.client.api.v1.dto.Engine;
-import org.apache.kyuubi.client.api.v1.dto.OperationData;
-import org.apache.kyuubi.client.api.v1.dto.ServerData;
-import org.apache.kyuubi.client.api.v1.dto.SessionData;
+import org.apache.kyuubi.client.api.v1.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,6 +86,14 @@ public class AdminRestApi {
     params.put("hive.server2.proxy.user", hs2ProxyUser);
     params.put("kill", kill);
     return this.getClient().delete(API_BASE_PATH + "/engine", params, client.getAuthHeader());
+  }
+
+  public List<ConfigEntry> listConfigs() {
+    Map<String, Object> params = new HashMap<>();
+    ConfigEntry[] result =
+        this.getClient()
+            .get(API_BASE_PATH + "/config", params, ConfigEntry[].class, client.getAuthHeader());
+    return Arrays.asList(result);
   }
 
   public List<Engine> listEngines(

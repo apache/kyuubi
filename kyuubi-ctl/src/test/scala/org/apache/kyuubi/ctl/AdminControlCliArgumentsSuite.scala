@@ -49,6 +49,15 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
     }
   }
 
+  test("test list server config") {
+    val args = Array(
+      "list",
+      "config")
+    val opArgs1 = new AdminControlCliArguments(args)
+    assert(opArgs1.cliConfig.action === ControlAction.LIST)
+    assert(opArgs1.cliConfig.resource === ControlObject.CONFIG)
+  }
+
   test("test refresh config") {
     var args = Array(
       "refresh",
@@ -164,8 +173,10 @@ class AdminControlCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExi
          |  --hs2ProxyUser <value>   The value of hive.server2.proxy.user config.
          |  --conf <value>           Kyuubi config property pair, formatted key=value.
          |
-         |Command: list [engine|server]
+         |Command: list [config|engine|server]
          |	List information about resources.
+         |Command: list config
+         |	List all the server configs
          |Command: list engine [options]
          |	List all the engine nodes for a user
          |  -et, --engine-type <value>

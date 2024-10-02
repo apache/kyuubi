@@ -200,8 +200,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       cloned.set(e.getKey, e.getValue)
     }
 
-    for ((k, v) <-
-        getAllWithPrefix(s"$USER_DEFAULTS_CONF_QUOTE${user}$USER_DEFAULTS_CONF_QUOTE", "")) {
+    for ((k, v) <- getAllWithPrefix(getUserDefaultsPrefix(user), "")) {
       cloned.set(k, v)
     }
     serverOnlyConfEntries.foreach(cloned.unset)
@@ -286,6 +285,12 @@ object KyuubiConf {
   def buildConf(key: String): ConfigBuilder = {
     ConfigBuilder(key).onCreate(register)
   }
+
+  def getUserDefaultsPrefix(user: String): String =
+    s"$USER_DEFAULTS_CONF_QUOTE$user$USER_DEFAULTS_CONF_QUOTE"
+
+  def wrapConfKeyWithUserDefaults(user: String, key: String): String =
+    s"${getUserDefaultsPrefix(user)}.$key"
 
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("kyuubi.kinit.principal")
     .doc("Name of the Kerberos principal.")
