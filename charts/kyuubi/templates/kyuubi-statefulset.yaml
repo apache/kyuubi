@@ -59,14 +59,28 @@ spec:
           {{- with .Values.command }}
           command: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}
-          {{- with .Values.args }}
+          {{- if .Values.args }}
           args: {{- tpl (toYaml .) $ | nindent 12 }}
+          {{- else }}
+          args:
+            - ./bin/kyuubi
+            - run
+            - --conf kyuubi.kubernetes.namespace={{ .Release.Namespace }}
+            - --conf kyuubi.frontend.connection.url.use.hostname=false
+            - --conf kyuubi.frontend.thrift.binary.bind.port={{ .Values.server.thriftBinary.port }}
+            - --conf kyuubi.frontend.thrift.http.bind.port={{ .Values.server.thriftHttp.port }}
+            - --conf kyuubi.frontend.rest.bind.port={{ .Values.server.rest.port }}
+            - --conf kyuubi.frontend.mysql.bind.port={{ .Values.server.mysql.port }}
+            - --conf kyuubi.frontend.protocols={{ include "kyuubi.frontend.protocols" . }}
+            - --conf kyuubi.metrics.enabled={{ .Values.metrics.enabled }}
+            - --conf kyuubi.metrics.reporters={{ .Values.metrics.reporters }}
+            - --conf kyuubi.metrics.prometheus.port={{ .Values.metrics.prometheusPort }}
           {{- end }}
           env:
             - name: KYUUBI_CONF_DIR
-              value: {{ .Values.kyuubiConfDir }}
+              value: {{ .Values.kyuubiConf.dir }}
             - name: SPARK_CONF_DIR
-              value: {{ .Values.sparkConfDir }}
+              value: {{ .Values.sparkConf.dir }}
             {{- with .Values.env }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -109,9 +123,9 @@ spec:
           {{- end }}
           volumeMounts:
             - name: conf
-              mountPath: {{ .Values.kyuubiConfDir }}
+              mountPath: {{ .Values.kyuubiConf.dir }}
             - name: conf-spark
-              mountPath: {{ .Values.sparkConfDir }}
+              mountPath: {{ .Values.sparkConf.dir }}
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
             {{- end }}
@@ -120,11 +134,21 @@ spec:
         {{- end }}
       volumes:
         - name: conf
-          configMap:
-            name: {{ .Release.Name }}
+          projected:
+            sources:
+              - configMap:
+                  name: {{ .Release.Name }}
+              {{- with .Values.kyuubiConf.filesFrom }}
+                {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- end }}
         - name: conf-spark
-          configMap:
-            name: {{ .Release.Name }}-spark
+          projected:
+            sources:
+              - configMap:
+                  name: {{ .Release.Name }}-spark
+              {{- with .Values.sparkConf.filesFrom }}
+                {{- tpl (toYaml .) $ | nindent 14 }}
+              {{- end }}
         {{- with .Values.volumes }}
           {{- tpl (toYaml .) $ | nindent 8 }}
         {{- end }}
