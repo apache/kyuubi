@@ -193,14 +193,13 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
   }
 
   test("fast fail the kyuubi connection on engine terminated") {
-    val batchId = UUID.randomUUID().toString
     withSessionConf(Map.empty)(Map(
       "spark.master" -> "yarn",
       "spark.submit.deployMode" -> "cluster",
       "spark.sql.defaultCatalog=spark_catalog" -> "spark_catalog",
       "spark.sql.catalog.spark_catalog.type" -> "invalid_type",
       ENGINE_INIT_TIMEOUT.key -> "PT10M",
-      KYUUBI_BATCH_ID_KEY -> batchId))(Map.empty) {
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))(Map.empty) {
       val startTime = System.currentTimeMillis()
       val exception = intercept[Exception] {
         withJdbcStatement() { _ => }
@@ -208,8 +207,13 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       val elapsedTime = System.currentTimeMillis() - startTime
       assert(elapsedTime < 60 * 1000)
       assert(exception.getMessage contains "Could not open client transport with JDBC Uri")
-      assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("ERROR"))
-      assert(sessionManager.getBatchMetadata(batchId).map(_.appState).contains("UNKNOWN"))
     }
+  }
+
+  test("last application state is UNKNOWN if engine connection fail") {
+    val batchId = UUID.randomUUID().toString
+    // TODO Simulate connection fail
+    assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("ERROR"))
+    assert(sessionManager.getBatchMetadata(batchId).map(_.appState).contains("UNKNOWN"))
   }
 }
