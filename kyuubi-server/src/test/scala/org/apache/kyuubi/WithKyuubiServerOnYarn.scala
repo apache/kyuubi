@@ -210,11 +210,4 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       assert(exception.getMessage contains "Could not open client transport with JDBC Uri")
     }
   }
-
-  test("last application state is UNKNOWN if engine connection fail") {
-    val batchId = UUID.randomUUID().toString
-    // TODO Simulate connection fail
-    assert(sessionManager.getBatchMetadata(batchId).map(_.state).contains("ERROR"))
-    assert(sessionManager.getBatchMetadata(batchId).map(_.appState).contains("UNKNOWN"))
-  }
 }
