@@ -32,6 +32,7 @@ import org.apache.kyuubi.operation.{FetchOrientation, HiveJDBCTestHelper, Operat
 import org.apache.kyuubi.operation.OperationState.ERROR
 import org.apache.kyuubi.server.MiniYarnService
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager}
+import org.apache.hadoop.yarn.client.api.YarnClient
 
 /**
  * To developers:
