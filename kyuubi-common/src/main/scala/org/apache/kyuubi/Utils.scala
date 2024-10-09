@@ -416,4 +416,14 @@ object Utils extends Logging {
     }
   }
 
+  /**
+   * Concatenates the engine-specific path to the metrics endpoint.
+   *
+   * @param path Segment of the path (e.g., engine space) to append to the "/metrics" base path.
+   * @return The combined metrics path, formatted as "/metrics{path}", where {path} is the input.
+   */
+  def concatEngineMetricsPath(path: String): String = {
+    s"/metrics$path"
+  }
+
 }
