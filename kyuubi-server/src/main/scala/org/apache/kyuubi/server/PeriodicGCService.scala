@@ -41,11 +41,13 @@ class PeriodicGCService(name: String) extends AbstractService(name) {
 
   private def startGcTrigger(): Unit = {
     val interval = conf.get(KyuubiConf.SERVER_PERIODIC_GC_INTERVAL)
-    scheduleTolerableRunnableWithFixedDelay(
-      gcTrigger,
-      () => System.gc(),
-      interval,
-      interval,
-      TimeUnit.MILLISECONDS)
+    if (interval > 0) {
+      scheduleTolerableRunnableWithFixedDelay(
+        gcTrigger,
+        () => System.gc(),
+        interval,
+        interval,
+        TimeUnit.MILLISECONDS)
+    }
   }
 }
