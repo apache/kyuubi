@@ -37,6 +37,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
+import org.apache.kyuubi.util.JavaUtils
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -142,7 +143,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       ipAddress,
       (request.getConfigs.asScala ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
-        KYUUBI_SERVER_IP_KEY -> fe.host,
+        KYUUBI_SERVER_IP_KEY -> {
+          if (JavaUtils.isAnyInetAddress(fe.host)) {
+            JavaUtils.findLocalInetAddress.getHostAddress
+          } else {
+            fe.host
+          }
+        },
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
         KYUUBI_SESSION_REAL_USER_KEY -> fe.getRealUser())).toMap)
     new dto.SessionHandle(handle.identifier, fe.connectionUrl)
