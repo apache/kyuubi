@@ -162,10 +162,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
     requestObj.setBatchType("PYSPARK")
     requestObj.setName("pyspark-test")
-    requestObj.setExtraResourcesMap(Map(
-      "spark.submit.pyFiles" -> modulesZipFileName,
-      "hahaha" -> "ok.file",
-    ).asJava)
+    requestObj.setExtraResourcesMap(Map("spark.submit.pyFiles" -> modulesZipFileName).asJava)
     val extraResources = List(modulesZipFile)
     val batch: Batch = batchRestApi.createBatch(requestObj, appScriptFile, extraResources.asJava)
 
