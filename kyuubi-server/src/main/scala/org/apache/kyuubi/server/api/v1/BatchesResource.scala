@@ -202,13 +202,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       "batchRequest is required and please check the content type" +
         " of batchRequest is application/json")
 
-    val usedExtraResourcesFileNames =
-      batchRequest.getExtraResourcesMap.values.asScala.flatMap(_.split(",")).toSet
-    val fileNamesInMultiParts = formDataMultiPart.getFields.values().flatten
-      .map(_.getContentDisposition.getFileName).toSet
+    val unsatisfiedFileNames =
+      batchRequest.getExtraResourcesMap.values.asScala.flatMap(_.split(",")).toSet.diff(
+        formDataMultiPart.getFields.values().flatten.map(_.getContentDisposition.getFileName).toSet)
     require(
-      usedExtraResourcesFileNames.subsetOf(fileNamesInMultiParts),
-      "not all required extra resource files are uploaded")
+      unsatisfiedFileNames.isEmpty,
+      f"required extra resource files [${unsatisfiedFileNames.mkString(",")}]" +
+        f" are not uploaded in the multipart form data")
 
     openBatchSessionInternal(
       batchRequest,
