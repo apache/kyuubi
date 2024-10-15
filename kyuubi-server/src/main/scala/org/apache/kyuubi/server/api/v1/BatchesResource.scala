@@ -26,6 +26,7 @@ import javax.ws.rs._
 import javax.ws.rs.core.MediaType
 
 import scala.collection.JavaConverters._
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
@@ -200,6 +201,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       batchRequest != null,
       "batchRequest is required and please check the content type" +
         " of batchRequest is application/json")
+
+    val usedExtraResourcesFileNames =
+      batchRequest.getExtraResourcesMap.values.asScala.flatMap(_.split(",")).toSet
+    val fileNamesInMultiParts = formDataMultiPart.getFields.values().flatten
+      .map(_.getContentDisposition.getFileName).toSet
+    require(
+      usedExtraResourcesFileNames.subsetOf(fileNamesInMultiParts),
+      "not all required extra resource files are uploaded")
+
     openBatchSessionInternal(
       batchRequest,
       isResourceFromUpload = true,
