@@ -23,7 +23,6 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import scala.collection.JavaConverters._
 
-import com.github.dockerjava.zerodep.shaded.org.apache.hc.core5.http.HttpResponse
 import org.apache.http.client.HttpResponseException
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
@@ -203,13 +202,18 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
     requestObj.setBatchType("PYSPARK")
     requestObj.setName("pyspark-test")
-    requestObj.setExtraResourcesMap(Map("spark.submit.pyFiles" -> "non-existed.zip").asJava)
+    requestObj.setExtraResourcesMap(Map(
+      "spark.submit.pyFiles" -> "non-existed-zip.zip",
+      "spark.files" -> "non-existed-jar.jar",
+      "spark.some.config1" -> "",
+      "spark.some.config2" -> " ",
+    ).asJava)
 
     try {
       interceptCauseContains[KyuubiRestException, HttpResponseException] {
         batchRestApi.createBatch(requestObj, appScriptFile, List().asJava)
-      }("required extra resource files [non-existed.zip] are not uploaded" +
-        " in the multipart form data")
+      }("required extra resource files [non-existed-jar.jar,non-existed-zip.zip]" +
+        " are not uploaded in the multipart form data")
     } finally {
       basicKyuubiRestClient.close()
     }
