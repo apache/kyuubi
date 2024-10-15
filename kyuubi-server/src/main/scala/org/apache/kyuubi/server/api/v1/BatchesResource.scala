@@ -203,10 +203,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         " of batchRequest is application/json")
 
     val unUploadedExtraResourceFileNames =
-      batchRequest.getExtraResourcesMap.values.asScala
-        .flatMap(_.split(",")).filter(StringUtils.isNotBlank(_)).toSet.diff(
-          formDataMultiPart.getFields.values().flatten.map(_.getContentDisposition.getFileName)
-            .filter(StringUtils.isNotBlank(_)).toSet)
+      batchRequest.getExtraResourcesMap.values.asScala.flatMap(_.split(",")).toSet.diff(
+        formDataMultiPart.getFields.values.flatten.map(_.getContentDisposition.getFileName).toSet)
+        .filter(StringUtils.isNotBlank(_))
     require(
       unUploadedExtraResourceFileNames.isEmpty,
       f"required extra resource files " +
