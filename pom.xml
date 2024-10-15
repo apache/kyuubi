@@ -208,8 +208,6 @@
         <supercsv.version>2.2.0</supercsv.version>
         <swagger.version>2.2.1</swagger.version>
         <testcontainers-scala.version>0.41.0</testcontainers-scala.version>
-        <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
-        <threeten.version>1.7.0</threeten.version>
         <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
         <trino.client.version>411</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
@@ -1193,12 +1191,6 @@
                 <groupId>com.theokanning.openai-gpt3-java</groupId>
                 <artifactId>service</artifactId>
                 <version>${openai.java.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.threeten</groupId>
-                <artifactId>threeten-extra</artifactId>
-                <version>${threeten.version}</version>
             </dependency>
 
             <dependency>
