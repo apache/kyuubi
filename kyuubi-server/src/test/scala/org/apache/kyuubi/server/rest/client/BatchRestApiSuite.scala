@@ -206,8 +206,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
       "spark.submit.pyFiles" -> "non-existed-zip.zip",
       "spark.files" -> "non-existed-jar.jar",
       "spark.some.config1" -> "",
-      "spark.some.config2" -> " ",
-    ).asJava)
+      "spark.some.config2" -> " ").asJava)
 
     try {
       interceptCauseContains[KyuubiRestException, HttpResponseException] {
