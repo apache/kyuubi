@@ -193,4 +193,17 @@ object AssertionUtils {
     val exception = intercept[T](f)(classTag, pos)
     assert(exception.getMessage.endsWith(end))
   }
+
+  /**
+   * Asserts that the given function throws an exception of the given type T
+   * with a cause of type Q and with the cause message of the exception equals to expected string
+   */
+  def interceptCauseContains[T <: Exception, Q <: Throwable](f: => Any)(contained: String)(
+      implicit
+      classTag: ClassTag[T],
+      pos: Position): Unit = {
+    assert(contained != null)
+    val exception = intercept[T](f)(classTag, pos)
+    assert(exception.getCause.asInstanceOf[Q].getMessage.contains(contained))
+  }
 }
