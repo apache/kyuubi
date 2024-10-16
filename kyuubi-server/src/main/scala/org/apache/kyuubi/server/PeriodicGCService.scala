@@ -22,12 +22,12 @@ import java.util.concurrent.TimeUnit
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.ThreadUtils
-import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
+import org.apache.kyuubi.util.ThreadUtils.{newDaemonSingleThreadScheduledExecutor, scheduleTolerableRunnableWithFixedDelay}
 
 class PeriodicGCService(name: String) extends AbstractService(name) {
   def this() = this(classOf[PeriodicGCService].getSimpleName)
 
-  private val gcTrigger = ThreadUtils.newDaemonSingleThreadScheduledExecutor("periodic-gc-trigger")
+  private lazy val gcTrigger = newDaemonSingleThreadScheduledExecutor("periodic-gc-trigger")
 
   override def start(): Unit = {
     startGcTrigger()
