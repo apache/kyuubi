@@ -65,7 +65,7 @@ class TrinoProcessBuilder(
     buffer += s"-Xmx$memory"
     val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
-      buffer += javaOptions.get
+      buffer ++= parseOptionString(javaOptions.get)
     }
 
     val classpathEntries = new mutable.LinkedHashSet[String]
