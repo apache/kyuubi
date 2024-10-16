@@ -30,6 +30,7 @@ import org.apache.flink.table.gateway.service.operation.OperationExecutor
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.{FlinkTRowSetGenerator, RowSet}
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
@@ -54,6 +55,9 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
   protected val sessionId: String = session.handle.identifier.toString
 
   protected var resultSet: ResultSet = _
+
+  protected val isGenerateTRowSetInParallel: Boolean = session.conf
+    .getOrElse(KyuubiConf.OPERATION_TROWSET_GENERATION_IN_PARALLEL.key, "false").toBoolean
 
   override protected def beforeRun(): Unit = {
     setHasResultSet(true)
@@ -136,7 +140,8 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
     val resultRowSet = new FlinkTRowSetGenerator(zoneId).toTRowSet(
       batch.toList,
       resultSet,
-      getProtocolVersion)
+      getProtocolVersion,
+      isGenerateTRowSetInParallel)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)
     resp.setHasMoreRows(resultSet.getData.hasNext)

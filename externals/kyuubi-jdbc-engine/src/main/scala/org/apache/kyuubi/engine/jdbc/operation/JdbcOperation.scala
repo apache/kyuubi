@@ -36,6 +36,9 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
 
   protected lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
 
+  protected val isGenerateTRowSetInParallel: Boolean = session.conf
+    .getOrElse(KyuubiConf.OPERATION_TROWSET_GENERATION_IN_PARALLEL.key, "false").toBoolean
+
   def validateFetchOrientation(order: FetchOrientation): Unit =
     validateDefaultFetchOrientation(order)
 
@@ -102,7 +105,11 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
 
   protected def toTRowSet(taken: Iterator[Row]): TRowSet = {
     dialect.getTRowSetGenerator()
-      .toTRowSet(taken.toSeq.map(_.values), schema.columns, getProtocolVersion)
+      .toTRowSet(
+        taken.toSeq.map(_.values),
+        schema.columns,
+        getProtocolVersion,
+        isGenerateTRowSetInParallel)
   }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
