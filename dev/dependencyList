@@ -174,7 +174,7 @@ slf4j-api/1.7.36//slf4j-api-1.7.36.jar
 snakeyaml-engine/2.7//snakeyaml-engine-2.7.jar
 snakeyaml/2.2//snakeyaml-2.2.jar
 snappy-java/1.1.10.5//snappy-java-1.1.10.5.jar
-sqlite-jdbc/3.42.0.0//sqlite-jdbc-3.42.0.0.jar
+sqlite-jdbc/3.46.1.3//sqlite-jdbc-3.46.1.3.jar
 swagger-annotations/2.2.1//swagger-annotations-2.2.1.jar
 swagger-core/2.2.1//swagger-core-2.2.1.jar
 swagger-integration/2.2.1//swagger-integration-2.2.1.jar
