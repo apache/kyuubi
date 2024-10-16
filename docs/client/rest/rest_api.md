@@ -27,7 +27,7 @@ REST API supports the [Basic Authentication](https://developer.mozilla.org/en-US
 Authorization: Basic <credentials>
 ```
 
-The `<credentials>` value is the Base64 encoded string of `username:password`. For example,in the case of a user `aladdin` with the password `opensesame`, set the `Authorization` header to `Basic YWxhZGRpbjpvcGVuc2VzYW1l` as Base64 encoded `aladdin:opensesame`.
+The `<credentials>` value is the Base64 encoded string of `username:password`. For example, in the case of a user `aladdin` with the password `opensesame`, set the `Authorization` header to `Basic YWxhZGRpbjpvcGVuc2VzYW1l` as Base64 encoded `aladdin:opensesame`.
 
 ## Session Resource
 
