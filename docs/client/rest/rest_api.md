@@ -19,6 +19,13 @@
 
 Note that: now the api version is v1 and the base uri is `/api/v1`.
 
+## Authentication
+REST API supports the Basic Authentication which relies on `Authorization` header in HTTP request.
+```
+Authorization: Basic <credentials>
+```
+The `<credentials>` value is the Base64 encoded string of `username:password`. For example,in the case of user `kyuubi_user` with the password `kyuubi_password`, set the `Authorization` header with `Basic a3l1dWJpX3VzZXI6a3l1dWJpX3Bhc3N3b3Jk`  .
+
 ## Session Resource
 
 ### GET /sessions
