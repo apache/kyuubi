@@ -3109,8 +3109,7 @@ object KyuubiConf {
 
   val SERVER_PERIODIC_GC_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.server.periodicGC.interval")
-      .doc("How often to trigger the periodical garbage collection. " +
-        "0 will disable it.")
+      .doc("How often to trigger the periodic garbage collection. 0 will disable it.")
       .version("1.7.0")
       .serverOnly
       .timeConf
