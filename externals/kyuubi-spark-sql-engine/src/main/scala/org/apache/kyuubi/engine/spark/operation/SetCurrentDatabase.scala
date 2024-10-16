@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.types.StructType
-
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -28,10 +26,6 @@ class SetCurrentDatabase(session: Session, database: String)
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
 
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
-
-  override protected def resultSchema: StructType = {
-    new StructType()
-  }
 
   override protected def runInternal(): Unit = {
     try {
