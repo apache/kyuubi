@@ -182,7 +182,7 @@ swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
 swagger-models/2.2.1//swagger-models-2.2.1.jar
 trino-client/411//trino-client-411.jar
 units/1.7//units-1.7.jar
-vertx-core/4.5.1//vertx-core-4.5.1.jar
-vertx-grpc/4.5.1//vertx-grpc-4.5.1.jar
+vertx-core/4.5.3//vertx-core-4.5.3.jar
+vertx-grpc/4.5.3//vertx-grpc-4.5.3.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
 zstd-jni/1.5.5-1//zstd-jni-1.5.5-1.jar

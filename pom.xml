@@ -214,6 +214,7 @@
         <trino.client.version>411</trino.client.version>
         <trino.tpcds.version>1.4</trino.tpcds.version>
         <trino.tpch.version>1.1</trino.tpch.version>
+        <vertx.version>4.5.3</vertx.version>
 
         <!-- webui -->
         <webui.skip>true</webui.skip>
@@ -907,6 +908,12 @@
                         <artifactId>snappy-java</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.vertx</groupId>
+                <artifactId>vertx-grpc</artifactId>
+                <version>${vertx.version}</version>
             </dependency>
 
             <dependency>
