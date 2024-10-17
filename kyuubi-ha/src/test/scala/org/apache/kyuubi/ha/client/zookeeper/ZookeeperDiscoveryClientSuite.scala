@@ -236,29 +236,33 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       .retryPolicy(new ExponentialBackoffRetry(1000, 3))
       .build
     zkClient.start()
+
     val namespace = "kyuubi-strategy-test"
     val testServerHosts = Seq(
       "testNode1",
       "testNode2",
-      "testNode3").toList.asJava
+      "testNode3").asJava
     // test poll strategy
-    val pollingChooseStrategy = StrategyFactory.createStrategy("poll")
-    assert(pollingChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(pollingChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode2")
-    assert(pollingChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode3")
+    val pollingStrategy = StrategyFactory.createStrategy("poll")
+    1 to testServerHosts.size() foreach { _ =>
+      assertResult(f"testNode1")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+      assertResult(f"testNode2")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+      assertResult(f"testNode3")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+    }
+
     // test only get first serverHost strategy
-    assert(TestStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(TestStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(TestStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
     zkClient.close()
   }
+}
 
-  object TestStrategy extends ChooseServerStrategy {
-    override def chooseServer(
-        serverHosts: util.List[String],
-        zkClient: CuratorFramework,
-        namespace: String): String = {
-      serverHosts.get(0)
-    }
+object CustomChooseStrategy extends ChooseServerStrategy {
+  override def chooseServer(
+      serverHosts: util.List[String],
+      zkClient: CuratorFramework,
+      namespace: String): String = {
+    serverHosts.get(0)
   }
 }
