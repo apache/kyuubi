@@ -158,8 +158,8 @@ paranamer/2.8//paranamer-2.8.jar
 perfmark-api/0.26.0//perfmark-api-0.26.0.jar
 postgresql/42.7.2//postgresql-42.7.2.jar
 proto-google-common-protos/2.29.0//proto-google-common-protos-2.29.0.jar
-protobuf-java-util/3.25.4//protobuf-java-util-3.25.4.jar
-protobuf-java/3.25.4//protobuf-java-3.25.4.jar
+protobuf-java-util/3.25.5//protobuf-java-util-3.25.5.jar
+protobuf-java/3.25.5//protobuf-java-3.25.5.jar
 scala-library/2.12.19//scala-library-2.12.19.jar
 scopt_2.12/4.1.0//scopt_2.12-4.1.0.jar
 simpleclient/0.16.0//simpleclient-0.16.0.jar
