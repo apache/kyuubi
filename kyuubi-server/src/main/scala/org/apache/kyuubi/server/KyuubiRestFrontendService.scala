@@ -257,7 +257,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     } catch {
       case t: Throwable => throw new WebApplicationException(
           t.getMessage,
-          Status.METHOD_NOT_ALLOWED)
+          Status.FORBIDDEN)
     }
   }
 

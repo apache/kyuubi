@@ -90,7 +90,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request()
       .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader("admin002"))
       .post(null)
-    assert(response.getStatus === 405)
+    assert(response.getStatus === 403)
   }
 
   test("refresh user defaults config of the kyuubi server") {
@@ -542,19 +542,19 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       // use proxyUser
       val deleteEngineResponse1 = runDeleteEngine(Option(normalUser), None)
-      assert(deleteEngineResponse1.getStatus === 405)
+      assert(deleteEngineResponse1.getStatus === 403)
       val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(deleteEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
       val deleteEngineResponse2 = runDeleteEngine(None, Option(normalUser))
-      assert(deleteEngineResponse2.getStatus === 405)
+      assert(deleteEngineResponse2.getStatus === 403)
       assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
       val deleteEngineResponse3 =
         runDeleteEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-      assert(deleteEngineResponse3.getStatus === 405)
+      assert(deleteEngineResponse3.getStatus === 403)
       assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
@@ -793,19 +793,19 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       // use proxyUser
       val listEngineResponse1 = runListEngine(Option(normalUser), None)
-      assert(listEngineResponse1.getStatus === 405)
+      assert(listEngineResponse1.getStatus === 403)
       val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(listEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
       val listEngineResponse2 = runListEngine(None, Option(normalUser))
-      assert(listEngineResponse2.getStatus === 405)
+      assert(listEngineResponse2.getStatus === 403)
       assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
       val listEngineResponse3 =
         runListEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-      assert(listEngineResponse3.getStatus === 405)
+      assert(listEngineResponse3.getStatus === 403)
       assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
