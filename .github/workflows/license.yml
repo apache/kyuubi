@@ -48,7 +48,7 @@ jobs:
           -Pspark-3.3 -Pspark-3.4 -Pspark-3.5
       - name: Upload rat report
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rat-report
           path: "**/target/rat*.txt"
