@@ -68,12 +68,10 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
       }.toMap
 
       try {
-        // Renewer is not needed. But setting a renewer can avoid potential NPE.
-        val renewer = UserGroupInformation.getCurrentUser.getUserName
         fileSystems.foreach { case (fs, uri) =>
           info(s"getting token owned by $owner for: $uri")
           try {
-            fs.addDelegationTokens(renewer, creds)
+            fs.addDelegationTokens("", creds)
           } catch {
             case e: Exception =>
               throw new KyuubiException(s"Failed to get token owned by $owner for: $uri", e)
