@@ -348,6 +348,36 @@ public class Utils {
       }
     }
 
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_CLIENT_PRINCIPAL)) {
+      if (info.containsKey(AUTH_KYUUBI_CLIENT_PRINCIPAL)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_CLIENT_PRINCIPAL, info.getProperty(AUTH_KYUUBI_CLIENT_PRINCIPAL));
+      }
+    }
+
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_CLIENT_KEYTAB)) {
+      if (info.containsKey(AUTH_KYUUBI_CLIENT_KEYTAB)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_CLIENT_KEYTAB, info.getProperty(AUTH_KYUUBI_CLIENT_KEYTAB));
+      }
+    }
+
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+      if (info.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_SERVER_PRINCIPAL, info.getProperty(AUTH_KYUUBI_SERVER_PRINCIPAL));
+      }
+    }
+
+    if (!connParams.getSessionVars().containsKey(AUTH_PRINCIPAL)) {
+      if (info.containsKey(AUTH_PRINCIPAL)) {
+        connParams.getSessionVars().put(AUTH_PRINCIPAL, info.getProperty(AUTH_PRINCIPAL));
+      }
+    }
+
     if (info.containsKey(AUTH_TYPE)) {
       connParams.getSessionVars().put(AUTH_TYPE, info.getProperty(AUTH_TYPE));
     }
