@@ -22,7 +22,7 @@ on: issues
 
 jobs:
   greeting:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       issues: write
       pull-requests: write
