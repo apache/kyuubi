@@ -63,9 +63,7 @@ class FlinkProcessBuilder(
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
 
   private lazy val proxyUserEnable: Boolean = {
-    doAsEnabled && conf.get(ENGINE_FLINK_DOAS_ENABLED) &&
-    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_KEYTAB_KEY").isEmpty &&
-    conf.getOption(s"$FLINK_CONF_PREFIX.$FLINK_SECURITY_PRINCIPAL_KEY").isEmpty
+    doAsEnabled && conf.get(ENGINE_FLINK_DOAS_ENABLED)
   }
 
   override protected def module: String = "kyuubi-flink-sql-engine"
@@ -255,17 +253,21 @@ class FlinkProcessBuilder(
 
   @volatile private var tokenTempDir: java.nio.file.Path = _
   private def generateTokenFile(): Option[(String, String)] = {
-    // We disabled `hadoopfs` token service, which may cause yarn client to miss hdfs token.
-    // So we generate a hadoop token file to pass kyuubi engine tokens to submit process.
-    // TODO: Removed this after FLINK-35525 (1.20.0), delegation tokens will be passed
-    //  by `kyuubi` provider
-    conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
-      val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
-      tokenTempDir = Utils.createTempDir()
-      val file = s"${tokenTempDir.toString}/kyuubi_credentials_${System.currentTimeMillis()}"
-      credentials.writeTokenStorageFile(new Path(s"file://$file"), new Configuration())
-      info(s"Generated hadoop token file: $file")
-      "HADOOP_TOKEN_FILE_LOCATION" -> file
+    if (conf.get(ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE)) {
+      // We disabled `hadoopfs` token service, which may cause yarn client to miss hdfs token.
+      // So we generate a hadoop token file to pass kyuubi engine tokens to submit process.
+      // TODO: Removed this after FLINK-35525 (1.20.0), delegation tokens will be passed
+      //  by `kyuubi` provider
+      conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
+        val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
+        tokenTempDir = Utils.createTempDir()
+        val file = s"${tokenTempDir.toString}/kyuubi_credentials_${System.currentTimeMillis()}"
+        credentials.writeTokenStorageFile(new Path(s"file://$file"), new Configuration())
+        info(s"Generated hadoop token file: $file")
+        "HADOOP_TOKEN_FILE_LOCATION" -> file
+      }
+    } else {
+      None
     }
   }
 

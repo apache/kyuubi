@@ -3001,8 +3001,18 @@ object KyuubiConf {
 
   val ENGINE_FLINK_DOAS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.flink.doAs.enabled")
-      .doc("Whether to enable using hadoop proxy user to run flink engine. Only takes effect" +
-        s" in kerberos environment and when `${ENGINE_DO_AS_ENABLED.key}` is set to `true`.")
+      .doc("When enabled, the session user is used as the proxy user to launch the Flink engine," +
+        " otherwise, the server user. Note, due to the limitation of Apache Flink," +
+        " it can only be enabled on Kerberized environment.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.doAs.generateTokenFile")
+      .doc("Whether to generate a hadoop token file for flink submit process." +
+        s" We need to enable it when we set `$ENGINE_FLINK_DOAS_ENABLED=true`" +
+        s" and flink version is less than 1.20.0.")
       .version("1.10.0")
       .booleanConf
       .createWithDefault(false)
