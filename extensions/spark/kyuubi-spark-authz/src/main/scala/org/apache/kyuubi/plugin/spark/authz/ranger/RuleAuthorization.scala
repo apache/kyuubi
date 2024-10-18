@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.immutable.HashMap
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
+import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType.AccessType
 import org.apache.kyuubi.plugin.spark.authz.ranger.SparkRangerAdminPlugin._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -34,15 +35,14 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
-    val requests = new ArrayBuffer[AccessRequest]()
+    var requests = new HashMap[(AccessResource, AccessType), AccessRequest]()
 
     def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
-        if (accessType != AccessType.NONE && !requests.exists(o =>
-            o.accessType == accessType && o.getResource == resource)) {
-          requests += AccessRequest(resource, ugi, opType, accessType)
+        if (accessType != AccessType.NONE) {
+          requests += (resource, accessType) -> AccessRequest(resource, ugi, opType, accessType)
         }
       }
     }
@@ -50,7 +50,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
 
-    val requestArrays = requests.map { request =>
+    val requestArrays = requests.values.map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
