@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.security.token
+package org.apache.kyuubi.flink.security.token;
 
-import org.apache.flink.runtime.security.token.hadoop.HadoopDelegationTokenReceiver
+import org.apache.flink.runtime.security.token.hadoop.HadoopDelegationTokenReceiver;
 
-class KyuubiDelegationTokenReceiver extends HadoopDelegationTokenReceiver {
+public class KyuubiDelegationTokenReceiver extends HadoopDelegationTokenReceiver {
 
-  override def serviceName(): String = "kyuubi"
-
+  @Override
+  public String serviceName() {
+    return "kyuubi";
+  }
 }
