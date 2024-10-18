@@ -60,6 +60,7 @@ whereClause
 
 zorderClause
     : ZORDER BY order+=multipartIdentifier (',' order+=multipartIdentifier)*
+    | ZORDER BY '(' order+=multipartIdentifier (',' order+=multipartIdentifier)*  ')'
     ;
 
 // We don't have an expression rule in our grammar here, so we just grab the tokens and defer

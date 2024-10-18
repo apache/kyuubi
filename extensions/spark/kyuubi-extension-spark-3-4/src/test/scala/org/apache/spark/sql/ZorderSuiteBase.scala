@@ -21,7 +21,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, EqualTo, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
-import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, OneRowRelation, Project, Sort}
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
@@ -747,14 +747,25 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
                 UnresolvedFunction("current_date", Seq.empty, false)),
               UnresolvedRelation(TableIdentifier("p")))))))
 
-    // TODO: add following case support
-    intercept[ParseException] {
-      parser.parsePlan("OPTIMIZE p zorder by (c1)")
-    }
+    assert(parser.parsePlan("OPTIMIZE p zorder by (c1)") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(UnresolvedAttribute("c1"), Ascending, NullsLast, Seq.empty) :: Nil,
+          globalSort,
+          Project(Seq(UnresolvedStar(None)), UnresolvedRelation(TableIdentifier("p"))))))
 
-    intercept[ParseException] {
-      parser.parsePlan("OPTIMIZE p zorder by (c1, c2)")
-    }
+    assert(parser.parsePlan("OPTIMIZE p zorder by (c1, c2)") ===
+      OptimizeZorderStatement(
+        Seq("p"),
+        Sort(
+          SortOrder(
+            Zorder(Seq(UnresolvedAttribute("c1"), UnresolvedAttribute("c2"))),
+            Ascending,
+            NullsLast,
+            Seq.empty) :: Nil,
+          globalSort,
+          Project(Seq(UnresolvedStar(None)), UnresolvedRelation(TableIdentifier("p"))))))
   }
 
   test("OPTIMIZE partition predicates constraint") {
