@@ -1876,6 +1876,26 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val BATCH_RESOURCE_FILE_MAX_SIZE: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.resource.file.max.size")
+      .doc("The maximum size in bytes of the resource file" +
+        " that can be uploaded in a batch creating request via REST API." +
+        " 0 or negative value means no limit.")
+      .version("1.10.0")
+      .serverOnly
+      .longConf
+      .createWithDefault(100 * 1024 * 1024)
+
+  val BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.extra.resource.file.max.size")
+      .doc("The maximum size in bytes of each extra resource file" +
+        " that can be uploaded in a batch creating request via REST API." +
+        " 0 or negative value means no limit.")
+      .version("1.10.0")
+      .serverOnly
+      .longConf
+      .createWithDefault(100 * 1024 * 1024)
+
   val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.batch.submitter.enabled")
       .internal

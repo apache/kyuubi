@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.io.InputStream
-import java.nio.file.{Path => JPath}
+import java.nio.file.{Files, Path => JPath}
 import java.util
 import java.util.{Collections, Locale, UUID}
 import java.util.concurrent.ConcurrentHashMap
@@ -42,7 +42,7 @@ import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KillResponse, KyuubiApplicationManager}
+import org.apache.kyuubi.engine._
 import org.apache.kyuubi.operation.{BatchJobSubmission, FetchOrientation, OperationState}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.server.api.v1.BatchesResource._
@@ -65,6 +65,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(BATCH_INTERNAL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
   private lazy val internalSecurityEnabled =
     fe.getConf.get(ENGINE_SECURITY_ENABLED)
+  private lazy val resourceFileMaxSize = fe.getConf.get(BATCH_RESOURCE_FILE_MAX_SIZE)
+  private lazy val extraResourceFileMaxSize = fe.getConf.get(BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -585,6 +587,10 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       uploadFileFolderPath: JPath): Unit = {
     try {
       val tempFile = Utils.writeToTempFile(inputStream, uploadFileFolderPath, fileName)
+      if (resourceFileMaxSize > 0 && Files.size(tempFile.toPath) > resourceFileMaxSize) {
+        throw new RuntimeException(
+          s"Resource file $fileName exceeds the maximum size limit $resourceFileMaxSize bytes")
+      }
       fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
       request.setResource(tempFile.getPath)
     } catch {
@@ -621,6 +627,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                   filePart.getValueAs(classOf[InputStream]),
                   uploadFileFolderPath,
                   fileName)
+                if (extraResourceFileMaxSize > 0
+                  && Files.size(tempFile.toPath) > extraResourceFileMaxSize) {
+                  throw new RuntimeException(
+                    s"Extra resource file $fileName exceeds the maximum size limit " +
+                      s"$extraResourceFileMaxSize bytes")
+                }
                 fe.sessionManager.tempFileService.addPathToExpiration(tempFile.toPath)
                 tempFile.getPath
               } catch {
