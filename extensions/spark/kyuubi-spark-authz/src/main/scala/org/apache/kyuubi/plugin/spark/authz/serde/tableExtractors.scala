@@ -21,6 +21,7 @@ import java.util.{LinkedHashMap, Map => JMap}
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -39,9 +40,9 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
  * A trait for extracting database and table as string tuple
  * from the give object whose class type is define by `key`.
  */
-trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
+trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor with Logging
 
-object TableExtractor {
+object TableExtractor extends Logging {
   val tableExtractors: Map[String, TableExtractor] = {
     loadExtractorsToMap[TableExtractor]
   }
@@ -52,10 +53,16 @@ object TableExtractor {
    * @return owner
    */
   def getOwner(v: AnyRef): Option[String] = {
-    // org.apache.spark.sql.connector.catalog.Table
-    val table = invokeAs[AnyRef](v, "table")
-    val properties = invokeAs[JMap[String, String]](table, "properties").asScala
-    properties.get("owner")
+    try {
+      // org.apache.spark.sql.connector.catalog.Table
+      val table = invokeAs[AnyRef](v, "table")
+      val properties = invokeAs[JMap[String, String]](table, "properties").asScala
+      properties.get("owner")
+    } catch {
+      case e: Throwable =>
+        logDebug("Extract owner from table failed.", e)
+        None
+    }
   }
 
   def getOwner(spark: SparkSession, catalogName: String, tableIdent: AnyRef): Option[String] = {
@@ -69,7 +76,9 @@ object TableExtractor {
       getOwner(table)
     } catch {
       // Exception may occur due to invalid reflection or table not found
-      case _: Exception => None
+      case e: Throwable =>
+        logDebug("Extract owner from table failed.", e)
+        None
     }
   }
 }
@@ -88,7 +97,9 @@ class TableIdentifierTableExtractor extends TableExtractor {
           val catalogTable = spark.sessionState.catalog.getTableMetadata(identifier)
           Option(catalogTable.owner).filter(_.nonEmpty)
         } catch {
-          case _: Exception => None
+          case e: Throwable =>
+            logDebug("Extract owner from table failed.", e)
+            None
         }
       Some(Table(None, identifier.database, identifier.table, owner))
     }
