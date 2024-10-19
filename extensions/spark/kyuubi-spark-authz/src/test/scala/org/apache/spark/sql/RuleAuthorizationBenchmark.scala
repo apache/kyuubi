@@ -30,10 +30,10 @@ import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.benchmark.KyuubiBenchmarkBase
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * Benchmark to measure performance of collecting ranger access requests.
@@ -62,7 +62,6 @@ class RuleAuthorizationBenchmark extends AnyFunSuite
     assume(runBenchmark)
     tempDir = Files.createTempDirectory("kyuubi-test-").toFile
   }
-
 
   override def afterAll(): Unit = {
     if (tempDir != null) {
