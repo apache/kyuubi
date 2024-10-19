@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
@@ -35,7 +35,10 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     val auditHandler = new SparkRangerAuditHandler
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
-    var requests = new HashMap[(AccessResource, AccessType), AccessRequest]()
+
+    // Use a HashMap to deduplicate the same AccessResource and AccessType, it's values will be all
+    // the non-duplicate requests.
+    val requests = new mutable.HashMap[(AccessResource, AccessType), AccessRequest]()
 
     def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
