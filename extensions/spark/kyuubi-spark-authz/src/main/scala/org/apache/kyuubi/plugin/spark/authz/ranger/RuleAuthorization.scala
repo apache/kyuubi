@@ -38,14 +38,15 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
 
     // Use a HashMap to deduplicate the same AccessResource and AccessType, it's values will be all
     // the non-duplicate requests.
-    val requests = new mutable.HashMap[(AccessResource, AccessType), AccessRequest]()
+    val requests = new mutable.HashMap[(AccessResource, AccessType), (Int, AccessRequest)]()
 
     def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
-      objects.foreach { obj =>
+      objects.zipWithIndex.foreach { case (obj, idx) =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
         if (accessType != AccessType.NONE) {
-          requests += (resource, accessType) -> AccessRequest(resource, ugi, opType, accessType)
+          requests += (resource, accessType) ->
+            (requests.size, AccessRequest(resource, ugi, opType, accessType))
         }
       }
     }
@@ -53,7 +54,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
 
-    val requestArrays = requests.values.map { request =>
+    val requestArrays = requests.values.toSeq.sortBy(_._1).map(_._2).map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
@@ -70,7 +71,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
           }
         case _ => Seq(request)
       }
-    }.toSeq
+    }
 
     if (authorizeInSingleCall) {
       verify(requestArrays.flatten, auditHandler)
