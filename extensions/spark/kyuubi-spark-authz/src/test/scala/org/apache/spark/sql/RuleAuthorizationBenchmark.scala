@@ -59,7 +59,6 @@ class RuleAuthorizationBenchmark extends AnyFunSuite
   private var tempDir: File = _
 
   override def beforeAll(): Unit = {
-    assume(runBenchmark)
     tempDir = Files.createTempDirectory("kyuubi-test-").toFile
   }
 
