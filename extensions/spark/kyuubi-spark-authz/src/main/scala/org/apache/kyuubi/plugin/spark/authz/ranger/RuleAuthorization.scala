@@ -36,17 +36,18 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     val ugi = getAuthzUgi(spark.sparkContext)
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
 
-    // Use a HashMap to deduplicate the same AccessResource and AccessType, it's values will be all
+    // Use a HashSet to deduplicate the same AccessResource and AccessType, the requests will be all
     // the non-duplicate requests.
-    val requests = new mutable.HashMap[(AccessResource, AccessType), (Int, AccessRequest)]()
+    val requests = new mutable.ArrayBuffer[AccessRequest]()
+    val requestsSet = new mutable.HashSet[(AccessResource, AccessType)]()
 
     def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
-      objects.zipWithIndex.foreach { case (obj, idx) =>
+      objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
         val accessType = ranger.AccessType(obj, opType, isInput)
-        if (accessType != AccessType.NONE) {
-          requests += (resource, accessType) ->
-            (requests.size, AccessRequest(resource, ugi, opType, accessType))
+        if (accessType != AccessType.NONE && !requestsSet.contains((resource, accessType))) {
+          requests += AccessRequest(resource, ugi, opType, accessType)
+          requestsSet.add(resource, accessType)
         }
       }
     }
@@ -54,7 +55,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     addAccessRequest(inputs, isInput = true)
     addAccessRequest(outputs, isInput = false)
 
-    val requestArrays = requests.values.toSeq.sortBy(_._1).map(_._2).map { request =>
+    val requestArrays = requests.map { request =>
       val resource = request.getResource.asInstanceOf[AccessResource]
       resource.objectType match {
         case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
@@ -71,7 +72,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
           }
         case _ => Seq(request)
       }
-    }
+    }.toSeq
 
     if (authorizeInSingleCall) {
       verify(requestArrays.flatten, auditHandler)
