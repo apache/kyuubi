@@ -41,7 +41,7 @@ jobs:
       - name: make html
         run: make -d --directory docs html
       - name: upload html
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: |
             docs/_build/html/
