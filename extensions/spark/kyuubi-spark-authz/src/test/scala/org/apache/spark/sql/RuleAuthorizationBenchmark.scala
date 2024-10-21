@@ -39,10 +39,8 @@ import org.apache.kyuubi.util.ThreadUtils
  * Benchmark to measure performance of collecting ranger access requests.
  *
  * {{{
- *
  *   RUN_BENCHMARK=1 ./build/mvn clean test \
  *   -pl extensions/spark/kyuubi-spark-authz -am \
- *   -Pspark-3.3 \
  *   -Dtest=none -DwildcardSuites=org.apache.spark.sql.RuleAuthorizationBenchmark
  * }}}
  */
