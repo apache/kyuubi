@@ -256,6 +256,8 @@ for arg in "$@"; do
         FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
     elif [[ $arg == *scala-2.13* ]]; then
         FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
+    else
+        FILTERED_ARGS+=("$arg")
     fi
 done
 
