@@ -32,7 +32,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
   KUBERNETES_VERSION: v1.30.0
   MINIKUBE_VERSION: v1.33.1
 
@@ -106,10 +106,10 @@ jobs:
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.5" && "${{ matrix.spark-archive }}" == "" ]]; then
-            MVN_OPT="${MVN_OPT} -Pcodecov -Dmaven.javadoc.skip=false -Dmaven.scaladoc.skip=false"
+            export MAVEN_ARGS="${MAVEN_ARGS} -Pcodecov -Dmaven.javadoc.skip=false -Dmaven.scaladoc.skip=false"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
-          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          ./build/mvn clean install -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
         if: |
@@ -161,7 +161,7 @@ jobs:
       - name: Build on Scala ${{ matrix.scala }}
         run: |
           TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
-          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am \
+          ./build/mvn clean install -pl ${TEST_MODULES} -am \
           -Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.SparkLocalClusterTest \
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
@@ -222,11 +222,11 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Build Kyuubi Spark Connectors with Spark-${{ matrix.spark-compile }}
         run: |
-          ./build/mvn clean install ${MVN_OPT} -pl ${TEST_MODULES} -am -Pjava-${{ matrix.java }} \
+          ./build/mvn clean install -pl ${TEST_MODULES} -am -Pjava-${{ matrix.java }} \
           -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-compile }} -DskipTests
       - name: Test Kyuubi Spark Connectors with Spark-${{ matrix.spark-runtime }}
         run: |
-          ./build/mvn test ${MVN_OPT} -pl ${TEST_MODULES} -Pjava-${{ matrix.java }} \
+          ./build/mvn test -pl ${TEST_MODULES} -Pjava-${{ matrix.java }} \
           -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} -Pcross-version-test
       - name: Upload test logs
         if: failure()
@@ -287,18 +287,18 @@ jobs:
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am clean install -DskipTests
+          ./build/mvn -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} -am clean install -DskipTests
       - name: Test Flink
         if: matrix.flink-archive == ''
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
+          ./build/mvn -pl ${TEST_MODULES} -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }} test
       - name: Cross-version test Flink
         if: matrix.flink-archive != ''
         run: |
           IT_FLINK=`echo "${{ matrix.flink-archive }}" | grep -E 'flink\-([0-9]+\.[0-9]+.[0-9]+)\-bin' -o | grep -E '[0-9]+\.[0-9]+' -o`
           IT_MODULE="integration-tests/kyuubi-flink-it"
-          ./build/mvn ${MVN_OPT} -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
+          ./build/mvn -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -346,7 +346,7 @@ jobs:
       - name: Build and test Hive with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
-          ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
           # unpack avatica-1.8.0.jar and delete Jackson classes to workaround CALCITE-1224
           if [[ "${{ matrix.hive-archive }}" == *apache-hive-2.3.10-bin.tar.gz* ]]; then
             HIVE_2310_LIB="$PWD/externals/kyuubi-download/target/apache-hive-2.3.10-bin/lib"
@@ -360,7 +360,7 @@ jobs:
             cd ..
             rm -rf avatica-1.8.0-unpack
           fi
-          ./build/mvn ${MVN_OPT} ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
+          ./build/mvn ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
@@ -400,10 +400,10 @@ jobs:
           JDBC_TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
           TRINO_TEST_MODULES="externals/kyuubi-trino-engine,integration-tests/kyuubi-trino-it"
           TPC_TEST_MODULES="kyuubi-server,extensions/spark/kyuubi-spark-connector-tpcds,extensions/spark/kyuubi-spark-connector-tpch"
-          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES},${TRINO_TEST_MODULES},${TPC_TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${JDBC_TEST_MODULES} test
-          ./build/mvn ${MVN_OPT} -pl ${TRINO_TEST_MODULES} test
-          ./build/mvn ${MVN_OPT} -pl ${TPC_TEST_MODULES} test \
+          ./build/mvn -pl ${JDBC_TEST_MODULES},${TRINO_TEST_MODULES},${TPC_TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn -pl ${JDBC_TEST_MODULES} test
+          ./build/mvn -pl ${TRINO_TEST_MODULES} test
+          ./build/mvn -pl ${TPC_TEST_MODULES} test \
           -Dmaven.plugin.scalatest.exclude.tags='' \
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
       - name: Upload test logs
@@ -465,7 +465,7 @@ jobs:
           kubectl describe pods kyuubi-test
       - name: integration tests
         run: >-
-          ./build/mvn ${MVN_OPT} clean install
+          ./build/mvn clean install
           -pl integration-tests/kyuubi-kubernetes-it -am
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.deployment,org.apache.kyuubi.kubernetes.test.KubernetesUtilsTest
@@ -513,7 +513,7 @@ jobs:
       # TODO Support more Spark version
       - name: integration tests
         run: >-
-          ./build/mvn ${MVN_OPT} clean install
+          ./build/mvn clean install
           -Pflink-provided,hive-provided
           -Pkubernetes-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test.spark
@@ -561,8 +561,8 @@ jobs:
         run: |
           export KYUUBI_IT_ZOOKEEPER_VERSION=${{ matrix.zookeeper }}
           TEST_MODULES="integration-tests/kyuubi-zookeeper-it"
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} -am clean install -DskipTests
-          ./build/mvn ${MVN_OPT} -pl ${TEST_MODULES} test
+          ./build/mvn -pl ${TEST_MODULES} -am clean install -DskipTests
+          ./build/mvn -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v3
