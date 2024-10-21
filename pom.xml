@@ -54,6 +54,7 @@
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>extensions/server/kyuubi-server-plugin</module>
+        <module>extensions/flink/kyuubi-flink-token-provider</module>
         <module>extensions/spark/kyuubi-extension-spark-jdbc-dialect</module>
         <module>extensions/spark/kyuubi-spark-authz</module>
         <module>extensions/spark/kyuubi-spark-authz-shaded</module>
@@ -84,7 +85,6 @@
         <module>kyuubi-util</module>
         <module>kyuubi-util-scala</module>
         <module>kyuubi-zookeeper</module>
-        <module>extensions/flink/kyuubi-flink-token-provider</module>
     </modules>
 
     <scm>

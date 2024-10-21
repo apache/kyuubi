@@ -3010,9 +3010,10 @@ object KyuubiConf {
 
   val ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE: ConfigEntry[Boolean] =
     buildConf("kyuubi.engine.flink.doAs.generateTokenFile")
-      .doc("Whether to generate a hadoop token file for flink submit process." +
-        s" We need to enable it when we set `$ENGINE_FLINK_DOAS_ENABLED=true`" +
-        s" and flink version is less than 1.20.0.")
+      .doc(s"When ${ENGINE_FLINK_DOAS_ENABLED.key}=true and neither FLINK-35525 (Flink 1.20.0)" +
+        " nor YARN-10333 (Hadoop 3.4.0) is available, enable this configuration to generate a" +
+        " temporary HADOOP_TOKEN_FILE that will be picked up by the Flink engine bootstrap" +
+        " process.")
       .version("1.10.0")
       .booleanConf
       .createWithDefault(false)

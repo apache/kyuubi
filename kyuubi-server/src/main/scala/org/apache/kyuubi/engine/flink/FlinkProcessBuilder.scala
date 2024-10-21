@@ -26,6 +26,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -63,7 +64,12 @@ class FlinkProcessBuilder(
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
 
   private lazy val proxyUserEnable: Boolean = {
-    doAsEnabled && conf.get(ENGINE_FLINK_DOAS_ENABLED)
+    var flinkDoAsEnabled = conf.get(ENGINE_FLINK_DOAS_ENABLED)
+    if (flinkDoAsEnabled && !UserGroupInformation.isSecurityEnabled) {
+      warn(s"${ENGINE_FLINK_DOAS_ENABLED.key} can only be enabled on Kerberized environment.")
+      flinkDoAsEnabled = false
+    }
+    doAsEnabled && flinkDoAsEnabled
   }
 
   override protected def module: String = "kyuubi-flink-sql-engine"
