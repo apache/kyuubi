@@ -27,7 +27,7 @@ env:
 jobs:
   gluten-build:
     name: Build Gluten
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -74,7 +74,7 @@ jobs:
   gluten-it:
     name: Gluten Integration TPC-H/DS Test
     needs: gluten-build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

@@ -39,7 +39,7 @@ env:
 jobs:
   default:
     name: Kyuubi and Spark Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 6
@@ -131,7 +131,7 @@ jobs:
 
   scala-test:
     name: Scala Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -178,7 +178,7 @@ jobs:
 
   spark-connector-cross-version-test:
     name: Spark Connector Cross Version Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -240,7 +240,7 @@ jobs:
 
   flink-it:
     name: Flink Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -310,7 +310,7 @@ jobs:
 
   hive-it:
     name: Hive Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -372,7 +372,7 @@ jobs:
 
   jdbc-trino-tpc-it:
     name: JDBC Trino TPC Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -418,7 +418,7 @@ jobs:
 
   kyuubi-on-k8s-it:
     name: Kyuubi Server On Kubernetes Integration Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -491,7 +491,7 @@ jobs:
 
   spark-on-k8s-it:
     name: Spark Engine On Kubernetes Integration Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -534,7 +534,7 @@ jobs:
 
   zookeeper-it:
     name: Zookeeper Integration Test
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       max-parallel: 1

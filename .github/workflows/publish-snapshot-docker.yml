@@ -25,7 +25,7 @@ jobs:
   push_to_registry:
     name: Push Snapshot Docker Image to Docker Hub
     if: ${{ startsWith(github.repository, 'apache/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space

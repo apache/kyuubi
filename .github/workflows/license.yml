@@ -32,7 +32,7 @@ concurrency:
 jobs:
   rat:
     name: License
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK 8
