@@ -40,10 +40,10 @@ FROM builder_${spark_provided}
 ARG kyuubi_uid=10009
 USER root
 
-ENV KYUUBI_HOME /opt/kyuubi
-ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
-ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
-ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
+ENV KYUUBI_HOME=/opt/kyuubi
+ENV KYUUBI_LOG_DIR=${KYUUBI_HOME}/logs
+ENV KYUUBI_PID_DIR=${KYUUBI_HOME}/pid
+ENV KYUUBI_WORK_DIR_ROOT=${KYUUBI_HOME}/work
 
 RUN set -ex && \
     sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \

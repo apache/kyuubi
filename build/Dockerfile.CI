@@ -33,7 +33,7 @@
 # see: https://github.com/moby/moby/issues/38379
 ARG BASE_IMAGE=eclipse-temurin:8-jdk-focal
 
-FROM eclipse-temurin:8-jdk-focal as builder
+FROM eclipse-temurin:8-jdk-focal AS builder
 
 ARG MVN_ARG
 
@@ -43,7 +43,7 @@ ARG MVN_ARG
 # an environment variable `CI` in runners, and we detect this variable to run some
 # specific actions, e.g. run `mvn` in batch mode to suppress noisy logs.
 ARG CI
-ENV CI ${CI}
+ENV CI=${CI}
 
 ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi
@@ -64,10 +64,10 @@ ARG kyuubi_uid=10009
 
 USER root
 
-ENV KYUUBI_HOME /opt/kyuubi
-ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
-ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
-ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
+ENV KYUUBI_HOME=/opt/kyuubi
+ENV KYUUBI_LOG_DIR=${KYUUBI_HOME}/logs
+ENV KYUUBI_PID_DIR=${KYUUBI_HOME}/pid
+ENV KYUUBI_WORK_DIR_ROOT=${KYUUBI_HOME}/work
 
 COPY --from=builder /opt/kyuubi ${KYUUBI_HOME}
 
