@@ -43,6 +43,8 @@ sudo rm -rf /usr/share/dotnet/ \
   /opt/hostedtoolcache/go \
   /opt/hostedtoolcache/node
 
+df -h
+
 sudo apt-get remove --purge -y \
   '^aspnet.*' \
   '^dotnet-.*' \
@@ -51,6 +53,8 @@ sudo apt-get remove --purge -y \
   '^temurin-\d{n,}.*' \
   snapd google-chrome-stable microsoft-edge-stable firefox \
   azure-cli google-cloud-sdk mono-devel msbuild powershell libgl1-mesa-dri
+
+df -h
 
 sudo apt-get autoremove --purge -y \
   && sudo apt-get clean \
