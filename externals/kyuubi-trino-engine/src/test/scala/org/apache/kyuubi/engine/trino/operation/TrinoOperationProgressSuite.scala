@@ -23,7 +23,7 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TRINO_CONNECTION_CATALOG, SESSION_PROGRESS_ENABLE}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TJobExecutionStatus}
 
 class TrinoOperationProgressSuite extends TrinoOperationSuite {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -31,7 +31,7 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
     SESSION_PROGRESS_ENABLE.key -> "true")
 
   test("get operation progress") {
-    val sql = "select date '2011-11-11' - interval '1' day"
+    val sql = "SELECT DECIMAL '1.2' as col1, DECIMAL '1.23' AS col2"
 
     withSessionHandle { (client, handle) =>
       val req = new TExecuteStatementReq()
@@ -39,7 +39,6 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
       req.setRunAsync(true)
       req.setSessionHandle(handle)
       val resp = client.ExecuteStatement(req)
-      //scalastyle:off
       eventually(Timeout(25.seconds)) {
         val statusReq = new TGetOperationStatusReq(resp.getOperationHandle)
         val statusResp = client.GetOperationStatus(statusReq)
@@ -48,9 +47,31 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
         val rows = statusResp.getProgressUpdateResponse.getRows
         val footerSummary = statusResp.getProgressUpdateResponse.getFooterSummary
         val status = statusResp.getProgressUpdateResponse.getStatus
-        println(rows.get(0).asScala)
-        println("headers:" + String.join(",", headers))
-        println("progress: " + progress)
+        assertResult(Seq(
+          "STAGES",
+          "STATUS",
+          "TOTAL",
+          "COMPLETED",
+          "RUNNING",
+          "PENDING",
+          "FAILED",
+          ""))(headers.asScala)
+        assert(rows.size() == 1)
+        progress match {
+          case 100.0 =>
+            assertResult(Seq(
+              s"Stage-0 ........",
+              "FINISHED",
+              "1",
+              "1",
+              "0",
+              "0",
+              "0",
+              ""))(
+              rows.get(0).asScala)
+            assert("STAGES: 01/01" === footerSummary)
+            assert(TJobExecutionStatus.COMPLETE === status)
+        }
       }
     }
   }

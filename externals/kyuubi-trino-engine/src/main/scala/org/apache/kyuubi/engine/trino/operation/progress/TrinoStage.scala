@@ -23,12 +23,8 @@ case class TrinoStage(stageId: String) extends Comparable[TrinoStage] {
 }
 
 case class TrinoStageProgress(
+    state: String,
     totalSplits: Int,
     completedSplits: Int,
     runningSplits: Int,
-    queuedSplits: Int)
-
-object TrinoOperationProgressStatus extends Enumeration {
-  type TrinoOperationProgressStatus = Value
-  val PENDING, RUNNING, FINISHED = Value
-}
+    failedTasks: Int)

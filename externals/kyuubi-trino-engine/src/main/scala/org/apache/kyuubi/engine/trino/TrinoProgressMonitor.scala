@@ -24,17 +24,17 @@ import scala.collection.immutable.SortedMap
 import io.trino.client.{StageStats, StatementClient}
 
 import org.apache.kyuubi.engine.trino.TrinoProgressMonitor.{COLUMN_1_WIDTH, HEADERS}
-import org.apache.kyuubi.engine.trino.operation.progress.{TrinoOperationProgressStatus, TrinoStage, TrinoStageProgress}
+import org.apache.kyuubi.engine.trino.operation.progress.{TrinoStage, TrinoStageProgress}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TJobExecutionStatus
 
 class TrinoProgressMonitor(trino: StatementClient) {
 
   private lazy val progressMap: Map[TrinoStage, TrinoStageProgress] = {
     if (trino != null) {
-      val prestoStats = trino.getStats
+      val trinoStats = trino.getStats
       val stageQueue = scala.collection.mutable.Queue[StageStats]()
       val stages = scala.collection.mutable.ListBuffer[(TrinoStage, TrinoStageProgress)]()
-      val rootStage = prestoStats.getRootStage
+      val rootStage = trinoStats.getRootStage
       if (rootStage != null) {
         stageQueue.enqueue(rootStage)
       }
@@ -42,10 +42,11 @@ class TrinoProgressMonitor(trino: StatementClient) {
         val stage = stageQueue.dequeue()
         val stageId = stage.getStageId
         val stageProgress = TrinoStageProgress(
+          stage.getState,
           stage.getTotalSplits,
           stage.getCompletedSplits,
           stage.getRunningSplits,
-          stage.getQueuedSplits)
+          stage.getFailedTasks)
         stages.append((TrinoStage(stageId), stageProgress))
         val subStages = asScalaBuffer(stage.getSubStages)
         stageQueue.enqueue(subStages: _*)
@@ -64,33 +65,18 @@ class TrinoProgressMonitor(trino: StatementClient) {
         val complete = progress.completedSplits
         val total = progress.totalSplits
         val running = progress.runningSplits
-        val queued = progress.queuedSplits
-        var state =
-          if (total > 0) {
-            TrinoOperationProgressStatus.PENDING
-          } else {
-            TrinoOperationProgressStatus.FINISHED
-          }
-        if (complete > 0 || running > 0 || queued > 0) {
-          state =
-            if (complete < total) {
-              TrinoOperationProgressStatus.RUNNING
-            } else {
-              TrinoOperationProgressStatus.FINISHED
-            }
-        }
+        val failed = progress.failedTasks
         val stageName = "Stage-" + stage.stageId
         val nameWithProgress = getNameWithProgress(stageName, complete, total)
         val pending = total - complete - running
         util.Arrays.asList(
           nameWithProgress,
-          "0",
-          state.toString,
+          progress.state,
           String.valueOf(total),
           String.valueOf(complete),
           String.valueOf(running),
           String.valueOf(pending),
-          String.valueOf(queued),
+          String.valueOf(failed),
           "")
     }.toList.asJavaCollection
     new util.ArrayList[util.List[String]](progressRows)
@@ -149,7 +135,6 @@ object TrinoProgressMonitor {
 
   private val HEADERS: util.List[String] = util.Arrays.asList(
     "STAGES",
-    "ATTEMPT",
     "STATUS",
     "TOTAL",
     "COMPLETED",
