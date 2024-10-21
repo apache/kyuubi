@@ -3017,6 +3017,26 @@ object KyuubiConf {
       .version("1.8.1")
       .fallbackConf(ENGINE_INITIALIZE_SQL)
 
+  val ENGINE_FLINK_DOAS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.doAs.enabled")
+      .doc("When enabled, the session user is used as the proxy user to launch the Flink engine," +
+        " otherwise, the server user. Note, due to the limitation of Apache Flink," +
+        " it can only be enabled on Kerberized environment.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.doAs.generateTokenFile")
+      .internal
+      .doc(s"When ${ENGINE_FLINK_DOAS_ENABLED.key}=true and neither FLINK-35525 (Flink 1.20.0)" +
+        " nor YARN-10333 (Hadoop 3.4.0) is available, enable this configuration to generate a" +
+        " temporary HADOOP_TOKEN_FILE that will be picked up by the Flink engine bootstrap" +
+        " process.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +
