@@ -117,6 +117,7 @@
         <maven.version>3.9.9</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.release>8</maven.compiler.release>
         <scala.version>2.12.19</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.12.0</scala-collection-compat.version>
@@ -1902,6 +1903,7 @@
             </activation>
             <properties>
                 <java.version>1.8</java.version>
+                <maven.compiler.release></maven.compiler.release>
             </properties>
         </profile>
 
@@ -1914,7 +1916,7 @@
                 <java.version>11</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
+                
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
@@ -1928,7 +1930,7 @@
                 <java.version>17</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
+                
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
@@ -1942,7 +1944,7 @@
                 <java.version>21</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
+                
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
