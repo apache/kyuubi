@@ -242,6 +242,14 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     })
   }
 
+  test("python worker process pooling") {
+    checkPythonRuntimeAndVersion()
+    val code = "print(1)"
+    val output = "1"
+    runPySparkTest(code, output)
+    runPySparkTest(code, output)
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {
