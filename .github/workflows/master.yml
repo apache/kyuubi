@@ -448,8 +448,8 @@ jobs:
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:latest
           # pre-install spark into minikube
-          docker pull apache/spark:3.5.2
-          minikube image load apache/spark:3.5.2
+          docker pull apache/spark:3.5.3
+          minikube image load apache/spark:3.5.3
       - name: kubectl pre-check
         run: |
           kubectl get nodes
