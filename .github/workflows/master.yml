@@ -121,7 +121,7 @@ jobs:
           verbose: true
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-java-${{ matrix.java }}-spark-${{ matrix.spark }}-${{ matrix.comment }}
           path: |
@@ -166,7 +166,7 @@ jobs:
           -Pscala-${{ matrix.scala }} -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }}
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-scala-${{ matrix.scala }}-java-${{ matrix.java }}-spark-${{ matrix.spark }}
           path: |
@@ -230,7 +230,7 @@ jobs:
           -Pscala-${{ matrix.scala }} -Pspark-${{ matrix.spark-runtime }} -Pcross-version-test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: "unit-tests-log-java-${{ matrix.java }}-scala-${{ matrix.scala }}\
             -spark-compile-${{ matrix.spark-compile }}-spark-runtime-${{ matrix.spark-runtime }}\
@@ -301,7 +301,7 @@ jobs:
           ./build/mvn -pl ${IT_MODULE} -Pflink-${IT_FLINK} ${{ matrix.flink-archive }} test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-java-${{ matrix.java }}-flink-${{ matrix.flink }}-${{ matrix.comment }}
           path: |
@@ -363,7 +363,7 @@ jobs:
           ./build/mvn ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-java-${{ matrix.java }}-hive-${{ matrix.comment }}
           path: |
@@ -408,7 +408,7 @@ jobs:
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds,org.apache.kyuubi.spark.connector.tpcds.TPCDSQuerySuite,org.apache.kyuubi.spark.connector.tpch.TPCHQuerySuite
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-java-${{ matrix.java }}-hive-${{ matrix.comment }}
           path: |
@@ -482,7 +482,7 @@ jobs:
           kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-kyuubi-on-k8s-it
           path: |
@@ -524,7 +524,7 @@ jobs:
           kubectl get pods | grep driver | awk -F " " '{print$1}' | xargs -I {} kubectl logs {}
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-spark-on-k8s-it
           path: |
@@ -565,7 +565,7 @@ jobs:
           ./build/mvn -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-java-${{ matrix.java }}-zookeeper-${{ matrix.comment }}
           path: |
