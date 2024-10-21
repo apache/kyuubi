@@ -69,7 +69,7 @@ class FlinkProcessBuilder(
       warn(s"${ENGINE_FLINK_DOAS_ENABLED.key} can only be enabled on Kerberized environment.")
       flinkDoAsEnabled = false
     }
-    doAsEnabled && flinkDoAsEnabled
+    flinkDoAsEnabled
   }
 
   override protected def module: String = "kyuubi-flink-sql-engine"
