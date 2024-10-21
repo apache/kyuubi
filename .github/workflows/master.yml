@@ -491,7 +491,7 @@ jobs:
 
   spark-on-k8s-it:
     name: Spark Engine On Kubernetes Integration Test
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
