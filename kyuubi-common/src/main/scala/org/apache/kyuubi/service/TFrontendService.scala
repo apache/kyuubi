@@ -142,16 +142,16 @@ abstract class TFrontendService(name: String)
    * The real user is the user used for session authentication.
    * The session user is the proxy user if proxy user is provided, otherwise is the real user.
    */
-  protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
-    val realUser: String =
-      ServiceUtils.getShortName(authFactory.getRemoteUser.getOrElse(req.getUsername))
+  protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String, String) = {
+    val fullUsername: String = authFactory.getRemoteUser.getOrElse(req.getUsername)
+    val realUser: String = ServiceUtils.getShortName(fullUsername)
     val sessionUser =
       if (req.getConfiguration == null) {
         realUser
       } else {
         getProxyUser(req.getConfiguration, authFactory.getIpAddress.orNull, realUser)
       }
-    realUser -> sessionUser
+    (fullUsername, realUser, sessionUser)
   }
 
   protected def getIpAddress: String = {
@@ -166,14 +166,16 @@ abstract class TFrontendService(name: String)
   protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
-    val (realUser, sessionUser) = getRealUserAndSessionUser(req)
+    val (fullUsername, realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
     val configuration =
       Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
         Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
         Map(
           KYUUBI_SESSION_CONNECTION_URL_KEY -> connectionUrl,
-          KYUUBI_SESSION_REAL_USER_KEY -> realUser)
+          KYUUBI_SESSION_REAL_USER_KEY -> realUser,
+          "kyuubi.session.full.user" -> fullUsername
+        ) // Add full username here
     val sessionHandle = be.openSession(
       protocol,
       sessionUser,
