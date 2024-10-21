@@ -1883,7 +1883,7 @@ object KyuubiConf {
       .version("1.10.0")
       .serverOnly
       .longConf
-      .createWithDefault(100 * 1024 * 1024)
+      .createWithDefault(0)
 
   val BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE: ConfigEntry[Long] =
     buildConf("kyuubi.batch.extra.resource.file.max.size")
@@ -1892,7 +1892,7 @@ object KyuubiConf {
       .version("1.10.0")
       .serverOnly
       .longConf
-      .createWithDefault(100 * 1024 * 1024)
+      .createWithDefault(0)
 
   val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.batch.submitter.enabled")
