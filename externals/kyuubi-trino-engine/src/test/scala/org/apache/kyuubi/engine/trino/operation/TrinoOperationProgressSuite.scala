@@ -31,7 +31,8 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
     SESSION_PROGRESS_ENABLE.key -> "true")
 
   test("get operation progress") {
-    val sql = "SELECT DECIMAL '1.2' as col1, DECIMAL '1.23' AS col2"
+    val sql = "select * from (select item from (SELECT sequence(0, 100, 1) as t) as a " +
+      "CROSS JOIN UNNEST(t) AS temTable (item)) WHERE random() < 0.1"
 
     withSessionHandle { (client, handle) =>
       val req = new TExecuteStatementReq()
@@ -62,8 +63,8 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
             assertResult(Seq(
               s"Stage-0 ........",
               "FINISHED",
-              "1",
-              "1",
+              "5",
+              "5",
               "0",
               "0",
               "0",
