@@ -1,0 +1,6 @@
+Java HotSpot(TM) 64-Bit Server VM 17.0.12+8-LTS-286 on Mac OS X 14.6
+Apple M3
+Collecting files ranger access request:   Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
+------------------------------------------------------------------------------------------------------------------------
+50000 files benchmark                              1281           1310          33         -0.0 -1280563000.0       1.0X
+
