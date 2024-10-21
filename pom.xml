@@ -1916,7 +1916,7 @@
                 <java.version>11</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                
+
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
@@ -1930,7 +1930,7 @@
                 <java.version>17</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                
+
                 <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
@@ -1944,7 +1944,7 @@
                 <java.version>21</java.version>
                 <maven.compiler.source></maven.compiler.source>
                 <maven.compiler.target></maven.compiler.target>
-                
+
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
