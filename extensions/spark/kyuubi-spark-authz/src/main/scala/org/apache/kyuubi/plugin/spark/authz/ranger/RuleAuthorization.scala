@@ -37,7 +37,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
     val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
 
     // Use a HashSet to deduplicate the same AccessResource and AccessType, the requests will be all
-    // the non-duplicate requests.
+    // the non-duplicate requests and in the same order as the input requests.
     val requests = new mutable.ArrayBuffer[AccessRequest]()
     val requestsSet = new mutable.HashSet[(AccessResource, AccessType)]()
 
