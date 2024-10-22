@@ -41,7 +41,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - run: >-
           build/mvn org.apache.rat:apache-rat-plugin:check
           -Ptpcds -Pkubernetes-it
