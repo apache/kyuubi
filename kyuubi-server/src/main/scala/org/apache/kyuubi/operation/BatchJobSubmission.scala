@@ -161,7 +161,9 @@ class BatchJobSubmission(
     }
   }
 
-  private def getAppState(operState: OperationState, appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
+  private def getAppState(
+      operState: OperationState,
+      appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
     if (state == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
       ApplicationState.UNKNOWN
     }
