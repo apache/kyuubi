@@ -42,7 +42,6 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Build with Maven

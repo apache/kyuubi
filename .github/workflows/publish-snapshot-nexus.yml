@@ -52,7 +52,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Publish Snapshot Jar to Nexus - ${{ matrix.branch }}
         env:
           ASF_USERNAME: ${{ secrets.NEXUS_USER }}

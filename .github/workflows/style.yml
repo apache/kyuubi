@@ -46,7 +46,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python 3

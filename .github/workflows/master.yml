@@ -94,7 +94,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Setup Maven
@@ -153,7 +152,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
@@ -217,7 +215,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Build Kyuubi Spark Connectors with Spark-${{ matrix.spark-compile }}
@@ -279,7 +276,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
@@ -338,7 +334,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
@@ -390,7 +385,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
@@ -504,7 +498,6 @@ jobs:
           distribution: temurin
           java-version: 11
           cache: 'maven'
-          check-latest: false
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -559,7 +552,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Cache Engine Archives
