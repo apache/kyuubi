@@ -68,12 +68,34 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
   }
 
   test("kyuubi defined function - system_user/session_user") {
-    withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
+    withSessionConf(Map("hive.server2.proxy.user" -> "user2"))(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery("select system_user() as c1, session_user() as c2")
         assert(res.next())
-        assert(res.getString("c1") === "testGG")
-        assert(res.getString("c2") === "user1")
+        assert(res.getString("c1") === "user1")
+        assert(res.getString("c2") === "user2")
+      }
+    }
+  }
+
+  test("ensure preferred group is chosen from list of groups") {
+    withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map(
+      KyuubiConf.PREFERRED_GROUPS.key -> "test,group_tt,testGG"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        val engineName = res.getString("value")
+        assert(engineName.startsWith(s"kyuubi_GROUP_${conf.get(KyuubiConf.ENGINE_TYPE)}_group_tt"))
+      }
+    }
+
+    withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map(
+      KyuubiConf.PREFERRED_GROUPS.key -> "test"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        val engineName = res.getString("value")
+        assert(engineName.startsWith(s"kyuubi_GROUP_${conf.get(KyuubiConf.ENGINE_TYPE)}_testGG"))
       }
     }
   }
