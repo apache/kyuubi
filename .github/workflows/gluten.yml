@@ -53,7 +53,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
@@ -64,7 +64,7 @@ jobs:
             cd gluten
             ./dev/buildbundle-veloxbe.sh
           fi
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
           path: gluten/package/target/
@@ -98,7 +98,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
