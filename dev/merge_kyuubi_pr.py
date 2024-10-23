@@ -234,7 +234,9 @@ def main():
     branches = get_json("%s/branches" % GITHUB_API_BASE)
     branch_names = list(filter(lambda x: x.startswith("branch-"), [x['name'] for x in branches]))
     # Assumes branch names can be sorted lexicographically
-    latest_branch = sorted(branch_names, reverse=True)[0]
+    def sort_by_version(branch_name):
+        return tuple(map(int, branch_name.split('-')[1].split('.')))
+    latest_branch = sorted(branch_names, key=sort_by_version, reverse=True)[0]
 
     pr_num = input("Which pull request would you like to merge? (e.g. 34): ")
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
