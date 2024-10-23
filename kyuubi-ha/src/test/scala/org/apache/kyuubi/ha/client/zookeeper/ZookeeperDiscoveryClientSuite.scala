@@ -34,7 +34,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
-import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, StrategyFactory}
+import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, ServerStrategyFactory}
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
@@ -242,8 +242,8 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       "testNode1",
       "testNode2",
       "testNode3").asJava
-    // test poll strategy
-    val pollingStrategy = StrategyFactory.createStrategy("polling")
+    // test polling strategy
+    val pollingStrategy = ServerStrategyFactory.createStrategy("polling")
     1 to testServerHosts.size() foreach { _ =>
       assertResult(f"testNode1")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
       assertResult(f"testNode2")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))

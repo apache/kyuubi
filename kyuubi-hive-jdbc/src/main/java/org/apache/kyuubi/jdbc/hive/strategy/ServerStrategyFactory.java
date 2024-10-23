@@ -22,7 +22,7 @@ import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 
-public class StrategyFactory {
+public class ServerStrategyFactory {
   public static ServerSelectStrategy createStrategy(String strategyName) {
     try {
       switch (strategyName) {

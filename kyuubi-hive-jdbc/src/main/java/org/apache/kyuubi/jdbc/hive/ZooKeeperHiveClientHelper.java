@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
-import org.apache.kyuubi.jdbc.hive.strategy.StrategyFactory;
+import org.apache.kyuubi.jdbc.hive.strategy.ServerStrategyFactory;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory;
@@ -131,7 +131,7 @@ class ZooKeeperHiveClientHelper {
             .getOrDefault(
                 JdbcConnectionParams.SERVER_SELECT_STRATEGY, RandomSelectStrategy.strategyName);
     try {
-      ServerSelectStrategy strategy = StrategyFactory.createStrategy(strategyName);
+      ServerSelectStrategy strategy = ServerStrategyFactory.createStrategy(strategyName);
       return strategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
     } catch (Exception e) {
       throw new RuntimeException("Failed to choose server with strategy " + strategyName, e);
