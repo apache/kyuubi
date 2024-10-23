@@ -38,7 +38,7 @@ public class ServerStrategyFactory {
             return constructor.newInstance();
           } else {
             throw new ZooKeeperHiveClientException(
-                "The loaded class does not implement ChooseServerStrategy");
+                "The loaded class does not implement ServerSelectStrategy");
           }
       }
     } catch (Exception e) {
