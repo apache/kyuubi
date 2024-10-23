@@ -244,7 +244,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       "testNode3").asJava
     // test polling strategy
     val pollingStrategy = ServerStrategyFactory.createStrategy("polling")
-    1 to testServerHosts.size() foreach { _ =>
+    1 to testServerHosts.size() * 2 foreach { _ =>
       assertResult(f"testNode1")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
       assertResult(f"testNode2")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
       assertResult(f"testNode3")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
@@ -254,6 +254,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
     assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
     assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+
     zkClient.close()
   }
 }
