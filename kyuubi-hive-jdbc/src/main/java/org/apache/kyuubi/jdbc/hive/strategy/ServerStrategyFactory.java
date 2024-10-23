@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc.hive.strategy;
 
 import java.lang.reflect.Constructor;
-import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 
@@ -37,8 +36,7 @@ public class ServerStrategyFactory {
                 clazz.asSubclass(ServerSelectStrategy.class).getConstructor();
             return constructor.newInstance();
           } else {
-            throw new ZooKeeperHiveClientException(
-                "The loaded class does not implement ServerSelectStrategy");
+            throw new ClassNotFoundException("The loaded class does not implement ServerSelectStrategy");
           }
       }
     } catch (Exception e) {
