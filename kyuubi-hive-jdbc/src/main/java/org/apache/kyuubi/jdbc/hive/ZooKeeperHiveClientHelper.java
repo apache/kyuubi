@@ -126,7 +126,9 @@ class ZooKeeperHiveClientHelper {
       throws ZooKeeperHiveClientException {
     String zooKeeperNamespace = getZooKeeperNamespace(connParams);
     String zkStrategy =
-        connParams.getSessionVars().getOrDefault(JdbcConnectionParams.ZOOKEEPER_STRATEGY, "random");
+        connParams
+            .getSessionVars()
+            .getOrDefault(JdbcConnectionParams.SERVER_SELECT_STRATEGY, "random");
     ServerSelectStrategy strategy = StrategyFactory.createStrategy(zkStrategy);
     return strategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
   }
