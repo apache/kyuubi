@@ -70,8 +70,9 @@ class JdbcProcessBuilder(
     buffer += s"-Xmx$memory"
 
     val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
-    javaOptions.foreach(buffer += _)
-
+    if (javaOptions.isDefined) {
+      buffer ++= parseOptionString(javaOptions.get)
+    }
     val classpathEntries = new mutable.LinkedHashSet[String]
     mainResource.foreach(classpathEntries.add)
     mainResource.foreach { path =>

@@ -47,4 +47,11 @@ class CommandUtilsSuite extends AnyFunSuite {
     assertResult(Seq("-cp", "/path/a.jar:/path2/b*.jar"))(
       genClasspathOption(Seq("/path/a.jar", "/path2/b*.jar")))
   }
+
+  test("parseOptionString should parse a string as a list of arguments") {
+    val input = "\"ab cd\" efgh 'i \" j'"
+    val expectedOutput = List("ab cd", "efgh", "i \" j")
+    val actualOutput = CommandLineUtils.parseOptionString(input)
+    assert(actualOutput == expectedOutput)
+  }
 }

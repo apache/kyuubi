@@ -64,7 +64,7 @@ class HiveProcessBuilder(
     buffer += s"-Xmx$memory"
     val javaOptions = conf.get(ENGINE_HIVE_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
-      buffer += javaOptions.get
+      buffer ++= parseOptionString(javaOptions.get)
     }
     // -Xmx5g
     // java options

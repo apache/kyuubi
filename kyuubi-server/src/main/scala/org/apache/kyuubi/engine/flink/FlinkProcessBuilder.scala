@@ -157,9 +157,8 @@ class FlinkProcessBuilder(
         buffer += s"-Xmx$memory"
         val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
         if (javaOptions.isDefined) {
-          buffer += javaOptions.get
+          buffer ++= parseOptionString(javaOptions.get)
         }
-
         val classpathEntries = new mutable.LinkedHashSet[String]
         // flink engine runtime jar
         mainResource.foreach(classpathEntries.add)
