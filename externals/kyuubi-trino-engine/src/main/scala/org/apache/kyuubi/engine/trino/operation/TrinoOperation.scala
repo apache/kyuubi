@@ -24,6 +24,7 @@ import io.trino.client.StatementClient
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.TrinoContext
 import org.apache.kyuubi.engine.trino.schema.{SchemaHelper, TrinoTRowSetGenerator}
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
@@ -45,6 +46,9 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
 
   protected var iter: FetchIterator[List[Any]] = _
 
+  protected val isGenerateTRowSetInParallel: Boolean = session.conf
+    .getOrElse(KyuubiConf.OPERATION_TROWSET_GENERATION_IN_PARALLEL.key, "false").toBoolean
+
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val tTableSchema = SchemaHelper.toTTableSchema(schema)
     val resp = new TGetResultSetMetadataResp
@@ -65,8 +69,11 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
       case FETCH_FIRST => iter.fetchAbsolute(0)
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet =
-      new TrinoTRowSetGenerator().toTRowSet(taken.toSeq, schema, getProtocolVersion)
+    val resultRowSet = new TrinoTRowSetGenerator().toTRowSet(
+      taken.toSeq,
+      schema,
+      getProtocolVersion,
+      isGenerateTRowSetInParallel)
     resultRowSet.setStartRowOffset(iter.getPosition)
     val resp = new TFetchResultsResp(OK_STATUS)
     resp.setResults(resultRowSet)

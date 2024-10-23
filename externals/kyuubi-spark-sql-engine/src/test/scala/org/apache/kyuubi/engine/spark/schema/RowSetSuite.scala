@@ -273,4 +273,38 @@ class RowSetSuite extends KyuubiFunSuite {
       }
     }
   }
+
+  test("to TRowset in parallel") {
+    TProtocolVersion.values().foreach { proto =>
+      val set1 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = false)
+      val set2 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = true)
+      assert(set1 == set2)
+    }
+  }
+
+  test("to TRowset in parallel with benchmark result") {
+    // scalastyle:off println
+    List(TProtocolVersion.values().last).foreach { proto =>
+      println("row count: " + rows.size)
+      println("column count: " + rows.head.length)
+
+      val time1 = System.currentTimeMillis()
+      val set1 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = false)
+
+      val time2 = System.currentTimeMillis()
+      println("Time cost for non parallel execution: " + (time2 - time1) + "ms")
+
+      val set2 = new SparkTRowSetGenerator()
+        .toTRowSet(rows, schema, proto, isExecuteInParallel = true)
+
+      val time3 = System.currentTimeMillis()
+      println("Time cost for parallel execution: " + (time3 - time2) + "ms")
+
+      assert(set1 == set2)
+    }
+    // scalastyle:on println
+  }
 }

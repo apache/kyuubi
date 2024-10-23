@@ -26,7 +26,10 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 class SparkArrowTRowSetGenerator
   extends TRowSetGenerator[StructType, Array[Byte], DataType] {
-  override def toColumnBasedSet(rows: Seq[Array[Byte]], schema: StructType): TRowSet = {
+  override def toColumnBasedSet(
+      rows: Seq[Array[Byte]],
+      schema: StructType,
+      toColumnBasedSetInParallel: Boolean = false): TRowSet = {
     require(schema.length == 1, "ArrowRowSetGenerator accepts only one single byte array")
     require(schema.head.dataType == BinaryType, "ArrowRowSetGenerator accepts only BinaryType")
 
