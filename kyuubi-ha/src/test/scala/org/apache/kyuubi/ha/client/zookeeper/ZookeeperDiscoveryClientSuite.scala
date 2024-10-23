@@ -229,7 +229,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
   }
 
-  test("strategy for zookeeper") {
+  test("server select strategy with zookeeper") {
     val zkClient = CuratorFrameworkFactory.builder()
       .connectString(getConnectString)
       .sessionTimeoutMs(5000)
