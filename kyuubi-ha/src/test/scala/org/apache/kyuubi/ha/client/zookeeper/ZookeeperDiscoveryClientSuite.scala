@@ -262,7 +262,5 @@ object CustomSelectStrategy extends ServerSelectStrategy {
   override def chooseServer(
       serverHosts: util.List[String],
       zkClient: CuratorFramework,
-      namespace: String): String = {
-    serverHosts.get(0)
-  }
+      namespace: String): String = serverHosts.get(0)
 }

@@ -23,8 +23,7 @@ import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 
 public class StrategyFactory {
-  public static ServerSelectStrategy createStrategy(String strategyName)
-      throws ZooKeeperHiveClientException {
+  public static ServerSelectStrategy createStrategy(String strategyName) {
     try {
       switch (strategyName) {
         case PollingSelectStrategy.strategyName:
@@ -43,8 +42,7 @@ public class StrategyFactory {
           }
       }
     } catch (Exception e) {
-      throw new ZooKeeperHiveClientException(
-          "Oops, load the chooseStrategy is wrong, please check your connection params", e);
+      throw new RuntimeException("Failed to init server select strategy", e);
     }
   }
 }

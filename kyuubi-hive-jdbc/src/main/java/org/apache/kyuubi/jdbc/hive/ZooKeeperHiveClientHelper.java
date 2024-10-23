@@ -123,16 +123,19 @@ class ZooKeeperHiveClientHelper {
   }
 
   private static String chooseServer(
-      JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient)
-      throws ZooKeeperHiveClientException {
+      JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient) {
     String zooKeeperNamespace = getZooKeeperNamespace(connParams);
     String strategyName =
         connParams
             .getSessionVars()
             .getOrDefault(
                 JdbcConnectionParams.SERVER_SELECT_STRATEGY, RandomSelectStrategy.strategyName);
-    ServerSelectStrategy strategy = StrategyFactory.createStrategy(strategyName);
-    return strategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
+    try {
+      ServerSelectStrategy strategy = StrategyFactory.createStrategy(strategyName);
+      return strategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to choose server with strategy " + strategyName, e);
+    }
   }
 
   static List<JdbcConnectionParams> getDirectParamsList(JdbcConnectionParams connParams)

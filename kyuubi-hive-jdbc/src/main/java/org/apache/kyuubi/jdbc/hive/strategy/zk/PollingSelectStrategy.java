@@ -18,7 +18,6 @@
 package org.apache.kyuubi.jdbc.hive.strategy.zk;
 
 import java.util.List;
-import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.AtomicValue;
@@ -32,20 +31,19 @@ public class PollingSelectStrategy implements ServerSelectStrategy {
   private static final String COUNTER_PATH_SUFFIX = "-counter";
 
   @Override
-  public String chooseServer(List<String> serverHosts, CuratorFramework zkClient, String namespace)
-      throws ZooKeeperHiveClientException {
+  public String chooseServer(
+      List<String> serverHosts, CuratorFramework zkClient, String namespace) {
     String counterPath = COUNTER_PATH_PREFIX + namespace + COUNTER_PATH_SUFFIX;
     try {
       return serverHosts.get(getAndIncrement(zkClient, counterPath) % serverHosts.size());
     } catch (Exception e) {
-      throw new ZooKeeperHiveClientException(
-          "Oops, PollingSelectStrategy get the server is wrong!", e);
+      throw new RuntimeException("Failed to choose server by polling select strategy", e);
     }
   }
 
   private int getAndIncrement(CuratorFramework zkClient, String path) throws Exception {
     DistributedAtomicInteger dai =
-        new DistributedAtomicInteger(zkClient, path, new RetryForever(1000));
+        new DistributedAtomicInteger(zkClient, path, new RetryForever(3000));
     AtomicValue<Integer> atomicVal;
     do {
       atomicVal = dai.add(1);
