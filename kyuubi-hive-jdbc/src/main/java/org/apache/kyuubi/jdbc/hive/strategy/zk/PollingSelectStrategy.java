@@ -26,7 +26,7 @@ import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.DistributedAtom
 import org.apache.kyuubi.shaded.curator.retry.RetryForever;
 
 public class PollingSelectStrategy implements ServerSelectStrategy {
-  public static final String strategyName = "poll";
+  public static final String strategyName = "polling";
 
   private static final String COUNTER_PATH_PREFIX = "/";
   private static final String COUNTER_PATH_SUFFIX = "-counter";
@@ -39,7 +39,7 @@ public class PollingSelectStrategy implements ServerSelectStrategy {
       return serverHosts.get(getAndIncrement(zkClient, counterPath) % serverHosts.size());
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
-          "Oops, PollingChooseStrategy get the server is wrong!", e);
+          "Oops, PollingSelectStrategy get the server is wrong!", e);
     }
   }
 
