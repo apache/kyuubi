@@ -19,13 +19,13 @@ package org.apache.kyuubi.jdbc.hive.strategy.zk;
 
 import java.util.List;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
-import org.apache.kyuubi.jdbc.hive.strategy.ChooseServerStrategy;
+import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.AtomicValue;
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.DistributedAtomicInteger;
 import org.apache.kyuubi.shaded.curator.retry.RetryForever;
 
-public class PollingChooseStrategy implements ChooseServerStrategy {
+public class PollingSelectStrategy implements ServerSelectStrategy {
   private static final String COUNTER_PATH_PREFIX = "/";
   private static final String COUNTER_PATH_SUFFIX = "-counter";
 

@@ -34,7 +34,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
-import org.apache.kyuubi.jdbc.hive.strategy.{ChooseServerStrategy, StrategyFactory}
+import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, StrategyFactory}
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
@@ -251,14 +251,14 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
 
     // test only get first serverHost strategy
-    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(CustomChooseStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
     zkClient.close()
   }
 }
 
-object CustomChooseStrategy extends ChooseServerStrategy {
+object CustomSelectStrategy extends ServerSelectStrategy {
   override def chooseServer(
       serverHosts: util.List[String],
       zkClient: CuratorFramework,

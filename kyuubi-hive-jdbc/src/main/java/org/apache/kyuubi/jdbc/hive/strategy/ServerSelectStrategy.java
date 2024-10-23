@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 
-public interface ChooseServerStrategy {
+public interface ServerSelectStrategy {
   String chooseServer(List<String> serverHosts, CuratorFramework zkClient, String namespace)
       throws ZooKeeperHiveClientException;
 }

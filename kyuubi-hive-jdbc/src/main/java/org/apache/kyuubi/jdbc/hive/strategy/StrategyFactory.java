@@ -19,23 +19,23 @@ package org.apache.kyuubi.jdbc.hive.strategy;
 
 import java.lang.reflect.Constructor;
 import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
-import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingChooseStrategy;
-import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomChooseStrategy;
+import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
+import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 
 public class StrategyFactory {
-  public static ChooseServerStrategy createStrategy(String strategy)
+  public static ServerSelectStrategy createStrategy(String strategy)
       throws ZooKeeperHiveClientException {
     try {
       switch (strategy) {
         case "poll":
-          return new PollingChooseStrategy();
+          return new PollingSelectStrategy();
         case "random":
-          return new RandomChooseStrategy();
+          return new RandomSelectStrategy();
         default:
           Class<?> clazz = Class.forName(strategy);
-          if (ChooseServerStrategy.class.isAssignableFrom(clazz)) {
-            Constructor<? extends ChooseServerStrategy> constructor =
-                clazz.asSubclass(ChooseServerStrategy.class).getConstructor();
+          if (ServerSelectStrategy.class.isAssignableFrom(clazz)) {
+            Constructor<? extends ServerSelectStrategy> constructor =
+                clazz.asSubclass(ServerSelectStrategy.class).getConstructor();
             return constructor.newInstance();
           } else {
             throw new ZooKeeperHiveClientException(

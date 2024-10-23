@@ -19,10 +19,10 @@ package org.apache.kyuubi.jdbc.hive.strategy.zk;
 
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import org.apache.kyuubi.jdbc.hive.strategy.ChooseServerStrategy;
+import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 
-public class RandomChooseStrategy implements ChooseServerStrategy {
+public class RandomSelectStrategy implements ServerSelectStrategy {
   @Override
   public String chooseServer(
       List<String> serverHosts, CuratorFramework zkClient, String namespace) {
