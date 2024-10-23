@@ -23,16 +23,16 @@ import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 
 public class StrategyFactory {
-  public static ServerSelectStrategy createStrategy(String strategy)
+  public static ServerSelectStrategy createStrategy(String strategyName)
       throws ZooKeeperHiveClientException {
     try {
-      switch (strategy) {
-        case "poll":
+      switch (strategyName) {
+        case PollingSelectStrategy.strategyName:
           return new PollingSelectStrategy();
-        case "random":
+        case RandomSelectStrategy.strategyName:
           return new RandomSelectStrategy();
         default:
-          Class<?> clazz = Class.forName(strategy);
+          Class<?> clazz = Class.forName(strategyName);
           if (ServerSelectStrategy.class.isAssignableFrom(clazz)) {
             Constructor<? extends ServerSelectStrategy> constructor =
                 clazz.asSubclass(ServerSelectStrategy.class).getConstructor();
@@ -44,7 +44,7 @@ public class StrategyFactory {
       }
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
-          "Oops, load the chooseStrategy is wrong, please check your connection params");
+              "Oops, load the chooseStrategy is wrong, please check your connection params", e);
     }
   }
 }

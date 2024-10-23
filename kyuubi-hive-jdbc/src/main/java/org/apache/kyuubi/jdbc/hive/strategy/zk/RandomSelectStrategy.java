@@ -23,6 +23,8 @@ import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 
 public class RandomSelectStrategy implements ServerSelectStrategy {
+  public static final String strategyName = "random";
+
   @Override
   public String chooseServer(
       List<String> serverHosts, CuratorFramework zkClient, String namespace) {

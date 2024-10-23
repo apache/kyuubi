@@ -26,6 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.StrategyFactory;
+import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory;
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry;
@@ -125,11 +126,11 @@ class ZooKeeperHiveClientHelper {
       JdbcConnectionParams connParams, List<String> serverHosts, CuratorFramework zkClient)
       throws ZooKeeperHiveClientException {
     String zooKeeperNamespace = getZooKeeperNamespace(connParams);
-    String serverSelectStrategyName =
+    String strategyName =
         connParams
             .getSessionVars()
-            .getOrDefault(JdbcConnectionParams.SERVER_SELECT_STRATEGY, "random");
-    ServerSelectStrategy strategy = StrategyFactory.createStrategy(serverSelectStrategyName);
+            .getOrDefault(JdbcConnectionParams.SERVER_SELECT_STRATEGY, RandomSelectStrategy.strategyName);
+    ServerSelectStrategy strategy = StrategyFactory.createStrategy(strategyName);
     return strategy.chooseServer(serverHosts, zkClient, zooKeeperNamespace);
   }
 
