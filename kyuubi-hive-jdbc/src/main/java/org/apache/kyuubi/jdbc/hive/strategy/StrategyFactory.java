@@ -44,7 +44,7 @@ public class StrategyFactory {
       }
     } catch (Exception e) {
       throw new ZooKeeperHiveClientException(
-              "Oops, load the chooseStrategy is wrong, please check your connection params", e);
+          "Oops, load the chooseStrategy is wrong, please check your connection params", e);
     }
   }
 }
