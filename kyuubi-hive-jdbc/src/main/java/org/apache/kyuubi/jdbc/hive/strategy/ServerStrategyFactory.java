@@ -36,7 +36,8 @@ public class ServerStrategyFactory {
                 clazz.asSubclass(ServerSelectStrategy.class).getConstructor();
             return constructor.newInstance();
           } else {
-            throw new ClassNotFoundException("The loaded class does not implement ServerSelectStrategy");
+            throw new ClassNotFoundException(
+                "The loaded class does not implement ServerSelectStrategy");
           }
       }
     } catch (Exception e) {

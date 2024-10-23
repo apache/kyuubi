@@ -251,17 +251,18 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
 
     // test only get first serverHost strategy
-    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
-    assert(CustomSelectStrategy.chooseServer(testServerHosts, zkClient, namespace) === "testNode1")
+    val customStrategy = new ServerSelectStrategy {
+      override def chooseServer(
+          serverHosts: util.List[String],
+          zkClient: CuratorFramework,
+          namespace: String): String = serverHosts.get(0)
+    }
+    1 to testServerHosts.size() * 2 foreach { _ =>
+      assertResult("testNode1") {
+        customStrategy.chooseServer(testServerHosts, zkClient, namespace)
+      }
+    }
 
     zkClient.close()
   }
-}
-
-object CustomSelectStrategy extends ServerSelectStrategy {
-  override def chooseServer(
-      serverHosts: util.List[String],
-      zkClient: CuratorFramework,
-      namespace: String): String = serverHosts.get(0)
 }
