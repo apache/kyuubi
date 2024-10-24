@@ -23,10 +23,48 @@ set -x
 
 BASE_TAG="v1.9.0"
 TARGET_TAG="v1.10.0-rc0"
-OUTPUT_FILE="commit_diff.txt.tmp"
+OUTPUT_FILE="commit_diff.md.tmp"
+
+HEADER="
+# Highlight
+
+## Server
+
+### Spark Engine
+
+### Spark AuthZ Plugin
+
+### Other Spark Plugins
+
+### Flink Engine
+
+### Trino Engine
+
+### JDBC Engine
+
+### Web UI
+
+### Documentation
+
+### Building, Infrastructure and Dependency
+
+### Changelogs
+
+"
+
+CONTRIBUTOR_HEADER="
+
+## Credits
+
+Last but not least, this release would not have been possible without the following contributors:
+
+"
+
+echo "$HEADER" >> ./$OUTPUT_FILE
+git log $BASE_TAG..$TARGET_TAG --pretty=format:"%s" | sed -E 's/^/- /; s/\[KYUUBI #([0-9]+)\]/[KYUUBI [#\1](https:\/\/github.com\/apache\/kyuubi\/issues\/\1)]/g' >> ./$OUTPUT_FILE
 
 
-# 获取两个标签之间的提交差异
-git log $BASE_TAG..$TARGET_TAG --pretty=format:"- [ %s ](https://github.com/apache/kyuubi/commit/%h )" > ./$OUTPUT_FILE
+echo "$HEADER" >> ./$OUTPUT_FILE
+git log $BASE_TAG..$TARGET_TAG --pretty=format:"- %an" | sort -u >> ./$OUTPUT_FILE
 
-echo "Commit differences saved to $OUTPUT_FILE"
+echo "Release note draft saved to $OUTPUT_FILE"
