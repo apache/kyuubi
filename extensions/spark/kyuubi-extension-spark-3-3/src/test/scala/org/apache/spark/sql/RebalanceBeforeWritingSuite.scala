@@ -93,6 +93,39 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     }
   }
 
+  test("check rebalance does not exists for WithCTE") {
+    def check(df: DataFrame): Unit = {
+      assert(
+        df.queryExecution.analyzed.collect {
+          case r: RebalancePartitions => r
+        }.isEmpty)
+    }
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+      withTable("tmp1") {
+        spark.sql("CREATE TABLE tmp1 (id BIGINT,name BIGINT)")
+
+        val result = sql("with tmp_table as (select id, name from tmp1 group by id, name)" +
+          "select id, name from tmp_table order by id")
+
+        val colName = (0 until result.schema.size).map(x => "col" + x)
+        val renamedDf = result.toDF(colName: _*)
+
+        renamedDf.write
+          .option("compression", "zstd")
+          .format("orc")
+          .mode("overwrite")
+          .save("test")
+
+        // TODO
+        // This check will not take effect at this time
+        // because the execution plan associated with the write operation is not in the DF
+        check(renamedDf)
+      }
+    }
+  }
+
   test("check rebalance does not exists") {
     def check(df: DataFrame): Unit = {
       assert(
