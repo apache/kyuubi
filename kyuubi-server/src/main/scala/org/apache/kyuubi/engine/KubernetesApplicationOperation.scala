@@ -266,6 +266,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
     if (cleanupTerminatedAppInfoTrigger != null) {
       cleanupTerminatedAppInfoTrigger.invalidateAll()
+      ThreadUtils.shutdown(expireCleanUpTriggerCacheExecutor)
       cleanupTerminatedAppInfoTrigger = null
     }
 
