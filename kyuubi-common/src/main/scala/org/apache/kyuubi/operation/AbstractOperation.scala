@@ -62,7 +62,19 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
     if (queryTimeout > 0) {
       val timeoutExecutor =
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread", false)
-      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
+      val action: Runnable = () =>
+        // Clients less than version 2.1 have no HIVE-4924 Patch,
+        // no queryTimeout parameter and no TIMEOUT status.
+        // When the server enables kyuubi.operation.query.timeout,
+        // this will cause the client of the lower version to get stuck.
+        // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
+        // convert TIMEDOUT_STATE to CANCELED.
+        if (getProtocolVersion.getValue <=
+            TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue) {
+          cleanup(OperationState.CANCELED)
+        } else {
+          cleanup(OperationState.TIMEOUT)
+        }
       timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
