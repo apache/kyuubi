@@ -32,7 +32,7 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
       convertFunc: (RowT, Int) => T = null): (JList[T], ByteBuffer) = {
     val rowSize = rows.length
     val ret = new JArrayList[T](rowSize)
-    val nulls = new JBitSet(rowSize)
+    val nulls = new JBitSet()
     val isConvertFuncDefined = Option(convertFunc).isDefined
     var idx = 0
     rows.foreach { row =>
