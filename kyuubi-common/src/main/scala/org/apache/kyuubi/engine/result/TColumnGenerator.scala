@@ -33,7 +33,6 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     val rowSize = rows.length
     val ret = new JArrayList[T](rowSize)
     val nulls = new JBitSet()
-    val isConvertFuncDefined = Option(convertFunc).isDefined
     var idx = 0
     rows.foreach { row =>
       val isNull = isColumnNullAt(row, ordinal)
@@ -41,7 +40,7 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
         nulls.set(idx, true)
         ret.add(defaultVal)
       } else {
-        val value = if (isConvertFuncDefined) {
+        val value = if (convertFunc == null) {
           convertFunc(row, ordinal)
         } else {
           getColumnAs[T](row, ordinal)
