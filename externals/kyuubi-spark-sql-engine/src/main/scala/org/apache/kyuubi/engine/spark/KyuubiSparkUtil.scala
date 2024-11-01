@@ -48,7 +48,7 @@ object KyuubiSparkUtil extends Logging {
         interruptOnCancel = true)
       debug(s"Execute initialization sql: $sql")
       try {
-        spark.sql(sql).isEmpty
+        spark.sql(sql).take(1).isEmpty
       } finally {
         spark.sparkContext.clearJobGroup()
       }
