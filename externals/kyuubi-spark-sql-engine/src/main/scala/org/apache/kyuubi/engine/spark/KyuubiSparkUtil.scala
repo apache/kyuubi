@@ -24,6 +24,7 @@ import scala.annotation.meta.getter
 
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.kyuubi.SparkDatasetHelper
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Logging
@@ -48,7 +49,7 @@ object KyuubiSparkUtil extends Logging {
         interruptOnCancel = true)
       debug(s"Execute initialization sql: $sql")
       try {
-        spark.sql(sql).take(1).isEmpty
+        SparkDatasetHelper.commandResultOptimized(spark.sql(sql)).isEmpty
       } finally {
         spark.sparkContext.clearJobGroup()
       }

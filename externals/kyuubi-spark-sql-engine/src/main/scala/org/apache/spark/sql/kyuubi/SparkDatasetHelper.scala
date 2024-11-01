@@ -24,7 +24,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
-import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
+import org.apache.spark.sql.catalyst.plans.logical.{CommandResult, GlobalLimit, LocalRelation, LogicalPlan}
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
@@ -289,5 +289,14 @@ object SparkDatasetHelper extends Logging {
     val nodeName = result.queryExecution.executedPlan.getClass.getName
     nodeName == "org.apache.spark.sql.execution.command.ExecutedCommandExec" ||
     nodeName == "org.apache.spark.sql.execution.CommandResultExec"
+  }
+
+  /** SPARK-47270: Returns a optimized plan for CommandResult, convert to `LocalRelation`. */
+  def commandResultOptimized[T](dataset: Dataset[T]): Dataset[T] = {
+    dataset.logicalPlan match {
+      case c: CommandResult =>
+        Dataset(dataset.sparkSession, LocalRelation(c.output, c.rows))(dataset.encoder)
+      case _ => dataset
+    }
   }
 }
