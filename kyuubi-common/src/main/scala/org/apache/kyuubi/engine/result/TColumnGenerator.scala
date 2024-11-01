@@ -35,18 +35,15 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     val nulls = new JBitSet()
     var idx = 0
     rows.foreach { row =>
-      val isNull = isColumnNullAt(row, ordinal)
-      if (isNull) {
+      val value = if (isColumnNullAt(row, ordinal)) {
         nulls.set(idx, true)
-        ret.add(defaultVal)
+        defaultVal
+      } else if (convertFunc != null) {
+        convertFunc(row, ordinal)
       } else {
-        val value = if (convertFunc == null) {
-          convertFunc(row, ordinal)
-        } else {
-          getColumnAs[T](row, ordinal)
-        }
-        ret.add(value)
+        getColumnAs[T](row, ordinal)
       }
+      ret.add(value)
       idx += 1
     }
     (ret, ByteBuffer.wrap(nulls.toByteArray))
