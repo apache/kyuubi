@@ -21,7 +21,6 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
@@ -35,7 +34,9 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   // Behavior is affected by the initialization SQL: 'SHOW DATABASES'
   // SPARK-35378 (3.2.0) makes it triggers job
   // SPARK-43124 (4.0.0) makes it avoid triggering job
-  protected val initJobId: Int = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") 0 else 1
+  // KYUUBI #6789 makes it avoid triggering job
+  // protected val initJobId: Int = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") 0 else 1
+  protected val initJobId: Int = 0
 
   override def beforeAll(): Unit = {
     startSparkEngine()
