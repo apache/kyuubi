@@ -69,8 +69,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
         // this will cause the client of the lower version to get stuck.
         // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
         // convert TIMEDOUT_STATE to CANCELED.
-        if (getProtocolVersion.getValue <=
-            TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue) {
+        if (isHive21OrLower) {
           cleanup(OperationState.CANCELED)
         } else {
           cleanup(OperationState.TIMEOUT)
@@ -286,5 +285,9 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
         case e: IOException => error(e.getMessage, e)
       }
     }
+  }
+
+  protected def isHive21OrLower: Boolean = {
+    getProtocolVersion.getValue <= TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue
   }
 }
