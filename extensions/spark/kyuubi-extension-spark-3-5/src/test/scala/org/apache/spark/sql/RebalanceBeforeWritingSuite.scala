@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RebalancePartit
 import org.apache.spark.sql.execution.command.DataWritingCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.hive.HiveUtils
-import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
@@ -31,17 +30,15 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("check rebalance exists") {
     def check(df: => DataFrame, expectedRebalanceNum: Int = 1): Unit = {
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+        var rebalanceNum = 0
         withListener(df) { write =>
-          assert(write.collect {
-            case r: RebalancePartitions => r
-          }.size == expectedRebalanceNum)
+          rebalanceNum += collectRebalancePartitions(write).size
         }
+        assert(rebalanceNum == expectedRebalanceNum)
       }
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
         withListener(df) { write =>
-          assert(write.collect {
-            case r: RebalancePartitions => r
-          }.isEmpty)
+          assert(collectRebalancePartitions(write).isEmpty)
         }
       }
     }
@@ -97,11 +94,12 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   }
 
   test("check rebalance does not exists") {
-    def check(df: DataFrame): Unit = {
+    def checkQuery(df: => DataFrame): Unit = {
+      assert(collectRebalancePartitions(df.queryExecution.analyzed).isEmpty)
+    }
+    def checkWrite(df: => DataFrame): Unit = {
       withListener(df) { write =>
-        assert(write.collect {
-          case r: RebalancePartitions => r
-        }.isEmpty)
+        assert(collectRebalancePartitions(write).isEmpty)
       }
     }
 
@@ -109,17 +107,17 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       // test no write command
-      check(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
-      check(sql("SELECT count(*) FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
+      checkQuery(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
+      checkQuery(sql("SELECT count(*) FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
 
       // test not supported plan
       withTable("tmp1") {
         sql(s"CREATE TABLE tmp1 (c1 int) PARTITIONED BY (c2 string)")
-        check(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
+        checkWrite(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
           "SELECT /*+ repartition(10) */ * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
-        check(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
+        checkWrite(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
           "SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) ORDER BY c1"))
-        check(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
+        checkWrite(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
           "SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) LIMIT 10"))
       }
     }
@@ -128,13 +126,13 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       Seq("USING PARQUET", "").foreach { storage =>
         withTable("tmp1") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
-          check(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
+          checkWrite(sql("INSERT INTO TABLE tmp1 PARTITION(c2) " +
             "SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)"))
         }
 
         withTable("tmp1") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage")
-          check(sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
+          checkWrite(sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
         }
       }
     }
@@ -143,12 +141,10 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("test dynamic partition write") {
     def checkRepartitionExpression(sqlString: String): Unit = {
       withListener(sqlString) { write =>
-        assert(write.isInstanceOf[InsertIntoHiveTable])
-        assert(write.collect {
-          case r: RebalancePartitions if r.partitionExpressions.size == 1 =>
-            assert(r.partitionExpressions.head.asInstanceOf[Attribute].name === "c2")
-            r
-        }.size == 1)
+        val rebalancePartitions = collectRebalancePartitions(write)
+        assert(rebalancePartitions.size == 1)
+        assert(rebalancePartitions.head.partitionExpressions.size == 1 &&
+          rebalancePartitions.head.partitionExpressions.head.asInstanceOf[Attribute].name === "c2")
       }
     }
 
@@ -156,14 +152,19 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       Seq("USING PARQUET", "").foreach { storage =>
-        withTable("tmp1") {
-          sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
-          checkRepartitionExpression("INSERT INTO TABLE tmp1 SELECT 1 as c1, 'a' as c2 ")
-        }
+        withTable("tmp2") {
+          sql(s"CREATE TABLE tmp2 (c1 int, c2 string)")
+          sql(s"INSERT INTO tmp2 SELECT 1, 'a'")
 
-        withTable("tmp1") {
-          checkRepartitionExpression(
-            "CREATE TABLE tmp1 PARTITIONED BY(C2) SELECT 1 as c1, 'a' as c2")
+          withTable("tmp1") {
+            sql(s"CREATE TABLE tmp1 (c1 int) $storage PARTITIONED BY (c2 string)")
+            checkRepartitionExpression("INSERT INTO TABLE tmp1 SELECT c1,  c2 from tmp2")
+          }
+
+          withTable("tmp1") {
+            checkRepartitionExpression(
+              "CREATE TABLE tmp1 PARTITIONED BY(C2) SELECT c1, c2 from tmp2")
+          }
         }
       }
     }
@@ -177,9 +178,7 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       withTable("t") {
         withListener("CREATE TABLE t STORED AS parquet AS SELECT 1 as a") { write =>
           assert(write.isInstanceOf[InsertIntoHadoopFsRelationCommand])
-          assert(write.collect {
-            case _: RebalancePartitions => true
-          }.size == 1)
+          assert(collectRebalancePartitions(write).size == 1)
         }
       }
     }

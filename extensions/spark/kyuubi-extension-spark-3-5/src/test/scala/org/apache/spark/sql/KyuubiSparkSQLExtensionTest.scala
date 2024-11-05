@@ -16,10 +16,13 @@
  */
 package org.apache.spark.sql
 
+import java.util.Collections
+
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RebalancePartitions}
+import org.apache.spark.sql.execution.{QueryExecution, SparkPlan}
+import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, AdaptiveSparkPlanHelper, LogicalQueryStage}
 import org.apache.spark.sql.execution.command.{DataWritingCommand, DataWritingCommandExec}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
@@ -99,15 +102,24 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     withListener(sql(sqlString))(callback)
   }
 
-  def withListener(df: => DataFrame)(callback: DataWritingCommand => Unit): Unit = {
+  def withListener(df: => DataFrame)(
+      callback: DataWritingCommand => Unit,
+      failIfNotCallback: Boolean = true): Unit = {
+    val writes = Collections.synchronizedList(new java.util.ArrayList[DataWritingCommand]())
+
     val listener = new QueryExecutionListener {
       override def onFailure(f: String, qe: QueryExecution, e: Exception): Unit = {}
 
       override def onSuccess(funcName: String, qe: QueryExecution, duration: Long): Unit = {
-        qe.executedPlan match {
-          case write: DataWritingCommandExec => callback(write.cmd)
-          case _ =>
+        def doCallback(plan: SparkPlan): Unit = {
+          plan match {
+            case write: DataWritingCommandExec =>
+              writes.add(write.cmd)
+            case a: AdaptiveSparkPlanExec => doCallback(a.executedPlan)
+            case _ =>
+          }
         }
+        doCallback(qe.executedPlan)
       }
     }
     spark.listenerManager.register(listener)
@@ -117,5 +129,20 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     } finally {
       spark.listenerManager.unregister(listener)
     }
+    if (failIfNotCallback && writes.isEmpty) {
+      fail("No write command found")
+    }
+    writes.forEach(callback(_))
+  }
+
+  def collectRebalancePartitions(plan: LogicalPlan): Seq[RebalancePartitions] = {
+    def collect(p: LogicalPlan): Seq[RebalancePartitions] = {
+      p.flatMap {
+        case r: RebalancePartitions => Seq(r)
+        case s: LogicalQueryStage => collect(s.logicalPlan)
+        case _ => Nil
+      }
+    }
+    collect(plan)
   }
 }
