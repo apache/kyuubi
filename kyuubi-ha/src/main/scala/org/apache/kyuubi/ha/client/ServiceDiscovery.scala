@@ -66,10 +66,11 @@ abstract class ServiceDiscovery(
 
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
-    val activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
+    var activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
     while (activeSessionCount > 0) {
       info(s"$activeSessionCount connection(s) are active, delay shutdown")
       Thread.sleep(TimeUnit.SECONDS.toMillis(10))
+      activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
     }
     isServerLost.set(isLost)
     gracefulShutdownLatch.countDown()
