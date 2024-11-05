@@ -2475,6 +2475,48 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("file:///tmp/kyuubi/events")
 
+  val ENGINE_SPARK_EVENT_HTTP_INGEST_URI: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.spark.event.http.ingest.uri")
+      .doc("URL of receiving server where all the engine events go for the built-in HTTP logger." +
+        "Explicitly set the scheme https:// to use symmetric encryption")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_SPARK_EVENT_HTTP_RETRY_COUNT: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.spark.event.http.retry.count")
+      .doc("Number of retries on server error")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(0)
+
+  val ENGINE_SPARK_EVENT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.spark.event.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the HTTP loggers server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(30 * 1000).toMillis)
+
+  val ENGINE_SPARK_EVENT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.spark.event.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after HTTP loggers server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(2 * 60 * 1000).toMillis)
+
+  val ENGINE_SPARK_EVENT_HTTP_HEADERS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.spark.event.http.headers")
+      .doc("List of custom custom HTTP headers provided as: " +
+        "\"Header-Name-1: header value 1, Header-Value-2: header value 2, ...\" ")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createOptional
+
   val SERVER_EVENT_KAFKA_TOPIC: OptionalConfigEntry[String] =
     buildConf("kyuubi.backend.server.event.kafka.topic")
       .doc("The topic of server events go for the built-in Kafka logger")
@@ -2516,9 +2558,51 @@ object KyuubiConf {
       .transformToUpperCase
       .toSequence()
       .checkValue(
-        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA")),
+        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "KAFKA", "HTTP")),
         "Unsupported event loggers")
       .createWithDefault(Nil)
+
+  val SERVER_EVENT_HTTP_INGEST_URI: OptionalConfigEntry[String] =
+    buildConf("kyuubi.backend.server.event.http.ingest.uri")
+      .doc("URL of receiving server where all the engine events go for the built-in HTTP logger." +
+        "Explicitly set the scheme https:// to use symmetric encryption")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
+  val SERVER_EVENT_HTTP_RETRY_COUNT: ConfigEntry[Int] =
+    buildConf("kyuubi.backend.server.event.http.retry.count")
+      .doc("Number of retries on server error")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(0)
+
+  val SERVER_EVENT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.backend.server.event.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the HTTP loggers server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(30 * 1000).toMillis)
+
+  val SERVER_EVENT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.backend.server.event.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after HTTP loggers server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(2 * 60 * 1000).toMillis)
+
+  val SERVER_EVENT_HTTP_HEADERS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.backend.server.event.http.headers")
+      .doc("List of custom custom HTTP headers provided as: " +
+        "\"Header-Name-1: header value 1, Header-Value-2: header value 2, ...\" ")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createOptional
 
   @deprecated("using kyuubi.engine.spark.event.loggers instead", "1.6.0")
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
@@ -2540,7 +2624,7 @@ object KyuubiConf {
       .transformToUpperCase
       .toSequence()
       .checkValue(
-        _.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
+        _.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM", "HTTP")),
         "Unsupported event loggers")
       .createWithDefault(Seq("SPARK"))
 
@@ -3667,9 +3751,51 @@ object KyuubiConf {
       .transformToUpperCase
       .toSequence()
       .checkValue(
-        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
+        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "HTTP")),
         "Unsupported event loggers")
       .createWithDefault(Seq("JSON"))
+
+  val ENGINE_HIVE_EVENT_HTTP_INGEST_URI: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.hive.event.http.ingest.uri")
+      .doc("URL of receiving server where all the engine events go for the built-in HTTP logger." +
+        "Explicitly set the scheme https:// to use symmetric encryption")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_HIVE_EVENT_HTTP_RETRY_COUNT: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.hive.event.http.retry.count")
+      .doc("Number of retries on server error")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(0)
+
+  val ENGINE_HIVE_EVENT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.hive.event.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the HTTP loggers server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(30 * 1000).toMillis)
+
+  val ENGINE_HIVE_EVENT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.hive.event.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after HTTP loggers server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(2 * 60 * 1000).toMillis)
+
+  val ENGINE_HIVE_EVENT_HTTP_HEADERS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.hive.event.http.headers")
+      .doc("List of custom custom HTTP headers provided as: " +
+        "\"Header-Name-1: header value 1, Header-Value-2: header value 2, ...\" ")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createOptional
 
   val ENGINE_TRINO_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.trino.event.loggers")
@@ -3684,9 +3810,51 @@ object KyuubiConf {
       .transformToUpperCase
       .toSequence()
       .checkValue(
-        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
+        _.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM", "HTTP")),
         "Unsupported event loggers")
       .createWithDefault(Seq("JSON"))
+
+  val ENGINE_TRINO_EVENT_HTTP_INGEST_URI: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.trino.event.http.ingest.uri")
+      .doc("URL of receiving server where all the engine events go for the built-in HTTP logger." +
+        "Explicitly set the scheme https:// to use symmetric encryption")
+      .version("1.9.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_EVENT_HTTP_RETRY_COUNT: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.trino.event.http.retry.count")
+      .doc("Number of retries on server error")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(0)
+
+  val ENGINE_TRINO_EVENT_HTTP_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.trino.event.http.connect.timeout")
+      .doc("The timeout[ms] for establishing the connection with the HTTP loggers server. " +
+        "A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(30 * 1000).toMillis)
+
+  val ENGINE_TRINO_EVENT_HTTP_SOCKET_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.trino.event.http.socket.timeout")
+      .doc("The timeout[ms] for waiting for data packets after HTTP loggers server " +
+        "connection is established. A timeout value of zero is interpreted as an infinite timeout.")
+      .version("1.9.0")
+      .timeConf
+      .checkValue(_ >= 0, "must be 0 or positive number")
+      .createWithDefault(Duration.ofMillis(2 * 60 * 1000).toMillis)
+
+  val ENGINE_TRINO_EVENT_HTTP_HEADERS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.engine.trino.event.http.headers")
+      .doc("List of custom custom HTTP headers provided as: " +
+        "\"Header-Name-1: header value 1, Header-Value-2: header value 2, ...\" ")
+      .version("1.9.0")
+      .stringConf
+      .toSequence()
+      .createOptional
 
   val ASYNC_EVENT_HANDLER_POLL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.event.async.pool.size")
