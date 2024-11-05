@@ -111,15 +111,15 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
       override def onFailure(f: String, qe: QueryExecution, e: Exception): Unit = {}
 
       override def onSuccess(funcName: String, qe: QueryExecution, duration: Long): Unit = {
-        def doCallback(plan: SparkPlan): Unit = {
+        def collectWrite(plan: SparkPlan): Unit = {
           plan match {
             case write: DataWritingCommandExec =>
               writes.add(write.cmd)
-            case a: AdaptiveSparkPlanExec => doCallback(a.executedPlan)
+            case a: AdaptiveSparkPlanExec => collectWrite(a.executedPlan)
             case _ =>
           }
         }
-        doCallback(qe.executedPlan)
+        collectWrite(qe.executedPlan)
       }
     }
     spark.listenerManager.register(listener)
