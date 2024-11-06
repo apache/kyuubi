@@ -122,6 +122,8 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
         collectWrite(qe.executedPlan)
       }
     }
+    // Make sure the listener is registered after all previous events have been processed
+    sparkContext.listenerBus.waitUntilEmpty()
     spark.listenerManager.register(listener)
     try {
       df.collect()
