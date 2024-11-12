@@ -159,7 +159,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>0.15.0</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.6.1</iceberg.version>
+        <iceberg.version>1.7.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
