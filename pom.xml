@@ -233,6 +233,7 @@
         <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
+        <maven.plugin.frontend.inheritsProxyConfigFromMaven>false</maven.plugin.frontend.inheritsProxyConfigFromMaven>
         <maven.plugin.scala.version>4.9.2</maven.plugin.scala.version>
         <maven.plugin.scalatest.version>2.2.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -1786,6 +1787,8 @@
                     <configuration>
                         <nodeVersion>${node.version}</nodeVersion>
                         <pnpmVersion>${pnpm.version}</pnpmVersion>
+                        <npmInheritsProxyConfigFromMaven>${maven.plugin.frontend.inheritsProxyConfigFromMaven}</npmInheritsProxyConfigFromMaven>
+                        <pnpmInheritsProxyConfigFromMaven>${maven.plugin.frontend.inheritsProxyConfigFromMaven}</pnpmInheritsProxyConfigFromMaven>
                     </configuration>
                 </plugin>
             </plugins>
