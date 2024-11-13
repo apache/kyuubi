@@ -150,7 +150,7 @@ kyuubiConf:
   # $KYUUBI_CONF_DIR directory
   dir: /opt/kyuubi/conf
   # Configuration files from the specified keys (file name) and values (file content)
-  files: []
+  files: ~
   #files:
   #  'kyuubi-defaults.conf': |
   #    kyuubi.authentication=NONE
