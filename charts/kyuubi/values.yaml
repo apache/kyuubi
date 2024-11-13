@@ -44,7 +44,7 @@ updateStrategy:
 image:
   repository: apache/kyuubi
   pullPolicy: IfNotPresent
-  tag: master-snapshot
+  tag: ~
 
 imagePullSecrets: []
 
