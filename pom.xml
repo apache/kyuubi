@@ -1905,6 +1905,7 @@
             </activation>
             <properties>
                 <java.version>1.8</java.version>
+                <iceberg.version>1.6.1</iceberg.version>
             </properties>
         </profile>
 
