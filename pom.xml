@@ -228,7 +228,7 @@
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
-        <maven.plugin.download.version>1.11.2</maven.plugin.download.version>
+        <maven.plugin.download.version>1.11.3</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
         <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
