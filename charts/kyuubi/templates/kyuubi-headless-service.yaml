@@ -26,9 +26,11 @@ spec:
   clusterIP: None
   ports:
     {{- range $name, $frontend := .Values.server }}
+    {{- if $frontend.enabled }}
     - name: {{ $name | kebabcase }}
       port: {{ tpl $frontend.service.port $ }}
       targetPort: {{ $frontend.port }}
+    {{- end }}
     {{- end }}
     {{- if and .Values.metrics.enabled (.Values.metrics.reporters | nospace | splitList "," | has "PROMETHEUS") }}
     - name: prometheus
