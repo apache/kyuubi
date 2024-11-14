@@ -117,6 +117,14 @@ cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS $@"
 
 pid="${KYUUBI_PID_DIR}/kyuubi-$USER-$CLASS.pid"
 
+function get_pid(){
+  run_pid="$(ps -ef | grep org.apache.kyuubi.server.KyuubiServer |
+  grep java | grep "$KYUUBI_CONF_DIR" | grep -v grep | awk '{print $2}')"
+  if [[ -n $run_pid ]]; then
+    echo "$run_pid" > "$pid"
+  fi
+}
+
 function start_kyuubi() {
   if [[ ! -w ${KYUUBI_PID_DIR} ]]; then
     echo "${USER} does not have 'w' permission to ${KYUUBI_PID_DIR}"
@@ -127,6 +135,8 @@ function start_kyuubi() {
     echo "${USER} does not have 'w' permission to ${KYUUBI_LOG_DIR}"
     exit 1
   fi
+
+  get_pid
 
   if [ -f "$pid" ]; then
     TARGET_ID="$(cat "$pid")"
@@ -167,6 +177,14 @@ function start_kyuubi() {
 }
 
 function run_kyuubi() {
+  if [ -f "$pid" ]; then
+    TARGET_ID="$(cat "$pid")"
+    if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+      echo "$CLASS running as process $TARGET_ID  Stop it first."
+      exit 1
+    fi
+  fi
+
   echo "Starting $CLASS"
   exec nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
@@ -229,6 +247,12 @@ function kill_kyuubi() {
 }
 
 function check_kyuubi() {
+  if [[ ! -w ${KYUUBI_PID_DIR} ]]; then
+    echo "${USER} does not have 'w' permission to ${KYUUBI_PID_DIR}"
+    exit 1
+  fi
+
+  get_pid
   if [[ -f ${pid} ]]; then
     TARGET_ID="$(cat "$pid")"
     if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
