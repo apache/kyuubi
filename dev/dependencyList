@@ -29,7 +29,7 @@ arrow-memory-netty/16.0.0//arrow-memory-netty-16.0.0.jar
 arrow-vector/16.0.0//arrow-vector-16.0.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
-commons-codec/1.15//commons-codec-1.15.jar
+commons-codec/1.17.1//commons-codec-1.17.1.jar
 commons-lang3/3.17.0//commons-lang3-3.17.0.jar
 error_prone_annotations/2.23.0//error_prone_annotations-2.23.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
