@@ -338,6 +338,10 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
         if (value instanceof String) {
           return ((String) value).getBytes();
         }
+      case INT_TYPE:
+        if (value instanceof String) {
+          return Integer.valueOf((String) value);
+        }
         return value;
       case TIMESTAMP_TYPE:
         return Timestamp.valueOf((String) value);

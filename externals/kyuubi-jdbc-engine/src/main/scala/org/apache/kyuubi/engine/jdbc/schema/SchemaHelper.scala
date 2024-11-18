@@ -41,7 +41,7 @@ abstract class SchemaHelper {
     tColumnDesc
   }
 
-  private def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
+  protected def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
     val typeEntry = new TPrimitiveTypeEntry(toTTypeId(sqlType))
     typeEntry.setTypeQualifiers(toTTypeQualifiers(sqlType, precision, scale))
     val tTypeDesc = new TTypeDesc()

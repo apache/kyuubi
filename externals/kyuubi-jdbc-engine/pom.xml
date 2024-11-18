@@ -80,6 +80,12 @@
 
         <dependency>
             <groupId>com.dimafeng</groupId>
+            <artifactId>testcontainers-scala-oracle-xe_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
@@ -113,6 +119,12 @@
             <groupId>com.clickhouse</groupId>
             <artifactId>clickhouse-jdbc</artifactId>
             <classifier>http</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
