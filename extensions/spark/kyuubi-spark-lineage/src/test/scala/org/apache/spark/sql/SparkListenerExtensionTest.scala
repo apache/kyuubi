@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql
 
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.util.Utils
@@ -35,7 +34,7 @@ trait SparkListenerExtensionTest {
       .master("local")
       .config("spark.ui.enabled", "false")
       .config(
-        ConfVars.METASTORECONNECTURLKEY.varname,
+        "javax.jdo.option.ConnectionURL",
         s"jdbc:derby:;databaseName=$metastorePath;create=true")
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(StaticSQLConf.WAREHOUSE_PATH.key, warehousePath)

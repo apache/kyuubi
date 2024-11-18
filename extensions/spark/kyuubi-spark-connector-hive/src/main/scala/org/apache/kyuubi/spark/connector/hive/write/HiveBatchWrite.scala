@@ -126,10 +126,10 @@ class HiveBatchWrite(
 
     if (overwrite && table.tableType == CatalogTableType.EXTERNAL) {
       val numWrittenParts = writtenParts.size
-      val maxDynamicPartitionsKey = HiveConf.ConfVars.DYNAMICPARTITIONMAXPARTS.varname
+      val maxDynamicPartitionsKey = "hive.exec.dynamic.partition.max.partitions"
       val maxDynamicPartitions = hadoopConf.getInt(
         maxDynamicPartitionsKey,
-        HiveConf.ConfVars.DYNAMICPARTITIONMAXPARTS.defaultIntVal)
+        HiveConf.getInt("hive.exec.dynamic.partition.max.partitions"))
       if (numWrittenParts > maxDynamicPartitions) {
         throw KyuubiHiveConnectorException(
           s"Number of dynamic partitions created is $numWrittenParts, " +

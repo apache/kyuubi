@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.hive.operation
 
 import java.util.List
 
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.hadoop.hive.conf.HiveConf
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.hive.session.HiveSessionImpl
@@ -162,6 +162,7 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
   override def getQueryId(operation: Operation): String = {
     val hiveOperation = operation.asInstanceOf[HiveOperation]
     val internalHiveOperation = hiveOperation.internalHiveOperation
-    internalHiveOperation.getParentSession.getHiveConf.getVar(ConfVars.HIVEQUERYID)
+    internalHiveOperation.getParentSession.getHiveConf.getVar(
+      HiveConf.getConfVars("hive.query.id"))
   }
 }
