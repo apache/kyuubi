@@ -292,6 +292,8 @@
             --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            --add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED
+            --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
 
