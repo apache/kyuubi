@@ -54,7 +54,7 @@ class OracleSQLDialect extends JdbcDialect {
         tableTypes.asScala.toSet
       }
     val query = new StringBuilder(
-      s"""SELECT OWNER                                            AS TABLE_SCHEMA,
+      s"""SELECT OWNER  AS TABLE_SCHEMA,
          |       TABLE_NAME,
          |       TABLE_TYPE AS TABLE_TYPE
          |FROM ALL_CATALOG
