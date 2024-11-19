@@ -111,7 +111,7 @@
     </distributionManagement>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>8</java.version>
         <maven.version>3.8.8</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
@@ -1871,10 +1871,10 @@
         <profile>
             <id>java-8</id>
             <activation>
-                <jdk>1.8</jdk>
+                <jdk>8</jdk>
             </activation>
             <properties>
-                <java.version>1.8</java.version>
+                <java.version>8</java.version>
             </properties>
         </profile>
 
