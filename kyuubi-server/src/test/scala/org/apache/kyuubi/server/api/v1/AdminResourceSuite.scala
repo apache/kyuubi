@@ -68,6 +68,20 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     super.afterAll()
   }
 
+  test("list server configs") {
+    var response = webTarget.path("api/v1/admin/config")
+      .request()
+      .get()
+    assert(response.getStatus === 401)
+
+    response = webTarget.path("api/v1/admin/config")
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    assert(response.getStatus === 200)
+    assert(response.readEntity(classOf[Array[ConfigEntry]]).nonEmpty)
+  }
+
   test("refresh Hadoop configuration of the kyuubi server") {
     var response = webTarget.path("api/v1/admin/refresh/hadoop_conf")
       .request()

@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.client.api.v1.dto.{Batch, Engine, GetBatchesResponse, ServerData, SessionData}
+import org.apache.kyuubi.client.api.v1.dto.{Batch, ConfigEntry, Engine, GetBatchesResponse, ServerData, SessionData}
 import org.apache.kyuubi.ctl.util.DateTimeUtils._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 
@@ -30,6 +30,13 @@ private[ctl] object Render {
     val rows = serviceNodeInfo.toSeq.sortBy(_.nodeName).map { sn =>
       Array(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }.toArray
+    Tabulator.format(title, header, rows)
+  }
+
+  def renderConfigsInfo(configsInfo: Iterable[ConfigEntry]): String = {
+    val title = s"Server Configs List (total ${configsInfo.size})"
+    val header = Array("Key", "Value")
+    val rows = configsInfo.map { entry => Array(entry.getKey, entry.getValue) }.toArray
     Tabulator.format(title, header, rows)
   }
 
