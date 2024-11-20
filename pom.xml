@@ -115,7 +115,7 @@
     <properties>
         <java.version>8</java.version>
         <maven.version>3.9.9</maven.version>
-        <!-- Pinning compiler target to Java 8-->
+        <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
         <scala.version>2.12.19</scala.version>
