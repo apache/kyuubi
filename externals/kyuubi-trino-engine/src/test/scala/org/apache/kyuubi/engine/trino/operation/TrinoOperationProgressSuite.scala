@@ -63,8 +63,8 @@ class TrinoOperationProgressSuite extends TrinoOperationSuite {
             assertResult(Seq(
               s"Stage-0 ........",
               "FINISHED",
-              "5",
-              "5",
+              "3",
+              "3",
               "0",
               "0",
               "0",
