@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>integration-tests</artifactId>
-        <version>1.8.3-SNAPSHOT</version>
+        <version>1.8.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
