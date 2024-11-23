@@ -162,12 +162,13 @@ class BatchJobSubmission(
   }
 
   private def getAppState(
-      operState: OperationState,
+      opState: OperationState,
       appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
-    if (state == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
+    if (opState == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
       ApplicationState.UNKNOWN
+    } else {
+      appState
     }
-    appState
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
