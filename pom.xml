@@ -125,7 +125,7 @@
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.14.15</byte-buddy.version>
         <bouncycastle.version>1.78</bouncycastle.version>
