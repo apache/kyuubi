@@ -108,18 +108,6 @@ class OracleSQLDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getFunctionsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getPrimaryKeysOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  override def getCrossReferenceOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new OracleTRowSetGenerator
 
   override def getSchemaHelper(): SchemaHelper = {
