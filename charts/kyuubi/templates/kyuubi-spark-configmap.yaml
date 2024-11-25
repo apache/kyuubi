@@ -22,19 +22,6 @@ metadata:
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
 data:
-  {{- with .Values.sparkConf.sparkEnv }}
-  spark-env.sh: |
-    {{- tpl . $ | nindent 4 }}
-  {{- end }}
-  {{- with .Values.sparkConf.sparkDefaults }}
-  spark-defaults.conf: |
-    {{- tpl . $ | nindent 4 }}
-  {{- end }}
-  {{- with .Values.sparkConf.log4j2 }}
-  log4j2.properties: |
-    {{- tpl . $ | nindent 4 }}
-  {{- end }}
-  {{- with .Values.sparkConf.metrics }}
-  metrics.properties: |
-    {{- tpl . $ | nindent 4 }}
+  {{- with .Values.sparkConf.files }}
+    {{- tpl (toYaml .) $ | nindent 2 }}
   {{- end }}

@@ -24,16 +24,19 @@ import io.trino.client.StatementClient
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf.SESSION_PROGRESS_ENABLE
 import org.apache.kyuubi.engine.trino.TrinoContext
+import org.apache.kyuubi.engine.trino.TrinoProgressMonitor
 import org.apache.kyuubi.engine.trino.schema.{SchemaHelper, TrinoTRowSetGenerator}
 import org.apache.kyuubi.engine.trino.session.TrinoSessionImpl
 import org.apache.kyuubi.operation.AbstractOperation
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.operation.OperationStatus
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp}
 
 abstract class TrinoOperation(session: Session) extends AbstractOperation(session) {
 
@@ -44,6 +47,24 @@ abstract class TrinoOperation(session: Session) extends AbstractOperation(sessio
   protected var schema: List[Column] = _
 
   protected var iter: FetchIterator[List[Any]] = _
+
+  protected def supportProgress: Boolean = false
+
+  private val progressEnable: Boolean = session.sessionManager.getConf.get(SESSION_PROGRESS_ENABLE)
+
+  override def getStatus: OperationStatus = {
+    if (progressEnable && supportProgress) {
+      val progressMonitor = new TrinoProgressMonitor(trino)
+      setOperationJobProgress(new TProgressUpdateResp(
+        progressMonitor.headers,
+        progressMonitor.rows,
+        progressMonitor.progressedPercentage,
+        progressMonitor.executionStatus,
+        progressMonitor.footerSummary,
+        startTime))
+    }
+    super.getStatus
+  }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
     val tTableSchema = SchemaHelper.toTTableSchema(schema)
