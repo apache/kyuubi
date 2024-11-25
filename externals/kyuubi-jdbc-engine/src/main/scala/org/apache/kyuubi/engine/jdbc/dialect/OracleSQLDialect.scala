@@ -54,11 +54,7 @@ class OracleSQLDialect extends JdbcDialect {
         tableTypes.asScala.toSet
       }
     val query = new StringBuilder(
-      s"""SELECT OWNER  AS TABLE_SCHEMA,
-         |       TABLE_NAME,
-         |       TABLE_TYPE AS TABLE_TYPE
-         |FROM ALL_CATALOG
-         |""".stripMargin)
+      "SELECT OWNER AS TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE AS TABLE_TYPE FROM ALL_CATALOG")
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotBlank(schema)) {
@@ -95,12 +91,7 @@ class OracleSQLDialect extends JdbcDialect {
       tableName: String,
       columnName: String): String = {
     val query = new StringBuilder(
-      """
-        |SELECT OWNER AS TABLE_SCHEMA
-        |     , TABLE_NAME
-        |     , COLUMN_NAME
-        |FROM ALL_TAB_COLUMNS
-        |""".stripMargin)
+      "SELECT OWNER AS TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM ALL_TAB_COLUMNS")
 
     val filters = ArrayBuffer[String]()
     if (StringUtils.isNotEmpty(schemaName)) {
@@ -136,10 +127,8 @@ class OracleSQLDialect extends JdbcDialect {
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new OracleTRowSetGenerator
 
   override def getSchemaHelper(): SchemaHelper = {
-//    throw KyuubiSQLException.featureNotSupported()
     new OracleSchemaHelper
   }
 
   override def name(): String = "oracle"
 }
-// class OracleSchemaHelper extends SchemaHelper {}

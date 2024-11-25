@@ -43,10 +43,8 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
       assert(resultBuffer.contains(Table(null, null, "NLS_SESSION_PARAMETERS", "VIEW")))
       resultBuffer.clear()
 
-      statement.execute(
-        """create table T_PEOPLE
-          |(ID   INTEGER not null constraint "T_PEOPLE_pk" primary key,
-          |NAME VARCHAR2(64))""".stripMargin)
+      statement.execute("create table T_PEOPLE (ID INTEGER not null " +
+        "constraint \"T_PEOPLE_pk\" primary key, NAME VARCHAR2(64))")
 
       tables = meta.getTables(null, null, "T_PEOPLE", Array("TABLE"))
       while (tables.next()) {
@@ -89,9 +87,8 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
       assert(resultBuffer.contains(Column("DUAL", "DUMMY")))
       resultBuffer.clear()
 
-      statement.execute(
-        """create table T_PEOPLE
-          |(ID   INTEGER not null constraint "T_PEOPLE_pk" primary key)""".stripMargin)
+      statement.execute("create table T_PEOPLE (ID INTEGER not null " +
+        "constraint \"T_PEOPLE_pk\" primary key)")
 
       columns = meta.getColumns(null, null, "%PEOPLE", null)
       while (columns.next()) {

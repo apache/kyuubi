@@ -24,15 +24,8 @@ class OracleStatementSuite extends WithOracleEngine with HiveJDBCTestHelper {
 
   test("oracle - test select") {
     withJdbcStatement() { statement =>
-      statement.execute(
-        """create table T_TEST
-          |(
-          |    ID   INTEGER not null
-          |        constraint "T_TEST_PK" primary key,
-          |    NAME VARCHAR2(64),
-          |    USER_ID LONG,
-          |    SCORE NUMBER(8,2)
-          |)""".stripMargin)
+      statement.execute("create table T_TEST (ID INTEGER not null " +
+        "constraint \"T_TEST_PK\" primary key, NAME VARCHAR2(64), USER_ID LONG, SCORE NUMBER(8,2))")
       statement.execute("""INSERT INTO T_TEST(ID, NAME, USER_ID, SCORE)
                           |VALUES (1, 'Bob', 43254353,89.92)""".stripMargin)
       val resultSet = statement.executeQuery("SELECT * FROM T_TEST")
@@ -52,55 +45,17 @@ class OracleStatementSuite extends WithOracleEngine with HiveJDBCTestHelper {
 
   test("oracle - test types") {
     withJdbcStatement() { statement =>
-      statement.execute(
-        """
-          |CREATE TABLE TYPE_TEST
-          |(
-          |    INT_COL       INTEGER,
-          |    NUM_8_COL     NUMBER(8, 0),
-          |    NUM_16_4_COL  NUMBER(16, 4),
-          |    DECIMAL_COL   DECIMAL(8, 2),
-          |    DATE_COL      DATE,
-          |    TIMESTAMP_COL TIMESTAMP,
-          |    CHAR_COL      CHAR(10),
-          |    VARCHAR2_COL  VARCHAR2(255),
-          |    NCHAR_COL     NCHAR(10),
-          |    NCHAR2_COL    NVARCHAR2(255),
-          |    LONG_COL      LONG,
-          |    FLOAT_COL     FLOAT,
-          |    REAL_COL      REAL
-          |)
-          |""".stripMargin)
-      statement.execute(
-        """
-          |INSERT INTO TYPE_TEST( INT_COL
-          |                     , NUM_8_COL
-          |                     , NUM_16_4_COL
-          |                     , DECIMAL_COL
-          |                     , DATE_COL
-          |                     , TIMESTAMP_COL
-          |                     , CHAR_COL
-          |                     , VARCHAR2_COL
-          |                     , NCHAR_COL
-          |                     , NCHAR2_COL
-          |                     , LONG_COL
-          |                     , FLOAT_COL
-          |                     , REAL_COL)
-          |VALUES ( 1
-          |       , 2
-          |       , 3.1415
-          |       , 0.61
-          |       , TO_DATE('2024-11-07', 'YYYY-MM-DD')
-          |       , TO_TIMESTAMP('2024-11-07 22:03:01.324', 'YYYY-MM-DD HH24:MI:SS.FF3')
-          |    , 'pi'
-          |    , 'alice'
-          |    , 'bob'
-          |    , 'siri'
-          |    , 'alex'
-          |    , 1.432
-          |    , 3.432
-          |       )
-          |""".stripMargin)
+      statement.execute("CREATE TABLE TYPE_TEST(INT_COL INTEGER, NUM_8_COL NUMBER(8, 0), " +
+        " NUM_16_4_COL NUMBER(16, 4), DECIMAL_COL DECIMAL(8, 2), DATE_COL DATE, " +
+        "TIMESTAMP_COL TIMESTAMP, CHAR_COL CHAR(10), VARCHAR2_COL VARCHAR2(255), " +
+        "NCHAR_COL NCHAR(10), NCHAR2_COL NVARCHAR2(255), LONG_COL LONG, FLOAT_COL FLOAT, " +
+        "REAL_COL REAL)")
+      statement.execute("INSERT INTO TYPE_TEST( INT_COL, NUM_8_COL, NUM_16_4_COL," +
+        " DECIMAL_COL, DATE_COL, TIMESTAMP_COL, CHAR_COL, VARCHAR2_COL, NCHAR_COL, " +
+        "NCHAR2_COL, LONG_COL, FLOAT_COL, REAL_COL) " +
+        "VALUES ( 1, 2, 3.1415, 0.61, TO_DATE('2024-11-07', 'YYYY-MM-DD'), " +
+        "TO_TIMESTAMP('2024-11-07 22:03:01.324', 'YYYY-MM-DD HH24:MI:SS.FF3'), " +
+        "'pi', 'alice', 'bob', 'siri', 'alex', 1.432, 3.432)")
 
       val resultSet1 = statement.executeQuery("SELECT * FROM TYPE_TEST")
       while (resultSet1.next()) {
