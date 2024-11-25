@@ -116,7 +116,7 @@ class CatalogTableTableExtractor extends TableExtractor {
       val catalogTable = v1.asInstanceOf[CatalogTable]
       val identifier = catalogTable.identifier
       val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-      Some(Table(None, identifier.database, identifier.table, owner))
+      Some(Table(identifier.catalog, identifier.database, identifier.table, owner))
     }
   }
 }
@@ -295,11 +295,11 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "table") match {
       // Match multipartIdentifier with tableAlias
-      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, SubqueryAlias(_, relation)) =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(identifier, _) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, relation) =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
       case _ => None
     }
   }
@@ -309,11 +309,11 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "targetTable") match {
       // Match multipartIdentifier with tableAlias
-      case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, SubqueryAlias(_, relation)) =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(identifier, _) =>
-        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+      case SubqueryAlias(_, relation) =>
+        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
       case _ => None
     }
   }
