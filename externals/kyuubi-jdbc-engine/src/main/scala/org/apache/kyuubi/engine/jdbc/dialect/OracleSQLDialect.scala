@@ -80,10 +80,6 @@ class OracleSQLDialect extends JdbcDialect {
     query.toString()
   }
 
-  override def getTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
   override def getColumnsQuery(
       session: Session,
       catalogName: String,
