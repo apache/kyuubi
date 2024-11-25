@@ -140,8 +140,6 @@ class OracleSQLDialect extends JdbcDialect {
     new OracleSchemaHelper
   }
 
-  override def name(): String = {
-    "oracle"
-  }
+  override def name(): String = "oracle"
 }
 // class OracleSchemaHelper extends SchemaHelper {}
