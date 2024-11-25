@@ -26,9 +26,9 @@ trait WithOracleEngine extends WithJdbcEngine with WithOracleContainer {
   override def withKyuubiConf: Map[String, String] = withContainers { container =>
     Map(
       ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_JDBC_CONNECTION_URL.key -> container.jdbcUrl,
-      ENGINE_JDBC_CONNECTION_USER.key -> container.username,
-      ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
+      ENGINE_JDBC_CONNECTION_URL.key -> oracleJdbcUrl,
+      ENGINE_JDBC_CONNECTION_USER.key -> oracleUserName,
+      ENGINE_JDBC_CONNECTION_PASSWORD.key -> oraclePassword,
       ENGINE_TYPE.key -> "jdbc",
       ENGINE_JDBC_SHORT_NAME.key -> "oracle",
       FRONTEND_BIND_HOST.key -> "0.0.0.0",

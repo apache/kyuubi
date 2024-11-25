@@ -17,19 +17,39 @@
 
 package org.apache.kyuubi.engine.jdbc.oracle
 
-import com.dimafeng.testcontainers.OracleContainer
-import org.testcontainers.utility.DockerImageName
+// import java.time.Duration
+
+import com.dimafeng.testcontainers.GenericContainer
+import org.testcontainers.containers.wait.strategy.{Wait, WaitAllStrategy}
 
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithOracleContainer extends WithJdbcServerContainer {
-
-  private val oracleDockerImage = "gvenzl/oracle-xe:18.4.0-slim"
+  private val oraclePort = 1521
+  private val ports = Seq(oraclePort)
+  private val oracleDockerImage = "gvenzl/oracle-free:23.5-slim"
+  private val oracleUsernameKey = "APP_USER"
+  private val oraclePasswordKey = "APP_USER_PASSWORD"
   protected val oracleUserName = "kyuubi"
   protected val oraclePassword = "oracle"
 
-  override val containerDef = OracleContainer.Def(
-    dockerImageName = DockerImageName.parse(oracleDockerImage),
-    username = oracleUserName,
-    password = oraclePassword)
+  override val containerDef: GenericContainer.Def[GenericContainer] = GenericContainer.Def(
+    dockerImage = oracleDockerImage,
+    exposedPorts = ports,
+    waitStrategy = new WaitAllStrategy()
+      // .withStartupTimeout(Duration.ofMinutes(1))
+      .withStrategy(Wait.forListeningPort())
+      .withStrategy(Wait.forLogMessage(
+        "Completed: Pluggable database FREEPDB1 opened read write", 1))
+       ,
+      env = Map(
+      oraclePasswordKey -> oraclePassword,
+      oracleUsernameKey -> oracleUserName,
+      "ORACLE_RANDOM_PASSWORD" -> "true"))
+
+  protected def oracleJdbcUrl: String = withContainers { container =>
+    val queryServerHost: String = container.host
+    val queryServerPort: Int = container.mappedPort(oraclePort)
+    s"jdbc:oracle:thin:@//$queryServerHost:$queryServerPort/FREEPDB1"
+  }
 }
