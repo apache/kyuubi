@@ -586,12 +586,6 @@
 
             <dependency>
                 <groupId>com.dimafeng</groupId>
-                <artifactId>testcontainers-scala-oracle-xe_${scala.binary.version}</artifactId>
-                <version>${testcontainers-scala.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.dimafeng</groupId>
                 <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
                 <version>${testcontainers-scala.version}</version>
             </dependency>

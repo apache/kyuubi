@@ -80,12 +80,6 @@
 
         <dependency>
             <groupId>com.dimafeng</groupId>
-            <artifactId>testcontainers-scala-oracle-xe_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.dimafeng</groupId>
             <artifactId>testcontainers-scala-clickhouse_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
