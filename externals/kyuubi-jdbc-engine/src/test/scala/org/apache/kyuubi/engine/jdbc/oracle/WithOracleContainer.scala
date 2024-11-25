@@ -17,39 +17,36 @@
 
 package org.apache.kyuubi.engine.jdbc.oracle
 
-// import java.time.Duration
+import java.io.File
+import java.time.Duration
 
-import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.{Wait, WaitAllStrategy}
+import com.dimafeng.testcontainers.{DockerComposeContainer, ExposedService}
+import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithOracleContainer extends WithJdbcServerContainer {
-  private val oraclePort = 1521
-  private val ports = Seq(oraclePort)
-  private val oracleDockerImage = "gvenzl/oracle-free:23.5-slim"
-  private val oracleUsernameKey = "APP_USER"
-  private val oraclePasswordKey = "APP_USER_PASSWORD"
-  protected val oracleUserName = "kyuubi"
-  protected val oraclePassword = "oracle"
+  private val ORACLE_PORT = 1521
+  private val ORACLE_SERVICE_NAME = "oracle"
+  protected val ORACLE_USER_NAME = "kyuubi"
+  protected val ORACLE_PASSWORD = "oracle"
 
-  override val containerDef: GenericContainer.Def[GenericContainer] = GenericContainer.Def(
-    dockerImage = oracleDockerImage,
-    exposedPorts = ports,
-    waitStrategy = new WaitAllStrategy()
-      // .withStartupTimeout(Duration.ofMinutes(1))
-      .withStrategy(Wait.forListeningPort())
-      .withStrategy(Wait.forLogMessage(
-        "Completed: Pluggable database FREEPDB1 opened read write", 1))
-       ,
-      env = Map(
-      oraclePasswordKey -> oraclePassword,
-      oracleUsernameKey -> oracleUserName,
-      "ORACLE_RANDOM_PASSWORD" -> "true"))
+  override val containerDef: DockerComposeContainer.Def =
+    DockerComposeContainer
+      .Def(
+        composeFiles = new File(Utils.getContextOrKyuubiClassLoader
+          .getResource("oracle-compose.yml").toURI),
+        exposedServices = Seq[ExposedService](
+          ExposedService(
+            ORACLE_SERVICE_NAME,
+            ORACLE_PORT,
+            waitStrategy =
+              new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(2)))))
 
   protected def oracleJdbcUrl: String = withContainers { container =>
-    val queryServerHost: String = container.host
-    val queryServerPort: Int = container.mappedPort(oraclePort)
-    s"jdbc:oracle:thin:@//$queryServerHost:$queryServerPort/FREEPDB1"
+    val feHost: String = container.getServiceHost(ORACLE_SERVICE_NAME, ORACLE_PORT)
+    val fePort: Int = container.getServicePort(ORACLE_SERVICE_NAME, ORACLE_PORT)
+    s"jdbc:oracle:thin:@//$feHost:$fePort/FREEPDB1"
   }
 }

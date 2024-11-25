@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.jdbc.oracle
 
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_CONNECTION_USER, ENGINE_JDBC_DRIVER_CLASS, ENGINE_JDBC_SHORT_NAME, ENGINE_SHARE_LEVEL, ENGINE_TYPE, FRONTEND_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_CONNECTION_USER, ENGINE_JDBC_DRIVER_CLASS, ENGINE_JDBC_SHORT_NAME, ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
 
@@ -27,11 +27,10 @@ trait WithOracleEngine extends WithJdbcEngine with WithOracleContainer {
     Map(
       ENGINE_SHARE_LEVEL.key -> "SERVER",
       ENGINE_JDBC_CONNECTION_URL.key -> oracleJdbcUrl,
-      ENGINE_JDBC_CONNECTION_USER.key -> oracleUserName,
-      ENGINE_JDBC_CONNECTION_PASSWORD.key -> oraclePassword,
+      ENGINE_JDBC_CONNECTION_USER.key -> ORACLE_USER_NAME,
+      ENGINE_JDBC_CONNECTION_PASSWORD.key -> ORACLE_PASSWORD,
       ENGINE_TYPE.key -> "jdbc",
       ENGINE_JDBC_SHORT_NAME.key -> "oracle",
-      FRONTEND_BIND_HOST.key -> "0.0.0.0",
       KYUUBI_SESSION_USER_KEY -> "kyuubi",
       ENGINE_JDBC_DRIVER_CLASS.key -> "oracle.jdbc.OracleDriver")
   }
