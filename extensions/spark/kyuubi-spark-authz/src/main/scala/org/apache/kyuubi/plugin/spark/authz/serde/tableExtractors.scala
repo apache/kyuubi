@@ -72,6 +72,23 @@ object TableExtractor {
       case _: Exception => None
     }
   }
+
+  /**
+   * Get table owner from LogicalRelation
+   * @param v a object contains a org.apache.spark.sql.execution.datasources.LogicalRelation
+   * @return owner
+   */
+  def getLogicalRelationOwner(v: AnyRef): Option[String] = {
+    try {
+      val maybeCatalogTable = invokeAs[Option[CatalogTable]](v, "catalogTable")
+      val maybeOwner = maybeCatalogTable.flatMap { ct =>
+        Option(ct.owner).filter(_.nonEmpty)
+      }
+      maybeOwner
+    } catch {
+      case _: Exception => None
+    }
+  }
 }
 
 /**
@@ -116,7 +133,7 @@ class CatalogTableTableExtractor extends TableExtractor {
       val catalogTable = v1.asInstanceOf[CatalogTable]
       val identifier = catalogTable.identifier
       val owner = Option(catalogTable.owner).filter(_.nonEmpty)
-      Some(Table(identifier.catalog, identifier.database, identifier.table, owner))
+      Some(Table(None, identifier.database, identifier.table, owner))
     }
   }
 }
@@ -295,11 +312,19 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "table") match {
       // Match multipartIdentifier with tableAlias
-      case SubqueryAlias(_, SubqueryAlias(_, relation)) =>
-        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
+      case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map { table =>
+            val maybeOwner = TableExtractor.getLogicalRelationOwner(relation)
+            table.copy(owner = maybeOwner)
+          }
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(_, relation) =>
-        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
+      case SubqueryAlias(identifier, relation) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map { table =>
+            val maybeOwner = TableExtractor.getLogicalRelationOwner(relation)
+            table.copy(owner = maybeOwner)
+          }
       case _ => None
     }
   }
@@ -309,11 +334,19 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "targetTable") match {
       // Match multipartIdentifier with tableAlias
-      case SubqueryAlias(_, SubqueryAlias(_, relation)) =>
-        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
+      case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map { table =>
+            val maybeOwner = TableExtractor.getLogicalRelationOwner(relation)
+            table.copy(owner = maybeOwner)
+          }
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(_, relation) =>
-        lookupExtractor[LogicalRelationTableExtractor].apply(spark, relation)
+      case SubqueryAlias(identifier, relation) =>
+        lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map { table =>
+            val maybeOwner = TableExtractor.getLogicalRelationOwner(relation)
+            table.copy(owner = maybeOwner)
+          }
       case _ => None
     }
   }
