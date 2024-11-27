@@ -21,6 +21,9 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
+    {{- with .Values.labels }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -128,6 +131,27 @@ spec:
               mountPath: {{ .Values.sparkConf.dir }}
             {{- with .Values.volumeMounts }}
               {{- tpl (toYaml .) $ | nindent 12 }}
+            {{- end }}
+          lifecycle:
+            {{- if .Values.lifecycle.postStart }}
+            postStart:
+              {{- if .Values.lifecycle.postStart.exec }}
+              exec:
+                {{- if .Values.lifecycle.postStart.exec.command }}
+                command:
+                  {{- toYaml .Values.lifecycle.postStart.exec.command | nindent 16 }}
+                {{- end }}
+              {{- end }}
+            {{- end }}
+            {{- if .Values.lifecycle.preStop }}
+            preStop:
+              {{- if .Values.lifecycle.preStop.exec }}
+              exec:
+                {{- if .Values.lifecycle.preStop.exec.command }}
+                command:
+                  {{- toYaml .Values.lifecycle.preStop.exec.command | nindent 16 }}
+                {{- end }}
+              {{- end }}
             {{- end }}
         {{- with .Values.containers }}
           {{- tpl (toYaml .) $ | nindent 8 }}
