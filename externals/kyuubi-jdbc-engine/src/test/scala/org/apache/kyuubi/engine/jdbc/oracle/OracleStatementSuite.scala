@@ -26,8 +26,8 @@ class OracleStatementSuite extends WithOracleEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       statement.execute("create table T_TEST (ID INTEGER not null " +
         "constraint \"T_TEST_PK\" primary key, NAME VARCHAR2(64), USER_ID LONG, SCORE NUMBER(8,2))")
-      statement.execute("""INSERT INTO T_TEST(ID, NAME, USER_ID, SCORE)
-                          |VALUES (1, 'Bob', 43254353,89.92)""".stripMargin)
+      statement.execute("INSERT INTO T_TEST(ID, NAME, USER_ID, SCORE) " +
+        "VALUES (1, 'Bob', 43254353,89.92)")
       val resultSet = statement.executeQuery("SELECT * FROM T_TEST")
       while (resultSet.next()) {
         val id = resultSet.getObject(1)

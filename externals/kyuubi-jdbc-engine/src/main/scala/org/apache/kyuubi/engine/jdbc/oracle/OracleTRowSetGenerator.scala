@@ -16,6 +16,29 @@
  */
 package org.apache.kyuubi.engine.jdbc.oracle
 
-import org.apache.kyuubi.engine.jdbc.schema.DefaultJdbcTRowSetGenerator
+import java.sql.Types
 
-class OracleTRowSetGenerator extends DefaultJdbcTRowSetGenerator {}
+import org.apache.kyuubi.engine.jdbc.schema.{Column, DefaultJdbcTRowSetGenerator}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
+
+class OracleTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
+
+  override def toIntegerTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn = {
+    asIntegerTColumn(rows, ordinal, (rows, ordinal) => Integer.parseInt(rows(ordinal).toString))
+  }
+
+  override def toIntegerTColumnValue(row: Seq[_], ordinal: Int): TColumnValue = {
+    asIntegerTColumnValue(row, ordinal, x => Integer.parseInt(x.toString))
+    super.toIntegerTColumnValue(row, ordinal)
+  }
+
+  override def getColumnType(schema: Seq[Column], ordinal: Int): Int = {
+    schema(ordinal).sqlType match {
+      case Types.NUMERIC if schema(ordinal).scale == 0 =>
+        Types.INTEGER
+      case Types.NUMERIC =>
+        Types.DECIMAL
+      case _ => super.getColumnType(schema, ordinal)
+    }
+  }
+}
