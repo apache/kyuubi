@@ -33,7 +33,6 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTableSchema;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeId;
 
 /** Data independent base class which implements the common part of all Kyuubi result sets. */
-@SuppressWarnings("deprecation")
 public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   protected Statement statement = null;
@@ -50,32 +49,29 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   @Override
   public int findColumn(String columnName) throws SQLException {
     int columnIndex = 0;
-    boolean findColumn = false;
-    for (String normalizedColumnName : normalizedColumnNames) {
-      ++columnIndex;
-      String[] names = normalizedColumnName.split("\\.");
-      String name = names[names.length - 1];
-      if (name.equalsIgnoreCase(columnName) || normalizedColumnName.equalsIgnoreCase(columnName)) {
-        findColumn = true;
-        break;
+    if (columnName != null) {
+      final String lcColumnName = columnName.toLowerCase();
+      for (final String normalizedColumnName : normalizedColumnNames) {
+        ++columnIndex;
+        final int idx = normalizedColumnName.lastIndexOf('.');
+        final String name =
+            (idx == -1) ? normalizedColumnName : normalizedColumnName.substring(1 + idx);
+        if (name.equals(lcColumnName) || normalizedColumnName.equals(lcColumnName)) {
+          return columnIndex;
+        }
       }
     }
-    if (!findColumn) {
-      throw new KyuubiSQLException("Could not find " + columnName + " in " + normalizedColumnNames);
-    } else {
-      return columnIndex;
-    }
+    throw new KyuubiSQLException("Could not find " + columnName + " in " + normalizedColumnNames);
   }
 
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
-    Object val = getObject(columnIndex);
-
-    if (val == null || val instanceof BigDecimal) {
+    final Object val = getObject(columnIndex);
+    if (val instanceof BigDecimal) {
       return (BigDecimal) val;
     }
-
-    throw new KyuubiSQLException("Illegal conversion");
+    throw new KyuubiSQLException(
+        "Illegal conversion to BigDecimal from column " + columnIndex + " [" + val + "]");
   }
 
   @Override
@@ -96,19 +92,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public InputStream getBinaryStream(int columnIndex) throws SQLException {
-    Object obj = getObject(columnIndex);
+    final Object obj = getObject(columnIndex);
     if (obj == null) {
       return null;
-    } else if (obj instanceof InputStream) {
+    }
+    if (obj instanceof InputStream) {
       return (InputStream) obj;
-    } else if (obj instanceof byte[]) {
+    }
+    if (obj instanceof byte[]) {
       byte[] byteArray = (byte[]) obj;
       return new ByteArrayInputStream(byteArray);
-    } else if (obj instanceof String) {
-      String str = (String) obj;
+    }
+    if (obj instanceof String) {
+      final String str = (String) obj;
       return new ByteArrayInputStream(str.getBytes(StandardCharsets.UTF_8));
     }
-    throw new KyuubiSQLException("Illegal conversion to binary stream from column " + columnIndex);
+    throw new KyuubiSQLException(
+        "Illegal conversion to binary stream from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -116,35 +116,76 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     return getBinaryStream(findColumn(columnName));
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row of this ResultSet object as a
+   * boolean in the Java programming language. If the designated column has a datatype of CHAR or
+   * VARCHAR and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT and
+   * contains a 0, a value of false is returned.
+   *
+   * <p>For a true value, this implementation relaxes the JDBC specs. If the designated column has a
+   * datatype of CHAR or VARCHAR and contains a values other than "0" or has a datatype of BIT,
+   * TINYINT, SMALLINT, INTEGER or BIGINT and contains a value other than 0, a value of true is
+   * returned.
+   *
+   * @param columnIndex the first column is 1, the second is 2, ...
+   * @return the column value; if the value is SQL NULL, the value returned is false
+   * @throws if the columnIndex is not valid; if a database access error occurs or this method is
+   *     called on a closed result set
+   * @see ResultSet#getBoolean(int)
+   */
   @Override
   public boolean getBoolean(int columnIndex) throws SQLException {
-    Object obj = getObject(columnIndex);
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return false;
+    }
     if (obj instanceof Boolean) {
       return (Boolean) obj;
-    } else if (obj == null) {
-      return false;
-    } else if (obj instanceof Number) {
-      return ((Number) obj).intValue() != 0;
-    } else if (obj instanceof String) {
-      return !obj.equals("0");
     }
-    throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to boolean");
+    if (obj instanceof Number) {
+      return ((Number) obj).intValue() != 0;
+    }
+    if (obj instanceof String) {
+      return !"0".equals(obj);
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to boolean from column " + columnIndex + " [" + obj + "]");
   }
 
+  /**
+   * Retrieves the value of the designated column in the current row of this ResultSet object as a
+   * boolean in the Java programming language. If the designated column has a datatype of CHAR or
+   * VARCHAR and contains a "0" or has a datatype of BIT, TINYINT, SMALLINT, INTEGER or BIGINT and
+   * contains a 0, a value of false is returned.
+   *
+   * <p>For a true value, this implementation relaxes the JDBC specs. If the designated column has a
+   * datatype of CHAR or VARCHAR and contains a values other than "0" or has a datatype of BIT,
+   * TINYINT, SMALLINT, INTEGER or BIGINT and contains a value other than 0, a value of true is
+   * returned.
+   *
+   * @param columnLabel the label for the column specified with the SQL AS clause. If the SQL AS
+   *     clause was not specified, then the label is the name of the column
+   * @return the column value; if the value is SQL NULL, the value returned is false
+   * @throws if the columnIndex is not valid; if a database access error occurs or this method is
+   *     called on a closed result set
+   * @see ResultSet#getBoolean(String)
+   */
   @Override
-  public boolean getBoolean(String columnName) throws SQLException {
-    return getBoolean(findColumn(columnName));
+  public boolean getBoolean(String columnLabel) throws SQLException {
+    return getBoolean(findColumn(columnLabel));
   }
 
   @Override
   public byte getByte(int columnIndex) throws SQLException {
-    Object obj = getObject(columnIndex);
-    if (obj instanceof Number) {
-      return ((Number) obj).byteValue();
-    } else if (obj == null) {
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
       return 0;
     }
-    throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to byte");
+    if (obj instanceof Number) {
+      return ((Number) obj).byteValue();
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to byte from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -159,23 +200,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public Date getDate(int columnIndex) throws SQLException {
-    Object obj = getObject(columnIndex);
+    final Object obj = getObject(columnIndex);
     if (obj == null) {
       return null;
     }
     if (obj instanceof Date) {
       return (Date) obj;
     }
-    try {
-      if (obj instanceof String) {
+    if (obj instanceof String) {
+      try {
         return Date.valueOf((String) obj);
+      } catch (Exception e) {
+        throw new SQLException(
+            "Illegal conversion to Date from column " + columnIndex + " [" + obj + "]", e);
       }
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to date: " + e, e);
     }
-    // If we fell through to here this is not a valid type conversion
-    throw new KyuubiSQLException(
-        "Cannot convert column " + columnIndex + " to date: Illegal conversion");
+    throw new SQLException(
+        "Illegal conversion to Date from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -211,19 +252,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public double getDouble(int columnIndex) throws SQLException {
-    try {
-      Object obj = getObject(columnIndex);
-      if (obj instanceof Number) {
-        return ((Number) obj).doubleValue();
-      } else if (obj == null) {
-        return 0;
-      } else if (obj instanceof String) {
-        return Double.parseDouble((String) obj);
-      }
-      throw new Exception("Illegal conversion");
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to double: " + e, e);
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return 0.0;
     }
+    if (obj instanceof Number) {
+      return ((Number) obj).doubleValue();
+    }
+    if (obj instanceof String) {
+      try {
+        return Double.parseDouble((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to double from column " + columnIndex + " [" + obj + "]", e);
+      }
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to double from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -238,19 +283,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public float getFloat(int columnIndex) throws SQLException {
-    try {
-      Object obj = getObject(columnIndex);
-      if (obj instanceof Number) {
-        return ((Number) obj).floatValue();
-      } else if (obj == null) {
-        return 0;
-      } else if (obj instanceof String) {
-        return Float.parseFloat((String) obj);
-      }
-      throw new Exception("Illegal conversion");
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to float: " + e, e);
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return 0.0f;
     }
+    if (obj instanceof Number) {
+      return ((Number) obj).floatValue();
+    }
+    if (obj instanceof String) {
+      try {
+        return Float.parseFloat((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to float from column " + columnIndex + " [" + obj + "]", e);
+      }
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to float from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -260,19 +309,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public int getInt(int columnIndex) throws SQLException {
-    try {
-      Object obj = getObject(columnIndex);
-      if (obj instanceof Number) {
-        return ((Number) obj).intValue();
-      } else if (obj == null) {
-        return 0;
-      } else if (obj instanceof String) {
-        return Integer.parseInt((String) obj);
-      }
-      throw new Exception("Illegal conversion");
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to integer" + e, e);
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return 0;
     }
+    if (obj instanceof Number) {
+      return ((Number) obj).intValue();
+    }
+    if (obj instanceof String) {
+      try {
+        return Integer.parseInt((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to int from column " + columnIndex + " [" + obj + "]", e);
+      }
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to int from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -282,19 +335,23 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public long getLong(int columnIndex) throws SQLException {
-    try {
-      Object obj = getObject(columnIndex);
-      if (obj instanceof Number) {
-        return ((Number) obj).longValue();
-      } else if (obj == null) {
-        return 0;
-      } else if (obj instanceof String) {
-        return Long.parseLong((String) obj);
-      }
-      throw new Exception("Illegal conversion");
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to long: " + e, e);
+    final Object obj = getObject(columnIndex);
+    if (obj == null) {
+      return 0L;
     }
+    if (obj instanceof Number) {
+      return ((Number) obj).longValue();
+    }
+    if (obj instanceof String) {
+      try {
+        return Long.parseLong((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to long from column " + columnIndex + " [" + obj + "]", e);
+      }
+    }
+    throw new KyuubiSQLException(
+        "Illegal conversion to long from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
@@ -309,23 +366,24 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   private Object getColumnValue(int columnIndex) throws SQLException {
     if (row == null) {
-      throw new KyuubiSQLException("No row found.");
+      throw new KyuubiSQLException("No row found");
     }
     if (row.length == 0) {
-      throw new KyuubiSQLException("RowSet does not contain any columns!");
+      throw new KyuubiSQLException("RowSet does not contain any columns");
     }
-    if (columnIndex > row.length) {
+    // the first column is 1, the second is 2, ...
+    if (columnIndex <= 0 || columnIndex > row.length) {
       throw new KyuubiSQLException("Invalid columnIndex: " + columnIndex);
     }
-    TTypeId columnType = columnTypes.get(columnIndex - 1);
+    final TTypeId columnType = columnTypes.get(columnIndex - 1);
+    final Object value = row[columnIndex - 1];
 
     try {
-      Object evaluated = evaluate(columnType, row[columnIndex - 1]);
+      final Object evaluated = evaluate(columnType, value);
       wasNull = evaluated == null;
       return evaluated;
     } catch (Exception e) {
-      e.printStackTrace();
-      throw new KyuubiSQLException("Unrecognized column type:" + columnType, e);
+      throw new KyuubiSQLException("Failed to evaluate " + columnType + " [" + value + "]", e);
     }
   }
 
@@ -336,7 +394,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
     switch (columnType) {
       case BINARY_TYPE:
         if (value instanceof String) {
-          return ((String) value).getBytes();
+          return ((String) value).getBytes(StandardCharsets.UTF_8);
         }
         return value;
       case TIMESTAMP_TYPE:
@@ -373,18 +431,21 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public short getShort(int columnIndex) throws SQLException {
-    try {
-      Object obj = getObject(columnIndex);
-      if (obj instanceof Number) {
-        return ((Number) obj).shortValue();
-      } else if (obj == null) {
-        return 0;
-      } else if (obj instanceof String) {
+    final Object obj = getObject(columnIndex);
+    if (obj instanceof Number) {
+      return ((Number) obj).shortValue();
+    } else if (obj == null) {
+      return 0;
+    } else if (obj instanceof String) {
+      try {
         return Short.parseShort((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to int from column " + columnIndex + " [" + obj + "]", e);
       }
-      throw new Exception("Illegal conversion");
-    } catch (Exception e) {
-      throw new KyuubiSQLException("Cannot convert column " + columnIndex + " to short: " + e, e);
+    } else {
+      throw new KyuubiSQLException(
+          "Illegal conversion to int from column " + columnIndex + " [" + obj + "]");
     }
   }
 
@@ -404,12 +465,12 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
    */
   @Override
   public String getString(int columnIndex) throws SQLException {
-    Object value = getColumnValue(columnIndex);
-    if (wasNull) {
+    final Object value = getColumnValue(columnIndex);
+    if (value == null) {
       return null;
     }
     if (value instanceof byte[]) {
-      return new String((byte[]) value);
+      return new String((byte[]) value, StandardCharsets.UTF_8);
     }
     return value.toString();
   }
@@ -421,7 +482,7 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
 
   @Override
   public Timestamp getTimestamp(int columnIndex) throws SQLException {
-    Object obj = getObject(columnIndex);
+    final Object obj = getObject(columnIndex);
     if (obj == null) {
       return null;
     }
@@ -429,9 +490,15 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       return (Timestamp) obj;
     }
     if (obj instanceof String) {
-      return Timestamp.valueOf((String) obj);
+      try {
+        return Timestamp.valueOf((String) obj);
+      } catch (Exception e) {
+        throw new KyuubiSQLException(
+            "Illegal conversion to int from column " + columnIndex + " [" + obj + "]", e);
+      }
     }
-    throw new KyuubiSQLException("Illegal conversion");
+    throw new KyuubiSQLException(
+        "Illegal conversion to int from column " + columnIndex + " [" + obj + "]");
   }
 
   @Override
