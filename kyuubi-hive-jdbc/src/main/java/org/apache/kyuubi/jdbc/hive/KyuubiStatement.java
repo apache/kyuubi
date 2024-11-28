@@ -380,7 +380,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     TGetOperationStatusResp statusResp = null;
 
     // Poll on the operation status, till the operation is complete
-    do {
+    while (!isOperationComplete) {
       try {
         /**
          * For an async SQLOperation, GetOperationStatus will use the long polling approach It will
@@ -427,7 +427,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         isLogBeingGenerated = false;
         throw new KyuubiSQLException(e.toString(), "08S01", e);
       }
-    } while (!isOperationComplete);
+    }
 
     /*
       we set progress bar to be completed when hive query execution has completed
@@ -513,7 +513,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public int executeUpdate(String sql) throws SQLException {
     execute(sql);
-    return getUpdateCount();
+    return 0;
   }
 
   @Override
@@ -589,16 +589,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
      * client might end up using executeAsync and then call this to check if the query run is
      * finished.
      */
-    long numModifiedRows = -1L;
-    TGetOperationStatusResp resp = waitForOperationToComplete();
-    if (resp != null && resp.isSetNumModifiedRows()) {
-      numModifiedRows = resp.getNumModifiedRows();
-    }
-    if (numModifiedRows == -1L || numModifiedRows > Integer.MAX_VALUE) {
-      LOG.warn("Invalid number of updated rows: {}", numModifiedRows);
-      return -1;
-    }
-    return (int) numModifiedRows;
+    waitForOperationToComplete();
+    return -1;
   }
 
   @Override
