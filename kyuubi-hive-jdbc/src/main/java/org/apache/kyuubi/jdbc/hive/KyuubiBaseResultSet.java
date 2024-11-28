@@ -211,11 +211,11 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
       try {
         return Date.valueOf((String) obj);
       } catch (Exception e) {
-        throw new SQLException(
+        throw new KyuubiSQLException(
             "Illegal conversion to Date from column " + columnIndex + " [" + obj + "]", e);
       }
     }
-    throw new SQLException(
+    throw new KyuubiSQLException(
         "Illegal conversion to Date from column " + columnIndex + " [" + obj + "]");
   }
 
