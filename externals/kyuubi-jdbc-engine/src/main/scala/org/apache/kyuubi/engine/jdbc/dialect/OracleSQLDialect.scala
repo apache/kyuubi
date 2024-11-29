@@ -108,9 +108,7 @@ class OracleSQLDialect extends JdbcDialect {
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new OracleTRowSetGenerator
 
-  override def getSchemaHelper(): SchemaHelper = {
-    new OracleSchemaHelper
-  }
+  override def getSchemaHelper(): SchemaHelper = new OracleSchemaHelper
 
   override def name(): String = "oracle"
 }
