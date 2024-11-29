@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.9.3-SNAPSHOT</version>
+        <version>1.9.3</version>
     </parent>
 
     <artifactId>kyuubi-metrics_${scala.binary.version}</artifactId>
