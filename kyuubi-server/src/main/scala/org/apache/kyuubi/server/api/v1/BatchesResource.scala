@@ -427,7 +427,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       username = batchUser,
       state = batchState,
       requestName = batchName,
-      createTime = math.max(createTime, System.currentTimeMillis() - batchSearchWindow),
+      createTime =
+        math.max(createTime, batchSearchWindow.map(System.currentTimeMillis() - _).getOrElse(0L)),
       endTime = endTime)
     // order by key_id(primary key auto increment column) is slower
     val batches =

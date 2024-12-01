@@ -1938,13 +1938,13 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofDays(1).toMillis)
 
-  val BATCH_SEARCH_WINDOW: ConfigEntry[Long] =
+  val BATCH_SEARCH_WINDOW: OptionalConfigEntry[Long] =
     buildConf("kyuubi.batch.search.window")
       .doc("The time window to search the batch from metadata store.")
       .version("1.10.1")
       .timeConf
       .checkValue(_ > 0, "must be positive number")
-      .createWithDefault(Duration.ofDays(3).toMillis)
+      .createOptional
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
