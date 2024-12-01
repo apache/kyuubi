@@ -31,8 +31,12 @@ import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.metrics.MetricsConstants
+import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
+import org.apache.kyuubi.server.metadata.api.MetadataFilter
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
@@ -202,6 +206,15 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  private def getBatchPendingMaxElapse(): Long = {
+    val filter = MetadataFilter(
+      state = OperationState.PENDING.toString,
+      kyuubiInstance = connectionUrl,
+      createTime = System.currentTimeMillis() - conf.get(BATCH_PENDING_CHECK_WINDOW))
+    sessionManager.getBatchesFromMetadataStore(filter, 0, 1, desc = false, orderByKeyId = false)
+      .headOption.map { batch => System.currentTimeMillis() - batch.getCreateTime }.getOrElse(0L)
+  }
+
   def waitForServerStarted(): Unit = {
     // block until the HTTP server is started, otherwise, we may get
     // the wrong HTTP server port -1
@@ -220,6 +233,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         isStarted.set(true)
         startBatchChecker()
         recoverBatchSessions()
+        MetricsSystem.tracing { ms =>
+          ms.registerGauge(
+            MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE,
+            getBatchPendingMaxElapse,
+            0)
+        }
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }

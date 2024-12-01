@@ -138,8 +138,14 @@ class MetadataManager extends AbstractService("MetadataManager") {
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      desc: Boolean = false): Seq[Batch] = {
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, desc)).map(
+      desc: Boolean = false,
+      orderByKeyId: Boolean = true): Seq[Batch] = {
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(
+      filter,
+      from,
+      size,
+      desc,
+      orderByKeyId)).map(
       buildBatch)
   }
 

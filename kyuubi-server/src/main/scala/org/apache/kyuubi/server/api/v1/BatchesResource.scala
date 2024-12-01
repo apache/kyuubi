@@ -67,6 +67,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(ENGINE_SECURITY_ENABLED)
   private lazy val resourceFileMaxSize = fe.getConf.get(BATCH_RESOURCE_FILE_MAX_SIZE)
   private lazy val extraResourceFileMaxSize = fe.getConf.get(BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE)
+  private lazy val batchSearchWindow = fe.getConf.get(BATCH_SEARCH_WINDOW)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -426,9 +427,11 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       username = batchUser,
       state = batchState,
       requestName = batchName,
-      createTime = createTime,
+      createTime = math.max(createTime, System.currentTimeMillis() - batchSearchWindow),
       endTime = endTime)
-    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size, desc)
+    // order by key_id(primary key auto increment column) is slower
+    val batches =
+      sessionManager.getBatchesFromMetadataStore(filter, from, size, desc, orderByKeyId = false)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 

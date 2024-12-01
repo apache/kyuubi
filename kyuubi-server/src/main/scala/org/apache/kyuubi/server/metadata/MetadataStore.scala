@@ -58,13 +58,16 @@ trait MetadataStore extends Closeable {
    * @param from the metadata offset.
    * @param size the size to get.
    * @param desc the order of metadata list.
+   * @param orderByKeyId the result order by auto increment key id,
+   *                     which is stable but might slow.
    * @return selected metadata list.
    */
   def getMetadataList(
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      desc: Boolean = false): Seq[Metadata]
+      desc: Boolean = false,
+      orderByKeyId: Boolean = true): Seq[Metadata]
 
   /**
    * Count the metadata list with filter conditions.

@@ -257,14 +257,15 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      desc: Boolean = false): Seq[Metadata] = {
+      desc: Boolean = false,
+      orderByKeyId: Boolean = true): Seq[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
     queryBuilder.append("SELECT ")
     queryBuilder.append(METADATA_COLUMNS)
     queryBuilder.append(s" FROM $METADATA_TABLE")
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
-    queryBuilder.append(" ORDER BY key_id ")
+    queryBuilder.append(" ORDER BY ").append(if (orderByKeyId) "key_id " else "create_time ")
     queryBuilder.append(if (desc) "DESC " else "ASC ")
     queryBuilder.append(dialect.limitClause(size, from))
     val query = queryBuilder.toString

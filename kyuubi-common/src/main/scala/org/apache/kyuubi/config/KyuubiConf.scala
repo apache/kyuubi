@@ -1930,6 +1930,22 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("1")
 
+  val BATCH_PENDING_CHECK_WINDOW: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.pending.check.window")
+      .doc("The time window to check the batch pending max elapse time from metadata store.")
+      .version("1.10.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofDays(1).toMillis)
+
+  val BATCH_SEARCH_WINDOW: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.search.window")
+      .doc("The time window to search the batch from metadata store.")
+      .version("1.10.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofDays(3).toMillis)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")

@@ -280,8 +280,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       filter: MetadataFilter,
       from: Int,
       size: Int,
-      desc: Boolean = false): Seq[Batch] = {
-    metadataManager.map(_.getBatches(filter, from, size, desc)).getOrElse(Seq.empty)
+      desc: Boolean = false,
+      orderByKeyId: Boolean = true): Seq[Batch] = {
+    metadataManager.map(_.getBatches(filter, from, size, desc, orderByKeyId)).getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Option[Metadata] = {
