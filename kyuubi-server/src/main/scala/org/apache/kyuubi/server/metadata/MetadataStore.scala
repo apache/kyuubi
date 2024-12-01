@@ -58,8 +58,8 @@ trait MetadataStore extends Closeable {
    * @param from the metadata offset.
    * @param size the size to get.
    * @param desc the order of metadata list.
-   * @param orderByKeyId the result order by auto increment key id,
-   *                     which is stable but might slow.
+   * @param orderByKeyId the result order by auto increment key_id, which is stable but might slow.
+   *                     If false, order by create_time.
    * @return selected metadata list.
    */
   def getMetadataList(

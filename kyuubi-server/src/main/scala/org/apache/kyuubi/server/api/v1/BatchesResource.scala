@@ -421,18 +421,24 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         s"The valid batch state can be one of the following: ${VALID_BATCH_STATES.mkString(",")}")
     }
 
+    val createTimeFilter =
+      math.max(createTime, batchSearchWindow.map(System.currentTimeMillis() - _).getOrElse(0L))
     val filter = MetadataFilter(
       sessionType = SessionType.BATCH,
       engineType = batchType,
       username = batchUser,
       state = batchState,
       requestName = batchName,
-      createTime =
-        math.max(createTime, batchSearchWindow.map(System.currentTimeMillis() - _).getOrElse(0L)),
+      createTime = createTimeFilter,
       endTime = endTime)
-    // order by key_id(primary key auto increment column) is slower
     val batches =
-      sessionManager.getBatchesFromMetadataStore(filter, from, size, desc, orderByKeyId = false)
+      sessionManager.getBatchesFromMetadataStore(
+        filter,
+        from,
+        size,
+        desc,
+        // order by `create_time` rather then `key_id` if `create_time` is specified
+        orderByKeyId = createTimeFilter == 0)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
