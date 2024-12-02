@@ -1930,14 +1930,6 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("1")
 
-  val BATCH_SEARCH_WINDOW: OptionalConfigEntry[Long] =
-    buildConf("kyuubi.batch.search.window")
-      .doc("The time window to search the batch from metadata store.")
-      .version("1.10.1")
-      .timeConf
-      .checkValue(_ > 0, "must be positive number")
-      .createOptional
-
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -2030,6 +2022,14 @@ object KyuubiConf {
       .version("1.6.0")
       .intConf
       .createWithDefault(65536)
+
+  val METADATA_SEARCH_WINDOW: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.metadata.search.window")
+      .doc("The time window to search the metadata from metadata store.")
+      .version("1.10.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createOptional
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")

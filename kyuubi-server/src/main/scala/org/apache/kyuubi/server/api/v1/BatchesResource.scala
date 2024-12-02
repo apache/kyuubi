@@ -67,7 +67,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     fe.getConf.get(ENGINE_SECURITY_ENABLED)
   private lazy val resourceFileMaxSize = fe.getConf.get(BATCH_RESOURCE_FILE_MAX_SIZE)
   private lazy val extraResourceFileMaxSize = fe.getConf.get(BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE)
-  private lazy val batchSearchWindow = fe.getConf.get(BATCH_SEARCH_WINDOW)
+  private lazy val metadataSearchWindow = fe.getConf.get(METADATA_SEARCH_WINDOW)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -422,7 +422,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
 
     val createTimeFilter =
-      math.max(createTime, batchSearchWindow.map(System.currentTimeMillis() - _).getOrElse(0L))
+      math.max(createTime, metadataSearchWindow.map(System.currentTimeMillis() - _).getOrElse(0L))
     val filter = MetadataFilter(
       sessionType = SessionType.BATCH,
       engineType = batchType,
