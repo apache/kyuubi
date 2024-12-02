@@ -2779,6 +2779,17 @@ object KyuubiConf {
       }
       .createWithDefault("hadoop")
 
+  val PREFERRED_GROUPS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.session.preferGroups")
+      .doc("Comma separated list of hadoop group name for the group engine launch. " +
+        "The first preferred and valid group from this list will be used for GROUP " +
+        "SHARE LEVEL execution. If this is not configured, the engine will use " +
+        "the first group name from the users list of groups as the primary group.")
+      .version("1.10.0")
+      .stringConf
+      .toSequence()
+      .createOptional
+
   val SERVER_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.name")
       .doc("The name of Kyuubi Server.")
