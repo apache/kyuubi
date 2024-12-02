@@ -431,14 +431,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       requestName = batchName,
       createTime = createTimeFilter,
       endTime = endTime)
-    val batches =
-      sessionManager.getBatchesFromMetadataStore(
-        filter,
-        from,
-        size,
-        desc,
-        // order by `create_time` rather then `key_id` if `create_time` is specified
-        orderByKeyId = createTimeFilter == 0)
+    val batches = sessionManager.getBatchesFromMetadataStore(filter, from, size, desc)
     new GetBatchesResponse(from, batches.size, batches.asJava)
   }
 
