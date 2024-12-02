@@ -3245,7 +3245,8 @@ object KyuubiConf {
         "<li>postgresql: For establishing PostgreSQL connections.</li>" +
         "<li>starrocks: For establishing StarRocks connections.</li>" +
         "<li>impala: For establishing Impala connections.</li>" +
-        "<li>clickhouse: For establishing clickhouse connections.</li>")
+        "<li>clickhouse: For establishing clickhouse connections.</li>" +
+        "<li>oracle: For establishing oracle connections.</li>")
       .version("1.6.0")
       .stringConf
       .transform {
@@ -3263,6 +3264,8 @@ object KyuubiConf {
           "org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider"
         case "ClickHouse" | "clickhouse" | "ClickHouseConnectionProvider" =>
           "org.apache.kyuubi.engine.jdbc.clickhouse.ClickHouseConnectionProvider"
+        case "Oracle" | "oracle" | "OracleConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.oracle.OracleConnectionProvider"
         case other => other
       }
       .createOptional

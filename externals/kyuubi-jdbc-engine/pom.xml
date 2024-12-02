@@ -115,6 +115,12 @@
             <classifier>http</classifier>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc8</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
