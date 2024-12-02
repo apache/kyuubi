@@ -21,6 +21,6 @@ import org.apache.kyuubi.engine.jdbc.connection.JdbcConnectionProvider
 
 class OracleConnectionProvider extends JdbcConnectionProvider {
   override val name: String = classOf[OracleConnectionProvider].getName
-
+  // use oracle jdbc class for connection
   override val driverClass: String = "oracle.jdbc.OracleDriver"
 }

@@ -24,6 +24,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TColumnValue}
 class OracleTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
   override def toIntegerTColumn(rows: Seq[Seq[_]], ordinal: Int): TColumn = {
+    // define convertFunc in asIntegerTColumn for int type
     asIntegerTColumn(rows, ordinal, (rows, ordinal) => Integer.parseInt(rows(ordinal).toString))
   }
 
@@ -34,6 +35,7 @@ class OracleTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
 
   override def getColumnType(schema: Seq[Column], ordinal: Int): Int = {
     schema(ordinal).sqlType match {
+      // case for int, returns NUMERIC type in Oracle JDBC
       case Types.NUMERIC if schema(ordinal).scale == 0 =>
         Types.INTEGER
       case Types.NUMERIC =>

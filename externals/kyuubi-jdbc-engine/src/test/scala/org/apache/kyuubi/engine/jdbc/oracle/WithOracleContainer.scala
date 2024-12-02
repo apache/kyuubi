@@ -32,7 +32,9 @@ trait WithOracleContainer extends WithJdbcServerContainer {
   protected val ORACLE_USER_NAME = "kyuubi"
   protected val ORACLE_PASSWORD = "oracle"
 
-  override val containerDef: DockerComposeContainer.Def =
+  override val containerDef: DockerComposeContainer.Def = {
+    // Use docker compose for healthcheck. Without healthcheck the test case may fail,
+    // because the container is pulled up but the oracle service is not ready yet.
     DockerComposeContainer
       .Def(
         composeFiles = new File(Utils.getContextOrKyuubiClassLoader
@@ -43,6 +45,7 @@ trait WithOracleContainer extends WithJdbcServerContainer {
             ORACLE_PORT,
             waitStrategy =
               new DockerHealthcheckWaitStrategy().withStartupTimeout(Duration.ofMinutes(2)))))
+  }
 
   protected def oracleJdbcUrl: String = withContainers { container =>
     val feHost: String = container.getServiceHost(ORACLE_SERVICE_NAME, ORACLE_PORT)

@@ -24,8 +24,10 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TTypeDesc
 class OracleSchemaHelper extends SchemaHelper {
   override protected def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
     sqlType match {
+      // case for int, returns NUMERIC type in Oracle JDBC
       case Types.NUMERIC if scale == 0 =>
         super.toTTypeDesc(Types.INTEGER, precision, scale)
+      // except for int
       case Types.NUMERIC =>
         super.toTTypeDesc(Types.DECIMAL, precision, scale)
       case _ => super.toTTypeDesc(sqlType, precision, scale)
