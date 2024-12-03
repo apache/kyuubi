@@ -2025,9 +2025,12 @@ object KyuubiConf {
 
   val METADATA_SEARCH_WINDOW: OptionalConfigEntry[Long] =
     buildConf("kyuubi.metadata.search.window")
-      .doc("The time window to restrict user queries to metadata within a specific period. " +
-        "For example, if the window is set to P7D, only metadata from the past 7 days can be " +
-        "queried. If not set, it allows searching all metadata information in the metadata store.")
+      .doc("The time window to restrict user queries to metadata within a specific period, " +
+        "starting from the current time to the past. It only affects `GET /api/v1/batches` API. " +
+        "You may want to set this to short period to improve query performance and reduce load " +
+        "on the metadata store when administer want to reserve the metadata for long time. " +
+        "The side-effects is that, the metadata created outside the window will not be " +
+        "invisible to users. If it is undefined, all metadata will be visible for users.")
       .version("1.10.1")
       .timeConf
       .checkValue(_ > 0, "must be positive number")
