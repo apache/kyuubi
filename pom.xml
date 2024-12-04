@@ -47,7 +47,7 @@
             <subscribe>dev-subscribe@kyuubi.apache.org</subscribe>
             <unsubscribe>dev-unsubscribe@kyuubi.apache.org</unsubscribe>
             <post>dev@kyuubi.apache.org</post>
-            <archive>https://mail-archives.apache.org/mod_mbox/kyuubi-dev</archive>
+            <archive>https://lists.apache.org/list.html?dev@kyuubi.apache.org</archive>
         </mailingList>
     </mailingLists>
 
