@@ -103,6 +103,14 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val REBALANCE_ADVISORY_PARTITION_SIZE_IN_BYTES =
+    buildConf("spark.sql.optimizer.rebalanceAdvisoryPartitionSize")
+      .doc("The advisory size in bytes of the shuffle partition during merge small files. " +
+        s"It takes effect when Spark coalesces small shuffle partitions or splits skewed " +
+        s"shuffle partition.")
+      .version("1.10.1")
+      .fallbackConf(ADVISORY_PARTITION_SIZE_IN_BYTES)
+
   val WATCHDOG_MAX_PARTITIONS =
     buildConf("spark.sql.watchdog.maxPartitions")
       .doc("Set the max partition number when spark scans a data source. " +
