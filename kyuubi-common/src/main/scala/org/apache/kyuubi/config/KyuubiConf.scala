@@ -2023,6 +2023,19 @@ object KyuubiConf {
       .intConf
       .createWithDefault(65536)
 
+  val METADATA_SEARCH_WINDOW: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.metadata.search.window")
+      .doc("The time window to restrict user queries to metadata within a specific period, " +
+        "starting from the current time to the past. It only affects `GET /api/v1/batches` API. " +
+        "You may want to set this to short period to improve query performance and reduce load " +
+        "on the metadata store when administer want to reserve the metadata for long time. " +
+        "The side-effects is that, the metadata created outside the window will not be " +
+        "invisible to users. If it is undefined, all metadata will be visible for users.")
+      .version("1.10.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createOptional
+
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +
