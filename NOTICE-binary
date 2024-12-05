@@ -1063,19 +1063,3 @@ which can be obtained at:
     * license/LICENSE.kafka.txt (Apache License 2.0)
   * HOMEPAGE:
     * https://github.com/apache/kafka
-
-This product optionally depends on 'snappy-java', Snappy compression and
-decompression for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/LICENSE.snappy-java.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * https://github.com/xerial/snappy-java
-
-This product optionally depends on 'lz4-java', Lz4 compression and
-decompression for Java, which can be obtained at:
-
-  * LICENSE:
-    * license/LICENSE.lz4-java.txt (Apache License 2.0)
-  * HOMEPAGE:
-    * https://github.com/lz4/lz4-java

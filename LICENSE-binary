@@ -306,8 +306,6 @@ io.vertx:vertx-grpc
 com.squareup.retrofit2:retrofit
 com.squareup.okhttp3:okhttp
 org.apache.kafka:kafka-clients
-org.lz4:lz4-java
-org.xerial.snappy:snappy-java
 org.xerial:sqlite-jdbc
 
 BSD
@@ -319,7 +317,6 @@ jline:jline
 com.thoughtworks.paranamer:paranamer
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
-com.github.luben:zstd-jni
 org.postgresql:postgresql
 
 Eclipse Distribution License - v 1.0
