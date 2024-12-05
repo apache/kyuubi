@@ -486,6 +486,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "1")
       .queryParam("desc", "true")
+      .queryParam("createTime", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()

@@ -424,6 +424,14 @@ class BatchJobSubmission(
       Utils.deleteDirectoryRecursively(session.resourceUploadFolderPath.toFile)
     }
   }
+
+  def getPendingElapsedTime: Long = {
+    if (state == OperationState.PENDING) {
+      System.currentTimeMillis() - createTime
+    } else {
+      0L
+    }
+  }
 }
 
 object BatchJobSubmission {
