@@ -282,6 +282,9 @@ metrics:
     enabled: false
     # List of pod endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
     podMetricsEndpoints: []
+    #  podMetricsEndpoints：
+    #    - path: /metrics
+    #      port: prometheus
 
   # ServiceMonitor by Prometheus Operator
   serviceMonitor:
