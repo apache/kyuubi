@@ -25,7 +25,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      {{- include "kyuubi.selectorLabels" . | nindent 6 }}
   podMetricsEndpoints:
     {{- toYaml .Values.metrics.podMonitor.podMetricsEndpoints | nindent 4 }}
 {{- end }}
