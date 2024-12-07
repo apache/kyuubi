@@ -18,6 +18,7 @@
 HikariCP/4.0.3//HikariCP-4.0.3.jar
 ST4/4.3.4//ST4-4.3.4.jar
 animal-sniffer-annotations/1.23//animal-sniffer-annotations-1.23.jar
+annotations/13.0//annotations-13.0.jar
 annotations/4.1.1.4//annotations-4.1.1.4.jar
 antlr-runtime/3.5.3//antlr-runtime-3.5.3.jar
 antlr4-runtime/4.9.3//antlr4-runtime-4.9.3.jar
@@ -98,6 +99,10 @@ jetty-util/9.4.56.v20240826//jetty-util-9.4.56.v20240826.jar
 jline/2.14.6//jline-2.14.6.jar
 jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
 kafka-clients/3.5.2//kafka-clients-3.5.2.jar
+kotlin-stdlib-common/1.9.10//kotlin-stdlib-common-1.9.10.jar
+kotlin-stdlib-jdk7/1.8.21//kotlin-stdlib-jdk7-1.8.21.jar
+kotlin-stdlib-jdk8/1.8.21//kotlin-stdlib-jdk8-1.8.21.jar
+kotlin-stdlib/1.8.21//kotlin-stdlib-1.8.21.jar
 kubernetes-client-api/6.13.1//kubernetes-client-api-6.13.1.jar
 kubernetes-client/6.13.1//kubernetes-client-6.13.1.jar
 kubernetes-httpclient-okhttp/6.13.1//kubernetes-httpclient-okhttp-6.13.1.jar
@@ -150,8 +155,9 @@ netty-transport-native-epoll/4.1.108.Final/linux-x86_64/netty-transport-native-e
 netty-transport-native-unix-common/4.1.108.Final//netty-transport-native-unix-common-4.1.108.Final.jar
 netty-transport/4.1.108.Final//netty-transport-4.1.108.Final.jar
 okhttp-urlconnection/3.14.9//okhttp-urlconnection-3.14.9.jar
-okhttp/3.12.12//okhttp-3.12.12.jar
-okio/1.15.0//okio-1.15.0.jar
+okhttp/4.12.0//okhttp-4.12.0.jar
+okio-jvm/3.6.0//okio-jvm-3.6.0.jar
+okio/3.6.0//okio-3.6.0.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 perfmark-api/0.26.0//perfmark-api-0.26.0.jar
