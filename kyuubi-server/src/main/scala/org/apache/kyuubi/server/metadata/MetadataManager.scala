@@ -139,8 +139,13 @@ class MetadataManager extends AbstractService("MetadataManager") {
       from: Int,
       size: Int,
       desc: Boolean = false): Seq[Batch] = {
-    withMetadataRequestMetrics(_metadataStore.getMetadataList(filter, from, size, desc)).map(
-      buildBatch)
+    withMetadataRequestMetrics(_metadataStore.getMetadataList(
+      filter,
+      from,
+      size,
+      // if create_file field is set, order by create_time, which is faster, otherwise by key_id
+      orderBy = if (filter.createTime > 0) Some("create_time") else Some("key_id"),
+      direction = if (desc) "DESC" else "ASC")).map(buildBatch)
   }
 
   def countBatch(

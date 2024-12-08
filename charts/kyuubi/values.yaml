@@ -289,6 +289,8 @@ metrics:
     enabled: false
     # List of service endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
     endpoints: []
+    #  endpoints:
+    #    - port: prometheus
     # Additional labels to be used to make ServiceMonitor discovered by Prometheus
     labels: {}
 
