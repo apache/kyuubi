@@ -49,9 +49,9 @@ class TrinoProgressMonitor(trino: StatementClient) {
           stage.getFailedTasks)
         stages.append((TrinoStage(stageId), stageProgress))
         val subStages = asScalaBuffer(stage.getSubStages)
-        stageQueue.enqueue(subStages: _*)
+        stageQueue ++= subStages.toSeq
       }
-      SortedMap(stages: _*)
+      SortedMap(stages.toSeq: _*)
     } else {
       SortedMap()
     }
