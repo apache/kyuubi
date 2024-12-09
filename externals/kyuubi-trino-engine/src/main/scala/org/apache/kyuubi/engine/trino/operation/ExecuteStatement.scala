@@ -76,7 +76,7 @@ class ExecuteStatement(
           val ke =
             KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
-          shutdownTimeoutMonitor
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {

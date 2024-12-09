@@ -71,7 +71,7 @@ class PlanOnlyStatement(
           explainOperation(statement)
       }
     } catch {
-      shutdownTimeoutMonitor
+      shutdownTimeoutMonitor()
       onError()
     }
   }

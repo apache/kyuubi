@@ -127,7 +127,7 @@ class ExecutePython(
           val ke =
             KyuubiSQLException("Error submitting python in background", rejected)
           setOperationException(ke)
-          shutdownTimeoutMonitor
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {
