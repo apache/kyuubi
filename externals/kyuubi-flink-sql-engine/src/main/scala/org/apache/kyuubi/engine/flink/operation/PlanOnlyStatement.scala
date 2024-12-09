@@ -67,12 +67,11 @@ class PlanOnlyStatement(
             statement)
           resultSet =
             ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout);
-          shutdownTimeoutMonitor
         case _ =>
           explainOperation(statement)
-          shutdownTimeoutMonitor
       }
     } catch {
+      shutdownTimeoutMonitor
       onError()
     }
   }
