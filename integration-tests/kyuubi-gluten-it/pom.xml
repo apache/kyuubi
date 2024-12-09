@@ -30,7 +30,7 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <gluten.version>1.2.0-SNAPSHOT</gluten.version>
+        <gluten.version>1.3.0-SNAPSHOT</gluten.version>
         <gluten.artifact.name>gluten-velox-bundle-spark${spark.binary.version}_${scala.binary.version}-ubuntu_22.04</gluten.artifact.name>
     </properties>
 
@@ -40,7 +40,7 @@
             <artifactId>${gluten.artifact.name}</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
+            <systemPath>${project.basedir}/../../incubator-gluten/package/target/${gluten.artifact.name}_x86_64-${gluten.version}.jar</systemPath>
         </dependency>
 
         <dependency>
