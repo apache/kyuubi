@@ -200,7 +200,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.2</spark.version>
+        <spark.version>3.5.4</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -2030,8 +2030,9 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.2</spark.version>
+                <spark.version>3.5.4</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc1-bin</spark.archive.mirror>
                 <delta.version>3.2.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
