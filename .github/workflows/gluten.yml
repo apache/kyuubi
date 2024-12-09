@@ -27,6 +27,7 @@ env:
 jobs:
   gluten-build:
     name: Build Gluten
+    if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
