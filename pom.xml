@@ -1282,6 +1282,18 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>spark-3.5.4-rc-staging</id>
+            <name>Spark 3.5.4 RC Staging</name>
+            <url>https://repository.apache.org/content/repositories/orgapachespark-1471</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
