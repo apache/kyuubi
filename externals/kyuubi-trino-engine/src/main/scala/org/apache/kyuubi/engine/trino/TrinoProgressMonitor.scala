@@ -16,14 +16,16 @@
  */
 package org.apache.kyuubi.engine.trino
 
+import java.util
+
+import scala.collection.JavaConverters._
+import scala.collection.immutable.SortedMap
+
 import io.trino.client.{StageStats, StatementClient}
+
 import org.apache.kyuubi.engine.trino.TrinoProgressMonitor.{COLUMN_1_WIDTH, HEADERS}
 import org.apache.kyuubi.engine.trino.operation.progress.{TrinoStage, TrinoStageProgress}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TJobExecutionStatus
-
-import java.util
-import scala.collection.JavaConverters._
-import scala.collection.immutable.SortedMap
 
 class TrinoProgressMonitor(trino: StatementClient) {
 
