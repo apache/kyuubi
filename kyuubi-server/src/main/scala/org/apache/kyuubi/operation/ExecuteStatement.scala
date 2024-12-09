@@ -172,7 +172,10 @@ class ExecuteStatement(
     try {
       val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
       setBackgroundHandle(opHandle)
-    } catch onError("submitting query in background, query rejected")
+    } catch {
+      shutdownTimeoutMonitor
+      onError("submitting query in background, query rejected")
+    }
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }

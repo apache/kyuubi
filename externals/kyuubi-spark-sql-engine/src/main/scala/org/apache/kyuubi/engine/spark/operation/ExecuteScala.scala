@@ -154,6 +154,7 @@ class ExecuteScala(
           val ke =
             KyuubiSQLException("Error submitting scala in background", rejected)
           setOperationException(ke)
+          shutdownTimeoutMonitor
           throw ke
       }
     } else {
