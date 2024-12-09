@@ -28,8 +28,9 @@ import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder
 import io.swagger.v3.jaxrs2.integration.resources.BaseOpenApiResource
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.integration.api.OpenApiContext
-import io.swagger.v3.oas.models.OpenAPI
+import io.swagger.v3.oas.models.{Components, OpenAPI}
 import io.swagger.v3.oas.models.info.{Contact, Info, License}
+import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import io.swagger.v3.oas.models.servers.Server
 import io.swagger.v3.oas.models.tags.Tag
 import org.apache.commons.lang3.StringUtils
@@ -99,6 +100,21 @@ class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
             .url("https://www.apache.org/licenses/LICENSE-2.0.txt")))
       .tags(List(new Tag().name("Session"), new Tag().name("Operation")).asJava)
       .servers(List(new Server().url(apiUrl)).asJava)
+      .components(Option(openApi.getComponents).getOrElse(new Components())
+        .addSecuritySchemes(
+          "BasicAuth",
+          new SecurityScheme()
+            .`type`(SecurityScheme.Type.HTTP)
+            .scheme("Basic"))
+        .addSecuritySchemes(
+          "BearerAuth",
+          new SecurityScheme()
+            .`type`(SecurityScheme.Type.HTTP)
+            .scheme("Bearer")
+            .bearerFormat("JWT")))
+      .addSecurityItem(new SecurityRequirement()
+        .addList("BasicAuth")
+        .addList("BearerAuth"))
   }
 }
 

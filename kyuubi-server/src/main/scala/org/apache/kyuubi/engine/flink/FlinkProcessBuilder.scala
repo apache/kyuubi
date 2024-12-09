@@ -23,14 +23,19 @@ import java.nio.file.{Files, Paths}
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_USER_KEY}
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 /**
@@ -58,14 +63,31 @@ class FlinkProcessBuilder(
   // flink.execution.target are required in Kyuubi conf currently
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
 
+  private lazy val proxyUserEnable: Boolean = {
+    var flinkDoAsEnabled = conf.get(ENGINE_FLINK_DOAS_ENABLED)
+    if (flinkDoAsEnabled && !UserGroupInformation.isSecurityEnabled) {
+      warn(s"${ENGINE_FLINK_DOAS_ENABLED.key} can only be enabled on Kerberized environment.")
+      flinkDoAsEnabled = false
+    }
+    flinkDoAsEnabled
+  }
+
   override protected def module: String = "kyuubi-flink-sql-engine"
 
   override protected def mainClass: String = "org.apache.kyuubi.engine.flink.FlinkSQLEngine"
 
-  override def env: Map[String, String] = conf.getEnvs +
-    ("FLINK_CONF_DIR" -> conf.getEnvs.getOrElse(
-      "FLINK_CONF_DIR",
-      s"$flinkHome${File.separator}conf"))
+  override def env: Map[String, String] = {
+    val flinkConfDir =
+      conf.getEnvs.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
+    val flinkExtraEnvs = if (proxyUserEnable) {
+      Map(
+        "FLINK_CONF_DIR" -> flinkConfDir,
+        FLINK_PROXY_USER_KEY -> proxyUser) ++ generateTokenFile()
+    } else {
+      Map("FLINK_CONF_DIR" -> flinkConfDir)
+    }
+    conf.getEnvs ++ flinkExtraEnvs
+  }
 
   override def clusterManager(): Option[String] = {
     executionTarget match {
@@ -113,7 +135,29 @@ class FlinkProcessBuilder(
           flinkExtraJars += s"$hiveConfFile"
         }
 
-        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "")
+        val externalProxyUserConf: Map[String, String] = if (proxyUserEnable) {
+          // FLINK-31109 (1.17.0): Flink only supports hadoop proxy user when delegation tokens
+          // fetch is managed outside, but disabling `security.delegation.tokens.enabled` will cause
+          // delegation token updates on JobManager not to be passed to TaskManagers.
+          // Based on the solution in
+          // https://github.com/apache/flink/pull/22009#issuecomment-2122226755, we removed
+          // `HadoopModuleFactory` from `security.module.factory.classes` and disabled delegation
+          // token providers (hadoopfs/hbase/HiveServer2) that do not support proxyUser.
+          // FLINK-35525: We need to add `yarn.security.appmaster.delegation.token.services=kyuubi`
+          // configuration to pass hdfs token obtained by kyuubi provider to the yarn client.
+          Map(
+            "security.module.factory.classes" ->
+              ("org.apache.flink.runtime.security.modules.JaasModuleFactory;" +
+                "org.apache.flink.runtime.security.modules.ZookeeperModuleFactory"),
+            "security.delegation.token.provider.hadoopfs.enabled" -> "false",
+            "security.delegation.token.provider.hbase.enabled" -> "false",
+            "security.delegation.token.provider.HiveServer2.enabled" -> "false",
+            "yarn.security.appmaster.delegation.token.services" -> "kyuubi")
+        } else {
+          Map.empty
+        }
+
+        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "") ++ externalProxyUserConf
         // add custom yarn.ship-files
         flinkExtraJars ++= customFlinkConf.get(YARN_SHIP_FILES_KEY)
         val yarnAppName = customFlinkConf.get(YARN_APPLICATION_NAME_KEY)
@@ -152,11 +196,10 @@ class FlinkProcessBuilder(
 
         val memory = conf.get(ENGINE_FLINK_MEMORY)
         buffer += s"-Xmx$memory"
-        val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS)
+        val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
         if (javaOptions.isDefined) {
-          buffer += javaOptions.get
+          buffer ++= parseOptionString(javaOptions.get)
         }
-
         val classpathEntries = new mutable.LinkedHashSet[String]
         // flink engine runtime jar
         mainResource.foreach(classpathEntries.add)
@@ -213,6 +256,37 @@ class FlinkProcessBuilder(
     }
   }
 
+  @volatile private var tokenTempDir: java.nio.file.Path = _
+  private def generateTokenFile(): Option[(String, String)] = {
+    if (conf.get(ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE)) {
+      // We disabled `hadoopfs` token service, which may cause yarn client to miss hdfs token.
+      // So we generate a hadoop token file to pass kyuubi engine tokens to submit process.
+      // TODO: Removed this after FLINK-35525 (1.20.0), delegation tokens will be passed
+      //  by `kyuubi` provider
+      conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
+        val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
+        tokenTempDir = Utils.createTempDir()
+        val file = s"${tokenTempDir.toString}/kyuubi_credentials_${System.currentTimeMillis()}"
+        credentials.writeTokenStorageFile(new Path(s"file://$file"), new Configuration())
+        info(s"Generated hadoop token file: $file")
+        "HADOOP_TOKEN_FILE_LOCATION" -> file
+      }
+    } else {
+      None
+    }
+  }
+
+  override def close(destroyProcess: Boolean): Unit = {
+    super.close(destroyProcess)
+    if (tokenTempDir != null) {
+      try {
+        Utils.deleteDirectoryRecursively(tokenTempDir.toFile)
+      } catch {
+        case e: Throwable => error(s"Error deleting token temp dir: $tokenTempDir", e)
+      }
+    }
+  }
+
   override def shortName: String = "flink"
 }
 
@@ -226,4 +300,6 @@ object FlinkProcessBuilder {
 
   final val FLINK_HADOOP_CLASSPATH_KEY = "FLINK_HADOOP_CLASSPATH"
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
+  final val FLINK_SECURITY_KEYTAB_KEY = "security.kerberos.login.keytab"
+  final val FLINK_SECURITY_PRINCIPAL_KEY = "security.kerberos.login.principal"
 }

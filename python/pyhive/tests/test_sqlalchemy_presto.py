@@ -1,6 +1,11 @@
 from __future__ import absolute_import
 from __future__ import unicode_literals
+
+import re
 from builtins import str
+
+import sqlalchemy
+
 from pyhive.tests.sqlalchemy_test_case import SqlAlchemyTestCase
 from pyhive.tests.sqlalchemy_test_case import with_engine_connection
 from sqlalchemy import types
@@ -87,3 +92,14 @@ class TestSqlAlchemyPresto(unittest.TestCase, SqlAlchemyTestCase):
         self.assertIn('"current_timestamp"', query)
         self.assertNotIn('`select`', query)
         self.assertNotIn('`current_timestamp`', query)
+
+    @with_engine_connection
+    def test_hash_table(self, engine, connection):
+        sqlalchemy_version = float(re.search(r"^([\d]+\.[\d]+)\..+", sqlalchemy.__version__).group(1))
+        if sqlalchemy_version >= 1.4:
+            insp = sqlalchemy.inspect(engine)
+            self.assertFalse(insp.has_table("THIS_TABLE_DOSE_NOT_EXIST"))
+            self.assertFalse(insp.has_table("THIS_TABLE_DOSE_not_exist"))
+        else:
+            self.assertFalse(Table('THIS_TABLE_DOSE_NOT_EXIST', MetaData(bind=engine)).exists())
+            self.assertFalse(Table('THIS_TABLE_DOSE_not_exits', MetaData(bind=engine)).exists())

@@ -19,6 +19,16 @@
 
 Note that: now the api version is v1 and the base uri is `/api/v1`.
 
+## Authentication
+
+REST API supports the [Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization#basic_authentication) which relies on `Authorization` header in HTTP request.
+
+```
+Authorization: Basic <credentials>
+```
+
+The `<credentials>` value is the Base64 encoded string of `username:password`. For example, in the case of a user `aladdin` with the password `opensesame`, set the `Authorization` header to `Basic YWxhZGRpbjpvcGVuc2VzYW1l` as Base64 encoded `aladdin:opensesame`.
+
 ## Session Resource
 
 ### GET /sessions
@@ -332,15 +342,16 @@ Returns all the batches.
 
 #### Request Parameters
 
-| Name       | Description                                                                                         | Type   |
-|:-----------|:----------------------------------------------------------------------------------------------------|:-------|
-| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String |
-| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String |
-| batchUser  | The user name that created the batch                                                                | String |
-| createTime | Return the batch that created after this timestamp                                                  | Long   |
-| endTime    | Return the batch that ended before this timestamp                                                   | Long   |
-| from       | The start index to fetch batches                                                                    | Int    |
-| size       | Number of batches to fetch, 100 by default                                                          | Int    |
+| Name       | Description                                                                                         | Type    |
+|:-----------|:----------------------------------------------------------------------------------------------------|:--------|
+| batchType  | The batch type, such as spark/flink, if no batchType is specified,<br/> return all types            | String  |
+| batchState | The valid batch state can be one of the following:<br/> PENDING, RUNNING, FINISHED, ERROR, CANCELED | String  |
+| batchUser  | The user name that created the batch                                                                | String  |
+| createTime | Return the batch that created after this timestamp                                                  | Long    |
+| endTime    | Return the batch that ended before this timestamp                                                   | Long    |
+| from       | The start index to fetch batches                                                                    | Int     |
+| size       | Number of batches to fetch, 100 by default                                                          | Int     |
+| desc       | List the batches in descending order, false by default.                                             | Boolean |
 
 #### Response Body
 
@@ -391,7 +402,7 @@ curl --location --request POST 'http://localhost:10099/api/v1/batches' \
 
 | Name         | Description                                                                                       | Media Type       |
 |:-------------|:--------------------------------------------------------------------------------------------------|:-----------------|
-| batchRequest | The batch request in JSON format as request body requried in [POST /batches](#post-batches)       | application/json |
+| batchRequest | The batch request in JSON format as request body required in [POST /batches](#post-batches)       | application/json |
 | resourceFile | The resource to upload and execute, which will be cached on server and cleaned up after execution | File             |
 
 #### Response Body

@@ -20,7 +20,7 @@ package org.apache.kyuubi.server.http.authentication
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter.{HTTP_AUTH_TYPE, HTTP_CLIENT_IP_ADDRESS, HTTP_CLIENT_USER_NAME, HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS}
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter._
 
 object AuthenticationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
@@ -31,8 +31,14 @@ object AuthenticationAuditLogger extends Logging {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
     sb.append(s"user=${HTTP_CLIENT_USER_NAME.get()}(auth:${HTTP_AUTH_TYPE.get()})").append("\t")
+    if (HTTP_CLIENT_PROXY_USER_NAME.get() != null) {
+      sb.append(s"proxyUser=${HTTP_CLIENT_PROXY_USER_NAME.get()}").append("\t")
+    }
     sb.append(s"ip=${HTTP_CLIENT_IP_ADDRESS.get()}").append("\t")
     sb.append(s"proxyIp=${HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.get()}").append("\t")
+    if (HTTP_FORWARDED_ADDRESSES.get().nonEmpty) {
+      sb.append(s"forwardedFor=${getForwardedAddresses.mkString(",")}").append("\t")
+    }
     sb.append(s"method=${request.getMethod}").append("\t")
     sb.append(s"uri=${request.getRequestURI}").append("\t")
     sb.append(s"params=${request.getQueryString}").append("\t")

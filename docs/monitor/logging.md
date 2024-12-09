@@ -27,11 +27,11 @@ In general, there are mainly three components in the Kyuubi architecture that wi
 
 In addition, a Kyuubi deployment for production usually relies on some other external systems.
 For example, both Kyuubi servers and engines will use [Apache Zookeeper](https://zookeeper.apache.org/) for service discovery.
-The instructions for external system loggings will not be included in this article.
+The instructions for external system logging will not be included in this article.
 
 ## Logs of Kyuubi Server
 
-Logs of Kyuubi Server show us the activities of the server instance including how start/stop, how does it response client requests, etc.
+Logs of Kyuubi Server show us the activities of the server instance including how it starts and stops, how it responds to client requests, etc.
 
 ### Configuring Server Logging
 
@@ -49,7 +49,7 @@ cp conf/log4j2.xml.template conf/log4j2.xml
 
 With or without the above step, by default the server logging will redirect the logs to a file named `kyuubi-${env:USER}-org.apache.kyuubi.server.KyuubiServer-${env:HOSTNAME}.out` under the directory of `$KYUUBI_HOME/logs`.
 
-For example, you can easily find where the server log goes when staring a Kyuubi server from the console output.
+For example, you can easily find where the server log goes when starting a Kyuubi server from the console output.
 
 ```shell
 $ export SPARK_HOME=/Users/kentyao/Downloads/spark/spark-3.2.0-bin-hadoop3.2
@@ -87,9 +87,9 @@ Welcome to
 
 You may also notice that there is an environment variable called `KYUUBI_LOG_DIR` in the above example.
 
-`KYUUBI_LOG_DIR` determines which folder we want to put our server log files.
+`KYUUBI_LOG_DIR` determines into which folder we want to put our server log files.
 
-For example, the below command will locate the log files to `/Users/kentyao/tmp`.
+For example, the below command will write the log files to `/Users/kentyao/tmp`.
 
 ```shell
 $ mkdir /Users/kentyao/tmp
@@ -102,7 +102,7 @@ Starting org.apache.kyuubi.server.KyuubiServer, logging to /Users/kentyao/tmp/ky
 
 #### KYUUBI_MAX_LOG_FILES
 
-`KYUUBI_MAX_LOG_FILES` controls how many log files will be remained after a Kyuubi server reboots.
+`KYUUBI_MAX_LOG_FILES` controls how many log files will remain after a Kyuubi server reboots.
 
 #### Custom Log4j2 Settings
 
@@ -134,20 +134,20 @@ Then everything goes to `log/dummy.log`.
 
 Spark SQL Engine is one type of Kyuubi Engines and also a typical Spark application.
 Thus, its logs mainly contain the logs of a Spark Driver.
-Meanwhile, it also includes how all the services of an engine start/stop, how does it response the incoming calls from Kyuubi servers, etc.
+Meanwhile, it also includes how all the services of an engine start/stop, how it responds to incoming calls from Kyuubi servers, etc.
 
 In general, when an exception occurs, we are able to find more information and clues in the engine's logs.
 
 #### Configuring Engine Logging
 
-Please refer to Apache Spark online documentation -[Configuring Logging](https://spark.apache.org/docs/latest/configuration.html#configuring-logging) for instructions.
+Please refer to Apache Spark online documentation [Configuring Logging](https://spark.apache.org/docs/latest/configuration.html#configuring-logging) for instructions.
 
 #### Where to Find the Engine Log
 
-The engine logs locate differently based on the deploy mode and the cluster manager.
+The engine logs are located differently based on the deploy mode and the cluster manager.
 When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-spark-sql-engine.log.${num}`.
 Different session users have different folders to group all live and historical engine logs.
-Each engine will have one and only engine log.
+Each engine will have exactly one engine log.
 When using `cluster` deploy mode, the local engine logs only contain very little information, the main parts of engine logs are on the remote driver side, e.g. for YARN cluster, they are in ApplicationMasters' log.
 
 ## Logs of Flink SQL Engine
@@ -160,23 +160,23 @@ In general, when an exception occurs, we are able to find more information and c
 
 #### Configuring Engine Logging
 
-Please refer to Apache Flink online documentation -[Configuring Logging](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/logging) for instructions.
+Please refer to Apache Flink online documentation [Configuring Logging](https://nightlies.apache.org/flink/flink-docs-stable/docs/deployment/advanced/logging) for instructions.
 
 #### Where to Find the Engine Log
 
-The engine logs locate differently based on the deploy mode and the cluster manager.
+The engine logs are located differently based on the deploy mode and the cluster manager.
 When using local backend or `client` deploy mode for other cluster managers, such as YARN, you can find the whole engine log in `$KYUUBI_WORK_DIR_ROOT/${session username}/kyuubi-flink-sql-engine.log.${num}`.
 Different session users have different folders to group all live and historical engine logs.
-Each engine will have one and only engine log.
+Each engine will have exactly one engine log.
 When using `cluster` deploy mode, the local engine logs only contain very little information, the main parts of engine logs are on the remote driver side, e.g. for YARN cluster, they are in ApplicationMasters' log.
 
 ## Operation Logs
 
 Operation log will show how SQL queries are executed, such as query planning, execution, and statistic reports.
 
-Operation logs can reveal directly to end-users how their queries are being executed on the server/engine-side, including some process-oriented information, and why their queries are slow or in error.
+Operation logs can reveal directly to end-users how their queries are being executed on the server/engine-side, including some process-oriented information, and why their queries are slow or fail.
 
-For example, when you, as an end-user, use `kyuubi-beeline` to connect a Kyuubi server and execute query like below.
+For example, when you, as an end-user, use `kyuubi-beeline` to connect a Kyuubi server and execute query like below:
 
 ```shell
 kyuubi-beeline -u 'jdbc:kyuubi://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kent -e 'select * from src;'

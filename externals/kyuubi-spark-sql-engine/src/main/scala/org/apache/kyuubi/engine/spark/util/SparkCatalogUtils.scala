@@ -102,7 +102,7 @@ object SparkCatalogUtils extends Logging {
   private def getGlobalTempViewManager(
       spark: SparkSession,
       schemaPattern: String): Seq[String] = {
-    val database = spark.sharedState.globalTempViewManager.database
+    val database = spark.conf.get("spark.sql.globalTempDatabase")
     Option(database).filter(_.matches(schemaPattern)).toSeq
   }
 

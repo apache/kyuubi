@@ -47,9 +47,7 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   override def beforeAll(): Unit = {
     spark.conf.set(s"spark.sql.catalog.$catalogV2", v2JdbcTableCatalogClassName)
     spark.conf.set(s"spark.sql.catalog.$catalogV2.url", jdbcUrl)
-    spark.conf.set(
-      s"spark.sql.catalog.$catalogV2.driver",
-      "org.apache.derby.jdbc.AutoloadedDriver")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.driver", derbyJdbcDriverClass)
 
     super.beforeAll()
 

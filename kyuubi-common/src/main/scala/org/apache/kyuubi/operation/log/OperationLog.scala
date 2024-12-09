@@ -31,7 +31,7 @@ import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, Fe
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
-import org.apache.kyuubi.util.ThriftUtils
+import org.apache.kyuubi.util.{TempFileCleanupUtils, ThriftUtils}
 
 object OperationLog extends Logging {
   final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
@@ -49,19 +49,23 @@ object OperationLog extends Logging {
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
   /**
-   * The operation log root directory, this directory will delete when JVM exit.
+   * The operation log root directory, this directory will be deleted
+   * either after the duration of `kyuubi.server.tempFile.expireTime`
+   * or when JVM exit.
    */
-  def createOperationLogRootDirectory(session: Session): Unit = {
-    session.sessionManager.operationLogRoot.foreach { operationLogRoot =>
+  def createOperationLogRootDirectory(session: Session): Path = {
+    session.sessionManager.operationLogRoot.map { operationLogRoot =>
       val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
       try {
         Files.createDirectories(path)
-        path.toFile.deleteOnExit()
+        TempFileCleanupUtils.deleteOnExit(path)
+        path
       } catch {
         case e: IOException =>
           error(s"Failed to create operation log root directory: $path", e)
+          null
       }
-    }
+    }.orNull
   }
 
   /**

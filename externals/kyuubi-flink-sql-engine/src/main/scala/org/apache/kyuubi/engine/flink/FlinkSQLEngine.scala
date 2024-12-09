@@ -91,6 +91,7 @@ object FlinkSQLEngine extends Logging {
       val flinkConfFromArgs =
         kyuubiConf.getAll.filterKeys(_.startsWith("flink."))
           .map { case (k, v) => (k.stripPrefix("flink."), v) }
+          .toMap
       flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
       val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
@@ -101,7 +102,7 @@ object FlinkSQLEngine extends Logging {
       val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
       kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
       engineCredentials.filter(_.nonEmpty).foreach { credentials =>
-        FlinkTBinaryFrontendService.renewDelegationToken(credentials)
+        FlinkEngineUtils.renewDelegationToken(credentials)
       }
 
       val engineContext = FlinkEngineUtils.getDefaultContext(args, flinkConf, flinkConfDir)

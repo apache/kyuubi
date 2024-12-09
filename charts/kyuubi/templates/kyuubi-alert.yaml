@@ -15,7 +15,7 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.monitoring.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.prometheusRule.enabled }}
+{{- if and .Values.metrics.enabled (.Values.metrics.reporters | nospace | splitList "," | has "PROMETHEUS") .Values.metrics.prometheusRule.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
@@ -24,5 +24,5 @@ metadata:
     {{- include "kyuubi.labels" . | nindent 4 }}
 spec:
   groups:
-    {{- toYaml .Values.prometheusRule.groups | nindent 4 }}
+    {{- toYaml .Values.metrics.prometheusRule.groups | nindent 4 }}
 {{- end }}

@@ -26,7 +26,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KerberizedTestHelper, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.service.authentication.{AuthTypes, UserDefineAuthenticationProviderImpl, WithLdapServer}
 
 class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with KerberizedTestHelper
   with WithLdapServer with HiveJDBCTestHelper {
@@ -42,6 +42,12 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
   protected def kerberosKeytabJdbcUrlUsingAlias: String = kerberosTgtJdbcUrlUsingAlias +
     s";kyuubiClientPrincipal=$testPrincipal;kyuubiClientKeytab=$testKeytab"
   private val currentUser = UserGroupInformation.getCurrentUser
+
+  protected def authMethods = conf.get(KyuubiConf.AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  protected def kerberosAuthEnabled: Boolean = authMethods.contains(AuthTypes.KERBEROS)
+  protected def nonKerberosAuth = authMethods.filterNot(_ == AuthTypes.KERBEROS).headOption
+  protected def ldapAuthEnabled = nonKerberosAuth.contains(AuthTypes.LDAP)
+  protected def customAuthEnabled = nonKerberosAuth.contains(AuthTypes.CUSTOM)
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -114,25 +120,49 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with Ker
   }
 
   test("test with LDAP authentication") {
-    val conn = DriverManager.getConnection(jdbcUrlWithConf, ldapUser, ldapUserPasswd)
-    try {
-      val statement = conn.createStatement()
-      val resultSet = statement.executeQuery("select engine_name()")
-      assert(resultSet.next())
-      assert(resultSet.getString(1).nonEmpty)
-    } finally {
-      conn.close()
+    if (ldapAuthEnabled) {
+      val conn = DriverManager.getConnection(jdbcUrlWithConf, ldapUser, ldapUserPasswd)
+      try {
+        val statement = conn.createStatement()
+        val resultSet = statement.executeQuery("select engine_name()")
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
+      } finally {
+        conn.close()
+      }
+    } else {
+      intercept[SQLException] {
+        val conn = DriverManager.getConnection(jdbcUrlWithConf, ldapUser, ldapUserPasswd)
+        try {
+          val statement = conn.createStatement()
+          statement.executeQuery("select engine_name()")
+        } finally {
+          conn.close()
+        }
+      }
     }
   }
 
   test("only the first specified plain auth type is valid") {
-    intercept[SQLException] {
+    if (customAuthEnabled) {
       val conn = DriverManager.getConnection(jdbcUrlWithConf, customUser, customPasswd)
       try {
         val statement = conn.createStatement()
-        statement.executeQuery("select engine_name()")
+        val resultSet = statement.executeQuery("select engine_name()")
+        assert(resultSet.next())
+        assert(resultSet.getString(1).nonEmpty)
       } finally {
         conn.close()
+      }
+    } else {
+      intercept[SQLException] {
+        val conn = DriverManager.getConnection(jdbcUrlWithConf, customUser, customPasswd)
+        try {
+          val statement = conn.createStatement()
+          statement.executeQuery("select engine_name()")
+        } finally {
+          conn.close()
+        }
       }
     }
   }

@@ -171,7 +171,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       ldapUser,
       "--password",
       ldapUserPasswd)
-    result = testPrematureExitForControlCli(deleteArgs, "\"success\":true")
+    result = testPrematureExitForControlCli(deleteArgs, "\"success\" : true")
 
     eventually(timeout(3.seconds), interval(200.milliseconds)) {
       assert(MetricsSystem.counterValue(
@@ -230,7 +230,7 @@ class BatchCliSuite extends RestClientTestHelper with TestPrematureExit with Bat
       batchId,
       "--authSchema",
       "spnego")
-    result = testPrematureExitForControlCli(deleteArgs, "\"success\":true")
+    result = testPrematureExitForControlCli(deleteArgs, "\"success\" : true")
   }
 
   test("log batch test") {

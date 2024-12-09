@@ -108,6 +108,59 @@ It follows the [Hadoop GroupsMapping](https://hadoop.apache.org/docs/current/had
 
 The mechanisms of `SparkContext`, `SparkSession` and TTL works similarly to USER share level.
 
+Here is an example to configure `HadoopGroupProvider` to use LDAP-based group mapping.
+1. Add the properties shown in the example below to the `core-site.xml` file. You will need to provide the value for the bind user, the bind password, and other properties specific to your LDAP instance, and make sure that object class, user, and group filters match the values specified in your LDAP instance.
+
+```xml
+<property>
+  <name>hadoop.security.group.mapping</name>
+  <value>org.apache.hadoop.security.LdapGroupsMapping</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.url</name>
+  <value>ldap://localhost:389</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.base</name>
+  <value>dc=example,dc=com</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.bind.user</name>
+  <value>cn=Manager,dc=example,dc=com</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.bind.password</name>
+  <value>example</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.search.filter.user</name>
+  <value>(&(objectClass=posixAccount)(cn={0}))</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.search.filter.group</name>
+  <value>(objectClass=posixGroup)</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.search.attr.member</name>
+  <value>memberuid</value>
+</property>
+
+<property>
+  <name>hadoop.security.group.mapping.ldap.search.attr.group.name</name>
+  <value>cn</value>
+</property>
+```
+
+2. Use the applicable instructions to re-start the HDFS NameNode and the YARN ResourceManager.
+3. Verify LDAP group mapping by running the `hdfs groups` command. This command will fetch groups from LDAP for the current user. Note that with LDAP group mapping configured, the HDFS permissions can leverage groups defined in LDAP for access control.
+
 **Tips for authorization in GROUP share level**:
 
 The session user and the primary group name(as sparkUser/execute user) will be both accessible at engine-side.

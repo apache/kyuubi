@@ -24,7 +24,7 @@ on:
 jobs:
   publish-snapshot:
     if: ${{ startsWith(github.repository, 'apache/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -52,7 +52,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Publish Snapshot Jar to Nexus - ${{ matrix.branch }}
         env:
           ASF_USERNAME: ${{ secrets.NEXUS_USER }}

@@ -25,7 +25,7 @@ jobs:
   push_to_registry:
     name: Push Snapshot Docker Image to Docker Hub
     if: ${{ startsWith(github.repository, 'apache/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -40,7 +40,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Build and Push Kyuubi Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           # build cache on Github Actions, See: https://docs.docker.com/build/cache/backends/gha/#using-dockerbuild-push-action
           cache-from: type=gha

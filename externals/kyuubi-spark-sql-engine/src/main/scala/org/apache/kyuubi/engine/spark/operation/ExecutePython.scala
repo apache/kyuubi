@@ -40,8 +40,11 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYU
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.util.JsonUtils
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.TempFileCleanupUtils
+import org.apache.kyuubi.util.reflect.DynFields
 
 class ExecutePython(
     session: Session,
@@ -56,14 +59,14 @@ class ExecutePython(
   override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
+    if (result == null) {
       new StructType().add("output", "string")
         .add("status", "string")
         .add("ename", "string")
         .add("evalue", "string")
         .add("traceback", "array<string>")
     } else {
-      result.schema
+      super.resultSchema
     }
   }
 
@@ -171,6 +174,14 @@ class ExecutePython(
       }
     }
   }
+
+  override def cleanup(targetState: OperationState): Unit = {
+    if (!isTerminalState(state)) {
+      info(s"Staring to cancel python code: $statement")
+      worker.interrupt()
+    }
+    super.cleanup(targetState)
+  }
 }
 
 case class SessionPythonWorker(
@@ -224,6 +235,21 @@ case class SessionPythonWorker(
     errorReader.interrupt()
     pythonWorkerMonitor.interrupt()
     workerProcess.destroy()
+  }
+
+  def interrupt(): Unit = {
+    val pid = DynFields.builder()
+      .hiddenImpl(workerProcess.getClass, "pid")
+      .build[java.lang.Integer](workerProcess)
+      .get()
+    // sends a SIGINT (interrupt) signal, similar to Ctrl-C
+    val builder = new ProcessBuilder(Seq("kill", "-2", pid.toString).asJava)
+    val process = builder.start()
+    val exitCode = process.waitFor()
+    process.destroy()
+    if (exitCode != 0) {
+      error(s"Process `${builder.command().asScala.mkString(" ")}` exit with value: $exitCode")
+    }
   }
 }
 
@@ -373,7 +399,7 @@ object ExecutePython extends Logging {
     val source = getClass.getClassLoader.getResourceAsStream(s"python/$pyfile")
 
     val file = new File(pythonPath.toFile, pyfile)
-    file.deleteOnExit()
+    TempFileCleanupUtils.deleteOnExit(file)
 
     val sink = new FileOutputStream(file)
     val buf = new Array[Byte](1024)

@@ -20,5 +20,5 @@ package org.apache.kyuubi.server.http.authentication
 object AuthSchemes extends Enumeration {
   type AuthScheme = Value
 
-  val BASIC, NEGOTIATE, KYUUBI_INTERNAL = Value
+  val BASIC, BEARER, NEGOTIATE, KYUUBI_INTERNAL = Value
 }

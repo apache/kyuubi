@@ -53,29 +53,51 @@
           :value="item" />
       </el-select>
     </el-space>
-    <section>
-      <MonacoEditor
-        ref="monacoEditor"
-        v-model="editorVariables.content"
-        :language="editorVariables.language"
-        :theme="theme"
-        @editor-mounted="editorMounted"
-        @change="handleContentChange"
-        @editor-save="editorSave" />
-    </section>
-    <el-tabs v-model="activeTab" type="card" class="result-el-tabs">
-      <el-tab-pane
-        v-loading="resultLoading"
-        :label="`${$t('result')}${
-          sqlResult?.length ? ` (${sqlResult?.length})` : ''
-        }`"
-        name="result">
-        <Result :data="sqlResult" :error-messages="errorMessages" />
-      </el-tab-pane>
-      <el-tab-pane v-loading="logLoading" :label="$t('log')" name="log">
-        <Log :data="sqlLog" />
-      </el-tab-pane>
-    </el-tabs>
+    <div ref="box" class="box">
+      <div ref="sqlEditor" class="sqlEditor">
+        <MonacoEditor
+          ref="monacoEditor"
+          v-model="editorVariables.content"
+          :language="editorVariables.language"
+          :theme="theme"
+          @editor-mounted="editorMounted"
+          @change="handleContentChange"
+          @editor-save="editorSave" />
+      </div>
+      <div ref="resizer" class="resizer"></div>
+      <div ref="queryResult" class="queryResult">
+        <el-tabs
+          v-model="activeTab"
+          type="card"
+          class="result-el-tabs"
+          :class="{ 'hide-query-detail': !showQueryDetail.valueOf() }">
+          <el-tab-pane
+            v-loading="resultLoading"
+            :label="`${$t('result')}${
+              sqlResult?.length ? ` (${sqlResult?.length})` : ''
+            }`"
+            name="result">
+            <Result :data="sqlResult" :error-messages="errorMessages" />
+          </el-tab-pane>
+          <el-tab-pane v-loading="logLoading" :label="$t('log')" name="log">
+            <Log :data="sqlLog" />
+          </el-tab-pane>
+        </el-tabs>
+
+        <div style="position: absolute; right: 0; top: 0">
+          <div class="el-tabs__item" @click="minimizeQueryResultTab">
+            <el-icon>
+              <ArrowDown />
+            </el-icon>
+          </div>
+          <div class="el-tabs__item" @click="maximizeQueryResultTab">
+            <el-icon>
+              <ArrowUp />
+            </el-icon>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -83,7 +105,7 @@
   import MonacoEditor from '@/components/monaco-editor/index.vue'
   import Result from './Result.vue'
   import Log from './Log.vue'
-  import { ref, reactive, onUnmounted, toRaw } from 'vue'
+  import { ref, reactive, onUnmounted, toRaw, onMounted } from 'vue'
   import type { Ref } from 'vue'
   import * as monaco from 'monaco-editor'
   import { format } from 'sql-formatter'
@@ -128,6 +150,82 @@
     content: '',
     options: {}
   })
+
+  const sqlEditor = ref()
+  const queryResult = ref()
+  const box = ref()
+  const resizer = ref()
+
+  const showQueryDetail = ref(true)
+  const sqlEditorMinHeight = 64
+  const resizerHeight = 10
+  const queryResultHiddenThreshold = 210
+
+  onMounted(() => {
+    handleResizerDrag()
+  })
+
+  function setEditorAndResultHeights(
+    sqlEditorHeight: number,
+    queryResultHeight: number
+  ): void {
+    sqlEditor.value.style.height = `${sqlEditorHeight}px`
+    queryResult.value.style.height = `${queryResultHeight}px`
+  }
+
+  function maximizeQueryResultTab(): void {
+    showQueryDetail.value = true
+    const sqlEditorHeight = sqlEditorMinHeight
+    const queryResultHeight =
+      box.value.clientHeight - sqlEditorMinHeight - resizerHeight
+    setEditorAndResultHeights(sqlEditorHeight, queryResultHeight)
+  }
+
+  function minimizeQueryResultTab(): void {
+    showQueryDetail.value = false
+    const sqlEditorHeight =
+      box.value.clientHeight - resizerHeight - sqlEditorMinHeight
+    setEditorAndResultHeights(sqlEditorHeight, 0)
+  }
+
+  function handleResizerDrag(): void {
+    const onMouseDown = (event: MouseEvent): void => {
+      const initialMouseY = event.clientY
+      const initialResizerTop = resizer.value.offsetTop
+
+      const onMouseMove = (moveEvent: MouseEvent): void => {
+        const currentMouseY = moveEvent.clientY
+        const distanceMoved =
+          initialResizerTop + (currentMouseY - initialMouseY)
+        const newSqlEditorHeight = Math.max(distanceMoved, sqlEditorMinHeight)
+        const newQueryResultHeight =
+          box.value.clientHeight - distanceMoved - resizerHeight
+        if (newQueryResultHeight < queryResultHiddenThreshold) {
+          minimizeQueryResultTab()
+        } else {
+          showQueryDetail.value = true
+          resizer.value.style.top = `${distanceMoved}px`
+          setEditorAndResultHeights(newSqlEditorHeight, newQueryResultHeight)
+        }
+      }
+
+      const onMouseUp = (): void => {
+        document.removeEventListener('mousemove', onMouseMove)
+        document.removeEventListener('mouseup', onMouseUp)
+        if (resizer.value.releaseCapture) {
+          resizer.value.releaseCapture()
+        }
+      }
+
+      document.addEventListener('mousemove', onMouseMove)
+      document.addEventListener('mouseup', onMouseUp)
+      if (resizer.value.setCapture) {
+        resizer.value.setCapture()
+      }
+      event.preventDefault()
+    }
+    resizer.value.addEventListener('mousedown', onMouseDown)
+  }
 
   const editorMounted = (editor: monaco.editor.IStandaloneCodeEditor) => {
     editorVariables.editor = editor
@@ -284,9 +382,40 @@
       }
     }
 
-    > section {
-      height: 180px;
-      border: 1px solid #e0e0e0;
+    .box {
+      height: calc(100vh - 190px);
+    }
+
+    .sqlEditor {
+      width: 100%;
+      height: calc(60% - 10px);
+      background: #ffffff;
+      float: left;
+      box-sizing: border-box;
+    }
+
+    .resizer {
+      cursor: row-resize;
+      float: left;
+      width: 100%;
+      height: 2px;
+      background-color: #e4e7ed;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+
+    .queryResult {
+      position: relative;
+      float: left;
+      width: 100%;
+      height: calc(32% - 10px);
+      box-sizing: border-box;
+    }
+  }
+
+  :deep(.hide-query-detail) {
+    .el-tabs__content {
+      display: none;
     }
   }
 </style>

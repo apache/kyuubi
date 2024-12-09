@@ -78,7 +78,8 @@ object JettyServer {
       host: String,
       port: Int,
       poolSize: Int,
-      stopTimeout: Long): JettyServer = {
+      stopTimeout: Long,
+      sendServerVersion: Boolean): JettyServer = {
     val pool = new QueuedThreadPool(poolSize)
     pool.setName(name)
     pool.setDaemon(true)
@@ -95,6 +96,7 @@ object JettyServer {
 
     val serverExecutor = new ScheduledExecutorScheduler(s"$name-JettyScheduler", true)
     val httpConf = new HttpConfiguration()
+    httpConf.setSendServerVersion(sendServerVersion)
     val connector = new ServerConnector(
       server,
       null,

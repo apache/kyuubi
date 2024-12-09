@@ -15,20 +15,20 @@
   limitations under the License.
 */}}
 
-{{- if and .Values.monitoring.prometheus.enabled (eq .Values.metricsReporters "PROMETHEUS") .Values.serviceMonitor.enabled }}
+{{- if and .Values.metrics.enabled (.Values.metrics.reporters | nospace | splitList "," | has "PROMETHEUS") .Values.metrics.serviceMonitor.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
-    {{- if .Values.serviceMonitor.labels }}
-    {{- toYaml .Values.serviceMonitor.labels | nindent 4 }}
+    {{- if .Values.metrics.serviceMonitor.labels }}
+    {{- toYaml .Values.metrics.serviceMonitor.labels | nindent 4 }}
     {{- end }}
 spec:
   selector:
     matchLabels:
       {{- include "kyuubi.selectorLabels" . | nindent 6 }}
   endpoints:
-    {{- toYaml .Values.serviceMonitor.endpoints | nindent 4 }}
+    {{- toYaml .Values.metrics.serviceMonitor.endpoints | nindent 4 }}
 {{- end }}

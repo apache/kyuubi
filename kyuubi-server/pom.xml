@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.10.0-SNAPSHOT</version>
+        <version>1.11.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>kyuubi-server_${scala.binary.version}</artifactId>
@@ -276,10 +276,21 @@
             <scope>test</scope>
         </dependency>
 
+        <!--
+          The server module does not consume the `spark-sql-engine` classes, but it supposes that
+          `spark-sql-engine`'s jar existed on the target folder, so here we declare it as a dependency
+          to make sure that Maven always processes `spark-sql-engine` module before the server module.
+          IntelliJ IDEA 2024.1 fixed the IDEA-93855, thus the relocated classes inside the
+          `spark-sql-engine`'s shaded jar are visible in the server module in IDEA, for example,
+          `org.apache.kyuubi.shaded.spark.connect.proto.ExecutePlanRequest`, which silently breaks
+          the IDEA code analysis and jumping capabilities. It seems to be a workaround by changing
+          the dependency type from `jar`(default value) to `pom`.
+         -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-spark-sql-engine_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
 

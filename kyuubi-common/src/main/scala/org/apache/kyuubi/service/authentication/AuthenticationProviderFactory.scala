@@ -19,6 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.util.ClassUtils
@@ -47,10 +49,9 @@ object AuthenticationProviderFactory {
     case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
-      if (className.isEmpty) {
-        throw new AuthenticationException(
-          "authentication.custom.class must be set when auth method was CUSTOM.")
-      }
+      require(
+        className.nonEmpty,
+        "kyuubi.authentication.custom.class must be set when auth method was CUSTOM.")
       ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
@@ -61,5 +62,29 @@ object AuthenticationProviderFactory {
     } else {
       new AnonymousAuthenticationProviderImpl
     }
+  }
+
+  def getHttpBasicAuthenticationProvider(
+      method: AuthMethod,
+      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
+    case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
+    case AuthMethods.CUSTOM =>
+      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
+      require(
+        className.nonEmpty,
+        "kyuubi.authentication.custom.basic.class must be set for http basic authentication.")
+      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
+    case _ => throw new AuthenticationException("Not a valid authentication method")
+  }
+
+  def getHttpBearerAuthenticationProvider(
+      providerClass: String,
+      conf: KyuubiConf): TokenAuthenticationProvider = {
+    require(
+      !StringUtils.isBlank(providerClass),
+      "kyuubi.authentication.custom.bearer.class must be set for http bearer authentication.")
+    ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
   }
 }

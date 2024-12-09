@@ -19,6 +19,8 @@
 
 # This script is inspired by Apache Spark
 
+set -x
+
 echo "=================================="
 echo "Free up disk space on CI system"
 echo "=================================="
@@ -28,28 +30,34 @@ dpkg-query -Wf '${Installed-Size}\t${Package}\n' | sort -n | tail -n 100
 df -h
 
 echo "Removing large packages"
-sudo rm -rf /usr/share/dotnet/
-sudo rm -rf /usr/share/php/
-sudo rm -rf /usr/local/graalvm/
-sudo rm -rf /usr/local/.ghcup/
-sudo rm -rf /usr/local/share/powershell
-sudo rm -rf /usr/local/share/chromium
-sudo rm -rf /usr/local/lib/android
-sudo rm -rf /usr/local/lib/node_modules
+sudo rm -rf /usr/share/dotnet/ \
+  /usr/share/php/ \
+  /usr/local/graalvm/ \
+  /usr/local/.ghcup/ \
+  /usr/local/share/powershell \
+  /usr/local/share/chromium \
+  /usr/local/lib/android \
+  /usr/local/lib/node_modules \
+  /opt/az \
+  /opt/hostedtoolcache/CodeQL \
+  /opt/hostedtoolcache/go \
+  /opt/hostedtoolcache/node
 
-sudo rm -rf /opt/az
-sudo rm -rf /opt/hostedtoolcache/CodeQL
-sudo rm -rf /opt/hostedtoolcache/go
-sudo rm -rf /opt/hostedtoolcache/node
+df -h
 
-sudo apt-get remove --purge -y '^aspnet.*'
-sudo apt-get remove --purge -y '^dotnet-.*'
-sudo apt-get remove --purge -y '^llvm-.*'
-sudo apt-get remove --purge -y 'php.*'
-sudo apt-get remove --purge -y '^temurin-\d{n,}.*'
-sudo apt-get remove --purge -y snapd google-chrome-stable microsoft-edge-stable firefox
-sudo apt-get remove --purge -y azure-cli google-cloud-sdk mono-devel msbuild powershell libgl1-mesa-dri
-sudo apt-get autoremove --purge -y
-sudo apt-get clean
+sudo apt-get remove --purge -y \
+  '^aspnet.*' \
+  '^dotnet-.*' \
+  '^llvm.*' \
+  'php.*' \
+  '^temurin-\d{n,}.*' \
+  snapd google-chrome-stable microsoft-edge-stable firefox \
+  azure-cli google-cloud-sdk mono-devel msbuild powershell libgl1-mesa-dri
+
+df -h
+
+sudo apt-get autoremove --purge -y \
+  && sudo apt-get clean \
+  && sudo apt-get autoclean
 
 df -h

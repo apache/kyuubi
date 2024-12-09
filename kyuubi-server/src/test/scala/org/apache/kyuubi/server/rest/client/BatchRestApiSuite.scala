@@ -16,10 +16,14 @@
  */
 
 package org.apache.kyuubi.server.rest.client
-
-import java.nio.file.Paths
+import java.io.{File, FileOutputStream}
+import java.nio.file.{Files, Path, Paths}
 import java.util.Base64
+import java.util.zip.{ZipEntry, ZipOutputStream}
 
+import scala.collection.JavaConverters._
+
+import org.apache.http.client.HttpResponseException
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{BatchTestHelper, KYUUBI_VERSION, RestClientTestHelper}
@@ -29,6 +33,8 @@ import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.util.AssertionUtils.interceptCauseContains
+import org.apache.kyuubi.util.GoldenFileUtils.getCurrentModuleHome
 
 class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
@@ -97,6 +103,119 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     assert(batch.getKyuubiInstance === fe.connectionUrl)
     assert(batch.getBatchType === "SPARK")
     basicKyuubiRestClient.close()
+  }
+
+  test("basic batch rest client with uploading resource and extra resources") {
+    def preparePyModulesZip(
+        srcFolderPath: Path,
+        targetZipFileName: String,
+        excludedFileNames: Set[String] = Set.empty[String]): String = {
+
+      def addFolderToZip(zos: ZipOutputStream, folder: File, parentFolder: String = ""): Unit = {
+        if (folder.isDirectory) {
+          folder.listFiles().foreach { file =>
+            val fileName = file.getName
+            if (!(excludedFileNames.contains(fileName) || fileName.startsWith("."))) {
+              if (file.isDirectory) {
+                val folderPath =
+                  if (parentFolder.isEmpty) fileName else parentFolder + "/" + fileName
+                addFolderToZip(zos, file, folderPath)
+              } else {
+                val filePath = if (parentFolder.isEmpty) fileName else parentFolder + "/" + fileName
+                zos.putNextEntry(new ZipEntry(filePath))
+                zos.write(Files.readAllBytes(file.toPath))
+                zos.closeEntry()
+              }
+            }
+          }
+        }
+      }
+
+      val zipFilePath = Paths.get(System.getProperty("java.io.tmpdir"), targetZipFileName).toString
+      val fileOutputStream = new FileOutputStream(zipFilePath)
+      val zipOutputStream = new ZipOutputStream(fileOutputStream)
+      try {
+        addFolderToZip(zipOutputStream, srcFolderPath.toFile)
+      } finally {
+        zipOutputStream.close()
+        fileOutputStream.close()
+      }
+      zipFilePath
+    }
+
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(ldapUser)
+        .password(ldapUserPasswd)
+        .socketTimeout(5 * 60 * 1000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val pythonScriptsPath = s"${getCurrentModuleHome(this)}/src/test/resources/python/"
+    val appScriptFileName = "app.py"
+    val appScriptFile = Paths.get(pythonScriptsPath, appScriptFileName).toFile
+    val modulesZipFileName = "pymodules.zip"
+    val modulesZipFile = preparePyModulesZip(
+      srcFolderPath = Paths.get(pythonScriptsPath),
+      targetZipFileName = modulesZipFileName,
+      excludedFileNames = Set(appScriptFileName))
+
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    requestObj.setBatchType("PYSPARK")
+    requestObj.setName("pyspark-test")
+    requestObj.setExtraResourcesMap(Map("spark.submit.pyFiles" -> modulesZipFileName).asJava)
+    val extraResources = List(modulesZipFile)
+    val batch: Batch = batchRestApi.createBatch(requestObj, appScriptFile, extraResources.asJava)
+
+    try {
+      assert(batch.getKyuubiInstance === fe.connectionUrl)
+      assert(batch.getBatchType === "PYSPARK")
+      val batchId = batch.getId
+      assert(batchId !== null)
+
+      eventually(timeout(1.minutes), interval(1.seconds)) {
+        val batch = batchRestApi.getBatchById(batchId)
+        assert(batch.getState == "FINISHED")
+      }
+
+    } finally {
+      Files.deleteIfExists(Paths.get(modulesZipFile))
+      basicKyuubiRestClient.close()
+    }
+  }
+
+  test("basic batch rest client with uploading resource and extra resources of unuploaded") {
+
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(ldapUser)
+        .password(ldapUserPasswd)
+        .socketTimeout(5 * 60 * 1000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val pythonScriptsPath = s"${getCurrentModuleHome(this)}/src/test/resources/python/"
+    val appScriptFileName = "app.py"
+    val appScriptFile = Paths.get(pythonScriptsPath, appScriptFileName).toFile
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    requestObj.setBatchType("PYSPARK")
+    requestObj.setName("pyspark-test")
+    requestObj.setExtraResourcesMap(Map(
+      "spark.submit.pyFiles" -> "non-existed-zip.zip",
+      "spark.files" -> "non-existed-jar.jar",
+      "spark.some.config1" -> "",
+      "spark.some.config2" -> " ").asJava)
+
+    try {
+      interceptCauseContains[KyuubiRestException, HttpResponseException] {
+        batchRestApi.createBatch(requestObj, appScriptFile, List().asJava)
+      }("required extra resource files [non-existed-jar.jar,non-existed-zip.zip]" +
+        " are not uploaded in the multipart form data")
+    } finally {
+      basicKyuubiRestClient.close()
+    }
   }
 
   test("basic batch rest client with invalid user") {

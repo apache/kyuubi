@@ -772,6 +772,49 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
     }
   }
 
+  test("optimize sort by backquoted column name") {
+    withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
+      withTable("up") {
+        sql(s"DROP TABLE IF EXISTS up")
+        val target = Seq(
+          Seq(0, 0),
+          Seq(1, 0),
+          Seq(0, 1),
+          Seq(1, 1),
+          Seq(2, 0),
+          Seq(3, 0),
+          Seq(2, 1),
+          Seq(3, 1),
+          Seq(0, 2),
+          Seq(1, 2),
+          Seq(0, 3),
+          Seq(1, 3),
+          Seq(2, 2),
+          Seq(3, 2),
+          Seq(2, 3),
+          Seq(3, 3))
+        sql(s"CREATE TABLE up (c1 INT, `@c2` INT, c3 INT)")
+        sql(s"INSERT INTO TABLE up VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+
+        sql("OPTIMIZE up ZORDER BY c1, `@c2`")
+        val res = sql("SELECT c1, `@c2` FROM up").collect()
+
+        assert(res.length == 16)
+
+        for (i <- target.indices) {
+          val t = target(i)
+          val r = res(i)
+          assert(t(0) == r.getInt(0))
+          assert(t(1) == r.getInt(1))
+        }
+      }
+    }
+  }
+
   def createParser: ParserInterface
 }
 

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.10.0-SNAPSHOT</version>
+        <version>1.11.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -121,6 +121,11 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
         </dependency>
 
         <dependency>

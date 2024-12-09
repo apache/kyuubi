@@ -56,7 +56,7 @@ For more configurations, please see the HA section of [Introduction to the Kyuub
 ### Pseudo mode
 
 When `kyuubi.ha.addresses` is not configured, a `k.i.` will start an embedded zookeeper service and expose the address of itself there.
-In this pseduo mode, the `k.i.` can be connected by clients through both raw ip address and zk quorum + namespace.
+In this pseudo mode, the `k.i.` can be connected by clients through both raw ip address and zk quorum + namespace.
 But it doesn't have any availability to being highly available.
 
 ### Production mode

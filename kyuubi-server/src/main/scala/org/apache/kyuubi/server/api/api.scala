@@ -26,7 +26,7 @@ import javax.ws.rs.ext.{ExceptionMapper, Provider}
 import org.eclipse.jetty.server.handler.ContextHandler
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService, KyuubiServer}
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 private[api] trait ApiRequestContext {
 
@@ -35,11 +35,6 @@ private[api] trait ApiRequestContext {
 
   @Context
   protected var httpRequest: HttpServletRequest = _
-
-  protected lazy val batchService: Option[KyuubiBatchService] =
-    KyuubiServer.kyuubiServer.getServices
-      .find(_.isInstanceOf[KyuubiBatchService])
-      .map(_.asInstanceOf[KyuubiBatchService])
 
   final protected def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
 }

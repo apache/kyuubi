@@ -32,7 +32,7 @@ concurrency:
 jobs:
   rat:
     name: License
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Setup JDK 8
@@ -41,14 +41,13 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - run: >-
           build/mvn org.apache.rat:apache-rat-plugin:check
           -Ptpcds -Pkubernetes-it
           -Pspark-3.3 -Pspark-3.4 -Pspark-3.5
       - name: Upload rat report
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: rat-report
           path: "**/target/rat*.txt"

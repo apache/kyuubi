@@ -37,6 +37,7 @@ trait Operation {
   def getHandle: OperationHandle
   def getStatus: OperationStatus
   def getOperationLog: Option[OperationLog]
+  def withOperationLog(f: => Unit): Unit
 
   def getBackgroundHandle: Future[_]
   def shouldRunAsync: Boolean

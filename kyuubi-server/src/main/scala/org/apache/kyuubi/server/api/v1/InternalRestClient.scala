@@ -19,6 +19,8 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.Base64
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, CloseBatchResponse, OperationLog}
 import org.apache.kyuubi.client.auth.AuthHeaderGenerator
@@ -38,6 +40,7 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
  */
 class InternalRestClient(
     kyuubiInstance: String,
+    proxyClientIpHeader: String,
     socketTimeout: Int,
     connectTimeout: Int,
     securityEnabled: Boolean,
@@ -51,21 +54,30 @@ class InternalRestClient(
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
 
-  def getBatch(user: String, batchId: String): Batch = {
+  def getBatch(user: String, clientIp: String, batchId: String): Batch = {
     withAuthUser(user) {
-      internalBatchRestApi.getBatchById(batchId)
+      internalBatchRestApi.getBatchById(batchId, Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 
-  def getBatchLocalLog(user: String, batchId: String, from: Int, size: Int): OperationLog = {
+  def getBatchLocalLog(
+      user: String,
+      clientIp: String,
+      batchId: String,
+      from: Int,
+      size: Int): OperationLog = {
     withAuthUser(user) {
-      internalBatchRestApi.getBatchLocalLog(batchId, from, size)
+      internalBatchRestApi.getBatchLocalLog(
+        batchId,
+        from,
+        size,
+        Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 
-  def deleteBatch(user: String, batchId: String): CloseBatchResponse = {
+  def deleteBatch(user: String, clientIp: String, batchId: String): CloseBatchResponse = {
     withAuthUser(user) {
-      internalBatchRestApi.deleteBatch(batchId)
+      internalBatchRestApi.deleteBatch(batchId, Map(proxyClientIpHeader -> clientIp).asJava)
     }
   }
 

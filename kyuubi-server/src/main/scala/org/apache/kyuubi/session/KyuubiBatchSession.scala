@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.file.Path
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.util.BatchUtils._
@@ -79,6 +81,9 @@ class KyuubiBatchSession(
   override val normalizedConf: Map[String, String] =
     sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
 
+  private[kyuubi] def resourceUploadFolderPath: Path =
+    KyuubiApplicationManager.sessionUploadFolderPath(handle.identifier.toString)
+
   val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
@@ -101,8 +106,8 @@ class KyuubiBatchSession(
     batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
-  private[kyuubi] val isResourceUploaded: Boolean =
-    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, "false").toBoolean
+  private[kyuubi] lazy val isResourceUploaded: Boolean =
+    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, false.toString).toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -144,7 +149,7 @@ class KyuubiBatchSession(
       batchType,
       optimizedConf,
       sessionManager.getConf)
-    if (resource != SparkProcessBuilder.INTERNAL_RESOURCE && !isResourceUploaded) {
+    if (resource != SparkProcessBuilder.INTERNAL_RESOURCE) {
       KyuubiApplicationManager.checkApplicationAccessPath(resource, sessionManager.getConf)
     }
   }
@@ -158,7 +163,10 @@ class KyuubiBatchSession(
         Map(KyuubiConf.KUBERNETES_CONTEXT.key -> context)
       }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
         Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
-      }.getOrElse(Map.empty)
+      }.getOrElse(Map.empty) ++ (batchJobSubmissionOp.builder match {
+        case builder: SparkProcessBuilder => builder.appendPodNameConf(optimizedConf)
+        case _ => Map.empty[String, String]
+      })
     }
 
     (metadata, fromRecovery) match {

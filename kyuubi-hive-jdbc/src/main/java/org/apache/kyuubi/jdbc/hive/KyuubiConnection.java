@@ -21,6 +21,7 @@ import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.*;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_KEY;
 import static org.apache.kyuubi.jdbc.hive.Utils.HIVE_SERVER2_RETRY_TRUE;
 
+import com.google.common.base.Preconditions;
 import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -66,6 +67,7 @@ import org.apache.kyuubi.jdbc.hive.cli.RowSet;
 import org.apache.kyuubi.jdbc.hive.cli.RowSetFactory;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.shaded.thrift.TConfiguration;
 import org.apache.kyuubi.shaded.thrift.TException;
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol;
 import org.apache.kyuubi.shaded.thrift.transport.THttpClient;
@@ -418,7 +420,13 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     boolean useSsl = isSslConnection();
     // Create an http client from the configs
     httpClient = getHttpClient(useSsl);
-    transport = new THttpClient(getServerHttpUrl(useSsl), httpClient);
+    int maxMessageSize = getMaxMessageSize();
+    TConfiguration.Builder tConfBuilder = TConfiguration.custom();
+    if (maxMessageSize > 0) {
+      tConfBuilder.setMaxMessageSize(maxMessageSize);
+    }
+    TConfiguration tConf = tConfBuilder.build();
+    transport = new THttpClient(tConf, getServerHttpUrl(useSsl), httpClient);
     return transport;
   }
 
@@ -446,19 +454,33 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     if (!isSaslAuthMode()) {
       requestInterceptor = null;
     } else if (isPlainSaslAuthMode()) {
-      /*
-       * Add an interceptor to pass username/password in the header. In https mode, the entire
-       * information is encrypted
-       */
-      requestInterceptor =
-          new HttpBasicAuthInterceptor(
-              getUserName(),
-              getPassword(),
-              cookieStore,
-              cookieName,
-              useSsl,
-              additionalHttpHeaders,
-              customCookies);
+      if (isJwtAuthMode()) {
+        final String signedJwt = getJWT();
+        Preconditions.checkArgument(
+            signedJwt != null && !signedJwt.isEmpty(),
+            "For jwt auth mode," + " a signed jwt must be provided");
+        /*
+         * Add an interceptor to pass jwt token in the header. In https mode, the entire
+         * information is encrypted
+         */
+        requestInterceptor =
+            new HttpJwtAuthRequestInterceptor(
+                signedJwt, cookieStore, cookieName, useSsl, additionalHttpHeaders, customCookies);
+      } else {
+        /*
+         * Add an interceptor to pass username/password in the header. In https mode, the entire
+         * information is encrypted
+         */
+        requestInterceptor =
+            new HttpBasicAuthInterceptor(
+                getUserName(),
+                getPassword(),
+                cookieStore,
+                cookieName,
+                useSsl,
+                additionalHttpHeaders,
+                customCookies);
+      }
     } else {
       // Configure http client for kerberos-based authentication
       Subject subject = createSubject();
@@ -581,8 +603,41 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     return httpClientBuilder.build();
   }
 
+  private String getJWT() {
+    String jwtCredential = getJWTStringFromSession();
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      jwtCredential = getJWTStringFromEnv();
+    }
+    return jwtCredential;
+  }
+
+  private String getJWTStringFromEnv() {
+    String jwtCredential = System.getenv(JdbcConnectionParams.AUTH_JWT_ENV);
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      LOG.debug("No JWT is specified in env variable {}", JdbcConnectionParams.AUTH_JWT_ENV);
+    } else {
+      int startIndex = Math.max(0, jwtCredential.length() - 7);
+      String lastSevenChars = jwtCredential.substring(startIndex);
+      LOG.debug("Fetched JWT (ends with {}) from the env.", lastSevenChars);
+    }
+    return jwtCredential;
+  }
+
+  private String getJWTStringFromSession() {
+    String jwtCredential = sessConfMap.get(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
+    if (jwtCredential == null || jwtCredential.isEmpty()) {
+      LOG.debug("No JWT is specified in connection string.");
+    } else {
+      int startIndex = Math.max(0, jwtCredential.length() - 7);
+      String lastSevenChars = jwtCredential.substring(startIndex);
+      LOG.debug("Fetched JWT (ends with {}) from the session.", lastSevenChars);
+    }
+    return jwtCredential;
+  }
+
   /** Create underlying SSL or non-SSL transport */
-  private TTransport createUnderlyingTransport() throws TTransportException {
+  private TTransport createUnderlyingTransport() throws TTransportException, SQLException {
+    int maxMessageSize = getMaxMessageSize();
     TTransport transport = null;
     // Note: Thrift returns an SSL socket that is already bound to the specified host:port
     // Therefore an open called on this would be a no-op later
@@ -596,17 +651,44 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
-        transport = ThriftUtils.getSSLSocket(host, port, connectTimeout, socketTimeout);
+        transport =
+            ThriftUtils.getSSLSocket(host, port, connectTimeout, socketTimeout, maxMessageSize);
       } else {
         transport =
             ThriftUtils.getSSLSocket(
-                host, port, connectTimeout, socketTimeout, sslTrustStore, sslTrustStorePassword);
+                host,
+                port,
+                connectTimeout,
+                socketTimeout,
+                sslTrustStore,
+                sslTrustStorePassword,
+                maxMessageSize);
       }
     } else {
       // get non-SSL socket transport
-      transport = ThriftUtils.getSocketTransport(host, port, connectTimeout, socketTimeout);
+      transport =
+          ThriftUtils.getSocketTransport(host, port, connectTimeout, socketTimeout, maxMessageSize);
     }
     return transport;
+  }
+
+  private int getMaxMessageSize() throws SQLException {
+    String maxMessageSize = sessConfMap.get(JdbcConnectionParams.THRIFT_CLIENT_MAX_MESSAGE_SIZE);
+    if (maxMessageSize == null) {
+      return -1;
+    }
+
+    try {
+      return Integer.parseInt(maxMessageSize);
+    } catch (Exception e) {
+      String errFormat =
+          "Invalid {} configuration of '{}'. Expected an integer specifying number of bytes. "
+              + "A configuration of <= 0 uses default max message size.";
+      String errMsg =
+          String.format(
+              errFormat, JdbcConnectionParams.THRIFT_CLIENT_MAX_MESSAGE_SIZE, maxMessageSize);
+      throw new SQLException(errMsg, "42000", e);
+    }
   }
 
   /**
@@ -915,6 +997,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isPlainSaslAuthMode() {
     return isSaslAuthMode() && !hasSessionValue(AUTH_PRINCIPAL);
+  }
+
+  private boolean isJwtAuthMode() {
+    return JdbcConnectionParams.AUTH_TYPE_JWT.equalsIgnoreCase(
+            sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))
+        || sessConfMap.containsKey(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
   }
 
   private boolean isKerberosAuthMode() {

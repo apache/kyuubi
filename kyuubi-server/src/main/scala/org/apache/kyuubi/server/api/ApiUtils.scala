@@ -22,7 +22,6 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
@@ -86,7 +85,7 @@ object ApiUtils extends Logging {
   }
 
   def operationEvent(operation: KyuubiOperation): dto.KyuubiOperationEvent = {
-    val opEvent = KyuubiOperationEvent(operation)
+    val opEvent = operation.getOperationEvent
     dto.KyuubiOperationEvent.builder()
       .statementId(opEvent.statementId)
       .remoteId(opEvent.remoteId)
@@ -108,7 +107,7 @@ object ApiUtils extends Logging {
   }
 
   def operationData(operation: KyuubiOperation): OperationData = {
-    val opEvent = KyuubiOperationEvent(operation)
+    val opEvent = operation.getOperationEvent
     new OperationData(
       opEvent.statementId,
       opEvent.remoteId,

@@ -25,6 +25,7 @@ import java.nio.file.{Files, Paths}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 
@@ -119,7 +120,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
 
     val memory = conf.get(ENGINE_FLINK_MEMORY)
     command += s"-Xmx$memory"
-    val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS)
+    val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       command += javaOptions.get
     }

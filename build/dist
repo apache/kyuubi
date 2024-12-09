@@ -215,7 +215,7 @@ else
   echo "Making distribution for Kyuubi $VERSION in '$DISTDIR'..."
 fi
 
-MVN_DIST_OPT="-DskipTests -Dmaven.javadoc.skip=true -Dmaven.scaladoc.skip=true -Dmaven.source.skip"
+MVN_DIST_OPT="-DskipTests -Dmaven.source.skip"
 
 if [[ "$ENABLE_WEBUI" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pweb-ui"
@@ -256,6 +256,8 @@ for arg in "$@"; do
         FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
     elif [[ $arg == *scala-2.13* ]]; then
         FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
+    else
+        FILTERED_ARGS+=("$arg")
     fi
 done
 

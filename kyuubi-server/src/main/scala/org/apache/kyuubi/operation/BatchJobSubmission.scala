@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.nio.file.{Files, Paths}
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
@@ -126,7 +125,10 @@ class BatchJobSubmission(
   }
 
   private[kyuubi] def killBatchApplication(): KillResponse = {
-    applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
+    val (killed, msg) =
+      applicationManager.killApplication(builder.appMgrInfo(), batchId, Some(session.user))
+    withOperationLog(warn(s"Kill batch response: killed: $killed, msg: $msg."))
+    (killed, msg)
   }
 
   private val applicationCheckInterval =
@@ -152,10 +154,20 @@ class BatchJobSubmission(
         engineId = appInfo.id,
         engineName = appInfo.name,
         engineUrl = appInfo.url.orNull,
-        engineState = appInfo.state.toString,
+        engineState = getAppState(state, appInfo.state).toString,
         engineError = appInfo.error,
         endTime = endTime)
       session.sessionManager.updateMetadata(metadataToUpdate)
+    }
+  }
+
+  private def getAppState(
+      opState: OperationState,
+      appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
+    if (opState == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
+      ApplicationState.UNKNOWN
+    } else {
+      appState
     }
   }
 
@@ -378,7 +390,21 @@ class BatchJobSubmission(
             // we can not change state safely
             killMessage = (false, s"batch $batchId is already terminal so can not kill it.")
           } else if (!isTerminalState(state)) {
-            // failed to kill, the kill message is enough
+            _applicationInfo = currentApplicationInfo()
+            _applicationInfo.map(_.state) match {
+              case Some(ApplicationState.FINISHED) =>
+                setState(OperationState.FINISHED)
+                updateBatchMetadata()
+              case Some(ApplicationState.FAILED) =>
+                setState(OperationState.ERROR)
+                updateBatchMetadata()
+              case Some(ApplicationState.UNKNOWN) |
+                  Some(ApplicationState.NOT_FOUND) |
+                  Some(ApplicationState.KILLED) =>
+                setState(OperationState.CANCELED)
+                updateBatchMetadata()
+              case _ => // failed to kill, the kill message is enough
+            }
           }
         }
       }
@@ -395,11 +421,15 @@ class BatchJobSubmission(
 
   private def cleanupUploadedResourceIfNeeded(): Unit = {
     if (session.isResourceUploaded) {
-      try {
-        Files.deleteIfExists(Paths.get(resource))
-      } catch {
-        case e: Throwable => error(s"Error deleting the uploaded resource: $resource", e)
-      }
+      Utils.deleteDirectoryRecursively(session.resourceUploadFolderPath.toFile)
+    }
+  }
+
+  def getPendingElapsedTime: Long = {
+    if (state == OperationState.PENDING) {
+      System.currentTimeMillis() - createTime
+    } else {
+      0L
     }
   }
 }

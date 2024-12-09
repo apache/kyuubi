@@ -644,8 +644,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s" [select] privilege on" +
           s" [$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name," +
           s"$db1/$srcTable2/age,$db1/$srcTable2/id]," +
-          s" [update] privilege on [$db1/$sinkTable1/id,$db1/$sinkTable1/age," +
-          s"$db1/$sinkTable1/name,$db1/$sinkTable1/city]"))
+          s" [update] privilege on [$db1/$sinkTable1]"))
       }
     }
   }

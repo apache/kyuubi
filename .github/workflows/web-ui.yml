@@ -17,7 +17,7 @@ concurrency:
 jobs:
   web-ui:
     name: Kyuubi Web UI check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -41,7 +41,7 @@ jobs:
           cache: npm
           cache-dependency-path: ./kyuubi-server/web-ui/package.json
       - name: Cache NPM dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ./kyuubi-server/web-ui/node_modules
           key: webui-dependencies-${{ hashFiles('kyuubi-server/web-ui/pnpm-lock.yaml') }}
@@ -50,6 +50,6 @@ jobs:
         run: |
           cd ./kyuubi-server/web-ui
           npm install pnpm@${PNPM_VERSION} -g
-          pnpm install
+          pnpm install --frozen-lockfile
           pnpm run coverage
           pnpm run build

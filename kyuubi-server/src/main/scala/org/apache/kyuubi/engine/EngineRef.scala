@@ -43,7 +43,6 @@ import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, 
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
-import org.apache.kyuubi.server.KyuubiServer
 
 /**
  * The description and functionality of an engine at server side
@@ -72,8 +71,8 @@ private[kyuubi] class EngineRef(
   private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
   // Server-side engine pool size threshold
-  private val poolThreshold: Int = Option(KyuubiServer.kyuubiServer).map(_.getConf)
-    .getOrElse(KyuubiConf()).get(ENGINE_POOL_SIZE_THRESHOLD)
+  private val poolThreshold: Int =
+    Option(engineManager).map(_.getConf).getOrElse(KyuubiConf()).get(ENGINE_POOL_SIZE_THRESHOLD)
 
   private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
 

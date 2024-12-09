@@ -24,6 +24,8 @@ import java.util.Locale
 
 import scala.util.control.NonFatal
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
@@ -133,8 +135,9 @@ object KyuubiApplicationManager {
   }
 
   private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {
-    val localDirAllowList = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
+    var localDirAllowList: Set[String] = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
     if (localDirAllowList.nonEmpty) {
+      localDirAllowList ++= Set(uploadWorkDir.toUri.getPath)
       val uri =
         try {
           new URI(path)
@@ -209,5 +212,10 @@ object KyuubiApplicationManager {
       case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }
+  }
+
+  def sessionUploadFolderPath(sessionId: String): Path = {
+    require(StringUtils.isNotBlank(sessionId))
+    uploadWorkDir.resolve(sessionId)
   }
 }

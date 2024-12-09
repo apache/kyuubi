@@ -41,6 +41,8 @@ class ExecuteStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  override protected def supportProgress: Boolean = true
+
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
     setState(OperationState.PENDING)
@@ -127,6 +129,7 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
+      trinoStatement.stopPrinter()
       shutdownTimeoutMonitor()
     }
   }

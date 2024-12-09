@@ -263,7 +263,7 @@ object SparkSQLEngine extends Logging {
     // "Cannot mutate ReadOnlySQLConf" exception when task calling HiveResult.getBinaryFormatter.
     // Here we follow the HiveResult.getBinaryFormatter behavior to set it to UTF8 if configuration
     // is absent to reserve the legacy behavior for compatibility.
-    _sparkConf.setIfMissing("spark.sql.binaryOutputStyle", "UTF8")
+    _sparkConf.setIfMissing("spark.sql.binaryOutputStyle", "UTF-8")
     _sparkConf.setIfMissing("spark.master", "local")
     _sparkConf.set(
       "spark.redaction.regex",

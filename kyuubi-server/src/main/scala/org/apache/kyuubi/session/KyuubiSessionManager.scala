@@ -38,6 +38,7 @@ import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
 import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.service.TempFileService
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.sql.parser.server.KyuubiParser
 import org.apache.kyuubi.util.{SignUtils, ThreadUtils}
@@ -71,10 +72,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private val engineConnectionAliveChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-engine-alive-checker")
 
+  val tempFileService = new TempFileService()
+
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
     addService(applicationManager)
     addService(credentialsManager)
+    addService(tempFileService)
     metadataManager.foreach(addService)
     initSessionLimiter(conf)
     initEngineStartupProcessSemaphore(conf)
@@ -272,8 +276,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     metadataManager.flatMap(mm => mm.getBatch(batchId))
   }
 
-  def getBatchesFromMetadataStore(filter: MetadataFilter, from: Int, size: Int): Seq[Batch] = {
-    metadataManager.map(_.getBatches(filter, from, size)).getOrElse(Seq.empty)
+  def getBatchesFromMetadataStore(
+      filter: MetadataFilter,
+      from: Int,
+      size: Int,
+      desc: Boolean = false): Seq[Batch] = {
+    metadataManager.map(_.getBatches(filter, from, size, desc)).getOrElse(Seq.empty)
   }
 
   def getBatchMetadata(batchId: String): Option[Metadata] = {

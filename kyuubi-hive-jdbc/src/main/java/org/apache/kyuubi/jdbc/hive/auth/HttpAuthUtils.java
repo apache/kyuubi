@@ -29,6 +29,7 @@ import org.ietf.jgss.Oid;
 public final class HttpAuthUtils {
   public static final String AUTHORIZATION = "Authorization";
   public static final String NEGOTIATE = "Negotiate";
+  public static final String BEARER = "Bearer";
 
   /** @return Stringified Base64 encoded kerberosAuthHeader on success */
   public static String getKerberosServiceTicket(

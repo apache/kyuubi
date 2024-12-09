@@ -80,7 +80,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
       } else {
         val Seq(user, password) = creds.toSeq.take(2)
         val passwdAuthenticationProvider = AuthenticationProviderFactory
-          .getAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+          .getHttpBasicAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
         passwdAuthenticationProvider.authenticate(user, password)
         response.setStatus(HttpServletResponse.SC_OK)
         authUser = user

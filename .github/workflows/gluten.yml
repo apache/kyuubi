@@ -22,12 +22,12 @@ on:
     - cron: 0 4 * * *
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
 
 jobs:
   gluten-build:
     name: Build Gluten
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
@@ -46,7 +46,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Get gluten cache date
@@ -54,7 +53,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
@@ -65,7 +64,7 @@ jobs:
             cd gluten
             ./dev/buildbundle-veloxbe.sh
           fi
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
           path: gluten/package/target/
@@ -74,7 +73,7 @@ jobs:
   gluten-it:
     name: Gluten Integration TPC-H/DS Test
     needs: gluten-build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -99,7 +98,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
@@ -109,17 +108,16 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-spark-${{ matrix.spark }}-gluten
           path: |

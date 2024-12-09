@@ -21,7 +21,6 @@
         "isRecursive" : true
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -55,19 +54,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "admin" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 1,
@@ -81,12 +69,12 @@
     "description" : "Policy for all - database, table, column",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
+      "column" : {
         "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
+      "database" : {
         "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
@@ -97,7 +85,6 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -131,19 +118,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "admin" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 2,
@@ -168,7 +144,6 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -202,19 +177,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "admin" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 3,
@@ -228,13 +192,13 @@
     "description" : "Policy for all - database, udf",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1", "paimon_ns" ],
+      "column" : {
+        "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "*" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1", "paimon_ns" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -244,7 +208,6 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -278,9 +241,6 @@
         "isAllowed" : true
       } ],
       "users" : [ "bob", "perm_view_user", "{OWNER}" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     }, {
       "accesses" : [ {
@@ -288,19 +248,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "default_table_owner", "create_only_user" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 4,
@@ -311,16 +260,15 @@
     "name" : "default_kent",
     "policyType" : 0,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "key" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "key" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -330,7 +278,6 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -364,9 +311,6 @@
         "isAllowed" : true
       } ],
       "users" : [ "kent" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     }, {
       "accesses" : [ {
@@ -374,19 +318,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "default_table_owner", "create_only_user" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 5,
@@ -397,16 +330,15 @@
     "name" : "default_bob_use",
     "policyType" : 0,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default_bob", "spark_catalog" ],
+      "column" : {
+        "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "*" ],
+      "database" : {
+        "values" : [ "default_bob", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -416,26 +348,14 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "update",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 6,
@@ -446,16 +366,15 @@
     "name" : "default_bob_select",
     "policyType" : 0,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default_bob", "spark_catalog" ],
+      "column" : {
+        "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "*" ],
+      "database" : {
+        "values" : [ "default_bob", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -465,7 +384,6 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
@@ -475,19 +393,8 @@
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 7,
@@ -498,16 +405,15 @@
     "name" : "someone_access_perm_view",
     "policyType" : 0,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default" ],
+      "column" : {
+        "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "*" ],
+      "database" : {
+        "values" : [ "default" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -517,26 +423,14 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "user_perm_view_only" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 8,
@@ -547,16 +441,15 @@
     "name" : "someone_access_table2",
     "policyType" : 0,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default" ],
+      "column" : {
+        "values" : [ "*" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "*" ],
+      "database" : {
+        "values" : [ "default" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -566,26 +459,14 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
     "policyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "user_table2_only" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true
     } ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 9,
@@ -596,7 +477,6 @@
     "name" : "src_key_less_than_20",
     "policyType" : 2,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
       "database" : {
@@ -610,29 +490,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
     "rowFilterPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob", "perm_view_user" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : false,
       "rowFilterInfo" : {
         "filterExpr" : "key<20"
       }
     } ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 10,
@@ -643,7 +511,6 @@
     "name" : "perm_view_key_less_than_20",
     "policyType" : 2,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
       "database" : {
@@ -657,29 +524,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
-    "dataMaskPolicyItems" : [ ],
     "rowFilterPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "perm_view_user" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : false,
       "rowFilterInfo" : {
         "filterExpr" : "key<20"
       }
     } ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 11,
@@ -690,16 +545,15 @@
     "name" : "src_value_hash_perm_view",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "value1" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value1" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -709,29 +563,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK_HASH"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 12,
@@ -742,16 +584,15 @@
     "name" : "src_value_hash",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "value1" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value1" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -761,29 +602,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "perm_view_user" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK_HASH"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 13,
@@ -794,16 +623,15 @@
     "name" : "src_value2_nullify",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1" ],
+      "column" : {
+        "values" : [ "value2" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value2" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -813,29 +641,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 14,
@@ -846,16 +662,15 @@
     "name" : "src_value3_sf4",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "value3" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value3" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -865,29 +680,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK_SHOW_FIRST_4"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 15,
@@ -898,16 +701,15 @@
     "name" : "src_value4_sf4",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "value4" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value4" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -917,29 +719,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK_DATE_SHOW_YEAR"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   }, {
     "id" : 16,
@@ -950,16 +740,15 @@
     "name" : "src_value5_sf4",
     "policyType" : 1,
     "policyPriority" : 0,
-    "description" : "",
     "isAuditEnabled" : true,
     "resources" : {
-      "database" : {
-        "values" : [ "default", "spark_catalog" ],
+      "column" : {
+        "values" : [ "value5" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
-      "column" : {
-        "values" : [ "value5" ],
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
         "isExcludes" : false,
         "isRecursive" : false
       },
@@ -969,29 +758,17 @@
         "isRecursive" : false
       }
     },
-    "conditions" : [ ],
-    "policyItems" : [ ],
-    "denyPolicyItems" : [ ],
-    "allowExceptions" : [ ],
-    "denyExceptions" : [ ],
     "dataMaskPolicyItems" : [ {
       "accesses" : [ {
         "type" : "select",
         "isAllowed" : true
       } ],
       "users" : [ "bob" ],
-      "groups" : [ ],
-      "roles" : [ ],
-      "conditions" : [ ],
       "delegateAdmin" : true,
       "dataMaskInfo" : {
         "dataMaskType" : "MASK_SHOW_LAST_4"
       }
     } ],
-    "rowFilterPolicyItems" : [ ],
-    "options" : { },
-    "validitySchedules" : [ ],
-    "policyLabels" : [ ],
     "isDenyAllElse" : false
   } ],
   "serviceDef" : {

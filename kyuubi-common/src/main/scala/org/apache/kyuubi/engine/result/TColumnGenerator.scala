@@ -34,19 +34,17 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     val ret = new JArrayList[T](rowSize)
     val nulls = new JBitSet()
     var idx = 0
-    while (idx < rowSize) {
-      val row = rows(idx)
-      val isNull = isColumnNullAt(row, ordinal)
-      if (isNull) {
+    val isConvertFuncNull = convertFunc == null
+    rows.foreach { row =>
+      val value = if (isColumnNullAt(row, ordinal)) {
         nulls.set(idx, true)
-        ret.add(defaultVal)
+        defaultVal
+      } else if (isConvertFuncNull) {
+        getColumnAs[T](row, ordinal)
       } else {
-        val value = Option(convertFunc) match {
-          case Some(f) => f(row, ordinal)
-          case _ => getColumnAs[T](row, ordinal)
-        }
-        ret.add(value)
+        convertFunc(row, ordinal)
       }
+      ret.add(value)
       idx += 1
     }
     (ret, ByteBuffer.wrap(nulls.toByteArray))

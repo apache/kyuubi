@@ -31,12 +31,14 @@ import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
-import org.apache.kyuubi.session.{KyuubiSessionManager, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle}
 import org.apache.kyuubi.util.{JavaUtils, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
@@ -56,6 +58,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private[kyuubi] def sessionManager = be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
   private val batchChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor("batch-checker")
+
+  private[kyuubi] lazy val batchService: Option[KyuubiBatchService] =
+    if (conf.get(BATCH_SUBMITTER_ENABLED)) {
+      Some(new KyuubiBatchService(this, sessionManager))
+    } else {
+      None
+    }
 
   lazy val host: String = conf.get(FRONTEND_REST_BIND_HOST)
     .getOrElse {
@@ -90,7 +99,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       host,
       port,
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
-      conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT))
+      conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT),
+      conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
+    batchService.foreach(addService)
     super.initialize(conf)
   }
 
@@ -193,6 +204,14 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  private def getBatchPendingMaxElapse(): Long = {
+    val batchPendingElapseTimes = sessionManager.allSessions().map {
+      case session: KyuubiBatchSession => session.batchJobSubmissionOp.getPendingElapsedTime
+      case _ => 0L
+    }
+    if (batchPendingElapseTimes.isEmpty) 0L else batchPendingElapseTimes.max
+  }
+
   def waitForServerStarted(): Unit = {
     // block until the HTTP server is started, otherwise, we may get
     // the wrong HTTP server port -1
@@ -211,6 +230,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         isStarted.set(true)
         startBatchChecker()
         recoverBatchSessions()
+        MetricsSystem.tracing { ms =>
+          ms.registerGauge(OPERATION_BATCH_PENDING_MAX_ELAPSE, getBatchPendingMaxElapse, 0)
+        }
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }
@@ -248,7 +270,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     } catch {
       case t: Throwable => throw new WebApplicationException(
           t.getMessage,
-          Status.METHOD_NOT_ALLOWED)
+          Status.FORBIDDEN)
     }
   }
 

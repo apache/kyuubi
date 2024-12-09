@@ -38,7 +38,7 @@ class DeleteBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
 
       val result = batchRestApi.deleteBatch(batchId)
 
-      info(JsonUtils.toJson(result))
+      info(JsonUtils.toPrettyJson(result))
 
       if (!result.isSuccess) {
         val batch = batchRestApi.getBatchById(batchId)

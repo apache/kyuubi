@@ -145,59 +145,40 @@ server:
       #    clientIP:
       #      timeoutSeconds: 10800
 
-monitoring:
-  # Exposes metrics in Prometheus format
-  prometheus:
-    enabled: true
-    port: 10019
-
-# $KYUUBI_CONF_DIR directory
-kyuubiConfDir: /opt/kyuubi/conf
 # Kyuubi configuration files
 kyuubiConf:
-  # The value (templated string) is used for kyuubi-env.sh file
-  # See example at conf/kyuubi-env.sh.template and https://kyuubi.readthedocs.io/en/master/configuration/settings.html#environments for more details
-  kyuubiEnv: ~
-  #  kyuubiEnv: |
-  #    #!/usr/bin/env bash
-  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #    export SPARK_HOME=/opt/spark
-  #    export FLINK_HOME=/opt/flink
-  #    export HIVE_HOME=/opt/hive
-
-  # The value (templated string) is used for kyuubi-defaults.conf file
-  # See https://kyuubi.readthedocs.io/en/master/configuration/settings.html#kyuubi-configurations for more details
-  kyuubiDefaults: ~
-  #  kyuubiDefaults: |
+  # $KYUUBI_CONF_DIR directory
+  dir: /opt/kyuubi/conf
+  # Configuration files from the specified keys (file name) and values (file content)
+  files: ~
+  #files:
+  #  'kyuubi-defaults.conf': |
   #    kyuubi.authentication=NONE
-  #    kyuubi.frontend.bind.host=10.0.0.1
-  #    kyuubi.engine.type=SPARK_SQL
   #    kyuubi.engine.share.level=USER
-  #    kyuubi.session.engine.initialize.timeout=PT3M
-  #    kyuubi.ha.addresses=zk1:2181,zk2:2181,zk3:2181
-  #    kyuubi.ha.namespace=kyuubi
 
-  # The value (templated string) is used for log4j2.xml file
-  # See example at conf/log4j2.xml.template https://kyuubi.readthedocs.io/en/master/configuration/settings.html#logging for more details
-  log4j2: ~
+  # Configuration files from the list of existing ConfigMaps and Secrets
+  filesFrom: []
+  #filesFrom:
+  #- configMap:
+  #    name: kyuubi-configs
+  #- secret:
+  #    name: kyuubi-secrets
+  #- secret:
+  #    name: ssl-secrets
+  #    items:
+  #      - key: key-store
+  #        path: certs/keystore.jks
+  #      - key: trust-store
+  #        path: certs/truststore.jks
 
-# $SPARK_CONF_DIR directory
-sparkConfDir: /opt/spark/conf
-# Spark configuration files
+# Spark configuration, see https://github.com/apache/spark/tree/master/conf and Spark documentation for more details
 sparkConf:
-  # The value (templated string) is used for spark-env.sh file
-  # See example at https://github.com/apache/spark/blob/master/conf/spark-env.sh.template and Spark documentation for more details
-  sparkEnv: ~
-  #  sparkEnv: |
-  #    #!/usr/bin/env bash
-  #    export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
-  #    export SPARK_LOG_DIR=/opt/spark/logs
-  #    export SPARK_LOG_MAX_FILES=5
-
-  # The value (templated string) is used for spark-defaults.conf file
-  # See example at https://github.com/apache/spark/blob/master/conf/spark-defaults.conf.template and Spark documentation for more details
-  sparkDefaults: ~
-  #  sparkDefaults: |
+  # $SPARK_CONF_DIR directory
+  dir: /opt/spark/conf
+  # Configuration files from the specified keys (file name) and values (file content)
+  files: ~
+  #files:
+  #  'spark-defaults.conf': |
   #    spark.submit.deployMode=cluster
   #    spark.kubernetes.container.image=apache/spark:3.5.0
   #    spark.kubernetes.authenticate.driver.serviceAccountName=spark
@@ -213,13 +194,20 @@ sparkConf:
   #    spark.hadoop.fs.s3a.path.style.access=true
   #    spark.hadoop.fs.s3a.fast.upload=true
 
-  # The value (templated string) is used for log4j2.properties file
-  # See example at https://github.com/apache/spark/blob/master/conf/log4j2.properties.template and Spark documentation for more details
-  log4j2: ~
-
-  # The value (templated string) is used for metrics.properties file
-  # See example at https://github.com/apache/spark/blob/master/conf/metrics.properties.template and Spark documentation for more details
-  metrics: ~
+  # Configuration files from the list of existing ConfigMaps and Secrets
+  filesFrom: []
+  #filesFrom:
+  #- configMap:
+  #    name: spark-configs
+  #- secret:
+  #    name: spark-secrets
+  #- secret:
+  #    name: ssl-secrets
+  #    items:
+  #      - key: key-store
+  #        path: certs/keystore.jks
+  #      - key: trust-store
+  #        path: certs/truststore.jks
 
 # Command to launch Kyuubi server (templated)
 command: ~
@@ -279,31 +267,36 @@ affinity: {}
 # Kyuubi pods security context
 securityContext: {}
 
-# Monitoring Kyuubi - Server Metrics
-# PROMETHEUS - PrometheusReporter which exposes metrics in Prometheus format
-metricsReporters: ~
+# Metrics configuration
+metrics:
+  # Enable metrics system, used for 'kyuubi.metrics.enabled' property
+  enabled: true
+  # A comma-separated list of metrics reporters, used for 'kyuubi.metrics.reporters' property
+  reporters: PROMETHEUS
+  # Prometheus port, used for 'kyuubi.metrics.prometheus.port' property
+  prometheusPort: 10019
 
-# Prometheus pod monitor
-podMonitor:
-  # If enabled, podMonitor for operator's pod will be created
-  enabled: false
-  # The podMetricsEndpoint contains metrics information such as port, interval, scheme, and possibly other relevant details.
-  # This information is used to configure the endpoint from which Prometheus can scrape and collect metrics for a specific Pod in Kubernetes.
-  podMetricsEndpoint: []
+  # PodMonitor by Prometheus Operator
+  podMonitor:
+    # Enable PodMonitor creation
+    enabled: false
+    # List of pod endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
+    podMetricsEndpoints: []
 
-# Prometheus service monitor
-serviceMonitor:
-  # If enabled, ServiceMonitor resources for Prometheus Operator are created
-  enabled: false
-  # The endpoints section in a ServiceMonitor specifies the metrics information for each target endpoint.
-  # This allows you to collect metrics from multiple Services across your Kubernetes cluster in a standardized and automated way.
-  endpoints: []
-  # Additional labels that can be used so ServiceMonitor will be discovered by Prometheus
-  labels: {}
+  # ServiceMonitor by Prometheus Operator
+  serviceMonitor:
+    # Enable ServiceMonitor creation
+    enabled: false
+    # List of service endpoints serving metrics to be scraped by Prometheus, see Prometheus Operator docs for more details
+    endpoints: []
+    #  endpoints:
+    #    - port: prometheus
+    # Additional labels to be used to make ServiceMonitor discovered by Prometheus
+    labels: {}
 
-# Rules for the Prometheus Operator
-prometheusRule:
-  # If enabled, a PrometheusRule resource for Prometheus Operator is created
-  enabled: false
-  # Contents of Prometheus rules file
-  groups: []
+  # PrometheusRule by Prometheus Operator
+  prometheusRule:
+    # Enable PrometheusRule creation
+    enabled: false
+    # Content of Prometheus rule file
+    groups: []

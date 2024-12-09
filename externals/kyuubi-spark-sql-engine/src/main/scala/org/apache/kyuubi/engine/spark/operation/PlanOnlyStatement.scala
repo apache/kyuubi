@@ -22,6 +22,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.kyuubi.SparkUtilsHelper
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.CommandExecutionMode
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
 
@@ -58,9 +59,9 @@ class PlanOnlyStatement(
   override protected def resultSchema: StructType = {
     if (result == null) {
       new StructType().add("plan", "string")
-    } else if (result.isEmpty) {
-      new StructType().add("result", "string")
-    } else result.schema
+    } else {
+      super.resultSchema
+    }
   }
 
   override protected def beforeRun(): Unit = {
@@ -115,10 +116,10 @@ class PlanOnlyStatement(
           SQLConf.get.maxToStringFields,
           printOperatorId = false))))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val physical = spark.sessionState.executePlan(plan, CommandExecutionMode.SKIP).sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
       case ExecutionMode =>
-        val executed = spark.sql(statement).queryExecution.executedPlan
+        val executed = spark.sessionState.executePlan(plan, CommandExecutionMode.SKIP).executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toString())))
       case LineageMode =>
         val result = parseLineage(spark, plan)
@@ -142,10 +143,10 @@ class PlanOnlyStatement(
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         iter = new IterableFetchIterator(Seq(Row(optimized.toJSON)))
       case PhysicalMode =>
-        val physical = spark.sql(statement).queryExecution.sparkPlan
+        val physical = spark.sessionState.executePlan(plan, CommandExecutionMode.SKIP).sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toJSON)))
       case ExecutionMode =>
-        val executed = spark.sql(statement).queryExecution.executedPlan
+        val executed = spark.sessionState.executePlan(plan, CommandExecutionMode.SKIP).executedPlan
         iter = new IterableFetchIterator(Seq(Row(executed.toJSON)))
       case LineageMode =>
         val result = parseLineage(spark, plan)

@@ -57,9 +57,17 @@ trait MetadataStore extends Closeable {
    * @param filter the metadata filter conditions.
    * @param from the metadata offset.
    * @param size the size to get.
+   * @param desc the order of metadata list.
+   * @param orderBy the order by column, default is the auto increment primary key, `key_id`.
+   * @param direction the order direction, default is `ASC`.
    * @return selected metadata list.
    */
-  def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata]
+  def getMetadataList(
+      filter: MetadataFilter,
+      from: Int,
+      size: Int,
+      orderBy: Option[String] = Some("key_id"),
+      direction: String = "ASC"): Seq[Metadata]
 
   /**
    * Count the metadata list with filter conditions.

@@ -471,53 +471,68 @@ def main():
     try:
 
         while True:
-            line = sys_stdin.readline()
-
-            if line == "":
-                break
-            elif line == "\n":
-                continue
-
             try:
-                content = json.loads(line)
-            except ValueError:
-                continue
+                line = sys_stdin.readline()
 
-            if content["cmd"] == "exit_worker":
-                break
+                if line == "":
+                    break
+                elif line == "\n":
+                    continue
 
-            result = execute_request(content)
+                try:
+                    content = json.loads(line)
+                except ValueError:
+                    continue
 
-            try:
-                result = json.dumps(result)
-            except ValueError:
+                if content["cmd"] == "exit_worker":
+                    break
+
+                result = execute_request(content)
+
+                try:
+                    result = json.dumps(result)
+                except ValueError:
+                    result = json.dumps(
+                        {
+                            "msg_type": "inspect_reply",
+                            "content": {
+                                "status": "error",
+                                "ename": "ValueError",
+                                "evalue": "cannot json-ify %s" % result,
+                                "traceback": [],
+                            },
+                        }
+                    )
+                except Exception:
+                    exc_type, exc_value, tb = sys.exc_info()
+                    result = json.dumps(
+                        {
+                            "msg_type": "inspect_reply",
+                            "content": {
+                                "status": "error",
+                                "ename": str(exc_type.__name__),
+                                "evalue": "cannot json-ify %s: %s"
+                                % (result, str(exc_value)),
+                                "traceback": [],
+                            },
+                        }
+                    )
+
+                print(result, file=sys_stdout)
+            except KeyboardInterrupt:
                 result = json.dumps(
                     {
                         "msg_type": "inspect_reply",
                         "content": {
-                            "status": "error",
-                            "ename": "ValueError",
-                            "evalue": "cannot json-ify %s" % result,
+                            "status": "canceled",
+                            "ename": "KeyboardInterrupt",
+                            "evalue": "execution interrupted by user",
                             "traceback": [],
                         },
                     }
                 )
-            except Exception:
-                exc_type, exc_value, tb = sys.exc_info()
-                result = json.dumps(
-                    {
-                        "msg_type": "inspect_reply",
-                        "content": {
-                            "status": "error",
-                            "ename": str(exc_type.__name__),
-                            "evalue": "cannot json-ify %s: %s"
-                            % (result, str(exc_value)),
-                            "traceback": [],
-                        },
-                    }
-                )
-
-            print(result, file=sys_stdout)
+                print(result, file=sys_stdout)
+                print("execution interrupted by user: " + line, file=sys_stderr)
             sys_stdout.flush()
             clearOutputs()
     finally:

@@ -514,7 +514,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
       if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
         assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
-        assert(errorMessage.contains(s"The schema `$dbName` cannot be found."))
       } else {
         assert(errorMessage.contains(s"Database '$dbName' not found"))
       }

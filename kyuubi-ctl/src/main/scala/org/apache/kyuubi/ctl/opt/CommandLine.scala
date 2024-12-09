@@ -264,7 +264,10 @@ object CommandLine extends CommonCommandLine {
             } else {
               failure("Option --size must be >=0")
             })
-          .text("The max number of records returned in the query."))
+          .text("The max number of records returned in the query."),
+        opt[Boolean]("desc")
+          .action((v, c) => c.copy(batchOpts = c.batchOpts.copy(desc = v)))
+          .text("List the batches in descending order."))
   }
 
   private def logBatchCmd(builder: OParserBuilder[CliConfig]): OParser[_, CliConfig] = {

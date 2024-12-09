@@ -18,9 +18,12 @@
 package org.apache.kyuubi.server
 
 import java.net.ServerSocket
+import java.util.Base64
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 import javax.security.sasl.AuthenticationException
 import javax.servlet.{ServletContextEvent, ServletContextListener}
+
+import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.conf.Configuration
@@ -33,15 +36,19 @@ import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.ExecutorThreadPool
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
+import org.apache.kyuubi.cli.Handle
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID, KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET, KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT}
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.http.ThriftHttpServlet
-import org.apache.kyuubi.server.http.util.SessionManager
+import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq}
+import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
+import org.apache.kyuubi.session.KyuubiSessionImpl
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq, TOpenSessionResp}
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
 import org.apache.kyuubi.util.NamedThreadFactory
 
@@ -64,6 +71,8 @@ final class KyuubiTHttpFrontendService(
   private val APPLICATION_THRIFT = "application/x-thrift"
 
   override protected def hadoopConf: Configuration = KyuubiServer.getHadoopConf()
+
+  private lazy val defaultFetchSize = conf.get(KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
 
   /**
    * Configure Jetty to serve http requests. Example of a client connection URL:
@@ -101,8 +110,10 @@ final class KyuubiTHttpFrontendService(
       // Configure header size
       val requestHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE)
       val responseHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
+      val jettySendVersionEnabled = conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
       httpConf.setRequestHeaderSize(requestHeaderSize)
       httpConf.setResponseHeaderSize(responseHeaderSize)
+      httpConf.setSendServerVersion(jettySendVersionEnabled)
       val connectionFactory = new HttpConnectionFactory(httpConf)
 
       val useSsl = conf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
@@ -217,6 +228,45 @@ final class KyuubiTHttpFrontendService(
     super.initialize(conf)
   }
 
+  /** Same as KyuubiTBinaryFrontendService, to return launch engine op handle. */
+  override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
+    debug(req.toString)
+    info("Client protocol version: " + req.getClient_protocol)
+    val resp = new TOpenSessionResp
+    try {
+      val sessionHandle = getSessionHandle(req, resp)
+
+      val respConfiguration = new java.util.HashMap[String, String]()
+      val launchEngineOp = be.sessionManager.getSession(sessionHandle)
+        .asInstanceOf[KyuubiSessionImpl].launchEngineOp
+
+      val opHandleIdentifier = Handle.toTHandleIdentifier(launchEngineOp.getHandle.identifier)
+      respConfiguration.put(
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID,
+        Base64.getEncoder.encodeToString(opHandleIdentifier.getGuid))
+      respConfiguration.put(
+        KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET,
+        Base64.getEncoder.encodeToString(opHandleIdentifier.getSecret))
+
+      respConfiguration.put(KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT, true.toString)
+
+      // HIVE-23005(4.0.0), Hive JDBC driver supposes that server always returns this conf
+      respConfiguration.put(
+        "hive.server2.thrift.resultset.default.fetch.size",
+        defaultFetchSize.toString)
+
+      resp.setSessionHandle(sessionHandle.toTSessionHandle)
+      resp.setConfiguration(respConfiguration)
+      resp.setStatus(OK_STATUS)
+      Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(sessionHandle))
+    } catch {
+      case e: Exception =>
+        error("Error opening session: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
+    }
+    resp
+  }
+
   override def run(): Unit =
     try {
       if (isServer()) {
@@ -266,13 +316,30 @@ final class KyuubiTHttpFrontendService(
   }
 
   override protected def getIpAddress: String = {
-    Option(SessionManager.getProxyHttpHeaderIpAddress).getOrElse(SessionManager.getIpAddress)
+    Option(AuthenticationFilter.getUserProxyHeaderIpAddress).getOrElse(
+      AuthenticationFilter.getUserIpAddress)
+  }
+
+  override protected def getProxyUser(
+      sessionConf: java.util.Map[String, String],
+      ipAddress: String,
+      realUser: String): String = {
+    Option(AuthenticationFilter.getProxyUserName) match {
+      case Some(proxyUser) =>
+        val proxyUserConf = Map(PROXY_USER.key -> proxyUser)
+        super.getProxyUser(
+          (sessionConf.asScala ++ proxyUserConf).asJava,
+          ipAddress,
+          realUser)
+      case None => super.getProxyUser(sessionConf, ipAddress, realUser)
+    }
   }
 
   override protected def getRealUserAndSessionUser(req: TOpenSessionReq): (String, String) = {
-    val realUser = getShortName(Option(SessionManager.getUserName).getOrElse(req.getUsername))
+    val realUser = getShortName(Option(AuthenticationFilter.getUserName)
+      .getOrElse(req.getUsername))
     // using the remote ip address instead of that in proxy http header for authentication
-    val ipAddress: String = SessionManager.getIpAddress
+    val ipAddress: String = AuthenticationFilter.getUserIpAddress
     val sessionUser: String = if (req.getConfiguration == null) {
       realUser
     } else {

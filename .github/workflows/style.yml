@@ -30,7 +30,7 @@ concurrency:
 jobs:
   linter:
     name: Style check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         profiles:
@@ -46,7 +46,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python 3
@@ -64,11 +63,11 @@ jobs:
         # for more details, please visit: https://github.com/actions/toolkit/issues/399#issuecomment-666147717
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: |
-          MVN_OPT="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip"
-          build/mvn clean install ${MVN_OPT} -Pflink-provided,hive-provided,spark-provided,tpcds
-          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-3 -Pspark-3.3
-          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
-          build/mvn clean install ${MVN_OPT} -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.5
+          export MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true"
+          build/mvn clean install -Pflink-provided,hive-provided,spark-provided,tpcds
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -Pspark-3.3
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.5
 
       - name: Scalastyle with maven
         id: scalastyle-check
@@ -88,15 +87,21 @@ jobs:
           SPOTLESS_BLACK_VERSION=$(build/mvn help:evaluate -Dexpression=spotless.python.black.version -q -DforceStdout)
           pip install black==$SPOTLESS_BLACK_VERSION
           build/mvn spotless:check ${{ matrix.profiles }} -Pspotless-python
+      - name: Get NodeJS and PNPM version
+        run: |
+          NODEJS_VERSION=$(build/mvn help:evaluate -Dexpression=node.version -q -DforceStdout)
+          PNPM_VERSION=$(build/mvn help:evaluate -Dexpression=pnpm.version -q -DforceStdout)
+          echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
+          echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
       - name: setup npm
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: ${{env.NODEJS_VERSION}}
       - name: Web UI Style with node
         run: |
           cd ./kyuubi-server/web-ui
-          npm install pnpm@8 -g
-          pnpm install
+          npm install pnpm@${PNPM_VERSION} -g
+          pnpm install --frozen-lockfile
           pnpm run lint
           echo "---------------------------------------Notice------------------------------------"
           echo "If this style check fail, you should follow these commands for a tentative fix"
@@ -108,10 +113,9 @@ jobs:
           echo "---------------------------------------------------------------------------------"
 
       - name: Super Linter Checks
-        uses: github/super-linter/slim@v5
+        uses: github/super-linter/slim@v7
         env:
           CREATE_LOG_FILE: true
-          ERROR_ON_MISSING_EXEC_BIT: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           IGNORE_GENERATED_FILES: true
           IGNORE_GITIGNORED_FILES: true
@@ -119,13 +123,12 @@ jobs:
           LOG_LEVEL: NOTICE
           SUPPRESS_POSSUM: true
           VALIDATE_BASH_EXEC: true
-          VALIDATE_ENV: true
           VALIDATE_JSONC: true
           VALIDATE_POWERSHELL: true
           VALIDATE_XML: true
       - name: Upload Super Linter logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: super-linter-log
           path: super-linter.log

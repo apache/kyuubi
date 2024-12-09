@@ -134,7 +134,9 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
       "--from",
       "2",
       "--size",
-      "5")
+      "5",
+      "--desc",
+      "true")
     val opArgs = new ControlCliArguments(args)
     assert(opArgs.cliConfig.batchOpts.batchType == "spark")
     assert(opArgs.cliConfig.batchOpts.batchUser == "tom")
@@ -144,6 +146,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     assert(opArgs.cliConfig.batchOpts.endTime == 0)
     assert(opArgs.cliConfig.batchOpts.from == 2)
     assert(opArgs.cliConfig.batchOpts.size == 5)
+    assert(opArgs.cliConfig.batchOpts.desc)
   }
 
   test("test list batch default option") {
@@ -154,6 +157,7 @@ class BatchCliArgumentsSuite extends KyuubiFunSuite with TestPrematureExit {
     assert(opArgs.cliConfig.batchOpts.batchType == null)
     assert(opArgs.cliConfig.batchOpts.from == -1)
     assert(opArgs.cliConfig.batchOpts.size == 100)
+    assert(!opArgs.cliConfig.batchOpts.desc)
   }
 
   test("test bad list batch option - size") {

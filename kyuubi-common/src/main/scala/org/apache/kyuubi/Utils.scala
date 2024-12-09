@@ -38,6 +38,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+import org.apache.kyuubi.util.TempFileCleanupUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 object Utils extends Logging {
@@ -137,12 +138,27 @@ object Utils extends Logging {
   /**
    * Delete a directory recursively.
    */
-  def deleteDirectoryRecursively(f: File): Boolean = {
-    if (f.isDirectory) f.listFiles match {
-      case files: Array[File] => files.foreach(deleteDirectoryRecursively)
-      case _ =>
+  def deleteDirectoryRecursively(f: File, ignoreException: Boolean = true): Unit = {
+    if (f == null || !f.exists()) {
+      return
     }
-    f.delete()
+
+    if (f.isDirectory) {
+      val files = f.listFiles
+      if (files != null && files.nonEmpty) {
+        files.foreach(deleteDirectoryRecursively(_, ignoreException))
+      }
+    }
+    try {
+      f.delete()
+    } catch {
+      case e: Exception =>
+        if (ignoreException) {
+          warn(s"Ignoring the exception in deleting file, path: ${f.toPath}", e)
+        } else {
+          throw e
+        }
+    }
   }
 
   /**
@@ -153,7 +169,7 @@ object Utils extends Logging {
       prefix: String = "kyuubi",
       root: String = System.getProperty("java.io.tmpdir")): Path = {
     val dir = createDirectory(root, prefix)
-    dir.toFile.deleteOnExit()
+    TempFileCleanupUtils.deleteOnExit(dir)
     dir
   }
 
@@ -200,9 +216,8 @@ object Utils extends Logging {
       } finally {
         source.close()
       }
-      val file = filePath.toFile
-      file.deleteOnExit()
-      file
+      TempFileCleanupUtils.deleteOnExit(filePath)
+      filePath.toFile
     } catch {
       case e: Exception =>
         error(

@@ -122,7 +122,7 @@ private[ctl] object Render {
         millisToDateString(batch.getEndTime, "yyyy-MM-dd HH:mm:ss")).mkString("\n~\n"))
   }
 
-  private def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
+  def buildBatchAppInfo(batch: Batch, showDiagnostic: Boolean = true): List[String] = {
     val batchAppInfo = ListBuffer[String]()
     batch.getBatchInfo.asScala.foreach { case (key, value) =>
       batchAppInfo += s"$key: $value"

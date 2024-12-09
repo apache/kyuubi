@@ -34,7 +34,6 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SQL_EXECUTION_ID_KEY}
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
-import org.apache.kyuubi.operation.log.OperationLog
 
 /**
  * A [[SparkListener]] based on spark's DeveloperApi [[StatsReportListener]], used to appending
@@ -78,15 +77,6 @@ class SQLOperationListener(
     properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
 
-  private def withOperationLog(f: => Unit): Unit = {
-    try {
-      operation.getOperationLog.foreach(OperationLog.setCurrentOperationLog)
-      f
-    } finally {
-      OperationLog.removeCurrentOperationLog()
-    }
-  }
-
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
@@ -105,7 +95,7 @@ class SQLOperationListener(
       activeJobs.put(
         jobId,
         new SparkJobInfo(stageSize, stageIds))
-      withOperationLog {
+      operation.withOperationLog {
         info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
           s" ${activeJobs.size()} active jobs running")
       }
@@ -119,7 +109,7 @@ class SQLOperationListener(
         case JobSucceeded => "succeeded"
         case _ => "failed" // TODO: Handle JobFailed(exception: Exception)
       }
-      withOperationLog {
+      operation.withOperationLog {
         info(s"Query [$operationId]: Job $jobId $hint, ${activeJobs.size()} active jobs running")
       }
     }
@@ -135,7 +125,7 @@ class SQLOperationListener(
         activeStages.put(
           stageAttempt,
           new SparkStageInfo(stageId, stageInfo.numTasks))
-        withOperationLog {
+        operation.withOperationLog {
           info(s"Query [$operationId]: Stage $stageId.$attemptNumber started " +
             s"with ${stageInfo.numTasks} tasks, ${activeStages.size()} active stages running")
         }
@@ -166,7 +156,7 @@ class SQLOperationListener(
           operationRunTime.getAndAdd(taskMetrics.executorRunTime)
           operationCpuTime.getAndAdd(taskMetrics.executorCpuTime)
         }
-        withOperationLog(super.onStageCompleted(stageCompleted))
+        operation.withOperationLog(super.onStageCompleted(stageCompleted))
       }
     }
   }

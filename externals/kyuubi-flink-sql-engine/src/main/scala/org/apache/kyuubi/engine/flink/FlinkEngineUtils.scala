@@ -36,9 +36,10 @@ import org.apache.flink.table.gateway.service.context.{DefaultContext, SessionCo
 import org.apache.flink.table.gateway.service.result.ResultFetcher
 import org.apache.flink.table.gateway.service.session.Session
 import org.apache.flink.util.JarUtils
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 
 import org.apache.kyuubi.{KyuubiException, Logging}
-import org.apache.kyuubi.util.SemanticVersion
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, SemanticVersion}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object FlinkEngineUtils extends Logging {
@@ -46,7 +47,7 @@ object FlinkEngineUtils extends Logging {
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
   private def SUPPORTED_FLINK_VERSIONS =
-    Set("1.17", "1.18", "1.19").map(SemanticVersion.apply)
+    Set("1.17", "1.18", "1.19", "1.20").map(SemanticVersion.apply)
 
   val FLINK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
@@ -165,5 +166,33 @@ object FlinkEngineUtils extends Logging {
         }
       }).toList
     } else null
+  }
+
+  def renewDelegationToken(delegationToken: String): Unit = {
+    val newCreds = KyuubiHadoopUtils.decodeCredentials(delegationToken)
+    val newTokens = KyuubiHadoopUtils.getTokenMap(newCreds)
+
+    val updateCreds = new Credentials()
+    val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
+    newTokens.foreach { case (alias, newToken) =>
+      val oldToken = oldCreds.getToken(alias)
+      if (oldToken != null) {
+        if (KyuubiHadoopUtils.compareIssueDate(newToken, oldToken) > 0) {
+          updateCreds.addToken(alias, newToken)
+        } else {
+          warn(s"Ignore token with earlier issue date: $newToken")
+        }
+      } else {
+        info(s"Add new unknown token $newToken")
+        updateCreds.addToken(alias, newToken)
+      }
+    }
+
+    if (updateCreds.numberOfTokens() > 0) {
+      info("Update delegation tokens. " +
+        s"The number of tokens sent by the server is ${newCreds.numberOfTokens()}. " +
+        s"The actual number of updated tokens is ${updateCreds.numberOfTokens()}.")
+      UserGroupInformation.getCurrentUser.addCredentials(updateCreds)
+    }
   }
 }

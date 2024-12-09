@@ -470,8 +470,10 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       host: String,
       port: Int,
       socketTimeout: Int,
-      connectionTimeout: Int): TProtocol = {
-    val tSocket = new TSocket(TConfiguration.DEFAULT, host, port, socketTimeout, connectionTimeout)
+      connectionTimeout: Int,
+      maxMessageSize: Int): TProtocol = {
+    val tConf = TConfiguration.custom().setMaxMessageSize(maxMessageSize).build()
+    val tSocket = new TSocket(tConf, host, port, socketTimeout, connectionTimeout)
     val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
     tTransport.open()
     new TBinaryProtocol(tTransport)
@@ -485,15 +487,23 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       conf: KyuubiConf): KyuubiSyncThriftClient = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
+    val maxMessageSize = conf.get(KyuubiConf.FRONTEND_THRIFT_CLIENT_MAX_MESSAGE_SIZE)
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
 
-    val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout)
+    val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout, maxMessageSize)
 
     val aliveProbeProtocol =
       if (aliveProbeEnabled) {
-        Option(createTProtocol(user, passwd, host, port, aliveProbeInterval, loginTimeout))
+        Some(createTProtocol(
+          user,
+          passwd,
+          host,
+          port,
+          aliveProbeInterval,
+          loginTimeout,
+          maxMessageSize))
       } else {
         None
       }

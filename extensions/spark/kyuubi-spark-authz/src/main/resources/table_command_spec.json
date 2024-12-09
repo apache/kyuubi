@@ -1628,11 +1628,7 @@
   "tableDescs" : [ {
     "fieldName" : "catalogTable",
     "fieldExtractor" : "CatalogTableOptionTableExtractor",
-    "columnDesc" : {
-      "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor",
-      "comment" : ""
-    },
+    "columnDesc" : null,
     "actionTypeDesc" : {
       "fieldName" : "mode",
       "fieldExtractor" : "SaveModeActionTypeExtractor",
@@ -1732,11 +1728,7 @@
   "tableDescs" : [ {
     "fieldName" : "table",
     "fieldExtractor" : "CatalogTableTableExtractor",
-    "columnDesc" : {
-      "fieldName" : "outputColumnNames",
-      "fieldExtractor" : "StringSeqColumnExtractor",
-      "comment" : ""
-    },
+    "columnDesc" : null,
     "actionTypeDesc" : {
       "fieldName" : "overwrite",
       "fieldExtractor" : "OverwriteOrInsertActionTypeExtractor",

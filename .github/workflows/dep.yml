@@ -36,7 +36,7 @@ concurrency:
 jobs:
   dep:
     name: Dependency check
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: setup java
@@ -45,7 +45,6 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Install modules
@@ -60,6 +59,6 @@ jobs:
       - name: Check dependency list
         run: build/dependency.sh
       - name: Dependency Review
-        uses: actions/dependency-review-action@v3
+        uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: moderate
