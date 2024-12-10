@@ -285,7 +285,7 @@ metrics:
     #  podMetricsEndpoints：
     #    - path: /metrics
     #      port: prometheus
-    # Additional labels to be used to make podMonitor discovered by Prometheus
+    # Additional labels for PodMonitor to be discovered by Prometheus
     labels: {}
 
   # ServiceMonitor by Prometheus Operator
