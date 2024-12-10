@@ -204,7 +204,7 @@
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
-        <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc1-bin</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
@@ -2014,6 +2014,7 @@
             <properties>
                 <spark.version>3.3.4</spark.version>
                 <spark.binary.version>3.3</spark.binary.version>
+                <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
                 <delta.version>2.3.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2029,6 +2030,7 @@
             <properties>
                 <spark.version>3.4.3</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
+                <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
                 <delta.version>2.4.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
@@ -2059,6 +2061,7 @@
             <properties>
                 <spark.version>4.0.0-preview2</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
+                <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
                 <antlr4.version>4.13.1</antlr4.version>
                 <!-- TODO: update once Delta support Spark 4.0.0-preview2 -->
                 <delta.version>4.0.0rc1</delta.version>
