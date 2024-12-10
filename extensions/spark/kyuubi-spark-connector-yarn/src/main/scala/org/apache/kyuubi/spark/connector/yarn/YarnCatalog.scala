@@ -19,7 +19,10 @@ package org.apache.kyuubi.spark.connector.yarn
 
 import java.util
 
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+
 import org.apache.spark.internal.Logging
+import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
@@ -35,35 +38,67 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = {
-    Array(Identifier.of(namespace, "agg_logs"))
+    Array(Identifier.of(namespace, "app_logs"), Identifier.of(namespace, "apps"))
   }
 
-  override def loadTable(identifier: Identifier): Table = ???
+  override def loadTable(identifier: Identifier): Table = identifier.name match {
+    case "app_logs" => new YarnLogsTable
+    // TODO impl YarnAppTable
+    // case "apps" => new YarnAppTable
+    case _ => throw new UnsupportedOperationException(s"Table ${identifier.name()} not found")
+
+  }
 
   override def createTable(
       identifier: Identifier,
       structType: StructType,
       transforms: Array[Transform],
-      map: util.Map[String, String]): Table = ???
+      map: util.Map[String, String]): Table = {
+    throw new UnsupportedOperationException("Create table is not supported")
+  }
 
-  override def alterTable(identifier: Identifier, tableChanges: TableChange*): Table = ???
+  override def alterTable(identifier: Identifier, tableChanges: TableChange*): Table = {
+    throw new UnsupportedOperationException("Alter table is not supported")
+  }
 
-  override def dropTable(identifier: Identifier): Boolean = ???
+  override def dropTable(identifier: Identifier): Boolean = {
+    throw new UnsupportedOperationException("Drop table is not supported")
+  }
 
-  override def renameTable(identifier: Identifier, identifier1: Identifier): Unit = ???
+  override def renameTable(identifier: Identifier, identifier1: Identifier): Unit = {
+    throw new UnsupportedOperationException("Rename table is not supported")
+  }
 
-  override def listNamespaces(): Array[Array[String]] = ???
+  override def listNamespaces(): Array[Array[String]] = {
+    Array("default")
+  }
 
-  override def listNamespaces(strings: Array[String]): Array[Array[String]] = ???
+  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
+    case Array() => listNamespaces()
+    // TODO make it available
+    case Array(db) if db eq "default" => listNamespaces()
+    case _ => throw new NoSuchNamespaceException(namespace)
+  }
 
-  override def loadNamespaceMetadata(strings: Array[String]): util.Map[String, String] = ???
+  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
+    namespace match {
+      case Array(_) => Map.empty[String, String].asJava
+      case _ => throw new NoSuchNamespaceException(namespace)
+    }
 
-  override def createNamespace(strings: Array[String], map: util.Map[String, String]): Unit = ???
+  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
+    throw new UnsupportedOperationException
 
-  override def alterNamespace(strings: Array[String], namespaceChanges: NamespaceChange*): Unit =
-    ???
+  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
+    throw new UnsupportedOperationException
 
-  override def dropNamespace(strings: Array[String], b: Boolean): Boolean = ???
+  // Removed in SPARK-37929
+  def dropNamespace(namespace: Array[String]): Boolean =
+    throw new UnsupportedOperationException
+
+  // Introduced in SPARK-37929
+  def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
+    throw new UnsupportedOperationException
 
   override def name(): String = this.catalogName
 }

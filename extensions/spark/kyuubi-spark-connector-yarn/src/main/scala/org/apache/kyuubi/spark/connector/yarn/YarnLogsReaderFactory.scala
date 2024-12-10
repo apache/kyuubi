@@ -17,18 +17,13 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.spark.sql.connector.read.{Batch, InputPartition, PartitionReaderFactory, Scan}
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
 
-class YarnLogsScan(options: CaseInsensitiveStringMap, schema: StructType) extends Scan with Batch {
-  private val appId: String = options.getOrDefault("appId", "*")
-  override def readSchema(): StructType = schema
+class YarnLogsReaderFactory extends PartitionReaderFactory {
 
-  override def planInputPartitions(): Array[InputPartition] = {
-    // Fetch logs for the given appId (filtering logic can be added)
-    Array(new YarnLogsPartition(appId))
+  override def createReader(partition: InputPartition): PartitionReader[InternalRow] = {
+    val yarnPartition = partition.asInstanceOf[YarnLogsPartition]
+    new YarnLogsPartitionReader(yarnPartition.appId)
   }
-
-  override def createReaderFactory(): PartitionReaderFactory = ???
 }
