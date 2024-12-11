@@ -18,9 +18,8 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.yarn.client.api.YarnClient
 
-class SparkYarnConnectorOnYarn extends WithKyuubiServerAndYarnMiniCluster {
+trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
   override def beforeAll(): Unit = {
     super.beforeAll()
     // init log dir and set permission
@@ -34,30 +33,5 @@ class SparkYarnConnectorOnYarn extends WithKyuubiServerAndYarnMiniCluster {
     for (i <- 1 to 10) {
       submitMockTaskOnYarn()
     }
-  }
-
-  test("yarn - list applications") {
-    val yarnClient = YarnClient.createYarnClient()
-    yarnClient.init(yarnConf)
-    yarnClient.start()
-    val applications = yarnClient.getApplications
-    applications.forEach(app => {
-      val applicationId = app.getApplicationId
-      val applicationType = app.getApplicationType
-      val applicationName = app.getName
-      val applicationState = app.getYarnApplicationState
-      val currentApplicationAttemptId = app.getCurrentApplicationAttemptId
-      val startTime = app.getStartTime
-      val finishTime = app.getFinishTime
-      val submitTime = app.getSubmitTime
-      val launchTime = app.getLaunchTime
-      info(s"get application info from client, ${applicationId}, " +
-        s"submit: ${submitTime}" +
-        s"launch: ${launchTime}" +
-        s"start: ${startTime}" +
-        s"finish: ${finishTime}" +
-        s"${applicationName}, ${applicationType}, ${applicationState.name()}")
-    })
-    yarnClient.close()
   }
 }

@@ -22,7 +22,7 @@ import java.util
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException
+import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
@@ -43,9 +43,8 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
   override def loadTable(identifier: Identifier): Table = identifier.name match {
     case "app_logs" => new YarnLogsTable
-    // TODO impl YarnAppTable
-    // case "apps" => new YarnAppTable
-    case _ => throw new UnsupportedOperationException(s"Table ${identifier.name()} not found")
+    case "apps" => new YarnApplicationTable
+    case _ => throw new NoSuchTableException(s"${identifier.name}")
 
   }
 
@@ -70,7 +69,7 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   }
 
   override def listNamespaces(): Array[Array[String]] = {
-    Array("default")
+    Array(Array("default"))
   }
 
   override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
