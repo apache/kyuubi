@@ -62,7 +62,7 @@ jobs:
       - name: Build Gluten velox third party
         run: |
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
-            git clone https://github.com/apache/incubator-gluten.git
+            git clone https://github.com/apache/incubator-gluten.git --depth=1
             cd incubator-gluten
             docker run -v $GITHUB_WORKSPACE/incubator-gluten:/work -w /work apache/gluten:vcpkg-centos-7 bash -c "
               df -a
