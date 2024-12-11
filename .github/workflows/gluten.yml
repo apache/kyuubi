@@ -20,7 +20,6 @@ name: Gluten CI
 on:
   schedule:
     - cron: 0 4 * * *
-  workflow_dispatch:
 
 env:
   MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
@@ -77,7 +76,6 @@ jobs:
             mkdir -p ~/.m2/repository/org/apache/arrow
             cp -r $GITHUB_WORKSPACE/incubator-gluten/.m2/repository/org/apache/arrow/* ~/.m2/repository/org/apache/arrow/
             mvn clean package -Pbackends-velox -Pceleborn -Puniffle -Pspark-3.5 -DskipTests
-            ls -l package/target/
           fi
       - uses: actions/cache@v4
         if: steps.gluten-cache.outputs.cache-hit != 'true'
@@ -126,7 +124,6 @@ jobs:
         uses: ./.github/actions/setup-maven
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
-          ls -l incubator-gluten/package/target/
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
           ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
           ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
