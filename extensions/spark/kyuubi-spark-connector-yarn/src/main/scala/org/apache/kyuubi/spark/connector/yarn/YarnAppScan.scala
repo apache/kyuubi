@@ -23,6 +23,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) extends ScanBuilder
   with Scan with Batch with Serializable {
+
+  override def toBatch: Batch = this
+
   private val appId: String = options.getOrDefault("appId", "*")
   // private val yarnApplication: YarnApplication = new YarnApplication(id =
   // options.get("appId").isEmpty
