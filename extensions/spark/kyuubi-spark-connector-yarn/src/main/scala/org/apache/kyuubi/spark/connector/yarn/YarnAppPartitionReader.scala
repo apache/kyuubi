@@ -17,15 +17,17 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.client.api.YarnClient
-import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
 
+
 class YarnAppPartitionReader(inputPartition: YarnAppPartition)
-  extends PartitionReader[InternalRow] {
+  extends PartitionReader[InternalRow] with Logging {
 
   private val appIterator = fetchApp(inputPartition).iterator
 
@@ -50,12 +52,15 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   override def close(): Unit = {}
 
   private def fetchApp(inputPartition: YarnAppPartition): Seq[YarnApplication] = {
+    val hadoopConf = new Configuration()
+    inputPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
+    inputPartition.hadoopConfMap.foreach(kv => logInfo(s"hadoop conf: ${kv._1}: ${kv._2}"))
     val yarnClient = YarnClient.createYarnClient()
-    val yarnConf = new YarnConfiguration()
-    yarnClient.init(yarnConf)
+    yarnClient.init(hadoopConf)
     yarnClient.start()
+    val queues = yarnClient.getAllQueues
     // fet apps
-    val applicationReports = yarnClient.getApplications()
+    val applicationReports = yarnClient.getApplications
     val appSeq = Seq[YarnApplication]()
     applicationReports.forEach(app => {
       appSeq :+ YarnApplication(

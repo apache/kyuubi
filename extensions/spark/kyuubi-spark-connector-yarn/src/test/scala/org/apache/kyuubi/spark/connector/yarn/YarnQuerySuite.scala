@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class YarnQuerySuite extends SparkYarnConnectorWithYarn {
   test("get app tables") {

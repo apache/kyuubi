@@ -17,11 +17,30 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
+import java.io.{File, FileOutputStream}
+
 trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
+  def writeConfigToFile(conf: Configuration, filePath: String): Unit = {
+    val file = new File(filePath)
+    info(s"xml path: ${file.getAbsolutePath}")
+    val outputStream = new FileOutputStream(file)
+    try {
+      conf.writeXml(outputStream)
+    } finally {
+      outputStream.close()
+    }
+  }
+
   override def beforeAll(): Unit = {
     super.beforeAll()
+    // get all conf and set up hadoop conf dir
+    if (!new File("tmp/hadoop-conf").exists()) new File("tmp/hadoop-conf").mkdirs()
+    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/core-site.xml")
+    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/hdfs-site.xml")
+    writeConfigToFile(miniYarnService.getYarnConf, "tmp/hadoop-conf/yarn-site.xml")
     // init log dir and set permission
     val fs = FileSystem.get(hdfsConf)
     val logDir = new Path("/tmp/logs")
@@ -30,8 +49,18 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
     info(s"hdfs web address: http://${fs.getConf.get("dfs.http.address")}")
     fs.close()
     // mock app submit
-    for (i <- 1 to 10) {
+    for (i <- 1 to 3) {
       submitMockTaskOnYarn()
     }
+    // log all conf
+    miniHdfsService.getHadoopConf.forEach(kv =>
+      info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
+    miniYarnService.getYarnConf.forEach(kv => info(s"mini yarn conf ${kv.getKey}: ${kv.getValue}"))
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    // delete hadoop conf dir
+
   }
 }
