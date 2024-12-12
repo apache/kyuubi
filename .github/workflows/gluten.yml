@@ -18,6 +18,11 @@
 name: Gluten CI
 
 on:
+  pull_request:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/gluten.yml'
   schedule:
     - cron: 0 4 * * *
 
