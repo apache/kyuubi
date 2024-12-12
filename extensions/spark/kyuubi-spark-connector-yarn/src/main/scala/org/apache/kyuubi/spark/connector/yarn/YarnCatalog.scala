@@ -74,7 +74,6 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
 
   override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
     case Array() => listNamespaces()
-    // TODO make it available
     case Array(db) if db eq "default" => listNamespaces()
     case _ => throw new NoSuchNamespaceException(namespace)
   }

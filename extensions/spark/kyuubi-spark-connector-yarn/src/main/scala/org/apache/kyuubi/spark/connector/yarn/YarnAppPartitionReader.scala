@@ -22,6 +22,7 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
+import org.apache.spark.unsafe.types.UTF8String
 
 class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] {
@@ -33,13 +34,13 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   override def get(): InternalRow = {
     val app = appIterator.next()
     new GenericInternalRow(Array[Any](
-      app.id,
-      app.appType,
-      app.user,
-      app.name,
-      app.state,
-      app.queue,
-      app.attemptId,
+      UTF8String.fromString(app.id),
+      UTF8String.fromString(app.appType),
+      UTF8String.fromString(app.user),
+      UTF8String.fromString(app.name),
+      UTF8String.fromString(app.state),
+      UTF8String.fromString(app.queue),
+      UTF8String.fromString(app.attemptId),
       app.submitTime,
       app.launchTime,
       app.startTime,

@@ -22,7 +22,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
-class YarnQuerySuiteextends extends SparkYarnConnectorWithYarn {
+class YarnQuerySuite extends SparkYarnConnectorWithYarn {
   test("get app tables") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
@@ -31,6 +31,7 @@ class YarnQuerySuiteextends extends SparkYarnConnectorWithYarn {
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
+      val apps = spark.sql("select * from apps").collect()
       assert(spark.sql("SHOW TABLES").collect().length == 2)
     }
   }

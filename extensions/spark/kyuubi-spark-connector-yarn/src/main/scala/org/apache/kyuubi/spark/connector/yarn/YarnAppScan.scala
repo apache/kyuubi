@@ -27,6 +27,7 @@ class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) extends
   override def toBatch: Batch = this
 
   private val appId: String = options.getOrDefault("appId", "*")
+  private val _options: CaseInsensitiveStringMap = options
   // private val yarnApplication: YarnApplication = new YarnApplication(id =
   // options.get("appId").isEmpty
   // )
@@ -34,11 +35,11 @@ class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) extends
 
   override def planInputPartitions(): Array[InputPartition] = {
     // Fetch app for the given appId (filtering logic can be added)
-    Array(new YarnLogsPartition(appId))
+    Array(new YarnAppPartition(appId))
   }
 
   override def createReaderFactory(): PartitionReaderFactory =
-    new YarnLogsReaderFactory
+    new YarnAppReaderFactory
 
   override def build(): Scan = this
 }
