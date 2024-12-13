@@ -26,6 +26,10 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.asScalaBufferConverter
+
+
 
 class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
@@ -52,27 +56,26 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
 
   override def close(): Unit = {}
 
-  private def fetchApp(inputPartition: YarnAppPartition): Seq[YarnApplication] = {
+  private def fetchApp(inputPartition: YarnAppPartition): mutable.Seq[YarnApplication] = {
     val hadoopConf = new Configuration()
     val confPath = new Path("tmp/hadoop-conf")
     val fs = confPath.getFileSystem(hadoopConf)
     val fileStatuses = fs.listStatus(confPath)
     fileStatuses.foreach(
       fileStatus => {
-        if (fileStatus.isFile && fileStatus.getPath.getName.endsWith(".xml")) {
+        if (fileStatus.isFile && fileStatus.getPath.getName.endsWith("yarn-site.xml")) {
           hadoopConf.addResource(fileStatus.getPath)
         }
       }
     )
-    fs.close()
     val yarnClient = YarnClient.createYarnClient()
+    hadoopConf.get("yarn.resourcemanager.address")
     yarnClient.init(hadoopConf)
     yarnClient.start()
     // fet apps
     val applicationReports = yarnClient.getApplications
-    val appSeq = Seq[YarnApplication]()
-    applicationReports.forEach(app => {
-      appSeq :+ YarnApplication(
+    val appSeq = applicationReports.asScala.map(app => {
+      YarnApplication(
         id = app.getApplicationType,
         appType = app.getApplicationType,
         user = app.getUser,
@@ -86,6 +89,7 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
         finishTime = app.getFinishTime)
     })
     yarnClient.close()
+    fs.close()
     appSeq
   }
 }

@@ -54,8 +54,8 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     yarnConfig.setInt(YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_MB, 4096)
 
     yarnConfig.setBoolean(YarnConfiguration.RM_SCHEDULER_INCLUDE_PORT_IN_NODE_NAME, true)
-    yarnConfig.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 2)
-    yarnConfig.setInt(YarnConfiguration.RM_MAX_COMPLETED_APPLICATIONS, 2)
+    yarnConfig.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 1)
+    yarnConfig.setInt(YarnConfiguration.RM_MAX_COMPLETED_APPLICATIONS, 10)
     yarnConfig.setInt(YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES, 4)
     yarnConfig.setInt(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC, 3600)
     yarnConfig.setBoolean(YarnConfiguration.LOG_AGGREGATION_ENABLED, false)
@@ -160,7 +160,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
 
     // Set up container launch context (e.g., commands to execute)
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
-    val commands = Collections.singletonList("echo Hello, MiniYARNCluster! && sleep 2")
+    val commands = Collections.singletonList("echo Hello, MiniYARNCluster! && sleep 5")
     amContainer.setCommands(commands)
 
     // Application Master resource requirements
@@ -190,6 +190,25 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     // Clean up
     yarnClient.stop()
   }
+
+  def submitMockTasksInParallelTreeTimes(): Unit = {
+    val threads = (1 to 3).map { i =>
+      new Thread(() => {
+        info(s"Starting submission in thread $i")
+        try {
+          submitMockTaskOnYarn()
+        } catch {
+          case e: Exception =>
+            error(s"Error in thread $i: ${e.getMessage}", e)
+        }
+        info(s"Finished submission in thread $i")
+      })
+    }
+
+    threads.foreach(_.start())
+    threads.foreach(_.join())
+  }
+
 
   override def afterAll(): Unit = {
     super.afterAll()

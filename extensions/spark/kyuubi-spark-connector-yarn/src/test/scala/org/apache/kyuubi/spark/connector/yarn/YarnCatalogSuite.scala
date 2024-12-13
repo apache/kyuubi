@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.spark.SparkConf
-import org.apache.spark.sql.{AnalysisException, SparkSession}
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
-
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
+import org.apache.spark.SparkConf
+import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 class YarnCatalogSuite extends SparkYarnConnectorWithYarn {
   test("get catalog name") {
@@ -46,7 +46,6 @@ class YarnCatalogSuite extends SparkYarnConnectorWithYarn {
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
-      // spark.sql("show tables").collect().head.get(1)
       assert(spark.sql("SHOW DATABASES").collect().length == 1)
       assert(spark.sql("SHOW NAMESPACES").collect().length == 1)
       assert(spark.sql("SHOW DATABASES").collect().head.get(0) == "default")
@@ -62,6 +61,22 @@ class YarnCatalogSuite extends SparkYarnConnectorWithYarn {
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
       assert(spark.sql("SHOW TABLES").collect().length == 2)
+    }
+  }
+
+  test("nonexistent namespace") {
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      val namespace = "nonexistent_db"
+      val exception = intercept[NoSuchNamespaceException] {
+        spark.sql(s"show tables from yarn.${namespace}.apps")
+      }
+      assert(exception.message.contains(s"The schema `${namespace}` cannot be found")
+        || exception.message.contains("SCHEMA_NOT_FOUND"))
     }
   }
 

@@ -17,16 +17,15 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.util
-
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
-
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException}
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import java.util
+import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
 class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   private var catalogName: String = _
@@ -38,7 +37,11 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = {
-    Array(Identifier.of(namespace, "app_logs"), Identifier.of(namespace, "apps"))
+    namespace(1) match {
+      case "default" => Array(Identifier.of(namespace, "app_logs"),
+        Identifier.of(namespace, "apps"))
+      case _ => throw new NoSuchNamespaceException(namespace)
+    }
   }
 
   override def loadTable(identifier: Identifier): Table = identifier.name match {

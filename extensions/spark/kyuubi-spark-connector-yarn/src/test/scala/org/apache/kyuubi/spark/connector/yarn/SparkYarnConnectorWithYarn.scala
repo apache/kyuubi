@@ -49,9 +49,7 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
     info(s"hdfs web address: http://${fs.getConf.get("dfs.http.address")}")
     fs.close()
     // mock app submit
-    for (i <- 1 to 3) {
-      submitMockTaskOnYarn()
-    }
+    submitMockTasksInParallelTreeTimes()
     // log all conf
     miniHdfsService.getHadoopConf.forEach(kv =>
       info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
