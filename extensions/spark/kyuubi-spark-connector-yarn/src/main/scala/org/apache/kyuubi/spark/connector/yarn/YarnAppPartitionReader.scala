@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
@@ -53,12 +54,20 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
 
   private def fetchApp(inputPartition: YarnAppPartition): Seq[YarnApplication] = {
     val hadoopConf = new Configuration()
-    inputPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
-    inputPartition.hadoopConfMap.foreach(kv => logInfo(s"hadoop conf: ${kv._1}: ${kv._2}"))
+    val confPath = new Path("tmp/hadoop-conf")
+    val fs = confPath.getFileSystem(hadoopConf)
+    val fileStatuses = fs.listStatus(confPath)
+    fileStatuses.foreach(
+      fileStatus => {
+        if (fileStatus.isFile && fileStatus.getPath.getName.endsWith(".xml")) {
+          hadoopConf.addResource(fileStatus.getPath)
+        }
+      }
+    )
+    fs.close()
     val yarnClient = YarnClient.createYarnClient()
     yarnClient.init(hadoopConf)
     yarnClient.start()
-    val queues = yarnClient.getAllQueues
     // fet apps
     val applicationReports = yarnClient.getApplications
     val appSeq = Seq[YarnApplication]()
