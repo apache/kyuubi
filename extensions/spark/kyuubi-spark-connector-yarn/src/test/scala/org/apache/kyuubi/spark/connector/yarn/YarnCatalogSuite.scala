@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class YarnCatalogSuite extends SparkYarnConnectorWithYarn {
   test("get catalog name") {

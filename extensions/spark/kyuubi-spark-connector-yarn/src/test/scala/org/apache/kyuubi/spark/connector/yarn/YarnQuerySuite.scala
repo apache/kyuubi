@@ -18,12 +18,11 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.hadoop.yarn.client.api.YarnClient
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class YarnQuerySuite extends SparkYarnConnectorWithYarn {
   test("get app tables") {
@@ -37,44 +36,40 @@ class YarnQuerySuite extends SparkYarnConnectorWithYarn {
 //      val appCnt = spark.sql("select count(1) from yarn.default.apps")
 //        .collect().head.asInstanceOf[GenericRowWithSchema].getLong(0)
 //      assert(appCnt >= 0L)
-      val yarnApplications = spark.sql("select * from yarn.default.apps")
-        .collect().map(x => x.asInstanceOf[GenericRowWithSchema])
-        .map(x => YarnApplication(
-          id = x.getString(0),
-          appType = x.getString(1),
-          user = x.getString(2),
-          name = x.getString(3),
-          state = x.getString(4),
-          queue = x.getString(5),
-          attemptId = x.getString(6),
-          submitTime = x.getLong(7),
-          launchTime = x.getLong(8),
-          startTime = x.getLong(9),
-          finishTime = x.getLong(10)
-        ))
       val yarnClient = YarnClient.createYarnClient()
       yarnClient.init(yarnConf)
       yarnClient.start()
-      yarnClient.getApplications.forEach(
-        app => {
-          val appId = app.getApplicationId.toString
-          val queryApp = spark.sql(s"select * from yarn.default.apps " +
-            s"where id = '${appId}'").collect()
-          val searchedApps = yarnApplications.filter(x => x.id eq appId)
-          assert(!searchedApps.isEmpty)
-          val searchedApp = searchedApps.head
-          assert(searchedApp.appType == app.getApplicationType)
-          assert(searchedApp.user == app.getUser)
-          assert(searchedApp.name == app.getName)
-          assert(searchedApp.state == app.getYarnApplicationState.name)
-          assert(searchedApp.queue == app.getQueue)
-          assert(searchedApp.attemptId == app.getCurrentApplicationAttemptId.toString)
-          assert(searchedApp.submitTime == app.getSubmitTime)
-          assert(searchedApp.launchTime == app.getLaunchTime)
-          assert(searchedApp.startTime == app.getStartTime)
-          assert(searchedApp.finishTime == app.getFinishTime)
-        }
-      )
+      yarnClient.getApplications.forEach(app => {
+        val appId = app.getApplicationId.toString
+        val queryApps = spark.sql(s"select * from yarn.default.apps " +
+          s"where id = '${appId}'").collect()
+          .map(x => x.asInstanceOf[GenericRowWithSchema])
+          .map(x =>
+            YarnApplication(
+              id = x.getString(0),
+              appType = x.getString(1),
+              user = x.getString(2),
+              name = x.getString(3),
+              state = x.getString(4),
+              queue = x.getString(5),
+              attemptId = x.getString(6),
+              submitTime = x.getLong(7),
+              launchTime = x.getLong(8),
+              startTime = x.getLong(9),
+              finishTime = x.getLong(10)))
+        assert(!queryApps.isEmpty)
+        val queryApp = queryApps.head
+        assert(queryApp.appType == app.getApplicationType)
+        assert(queryApp.user == app.getUser)
+        assert(queryApp.name == app.getName)
+        assert(queryApp.state == app.getYarnApplicationState.name)
+        assert(queryApp.queue == app.getQueue)
+        assert(queryApp.attemptId == app.getCurrentApplicationAttemptId.toString)
+        assert(queryApp.submitTime == app.getSubmitTime)
+        assert(queryApp.launchTime == app.getLaunchTime)
+        assert(queryApp.startTime == app.getStartTime)
+        assert(queryApp.finishTime == app.getFinishTime)
+      })
       yarnClient.close()
     }
   }

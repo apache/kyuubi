@@ -21,7 +21,6 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-
 case class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) extends ScanBuilder
   with Scan with Batch with Serializable {
 

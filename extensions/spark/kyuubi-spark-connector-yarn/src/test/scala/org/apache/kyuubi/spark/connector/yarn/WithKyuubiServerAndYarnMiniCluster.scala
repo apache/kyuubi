@@ -209,7 +209,6 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     threads.foreach(_.join())
   }
 
-
   override def afterAll(): Unit = {
     super.afterAll()
     if (miniYarnService != null) {

@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.asScalaBufferConverter
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.client.api.YarnClient
@@ -25,11 +28,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
-
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-
-
 
 class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
@@ -61,13 +59,11 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
     val confPath = new Path("tmp/hadoop-conf")
     val fs = confPath.getFileSystem(hadoopConf)
     val fileStatuses = fs.listStatus(confPath)
-    fileStatuses.foreach(
-      fileStatus => {
-        if (fileStatus.isFile && fileStatus.getPath.getName.endsWith("yarn-site.xml")) {
-          hadoopConf.addResource(fileStatus.getPath)
-        }
+    fileStatuses.foreach(fileStatus => {
+      if (fileStatus.isFile && fileStatus.getPath.getName.endsWith("yarn-site.xml")) {
+        hadoopConf.addResource(fileStatus.getPath)
       }
-    )
+    })
     val yarnClient = YarnClient.createYarnClient()
     hadoopConf.get("yarn.resourcemanager.address")
     yarnClient.init(hadoopConf)
@@ -76,7 +72,7 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
     val applicationReports = yarnClient.getApplications
     val appSeq = applicationReports.asScala.map(app => {
       YarnApplication(
-        id = app.getApplicationType,
+        id = app.getApplicationId.toString,
         appType = app.getApplicationType,
         user = app.getUser,
         name = app.getName,

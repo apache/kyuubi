@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import java.io.{File, FileOutputStream}
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-
-import java.io.{File, FileOutputStream}
 
 trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
   def writeConfigToFile(conf: Configuration, filePath: String): Unit = {
