@@ -22,6 +22,8 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+
 case class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) extends ScanBuilder
   with Scan with Batch with Serializable {
 
@@ -38,9 +40,10 @@ case class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) ex
     // Fetch app for the given appId (filtering logic can be added)
     // hadoopConf can not be serialized correctly here
     // use map here
-    val yarnConfDir = SparkSession.active.conf.getOption("spark.sql.catalog.yarn.dir.conf.yarn")
-    val hdfsConfDir = SparkSession.active.conf.getOption("spark.sql.catalog.yarn.dir.conf.hdfs")
-    Array(new YarnAppPartition(yarnConfDir, hdfsConfDir))
+    Array(new YarnAppPartition(
+      SparkSession.active.sparkContext
+        .hadoopConfiguration.asScala.map(kv => (kv.getKey, kv.getValue)).toMap
+    ))
   }
 
   override def createReaderFactory(): PartitionReaderFactory =

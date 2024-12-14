@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
@@ -31,7 +30,16 @@ class YarnQuerySuite extends SparkYarnConnectorWithYarn {
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
-      .set("spark.sql.catalog.yarn.dir.conf.yarn", "tmp/hadoop-conf")
+    miniHdfsService.getHadoopConf.forEach(kv => {
+      if (kv.getKey.startsWith("fs")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    miniYarnService.getYarnConf.forEach(kv => {
+      if (kv.getKey.startsWith("yarn")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
       val appCnt = spark.sql("select count(1) from yarn.default.apps")
@@ -81,8 +89,17 @@ class YarnQuerySuite extends SparkYarnConnectorWithYarn {
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
+    miniHdfsService.getHadoopConf.forEach(kv => {
+      if (kv.getKey.startsWith("fs")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    miniYarnService.getYarnConf.forEach(kv => {
+      if (kv.getKey.startsWith("yarn")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      sys.props("HADOOP_CONF_DIR") = "tmp/hadoop-conf"
       spark.sql("USE yarn")
       val appCnt = spark.sql("select count(1) from yarn.default.apps")
         .collect().head.asInstanceOf[GenericRowWithSchema].getLong(0)
@@ -91,17 +108,21 @@ class YarnQuerySuite extends SparkYarnConnectorWithYarn {
   }
 
   test("use yarn conf in hdfs") {
-    val hadoopConf = new Configuration()
-    val fs = org.apache.hadoop.fs.FileSystem.get(hadoopConf)
-    val hadoopConfDir = hadoopConf.get("hadoop.conf.dir")
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
-      .set("spark.sql.catalog.yarn.dir.conf.yarn", "hdfs:///tmp/hadoop-conf")
-      // make hdfs available
-      .set("spark.sql.catalog.yarn.dir.conf.hdfs", "tmp/hadoop-conf")
+    miniHdfsService.getHadoopConf.forEach(kv => {
+      if (kv.getKey.startsWith("fs")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    miniYarnService.getYarnConf.forEach(kv => {
+      if (kv.getKey.startsWith("yarn")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
       val appCnt = spark.sql("select count(1) from yarn.default.apps")
