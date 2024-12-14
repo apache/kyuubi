@@ -40,7 +40,9 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
     if (!new File("tmp/hadoop-conf").exists()) new File("tmp/hadoop-conf").mkdirs()
     writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/core-site.xml")
     writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/hdfs-site.xml")
-    writeConfigToFile(miniYarnService.getYarnConf, "tmp/hadoop-conf/yarn-site.xml")
+    if (!new File("tmp/hdfs-conf").exists()) new File("tmp/hdfs-conf").mkdirs()
+    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hdfs-conf/core-site.xml")
+    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hdfs-conf/hdfs-site.xml")
     // init log dir and set permission
     val fs = FileSystem.get(hdfsConf)
     val logDir = new Path("/tmp/logs")

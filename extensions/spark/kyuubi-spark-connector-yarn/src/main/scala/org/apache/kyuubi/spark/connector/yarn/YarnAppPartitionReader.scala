@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.yarn.client.api.YarnClient
@@ -29,8 +26,19 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
 
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.asScalaBufferConverter
+
 class YarnAppPartitionReader(inputPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
+
+  private val YARN_XML_FILENAME: String = "yarn-site.xml"
+
+  private val CORE_XML_FILENAME: String = "core-site.xml"
+
+  private val HDFS_XML_FILENAME: String = "hdfs-site.xml"
+
+  private val CONF_DIR_PROP_KEY: String = "HADOOP_CONF_DIR"
 
   private val appIterator = fetchApp(inputPartition).iterator
 
@@ -56,16 +64,31 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
 
   private def fetchApp(inputPartition: YarnAppPartition): mutable.Seq[YarnApplication] = {
     val hadoopConf = new Configuration()
-    val confPath = new Path("tmp/hadoop-conf")
+    val confPath = new Path(inputPartition.yarnConfDir.getOrElse(
+      sys.props.getOrElse(CONF_DIR_PROP_KEY,
+        sys.env.getOrElse(CONF_DIR_PROP_KEY,
+          "./"))
+    ))
+    if (confPath.toString.startsWith("hdfs") && inputPartition.hdfsConfDir.isDefined) {
+      // load core-site.xml and hdfs-site.xml
+      val coreSitePath = new Path("file://" + inputPartition.hdfsConfDir.get + "/core-site.xml")
+      val hdfsSitePath = new Path("file://" + inputPartition.hdfsConfDir.get + "/hdfs-site.xml")
+      hadoopConf.addResource(coreSitePath)
+      hadoopConf.addResource(hdfsSitePath)
+    }
     val fs = confPath.getFileSystem(hadoopConf)
-    val fileStatuses = fs.listStatus(confPath)
-    fileStatuses.foreach(fileStatus => {
-      if (fileStatus.isFile && fileStatus.getPath.getName.endsWith("yarn-site.xml")) {
-        hadoopConf.addResource(fileStatus.getPath)
-      }
-    })
+    try {
+      val fileStatuses = fs.listStatus(confPath)
+      fileStatuses.foreach(fileStatus => {
+        if (fileStatus.isFile && fileStatus.getPath.getName.endsWith(YARN_XML_FILENAME)) {
+          hadoopConf.addResource(fileStatus.getPath)
+        }
+      })
+    }
+    finally {
+      fs.close()
+    }
     val yarnClient = YarnClient.createYarnClient()
-    hadoopConf.get("yarn.resourcemanager.address")
     yarnClient.init(hadoopConf)
     yarnClient.start()
     // fet apps
@@ -85,7 +108,6 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
         finishTime = app.getFinishTime)
     })
     yarnClient.close()
-    fs.close()
     appSeq
   }
 }

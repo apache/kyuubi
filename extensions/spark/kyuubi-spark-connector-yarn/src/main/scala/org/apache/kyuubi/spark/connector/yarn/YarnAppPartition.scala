@@ -19,5 +19,5 @@ package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.spark.sql.connector.read.InputPartition
 
-case class YarnAppPartition(val appId: String)
+case class YarnAppPartition(yarnConfDir: Option[String], hdfsConfDir: Option[String])
   extends InputPartition

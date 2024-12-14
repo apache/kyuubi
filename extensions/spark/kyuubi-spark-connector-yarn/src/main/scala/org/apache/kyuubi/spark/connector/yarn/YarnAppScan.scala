@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -37,7 +38,9 @@ case class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType) ex
     // Fetch app for the given appId (filtering logic can be added)
     // hadoopConf can not be serialized correctly here
     // use map here
-    Array(YarnAppPartition(appId))
+    val yarnConfDir = SparkSession.active.conf.getOption("spark.sql.catalog.yarn.dir.conf.yarn")
+    val hdfsConfDir = SparkSession.active.conf.getOption("spark.sql.catalog.yarn.dir.conf.hdfs")
+    Array(new YarnAppPartition(yarnConfDir, hdfsConfDir))
   }
 
   override def createReaderFactory(): PartitionReaderFactory =
