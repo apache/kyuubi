@@ -67,8 +67,7 @@ class PlanOnlyStatement(
             statement)
           resultSet =
             ResultSetUtil.fromResultFetcher(resultFetcher, resultMaxRows, resultFetchTimeout);
-        case _ =>
-          explainOperation(statement)
+        case _ => explainOperation(statement)
       }
     } catch {
       onError()
