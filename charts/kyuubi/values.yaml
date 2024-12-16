@@ -22,6 +22,9 @@
 # Kyuubi server numbers
 replicaCount: 2
 
+# Kyuubi labels
+labels: ~
+
 # controls how Kyuubi server pods are created during initial scale up,
 # when replacing pods on nodes, or when scaling down.
 # The default policy is `OrderedReady`, alternative policy is `Parallel`.
@@ -305,3 +308,12 @@ metrics:
     enabled: false
     # Content of Prometheus rule file
     groups: []
+
+# Kyuubi lifecycle
+lifecycle:
+  postStart:
+    exec:
+      command: ['sh', '-c', "echo \"ok!!!\""]
+  preStop:
+    exec:
+      command: ["/bin/sh","-c","/opt/kyuubi/bin/kyuubi-ctl delete server --host $(hostname -I) --port \"10009\""]
