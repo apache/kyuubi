@@ -204,7 +204,7 @@
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
-        <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc1-bin</spark.archive.mirror>
+        <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc2-bin</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
@@ -1292,7 +1292,7 @@
             </snapshots>
             <id>spark-3.5.4-rc-staging</id>
             <name>Spark 3.5.4 RC Staging</name>
-            <url>https://repository.apache.org/content/repositories/orgapachespark-1471</url>
+            <url>https://repository.apache.org/content/repositories/orgapachespark-1473</url>
         </repository>
     </repositories>
 
@@ -2046,7 +2046,7 @@
             <properties>
                 <spark.version>3.5.4</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc1-bin</spark.archive.mirror>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.4-rc2-bin</spark.archive.mirror>
                 <delta.version>3.2.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
