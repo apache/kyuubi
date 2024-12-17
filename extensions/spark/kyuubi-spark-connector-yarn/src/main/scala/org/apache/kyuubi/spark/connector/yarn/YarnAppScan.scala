@@ -34,10 +34,6 @@ case class YarnAppScan(options: CaseInsensitiveStringMap, schema: StructType, pu
   override def readSchema(): StructType = schema
 
   override def planInputPartitions(): Array[InputPartition] = {
-    // show pushed
-    // scalastyle:off println
-    println(s"Applying filters: ${pushed.mkString(", ")}")
-    // scalastyle:on println
     Array(YarnAppPartition(
       SparkSession.active.sparkContext
         .hadoopConfiguration.asScala.map(kv => (kv.getKey, kv.getValue)).toMap,

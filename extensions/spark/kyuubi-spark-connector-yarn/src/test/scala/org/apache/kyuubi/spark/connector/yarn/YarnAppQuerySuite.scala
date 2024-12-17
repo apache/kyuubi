@@ -113,7 +113,7 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
     }
   }
 
-  test("query app with equalTo appType") {
+  test("query app with equalTo appState") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -143,6 +143,42 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
           val appCnt = x._2
           val queryCnt = spark.sql("select count(1) from yarn.default.apps " +
             s"where state = '${appState}'").collect().head.getLong(0)
+          assert(queryCnt == appCnt)
+        })
+      yarnClient.close()
+    }
+  }
+
+  test("query app with equalTo appType") {
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
+    miniHdfsService.getHadoopConf.forEach(kv => {
+      if (kv.getKey.startsWith("fs")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    miniYarnService.getYarnConf.forEach(kv => {
+      if (kv.getKey.startsWith("yarn")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      spark.sql("USE yarn")
+      val yarnClient = YarnClient.createYarnClient()
+      yarnClient.init(yarnConf)
+      yarnClient.start()
+      yarnClient.getApplications().asScala.map(x => x.getApplicationType)
+        .map(x => (x, 1))
+        .groupBy(x => x._1)
+        .mapValues(values => values.map(_._2).sum)
+        .foreach(x => {
+          val appType = x._1
+          val appCnt = x._2
+          val queryCnt = spark.sql("select count(1) from yarn.default.apps " +
+            s"where type = '${appType}'").collect().head.getLong(0)
           assert(queryCnt == appCnt)
         })
       yarnClient.close()
