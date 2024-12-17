@@ -17,29 +17,24 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.asScalaBufferConverter
+
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.yarn.api.records.{ApplicationId, ApplicationReport, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
+import org.apache.spark.sql.sources.{EqualTo, In}
 import org.apache.spark.unsafe.types.UTF8String
 
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-
-class YarnAppPartitionReader(inputPartition: YarnAppPartition)
+class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
 
-  private val YARN_XML_FILENAME: String = "yarn-site.xml"
-
-  private val CORE_XML_FILENAME: String = "core-site.xml"
-
-  private val HDFS_XML_FILENAME: String = "hdfs-site.xml"
-
-  private val CONF_DIR_PROP_KEY: String = "HADOOP_CONF_DIR"
-
-  private val appIterator = fetchApp(inputPartition).iterator
+  private val appIterator = fetchApp().iterator
 
   override def next(): Boolean = appIterator.hasNext
 
@@ -56,19 +51,48 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
       app.submitTime,
       app.launchTime,
       app.startTime,
-      app.finishTime))
+      app.finishTime,
+      UTF8String.fromString(app.trackingUrl),
+      UTF8String.fromString(app.originalTrackingUrl)))
   }
 
   override def close(): Unit = {}
 
-  private def fetchApp(inputPartition: YarnAppPartition): mutable.Seq[YarnApplication] = {
+  private def fetchApp(): mutable.Seq[YarnApplication] = {
     val hadoopConf = new Configuration()
-    inputPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
+    yarnAppPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
     val yarnClient = YarnClient.createYarnClient()
     yarnClient.init(hadoopConf)
     yarnClient.start()
     // fet apps
-    val applicationReports = yarnClient.getApplications
+    val applicationReports: java.util.List[ApplicationReport] =
+      yarnAppPartition.filters match {
+        case filters if filters.isEmpty => yarnClient.getApplications
+        // id => point query
+        // state => batch query
+        // type => in (a,b,c), batch query
+        case filters =>
+          filters.collectFirst {
+            case EqualTo("id", appId: String) => java.util.Collections.singletonList(
+                yarnClient.getApplicationReport(ApplicationId.fromString(appId)))
+            case EqualTo("state", state: String) =>
+              yarnClient.getApplications(java.util.EnumSet.of(YarnApplicationState.valueOf(state)))
+            case EqualTo("type", appType: String) =>
+              yarnClient.getApplications(java.util.Collections.singleton(appType))
+            case In("state", states: Array[Any]) => yarnClient.getApplications(
+                java.util.EnumSet.copyOf(states.map(x =>
+                  YarnApplicationState.valueOf(x.toString)).toList.asJava))
+            case In("type", types: Array[Any]) => yarnClient.getApplications(
+                types.map(x => x.toString).toSet.asJava)
+            case _ => yarnClient.getApplications()
+          }.get
+      }
+
+    //    case yarnAppPartition.filters match {
+    //      case filters if filters.isEmpty => yarnClient.getApplications
+    //      case filters =>
+    //        yarnClient.getApplications
+    //    }
     val appSeq = applicationReports.asScala.map(app => {
       YarnApplication(
         id = app.getApplicationId.toString,
@@ -81,7 +105,9 @@ class YarnAppPartitionReader(inputPartition: YarnAppPartition)
         submitTime = app.getSubmitTime,
         launchTime = app.getLaunchTime,
         startTime = app.getStartTime,
-        finishTime = app.getFinishTime)
+        finishTime = app.getFinishTime,
+        trackingUrl = app.getTrackingUrl,
+        originalTrackingUrl = app.getOriginalTrackingUrl)
     })
     yarnClient.close()
     appSeq
@@ -100,4 +126,6 @@ case class YarnApplication(
     submitTime: Long,
     launchTime: Long,
     startTime: Long,
-    finishTime: Long)
+    finishTime: Long,
+    trackingUrl: String,
+    originalTrackingUrl: String)

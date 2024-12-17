@@ -17,39 +17,11 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.io.{File, FileOutputStream}
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
-
 trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
-  def writeConfigToFile(conf: Configuration, filePath: String): Unit = {
-    val file = new File(filePath)
-    info(s"xml path: ${file.getAbsolutePath}")
-    val outputStream = new FileOutputStream(file)
-    try {
-      conf.writeXml(outputStream)
-    } finally {
-      outputStream.close()
-    }
-  }
+  protected val CONF_DIR: String = "tmp/hadoop-conf"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    // get all conf and set up hadoop conf dir
-    if (!new File("tmp/hadoop-conf").exists()) new File("tmp/hadoop-conf").mkdirs()
-    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/core-site.xml")
-    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hadoop-conf/hdfs-site.xml")
-    if (!new File("tmp/hdfs-conf").exists()) new File("tmp/hdfs-conf").mkdirs()
-    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hdfs-conf/core-site.xml")
-    writeConfigToFile(miniHdfsService.getHadoopConf, "tmp/hdfs-conf/hdfs-site.xml")
-    // init log dir and set permission
-    val fs = FileSystem.get(hdfsConf)
-    val logDir = new Path("/tmp/logs")
-    fs.mkdirs(logDir)
-    fs.setPermission(logDir, new org.apache.hadoop.fs.permission.FsPermission("777"))
-    info(s"hdfs web address: http://${fs.getConf.get("dfs.http.address")}")
-    fs.close()
     // mock app submit
     submitMockTasksInParallelTreeTimes()
     // log all conf
@@ -60,7 +32,5 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
 
   override def afterAll(): Unit = {
     super.afterAll()
-    // delete hadoop conf dir
-
   }
 }

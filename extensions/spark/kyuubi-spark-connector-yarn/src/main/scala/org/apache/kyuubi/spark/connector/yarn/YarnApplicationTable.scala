@@ -40,13 +40,15 @@ class YarnApplicationTable extends Table with SupportsRead {
       StructField("submit_time", LongType, nullable = false),
       StructField("launch_time", LongType, nullable = false),
       StructField("start_time", LongType, nullable = false),
-      StructField("finish_time", LongType, nullable = false)))
+      StructField("finish_time", LongType, nullable = false),
+      StructField("tracking_url", StringType, nullable = false),
+      StructField("original_tracking_url", StringType, nullable = false)))
 
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(caseInsensitiveStringMap: CaseInsensitiveStringMap): ScanBuilder =
-    new YarnAppScan(
+    YarnAppScanBuilder(
       caseInsensitiveStringMap,
       schema())
 }
