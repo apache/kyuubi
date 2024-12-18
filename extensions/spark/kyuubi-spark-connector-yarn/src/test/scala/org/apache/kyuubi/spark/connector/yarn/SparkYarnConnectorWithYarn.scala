@@ -25,8 +25,8 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
     // mock app submit
     submitMockTasksInParallelTreeTimes()
     // log all conf
-    miniHdfsService.getHadoopConf.forEach(
-      kv => info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
+    miniHdfsService.getHadoopConf.forEach(kv =>
+      info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
     miniYarnService.getYarnConf.forEach(kv =>
       info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
   }

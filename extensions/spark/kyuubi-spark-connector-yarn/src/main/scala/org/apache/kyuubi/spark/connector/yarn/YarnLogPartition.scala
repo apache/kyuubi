@@ -20,6 +20,8 @@ package org.apache.kyuubi.spark.connector.yarn
 import org.apache.spark.sql.connector.read.InputPartition
 import org.apache.spark.sql.sources.Filter
 
-case class YarnLogPartition(hadoopConfMap: Map[String, String], filters: Array[Filter],
-                            logPath: Option[String])
+case class YarnLogPartition(
+    hadoopConfMap: Map[String, String],
+    filters: Array[Filter],
+    logPath: Option[String])
   extends InputPartition

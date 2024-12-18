@@ -22,8 +22,10 @@ import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-case class YarnLogScan(options: CaseInsensitiveStringMap, schema: StructType,
-                       filters: Array[Filter])
+case class YarnLogScan(
+    options: CaseInsensitiveStringMap,
+    schema: StructType,
+    filters: Array[Filter])
   extends BasicScan {
   override def readSchema(): StructType = schema
 

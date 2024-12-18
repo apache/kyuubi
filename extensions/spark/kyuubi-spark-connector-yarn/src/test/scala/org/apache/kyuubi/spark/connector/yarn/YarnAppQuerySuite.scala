@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import scala.jdk.CollectionConverters.asScalaBufferConverter
+
 import org.apache.hadoop.yarn.client.api.YarnClient
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
   test("query apps") {

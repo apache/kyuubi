@@ -16,13 +16,14 @@
  */
 package org.apache.kyuubi.spark.connector.yarn
 
+import java.util
+
+import scala.jdk.CollectionConverters.setAsJavaSetConverter
+
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table, TableCapability}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-
-import java.util
-import scala.jdk.CollectionConverters.setAsJavaSetConverter
 
 class YarnLogTable extends Table with SupportsRead {
   override def name(): String = "app_logs"
