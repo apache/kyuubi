@@ -44,8 +44,7 @@ class GlutenSuite extends KyuubiFunSuite with GlutenSuiteMixin {
   test("KYUUBI #5467: test gluten plan") {
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       val plan = spark.sql("explain SELECT 1").head().getString(0)
-      assert(plan.contains("VeloxColumnarToRowExec") && plan.contains(
-        "VeloxColumnarToRowExec") && plan.contains("RowToVeloxColumnar"))
+      assert(plan.contains("VeloxColumnarToRow") && plan.contains("RowToVeloxColumnar"))
     }
   }
 }
