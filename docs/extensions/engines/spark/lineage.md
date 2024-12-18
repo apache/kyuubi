@@ -117,7 +117,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests -Dspark.version=3.5.2
+build/mvn clean package -pl :kyuubi-spark-lineage_2.12 -am -DskipTests -Dspark.version=3.5.4
 ```
 
 The available `spark.version`s are shown in the following table.
