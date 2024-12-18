@@ -95,6 +95,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
           }
           setOperationException(ke)
           setState(OperationState.ERROR)
+          shutdownTimeoutMonitor()
           throw ke
         }
       }
