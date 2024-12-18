@@ -17,14 +17,19 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.read._
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-case class YarnAppScanBuilder(options: CaseInsensitiveStringMap, schema: StructType)
-  extends BasicScanBuilder {
+trait BasicScan
+  extends ScanBuilder
+  with Scan with Batch with Serializable {
 
-  override def build(): Scan = {
-    YarnAppScan(options, schema, pushed)
-  }
+  protected val hadoopConfMap: Map[String, String] = SparkSession.active.sparkContext
+    .hadoopConfiguration.asScala.map(kv => (kv.getKey, kv.getValue)).toMap
+
+  override def toBatch: Batch = this
+
+  override def build(): Scan = this
 }

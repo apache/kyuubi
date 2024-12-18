@@ -17,6 +17,23 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.spark.sql.connector.read.InputPartition
+import org.apache.spark.sql.connector.read._
+import org.apache.spark.sql.sources.Filter
+import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class YarnLogsPartition(val appId: String) extends InputPartition
+case class YarnLogScan(options: CaseInsensitiveStringMap, schema: StructType,
+                       filters: Array[Filter])
+  extends BasicScan {
+  override def readSchema(): StructType = schema
+
+  override def planInputPartitions(): Array[InputPartition] = {
+    // Fetch logs for the given appId (filtering logic can be added)
+    // TODO make remote dir configurable
+    Array(YarnLogPartition(hadoopConfMap, filters, null))
+  }
+
+  override def createReaderFactory(): PartitionReaderFactory =
+    new YarnLogReaderFactory
+
+}

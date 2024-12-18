@@ -20,10 +20,10 @@ package org.apache.kyuubi.spark.connector.yarn
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.read.{InputPartition, PartitionReader, PartitionReaderFactory}
 
-class YarnLogsReaderFactory extends PartitionReaderFactory {
+class YarnLogReaderFactory extends PartitionReaderFactory {
 
   override def createReader(partition: InputPartition): PartitionReader[InternalRow] = {
-    val yarnPartition = partition.asInstanceOf[YarnLogsPartition]
-    new YarnLogsPartitionReader(yarnPartition.appId)
+    val yarnPartition = partition.asInstanceOf[YarnLogPartition]
+    new YarnLogPartitionReader(yarnPartition)
   }
 }

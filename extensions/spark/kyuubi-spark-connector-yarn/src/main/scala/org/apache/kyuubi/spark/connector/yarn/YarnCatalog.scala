@@ -46,7 +46,7 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   }
 
   override def loadTable(identifier: Identifier): Table = identifier.name match {
-    case "app_logs" => new YarnLogsTable
+    case "app_logs" => new YarnLogTable
     case "apps" => new YarnApplicationTable
     case _ => throw new NoSuchTableException(s"${identifier.name}")
 

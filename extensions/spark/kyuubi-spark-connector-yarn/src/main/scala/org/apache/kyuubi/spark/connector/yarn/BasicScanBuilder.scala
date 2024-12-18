@@ -18,13 +18,23 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.spark.sql.connector.read._
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.apache.spark.sql.sources.Filter
 
-case class YarnAppScanBuilder(options: CaseInsensitiveStringMap, schema: StructType)
-  extends BasicScanBuilder {
+trait BasicScanBuilder
+  extends ScanBuilder
+  with SupportsPushDownFilters with Serializable {
 
-  override def build(): Scan = {
-    YarnAppScan(options, schema, pushed)
+  protected var pushed: Array[Filter] = Array.empty
+
+  override def pushFilters(filters: Array[Filter]): Array[Filter] = {
+    val (supportedFilter, unsupportedFilter) = filters.partition {
+      case _: org.apache.spark.sql.sources.EqualTo => true
+      case _: org.apache.spark.sql.sources.In => true
+      case _ => false
+    }
+    pushed = supportedFilter
+    unsupportedFilter
   }
+
+  override def pushedFilters(): Array[Filter] = pushed
 }

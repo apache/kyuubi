@@ -54,8 +54,8 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     yarnConfig.setInt(YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_MB, 4096)
 
     yarnConfig.setBoolean(YarnConfiguration.RM_SCHEDULER_INCLUDE_PORT_IN_NODE_NAME, true)
-    yarnConfig.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 1)
-    yarnConfig.setInt(YarnConfiguration.RM_MAX_COMPLETED_APPLICATIONS, 10)
+    yarnConfig.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, 5)
+    yarnConfig.setInt(YarnConfiguration.RM_MAX_COMPLETED_APPLICATIONS, 20)
     yarnConfig.setInt(YarnConfiguration.RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES, 4)
     yarnConfig.setInt(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC, 3600)
     yarnConfig.setBoolean(YarnConfiguration.LOG_AGGREGATION_ENABLED, false)
@@ -90,7 +90,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
 
     // Configure YARN log aggregation
     yarnConfig.set("yarn.nodemanager.remote-app-log-dir", "/tmp/logs")
-    yarnConfig.set("yarn.nodemanager.remote-app-log-dir-suffix", "logs")
+    yarnConfig.set("yarn.nodemanager.remote-app-log-dir-suffix", "xxx")
     yarnConfig.set("yarn.log-aggregation-enable", "true")
     yarnConfig.set("yarn.log-aggregation.retain-seconds", "3600")
     yarnConfig.set("yarn.log-aggregation.retain-check-interval-seconds", "300")
@@ -106,7 +106,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
 
     // TODO delete it
-    hdfsConf.set("hadoop.http.staticuser.user", s"zhangxinsen")
+    hdfsConf.set("hadoop.http.staticuser.user", "zhangxinsen")
 
     miniHdfsService = new MiniDFSService(hdfsConf)
     miniHdfsService.initialize(conf)
@@ -160,7 +160,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
 
     // Set up container launch context (e.g., commands to execute)
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])
-    val commands = Collections.singletonList("echo Hello, MiniYARNCluster! && sleep 5")
+    val commands = Collections.singletonList("echo Hello, MiniYARNCluster! && sleep 5 lscd")
     amContainer.setCommands(commands)
 
     // Application Master resource requirements
@@ -192,7 +192,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
   }
 
   def submitMockTasksInParallelTreeTimes(): Unit = {
-    val threads = (1 to 3).map { i =>
+    val threads = (1 to 10).map { i =>
       new Thread(() => {
         info(s"Starting submission in thread $i")
         try {

@@ -16,30 +16,29 @@
  */
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.util
-
-import scala.jdk.CollectionConverters.setAsJavaSetConverter
-
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table, TableCapability}
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class YarnLogsTable extends Table with SupportsRead {
-  override def name(): String = "app_log"
+import java.util
+import scala.jdk.CollectionConverters.setAsJavaSetConverter
+
+class YarnLogTable extends Table with SupportsRead {
+  override def name(): String = "app_logs"
 
   override def schema(): StructType =
     new StructType(Array(
-      StructField("appId", StringType, nullable = false),
+      StructField("app_id", StringType, nullable = false),
       StructField("user", StringType, nullable = false),
-      StructField("rowIndex", IntegerType, nullable = false),
+      StructField("row_number", IntegerType, nullable = false),
       StructField("message", StringType, nullable = true)))
 
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
   override def newScanBuilder(caseInsensitiveStringMap: CaseInsensitiveStringMap): ScanBuilder =
-    new YarnLogsScan(
+    YarnLogScanBuilder(
       caseInsensitiveStringMap,
       schema())
 }

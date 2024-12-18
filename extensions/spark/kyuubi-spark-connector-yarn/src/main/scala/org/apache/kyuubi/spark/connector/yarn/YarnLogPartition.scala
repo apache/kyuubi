@@ -17,22 +17,9 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import org.apache.spark.sql.connector.read._
-import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.apache.spark.sql.connector.read.InputPartition
+import org.apache.spark.sql.sources.Filter
 
-class YarnLogsScan(options: CaseInsensitiveStringMap, schema: StructType) extends ScanBuilder
-  with Scan with Batch with Serializable {
-  private val appId: String = options.getOrDefault("appId", "*")
-  override def readSchema(): StructType = schema
-
-  override def planInputPartitions(): Array[InputPartition] = {
-    // Fetch logs for the given appId (filtering logic can be added)
-    Array(new YarnLogsPartition(appId))
-  }
-
-  override def createReaderFactory(): PartitionReaderFactory =
-    new YarnLogsReaderFactory
-
-  override def build(): Scan = this
-}
+case class YarnLogPartition(hadoopConfMap: Map[String, String], filters: Array[Filter],
+                            logPath: Option[String])
+  extends InputPartition

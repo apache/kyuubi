@@ -25,9 +25,10 @@ trait SparkYarnConnectorWithYarn extends WithKyuubiServerAndYarnMiniCluster {
     // mock app submit
     submitMockTasksInParallelTreeTimes()
     // log all conf
-    miniHdfsService.getHadoopConf.forEach(kv =>
+    miniHdfsService.getHadoopConf.forEach(
+      kv => info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
+    miniYarnService.getYarnConf.forEach(kv =>
       info(s"mini hdfs conf ${kv.getKey}: ${kv.getValue}"))
-    miniYarnService.getYarnConf.forEach(kv => info(s"mini yarn conf ${kv.getKey}: ${kv.getValue}"))
   }
 
   override def afterAll(): Unit = {
