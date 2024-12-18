@@ -17,14 +17,13 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-
 import org.apache.hadoop.yarn.client.api.YarnClient
+import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 
-import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
   test("query apps") {
@@ -113,7 +112,7 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
     }
   }
 
-  test("query app with equalTo appState") {
+  test("query app with equalTo/in appState") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -141,15 +140,18 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
         .foreach(x => {
           val appState = x._1
           val appCnt = x._2
-          val queryCnt = spark.sql("select count(1) from yarn.default.apps " +
+          val queryCntWithEqualTo = spark.sql("select count(1) from yarn.default.apps " +
             s"where state = '${appState}'").collect().head.getLong(0)
-          assert(queryCnt == appCnt)
+          assert(queryCntWithEqualTo == appCnt)
+          val queryCntWithIn = spark.sql("select count(1) from yarn.default.apps " +
+            s"where state in ('${appState}')").collect().head.getLong(0)
+          assert(queryCntWithIn == appCnt)
         })
       yarnClient.close()
     }
   }
 
-  test("query app with equalTo appType") {
+  test("query app with equalTo/in appType") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
       .set("spark.ui.enabled", "false")
@@ -177,9 +179,12 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
         .foreach(x => {
           val appType = x._1
           val appCnt = x._2
-          val queryCnt = spark.sql("select count(1) from yarn.default.apps " +
+          val queryCntWithEqualTo = spark.sql("select count(1) from yarn.default.apps " +
             s"where type = '${appType}'").collect().head.getLong(0)
-          assert(queryCnt == appCnt)
+          assert(queryCntWithEqualTo == appCnt)
+          val queryCntWithIn = spark.sql("select count(1) from yarn.default.apps " +
+            s"where type in ('${appType}')").collect().head.getLong(0)
+          assert(queryCntWithIn == appCnt)
         })
       yarnClient.close()
     }
