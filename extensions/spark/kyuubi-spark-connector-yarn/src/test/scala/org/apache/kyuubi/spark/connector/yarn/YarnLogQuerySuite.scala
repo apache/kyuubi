@@ -42,7 +42,7 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
       val rows = spark.sql("select * from yarn.default.app_logs").collect()
-      rows
+      rows.foreach(row => info(row.toString()))
     }
   }
 

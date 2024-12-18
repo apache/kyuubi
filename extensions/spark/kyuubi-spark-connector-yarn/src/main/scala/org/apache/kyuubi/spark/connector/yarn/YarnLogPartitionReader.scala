@@ -26,8 +26,10 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.hadoop.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.sources.EqualTo
+import org.apache.spark.unsafe.types.UTF8String
 
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   extends PartitionReader[InternalRow] {
@@ -40,14 +42,18 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
     FileSystem.get(hadoopConf)
   }
 
-  private val logsIterator = fetchLogs().iterator
+  private val logIterator = fetchLogs().iterator
 
-  override def next(): Boolean = logsIterator.hasNext
+  override def next(): Boolean = logIterator.hasNext
 
   override def get(): InternalRow = {
-    val log = logsIterator.next()
-    // new GenericInternalRow(Array[Any](log.appId, log.logLevel, log.message))
-    null
+    val yarnLog = logIterator.next()
+    new GenericInternalRow(Array[Any](
+      UTF8String.fromString(yarnLog.appId),
+      UTF8String.fromString(yarnLog.user),
+      UTF8String.fromString(yarnLog.containerId),
+      yarnLog.rowNumber,
+      UTF8String.fromString(yarnLog.message)))
   }
 
   // given a path in hdfs, then get all files under it, supports *
@@ -108,11 +114,10 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
         val applicationId = split(split.length - 2)
         // TODO use regexp
         val user = remoteAppLogDir.get match {
-          case dir if dir.startsWith("hdfs") =>
-            logFileStatus.getPath.toString.split(s"${dir}")(0).split("/")(0)
-          case dir => logFileStatus.getPath.toString.split(s"${dir}")(1).split("/")(0)
+          case dir if dir.endsWith("/") =>
+            logFileStatus.getPath.toString.split(s"${dir}")(1).split("/")(0)
+          case dir => logFileStatus.getPath.toString.split(s"${dir}")(1).split("/")(1)
         }
-        logFileStatus.getPath.toString.split(s"${remoteAppLogDir}")(1).split("/")(0)
         // todo read logs multi-threads
         logEntries ++= fetchLog(
           logFileStatus,
@@ -121,7 +126,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
           applicationId)
       }
     }
-    Seq()
+    logEntries
   }
 
   /**

@@ -32,6 +32,7 @@ class YarnLogTable extends Table with SupportsRead {
     new StructType(Array(
       StructField("app_id", StringType, nullable = false),
       StructField("user", StringType, nullable = false),
+      StructField("container_id", StringType, nullable = false),
       StructField("row_number", IntegerType, nullable = false),
       StructField("message", StringType, nullable = true)))
 
