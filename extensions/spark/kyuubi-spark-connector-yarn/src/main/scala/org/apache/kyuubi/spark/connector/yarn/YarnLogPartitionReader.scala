@@ -118,7 +118,6 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
             logFileStatus.getPath.toString.split(s"${dir}")(1).split("/")(0)
           case dir => logFileStatus.getPath.toString.split(s"${dir}")(1).split("/")(1)
         }
-        // todo read logs multi-threads
         logEntries ++= fetchLog(
           logFileStatus,
           user,
@@ -160,7 +159,6 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
       }
       logEntries
     } finally {
-      // 关闭流
       IOUtils.closeStream(inputStream)
       reader.close()
     }

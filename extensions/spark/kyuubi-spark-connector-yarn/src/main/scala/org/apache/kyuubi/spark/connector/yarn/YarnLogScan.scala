@@ -32,6 +32,7 @@ case class YarnLogScan(
   override def planInputPartitions(): Array[InputPartition] = {
     // Fetch logs for the given appId (filtering logic can be added)
     // TODO make remote dir configurable
+    // TODO get file nums and construct nums inputPartition
     Array(YarnLogPartition(hadoopConfMap, filters, null))
   }
 
