@@ -17,6 +17,11 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import java.io.{BufferedReader, InputStreamReader}
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.IOUtils
@@ -24,10 +29,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
-
-import java.io.{BufferedReader, InputStreamReader}
-import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
 
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   extends PartitionReader[InternalRow] {
@@ -74,7 +75,9 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   private def fetchLog(): Seq[LogEntry] = {
     val logDirInReg = yarnLogPartition.remoteAppLogDir match {
       // in case of /tmp/logs/, /tmp/logs//
-      case dir if dir.endsWith("/") => dir.replaceAll("/+", "/").replace("/", "\\/")
+      case dir if dir.endsWith("/") =>
+        val tmpDir = dir.replaceAll("/+", "/")
+        tmpDir.substring(0, tmpDir.length - 1).replace("/", "\\/")
       // in case of /tmp/logs
       case dir => dir.replace("/", "\\/")
     }
@@ -93,7 +96,6 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
             line = reader.readLine();
             line != null
           }) {
-            // println(s"Line $lineNumber: $line")
             lineNumber += 1
             logEntries += LogEntry(
               applicationId,
