@@ -48,4 +48,28 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
     }
   }
 
+  test("query logs") {
+    val sparkConf = new SparkConf()
+      .setMaster("local[*]")
+      // .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+      .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
+    miniHdfsService.getHadoopConf.forEach(kv => {
+      if (kv.getKey.startsWith("fs")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    miniYarnService.getYarnConf.forEach(kv => {
+      if (kv.getKey.startsWith("yarn")) {
+        sparkConf.set(s"spark.hadoop.${kv.getKey}", kv.getValue)
+      }
+    })
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      spark.sql("USE yarn")
+      val host = spark.sql(
+        "select * from yarn.default.app_logs limit 10").collect().head.getString(2)
+      assert(host == "localhost")
+    }
+  }
+
 }

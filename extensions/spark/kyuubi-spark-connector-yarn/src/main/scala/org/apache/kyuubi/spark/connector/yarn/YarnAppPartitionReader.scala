@@ -34,6 +34,9 @@ import org.apache.spark.unsafe.types.UTF8String
 class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
 
+  private val validYarnStateSet =
+    Set("NEW", "NEW_SAVING", "SUBMITTED", "ACCEPTED", "RUNNING", "FINISHED", "FAILED", "KILLED")
+
   private val appIterator = fetchApp().iterator
 
   override def next(): Boolean = appIterator.hasNext
@@ -76,12 +79,20 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
             case EqualTo("id", appId: String) => java.util.Collections.singletonList(
                 yarnClient.getApplicationReport(ApplicationId.fromString(appId)))
             case EqualTo("state", state: String) =>
-              yarnClient.getApplications(java.util.EnumSet.of(YarnApplicationState.valueOf(state)))
+              state.toUpperCase match {
+                case validState if validYarnStateSet.contains(validState) =>
+                  yarnClient.getApplications(
+                    java.util.EnumSet.of(YarnApplicationState.valueOf(validState)))
+                case _ => java.util.Collections.EMPTY_LIST[ApplicationReport]
+              }
             case EqualTo("type", appType: String) =>
               yarnClient.getApplications(java.util.Collections.singleton(appType))
             case In("state", states: Array[Any]) => yarnClient.getApplications(
-                java.util.EnumSet.copyOf(states.map(x =>
-                  YarnApplicationState.valueOf(x.toString)).toList.asJava))
+                java.util.EnumSet.copyOf(states
+                  .map(x => x.toString.toUpperCase)
+                  .filter(x => validYarnStateSet.contains(x))
+                  .map(x =>
+                    YarnApplicationState.valueOf(x)).toList.asJava))
             case In("type", types: Array[Any]) => yarnClient.getApplications(
                 types.map(x => x.toString).toSet.asJava)
             case _ => yarnClient.getApplications()

@@ -110,7 +110,6 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
         }
       case _ => Seq.empty
     }
-
   }
 }
 

@@ -105,9 +105,6 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
     hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
 
-    // TODO delete it
-    hdfsConf.set("hadoop.http.staticuser.user", "zhangxinsen")
-
     miniHdfsService = new MiniDFSService(hdfsConf)
     miniHdfsService.initialize(conf)
     miniHdfsService.start()
@@ -192,7 +189,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
   }
 
   def submitMockTasksInParallelTreeTimes(): Unit = {
-    val threads = (1 to 10).map { i =>
+    val threads = (1 to 100).map { i =>
       new Thread(() => {
         info(s"Starting submission in thread $i")
         try {

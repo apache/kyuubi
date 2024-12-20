@@ -38,11 +38,7 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
   }
 
   override def listTables(namespace: Array[String]): Array[Identifier] = {
-    namespace(1) match {
-      case "default" =>
-        Array(Identifier.of(namespace, "app_logs"), Identifier.of(namespace, "apps"))
-      case _ => throw new NoSuchNamespaceException(namespace)
-    }
+    Array(Identifier.of(namespace, "app_logs"), Identifier.of(namespace, "apps"))
   }
 
   override def loadTable(identifier: Identifier): Table = identifier.name match {
