@@ -17,11 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.io.{BufferedReader, InputStreamReader}
-
-import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.io.IOUtils
@@ -29,6 +24,10 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
+
+import java.io.{BufferedReader, InputStreamReader}
+import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   extends PartitionReader[InternalRow] {
@@ -50,7 +49,8 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
       UTF8String.fromString(yarnLog.user),
       UTF8String.fromString(yarnLog.host),
       UTF8String.fromString(yarnLog.containerId),
-      yarnLog.rowNumber,
+      yarnLog.lineNumber,
+      UTF8String.fromString(yarnLog.fileName),
       UTF8String.fromString(yarnLog.message)))
   }
 
@@ -101,6 +101,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
               s"${containerHost}_${containerSuffix}",
               containerHost,
               lineNumber,
+              path.getName,
               line)
           }
           logEntries
@@ -119,5 +120,6 @@ case class LogEntry(
     user: String,
     containerId: String,
     host: String,
-    rowNumber: Int,
+    lineNumber: Int,
+    fileName: String,
     message: String)

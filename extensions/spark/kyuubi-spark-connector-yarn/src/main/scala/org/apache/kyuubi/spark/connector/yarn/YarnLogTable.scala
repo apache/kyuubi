@@ -34,7 +34,8 @@ class YarnLogTable extends Table with SupportsRead {
       StructField("user", StringType, nullable = false),
       StructField("host", StringType, nullable = false),
       StructField("container_id", StringType, nullable = false),
-      StructField("row_number", IntegerType, nullable = false),
+      StructField("line_num", IntegerType, nullable = false),
+      StructField("file_name", StringType, nullable = false),
       StructField("message", StringType, nullable = true)))
 
   override def capabilities(): util.Set[TableCapability] =

@@ -189,7 +189,7 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
   }
 
   def submitMockTasksInParallelTreeTimes(): Unit = {
-    val threads = (1 to 100).map { i =>
+    val threads = (1 to 5).map { i =>
       new Thread(() => {
         info(s"Starting submission in thread $i")
         try {

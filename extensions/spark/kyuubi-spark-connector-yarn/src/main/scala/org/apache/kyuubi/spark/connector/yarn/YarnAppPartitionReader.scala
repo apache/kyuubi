@@ -83,7 +83,7 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
                 case validState if validYarnStateSet.contains(validState) =>
                   yarnClient.getApplications(
                     java.util.EnumSet.of(YarnApplicationState.valueOf(validState)))
-                case _ => java.util.Collections.EMPTY_LIST[ApplicationReport]
+                case _ => Seq.empty[ApplicationReport].asJava
               }
             case EqualTo("type", appType: String) =>
               yarnClient.getApplications(java.util.Collections.singleton(appType))
