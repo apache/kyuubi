@@ -17,27 +17,20 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.io.{BufferedReader, InputStreamReader}
-
-import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
-
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
 
+import java.io.{BufferedReader, InputStreamReader}
+import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
+
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   extends PartitionReader[InternalRow] {
-
-  private val fs = {
-    val hadoopConf = new Configuration()
-    yarnLogPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
-    FileSystem.get(hadoopConf)
-  }
 
   private val logIterator = fetchLog().iterator
 
@@ -86,6 +79,9 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
     yarnLogPartition.logPath match {
       case pathPattern(user, applicationId, containerHost, containerSuffix) =>
         val path = new Path(yarnLogPartition.logPath)
+        val hadoopConf = new Configuration()
+        yarnLogPartition.hadoopConfMap.foreach(kv => hadoopConf.set(kv._1, kv._2))
+        val fs = path.getFileSystem(hadoopConf)
         val inputStream = fs.open(path)
         val reader = new BufferedReader(new InputStreamReader(inputStream))
         var line: String = null
@@ -93,7 +89,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
         val logEntries = new ArrayBuffer[LogEntry]()
         try {
           while ({
-            line = reader.readLine();
+            line = reader.readLine()
             line != null
           }) {
             lineNumber += 1
