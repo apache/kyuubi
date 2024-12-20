@@ -17,6 +17,11 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import java.io.{BufferedReader, InputStreamReader}
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.IOUtils
@@ -24,10 +29,6 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.unsafe.types.UTF8String
-
-import java.io.{BufferedReader, InputStreamReader}
-import scala.collection.mutable.ArrayBuffer
-import scala.util.matching.Regex
 
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   extends PartitionReader[InternalRow] {
