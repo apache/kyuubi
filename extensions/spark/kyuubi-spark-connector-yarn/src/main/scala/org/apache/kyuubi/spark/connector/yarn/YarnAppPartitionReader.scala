@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable
-import scala.jdk.CollectionConverters.asScalaBufferConverter
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.{ApplicationId, ApplicationReport, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
@@ -30,6 +26,10 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
 import org.apache.spark.sql.sources.{EqualTo, In}
 import org.apache.spark.unsafe.types.UTF8String
+
+import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.jdk.CollectionConverters.asScalaBufferConverter
 
 class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
   extends PartitionReader[InternalRow] with Logging {
@@ -79,7 +79,7 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
             case EqualTo("id", appId: String) => java.util.Collections.singletonList(
                 yarnClient.getApplicationReport(ApplicationId.fromString(appId)))
             case EqualTo("state", state: String) =>
-              state.toUpperCase match {
+              state match {
                 case validState if validYarnStateSet.contains(validState) =>
                   yarnClient.getApplications(
                     java.util.EnumSet.of(YarnApplicationState.valueOf(validState)))
@@ -89,7 +89,7 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
               yarnClient.getApplications(java.util.Collections.singleton(appType))
             case In("state", states: Array[Any]) => yarnClient.getApplications(
                 java.util.EnumSet.copyOf(states
-                  .map(x => x.toString.toUpperCase)
+                  .map(x => x.toString)
                   .filter(x => validYarnStateSet.contains(x))
                   .map(x =>
                     YarnApplicationState.valueOf(x)).toList.asJava))
