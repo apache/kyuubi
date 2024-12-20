@@ -23,10 +23,10 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
 
 class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
-  test("query logs") {
+  test("query logs with host") {
     val sparkConf = new SparkConf()
       .setMaster("local[*]")
-      .set("spark.ui.enabled", "false")
+      // .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.yarn", classOf[YarnCatalog].getName)
     miniHdfsService.getHadoopConf.forEach(kv => {
@@ -41,8 +41,10 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
     })
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
-      val rows = spark.sql("select * from yarn.default.app_logs").collect()
-      rows.foreach(row => info(row.toString()))
+      val cnt = spark.sql(
+        "select count(1) from yarn.default.app_logs where host='localhost'").collect().head.getLong(
+        0)
+      assert(cnt > 0)
     }
   }
 
