@@ -81,8 +81,6 @@ case class YarnLogScan(
    * hadoop3:
    * /tmp/logs/xxx/bucket-xxx-tfile/0001/application_1734531705578_0001/localhost_32422
    * /tmp/logs/xxx/bucket-logs-tfile/0001/application_1734530210878_0001/localhost_24232
-   * hadoop2:
-   * /tmp/logs/xxx/logs/application_1716268141594_240044/node10_35254
    *
    * @return
    */
@@ -91,13 +89,9 @@ case class YarnLogScan(
       case pushed if pushed.isEmpty => listFiles(remoteAppLogDir)
       case pushed => pushed.collectFirst {
           case EqualTo("app_id", appId: String) =>
-            listFiles(s"${remoteAppLogDir}/*/*/*/${appId}") ++
-              // compatible for hadoop2
-              listFiles(s"${remoteAppLogDir}/*/*/${appId}")
+            listFiles(s"${remoteAppLogDir}/*/*/*/${appId}")
           case EqualTo("container_id", containerId: String) =>
-            listFiles(s"${remoteAppLogDir}/*/*/*/*/${containerId}") ++
-              // compatible for hadoop2
-              listFiles(s"${remoteAppLogDir}/*/*/*/${containerId}")
+            listFiles(s"${remoteAppLogDir}/*/*/*/*/${containerId}")
           case EqualTo("user", user: String) => listFiles(s"${remoteAppLogDir}/${user}")
           case _ => listFiles(remoteAppLogDir)
         }.get
