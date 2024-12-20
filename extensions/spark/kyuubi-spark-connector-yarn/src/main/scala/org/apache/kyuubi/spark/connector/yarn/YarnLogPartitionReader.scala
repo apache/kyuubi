@@ -49,9 +49,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
       UTF8String.fromString(yarnLog.message)))
   }
 
-  override def close(): Unit = {
-    fs.close()
-  }
+  override def close(): Unit = {}
 
   /**
    * fet log
@@ -107,6 +105,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
         } finally {
           IOUtils.closeStream(inputStream)
           reader.close()
+          fs.close()
         }
       case _ => Seq.empty
     }
