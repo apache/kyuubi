@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
+import scala.collection.mutable
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.spark.sql.SparkSession
@@ -24,8 +26,6 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-
-import scala.collection.mutable
 
 case class YarnLogScan(
     options: CaseInsensitiveStringMap,
