@@ -18,7 +18,7 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.spark.sql.connector.read._
-import org.apache.spark.sql.sources.{EqualTo, Filter, In}
+import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -33,14 +33,10 @@ case class YarnLogScanBuilder(options: CaseInsensitiveStringMap, schema: StructT
     val (supportedFilter, unsupportedFilter) = filters.partition {
       case filter: EqualTo =>
         filter match {
-          case EqualTo("id", _) => true
-          case EqualTo("state", _) => true
-          case EqualTo("type", _) => true
-        }
-      case filter: In =>
-        filter match {
-          case In("state", _) => true
-          case In("type", _) => true
+          case EqualTo("app_id", _) => true
+          case EqualTo("user", _) => true
+          case EqualTo("container_id", _) => true
+          case _ => false
         }
       case _ => false
     }

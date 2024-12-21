@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import scala.collection.mutable
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, FileSystem, Path}
 import org.apache.spark.sql.SparkSession
@@ -26,6 +24,8 @@ import org.apache.spark.sql.connector.read._
 import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
+import scala.collection.mutable
 
 case class YarnLogScan(
     options: CaseInsensitiveStringMap,
@@ -58,18 +58,16 @@ case class YarnLogScan(
     val fs = FileSystem.get(hadoopConf)
     val path = new Path(pathStr)
     val logFiles = mutable.ArrayBuffer[FileStatus]()
-    if (fs.exists(path)) {
-      val fileStatuses: Array[FileStatus] = fs.globStatus(path)
-      if (fileStatuses != null && fileStatuses.nonEmpty) {
-        fileStatuses.foreach {
-          case status if status.isFile => logFiles += status
-          case status if status.isDirectory =>
-            val fileIterator = fs.listFiles(status.getPath, true)
-            while (fileIterator.hasNext) {
-              val fileStatus = fileIterator.next()
-              if (fileStatus.isFile) logFiles += fileStatus
-            }
-        }
+    val fileStatuses: Array[FileStatus] = fs.globStatus(path)
+    if (fileStatuses != null && fileStatuses.nonEmpty) {
+      fileStatuses.foreach {
+        case status if status.isFile => logFiles += status
+        case status if status.isDirectory =>
+          val fileIterator = fs.listFiles(status.getPath, true)
+          while (fileIterator.hasNext) {
+            val fileStatus = fileIterator.next()
+            if (fileStatus.isFile) logFiles += fileStatus
+          }
       }
     }
     fs.close()

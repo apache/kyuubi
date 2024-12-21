@@ -123,9 +123,9 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
 
   private def maybeFilter(app: ApplicationReport, filter: Filter): Boolean = {
     filter match {
-      case EqualTo("id", appId: String) => app.getApplicationId.toString eq appId
-      case EqualTo("state", appState: String) => app.getYarnApplicationState.name() eq appState
-      case EqualTo("type", appType: String) => app.getApplicationType eq appType
+      case EqualTo("id", appId: String) => app.getApplicationId.toString.equals(appId)
+      case EqualTo("state", appState: String) => app.getYarnApplicationState.name().equals(appState)
+      case EqualTo("type", appType: String) => app.getApplicationType.equals(appType)
       case In("state", states) => states.map(x => x.toString)
           .contains(app.getYarnApplicationState.name())
       case In("type", types) => types.map(x => x.toString)

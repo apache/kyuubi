@@ -28,6 +28,7 @@ import org.apache.hadoop.io.IOUtils
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
+import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.unsafe.types.UTF8String
 
 class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
@@ -52,8 +53,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
   override def close(): Unit = {}
 
   /**
-   * fet log
-   * * hadoop3:
+   * fetch log
    * * /tmp/logs/xxx/bucket-xxx-tfile/0001/application_1734531705578_0001/localhost_32422
    * * /tmp/logs/xxx/bucket-logs-tfile/0001/application_1734530210878_0001/localhost_24232
    *
@@ -82,7 +82,7 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
         val inputStream = fs.open(path)
         val reader = new BufferedReader(new InputStreamReader(inputStream))
         var line: String = null
-        var lineNumber: Int = 1
+        var lineNumber: Int = 0
         val logEntries = new ArrayBuffer[LogEntry]()
         try {
           while ({
@@ -99,12 +99,23 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
               path.toUri.getPath,
               line)
           }
-          logEntries
+          logEntries.filter(entry =>
+            yarnLogPartition.filters.forall(filter =>
+              maybeFilter(entry, filter)))
         } finally {
           IOUtils.closeStream(inputStream)
           reader.close()
         }
       case _ => Seq.empty
+    }
+  }
+
+  private def maybeFilter(entry: LogEntry, filter: Filter): Boolean = {
+    filter match {
+      case EqualTo("app_id", appId: String) => entry.appId.equals(appId)
+      case EqualTo("container_id", containerId: String) => entry.containerId.equals(containerId)
+      case EqualTo("user", user: String) => entry.user.equals(user)
+      case _ => false
     }
   }
 }
