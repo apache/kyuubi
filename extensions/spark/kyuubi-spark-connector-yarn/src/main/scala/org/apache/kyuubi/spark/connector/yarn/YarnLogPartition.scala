@@ -18,9 +18,11 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.spark.sql.connector.read.InputPartition
+import org.apache.spark.sql.sources.Filter
 
 case class YarnLogPartition(
     hadoopConfMap: Map[String, String],
     logPath: String,
-    remoteAppLogDir: String)
+    remoteAppLogDir: String,
+    filters: Array[Filter])
   extends InputPartition

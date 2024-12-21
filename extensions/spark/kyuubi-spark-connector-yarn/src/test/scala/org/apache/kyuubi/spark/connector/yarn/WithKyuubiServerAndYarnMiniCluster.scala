@@ -20,6 +20,8 @@ package org.apache.kyuubi.spark.connector.yarn
 import java.io.{File, FileWriter}
 import java.util.Collections
 
+import scala.util.Random
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.yarn.api.records.{ApplicationSubmissionContext, ContainerLaunchContext, Resource, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
@@ -33,6 +35,8 @@ import org.apache.kyuubi.server.{MiniDFSService, MiniYarnService}
 import org.apache.kyuubi.util.JavaUtils
 
 trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiServer {
+
+  private val taskTypeSet: Set[String] = Set("TYPE_1", "TYPE_2", "TYPE_3")
 
   override protected val conf: KyuubiConf = new KyuubiConf(false)
 
@@ -154,6 +158,8 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
       .getApplicationSubmissionContext.getApplicationId
     appContext.setApplicationId(applicationId)
     appContext.setApplicationName("TestApp")
+    // use random pickup
+    appContext.setApplicationType(taskTypeSet.toSeq(Random.nextInt(taskTypeSet.size)))
 
     // Set up container launch context (e.g., commands to execute)
     val amContainer = Records.newRecord(classOf[ContainerLaunchContext])

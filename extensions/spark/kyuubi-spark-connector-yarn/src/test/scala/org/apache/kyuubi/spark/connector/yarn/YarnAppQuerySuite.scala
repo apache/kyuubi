@@ -190,5 +190,4 @@ class YarnAppQuerySuite extends SparkYarnConnectorWithYarn {
       yarnClient.close()
     }
   }
-
 }

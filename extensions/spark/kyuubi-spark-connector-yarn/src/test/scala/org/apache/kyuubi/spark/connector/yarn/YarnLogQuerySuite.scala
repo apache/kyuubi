@@ -42,7 +42,9 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
       val cnt = spark.sql(
-        "select count(1) from yarn.default.app_logs where host='localhost'").collect().head.getLong(
+        "select count(1) from yarn.default.app_logs " +
+          "where (host='localhost' or host like '%host') and " +
+          "app_id like '%application%'").collect().head.getLong(
         0)
       assert(cnt > 0)
     }
@@ -66,8 +68,10 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
     })
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       spark.sql("USE yarn")
-      val host = spark.sql(
-        "select * from yarn.default.app_logs limit 10").collect().head.getString(2)
+      val rows = spark.sql(
+        "select * from yarn.default.app_logs where line_num = 10" +
+          " limit 10").collect()
+      val host = rows.head.getString(2)
       assert(host == "localhost")
     }
   }

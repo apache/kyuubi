@@ -28,7 +28,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.connector.read.PartitionReader
-import org.apache.spark.sql.sources.{EqualTo, In}
+import org.apache.spark.sql.sources.{EqualTo, Filter, In}
 import org.apache.spark.unsafe.types.UTF8String
 
 class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
@@ -98,25 +98,40 @@ class YarnAppPartitionReader(yarnAppPartition: YarnAppPartition)
             case _ => yarnClient.getApplications()
           }.get
       }
-
-    val appSeq = applicationReports.asScala.map(app => {
-      YarnApplication(
-        id = app.getApplicationId.toString,
-        appType = app.getApplicationType,
-        user = app.getUser,
-        name = app.getName,
-        state = app.getYarnApplicationState.name,
-        queue = app.getQueue,
-        attemptId = app.getCurrentApplicationAttemptId.toString,
-        submitTime = app.getSubmitTime,
-        launchTime = app.getLaunchTime,
-        startTime = app.getStartTime,
-        finishTime = app.getFinishTime,
-        trackingUrl = app.getTrackingUrl,
-        originalTrackingUrl = app.getOriginalTrackingUrl)
-    })
+    val appSeq = applicationReports.asScala.filter(app =>
+      yarnAppPartition.filters
+        .forall(filter => maybeFilter(app, filter)))
+      .map(app => {
+        YarnApplication(
+          id = app.getApplicationId.toString,
+          appType = app.getApplicationType,
+          user = app.getUser,
+          name = app.getName,
+          state = app.getYarnApplicationState.name,
+          queue = app.getQueue,
+          attemptId = app.getCurrentApplicationAttemptId.toString,
+          submitTime = app.getSubmitTime,
+          launchTime = app.getLaunchTime,
+          startTime = app.getStartTime,
+          finishTime = app.getFinishTime,
+          trackingUrl = app.getTrackingUrl,
+          originalTrackingUrl = app.getOriginalTrackingUrl)
+      })
     yarnClient.close()
     appSeq
+  }
+
+  private def maybeFilter(app: ApplicationReport, filter: Filter): Boolean = {
+    filter match {
+      case EqualTo("id", appId: String) => app.getApplicationId.toString eq appId
+      case EqualTo("state", appState: String) => app.getYarnApplicationState.name() eq appState
+      case EqualTo("type", appType: String) => app.getApplicationType eq appType
+      case In("state", states) => states.map(x => x.toString)
+          .contains(app.getYarnApplicationState.name())
+      case In("type", types) => types.map(x => x.toString)
+          .contains(app.getApplicationType)
+      case _ => false
+    }
   }
 }
 

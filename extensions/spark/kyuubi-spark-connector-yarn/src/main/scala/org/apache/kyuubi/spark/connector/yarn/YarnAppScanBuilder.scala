@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.spark.sql.connector.read._
+import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -26,5 +27,19 @@ case class YarnAppScanBuilder(options: CaseInsensitiveStringMap, schema: StructT
 
   override def build(): Scan = {
     YarnAppScan(options, schema, pushed)
+  }
+
+  override def pushFilters(filters: Array[Filter]): Array[Filter] = {
+    val (supportedFilter, unsupportedFilter) = filters.partition {
+      case filter: EqualTo =>
+        filter match {
+          case EqualTo("app_id", _) => true
+          case EqualTo("user", _) => true
+          case _ => false
+        }
+      case _ => false
+    }
+    pushed = supportedFilter
+    unsupportedFilter
   }
 }

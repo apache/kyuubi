@@ -96,14 +96,13 @@ class YarnLogPartitionReader(yarnLogPartition: YarnLogPartition)
               s"${containerHost}_${containerSuffix}",
               containerHost,
               lineNumber,
-              path.getName,
+              path.toUri.getPath,
               line)
           }
           logEntries
         } finally {
           IOUtils.closeStream(inputStream)
           reader.close()
-          fs.close()
         }
       case _ => Seq.empty
     }
