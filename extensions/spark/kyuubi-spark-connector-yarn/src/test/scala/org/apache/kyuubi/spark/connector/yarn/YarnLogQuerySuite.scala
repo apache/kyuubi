@@ -70,7 +70,7 @@ class YarnLogQuerySuite extends SparkYarnConnectorWithYarn {
       spark.sql("USE yarn")
       val rows = spark.sql(
         "select * from yarn.default.app_logs where line_num = 10" +
-          " and user='zhangxinsen'" +
+          " and host='localhost'" +
           " limit 10").collect()
       val host = rows.head.getString(2)
       assert(host == "localhost")
