@@ -28,7 +28,7 @@ import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
+class YarnCatalog extends TableCatalog with Logging {
   private var catalogName: String = _
 
   override def initialize(
@@ -53,50 +53,24 @@ class YarnCatalog extends TableCatalog with SupportsNamespaces with Logging {
       structType: StructType,
       transforms: Array[Transform],
       map: util.Map[String, String]): Table = {
-    throw new UnsupportedOperationException("Create table is not supported")
+    throw new UnsupportedOperationException(s"The tables in catalog " +
+      s"${catalogName} does not support CREATE TABLE")
   }
 
   override def alterTable(identifier: Identifier, tableChanges: TableChange*): Table = {
-    throw new UnsupportedOperationException("Alter table is not supported")
+    throw new UnsupportedOperationException(s"The tables in catalog " +
+      s"${catalogName} does not support ALTER TABLE")
   }
 
   override def dropTable(identifier: Identifier): Boolean = {
-    throw new UnsupportedOperationException("Drop table is not supported")
+    throw new UnsupportedOperationException(s"The tables in catalog " +
+      s"${catalogName} does not support DROP TABLE")
   }
 
   override def renameTable(identifier: Identifier, identifier1: Identifier): Unit = {
-    throw new UnsupportedOperationException("Rename table is not supported")
+    throw new UnsupportedOperationException(s"The tables in catalog " +
+      s"${catalogName} does not support RENAME TABLE")
   }
-
-  override def listNamespaces(): Array[Array[String]] = {
-    Array(Array("default"))
-  }
-
-  override def listNamespaces(namespace: Array[String]): Array[Array[String]] = namespace match {
-    case Array() => listNamespaces()
-    case Array(db) if db eq "default" => listNamespaces()
-    case _ => throw new NoSuchNamespaceException(namespace)
-  }
-
-  override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
-    namespace match {
-      case Array(_) => Map.empty[String, String].asJava
-      case _ => throw new NoSuchNamespaceException(namespace)
-    }
-
-  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
-    throw new UnsupportedOperationException
-
-  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
-    throw new UnsupportedOperationException
-
-  // Removed in SPARK-37929
-  def dropNamespace(namespace: Array[String]): Boolean =
-    throw new UnsupportedOperationException
-
-  // Introduced in SPARK-37929
-  def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
-    throw new UnsupportedOperationException
 
   override def name(): String = this.catalogName
 }
