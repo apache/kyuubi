@@ -22,13 +22,14 @@ import org.apache.spark.sql.sources.{EqualTo, Filter}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-case class YarnLogScanBuilder(options: CaseInsensitiveStringMap, schema: StructType) {
+case class YarnLogScanBuilder(options: CaseInsensitiveStringMap, schema: StructType)
+  extends ScanBuilder {
 
   private var pushed: Array[Filter] = Array.empty
 
   def pushedFilters(): Array[Filter] = pushed
 
-  def build(): Scan = YarnAppScan(options, schema, pushed)
+  override def build(): Scan = YarnAppScan(options, schema, pushed)
 
   def pushFilters(filters: Array[Filter]): Array[Filter] = {
     val (supportedFilter, unsupportedFilter) = filters.partition {

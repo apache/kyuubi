@@ -22,7 +22,8 @@ import org.apache.spark.sql.sources.{EqualTo, Filter, In}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-case class YarnAppScanBuilder(options: CaseInsensitiveStringMap, schema: StructType) {
+case class YarnAppScanBuilder(options: CaseInsensitiveStringMap, schema: StructType)
+  extends ScanBuilder {
 
   private var pushed: Array[Filter] = Array.empty
 
