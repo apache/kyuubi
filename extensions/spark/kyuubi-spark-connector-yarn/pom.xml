@@ -27,7 +27,7 @@
 
     <artifactId>kyuubi-spark-connector-yarn_${scala.binary.version}</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Spark Yarn Logs Connector</name>
+    <name>Kyuubi Spark Hadoop YARN Connector</name>
     <url>https://kyuubi.apache.org/</url>
 
     <dependencies>

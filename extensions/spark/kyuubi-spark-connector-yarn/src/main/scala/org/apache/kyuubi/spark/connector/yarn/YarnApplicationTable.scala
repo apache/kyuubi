@@ -25,7 +25,7 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-class YarnApplicationTable extends Table with SupportsRead {
+class YarnAppTable extends Table with SupportsRead {
   override def name(): String = "apps"
 
   override def schema(): StructType =
