@@ -41,8 +41,6 @@ class YarnLogTable extends Table with SupportsRead {
   override def capabilities(): util.Set[TableCapability] =
     Set(TableCapability.BATCH_READ).asJava
 
-  override def newScanBuilder(caseInsensitiveStringMap: CaseInsensitiveStringMap): ScanBuilder =
-    YarnLogScanBuilder(
-      caseInsensitiveStringMap,
-      schema())
+  override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder =
+    YarnLogScanBuilder(options,schema())
 }
