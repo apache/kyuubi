@@ -1,40 +1,31 @@
-# How to enable a grafana dashboard for Kyuubi
+# Kyuubi Grafana Dashboard
 
-## Overview
+[Grafana](https://grafana.com/) is a popular open and composable observability platform. Kyuubi provides
+a Grafana Dashboard template `dashboard-template.json` to help users to monitor the Kyuubi server.
 
-Grafana is introduced to visualize and monitor metrics from Kyuubi service collected by Prometheus.
+## For Users
 
-There are two ways for users to make grafana dashboard available.
+By default, Kyuubi server enables metrics system and exposes Prometheus endpoints at `http://<host>:10019/metrics`,
+to use the Kyuubi Grafana Dashboard, you are supposed to have an available Prometheus and Grafana service, then
+configure Prometheus to scrape Kyuubi metrics, add the Prometheus data source into Grafana, and then import the
+`dashboard-template.json` into Grafana and customize. For more details, please read the
+[Kyuubi Docs](https://kyuubi.readthedocs.io/en/master/monitor/metrics.html#grafana-and-prometheus) 
 
-## for environment that has grafana installed
+## For Developers
 
-1. Click on the import button on the left side of grafana home page
-2. Import the dashboard json file named dashboard_template under grafana folder
+If you have good ideas to improve the dashboard, please don't hesitate to reach out to us by opening
+GitHub [Issues](https://github.com/apache/kyuubi/issues)/[PRs](https://github.com/apache/kyuubi/pulls)
+or sending an email to `dev@kyuubi.apache.org`.
 
-## for environment without grafana built
+### Export Grafana Dashboard template
 
-Here we provide a solution for users to easily build a grafana image with desired dashboards.
+Depends on your Grafana version, the exporting steps might be a little different.
 
-Data sources and dashboards both are defined and managed via yml files. user can add or remove data sources and
-dashboards based on their needs.
+Use Grafana 11.4 as an example, after modifying the dashboard, save your changes and click the "Share" button
+on the top-right corner, then choose the "Export" tab and enable the "Export for sharing externally", finally,
+click the "View JSON" button and update the `dashboard-template.json` with that JSON content.
 
-The default data source is prometheus and its corresponding dashboard is predefined in dashboard_template json file.
-
-Below is the command to build a grafana image with grafana dashboards(json format files) that are predefined under the
-grafana folder.
-
-Once the grafana starts up, it will load all datasource and dashboards as per two config files(dashboard.yml and
-datasource.yml)
-
-```
-1. docker build --build-arg PROMETHEUS_URL_ARG="127.0.0.1:8080" -t grafana:kyuubi -f Dockerfile .
-
-Options:
-
---build-arg PROMETHEUS_URL_ARG: the url to access promethues datasource
-
--t: the target repo and tag name for image
-
--f: this docker file
-
-```
+We encourage the developers to use a similar version of Grafana to the existing `dashboard-template.json`,
+and focus on one topic in each PR, to avoid introducing unnecessary and huge diff of `dashboard-template.json`.
+Additionally, to make the reviewers easy to understand your changes, don't forget to attach the current and
+updated dashboard screenshots in your PR description.
