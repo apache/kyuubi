@@ -51,7 +51,7 @@ abstract class SparkOnKubernetesSuiteBase
     // TODO Support more Spark version
     // Spark official docker image: https://hub.docker.com/r/apache/spark/tags
     KyuubiConf().set("spark.master", s"k8s://$apiServerAddress")
-      .set("spark.kubernetes.container.image", "apache/spark:3.5.2")
+      .set("spark.kubernetes.container.image", "apache/spark:3.5.4")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
       .set("spark.executor.memory", "512M")
