@@ -1,7 +1,7 @@
 {
   "name": "kyuubi-ui",
   "private": true,
-  "version": "1.10.1-SNAPSHOT",
+  "version": "1.10.1",
   "type": "module",
   "scripts": {
     "dev": "vue-tsc --noEmit && vite --port 9090",
