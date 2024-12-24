@@ -21,11 +21,12 @@ import com.codahale.metrics.MetricRegistry
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.MetricsServlet
-import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_JETTY_SEND_VERSION_ENABLED
 import org.apache.kyuubi.service.AbstractService
 
 class PrometheusReporterService(registry: MetricRegistry)
@@ -35,12 +36,21 @@ class PrometheusReporterService(registry: MetricRegistry)
 
   // VisibleForTesting
   private[metrics] var httpServer: Server = _
+  private[metrics] var httpServerConnector: ServerConnector = _
   @volatile protected var isStarted = false
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
     val contextPath = conf.get(MetricsConf.METRICS_PROMETHEUS_PATH)
-    httpServer = new Server(port)
+    val jettyVersionEnabled = conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
+
+    val httpConf = new HttpConfiguration()
+    httpConf.setSendServerVersion(jettyVersionEnabled)
+    httpServer = new Server()
+    httpServerConnector = new ServerConnector(httpServer, new HttpConnectionFactory(httpConf))
+    httpServerConnector.setPort(port)
+    httpServer.addConnector(httpServerConnector)
+
     val context = new ServletContextHandler
     context.setContextPath("/")
     httpServer.setHandler(context)
@@ -56,6 +66,7 @@ class PrometheusReporterService(registry: MetricRegistry)
     if (!isStarted) {
       try {
         httpServer.start()
+        httpServerConnector.start()
         info(s"Prometheus metrics HTTP server has started at ${httpServer.getURI}.")
       } catch {
         case rethrow: Exception =>
@@ -78,12 +89,14 @@ class PrometheusReporterService(registry: MetricRegistry)
   private def stopHttpServer(): Unit = {
     if (httpServer != null) {
       try {
+        httpServerConnector.stop()
         httpServer.stop()
         info("Prometheus metrics HTTP server has stopped.")
       } catch {
         case err: Exception => error("Cannot safely stop prometheus metrics HTTP server", err)
       } finally {
         httpServer = null
+        httpServerConnector = null
       }
     }
   }
