@@ -262,6 +262,7 @@ org.eclipse.jetty:jetty-proxy
 org.apache.logging.log4j:log4j-1.2-api
 org.apache.logging.log4j:log4j-api
 org.apache.logging.log4j:log4j-core
+org.apache.logging.log4j:log4j-layout-template-json
 org.apache.logging.log4j:log4j-slf4j-impl
 org.yaml:snakeyaml
 io.dropwizard.metrics:metrics-core

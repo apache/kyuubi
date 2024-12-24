@@ -130,6 +130,55 @@ For example, we can disable the console appender and enable the file appender li
 
 Then everything goes to `log/dummy.log`.
 
+#### Sending Structured Logs to Kafka
+
+The Log4j2 has a built-in [KafkaAppender](https://logging.apache.org/log4j/2.x/manual/appenders/message-queue.html#KafkaAppender)
+which allows sending log messages to an Apache Kafka topic with a few configurations, and it also provides a built-in
+[JSON Template Layout](https://logging.apache.org/log4j/2.x/manual/json-template-layout.html) that supports encoding
+`LogEvents` to structured JSON messages according to the structure described by the provided template.
+
+For example, we can configure the Kyuubi server to send the structured logs to Kafka `ecs-json-logs` topic,
+
+```xml
+<Configuration status="INFO">
+  <Appenders>
+    <Kafka name="kafka" topic="ecs-json-logs" syncSend="false">
+      <JsonTemplateLayout>
+        <EventTemplateAdditionalField key="app" value="kyuubi"/>
+        <EventTemplateAdditionalField key="cluster" value="kyuubi-cluster"/>
+        <EventTemplateAdditionalField key="host" value="${hostName}"/>
+      </JsonTemplateLayout>
+      <Property name="bootstrap.servers" value="kafka-1:9092,kafka-2:9092,kafka-3:9092"/>
+      <Property name="compression.type" value="gzip"/>
+    </Kafka>
+  </Appenders>
+  <Loggers>
+    <Root level="INFO">
+      <AppenderRef ref="kafka"/>
+    </Root>
+  </Loggers>
+</Configuration>
+```
+
+And each structured log message looks like,
+
+```json
+{
+	"@timestamp": "2024-12-24T18:53:01.030Z",
+	"ecs.version": "1.2.0",
+	"log.level": "INFO",
+	"message": "Service[KyuubiServer] is started.",
+	"process.thread.name": "main",
+	"log.logger": "org.apache.kyuubi.server.KyuubiServer",
+	"app": "kyuubi",
+	"cluster": "kyuubi-cluster",
+	"host": "hadoop-master1.orb.local"
+}
+```
+
+Note: this feature may require additional jars to work. Please read the Log4j2 docs and ensure those jars are
+on the Kyuubi server's classpath before enabling it.
+
 ## Logs of Spark SQL Engine
 
 Spark SQL Engine is one type of Kyuubi Engines and also a typical Spark application.
