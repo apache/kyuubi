@@ -16,7 +16,7 @@
   ~ limitations under the License.
   -->
 
-<!-- Provide log4j2.xml.template to fix `ERROR Filters contains invalid attributes "onMatch", "onMismatch"`, see KYUUBI-2247 -->
+<!-- Provide log4j2.xml.template to fix `ERROR Filters contains invalid attributes "onMatch", "onMismatch"`, see KYUUBI #2247 -->
 <!-- Extra logging related to initialization of Log4j.
  Set to debug or trace if log4j initialization is failing. -->
 <Configuration status="INFO">
@@ -57,6 +57,17 @@
             </Policies>
             <DefaultRolloverStrategy max="10"/>
         </RollingFile>
+        <!-- Kafka appender with Elastic Common Schema(ECS) JSON template layout
+        <Kafka name="kafka" topic="ecs-json-logs" syncSend="false">
+            <JsonTemplateLayout>
+                <EventTemplateAdditionalField key="app" value="kyuubi"/>
+                <EventTemplateAdditionalField key="cluster" value="kyuubi-cluster"/>
+                <EventTemplateAdditionalField key="host" value="${hostName}"/>
+            </JsonTemplateLayout>
+            <Property name="bootstrap.servers" value="kafka-1:9092,kafka-2:9092,kafka-3:9092"/>
+            <Property name="compression.type" value="gzip"/>
+        </Kafka>
+        -->
     </Appenders>
     <Loggers>
         <Root level="INFO">
