@@ -113,6 +113,7 @@ server's metrics.
 
 By default, Kyuubi server exposes Prometheus metrics at `http://<host>:10019/metrics`, you can also modify
 the relative configurations in `kyuubi-defaults.conf`.
+
 ```
 kyuubi.metrics.enabled          true
 kyuubi.metrics.reporters        PROMETHEUS
@@ -121,6 +122,7 @@ kyuubi.metrics.prometheus.path  /metrics
 ```
 
 To verify Prometheus metrics endpoint, run `curl http://<host>:10019/metrics`, and the output should look like
+
 ```
 # HELP kyuubi_buffer_pool_mapped_count Generated from Dropwizard metric import (metric=kyuubi.buffer_pool.mapped.count, type=com.codahale.metrics.jvm.JmxAttributeGauge)
 # TYPE kyuubi_buffer_pool_mapped_count gauge
@@ -135,6 +137,7 @@ kyuubi_gc_PS_MarkSweep_time 831.0
 ```
 
 Set Prometheus's scraper to target the Kyuubi server cluster endpoints, for example,
+
 ```
 cat > /etc/prometheus/prometheus.yml <<EOF
 global:
