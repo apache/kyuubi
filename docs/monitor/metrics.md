@@ -101,3 +101,61 @@ Since v1.5.0, you can use the following metrics to replace:
 - `kyuubi.operation.total.ExecuteStatement`
 - `kyuubi.operation.opened.ExecuteStatement`
 - `kyuubi.operation.failed.ExecuteStatement.${errorType}`
+
+## Grafana and Prometheus
+
+[Grafana](https://grafana.com/) is a popular open and composable observability platform. Kyuubi provides
+a Grafana Dashboard template at `<KYUUBI_HOME>/grafana/dashboard-template.json` to help users to monitor
+the Kyuubi server.
+
+To use the provided Grafana Dashboard, [Prometheus](https://prometheus.io/) must be used to collect Kyuubi
+server's metrics.
+
+By default, Kyuubi server exposes Prometheus metrics at `http://<host>:10019/metrics`, you can also modify
+the relative configurations in `kyuubi-defaults.conf`.
+
+```
+kyuubi.metrics.enabled          true
+kyuubi.metrics.reporters        PROMETHEUS
+kyuubi.metrics.prometheus.port  10019
+kyuubi.metrics.prometheus.path  /metrics
+```
+
+To verify Prometheus metrics endpoint, run `curl http://<host>:10019/metrics`, and the output should look like
+
+```
+# HELP kyuubi_buffer_pool_mapped_count Generated from Dropwizard metric import (metric=kyuubi.buffer_pool.mapped.count, type=com.codahale.metrics.jvm.JmxAttributeGauge)
+# TYPE kyuubi_buffer_pool_mapped_count gauge
+kyuubi_buffer_pool_mapped_count 0.0
+# HELP kyuubi_memory_usage_pools_PS_Eden_Space_max Generated from Dropwizard metric import (metric=kyuubi.memory_usage.pools.PS-Eden-Space.max, type=com.codahale.metrics.jvm.MemoryUsageGaugeSet$$Lambda$231/207471778)
+# TYPE kyuubi_memory_usage_pools_PS_Eden_Space_max gauge
+kyuubi_memory_usage_pools_PS_Eden_Space_max 2.064646144E9
+# HELP kyuubi_gc_PS_MarkSweep_time Generated from Dropwizard metric import (metric=kyuubi.gc.PS-MarkSweep.time, type=com.codahale.metrics.jvm.GarbageCollectorMetricSet$$Lambda$218/811207775)
+# TYPE kyuubi_gc_PS_MarkSweep_time gauge
+kyuubi_gc_PS_MarkSweep_time 831.0
+...
+```
+
+Set Prometheus's scraper to target the Kyuubi server cluster endpoints, for example,
+
+```
+cat > /etc/prometheus/prometheus.yml <<EOF
+global:
+scrape_interval: 10s
+scrape_configs:
+  - job_name: "kyuubi-server"
+    scheme: "http"
+    metrics_path: "/metrics"
+    static_configs:
+      - targets:
+          - "kyuubi-server-1:10019"
+          - "kyuubi-server-2:10019"
+EOF
+```
+
+Grafana has built-in support for Prometheus, add the Prometheus data source, and then import the
+`<KYUUBI_HOME>/grafana/dashboard-template.json` into Grafana and customize.
+
+If you have good ideas to improve the dashboard, please don't hesitate to reach out to us by opening
+GitHub [Issues](https://github.com/apache/kyuubi/issues)/[PRs](https://github.com/apache/kyuubi/pulls)
+or sending an email to `dev@kyuubi.apache.org`.
