@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.watchdog.{MaxFileSizeExceedException, MaxPartitionExceedException}
@@ -605,6 +606,35 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         sql("SELECT TRANSFORM('') USING 'ls /'")
       }
       assert(e.getMessage == "Script transformation is not allowed")
+    }
+  }
+
+  test("watchdog with scan maxFileSize -- data source v2") {
+    val df = spark.read.format(classOf[ReportStatisticsAndPartitionAwareDataSource].getName).load()
+    df.createOrReplaceTempView("test")
+    val logical = df.queryExecution.optimizedPlan.collect {
+      case d: DataSourceV2ScanRelation => d
+    }.head
+    val tableSize = logical.computeStats().sizeInBytes.toLong
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> tableSize.toString) {
+      sql("SELECT * FROM test").queryExecution.sparkPlan
+    }
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> (tableSize / 2).toString) {
+      intercept[MaxFileSizeExceedException](
+        sql("SELECT * FROM test").queryExecution.sparkPlan)
+    }
+    val nonPartDf = spark.read.format(classOf[ReportStatisticsDataSource].getName).load()
+    nonPartDf.createOrReplaceTempView("test_non_part")
+    val nonPartLogical = nonPartDf.queryExecution.optimizedPlan.collect {
+      case d: DataSourceV2ScanRelation => d
+    }.head
+    val nonPartTableSize = nonPartLogical.computeStats().sizeInBytes.toLong
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> nonPartTableSize.toString) {
+      sql("SELECT * FROM test_non_part").queryExecution.sparkPlan
+    }
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_FILE_SIZE.key -> (nonPartTableSize / 2).toString) {
+      intercept[MaxFileSizeExceedException](
+        sql("SELECT * FROM test_non_part").queryExecution.sparkPlan)
     }
   }
 }
