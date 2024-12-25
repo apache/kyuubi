@@ -50,7 +50,7 @@ import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_ST
 import org.apache.kyuubi.session.KyuubiSessionImpl
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq, TOpenSessionResp}
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
-import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.util.{NamedThreadFactory, SSLUtils}
 
 /**
  * Apache Thrift based hive service rpc
@@ -66,6 +66,10 @@ final class KyuubiTHttpFrontendService(
   override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_HTTP_BIND_PORT)
   override protected lazy val actualPort: Int = portNum
   override protected lazy val serverSocket: ServerSocket = null
+
+  private var keyStorePath: Option[String] = None
+  private var keyStorePassword: Option[String] = None
+  private var keyStoreType: Option[String] = None
 
   private var server: Option[Server] = None
   private val APPLICATION_THRIFT = "application/x-thrift"
@@ -122,7 +126,7 @@ final class KyuubiTHttpFrontendService(
       // Change connector if SSL is used
       val connector =
         if (useSsl) {
-          val keyStorePath = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH)
+          keyStorePath = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH)
 
           if (keyStorePath.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.key +
@@ -130,7 +134,7 @@ final class KyuubiTHttpFrontendService(
               FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.doc)
           }
 
-          val keyStorePassword = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
+          keyStorePassword = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
           if (keyStorePassword.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD.key +
               " Not configured for SSL connection. please set the key with: " +
@@ -140,7 +144,7 @@ final class KyuubiTHttpFrontendService(
           val sslContextFactory = new SslContextFactory.Server
           val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST)
           val excludeCipherSuites = conf.get(FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES)
-          val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
           val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           info("Thrift HTTP Server SSL: adding excluded protocols: " +
             String.join(",", excludedProtocols: _*))
@@ -358,5 +362,10 @@ final class KyuubiTHttpFrontendService(
     }
 
     ret
+  }
+
+  override def start(): Unit = {
+    super.start()
+    SSLUtils.tracingThriftSSLCertExpiration(keyStorePath, keyStorePassword, keyStoreType)
   }
 }

@@ -37,6 +37,8 @@ object MetricsConstants {
   final private val THRIFT_BINARY_CONN = KYUUBI + "thrift.binary.connection."
   final private val REST_CONN = KYUUBI + "rest.connection."
 
+  final val THRIFT_SSL_CERT_EXPIRATION = KYUUBI + "thrift.ssl.cert.expiration"
+
   final val CONN_OPEN: String = CONN + "opened"
   final val CONN_FAIL: String = CONN + "failed"
   final val CONN_TOTAL: String = CONN + "total"

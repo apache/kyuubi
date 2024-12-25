@@ -35,6 +35,7 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
 import org.apache.kyuubi.shaded.thrift.server.ServerContext
+import org.apache.kyuubi.util.SSLUtils
 
 final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
@@ -121,5 +122,10 @@ final class KyuubiTBinaryFrontendService(
     val resp = new TRenewDelegationTokenResp
     resp.setStatus(notSupportTokenErrorStatus)
     resp
+  }
+
+  override def start(): Unit = {
+    super.start()
+    SSLUtils.tracingThriftSSLCertExpiration(keyStorePath, keyStorePassword, keyStoreType)
   }
 }
