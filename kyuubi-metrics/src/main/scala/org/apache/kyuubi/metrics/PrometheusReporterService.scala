@@ -37,7 +37,7 @@ class PrometheusReporterService(registry: MetricRegistry)
   private[metrics] var httpServerConnector: ServerConnector = _
   @volatile protected var isStarted = false
 
-  private var instanceLabel: String = _
+  private var instance: String = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
@@ -57,7 +57,7 @@ class PrometheusReporterService(registry: MetricRegistry)
 
     context.addServlet(new ServletHolder(createPrometheusServlet()), contextPath)
 
-    instanceLabel = s"""instance="${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port"""
+    instance = s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port"
 
     super.initialize(conf)
   }
@@ -123,73 +123,59 @@ class PrometheusReporterService(registry: MetricRegistry)
     }
   }
 
+  // scalastyle:off line.size.limit
   private def getMetricsSnapshot(): String = {
     import scala.collection.JavaConverters._
-
-    val gaugesLabel = s"""{type="gauges",$instanceLabel}"""
-    val countersLabel = s"""{type="counters",$instanceLabel}"""
-    val metersLabel = countersLabel
-    val histogramslabels = s"""{type="histograms",,$instanceLabel}"""
-    val timersLabels = s"""{type="timers",,$instanceLabel}"""
 
     val sb = new StringBuilder()
     registry.getGauges.asScala.foreach { case (k, v) =>
       if (!v.getValue.isInstanceOf[String]) {
-        sb.append(s"${normalizeKey(k)}Number$gaugesLabel ${v.getValue}\n")
-        sb.append(s"${normalizeKey(k)}Value$gaugesLabel ${v.getValue}\n")
+        sb.append(s"""${normalizeKey(k)}{type="gauges",instance="$instance"} ${v.getValue}\n""")
       }
     }
     registry.getCounters.asScala.foreach { case (k, v) =>
-      sb.append(s"${normalizeKey(k)}Count$countersLabel ${v.getCount}\n")
+      sb.append(s"""${normalizeKey(k)}{type="counters",instance="$instance"} ${v.getCount}\n""")
     }
     registry.getHistograms.asScala.foreach { case (k, h) =>
       val snapshot = h.getSnapshot
       val prefix = normalizeKey(k)
-      sb.append(s"${prefix}Count$histogramslabels ${h.getCount}\n")
-      sb.append(s"${prefix}Max$histogramslabels ${snapshot.getMax}\n")
-      sb.append(s"${prefix}Mean$histogramslabels ${snapshot.getMean}\n")
-      sb.append(s"${prefix}Min$histogramslabels ${snapshot.getMin}\n")
-      sb.append(s"${prefix}50thPercentile$histogramslabels ${snapshot.getMedian}\n")
-      sb.append(s"${prefix}75thPercentile$histogramslabels ${snapshot.get75thPercentile}\n")
-      sb.append(s"${prefix}95thPercentile$histogramslabels ${snapshot.get95thPercentile}\n")
-      sb.append(s"${prefix}98thPercentile$histogramslabels ${snapshot.get98thPercentile}\n")
-      sb.append(s"${prefix}99thPercentile$histogramslabels ${snapshot.get99thPercentile}\n")
-      sb.append(s"${prefix}999thPercentile$histogramslabels ${snapshot.get999thPercentile}\n")
-      sb.append(s"${prefix}StdDev$histogramslabels ${snapshot.getStdDev}\n")
+      sb.append(s"""${prefix}_count{type="histograms",instance="$instance"} ${h.getCount()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.5",type="histograms",instance="$instance"} ${snapshot.getMedian()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.75",type="histograms",instance="$instance"} ${snapshot.get75thPercentile()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.95",type="histograms",instance="$instance"} ${snapshot.get95thPercentile()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.98",type="histograms",instance="$instance"} ${snapshot.get98thPercentile()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.99",type="histograms",instance="$instance"} ${snapshot.get99thPercentile()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.999",type="histograms",instance="$instance"} ${snapshot.get999thPercentile()}\n""")
     }
     registry.getMeters.entrySet.iterator.asScala.foreach { kv =>
       val prefix = normalizeKey(kv.getKey)
       val meter = kv.getValue
-      sb.append(s"${prefix}Count$metersLabel ${meter.getCount}\n")
-      sb.append(s"${prefix}MeanRate$metersLabel ${meter.getMeanRate}\n")
-      sb.append(s"${prefix}OneMinuteRate$metersLabel ${meter.getOneMinuteRate}\n")
-      sb.append(s"${prefix}FiveMinuteRate$metersLabel ${meter.getFiveMinuteRate}\n")
-      sb.append(s"${prefix}FifteenMinuteRate$metersLabel ${meter.getFifteenMinuteRate}\n")
+      sb.append(s"""${prefix}{type="counters",instance="$instance"} ${meter.getCount}\n""")
     }
     registry.getTimers.entrySet.iterator.asScala.foreach { kv =>
       val prefix = normalizeKey(kv.getKey)
       val timer = kv.getValue
       val snapshot = timer.getSnapshot
-      sb.append(s"${prefix}Count$timersLabels ${timer.getCount}\n")
-      sb.append(s"${prefix}Max$timersLabels ${snapshot.getMax}\n")
-      sb.append(s"${prefix}Mean$timersLabels ${snapshot.getMean}\n")
-      sb.append(s"${prefix}Min$timersLabels ${snapshot.getMin}\n")
-      sb.append(s"${prefix}50thPercentile$timersLabels ${snapshot.getMedian}\n")
-      sb.append(s"${prefix}75thPercentile$timersLabels ${snapshot.get75thPercentile}\n")
-      sb.append(s"${prefix}95thPercentile$timersLabels ${snapshot.get95thPercentile}\n")
-      sb.append(s"${prefix}98thPercentile$timersLabels ${snapshot.get98thPercentile}\n")
-      sb.append(s"${prefix}99thPercentile$timersLabels ${snapshot.get99thPercentile}\n")
-      sb.append(s"${prefix}999thPercentile$timersLabels ${snapshot.get999thPercentile}\n")
-      sb.append(s"${prefix}StdDev$timersLabels ${snapshot.getStdDev}\n")
-      sb.append(s"${prefix}FifteenMinuteRate$timersLabels ${timer.getFifteenMinuteRate}\n")
-      sb.append(s"${prefix}FiveMinuteRate$timersLabels ${timer.getFiveMinuteRate}\n")
-      sb.append(s"${prefix}OneMinuteRate$timersLabels ${timer.getOneMinuteRate}\n")
-      sb.append(s"${prefix}MeanRate$timersLabels ${timer.getMeanRate}\n")
+      sb.append(s"""${prefix}_count{type="timers",instance="$instance"} ${timer.getCount()}\n""")
+      sb.append(
+        s"""${prefix}{quantile="0.5",type="timers",instance="$instance"} ${snapshot.getMedian()}\n""")
+      sb.append(s"""${prefix}{quantile="0.75",type="timers",instance="$instance"} ${snapshot.get75thPercentile()}\n""")
+      sb.append(s"""${prefix}{quantile="0.95",type="timers",instance="$instance"} ${snapshot.get95thPercentile()}\n""")
+      sb.append(s"""${prefix}{quantile="0.98",type="timers",instance="$instance"} ${snapshot.get98thPercentile()}\n""")
+      sb.append(s"""${prefix}{quantile="0.99",type="timers",instance="$instance"} ${snapshot.get99thPercentile()}\n""")
+      sb.append(s"""${prefix}{quantile="0.999",type="timers",instance="$instance"} ${snapshot.get999thPercentile()}\n""")
     }
     sb.toString()
   }
+  // scalastyle:on line.size.limit
 
   private def normalizeKey(key: String): String = {
-    s"${key.replaceAll("[^a-zA-Z0-9]", "_")}_"
+    s"${key.replaceAll("[^a-zA-Z0-9]", "_")}"
   }
 }
