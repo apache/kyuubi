@@ -80,6 +80,13 @@ object MetricsConf {
     .checkValue(path => path.startsWith("/"), "Context path must start with '/'")
     .createWithDefault("/metrics")
 
+  val METRICS_PROMETHEUS_METRICS_INSTANCE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metrics.prometheus.metrics.instance.enabled")
+      .doc("Whether to add instance label to prometheus metrics")
+      .version("1.10.2")
+      .booleanConf
+      .createWithDefault(false)
+
   val METRICS_SLF4J_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.slf4j.interval")
     .doc("How often should report metrics to SLF4J logger")
     .version("1.2.0")
