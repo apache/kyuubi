@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.metrics
 
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
-
 import com.codahale.metrics.MetricRegistry
+import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.dropwizard.DropwizardExports
+import io.prometheus.client.exporter.MetricsServlet
 import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
@@ -27,17 +28,16 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_JETTY_SEND_VERSION_ENABLED
 import org.apache.kyuubi.service.AbstractService
-import org.apache.kyuubi.util.JavaUtils
 
 class PrometheusReporterService(registry: MetricRegistry)
   extends AbstractService("PrometheusReporterService") {
+
+  private val bridgeRegistry = new CollectorRegistry
 
   // VisibleForTesting
   private[metrics] var httpServer: Server = _
   private[metrics] var httpServerConnector: ServerConnector = _
   @volatile protected var isStarted = false
-
-  private var instance: String = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
@@ -55,9 +55,9 @@ class PrometheusReporterService(registry: MetricRegistry)
     context.setContextPath("/")
     httpServer.setHandler(context)
 
-    context.addServlet(new ServletHolder(createPrometheusServlet()), contextPath)
-
-    instance = s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port"
+    new DropwizardExports(registry).register(bridgeRegistry)
+    val metricsServlet = new MetricsServlet(bridgeRegistry)
+    context.addServlet(new ServletHolder(metricsServlet), contextPath)
 
     super.initialize(conf)
   }
@@ -99,83 +99,5 @@ class PrometheusReporterService(registry: MetricRegistry)
         httpServerConnector = null
       }
     }
-  }
-
-  private def createPrometheusServlet(): HttpServlet = {
-    new HttpServlet {
-      override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-        try {
-          response.setContentType("text/plain;charset=utf-8")
-          response.setStatus(HttpServletResponse.SC_OK)
-          response.getWriter.print(getMetricsSnapshot())
-        } catch {
-          case e: IllegalArgumentException =>
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage)
-          case e: Exception =>
-            warn(s"GET ${request.getRequestURI} failed: $e", e)
-            throw e
-        }
-      }
-      // ensure TRACE is not supported
-      override protected def doTrace(req: HttpServletRequest, res: HttpServletResponse): Unit = {
-        res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
-      }
-    }
-  }
-
-  // scalastyle:off line.size.limit
-  private def getMetricsSnapshot(): String = {
-    import scala.collection.JavaConverters._
-
-    val sb = new StringBuilder()
-    registry.getGauges.asScala.foreach { case (k, v) =>
-      if (!v.getValue.isInstanceOf[String]) {
-        sb.append(s"""${normalizeKey(k)}{type="gauges",instance="$instance"} ${v.getValue}\n""")
-      }
-    }
-    registry.getCounters.asScala.foreach { case (k, v) =>
-      sb.append(s"""${normalizeKey(k)}{type="counters",instance="$instance"} ${v.getCount}\n""")
-    }
-    registry.getHistograms.asScala.foreach { case (k, h) =>
-      val snapshot = h.getSnapshot
-      val prefix = normalizeKey(k)
-      sb.append(s"""${prefix}_count{type="histograms",instance="$instance"} ${h.getCount()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.5",type="histograms",instance="$instance"} ${snapshot.getMedian()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.75",type="histograms",instance="$instance"} ${snapshot.get75thPercentile()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.95",type="histograms",instance="$instance"} ${snapshot.get95thPercentile()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.98",type="histograms",instance="$instance"} ${snapshot.get98thPercentile()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.99",type="histograms",instance="$instance"} ${snapshot.get99thPercentile()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.999",type="histograms",instance="$instance"} ${snapshot.get999thPercentile()}\n""")
-    }
-    registry.getMeters.entrySet.iterator.asScala.foreach { kv =>
-      val prefix = normalizeKey(kv.getKey)
-      val meter = kv.getValue
-      sb.append(s"""${prefix}{type="counters",instance="$instance"} ${meter.getCount}\n""")
-    }
-    registry.getTimers.entrySet.iterator.asScala.foreach { kv =>
-      val prefix = normalizeKey(kv.getKey)
-      val timer = kv.getValue
-      val snapshot = timer.getSnapshot
-      sb.append(s"""${prefix}_count{type="timers",instance="$instance"} ${timer.getCount()}\n""")
-      sb.append(
-        s"""${prefix}{quantile="0.5",type="timers",instance="$instance"} ${snapshot.getMedian()}\n""")
-      sb.append(s"""${prefix}{quantile="0.75",type="timers",instance="$instance"} ${snapshot.get75thPercentile()}\n""")
-      sb.append(s"""${prefix}{quantile="0.95",type="timers",instance="$instance"} ${snapshot.get95thPercentile()}\n""")
-      sb.append(s"""${prefix}{quantile="0.98",type="timers",instance="$instance"} ${snapshot.get98thPercentile()}\n""")
-      sb.append(s"""${prefix}{quantile="0.99",type="timers",instance="$instance"} ${snapshot.get99thPercentile()}\n""")
-      sb.append(s"""${prefix}{quantile="0.999",type="timers",instance="$instance"} ${snapshot.get999thPercentile()}\n""")
-    }
-    sb.toString()
-  }
-  // scalastyle:on line.size.limit
-
-  private def normalizeKey(key: String): String = {
-    s"${key.replaceAll("[^a-zA-Z0-9]", "_")}"
   }
 }
