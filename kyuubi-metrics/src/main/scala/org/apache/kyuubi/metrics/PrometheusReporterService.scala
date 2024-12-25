@@ -145,8 +145,10 @@ class PrometheusReporterService(registry: MetricRegistry)
       if (line.startsWith("#")) {
         line
       } else {
-        val Array(metrics, value) = line.split("\\s+", 2)
-        s"""$metrics${labelStr} $value"""
+        line.split("\\s+", 2) match {
+          case Array(metrics, rest) => s"""$metrics${labelStr} $rest"""
+          case _ => line
+        }
       }
     }.mkString("\n")
   }
