@@ -60,10 +60,11 @@ class PrometheusReporterService(registry: MetricRegistry)
     httpServer.setHandler(context)
 
     new DropwizardExports(registry).register(bridgeRegistry)
-    if (conf.get(MetricsConf.METRICS_PROMETHEUS_METRICS_INSTANCE_ENABLED)) {
-      val instance = s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port"
+    if (conf.get(MetricsConf.METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED)) {
+      val instanceLabel =
+        Map("instance" -> s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port")
       context.addServlet(
-        new ServletHolder(createPrometheusServletWithInstance(instance)),
+        new ServletHolder(createPrometheusServletWithLabels(instanceLabel)),
         contextPath)
     } else {
       val metricsServlet = new MetricsServlet(bridgeRegistry)
@@ -112,13 +113,13 @@ class PrometheusReporterService(registry: MetricRegistry)
     }
   }
 
-  private def createPrometheusServletWithInstance(instance: String): HttpServlet = {
+  private def createPrometheusServletWithLabels(labels: Map[String, String]): HttpServlet = {
     new HttpServlet {
       override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
         try {
           response.setContentType("text/plain;charset=utf-8")
           response.setStatus(HttpServletResponse.SC_OK)
-          response.getWriter.print(getMetricsSnapshot(instance))
+          response.getWriter.print(getMetricsSnapshot(labels))
         } catch {
           case e: IllegalArgumentException =>
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage)
@@ -135,17 +136,22 @@ class PrometheusReporterService(registry: MetricRegistry)
     }
   }
 
-  private def getMetricsSnapshot(instance: String): String = {
+  private def getMetricsSnapshot(labels: Map[String, String]): String = {
     val metricsSnapshotWriter = new java.io.StringWriter
     val contentType = TextFormat.chooseContentType(null)
     TextFormat.writeFormat(contentType, metricsSnapshotWriter, bridgeRegistry.metricFamilySamples())
+    val labelStr = labelString(labels)
     metricsSnapshotWriter.toString.split("\n").map { line =>
       if (line.startsWith("#")) {
         line
       } else {
         val Array(metrics, value) = line.split("\\s+", 2)
-        s"""$metrics{instance=\"$instance\"} $value"""
+        s"""$metrics${labelStr} $value"""
       }
     }.mkString("\n")
+  }
+
+  private def labelString(labels: Map[String, String]): String = {
+    labels.map { case (k, v) => s"""$k="$v"""" }.toArray.sorted.mkString("{", ",", "}")
   }
 }

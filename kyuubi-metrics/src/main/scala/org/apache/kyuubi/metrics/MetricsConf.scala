@@ -80,8 +80,8 @@ object MetricsConf {
     .checkValue(path => path.startsWith("/"), "Context path must start with '/'")
     .createWithDefault("/metrics")
 
-  val METRICS_PROMETHEUS_METRICS_INSTANCE_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.metrics.prometheus.metrics.instance.enabled")
+  val METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metrics.prometheus.labels.instance.enabled")
       .doc("Whether to add instance label to prometheus metrics")
       .version("1.10.2")
       .booleanConf
