@@ -99,7 +99,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_jvm_uptime{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_jvm_uptime{instance=~\"$instance\",$baseFilter}",
           "format": "time_series",
           "instant": true,
           "legendFormat": "{{instance}}",
@@ -191,7 +191,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_connection_total_BATCH{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_connection_total_BATCH{instance=~\"$instance\",$baseFilter}",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -208,7 +208,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "kyuubi_connection_total_INTERACTIVE{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_connection_total_INTERACTIVE{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "instant": false,
           "legendFormat": "{{instance}}-interactive",
@@ -527,7 +527,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": " kyuubi_memory_usage_total_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": " kyuubi_memory_usage_total_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "{{instance}}",
           "range": true,
@@ -684,7 +684,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Eden_Space_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_PS_Eden_Space_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Eden Space Used",
           "range": true,
@@ -846,7 +846,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Old_Gen_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_PS_Old_Gen_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Old Gen Used",
           "range": true,
@@ -1008,7 +1008,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Survivor_Space_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_PS_Survivor_Space_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Survivor Space Used",
           "range": true,
@@ -1170,7 +1170,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Metaspace_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_Metaspace_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Metaspace Used",
           "range": true,
@@ -1332,7 +1332,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Compressed Class Used",
           "range": true,
@@ -1494,7 +1494,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Code_Cache_used{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_memory_usage_pools_Code_Cache_used{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Code Cache Used",
           "range": true,
@@ -1598,7 +1598,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_exec_pool_threads_alive{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_exec_pool_threads_alive{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1670,7 +1670,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_exec_pool_threads_active{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_exec_pool_threads_active{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1756,7 +1756,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_engine_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_engine_total{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -1843,7 +1843,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_operation_state_ExecuteStatement_running_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_running_total{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "Running",
           "range": true,
           "refId": "A"
@@ -1851,7 +1851,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_operation_state_ExecuteStatement_finished_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_finished_total{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Finished",
           "range": true,
@@ -1861,7 +1861,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_operation_state_ExecuteStatement_error_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_error_total{instance=~\"$instance\",$baseFilter}",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1873,7 +1873,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_operation_state_ExecuteStatement_pending_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_pending_total{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "instant": false,
           "legendFormat": "Pending",
@@ -1966,7 +1966,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_connection_opened{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_connection_opened{instance=~\"$instance\",$baseFilter}",
           "format": "time_series",
           "instant": false,
           "legendFormat": "{{instance}}",
@@ -2058,7 +2058,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thrift_binary_connection_total{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_thrift_binary_connection_total{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -2148,7 +2148,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_runnable_count{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_thread_state_runnable_count{instance=~\"$instance\",$baseFilter}",
           "legendFormat": "Runnable",
           "range": true,
           "refId": "A"
@@ -2156,7 +2156,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_blocked_count{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_thread_state_blocked_count{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Blocked",
           "range": true,
@@ -2165,7 +2165,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_waiting_count{instance=~\"$instance\",job=~\"$job\"}",
+          "expr": "kyuubi_thread_state_waiting_count{instance=~\"$instance\",$baseFilter}",
           "hide": false,
           "legendFormat": "Waiting",
           "range": true,
@@ -2206,6 +2206,30 @@
         "regex": "",
         "sort": 1,
         "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "job=~\"$job\"",
+          "value": "job=~\"$job\""
+        },
+        "description": "The base filter to apply for all metrics",
+        "hide": 0,
+        "includeAll": false,
+        "label": "baseFilter",
+        "multi": false,
+        "name": "baseFilter",
+        "options": [
+          {
+            "selected": true,
+            "text": "job=~\"$job\"",
+            "value": "job=~\"$job\""
+          }
+        ],
+        "query": "job=~\"$job\"",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       },
       {
         "current": {
