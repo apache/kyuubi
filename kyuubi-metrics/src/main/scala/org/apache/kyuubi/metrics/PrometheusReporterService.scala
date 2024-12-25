@@ -17,16 +17,20 @@
 
 package org.apache.kyuubi.metrics
 
+import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+
 import com.codahale.metrics.MetricRegistry
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.MetricsServlet
+import io.prometheus.client.exporter.common.TextFormat
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.util.JavaUtils
 
 class PrometheusReporterService(registry: MetricRegistry)
   extends AbstractService("PrometheusReporterService") {
@@ -46,8 +50,16 @@ class PrometheusReporterService(registry: MetricRegistry)
     httpServer.setHandler(context)
 
     new DropwizardExports(registry).register(bridgeRegistry)
-    val metricsServlet = new MetricsServlet(bridgeRegistry)
-    context.addServlet(new ServletHolder(metricsServlet), contextPath)
+    if (conf.get(MetricsConf.METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED)) {
+      val instanceLabel =
+        Map("instance" -> s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port")
+      context.addServlet(
+        new ServletHolder(createPrometheusServletWithLabels(instanceLabel)),
+        contextPath)
+    } else {
+      val metricsServlet = new MetricsServlet(bridgeRegistry)
+      context.addServlet(new ServletHolder(metricsServlet), contextPath)
+    }
 
     super.initialize(conf)
   }
@@ -86,5 +98,49 @@ class PrometheusReporterService(registry: MetricRegistry)
         httpServer = null
       }
     }
+  }
+
+  private def createPrometheusServletWithLabels(labels: Map[String, String]): HttpServlet = {
+    new HttpServlet {
+      override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
+        try {
+          response.setContentType("text/plain;charset=utf-8")
+          response.setStatus(HttpServletResponse.SC_OK)
+          response.getWriter.print(getMetricsSnapshot(labels))
+        } catch {
+          case e: IllegalArgumentException =>
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage)
+          case e: Exception =>
+            warn(s"GET ${request.getRequestURI} failed: $e", e)
+            throw e
+        }
+      }
+
+      // ensure TRACE is not supported
+      override protected def doTrace(req: HttpServletRequest, res: HttpServletResponse): Unit = {
+        res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
+      }
+    }
+  }
+
+  private def getMetricsSnapshot(labels: Map[String, String]): String = {
+    val metricsSnapshotWriter = new java.io.StringWriter
+    val contentType = TextFormat.chooseContentType(null)
+    TextFormat.writeFormat(contentType, metricsSnapshotWriter, bridgeRegistry.metricFamilySamples())
+    val labelStr = labelString(labels)
+    metricsSnapshotWriter.toString.split("\n").map { line =>
+      if (line.startsWith("#")) {
+        line
+      } else {
+        line.split("\\s+", 2) match {
+          case Array(metrics, rest) => s"""$metrics${labelStr} $rest"""
+          case _ => line
+        }
+      }
+    }.mkString("\n")
+  }
+
+  private def labelString(labels: Map[String, String]): String = {
+    labels.map { case (k, v) => s"""$k="$v"""" }.toArray.sorted.mkString("{", ",", "}")
   }
 }
