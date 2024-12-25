@@ -1476,6 +1476,7 @@
                             <spark.driver.memory>1g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
+                            <kyuubi.zookeeper.embedded.client.port.address>localhost</kyuubi.zookeeper.embedded.client.port.address>
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
                             <kyuubi.operation.log.dir.root>${project.build.directory}/server_operation_logs</kyuubi.operation.log.dir.root>
                             <kyuubi.engine.operation.log.dir.root>${project.build.directory}/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
@@ -1503,6 +1504,7 @@
                             <spark.driver.memory>1g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
+                            <kyuubi.zookeeper.embedded.client.port.address>localhost</kyuubi.zookeeper.embedded.client.port.address>
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
                             <kyuubi.operation.log.dir.root>${project.build.directory}/server_operation_logs</kyuubi.operation.log.dir.root>
                             <kyuubi.engine.operation.log.dir.root>${project.build.directory}/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
