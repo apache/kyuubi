@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.metrics
 
+import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+
 import com.codahale.metrics.MetricRegistry
-import io.prometheus.client.CollectorRegistry
-import io.prometheus.client.dropwizard.DropwizardExports
-import io.prometheus.client.exporter.MetricsServlet
 import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 
@@ -28,16 +27,17 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_JETTY_SEND_VERSION_ENABLED
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.util.JavaUtils
 
 class PrometheusReporterService(registry: MetricRegistry)
   extends AbstractService("PrometheusReporterService") {
-
-  private val bridgeRegistry = new CollectorRegistry
 
   // VisibleForTesting
   private[metrics] var httpServer: Server = _
   private[metrics] var httpServerConnector: ServerConnector = _
   @volatile protected var isStarted = false
+
+  private var instanceLabel: String = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
@@ -55,9 +55,9 @@ class PrometheusReporterService(registry: MetricRegistry)
     context.setContextPath("/")
     httpServer.setHandler(context)
 
-    new DropwizardExports(registry).register(bridgeRegistry)
-    val metricsServlet = new MetricsServlet(bridgeRegistry)
-    context.addServlet(new ServletHolder(metricsServlet), contextPath)
+    context.addServlet(new ServletHolder(createPrometheusServlet()), contextPath)
+
+    instanceLabel = s"""instance="${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port"""
 
     super.initialize(conf)
   }
@@ -99,5 +99,97 @@ class PrometheusReporterService(registry: MetricRegistry)
         httpServerConnector = null
       }
     }
+  }
+
+  private def createPrometheusServlet(): HttpServlet = {
+    new HttpServlet {
+      override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
+        try {
+          response.setContentType("text/plain;charset=utf-8")
+          response.setStatus(HttpServletResponse.SC_OK)
+          response.getWriter.print(getMetricsSnapshot())
+        } catch {
+          case e: IllegalArgumentException =>
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage)
+          case e: Exception =>
+            warn(s"GET ${request.getRequestURI} failed: $e", e)
+            throw e
+        }
+      }
+      // ensure TRACE is not supported
+      override protected def doTrace(req: HttpServletRequest, res: HttpServletResponse): Unit = {
+        res.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED)
+      }
+    }
+  }
+
+  private def getMetricsSnapshot(): String = {
+    import scala.collection.JavaConverters._
+
+    val gaugesLabel = s"""{type="gauges",$instanceLabel}"""
+    val countersLabel = s"""{type="counters",$instanceLabel}"""
+    val metersLabel = countersLabel
+    val histogramslabels = s"""{type="histograms",,$instanceLabel}"""
+    val timersLabels = s"""{type="timers",,$instanceLabel}"""
+
+    val sb = new StringBuilder()
+    registry.getGauges.asScala.foreach { case (k, v) =>
+      if (!v.getValue.isInstanceOf[String]) {
+        sb.append(s"${normalizeKey(k)}Number$gaugesLabel ${v.getValue}\n")
+        sb.append(s"${normalizeKey(k)}Value$gaugesLabel ${v.getValue}\n")
+      }
+    }
+    registry.getCounters.asScala.foreach { case (k, v) =>
+      sb.append(s"${normalizeKey(k)}Count$countersLabel ${v.getCount}\n")
+    }
+    registry.getHistograms.asScala.foreach { case (k, h) =>
+      val snapshot = h.getSnapshot
+      val prefix = normalizeKey(k)
+      sb.append(s"${prefix}Count$histogramslabels ${h.getCount}\n")
+      sb.append(s"${prefix}Max$histogramslabels ${snapshot.getMax}\n")
+      sb.append(s"${prefix}Mean$histogramslabels ${snapshot.getMean}\n")
+      sb.append(s"${prefix}Min$histogramslabels ${snapshot.getMin}\n")
+      sb.append(s"${prefix}50thPercentile$histogramslabels ${snapshot.getMedian}\n")
+      sb.append(s"${prefix}75thPercentile$histogramslabels ${snapshot.get75thPercentile}\n")
+      sb.append(s"${prefix}95thPercentile$histogramslabels ${snapshot.get95thPercentile}\n")
+      sb.append(s"${prefix}98thPercentile$histogramslabels ${snapshot.get98thPercentile}\n")
+      sb.append(s"${prefix}99thPercentile$histogramslabels ${snapshot.get99thPercentile}\n")
+      sb.append(s"${prefix}999thPercentile$histogramslabels ${snapshot.get999thPercentile}\n")
+      sb.append(s"${prefix}StdDev$histogramslabels ${snapshot.getStdDev}\n")
+    }
+    registry.getMeters.entrySet.iterator.asScala.foreach { kv =>
+      val prefix = normalizeKey(kv.getKey)
+      val meter = kv.getValue
+      sb.append(s"${prefix}Count$metersLabel ${meter.getCount}\n")
+      sb.append(s"${prefix}MeanRate$metersLabel ${meter.getMeanRate}\n")
+      sb.append(s"${prefix}OneMinuteRate$metersLabel ${meter.getOneMinuteRate}\n")
+      sb.append(s"${prefix}FiveMinuteRate$metersLabel ${meter.getFiveMinuteRate}\n")
+      sb.append(s"${prefix}FifteenMinuteRate$metersLabel ${meter.getFifteenMinuteRate}\n")
+    }
+    registry.getTimers.entrySet.iterator.asScala.foreach { kv =>
+      val prefix = normalizeKey(kv.getKey)
+      val timer = kv.getValue
+      val snapshot = timer.getSnapshot
+      sb.append(s"${prefix}Count$timersLabels ${timer.getCount}\n")
+      sb.append(s"${prefix}Max$timersLabels ${snapshot.getMax}\n")
+      sb.append(s"${prefix}Mean$timersLabels ${snapshot.getMean}\n")
+      sb.append(s"${prefix}Min$timersLabels ${snapshot.getMin}\n")
+      sb.append(s"${prefix}50thPercentile$timersLabels ${snapshot.getMedian}\n")
+      sb.append(s"${prefix}75thPercentile$timersLabels ${snapshot.get75thPercentile}\n")
+      sb.append(s"${prefix}95thPercentile$timersLabels ${snapshot.get95thPercentile}\n")
+      sb.append(s"${prefix}98thPercentile$timersLabels ${snapshot.get98thPercentile}\n")
+      sb.append(s"${prefix}99thPercentile$timersLabels ${snapshot.get99thPercentile}\n")
+      sb.append(s"${prefix}999thPercentile$timersLabels ${snapshot.get999thPercentile}\n")
+      sb.append(s"${prefix}StdDev$timersLabels ${snapshot.getStdDev}\n")
+      sb.append(s"${prefix}FifteenMinuteRate$timersLabels ${timer.getFifteenMinuteRate}\n")
+      sb.append(s"${prefix}FiveMinuteRate$timersLabels ${timer.getFiveMinuteRate}\n")
+      sb.append(s"${prefix}OneMinuteRate$timersLabels ${timer.getOneMinuteRate}\n")
+      sb.append(s"${prefix}MeanRate$timersLabels ${timer.getMeanRate}\n")
+    }
+    sb.toString()
+  }
+
+  private def normalizeKey(key: String): String = {
+    s"${key.replaceAll("[^a-zA-Z0-9]", "_")}_"
   }
 }
