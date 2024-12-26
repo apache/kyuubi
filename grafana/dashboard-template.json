@@ -2195,8 +2195,8 @@
       {
         "current": {
           "selected": false,
-          "text": "job=~\"$job\"",
-          "value": "job=~\"$job\""
+          "text": "job=~\"kyuubi\"",
+          "value": "job=~\"kyuubi\""
         },
         "description": "The base filter to apply for all metrics",
         "hide": 0,
@@ -2207,11 +2207,11 @@
         "options": [
           {
             "selected": true,
-            "text": "job=~\"$job\"",
-            "value": "job=~\"$job\""
+            "text": "job=~\"kyuubi\"",
+            "value": "job=~\"kyuubi\""
           }
         ],
-        "query": "job=~\"$job\"",
+        "query": "job=~\"kyuubi\"",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
