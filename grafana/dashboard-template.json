@@ -2288,6 +2288,45 @@
         "skipUrlSync": false,
         "sort": 1,
         "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "thrift_binary_connection",
+          "value": "thrift_binary_connection"
+        },
+        "description": "The kyuubi connection type.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "connType",
+        "multi": false,
+        "name": "connType",
+        "options": [
+          {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": true,
+            "text": "thrift_binary_connection",
+            "value": "thrift_binary_connection"
+          },
+          {
+            "selected": false,
+            "text": "rest_connection",
+            "value": "rest_connection"
+          },
+          {
+            "selected": false,
+            "text": "thrift_http_connection",
+            "value": "thrift_http_connection"
+          }
+        ],
+        "query": "thrift_binary_connection,rest_connection,thrift_http_connection",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
