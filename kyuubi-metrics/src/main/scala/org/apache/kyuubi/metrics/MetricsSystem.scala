@@ -58,6 +58,10 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     meter.mark(value)
   }
 
+  def getGauge[T](name: String): Option[Gauge[T]] = {
+    Option(registry.gauge(name))
+  }
+
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
     registry.register(
       MetricRegistry.name(name),
@@ -121,10 +125,6 @@ object MetricsSystem {
 
   def meterValue(name: String): Option[Long] = {
     maybeSystem.map(_.registry.meter(name).getCount)
-  }
-
-  def getGauge(name: String): Option[Gauge[_]] = {
-    maybeSystem.map(_.registry.gauge(name))
   }
 
   def histogramSnapshot(name: String): Option[Snapshot] = {
