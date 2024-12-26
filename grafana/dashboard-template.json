@@ -7224,9 +7224,9 @@
         },
         "description": "The kyuubi connection type.",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "connType",
-        "multi": false,
+        "multi": true,
         "name": "connType",
         "options": [
           {
@@ -7268,9 +7268,9 @@
         },
         "description": "The kyuubi operation type.",
         "hide": 0,
-        "includeAll": false,
+        "includeAll": true,
         "label": "opType",
-        "multi": false,
+        "multi": true,
         "name": "opType",
         "options": [
           {
