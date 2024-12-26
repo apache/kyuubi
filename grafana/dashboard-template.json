@@ -107,7 +107,7 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 3,
+        "w": 2,
         "x": 0,
         "y": 1
       },
@@ -182,8 +182,8 @@
       },
       "gridPos": {
         "h": 6,
-        "w": 5,
-        "x": 3,
+        "w": 3,
+        "x": 2,
         "y": 1
       },
       "id": 31,
@@ -219,6 +219,85 @@
         }
       ],
       "title": "Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [
+            {
+              "options": {
+                "match": "null",
+                "result": {
+                  "text": "N/A"
+                }
+              },
+              "type": "special"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 2592000000
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 3,
+        "x": 5,
+        "y": 1
+      },
+      "id": 102,
+      "maxDataPoints": 100,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "kyuubi_thrift_ssl_cert_expiration{$baseFilter,instance=~\"$instance\"}",
+          "format": "time_series",
+          "instant": true,
+          "legendFormat": "${baseLegend}",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "KeyStore Expiration",
       "type": "stat"
     },
     {
