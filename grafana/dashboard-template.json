@@ -2270,7 +2270,7 @@
           "type": "prometheus",
           "uid": "${DS_PROMETHEUS}"
         },
-        "definition": "label_values(kyuubi_memory_usage_total_init, instance)",
+        "definition": "label_values(kyuubi_jvm_uptime, instance)",
         "hide": 0,
         "includeAll": true,
         "label": "instance",
@@ -2280,7 +2280,7 @@
         "name": "instance",
         "options": [],
         "query": {
-          "query": "label_values(kyuubi_memory_usage_total_init, instance)",
+          "query": "label_values(kyuubi_jvm_uptime, instance)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 1,
