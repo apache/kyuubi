@@ -2327,6 +2327,45 @@
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "ExecuteStatement",
+          "value": "ExecuteStatement"
+        },
+        "description": "The kyuubi operation type.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "opType",
+        "multi": false,
+        "name": "opType",
+        "options": [
+          {
+            "selected": false,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": true,
+            "text": "ExecuteStatement",
+            "value": "ExecuteStatement"
+          },
+          {
+            "selected": false,
+            "text": "BatchJobSubmission",
+            "value": "BatchJobSubmission"
+          },
+          {
+            "selected": false,
+            "text": "LaunchEngine",
+            "value": "LaunchEngine"
+          }
+        ],
+        "query": "ExecuteStatement,BatchJobSubmission,LaunchEngine",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },
