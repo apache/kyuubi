@@ -2321,9 +2321,14 @@
             "selected": false,
             "text": "thrift_http_connection",
             "value": "thrift_http_connection"
+          },
+          {
+            "selected": false,
+            "text": "metadata_request",
+            "value": "metadata_request"
           }
         ],
-        "query": "thrift_binary_connection,rest_connection,thrift_http_connection",
+        "query": "thrift_binary_connection,rest_connection,thrift_http_connection,metadata_request",
         "queryValue": "",
         "skipUrlSync": false,
         "type": "custom"
