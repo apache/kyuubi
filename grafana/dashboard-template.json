@@ -296,7 +296,7 @@
           "sort": "none"
         }
       },
-            "targets": [
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
@@ -408,7 +408,7 @@
           "sort": "none"
         }
       },
-            "targets": [
+      "targets": [
         {
           "datasource": {
             "type": "prometheus",
@@ -515,7 +515,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -631,7 +631,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -739,7 +739,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -837,7 +837,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -944,7 +944,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1051,7 +1051,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1155,7 +1155,7 @@
           "sort": "none"
         }
       },
-            "repeat": "memarea",
+      "repeat": "memarea",
       "repeatDirection": "h",
       "targets": [
         {
@@ -1254,7 +1254,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1349,7 +1349,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1470,7 +1470,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1567,7 +1567,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1664,7 +1664,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1770,7 +1770,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1891,7 +1891,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -1997,7 +1997,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -2094,7 +2094,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -2192,7 +2192,7 @@
           "sort": "none"
         }
       },
-            "repeatDirection": "h",
+      "repeatDirection": "h",
       "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
@@ -2308,7 +2308,7 @@
           "sort": "none"
         }
       },
-            "targets": [
+      "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
@@ -2427,7 +2427,7 @@
           "sort": "none"
         }
       },
-            "targets": [
+      "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
@@ -2517,7 +2517,7 @@
           "sort": "none"
         }
       },
-            "targets": [
+      "targets": [
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
@@ -2643,7 +2643,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
@@ -2760,7 +2760,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
@@ -2877,7 +2877,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
@@ -2994,7 +2994,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
@@ -3111,7 +3111,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
@@ -3228,7 +3228,7 @@
               "sort": "none"
             }
           },
-                    "targets": [
+          "targets": [
             {
               "datasource": "${DS_PROMETHEUS}",
               "editorMode": "code",
