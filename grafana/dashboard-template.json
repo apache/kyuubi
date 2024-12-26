@@ -302,19 +302,26 @@
             "type": "prometheus",
             "uid": "${DS_PROMETHEUS}"
           },
-          "disableTextWrap": false,
           "editorMode": "code",
-          "exemplar": false,
-          "expr": "kyuubi_connection_opened_BATCH{$baseFilter,instance=~\"$instance\"}",
-          "format": "time_series",
-          "fullMetaSearch": false,
-          "includeNullMetadata": true,
+          "expr": "sum(kyuubi_connection_opened_INTERACTIVE{$baseFilter,instance=~\"$instance\"})",
+          "hide": false,
           "instant": false,
-          "interval": "",
-          "legendFormat": "${baseLegend}-batch",
+          "legendFormat": "total-interactive",
           "range": true,
-          "refId": "A",
-          "useBackend": false
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "sum(kyuubi_connection_opened_BATCH{$baseFilter,instance=~\"$instance\"})",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "total-batch",
+          "range": true,
+          "refId": "B"
         },
         {
           "datasource": {
@@ -327,7 +334,20 @@
           "instant": false,
           "legendFormat": "${baseLegend}-interactive",
           "range": true,
-          "refId": "B"
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${DS_PROMETHEUS}"
+          },
+          "editorMode": "code",
+          "expr": "kyuubi_connection_opened_BATCH{$baseFilter,instance=~\"$instance\"}",
+          "hide": false,
+          "instant": false,
+          "legendFormat": "${baseLegend}-batch",
+          "range": true,
+          "refId": "D"
         }
       ],
       "title": "Connection Opened",
