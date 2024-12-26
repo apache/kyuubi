@@ -123,6 +123,10 @@ object MetricsSystem {
     maybeSystem.map(_.registry.meter(name).getCount)
   }
 
+  def getGauge(name: String): Option[Gauge[_]] = {
+    maybeSystem.map(_.registry.gauge(name))
+  }
+
   def histogramSnapshot(name: String): Option[Snapshot] = {
     maybeSystem.map(_.registry.histogram(name).getSnapshot)
   }
