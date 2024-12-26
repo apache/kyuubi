@@ -133,7 +133,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_jvm_uptime{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_jvm_uptime{$baseFilter,instance=~\"$instance\"}",
           "format": "time_series",
           "instant": false,
           "legendFormat": "${baseLegend}",
@@ -225,7 +225,7 @@
           "disableTextWrap": false,
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_connection_total_BATCH{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_connection_total_BATCH{$baseFilter,instance=~\"$instance\"}",
           "format": "time_series",
           "fullMetaSearch": false,
           "includeNullMetadata": true,
@@ -242,7 +242,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "kyuubi_connection_total_INTERACTIVE{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_connection_total_INTERACTIVE{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "${baseLegend}-interactive",
@@ -561,7 +561,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": " kyuubi_memory_usage_total_used{instance=~\"$instance\",$baseFilter}",
+          "expr": " kyuubi_memory_usage_total_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend}",
           "range": true,
@@ -718,7 +718,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Eden_Space_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_PS_Eden_Space_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Eden Space Used",
           "range": true,
@@ -727,7 +727,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Par_Eden_Space_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Par_Eden_Space_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Eden Space Committed",
           "range": true,
@@ -736,7 +736,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Par_Eden_Space_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Par_Eden_Space_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Eden Space Max",
           "range": true,
@@ -880,7 +880,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Old_Gen_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_PS_Old_Gen_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Old Gen Used",
           "range": true,
@@ -889,7 +889,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_CMS_Old_Gen_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_CMS_Old_Gen_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Old Gen Committed",
           "range": true,
@@ -898,7 +898,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_CMS_Old_Gen_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_CMS_Old_Gen_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Old Gen Max",
           "range": true,
@@ -1042,7 +1042,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_PS_Survivor_Space_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_PS_Survivor_Space_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Survivor Space Used",
           "range": true,
@@ -1051,7 +1051,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Par_Survivor_Space_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Par_Survivor_Space_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Survivor Space Committed",
           "range": true,
@@ -1060,7 +1060,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Par_Survivor_Space_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Par_Survivor_Space_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Survivor Space Max",
           "range": true,
@@ -1204,7 +1204,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Metaspace_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Metaspace_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Metaspace Used",
           "range": true,
@@ -1213,7 +1213,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Metaspace_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Metaspace_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Metaspace Committed",
           "range": true,
@@ -1222,7 +1222,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Metaspace_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Metaspace_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Metaspace Max",
           "range": true,
@@ -1366,7 +1366,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Compressed Class Used",
           "range": true,
@@ -1375,7 +1375,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Compressed Class Committed",
           "range": true,
@@ -1384,7 +1384,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Compressed_Class_Space_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Compressed Class Max",
           "range": true,
@@ -1528,7 +1528,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Code_Cache_used{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Code_Cache_used{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Code Cache Used",
           "range": true,
@@ -1537,7 +1537,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Code_Cache_committed{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Code_Cache_committed{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Code Cache Committed",
           "range": true,
@@ -1546,7 +1546,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_memory_usage_pools_Code_Cache_max{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_memory_usage_pools_Code_Cache_max{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Code Cache Max",
           "range": true,
@@ -1632,7 +1632,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_exec_pool_threads_alive{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_exec_pool_threads_alive{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend}",
           "range": true,
           "refId": "A"
@@ -1704,7 +1704,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_exec_pool_threads_active{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_exec_pool_threads_active{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend}",
           "range": true,
           "refId": "A"
@@ -1790,7 +1790,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_engine_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_engine_total{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend}",
           "range": true,
           "refId": "A"
@@ -1877,7 +1877,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_operation_state_ExecuteStatement_running_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_running_total{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend} Running",
           "range": true,
           "refId": "A"
@@ -1885,7 +1885,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_operation_state_ExecuteStatement_finished_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_finished_total{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Finished",
           "range": true,
@@ -1895,7 +1895,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_operation_state_ExecuteStatement_error_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_error_total{$baseFilter,instance=~\"$instance\"}",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1907,7 +1907,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_operation_state_ExecuteStatement_pending_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_operation_state_ExecuteStatement_pending_total{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "instant": false,
           "legendFormat": "${baseLegend} Pending",
@@ -2000,7 +2000,7 @@
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
           "exemplar": false,
-          "expr": "kyuubi_connection_opened{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_connection_opened{$baseFilter,instance=~\"$instance\"}",
           "format": "time_series",
           "instant": false,
           "legendFormat": "${baseLegend}",
@@ -2092,7 +2092,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thrift_binary_connection_total{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_thrift_binary_connection_total{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend}",
           "range": true,
           "refId": "A"
@@ -2182,7 +2182,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_runnable_count{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_thread_state_runnable_count{$baseFilter,instance=~\"$instance\"}",
           "legendFormat": "${baseLegend} Runnable",
           "range": true,
           "refId": "A"
@@ -2190,7 +2190,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_blocked_count{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_thread_state_blocked_count{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Blocked",
           "range": true,
@@ -2199,7 +2199,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_waiting_count{instance=~\"$instance\",$baseFilter}",
+          "expr": "kyuubi_thread_state_waiting_count{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
           "legendFormat": "${baseLegend} Waiting",
           "range": true,
