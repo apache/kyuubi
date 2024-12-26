@@ -127,20 +127,33 @@ class PrometheusReporterService(registry: MetricRegistry)
     val metricsSnapshotWriter = new java.io.StringWriter
     val contentType = TextFormat.chooseContentType(null)
     TextFormat.writeFormat(contentType, metricsSnapshotWriter, bridgeRegistry.metricFamilySamples())
-    val labelStr = labelString(labels)
+    val labelStr = labels.map { case (k, v) => s"""$k="$v"""" }.toArray.sorted.mkString(",")
     metricsSnapshotWriter.toString.split("\n").map { line =>
       if (line.startsWith("#")) {
         line
       } else {
         line.split("\\s+", 2) match {
-          case Array(metrics, rest) => s"""$metrics${labelStr} $rest"""
+          case Array(metrics, rest) =>
+            val metricsWithNewLabels = PrometheusReporterService.applyExtraLabels(metrics, labelStr)
+            s"""$metricsWithNewLabels $rest"""
           case _ => line
         }
       }
     }.mkString("\n")
   }
+}
 
-  private def labelString(labels: Map[String, String]): String = {
-    labels.map { case (k, v) => s"""$k="$v"""" }.toArray.sorted.mkString("{", ",", "}")
+object PrometheusReporterService {
+  def applyExtraLabels(metrics: String, labelStr: String): String = {
+    val labelStartIdx = metrics.indexOf("{")
+    val labelEndIdx = metrics.indexOf("}")
+    if (labelStartIdx > 0 && labelEndIdx > 0) {
+      metrics.substring(0, labelEndIdx).stripSuffix(",") +
+        "," +
+        labelStr +
+        metrics.substring(labelEndIdx)
+    } else {
+      s"$metrics{${labelStr}}"
+    }
   }
 }
