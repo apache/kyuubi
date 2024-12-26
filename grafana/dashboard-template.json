@@ -2251,7 +2251,10 @@
       "type": "row"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2313,7 +2316,7 @@
         "x": 0,
         "y": 60
       },
-      "id": 49,
+      "id": 100,
       "options": {
         "legend": {
           "calcs": [],
@@ -2331,31 +2334,40 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_runnable_count{$baseFilter,instance=~\"$instance\"}",
-          "legendFormat": "${baseLegend} Runnable",
+          "expr": "kyuubi_metadata_request_opened{$baseFilter,instance=~\"$instance\"}",
+          "legendFormat": "${baseLegend} Opened",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_blocked_count{$baseFilter,instance=~\"$instance\"}",
+          "expr": "kyuubi_metadata_request_total_total{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
-          "legendFormat": "${baseLegend} Blocked",
+          "legendFormat": "${baseLegend} Total",
           "range": true,
           "refId": "B"
         },
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_thread_state_waiting_count{$baseFilter,instance=~\"$instance\"}",
+          "expr": "kyuubi_metadata_request_failed_total{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
-          "legendFormat": "${baseLegend} Waiting",
+          "legendFormat": "${baseLegend} Failed",
           "range": true,
           "refId": "C"
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": "kyuubi_metadata_request_retrying_total{$baseFilter,instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "${baseLegend} Retring",
+          "range": true,
+          "refId": "D"
         }
       ],
-      "title": "Threads",
+      "title": "Metadata Request",
       "type": "timeseries"
     },
     {
@@ -2424,7 +2436,7 @@
         "x": 12,
         "y": 60
       },
-      "id": 100,
+      "id": 101,
       "options": {
         "legend": {
           "calcs": [],
@@ -2442,40 +2454,122 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_metadata_request_opened{$baseFilter,instance=~\"$instance\"}",
-          "legendFormat": "${baseLegend} Opened",
+          "expr": "increase(kyuubi_metadata_request_total_total{$baseFilter,instance=~\"$instance\"}[$trendInterval])",
+          "hide": false,
+          "legendFormat": "${baseLegend}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Metadata Request(new)[$trendInterval]",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 68
+      },
+      "id": 49,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": "kyuubi_thread_state_runnable_count{$baseFilter,instance=~\"$instance\"}",
+          "legendFormat": "${baseLegend} Runnable",
           "range": true,
           "refId": "A"
         },
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_metadata_request_total_total{$baseFilter,instance=~\"$instance\"}",
+          "expr": "kyuubi_thread_state_blocked_count{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
-          "legendFormat": "${baseLegend} Total",
+          "legendFormat": "${baseLegend} Blocked",
           "range": true,
           "refId": "B"
         },
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_metadata_request_failed_total{$baseFilter,instance=~\"$instance\"}",
+          "expr": "kyuubi_thread_state_waiting_count{$baseFilter,instance=~\"$instance\"}",
           "hide": false,
-          "legendFormat": "${baseLegend} Failed",
+          "legendFormat": "${baseLegend} Waiting",
           "range": true,
           "refId": "C"
-        },
-        {
-          "datasource": "${DS_PROMETHEUS}",
-          "editorMode": "code",
-          "expr": "kyuubi_metadata_request_retrying_total{$baseFilter,instance=~\"$instance\"}",
-          "hide": false,
-          "legendFormat": "${baseLegend} Retring",
-          "range": true,
-          "refId": "D"
         }
       ],
-      "title": "Metadata Request",
+      "title": "Threads",
       "type": "timeseries"
     },
     {
