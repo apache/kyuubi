@@ -1374,7 +1374,7 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_gc_ZGC_Cycles_count{$baseFilter,instance=~\"$instance\"}",
+          "expr": "increase(kyuubi_gc_ZGC_Cycles_count{$baseFilter,instance=~\"$instance\"}[$trendInterval])",
           "hide": false,
           "legendFormat": "${baseLegend}",
           "range": true,
@@ -1383,14 +1383,14 @@
         {
           "datasource": "${DS_PROMETHEUS}",
           "editorMode": "code",
-          "expr": "kyuubi_gc_PS_MarkSweep_count{$baseFilter,instance=~\"$instance\"}",
+          "expr": "increase(kyuubi_gc_PS_MarkSweep_count{$baseFilter,instance=~\"$instance\"}[$trendInterval])",
           "hide": false,
           "legendFormat": "${baseLegend}",
           "range": true,
           "refId": "B"
         }
       ],
-      "title": "JVM GC Count",
+      "title": "JVM GC Count[$trendInterval]",
       "type": "timeseries"
     },
     {
