@@ -115,6 +115,8 @@ class BeeLineOpts implements Completer {
 
   private String delimiter = DEFAULT_DELIMITER;
 
+  private boolean cancelImmediate = false;
+
   @Retention(RetentionPolicy.RUNTIME)
   public @interface Ignore {
     // marker annotations for functions that Reflector should ignore / pretend it does not exist
@@ -647,5 +649,13 @@ class BeeLineOpts implements Completer {
   @Ignore
   public static void setEnv(Env envToUse) {
     env = envToUse;
+  }
+
+  public boolean getCancelImmediate() {
+    return cancelImmediate;
+  }
+
+  public void setCancelImmediate(boolean cancelImmediate) {
+    this.cancelImmediate = cancelImmediate;
   }
 }

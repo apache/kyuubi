@@ -861,4 +861,8 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       resultSet = null;
     }
   }
+
+  public boolean getIsCancelled() {
+    return isCancelled;
+  }
 }
