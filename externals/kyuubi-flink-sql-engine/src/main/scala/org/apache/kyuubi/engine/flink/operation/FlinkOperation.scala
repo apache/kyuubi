@@ -163,6 +163,7 @@ abstract class FlinkOperation(session: Session) extends AbstractOperation(sessio
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
           setOperationException(ke)
           setState(OperationState.ERROR)
+          shutdownTimeoutMonitor()
           throw ke
         }
       }
