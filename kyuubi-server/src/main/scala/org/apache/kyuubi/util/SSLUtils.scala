@@ -56,13 +56,15 @@ object SSLUtils extends Logging {
         keyStorePath.get,
         keyStorePassword.get,
         keyStoreType).foreach { expiration =>
-        info(s"Thrift SSL Serve KeyStore ${keyStorePath.get} will expire at:" +
+        info(s"Thrift SSL Server KeyStore ${keyStorePath.get} will expire at:" +
           s" ${Utils.getDateFromTimestamp(expiration)}")
         MetricsSystem.tracing { ms =>
-          ms.registerGauge(
-            MetricsConstants.THRIFT_SSL_CERT_EXPIRATION,
-            expiration - System.currentTimeMillis(),
-            0L)
+          if (ms.getGauge(MetricsConstants.THRIFT_SSL_CERT_EXPIRATION).isEmpty) {
+            ms.registerGauge(
+              MetricsConstants.THRIFT_SSL_CERT_EXPIRATION,
+              expiration - System.currentTimeMillis(),
+              0L)
+          }
         }
       }
     }
