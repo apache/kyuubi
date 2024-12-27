@@ -17,6 +17,7 @@
 package org.apache.kyuubi.engine.jdbc.operation
 
 import java.sql.{Connection, Statement, Types}
+import java.util.concurrent.RejectedExecutionException
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
@@ -50,9 +51,19 @@ class ExecuteStatement(
           executeStatement()
         }
       }
-      val jdbcSessionManager = session.sessionManager
-      val backgroundHandle = jdbcSessionManager.submitBackgroundOperation(asyncOperation)
-      setBackgroundHandle(backgroundHandle)
+      try {
+        val jdbcSessionManager = session.sessionManager
+        val backgroundHandle = jdbcSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke =
+            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
+          setOperationException(ke)
+          shutdownTimeoutMonitor()
+          throw ke
+      }
     } else {
       executeStatement()
     }
