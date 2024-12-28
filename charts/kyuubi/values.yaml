@@ -171,6 +171,38 @@ kyuubiConf:
   #      - key: trust-store
   #        path: certs/truststore.jks
 
+# Hadoop configuration files
+hadoopConf:
+  # $HADOOP_CONF_DIR directory
+  dir: /opt/hadoop/conf
+  # Configuration files from the specified keys (file name) and values (file content)
+  files: ~
+  #files:
+  # 'core-site.xml': |
+  #   <?xml version="1.0"?>
+  #   <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+  #   <configuration>
+  #     <property>
+  #       <name>hadoop.tmp.dir</name>
+  #       <value>/tmp/hadoop-${user.name}</value>
+  #     </property>
+  #   </configuration>
+
+  # Configuration files from the list of existing ConfigMaps and Secrets
+  filesFrom: []
+  #filesFrom:
+  #- configMap:
+  #    name: hadoop-configs
+  #- secret:
+  #    name: hadoop-secrets
+  #- secret:
+  #    name: ssl-secrets
+  #    items:
+  #      - key: key-store
+  #        path: certs/keystore.jks
+  #      - key: trust-store
+  #        path: certs/truststore.jks
+
 # Spark configuration, see https://github.com/apache/spark/tree/master/conf and Spark documentation for more details
 sparkConf:
   # $SPARK_CONF_DIR directory
