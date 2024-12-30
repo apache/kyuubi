@@ -303,7 +303,7 @@ class SparkProcessBuilder(
           }
         }
         Map(KUBERNETES_FILE_UPLOAD_PATH -> uploadPath)
-      case None =>
+      case _ =>
         Map.empty
     }
   }
