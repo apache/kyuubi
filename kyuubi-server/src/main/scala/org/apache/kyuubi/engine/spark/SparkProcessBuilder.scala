@@ -27,7 +27,6 @@ import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
