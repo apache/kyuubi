@@ -48,6 +48,12 @@ The minimum required configurations are:
 * spark.kubernetes.file.upload.path (path on S3 or HDFS)
 * spark.kubernetes.authenticate.driver.serviceAccountName ([viz ServiceAccount](#serviceaccount))
 
+The vanilla Spark neither support rolling nor expiration mechanism for `spark.kubernetes.file.upload.path`, if you use
+file system that does not support TTL, e.g. HDFS, additional cleanup mechanisms are needed to prevent the files in this
+directory from growing indefinitely. Since Kyuubi v1.11.0, you can configure `spark.kubernetes.file.upload.path` with
+placeholders `{{YEAR}}`, `{{MONTH}}` and `{{DAY}}`, and enable `kyuubi.kubernetes.spark.autoCreateFileUploadPath.enabled`
+to let Kyuubi server create the directory with 777 permission automatically before submitting Spark application.
+
 ### Docker Image
 
 Spark ships a `./bin/docker-image-tool.sh` script to build and publish the Docker images for running Spark applications on Kubernetes.

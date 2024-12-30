@@ -19,7 +19,8 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
-import java.time.Duration
+import java.time.{Duration, LocalDate}
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 import java.util.concurrent.{Executors, TimeUnit}
 
@@ -467,6 +468,17 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       UUID.randomUUID().toString,
       None)
     assert(builder.commands.toSeq.contains("spark.kyuubi.key=value"))
+  }
+
+  test("spark.kubernetes.file.upload.path supports placeholder") {
+    val conf1 = KyuubiConf(false)
+    conf1.set("spark.master", "k8s://test:12345")
+    conf1.set("spark.submit.deployMode", "cluster")
+    conf1.set("spark.kubernetes.file.upload.path", "hdfs:///spark-upload-{{YEAR}}{{MONTH}}{{DAY}}")
+    val builder1 = new SparkProcessBuilder("", true, conf1)
+    val commands1 = builder1.toString.split(' ')
+    val toady = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now())
+    assert(commands1.contains(s"spark.kubernetes.file.upload.path=hdfs:///spark-upload-$toady"))
   }
 }
 
