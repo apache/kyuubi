@@ -337,11 +337,8 @@ class SparkProcessBuilder(
   }
 
   def isK8sClusterMode: Boolean = {
-    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
-      case Some(m) if m.startsWith("k8s") =>
-        deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
-      case _ => false
-    }
+    clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s")) &&
+      deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
   }
 
   def kubernetesContext(): Option[String] = {
