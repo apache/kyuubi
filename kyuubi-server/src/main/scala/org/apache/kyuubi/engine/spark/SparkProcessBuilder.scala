@@ -19,12 +19,16 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FileFilter, IOException}
 import java.nio.file.Paths
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -37,7 +41,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, Validator}
+import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, KyuubiHadoopUtils, Validator}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
@@ -141,7 +145,11 @@ class SparkProcessBuilder(
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++ engineLogPathConf ++ extraYarnConf(allConf) ++ appendPodNameConf(allConf)).foreach {
+    (allConf ++
+      engineLogPathConf ++
+      extraYarnConf(allConf) ++
+      appendPodNameConf(allConf) ++
+      prepareK8sFileUploadPath()).foreach {
       case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
@@ -266,6 +274,43 @@ class SparkProcessBuilder(
     map.result().toMap
   }
 
+  def prepareK8sFileUploadPath(): Map[String, String] = {
+    kubernetesFileUploadPath() match {
+      case Some(uploadPathPattern) if isK8sClusterMode =>
+        val today = LocalDate.now()
+        val uploadPath = uploadPathPattern
+          .replace("{{YEAR}}", today.format(YEAR_FMT))
+          .replace("{{MONTH}}", today.format(MONTH_FMT))
+          .replace("{{DAY}}", today.format(DAY_FMT))
+
+        if (conf.get(KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH)) {
+          // Create the `uploadPath` using permission 777, otherwise, spark just creates the
+          // `$uploadPath/spark-upload-$uuid` using default permission 511, which might prevent
+          // other users from creating the staging dir under `uploadPath` later.
+          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, loadDefaults = false)
+          val path = new Path(uploadPath)
+          var fs: FileSystem = null
+          try {
+            fs = path.getFileSystem(hadoopConf)
+            if (!fs.exists(path)) {
+              info(s"Try creating $KUBERNETES_FILE_UPLOAD_PATH: $uploadPath")
+              fs.mkdirs(path, KUBERNETES_UPLOAD_PATH_PERMISSION)
+            }
+          } catch {
+            case ioe: IOException =>
+              warn(s"Failed to create $KUBERNETES_FILE_UPLOAD_PATH: $uploadPath", ioe)
+          } finally {
+            if (fs != null) {
+              Utils.tryLogNonFatalError(fs.close())
+            }
+          }
+        }
+        Map(KUBERNETES_FILE_UPLOAD_PATH -> uploadPath)
+      case _ =>
+        Map.empty
+    }
+  }
+
   def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
@@ -294,12 +339,22 @@ class SparkProcessBuilder(
     }
   }
 
+  def isK8sClusterMode: Boolean = {
+    clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s")) &&
+    deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")
+  }
+
   def kubernetesContext(): Option[String] = {
     conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
   }
 
   def kubernetesNamespace(): Option[String] = {
     conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
+  }
+
+  def kubernetesFileUploadPath(): Option[String] = {
+    conf.getOption(KUBERNETES_FILE_UPLOAD_PATH)
+      .orElse(defaultsConf.get(KUBERNETES_FILE_UPLOAD_PATH))
   }
 
   override def validateConf(): Unit = Validator.validateConf(conf)
@@ -330,6 +385,13 @@ object SparkProcessBuilder {
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
   final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val INTERNAL_RESOURCE = "spark-internal"
+
+  final val KUBERNETES_FILE_UPLOAD_PATH = "spark.kubernetes.file.upload.path"
+  final val KUBERNETES_UPLOAD_PATH_PERMISSION = new FsPermission(Integer.parseInt("777", 8).toShort)
+
+  final val YEAR_FMT = DateTimeFormatter.ofPattern("yyyy")
+  final val MONTH_FMT = DateTimeFormatter.ofPattern("MM")
+  final val DAY_FMT = DateTimeFormatter.ofPattern("dd")
 
   /**
    * The path configs from Spark project that might upload local files:

@@ -56,7 +56,8 @@ class SparkBatchProcessBuilder(
     (batchKyuubiConf.getAll ++
       sparkAppNameConf() ++
       engineLogPathConf() ++
-      appendPodNameConf(batchConf)).map { case (k, v) =>
+      appendPodNameConf(batchConf) ++
+      prepareK8sFileUploadPath()).map { case (k, v) =>
       buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 

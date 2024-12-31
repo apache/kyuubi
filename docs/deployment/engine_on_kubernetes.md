@@ -48,6 +48,33 @@ The minimum required configurations are:
 * spark.kubernetes.file.upload.path (path on S3 or HDFS)
 * spark.kubernetes.authenticate.driver.serviceAccountName ([viz ServiceAccount](#serviceaccount))
 
+The vanilla Spark neither support rolling nor expiration mechanism for `spark.kubernetes.file.upload.path`, if you use
+file system that does not support TTL, e.g. HDFS, additional cleanup mechanisms are needed to prevent the files in this
+directory from growing indefinitely. Since Kyuubi v1.11.0, you can configure `spark.kubernetes.file.upload.path` with
+placeholders `{{YEAR}}`, `{{MONTH}}` and `{{DAY}}`, and enable `kyuubi.kubernetes.spark.autoCreateFileUploadPath.enabled`
+to let Kyuubi server create the directory with 777 permission automatically before submitting Spark application.
+
+Note that, Spark would create sub dir `s"spark-upload-${UUID.randomUUID()}"` under the `spark.kubernetes.file.upload.path`
+for each uploading, the administer still needs to clean up the staging directory periodically.
+
+For example, the user can configure the below configurations in `kyuubi-defaults.conf` to enable monthly rolling support
+for `spark.kubernetes.file.upload.path`
+
+```
+kyuubi.kubernetes.spark.autoCreateFileUploadPath.enabled=true
+spark.kubernetes.file.upload.path=hdfs://hadoop-cluster/spark-upload-{{YEAR}}{{MONTH}}
+```
+
+and the staging files would be like
+
+```
+hdfs://hadoop-cluster/spark-upload-202412/spark-upload-f2b71340-dc1d-4940-89e2-c5fc31614eb4
+hdfs://hadoop-cluster/spark-upload-202412/spark-upload-173a8653-4d3e-48c0-b8ab-b7f92ae582d6
+hdfs://hadoop-cluster/spark-upload-202501/spark-upload-3b22710f-a4a0-40bb-a3a8-16e481038a63
+```
+
+then the administer can safely delete the `hdfs://hadoop-cluster/spark-upload-202412` after 20250101.
+
 ### Docker Image
 
 Spark ships a `./bin/docker-image-tool.sh` script to build and publish the Docker images for running Spark applications on Kubernetes.

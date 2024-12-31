@@ -1334,6 +1334,15 @@ object KyuubiConf {
       .createWithDefault(
         "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc:{{SPARK_UI_PORT}}")
 
+  val KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.autoCreateFileUploadPath.enabled")
+      .doc("If enabled, Kyuubi server will try to create the " +
+        "`spark.kubernetes.file.upload.path` with permission 777 before submitting " +
+        "the Spark application.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(false)
+
   object KubernetesCleanupDriverPodStrategy extends Enumeration {
     type KubernetesCleanupDriverPodStrategy = Value
     val NONE, ALL, COMPLETED = Value
