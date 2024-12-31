@@ -284,6 +284,9 @@ class SparkProcessBuilder(
           .replace("{{DAY}}", today.format(DAY_FMT))
 
         if (conf.get(KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH)) {
+          // Create the `uploadPath` using permission 777, otherwise, spark just creates the
+          // `$uploadPath/spark-upload-$uuid` using default permission 511, which might prevent
+          // other users from creating the staging dir under `uploadPath` later.
           val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, loadDefaults = false)
           val path = new Path(uploadPath)
           var fs: FileSystem = null
