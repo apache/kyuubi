@@ -23,7 +23,7 @@ import java.util.Locale
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import io.fabric8.kubernetes.client.{Config, ConfigBuilder, KubernetesClient, KubernetesClientBuilder}
+import io.fabric8.kubernetes.client.{Config, ConfigBuilder, KubernetesClient, KubernetesClientBuilder, OAuthTokenProvider}
 import io.fabric8.kubernetes.client.Config.autoConfigure
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
 import okhttp3.{Dispatcher, OkHttpClient}
@@ -78,7 +78,9 @@ object KubernetesUtils extends Logging {
       .withOption(oauthTokenValue) { (token, configBuilder) =>
         configBuilder.withOauthToken(token)
       }.withOption(oauthTokenFile) { (file, configBuilder) =>
-        configBuilder.withOauthToken(Files.asCharSource(file, Charsets.UTF_8).read())
+        configBuilder.withOauthTokenProvider(new OAuthTokenProvider {
+          override def getToken: String = Files.asCharSource(file, Charsets.UTF_8).read()
+        })
       }.withOption(caCertFile) { (file, configBuilder) =>
         configBuilder.withCaCertFile(file)
       }.withOption(clientKeyFile) { (file, configBuilder) =>
