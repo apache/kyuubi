@@ -16,7 +16,9 @@
  */
 package org.apache.kyuubi.engine.chat.operation
 
-import org.apache.kyuubi.Logging
+import java.util.concurrent.RejectedExecutionException
+
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.chat.provider.ChatProvider
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -41,9 +43,19 @@ class ExecuteStatement(
           executeStatement()
         }
       }
-      val chatSessionManager = session.sessionManager
-      val backgroundHandle = chatSessionManager.submitBackgroundOperation(asyncOperation)
-      setBackgroundHandle(backgroundHandle)
+      try {
+        val chatSessionManager = session.sessionManager
+        val backgroundHandle = chatSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke =
+            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
+          setOperationException(ke)
+          shutdownTimeoutMonitor()
+          throw ke
+      }
     } else {
       executeStatement()
     }
