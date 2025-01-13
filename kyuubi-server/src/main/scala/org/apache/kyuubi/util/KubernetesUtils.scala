@@ -78,6 +78,8 @@ object KubernetesUtils extends Logging {
       .withOption(oauthTokenValue) { (token, configBuilder) =>
         configBuilder.withOauthToken(token)
       }.withOption(oauthTokenFile) { (file, configBuilder) =>
+        // Prior to Kubernetes 1.24, the default token never expired.
+        // In newer versions, it expires after 1 hour by defaults.
         configBuilder.withOauthTokenProvider(new OAuthTokenProvider {
           override def getToken: String = Files.asCharSource(file, Charsets.UTF_8).read()
         })
