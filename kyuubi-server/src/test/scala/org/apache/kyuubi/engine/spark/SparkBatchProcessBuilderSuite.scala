@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -35,5 +37,25 @@ class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
       Seq.empty,
       None)
     assert(builder.commands.toSeq.contains("spark.kyuubi.key=value"))
+  }
+
+  test("spark.kubernetes.file.upload.path supports placeholder") {
+    val conf1 = KyuubiConf(false)
+    conf1.set("spark.master", "k8s://test:12345")
+    conf1.set("spark.submit.deployMode", "cluster")
+    conf1.set("spark.kubernetes.file.upload.path", "hdfs:///spark-upload-{{YEAR}}{{MONTH}}{{DAY}}")
+    val builder1 = new SparkBatchProcessBuilder(
+      "",
+      conf1,
+      UUID.randomUUID().toString,
+      "test",
+      Some("test"),
+      "test",
+      Map("kyuubi.key" -> "value"),
+      Seq.empty,
+      None)
+    val commands1 = builder1.toString.split(' ')
+    val toady = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now())
+    assert(commands1.contains(s"spark.kubernetes.file.upload.path=hdfs:///spark-upload-$toady"))
   }
 }
