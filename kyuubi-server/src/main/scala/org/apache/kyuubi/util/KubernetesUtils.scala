@@ -23,7 +23,7 @@ import java.util.Locale
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import io.fabric8.kubernetes.client.{Config, ConfigBuilder, KubernetesClient, KubernetesClientBuilder}
+import io.fabric8.kubernetes.client.{Config, ConfigBuilder, KubernetesClient, KubernetesClientBuilder, OAuthTokenProvider}
 import io.fabric8.kubernetes.client.Config.autoConfigure
 import io.fabric8.kubernetes.client.okhttp.OkHttpClientFactory
 import okhttp3.{Dispatcher, OkHttpClient}
@@ -78,7 +78,11 @@ object KubernetesUtils extends Logging {
       .withOption(oauthTokenValue) { (token, configBuilder) =>
         configBuilder.withOauthToken(token)
       }.withOption(oauthTokenFile) { (file, configBuilder) =>
-        configBuilder.withOauthToken(Files.asCharSource(file, Charsets.UTF_8).read())
+        // Prior to Kubernetes 1.24, the default token never expired.
+        // In newer versions, it expires after 1 hour by defaults.
+        configBuilder.withOauthTokenProvider(new OAuthTokenProvider {
+          override def getToken: String = Files.asCharSource(file, Charsets.UTF_8).read()
+        })
       }.withOption(caCertFile) { (file, configBuilder) =>
         configBuilder.withCaCertFile(file)
       }.withOption(clientKeyFile) { (file, configBuilder) =>
