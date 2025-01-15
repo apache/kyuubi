@@ -94,4 +94,26 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     checkJsonFileMetrics(reportFile, "20181117")
     metricsSystem.stop()
   }
+
+  test("metrics - get gauge") {
+    val testContextPath = "/prometheus-metrics"
+
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(MetricsConf.METRICS_REPORTERS, Set(ReporterType.PROMETHEUS.toString))
+      .set(MetricsConf.METRICS_PROMETHEUS_PORT, 0) // random port
+      .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+
+    assert(metricsSystem.getGauge(MetricsConstants.THRIFT_SSL_CERT_EXPIRATION).isEmpty)
+    metricsSystem.registerGauge(
+      MetricsConstants.THRIFT_SSL_CERT_EXPIRATION,
+      () => System.currentTimeMillis(),
+      0)
+    assert(metricsSystem.getGauge(MetricsConstants.THRIFT_SSL_CERT_EXPIRATION).isDefined)
+
+    metricsSystem.stop()
+  }
 }
