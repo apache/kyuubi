@@ -20,8 +20,6 @@ package org.apache.kyuubi.metrics
 import java.lang.management.ManagementFactory
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
-
 import com.codahale.metrics.{Gauge, MetricRegistry, Snapshot}
 import com.codahale.metrics.jvm._
 
@@ -61,7 +59,7 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
   }
 
   def getGauge(name: String): Option[Gauge[_]] = {
-    registry.getGauges((metricsName, _) => { metricsName == name }).asScala.map(_._2).headOption
+    Option(registry.getGauges().get(name))
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
