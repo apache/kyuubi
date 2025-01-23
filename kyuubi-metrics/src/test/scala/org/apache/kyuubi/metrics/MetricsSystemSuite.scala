@@ -94,4 +94,20 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     checkJsonFileMetrics(reportFile, "20181117")
     metricsSystem.stop()
   }
+
+  test("metrics - get gauge") {
+    val conf = KyuubiConf().set(MetricsConf.METRICS_ENABLED, true)
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+
+    assert(metricsSystem.getGauge(MetricsConstants.THRIFT_SSL_CERT_EXPIRATION).isEmpty)
+    metricsSystem.registerGauge(
+      MetricsConstants.THRIFT_SSL_CERT_EXPIRATION,
+      1000,
+      0)
+    assert(metricsSystem.getGauge(MetricsConstants.THRIFT_SSL_CERT_EXPIRATION).get.getValue == 1000)
+
+    metricsSystem.stop()
+  }
 }
