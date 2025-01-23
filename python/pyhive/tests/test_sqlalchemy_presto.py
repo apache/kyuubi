@@ -6,15 +6,19 @@ from builtins import str
 
 import sqlalchemy
 
+from pyhive.sqlalchemy_presto import PrestoDialect
 from pyhive.tests.sqlalchemy_test_case import SqlAlchemyTestCase
 from pyhive.tests.sqlalchemy_test_case import with_engine_connection
 from sqlalchemy import types
+from sqlalchemy import select
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import Column
 from sqlalchemy.schema import MetaData
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import text
+from sqlalchemy.sql import try_cast
 from sqlalchemy.types import String
+from sqlalchemy.types import Double
 from decimal import Decimal
 
 import contextlib
@@ -103,3 +107,11 @@ class TestSqlAlchemyPresto(unittest.TestCase, SqlAlchemyTestCase):
         else:
             self.assertFalse(Table('THIS_TABLE_DOSE_NOT_EXIST', MetaData(bind=engine)).exists())
             self.assertFalse(Table('THIS_TABLE_DOSE_not_exits', MetaData(bind=engine)).exists())
+            
+    def test_try_cast(self):
+        fake_table = Table('TestModel', MetaData(), Column('MaybeDouble', String))
+        query = str(select(try_cast(fake_table.c.MaybeDouble, Double)).compile(dialect=PrestoDialect(), compile_kwargs={"literal_binds": True}))
+        self.assertIn(
+            'try_cast("TestModel"."MaybeDouble" as DOUBLE)',
+            query
+        )
