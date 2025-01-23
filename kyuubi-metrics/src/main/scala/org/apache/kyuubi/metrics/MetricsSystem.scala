@@ -58,8 +58,8 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     meter.mark(value)
   }
 
-  def getGauge[T](name: String): Option[Gauge[T]] = {
-    Option(registry.gauge(name))
+  def getGauge(name: String): Option[Gauge[_]] = {
+    Option(registry.getGauges().get(name))
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
