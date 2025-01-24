@@ -19,6 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
 
+import org.apache.kyuubi.sql.observe.InsertChecksumObserverAfterProject
 import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
 
 // scalastyle:off line.size.limit
@@ -31,6 +32,8 @@ import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, KyuubiUnsupporte
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
+
+    extensions.injectResolutionRule(InsertChecksumObserverAfterProject(_))
 
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingHive)

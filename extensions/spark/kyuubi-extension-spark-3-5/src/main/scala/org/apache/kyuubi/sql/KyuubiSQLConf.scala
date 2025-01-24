@@ -262,4 +262,11 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .booleanConf
       .createWithDefault(true)
+
+  val INSERT_CHECKSUM_OBSERVER_AFTER_PROJECT_ENABLED =
+    buildConf("spark.sql.optimizer.insertChecksumObserverAfterProject.enabled")
+      .doc("If true, insert crc checksum observer after all project nodes.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
 }
