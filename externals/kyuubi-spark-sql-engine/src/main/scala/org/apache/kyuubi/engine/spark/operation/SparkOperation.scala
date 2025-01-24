@@ -290,7 +290,12 @@ abstract class SparkOperation(session: Session)
       }
     } catch onError(cancel = true)
 
-    val resp = new TFetchResultsResp(OK_STATUS)
+    val resp = new TFetchResultsResp
+    if (isArrowBasedOperation) {
+      resp.setStatus(okStatusWithHints(getResultSetMetadataHints()))
+    } else {
+      resp.setStatus(OK_STATUS)
+    }
     resp.setResults(resultRowSet)
     resp.setHasMoreRows(false)
     resp
