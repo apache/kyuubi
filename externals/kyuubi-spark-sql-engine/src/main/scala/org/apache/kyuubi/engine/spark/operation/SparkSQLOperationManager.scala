@@ -116,10 +116,9 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
           new ExecuteScala(session, repl, statement, runAsync, queryTimeout, opHandle)
         case OperationLanguages.PYTHON =>
           try {
-            ExecutePython.init()
             val worker = sessionToPythonProcess.getOrElseUpdate(
               session.handle,
-              ExecutePython.createSessionPythonWorker(spark, session))
+              PythonWorkerPool.getPythonWorker(session))
             new ExecutePython(session, statement, runAsync, queryTimeout, worker, opHandle)
           } catch {
             case e: Throwable =>
