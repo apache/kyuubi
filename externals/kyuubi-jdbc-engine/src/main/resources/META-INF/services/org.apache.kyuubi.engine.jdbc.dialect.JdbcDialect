@@ -23,3 +23,4 @@ org.apache.kyuubi.engine.jdbc.dialect.OracleSQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.PhoenixDialect
 org.apache.kyuubi.engine.jdbc.dialect.PostgreSQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.StarRocksDialect
+org.apache.kyuubi.engine.jdbc.dialect.RedisDialect
