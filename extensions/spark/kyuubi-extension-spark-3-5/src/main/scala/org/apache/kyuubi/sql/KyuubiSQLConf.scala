@@ -262,4 +262,12 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .booleanConf
       .createWithDefault(true)
+
+  val OBSERVE_HINT_ENABLE =
+    buildConf("spark.sql.optimizer.observeHint.enabled")
+      .doc(s"Provide OBSERVE Hint to create an observer to collect aggregated metrics." +
+        s" The OBSERVE Hint Syntax: /*+ OBSERVE(name, exprs) */.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
 }
