@@ -1281,6 +1281,28 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
   }
 
+  test("test result fetch timeout but already fetched some data") {
+    withSessionConf()(Map(
+      ENGINE_FLINK_MAX_ROWS.key -> "10",
+      ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT5S"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        // unbounded data.
+        statement.execute("create table tbl_src_b (a bigint) with (" +
+          "'connector' = 'datagen', 'rows-per-second' = '0')")
+
+        // unbounded data query, just like query from kafka,but it have only one rows.
+        val resultSet = statement.executeQuery(
+          s"select  cast(1 as bigint) as a union all select a from tbl_src_b")
+        var rows = 0
+        while (resultSet.next()) {
+          rows += 1
+        }
+        // we shoud also return the only one rows before we cancel the query job
+        assert(rows === 1)
+      }
+    }
+  }
+
   test("execute statement - help") {
     withJdbcStatement() { stmt =>
       val resultSet = stmt.executeQuery("help")
