@@ -292,4 +292,36 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       }
     }
   }
+
+  test("check rebalance exists for WithCTE") {
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+      withTempDir { tempDir =>
+        withTable("tmp1") {
+          spark.sql("CREATE TABLE tmp1 (id BIGINT,name BIGINT)")
+
+          val result = sql(
+            """
+              |WITH tmp_table AS (
+              |  SELECT id, name FROM tmp1 GROUP BY id, name
+              |)
+              |SELECT id, name FROM tmp_table ORDER BY id""".stripMargin)
+
+          val colName = (0 until result.schema.size).map(x => "col" + x)
+          val renamedDf = result.toDF(colName: _*)
+
+          runWithListener {
+            renamedDf.write
+              .mode("overwrite")
+              .save(tempDir.getCanonicalPath)
+          } { write =>
+            assert(write.collect {
+              case r: RebalancePartitions => r
+            }.size == 1)
+          }
+        }
+      }
+    }
+  }
 }
