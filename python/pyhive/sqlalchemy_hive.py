@@ -421,6 +421,7 @@ class HiveHTTPDialect(HiveDialect):
             "scheme": self.scheme,
             "username": url.username or None,
             "password": url.password or None,
+            'database': url.database or 'default',
         }
         if url.query:
             kwargs.update(url.query)
