@@ -76,9 +76,8 @@ object AssertionUtils {
       path: Path,
       expectedLines: Traversable[String],
       regenScript: String,
-      splitFirstExpectedLine: Boolean = false)(implicit
-      prettifier: Prettifier,
-      pos: Position): Unit = {
+      splitFirstExpectedLine: Boolean =
+        false)(implicit prettifier: Prettifier, pos: Position): Unit = {
     val fileSource = Source.fromFile(path.toUri, StandardCharsets.UTF_8.name())
     try {
       def expectedLinesIter = if (splitFirstExpectedLine) {
