@@ -177,7 +177,9 @@ trait LineageParser {
     val mergedRelationColumnLineage = {
       relationOutput.foldLeft((ListMap[Attribute, AttributeSet](), relationColumnLineage)) {
         case ((acc, x), attr) =>
-          (acc + (attr -> x.head._2), x.tail)
+          val head_2 = if (x.isEmpty) AttributeSet.empty else x.head._2
+          val tail = if (x.isEmpty) x.empty else x.tail
+          (acc + (attr -> head_2), tail)
       }._1
     }
     joinColumnsLineage(parentColumnsLineage, mergedRelationColumnLineage)
