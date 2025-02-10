@@ -1452,7 +1452,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       s"""
         | CREATE OR REPLACE TEMPORARY VIEW temp_view
         |(
-        |	`a` STRING COMMENT '',
+        | `a` STRING COMMENT '',
         | `b` STRING COMMENT ''
         |)
         |USING csv OPTIONS(
@@ -1465,8 +1465,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       s"""
         |insert overwrite table test_db.test_table_from_dir
         |SELECT
-        |	`a`,
-        |	`b`
+        | `a`,
+        | `b`
         |FROM temp_view
         |""".stripMargin)
 
