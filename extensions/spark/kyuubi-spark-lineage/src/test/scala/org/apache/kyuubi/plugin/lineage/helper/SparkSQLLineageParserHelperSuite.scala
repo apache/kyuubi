@@ -64,8 +64,11 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   }
 
   override def afterAll(): Unit = {
-    Seq("test_db0.test_table0", "test_db0.test_table1",
-      "test_db0.test_table_part0", "test_db.test_table_from_dir").foreach { t =>
+    Seq(
+      "test_db0.test_table0",
+      "test_db0.test_table1",
+      "test_db0.test_table_part0",
+      "test_db.test_table_from_dir").foreach { t =>
       spark.sql(s"drop table if exists $t")
     }
     spark.sql("drop database if exists test_db")
@@ -1450,25 +1453,25 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val sourceFile = File(inputFile).createFile()
     spark.sql(
       s"""
-        | CREATE OR REPLACE TEMPORARY VIEW temp_view
-        |(
-        | `a` STRING COMMENT '',
-        | `b` STRING COMMENT ''
-        |)
-        |USING csv OPTIONS(
-        |    sep='\t',
-        |    path='${sourceFile.path}'
-        |);
-        |""".stripMargin).collect()
+         | CREATE OR REPLACE TEMPORARY VIEW temp_view
+         |(
+         | `a` STRING COMMENT '',
+         | `b` STRING COMMENT ''
+         |)
+         |USING csv OPTIONS(
+         |    sep='\t',
+         |    path='${sourceFile.path}'
+         |);
+         |""".stripMargin).collect()
 
     val ret0 = extractLineageWithoutExecuting(
       s"""
-        |insert overwrite table test_db.test_table_from_dir
-        |SELECT
-        | `a`,
-        | `b`
-        |FROM temp_view
-        |""".stripMargin)
+         |insert overwrite table test_db.test_table_from_dir
+         |SELECT
+         | `a`,
+         | `b`
+         |FROM temp_view
+         |""".stripMargin)
 
     assert(ret0 == Lineage(
       List(),
