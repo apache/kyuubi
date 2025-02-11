@@ -1457,8 +1457,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
          | `a` STRING COMMENT '',
          | `b` STRING COMMENT ''
          |) USING csv OPTIONS(
-         |    sep='\t',
-         |    path='${sourceFile.path}'
+         |  sep='\t',
+         |  path='${sourceFile.path}'
          |);
          |""".stripMargin).collect()
 
