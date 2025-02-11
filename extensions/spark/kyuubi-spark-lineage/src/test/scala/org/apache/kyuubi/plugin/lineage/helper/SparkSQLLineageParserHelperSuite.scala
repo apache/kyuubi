@@ -1453,8 +1453,7 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val sourceFile = File(inputFile).createFile()
     spark.sql(
       s"""
-         |CREATE OR REPLACE TEMPORARY VIEW temp_view
-         |(
+         |CREATE OR REPLACE TEMPORARY VIEW temp_view (
          | `a` STRING COMMENT '',
          | `b` STRING COMMENT ''
          |) USING csv OPTIONS(
