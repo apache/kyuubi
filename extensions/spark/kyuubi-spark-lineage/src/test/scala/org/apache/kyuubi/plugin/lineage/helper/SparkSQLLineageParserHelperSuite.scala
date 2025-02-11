@@ -1453,12 +1453,11 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     val sourceFile = File(inputFile).createFile()
     spark.sql(
       s"""
-         | CREATE OR REPLACE TEMPORARY VIEW temp_view
+         |CREATE OR REPLACE TEMPORARY VIEW temp_view
          |(
          | `a` STRING COMMENT '',
          | `b` STRING COMMENT ''
-         |)
-         |USING csv OPTIONS(
+         |) USING csv OPTIONS(
          |    sep='\t',
          |    path='${sourceFile.path}'
          |);
@@ -1466,11 +1465,8 @@ class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
 
     val ret0 = extractLineageWithoutExecuting(
       s"""
-         |insert overwrite table test_db.test_table_from_dir
-         |SELECT
-         | `a`,
-         | `b`
-         |FROM temp_view
+         |INSERT OVERWRITE TABLE test_db.test_table_from_dir
+         |SELECT `a`, `b` FROM temp_view
          |""".stripMargin)
 
     assert(ret0 == Lineage(
