@@ -23,7 +23,7 @@ import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithClickHouseContainer extends WithJdbcServerContainer {
 
-  private val clickHouseDockerImage = "clickhouse/clickhouse-server:23.8"
+  private val clickHouseDockerImage = "clickhouse/clickhouse-server:24.3.15"
 
   override val containerDef: ClickHouseContainer.Def = ClickHouseContainer.Def(dockerImageName =
     DockerImageName.parse(clickHouseDockerImage))
