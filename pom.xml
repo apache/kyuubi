@@ -2010,6 +2010,8 @@
                 <spark.binary.version>3.3</spark.binary.version>
                 <delta.version>2.3.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
+                <!-- Iceberg drops support for Spark 3.3 since 1.8.0 -->
+                <iceberg.version>1.7.1</iceberg.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
