@@ -1120,7 +1120,7 @@
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse-java.version}</version>
-                <classifier>http</classifier>
+                <classifier>shaded</classifier>
             </dependency>
 
             <!-- flink -->
