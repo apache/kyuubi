@@ -27,7 +27,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.11.0-SNAPSHOT</version>
+    <version>${project.version}</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -113,6 +113,8 @@
     </distributionManagement>
 
     <properties>
+        <project.version>1.11.0-SNAPSHOT</project.version>
+
         <java.version>8</java.version>
         <maven.version>3.9.9</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
