@@ -151,6 +151,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       expireCleanUpTriggerCacheExecutor,
       () => {
         try {
+          if (cleanupTerminatedAppInfoTrigger == null) return
           cleanupTerminatedAppInfoTrigger.asMap().asScala.foreach {
             case (key, _) =>
               // do get to trigger cache eviction
@@ -273,6 +274,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       Utils.tryLogNonFatalError(client.close())
     }
     kubernetesClients.clear()
+
+    if (expireCleanUpTriggerCacheExecutor != null) {
+      ThreadUtils.shutdown(expireCleanUpTriggerCacheExecutor)
+      expireCleanUpTriggerCacheExecutor = null
+    }
+
+    if (cleanupCanceledAppPodExecutor != null) {
+      ThreadUtils.shutdown(cleanupCanceledAppPodExecutor)
+      cleanupCanceledAppPodExecutor = null
+    }
   }
 
   private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
