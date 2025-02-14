@@ -27,8 +27,6 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -835,11 +833,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
           Integer.toString(fetchSize));
     }
-    try {
-      openConf.put("kyuubi.client.ipAddress", InetAddress.getLocalHost().getHostAddress());
-    } catch (UnknownHostException e) {
-      LOG.debug("Error getting Kyuubi session local client ip address", e);
-    }
+    openConf.put("kyuubi.client.ipAddress", Utils.CLIENT_IP_ADDRESS);
     openConf.put(Utils.KYUUBI_CLIENT_VERSION_KEY, Utils.getVersion());
     openReq.setConfiguration(openConf);
 
