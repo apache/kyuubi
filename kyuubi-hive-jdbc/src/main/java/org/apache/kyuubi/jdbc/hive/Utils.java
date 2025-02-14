@@ -69,6 +69,7 @@ public class Utils {
       Pattern.compile("^__kyuubi_operation_result_(.*)__=(.*)", Pattern.CASE_INSENSITIVE);
 
   public static final String CLIENT_IP_ADDRESS;
+
   static {
     String localIpAddress = null;
     try {
