@@ -71,12 +71,14 @@ public class Utils {
   public static final String CLIENT_IP_ADDRESS;
 
   static {
-    String localIpAddress;
+    String localIpAddress = null;
     try {
       localIpAddress = InetAddress.getLocalHost().getHostAddress();
     } catch (UnknownHostException e) {
-      localIpAddress = "unknown";
       LOG.warn("Error getting Kyuubi local client ip address", e);
+    }
+    if (StringUtils.isBlank(localIpAddress)) {
+      localIpAddress = "unknown";
     }
     CLIENT_IP_ADDRESS = localIpAddress;
   }
