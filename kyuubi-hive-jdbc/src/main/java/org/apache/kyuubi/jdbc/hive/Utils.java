@@ -75,7 +75,7 @@ public class Utils {
     try {
       localIpAddress = InetAddress.getLocalHost().getHostAddress();
     } catch (UnknownHostException e) {
-      LOG.warn("Error getting Kyuubi local client ip address", e);
+      LOG.warn("Error getting Kyuubi local client IP address", e);
     }
     if (StringUtils.isBlank(localIpAddress)) {
       localIpAddress = "unknown";
