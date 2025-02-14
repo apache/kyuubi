@@ -136,7 +136,7 @@
         <commons-io.version>2.16.1</commons-io.version>
         <commons-lang3.version>3.17.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
-        <delta.version>3.2.0</delta.version>
+        <delta.version>3.3.0</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
@@ -2037,7 +2037,7 @@
             <properties>
                 <spark.version>3.5.4</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
-                <delta.version>3.2.0</delta.version>
+                <delta.version>3.3.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
