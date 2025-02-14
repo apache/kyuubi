@@ -159,7 +159,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>1.0.1</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.7.0</iceberg.version>
+        <iceberg.version>1.8.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
@@ -1930,6 +1930,10 @@
             </activation>
             <properties>
                 <java.version>8</java.version>
+                <!--
+                  Iceberg drops support for Java 8 since 1.7.0.
+                  And it may have compatible issue with Spark 3.5.4, see Iceberg #11731
+                  -->
                 <iceberg.version>1.6.1</iceberg.version>
             </properties>
         </profile>
@@ -2009,6 +2013,11 @@
                 <spark.binary.version>3.3</spark.binary.version>
                 <delta.version>2.3.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
+                <!--
+                  Iceberg drops support for Java 8 since 1.7.0, and drops support for Spark 3.3 since 1.8.0,
+                  here we choose 1.6.1 to ensure that tests happy when activate both -Pjava-8 and -Pspark-3.3.
+                  -->
+                <iceberg.version>1.6.1</iceberg.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
