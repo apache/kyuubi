@@ -193,7 +193,7 @@
         <scalatestplus.version>3.2.16.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
         <slf4j.version>1.7.36</slf4j.version>
-        <clickhouse-java.version>0.6.0</clickhouse-java.version>
+        <clickhouse-java.version>0.6.5</clickhouse-java.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
@@ -1108,7 +1108,7 @@
                 <groupId>com.clickhouse</groupId>
                 <artifactId>clickhouse-jdbc</artifactId>
                 <version>${clickhouse-java.version}</version>
-                <classifier>http</classifier>
+                <classifier>shaded</classifier>
             </dependency>
 
             <!-- flink -->
