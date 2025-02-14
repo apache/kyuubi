@@ -55,6 +55,8 @@ class PrestoCompiler(SQLCompiler):
     def visit_char_length_func(self, fn, **kw):
         return 'length{}'.format(self.function_argspec(fn, **kw))
 
+    def visit_try_cast(self, element, **kw):
+        return f"try_cast({self.process(element.clause, **kw)} as {self.process(element.typeclause, **kw)})"
 
 class PrestoTypeCompiler(compiler.GenericTypeCompiler):
     def visit_CLOB(self, type_, **kw):
