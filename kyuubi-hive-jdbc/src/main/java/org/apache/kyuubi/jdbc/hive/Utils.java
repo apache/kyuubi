@@ -68,6 +68,17 @@ public class Utils {
   public static final Pattern KYUUBI_OPERATION_HINT_PATTERN =
       Pattern.compile("^__kyuubi_operation_result_(.*)__=(.*)", Pattern.CASE_INSENSITIVE);
 
+  public static final String CLIENT_IP_ADDRESS;
+  static {
+    String localIpAddress = null;
+    try {
+      localIpAddress = InetAddress.getLocalHost().getHostAddress();
+    } catch (UnknownHostException e) {
+      LOG.debug("Error getting Kyuubi local client ip address", e);
+    }
+    CLIENT_IP_ADDRESS = localIpAddress;
+  }
+
   static String getMatchedUrlPrefix(String uri) throws JdbcUriParseException {
     for (String urlPrefix : URL_PREFIX_LIST) {
       if (uri.startsWith(urlPrefix)) {
