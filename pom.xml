@@ -325,6 +325,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-relocated-spark-connect-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-relocated-util</artifactId>
                 <version>${kyuubi-relocated.version}</version>
             </dependency>
