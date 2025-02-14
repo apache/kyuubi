@@ -21,6 +21,10 @@ on:
   schedule:
     - cron: 0 4 * * *
 
+  pull_request:
+    branches:
+      - master
+
 jobs:
   build:
     name: Build
