@@ -539,7 +539,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       schema: StructType,
       timeZoneId: String,
       errorOnDuplicatedFieldNames: JBoolean,
-      largeVarTypes: Boolean,
+      largeVarTypes: JBoolean,
       context: TaskContext): Iterator[InternalRow] = {
     val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
     val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
