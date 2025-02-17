@@ -21,6 +21,8 @@ import java.lang.{Boolean => JBoolean}
 import java.sql.Statement
 import java.util.Locale
 
+import scala.util.Try
+
 import org.apache.spark.{KyuubiSparkContextHelper, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
@@ -511,19 +513,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   private lazy val fromBatchIteratorMethod = DynMethods.builder("fromBatchIterator")
-    .hiddenImpl( // for Spark 3.4 or previous
-      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
-      classOf[Iterator[Array[Byte]]],
-      classOf[StructType],
-      classOf[String],
-      classOf[TaskContext])
-    .hiddenImpl( // SPARK-43528: Spark 3.5
-      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
-      classOf[Iterator[Array[Byte]]],
-      classOf[StructType],
-      classOf[String],
-      classOf[Boolean],
-      classOf[TaskContext])
     .hiddenImpl( // SPARK-51079: Spark 4.0 or later
       "org.apache.spark.sql.execution.arrow.ArrowConverters$",
       classOf[Iterator[Array[Byte]]],
@@ -532,7 +521,25 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       classOf[Boolean],
       classOf[Boolean],
       classOf[TaskContext])
-    .build()
+    .hiddenImpl( // SPARK-43528: Spark 3.5
+      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
+      classOf[Iterator[Array[Byte]]],
+      classOf[StructType],
+      classOf[String],
+      classOf[Boolean],
+      classOf[TaskContext])
+    .hiddenImpl( // for Spark 3.4 or previous
+      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
+      classOf[Iterator[Array[Byte]]],
+      classOf[StructType],
+      classOf[String],
+      classOf[TaskContext])
+    .buildChecked()
+
+  private lazy val arrowConvertersObject = DynFields.builder()
+    .impl("org.apache.spark.sql.execution.arrow.ArrowConverters$", "MODULE$")
+    .buildStaticChecked[Any]()
+    .get()
 
   def fromBatchIterator(
       arrowBatchIter: Iterator[Array[Byte]],
@@ -540,35 +547,32 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       timeZoneId: String,
       errorOnDuplicatedFieldNames: JBoolean,
       largeVarTypes: JBoolean,
-      context: TaskContext): Iterator[InternalRow] = {
-    val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
-    val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
-    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-        instance,
+      context: TaskContext): Iterator[InternalRow] =
+    Try { // SPARK-51079: Spark 4.0 or later
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
         arrowBatchIter,
         schema,
         timeZoneId,
         errorOnDuplicatedFieldNames,
         largeVarTypes,
         context)
-    } else if (SPARK_ENGINE_RUNTIME_VERSION === "3.5") {
-      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-        instance,
+    }.recover { case _: Exception => // SPARK-43528: Spark 3.5
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
         arrowBatchIter,
         schema,
         timeZoneId,
         errorOnDuplicatedFieldNames,
         context)
-    } else {
-      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-        instance,
+    }.recover { case _: Exception => // for Spark 3.4 or previous
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
         arrowBatchIter,
         schema,
         timeZoneId,
         context)
-    }
-  }
+    }.get
 
   class JobCountListener extends SparkListener {
     var numJobs = 0
