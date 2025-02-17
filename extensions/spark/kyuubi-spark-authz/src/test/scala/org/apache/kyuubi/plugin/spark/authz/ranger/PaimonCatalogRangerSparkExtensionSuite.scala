@@ -16,13 +16,12 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import scala.util.Properties
-
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.PaimonTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -32,9 +31,11 @@ import org.apache.kyuubi.util.AssertionUtils._
 @PaimonTest
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
-  private def isSupportedVersion = true
+  override protected val sqlExtensions: String =
+    "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
 
-  val scalaVersion: String = Properties.versionString
+  private def isSupportedVersion = isScalaV212
+
   val catalogV2 = "paimon_catalog"
   val namespace1 = "paimon_ns"
   val table1 = "table1"
@@ -87,28 +88,20 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   test("[KYUUBI #6541] INSERT/SELECT TABLE") {
     val tName = "t_paimon"
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$tName", "table"))) {
+      doAs(bob, sql(createTableSql(namespace1, tName)))
 
-    /**
-     * paimon-spark run on Scala 2.12.
-     */
-    if (scalaVersion.startsWith("version 2.12")) {
-      withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$tName", "table"))) {
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_1')"))
+      }(s"does not have [update] privilege on [$namespace1/$tName]")
+      doAs(bob, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_1')"))
+      doAs(bob, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_2')"))
 
-        doAs(bob, sql(createTableSql(namespace1, tName)))
-
-        interceptEndsWith[AccessControlException] {
-          doAs(someone, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_1')"))
-        }(s"does not have [update] privilege on [$namespace1/$tName]")
-        doAs(bob, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_1')"))
-        doAs(bob, sql(s"INSERT INTO $catalogV2.$namespace1.$tName VALUES (1, 'name_2')"))
-
-        interceptEndsWith[AccessControlException] {
-          doAs(someone, sql(s"SELECT id FROM $catalogV2.$namespace1.$tName").show())
-        }(s"does not have [select] privilege on [$namespace1/$tName/id]")
-        doAs(bob, sql(s"SELECT name FROM $catalogV2.$namespace1.$tName").show())
-      }
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(s"SELECT id FROM $catalogV2.$namespace1.$tName").show())
+      }(s"does not have [select] privilege on [$namespace1/$tName/id]")
+      doAs(bob, sql(s"SELECT name FROM $catalogV2.$namespace1.$tName").show())
     }
-
   }
 
   def createTableSql(namespace: String, table: String): String =
