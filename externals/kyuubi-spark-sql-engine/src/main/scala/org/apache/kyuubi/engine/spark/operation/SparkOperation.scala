@@ -23,7 +23,7 @@ import java.time.ZoneId
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
-import org.apache.spark.sql.execution.SQLExecution
+import org.apache.spark.sql.execution.SparkSQLExecutionHelper
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 import org.apache.spark.ui.SparkUIUtils.formatDuration
 
@@ -155,7 +155,7 @@ abstract class SparkOperation(session: Session)
     spark.sparkContext.setLocalProperty
 
   protected def withLocalProperties[T](f: => T): T = {
-    SQLExecution.withSQLConfPropagated(spark) {
+    SparkSQLExecutionHelper.withSQLConfPropagated(spark) {
       val originalSession = SparkSession.getActiveSession
       try {
         SparkSession.setActiveSession(spark)

@@ -21,13 +21,15 @@ import java.lang.{Boolean => JBoolean}
 import java.sql.Statement
 import java.util.{Locale, Set => JSet}
 
+import scala.util.Try
+
 import org.apache.spark.{KyuubiSparkContextHelper, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.plans.logical.Project
 import org.apache.spark.sql.execution.{CollectLimitExec, LocalTableScanExec, QueryExecution, SparkPlan}
-import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
+import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, QueryStageExec}
 import org.apache.spark.sql.execution.exchange.Exchange
 import org.apache.spark.sql.execution.joins.{BroadcastHashJoinExec, SortMergeJoinExec}
 import org.apache.spark.sql.execution.metric.SparkMetricsTestUtils
@@ -164,6 +166,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         sparkPlan.schema,
         "",
         true,
+        true, // spark.sql.execution.arrow.useLargeVarTypes
         KyuubiSparkContextHelper.dummyTaskContext())
       assert(rows.size == expectSize)
     }
@@ -251,7 +254,11 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
           |) LIMIT 1
           |""".stripMargin)
       val smj = plan.collect { case smj: SortMergeJoinExec => smj }
-      val bhj = adaptivePlan.collect { case bhj: BroadcastHashJoinExec => bhj }
+      val bhj = (adaptivePlan match {
+        // SPARK-51008 (4.0.0) adds ResultQueryStageExec
+        case queryStage: QueryStageExec => queryStage.plan
+        case plan => plan
+      }).collect { case bhj: BroadcastHashJoinExec => bhj }
       assert(smj.size == 1)
       assert(bhj.size == 1)
     }
@@ -531,49 +538,67 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   private def isStaticConfigKey(key: String): Boolean =
     getField[JSet[String]]((SQLConf.getClass, SQLConf), "staticConfKeys").contains(key)
 
-  // the signature of function [[ArrowConverters.fromBatchIterator]] is changed in SPARK-43528
-  // (since Spark 3.5)
   private lazy val fromBatchIteratorMethod = DynMethods.builder("fromBatchIterator")
-    .hiddenImpl( // for Spark 3.4 or previous
+    .hiddenImpl( // SPARK-51079: Spark 4.0 or later
       "org.apache.spark.sql.execution.arrow.ArrowConverters$",
       classOf[Iterator[Array[Byte]]],
       classOf[StructType],
       classOf[String],
+      classOf[Boolean],
+      classOf[Boolean],
       classOf[TaskContext])
-    .hiddenImpl( // for Spark 3.5 or later
+    .hiddenImpl( // SPARK-43528: Spark 3.5
       "org.apache.spark.sql.execution.arrow.ArrowConverters$",
       classOf[Iterator[Array[Byte]]],
       classOf[StructType],
       classOf[String],
       classOf[Boolean],
       classOf[TaskContext])
-    .build()
+    .hiddenImpl( // for Spark 3.4 or previous
+      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
+      classOf[Iterator[Array[Byte]]],
+      classOf[StructType],
+      classOf[String],
+      classOf[TaskContext])
+    .buildChecked()
+
+  private lazy val arrowConvertersObject = DynFields.builder()
+    .impl("org.apache.spark.sql.execution.arrow.ArrowConverters$", "MODULE$")
+    .buildStaticChecked[Any]()
+    .get()
 
   def fromBatchIterator(
       arrowBatchIter: Iterator[Array[Byte]],
       schema: StructType,
       timeZoneId: String,
       errorOnDuplicatedFieldNames: JBoolean,
-      context: TaskContext): Iterator[InternalRow] = {
-    val className = "org.apache.spark.sql.execution.arrow.ArrowConverters$"
-    val instance = DynFields.builder().impl(className, "MODULE$").build[Object]().get(null)
-    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.5") {
-      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-        instance,
+      largeVarTypes: JBoolean,
+      context: TaskContext): Iterator[InternalRow] =
+    Try { // SPARK-51079: Spark 4.0 or later
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
+        arrowBatchIter,
+        schema,
+        timeZoneId,
+        errorOnDuplicatedFieldNames,
+        largeVarTypes,
+        context)
+    }.recover { case _: Exception => // SPARK-43528: Spark 3.5
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
         arrowBatchIter,
         schema,
         timeZoneId,
         errorOnDuplicatedFieldNames,
         context)
-    } else {
-      fromBatchIteratorMethod.invoke[Iterator[InternalRow]](
-        instance,
+    }.recover { case _: Exception => // for Spark 3.4 or previous
+      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+        arrowConvertersObject,
         arrowBatchIter,
         schema,
         timeZoneId,
         context)
-    }
-  }
+    }.get
 
   class JobCountListener extends SparkListener {
     var numJobs = 0

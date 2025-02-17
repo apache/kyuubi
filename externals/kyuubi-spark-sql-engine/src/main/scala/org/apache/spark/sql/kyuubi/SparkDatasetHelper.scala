@@ -37,7 +37,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
-import org.apache.kyuubi.util.reflect.DynMethods
+import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 object SparkDatasetHelper extends Logging {
@@ -66,8 +66,18 @@ object SparkDatasetHelper extends Logging {
       toArrowBatchRdd(plan).collect()
   }
 
+  private val datasetClz = DynClasses.builder()
+    .impl("org.apache.spark.sql.classic.Dataset") // SPARK-49700 (4.0.0)
+    .impl("org.apache.spark.sql.Dataset")
+    .build()
+
+  private val toArrowBatchRddMethod =
+    DynMethods.builder("toArrowBatchRdd")
+      .impl(datasetClz)
+      .buildChecked()
+
   def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
-    ds.toArrowBatchRdd
+    toArrowBatchRddMethod.bind(ds).invoke()
   }
 
   /**
