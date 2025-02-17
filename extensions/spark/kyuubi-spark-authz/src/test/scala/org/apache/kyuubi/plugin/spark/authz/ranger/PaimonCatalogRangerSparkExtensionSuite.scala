@@ -111,7 +111,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
   }
 
-  test("CreateTableAs") {
+  test("CTAS") {
     val table2 = "table2"
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"),
