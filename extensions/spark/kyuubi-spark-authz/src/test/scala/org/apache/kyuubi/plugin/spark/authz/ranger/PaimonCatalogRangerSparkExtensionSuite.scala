@@ -49,9 +49,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"spark.sql.catalog.$catalogV2.warehouse",
         Utils.createTempDir(catalogV2).toString)
       super.beforeAll()
+      doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
     }
-
-    doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
   }
 
   override def afterAll(): Unit = {
