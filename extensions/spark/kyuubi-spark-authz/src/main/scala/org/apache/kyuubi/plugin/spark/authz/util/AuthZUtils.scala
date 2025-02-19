@@ -92,7 +92,8 @@ private[authz] object AuthZUtils {
 
   lazy val SCALA_RUNTIME_VERSION: SemanticVersion =
     SemanticVersion(scala.util.Properties.versionNumberString)
-  lazy val isScalaV213: Boolean = SCALA_RUNTIME_VERSION >= "2.13"
+  lazy val isScalaV212: Boolean = SCALA_RUNTIME_VERSION === "2.12"
+  lazy val isScalaV213: Boolean = SCALA_RUNTIME_VERSION === "2.13"
 
   def derbyJdbcDriverClass: String = if (isSparkV40OrGreater) {
     // SPARK-46257 (Spark 4.0.0) moves to Derby 10.16
