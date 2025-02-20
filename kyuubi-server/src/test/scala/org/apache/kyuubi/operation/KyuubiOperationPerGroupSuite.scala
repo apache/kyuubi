@@ -32,6 +32,8 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
     .set("hadoop.user.group.static.mapping.overrides", s"user1=testGG,group_tt;user2=testGG")
     .set(s"hadoop.proxyuser.$user.groups", "*")
     .set(s"hadoop.proxyuser.$user.hosts", "*")
+    // TODO adapt to SPARK-49249 in Scala mode
+    .set("spark.sql.artifact.isolation.enabled", "false")
 
   override def beforeAll(): Unit = {
     UserGroupInformation.createUserForTesting("user1", Array("testGG", "group_tt"))
