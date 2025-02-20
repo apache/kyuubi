@@ -24,7 +24,8 @@ class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTest
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-  }
+  override protected val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
+    // TODO adapt to SPARK-49249 in Scala mode
+    .set("spark.sql.artifact.isolation.enabled", "false")
 }
