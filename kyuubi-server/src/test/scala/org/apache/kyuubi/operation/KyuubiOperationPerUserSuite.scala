@@ -38,9 +38,10 @@ class KyuubiOperationPerUserSuite
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
-  }
+  override protected val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+    // TODO adapt to SPARK-49249 in Scala mode
+    .set("spark.sql.artifact.isolation.enabled", "false")
 
   override def beforeAll(): Unit = {
     super.beforeAll()
