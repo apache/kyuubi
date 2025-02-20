@@ -18,18 +18,18 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import java.lang.{Boolean => JBoolean, Long => JLong}
+import java.net.URI
 
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange.{AddColumn, After, ColumnPosition, DeleteColumn, First, RenameColumn, UpdateColumnComment, UpdateColumnNullability, UpdateColumnPosition, UpdateColumnType}
 import org.apache.spark.sql.execution.command.CommandUtils
-import org.apache.spark.sql.execution.command.CommandUtils.{calculateMultipleLocationSizes, calculateSingleLocationSize}
 import org.apache.spark.sql.execution.datasources.{PartitionDirectory, PartitionedFile}
 import org.apache.spark.sql.hive.execution.HiveFileFormat
 import org.apache.spark.sql.internal.SQLConf
@@ -87,33 +87,35 @@ object HiveConnectorUtils extends Logging {
       sparkSession: SparkSession,
       file: AnyRef,
       filePath: Path,
-      isSplitable: Boolean,
-      maxSplitBytes: Long,
+      isSplitable: JBoolean,
+      maxSplitBytes: JLong,
       partitionValues: InternalRow): Seq[PartitionedFile] = {
 
-    if (SPARK_RUNTIME_VERSION >= "4.0") { // SPARK-42821
+    if (SPARK_RUNTIME_VERSION >= "4.0") { // SPARK-42821, SPARK-51185
       val fileStatusWithMetadataClz = DynClasses.builder()
         .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .build()
+        .buildChecked()
       DynMethods
         .builder("splitFiles")
         .impl(
           "org.apache.spark.sql.execution.PartitionedFileUtil",
           fileStatusWithMetadataClz,
+          classOf[Path],
           classOf[Boolean],
           classOf[Long],
           classOf[InternalRow])
-        .build()
-        .invoke[Seq[PartitionedFile]](
+        .buildChecked()
+        .invokeChecked[Seq[PartitionedFile]](
           null,
           file,
-          isSplitable.asInstanceOf[JBoolean],
-          maxSplitBytes.asInstanceOf[JLong],
+          filePath,
+          isSplitable,
+          maxSplitBytes,
           partitionValues)
     } else if (SPARK_RUNTIME_VERSION >= "3.5") { // SPARK-43039
       val fileStatusWithMetadataClz = DynClasses.builder()
         .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .build()
+        .buildChecked()
       DynMethods
         .builder("splitFiles")
         .impl(
@@ -123,13 +125,13 @@ object HiveConnectorUtils extends Logging {
           classOf[Boolean],
           classOf[Long],
           classOf[InternalRow])
-        .build()
-        .invoke[Seq[PartitionedFile]](
+        .buildChecked()
+        .invokeChecked[Seq[PartitionedFile]](
           null,
           sparkSession,
           file,
-          isSplitable.asInstanceOf[JBoolean],
-          maxSplitBytes.asInstanceOf[JLong],
+          isSplitable,
+          maxSplitBytes,
           partitionValues)
     } else if (SPARK_RUNTIME_VERSION >= "3.3") {
       DynMethods
@@ -142,14 +144,14 @@ object HiveConnectorUtils extends Logging {
           classOf[Boolean],
           classOf[Long],
           classOf[InternalRow])
-        .build()
-        .invoke[Seq[PartitionedFile]](
+        .buildChecked()
+        .invokeChecked[Seq[PartitionedFile]](
           null,
           sparkSession,
           file,
           filePath,
-          isSplitable.asInstanceOf[JBoolean],
-          maxSplitBytes.asInstanceOf[JLong],
+          isSplitable,
+          maxSplitBytes,
           partitionValues)
     } else {
       throw unsupportedSparkVersion()
@@ -187,6 +189,29 @@ object HiveConnectorUtils extends Logging {
     }
   }
 
+  private def calculateMultipleLocationSizes(
+      sparkSession: SparkSession,
+      tid: TableIdentifier,
+      paths: Seq[Option[URI]]): Seq[Long] = {
+
+    val sparkSessionClz = DynClasses.builder()
+      .impl("org.apache.spark.sql.classic.SparkSession") // SPARK-49700 (4.0.0)
+      .impl("org.apache.spark.sql.SparkSession")
+      .build()
+
+    val calculateMultipleLocationSizesMethod =
+      DynMethods.builder("calculateMultipleLocationSizes")
+        .impl(
+          CommandUtils.getClass,
+          sparkSessionClz,
+          classOf[TableIdentifier],
+          classOf[Seq[Option[URI]]])
+        .buildChecked(CommandUtils)
+
+    calculateMultipleLocationSizesMethod
+      .invokeChecked[Seq[Long]](sparkSession, tid, paths)
+  }
+
   private def unsupportedSparkVersion(): KyuubiHiveConnectorException = {
     KyuubiHiveConnectorException(s"Spark version $SPARK_VERSION " +
       "is not supported by Kyuubi spark hive connector.")
@@ -199,12 +224,11 @@ object HiveConnectorUtils extends Logging {
     val sessionState = spark.sessionState
     val startTime = System.nanoTime()
     val (totalSize, newPartitions) = if (catalogTable.partitionColumnNames.isEmpty) {
-      (
-        calculateSingleLocationSize(
-          sessionState,
-          catalogTable.identifier,
-          catalogTable.storage.locationUri),
-        Seq())
+      val tableSize = CommandUtils.calculateSingleLocationSize(
+        sessionState,
+        catalogTable.identifier,
+        catalogTable.storage.locationUri)
+      (tableSize, Seq())
     } else {
       // Calculate table size as a sum of the visible partitions. See SPARK-21079
       val partitions = hiveTableCatalog.listPartitions(catalogTable.identifier)
