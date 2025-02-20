@@ -47,6 +47,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 /**
  * A [[TableCatalog]] that wrap HiveExternalCatalog to as V2 CatalogPlugin instance to access Hive.
@@ -100,6 +101,20 @@ class HiveTableCatalog(sparkSession: SparkSession)
     catalogName
   }
 
+  private def newHiveMetastoreCatalog(sparkSession: SparkSession): HiveMetastoreCatalog = {
+    val sparkSessionClz = DynClasses.builder()
+      .impl("org.apache.spark.sql.classic.SparkSession") // SPARK-49700 (4.0.0)
+      .impl("org.apache.spark.sql.SparkSession")
+      .buildChecked()
+
+    val hiveMetastoreCatalogCtor =
+      DynConstructors.builder()
+        .impl("org.apache.spark.sql.hive.HiveMetastoreCatalog", sparkSessionClz)
+        .buildChecked[HiveMetastoreCatalog]()
+
+    hiveMetastoreCatalogCtor.newInstanceChecked(sparkSession)
+  }
+
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     assert(catalogName == null, "The Hive table catalog is already initialed.")
     assert(
@@ -110,7 +125,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     catalog = new HiveSessionCatalog(
       externalCatalogBuilder = () => externalCatalog,
       globalTempViewManagerBuilder = () => globalTempViewManager,
-      metastoreCatalog = new HiveMetastoreCatalog(sparkSession),
+      metastoreCatalog = newHiveMetastoreCatalog(sparkSession),
       functionRegistry = sessionState.functionRegistry,
       tableFunctionRegistry = sessionState.tableFunctionRegistry,
       hadoopConf = hadoopConf,
