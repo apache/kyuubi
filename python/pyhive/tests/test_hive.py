@@ -87,46 +87,59 @@ class TestHive(unittest.TestCase, DBAPITestCase):
         # catch unicode/str
         self.assertEqual(list(map(type, rows[0])), list(map(type, expected[0])))
 
+    @mock.patch('thrift.transport.THttpClient.THttpClient')
     @mock.patch('ssl.create_default_context')
-    def test_default_ssl_parameters(self, mock_create_context):
+    def test_default_ssl_parameters(self, mock_create_context, mock_http_client):
         """Test that default SSL parameters work correctly when no custom context is provided"""
-        # Setup mock default context
         mock_default_context = mock.MagicMock()
         mock_create_context.return_value = mock_default_context
         
-        conn = hive.Connection(
-            host=_HOST,
-            scheme='https',
-            check_hostname='true',
-            ssl_cert='required'
-        )
+        try:
+            conn = hive.Connection(
+                host=_HOST,
+                scheme='https',
+                check_hostname='true',
+                ssl_cert='required'
+            )
+        except TTransportException:
+            pass  # Expected since we're mocking the transport
         
         # Verify default context was created and configured correctly
         mock_create_context.assert_called_once()
         self.assertEqual(mock_default_context.check_hostname, True)
         self.assertEqual(mock_default_context.verify_mode, ssl.CERT_REQUIRED)
+        
+        # Verify the transport was created with our SSL context
+        mock_http_client.assert_called_once()
+        call_kwargs = mock_http_client.call_args[1]
+        self.assertEqual(call_kwargs['ssl_context'], mock_default_context)
 
+    @mock.patch('thrift.transport.THttpClient.THttpClient')
     @mock.patch('ssl.create_default_context')
-    def test_custom_ssl_context_overrides_defaults(self, mock_create_context):
+    def test_custom_ssl_context_overrides_defaults(self, mock_create_context, mock_http_client):
         """Test that custom SSL context overrides default SSL parameters"""
         custom_context = mock.MagicMock()
         custom_context.check_hostname = False
         custom_context.verify_mode = ssl.CERT_NONE
         
-        conn = hive.Connection(
-            host=_HOST,
-            scheme='https',
-            ssl_context=custom_context,
-            # These should be ignored when ssl_context is provided
-            check_hostname='true',
-            ssl_cert='required'
-        )
+        try:
+            conn = hive.Connection(
+                host=_HOST,
+                scheme='https',
+                ssl_context=custom_context,
+                check_hostname='true',
+                ssl_cert='required'
+            )
+        except TTransportException:
+            pass  # Expected since we're mocking the transport
         
         # Verify default context was NOT created
         mock_create_context.assert_not_called()
-        # Verify custom context settings weren't changed
-        self.assertEqual(custom_context.check_hostname, False)
-        self.assertEqual(custom_context.verify_mode, ssl.CERT_NONE)
+        
+        # Verify the transport was created with our custom context
+        mock_http_client.assert_called_once()
+        call_kwargs = mock_http_client.call_args[1]
+        self.assertEqual(call_kwargs['ssl_context'], custom_context)
 
     def test_ssl_context_mtls_configuration(self):
         """Test that SSL context can be configured for mTLS"""
