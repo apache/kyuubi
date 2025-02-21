@@ -130,8 +130,15 @@ class TestHive(unittest.TestCase, DBAPITestCase):
 
     def test_ssl_context_mtls_configuration(self):
         """Test that SSL context can be configured for mTLS"""
+        # Create and configure mTLS context before creating the connection
         mtls_context = mock.MagicMock()
         mtls_context.load_cert_chain = mock.MagicMock()
+        
+        # Configure mTLS before passing to Connection
+        mtls_context.load_cert_chain(
+            certfile='client.crt',
+            keyfile='client.key'
+        )
         
         conn = hive.Connection(
             host=_HOST,
@@ -139,12 +146,7 @@ class TestHive(unittest.TestCase, DBAPITestCase):
             ssl_context=mtls_context
         )
         
-        # Configure mTLS after connection creation
-        mtls_context.load_cert_chain(
-            certfile='client.crt',
-            keyfile='client.key'
-        )
-        
+        # Verify mTLS was configured correctly
         mtls_context.load_cert_chain.assert_called_once_with(
             certfile='client.crt',
             keyfile='client.key'
