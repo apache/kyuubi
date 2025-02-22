@@ -42,8 +42,8 @@ Examples:
     $0 -r docker.io/myrepo -t v1.8.1 build
     $0 -r docker.io/myrepo -t v1.8.1 push
 
-  - Build and push with tag "v1.8.1" and Spark-3.5.2 as base image to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v1.8.1 -b BASE_IMAGE=repo/spark:3.5.2 build
+  - Build and push with tag "v1.8.1" and Spark-3.5.4 as base image to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v1.8.1 -b BASE_IMAGE=repo/spark:3.5.4 build
     $0 -r docker.io/myrepo -t v1.8.1 push
 
   - Build and push for multiple archs to docker.io/myrepo

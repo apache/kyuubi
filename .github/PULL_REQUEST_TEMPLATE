@@ -1,38 +1,33 @@
-# :mag: Description
-## Issue References 🔗
-<!-- Append the issue number after #. If there is no issue for you to link create one or -->
-<!-- If there are no issues to link, please provide details here. -->
+<!--
+Thanks for sending a pull request!
 
-This pull request fixes #
+Here are some tips for you:
+  1. If this is your first time, please read our contributor guidelines: https://kyuubi.readthedocs.io/en/master/contributing/code/index.html
+  2. If the PR is related to an issue in https://github.com/apache/kyuubi/issues, add '[KYUUBI #XXXX]' in your PR title, e.g., '[KYUUBI #XXXX] Your PR title ...'.
+  3. If the PR is unfinished, add '[WIP]' in your PR title, e.g., '[WIP][KYUUBI #XXXX] Your PR title ...'.
+-->
 
-## Describe Your Solution 🔧
-
-Please include a summary of the change and which issue is fixed. Please also include relevant motivation and context. List any dependencies that are required for this change.
-
-
-## Types of changes :bookmark:
-<!--- What types of changes does your code introduce? Put an `x` in all the boxes that apply: -->
-- [ ] Bugfix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)
-- [ ] Breaking change (fix or feature that would cause existing functionality to change)
-
-## Test Plan 🧪
-
-#### Behavior Without This Pull Request :coffin:
+### Why are the changes needed?
+<!--
+Please clarify why the changes are needed. For instance,
+  1. If you propose a new API, clarify the use case for a new API.
+  2. If you fix a bug, you can clarify why it is a bug, and what versions are affected.
+-->
 
 
-#### Behavior With This Pull Request :tada:
+### How was this patch tested?
+<!--
+If tests were added, say they were added here. Please make sure to add some test cases that check the changes thoroughly including negative and positive cases if possible.
+If it was tested in a way different from regular unit tests, please clarify how you tested step by step, ideally copy and paste-able, so that other reviewers can test and check, and descendants can verify in the future.
+If tests were not added, please describe why they were not added and/or why it was difficult to add.
+-->
 
 
-#### Related Unit Tests
+### Was this patch authored or co-authored using generative AI tooling?
+<!--
+If a generative AI tooling has been used in the process of authoring this patch, please include
+phrase 'Generated-by: ' followed by the name of the tool and its version.
+If no, write 'No'.
+Please refer to the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html) for details.
+-->
 
-
----
-
-# Checklist 📝
-<!--- Go over all the following points, and put an `x` in all the boxes that apply. -->
-<!--- If you're unsure about any of these, don't hesitate to ask. We're here to help! -->
-
-- [ ] This patch was not authored or co-authored using [Generative Tooling](https://www.apache.org/legal/generative-tooling.html)
-
-**Be nice. Be informative.**

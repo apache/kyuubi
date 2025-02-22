@@ -28,7 +28,7 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState, TProtocolVersion}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetOperationStatusResp, TOperationState}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 
 class ExecuteStatement(
@@ -124,9 +124,7 @@ class ExecuteStatement(
               // this will cause the client of the lower version to get stuck.
               // Check thrift protocol version <= HIVE_CLI_SERVICE_PROTOCOL_V8(Hive 2.1.0),
               // convert TIMEDOUT_STATE to CANCELED.
-              if getProtocolVersion.getValue <=
-                TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8.getValue =>
-            setState(OperationState.CANCELED)
+              if isHive21OrLower => setState(OperationState.CANCELED)
 
           case TIMEDOUT_STATE =>
             setState(OperationState.TIMEOUT)

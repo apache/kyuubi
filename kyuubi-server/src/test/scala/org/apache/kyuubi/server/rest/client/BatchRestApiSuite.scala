@@ -23,6 +23,7 @@ import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import scala.collection.JavaConverters._
 
+import org.apache.http.client.HttpResponseException
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{BatchTestHelper, KYUUBI_VERSION, RestClientTestHelper}
@@ -32,6 +33,7 @@ import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSession, SessionHandle}
+import org.apache.kyuubi.util.AssertionUtils.interceptCauseContains
 import org.apache.kyuubi.util.GoldenFileUtils.getCurrentModuleHome
 
 class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
@@ -179,6 +181,39 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
 
     } finally {
       Files.deleteIfExists(Paths.get(modulesZipFile))
+      basicKyuubiRestClient.close()
+    }
+  }
+
+  test("basic batch rest client with uploading resource and extra resources of unuploaded") {
+
+    val basicKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+        .username(ldapUser)
+        .password(ldapUserPasswd)
+        .socketTimeout(5 * 60 * 1000)
+        .build()
+    val batchRestApi: BatchRestApi = new BatchRestApi(basicKyuubiRestClient)
+
+    val pythonScriptsPath = s"${getCurrentModuleHome(this)}/src/test/resources/python/"
+    val appScriptFileName = "app.py"
+    val appScriptFile = Paths.get(pythonScriptsPath, appScriptFileName).toFile
+    val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+    requestObj.setBatchType("PYSPARK")
+    requestObj.setName("pyspark-test")
+    requestObj.setExtraResourcesMap(Map(
+      "spark.submit.pyFiles" -> "non-existed-zip.zip",
+      "spark.files" -> "non-existed-jar.jar",
+      "spark.some.config1" -> "",
+      "spark.some.config2" -> " ").asJava)
+
+    try {
+      interceptCauseContains[KyuubiRestException, HttpResponseException] {
+        batchRestApi.createBatch(requestObj, appScriptFile, List().asJava)
+      }("required extra resource files [non-existed-jar.jar,non-existed-zip.zip]" +
+        " are not uploaded in the multipart form data")
+    } finally {
       basicKyuubiRestClient.close()
     }
   }

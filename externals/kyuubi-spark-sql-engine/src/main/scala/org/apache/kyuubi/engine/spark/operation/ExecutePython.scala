@@ -59,14 +59,14 @@ class ExecutePython(
   override protected def supportProgress: Boolean = true
 
   override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
+    if (result == null) {
       new StructType().add("output", "string")
         .add("status", "string")
         .add("ename", "string")
         .add("evalue", "string")
         .add("traceback", "array<string>")
     } else {
-      result.schema
+      super.resultSchema
     }
   }
 
@@ -127,6 +127,7 @@ class ExecutePython(
           val ke =
             KyuubiSQLException("Error submitting python in background", rejected)
           setOperationException(ke)
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {

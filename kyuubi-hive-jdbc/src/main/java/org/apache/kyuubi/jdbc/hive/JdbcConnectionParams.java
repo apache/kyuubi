@@ -79,6 +79,7 @@ public class JdbcConnectionParams {
   // Use ZooKeeper for indirection while using dynamic service discovery
   static final String SERVICE_DISCOVERY_MODE_ZOOKEEPER = "zooKeeper";
   static final String ZOOKEEPER_NAMESPACE = "zooKeeperNamespace";
+  static final String SERVER_SELECT_STRATEGY = "serverSelectStrategy";
   // Default namespace value on ZooKeeper.
   // This value is used if the param "zooKeeperNamespace" is not specified in the JDBC Uri.
   static final String ZOOKEEPER_DEFAULT_NAMESPACE = "hiveserver2";

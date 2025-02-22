@@ -1334,6 +1334,15 @@ object KyuubiConf {
       .createWithDefault(
         "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc:{{SPARK_UI_PORT}}")
 
+  val KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.spark.autoCreateFileUploadPath.enabled")
+      .doc("If enabled, Kyuubi server will try to create the " +
+        "`spark.kubernetes.file.upload.path` with permission 777 before submitting " +
+        "the Spark application.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(false)
+
   object KubernetesCleanupDriverPodStrategy extends Enumeration {
     type KubernetesCleanupDriverPodStrategy = Value
     val NONE, ALL, COMPLETED = Value
@@ -1876,6 +1885,24 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val BATCH_RESOURCE_FILE_MAX_SIZE: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.resource.file.max.size")
+      .doc("The maximum size in bytes of the uploaded resource file" +
+        " when creating batch. 0 or negative value means no limit.")
+      .version("1.10.0")
+      .serverOnly
+      .longConf
+      .createWithDefault(0)
+
+  val BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE: ConfigEntry[Long] =
+    buildConf("kyuubi.batch.extra.resource.file.max.size")
+      .doc("The maximum size in bytes of each uploaded extra resource file" +
+        " when creating batch. 0 or negative value means no limit.")
+      .version("1.10.0")
+      .serverOnly
+      .longConf
+      .createWithDefault(0)
+
   val BATCH_SUBMITTER_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.batch.submitter.enabled")
       .internal
@@ -2004,6 +2031,19 @@ object KyuubiConf {
       .version("1.6.0")
       .intConf
       .createWithDefault(65536)
+
+  val METADATA_SEARCH_WINDOW: OptionalConfigEntry[Long] =
+    buildConf("kyuubi.metadata.search.window")
+      .doc("The time window to restrict user queries to metadata within a specific period, " +
+        "starting from the current time to the past. It only affects `GET /api/v1/batches` API. " +
+        "You may want to set this to short period to improve query performance and reduce load " +
+        "on the metadata store when administer want to reserve the metadata for long time. " +
+        "The side-effects is that, the metadata created outside the window will not be " +
+        "invisible to users. If it is undefined, all metadata will be visible for users.")
+      .version("1.10.1")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createOptional
 
   val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.wait.queue.size")
@@ -2999,6 +3039,26 @@ object KyuubiConf {
       .version("1.8.1")
       .fallbackConf(ENGINE_INITIALIZE_SQL)
 
+  val ENGINE_FLINK_DOAS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.doAs.enabled")
+      .doc("When enabled, the session user is used as the proxy user to launch the Flink engine," +
+        " otherwise, the server user. Note, due to the limitation of Apache Flink," +
+        " it can only be enabled on Kerberized environment.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.flink.doAs.generateTokenFile")
+      .internal
+      .doc(s"When ${ENGINE_FLINK_DOAS_ENABLED.key}=true and neither FLINK-35525 (Flink 1.20.0)" +
+        " nor YARN-10333 (Hadoop 3.4.0) is available, enable this configuration to generate a" +
+        " temporary HADOOP_TOKEN_FILE that will be picked up by the Flink engine bootstrap" +
+        " process.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +
@@ -3207,7 +3267,8 @@ object KyuubiConf {
         "<li>postgresql: For establishing PostgreSQL connections.</li>" +
         "<li>starrocks: For establishing StarRocks connections.</li>" +
         "<li>impala: For establishing Impala connections.</li>" +
-        "<li>clickhouse: For establishing clickhouse connections.</li>")
+        "<li>clickhouse: For establishing clickhouse connections.</li>" +
+        "<li>oracle: For establishing oracle connections.</li>")
       .version("1.6.0")
       .stringConf
       .transform {
@@ -3225,6 +3286,8 @@ object KyuubiConf {
           "org.apache.kyuubi.engine.jdbc.impala.ImpalaConnectionProvider"
         case "ClickHouse" | "clickhouse" | "ClickHouseConnectionProvider" =>
           "org.apache.kyuubi.engine.jdbc.clickhouse.ClickHouseConnectionProvider"
+        case "Oracle" | "oracle" | "OracleConnectionProvider" =>
+          "org.apache.kyuubi.engine.jdbc.oracle.OracleConnectionProvider"
         case other => other
       }
       .createOptional

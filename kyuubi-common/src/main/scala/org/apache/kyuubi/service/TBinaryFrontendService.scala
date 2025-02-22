@@ -53,6 +53,10 @@ abstract class TBinaryFrontendService(name: String)
   private var _actualPort: Int = _
   override protected lazy val actualPort: Int = _actualPort
 
+  protected var keyStorePath: Option[String] = None
+  protected var keyStorePassword: Option[String] = None
+  protected var keyStoreType: Option[String] = None
+
   // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
@@ -73,9 +77,9 @@ abstract class TBinaryFrontendService(name: String)
       val tServerSocket =
         // only enable ssl for server side
         if (isServer() && conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
-          val keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
-          val keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
-          val keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
+          keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
+          keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
           val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           val disallowedSslProtocols = conf.get(FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS)
           val includeCipherSuites = conf.get(FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES)

@@ -25,7 +25,7 @@ trait GlutenSuiteMixin {
   }
 
   protected def extraConfigs: Map[String, String] = Map(
-    "spark.plugins" -> "io.glutenproject.GlutenPlugin",
+    "spark.plugins" -> "org.apache.gluten.GlutenPlugin",
     "spark.memory.offHeap.size" -> "4g",
     "spark.memory.offHeap.enabled" -> "true",
     "spark.shuffle.manager" -> "org.apache.spark.shuffle.sort.ColumnarShuffleManager",

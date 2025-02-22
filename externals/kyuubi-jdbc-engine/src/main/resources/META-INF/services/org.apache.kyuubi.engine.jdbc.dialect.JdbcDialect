@@ -19,6 +19,7 @@ org.apache.kyuubi.engine.jdbc.dialect.ClickHouseDialect
 org.apache.kyuubi.engine.jdbc.dialect.DorisDialect
 org.apache.kyuubi.engine.jdbc.dialect.ImpalaDialect
 org.apache.kyuubi.engine.jdbc.dialect.MySQLDialect
+org.apache.kyuubi.engine.jdbc.dialect.OracleSQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.PhoenixDialect
 org.apache.kyuubi.engine.jdbc.dialect.PostgreSQLDialect
 org.apache.kyuubi.engine.jdbc.dialect.StarRocksDialect

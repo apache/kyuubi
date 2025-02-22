@@ -23,7 +23,7 @@ Kyuubi Spark AuthZ Plugin is built using [Apache Maven](https://maven.apache.org
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -DskipTests
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests
 ```
 
 After a while, if everything goes well, you will get the plugin finally in two parts:
@@ -37,7 +37,7 @@ Apache Kyuubi also provides the shaded jar for the Spark AuthZ plugin, You can r
 To build it, `cd` to the root direct of kyuubi project and run:
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz-shaded_2.12 -DskipTests -am
+build/mvn clean package -pl :kyuubi-spark-authz-shaded_2.12 -am -DskipTests
 ```
 
 After a while, if everything goes well, you will get the plugin finally:
@@ -53,7 +53,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -DskipTests -Dspark.version=3.0.2
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Pspark-3.4 -Dspark.version=3.4.1
 ```
 
 The available `spark.version`s are shown in the following table.
@@ -61,9 +61,11 @@ The available `spark.version`s are shown in the following table.
 |   Spark Version   | Supported |                                                         Remark                                                         |
 |:-----------------:|:---------:|:----------------------------------------------------------------------------------------------------------------------:|
 |      master       |     √     |                                                           -                                                            |
+|       3.5.x       |     √     |                                                           -                                                            |
+|       3.4.x       |     √     |                                                           -                                                            |
 |       3.3.x       |     √     |                                                           -                                                            |
 |       3.2.x       |     √     |                                                           -                                                            |
-|       3.1.x       |     √     |                                                           -                                                            |
+|       3.1.x       |     x     |                                                   EOL since v1.10.0                                                    |
 |       3.0.x       |     x     |                                                    EOL since v1.9.0                                                    |
 | 2.4.x and earlier |     ×     | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
 
@@ -76,7 +78,7 @@ By default, it is always built with the latest `ranger.version` defined in kyuub
 Sometimes, it may be incompatible with other Ranger Admins, then you may need to build the plugin on your own targeting the Ranger Admin version you connect with.
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -DskipTests -Dranger.version=0.7.0
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.version=2.4.0
 ```
 
 The available `ranger.version`s are shown in the following table.

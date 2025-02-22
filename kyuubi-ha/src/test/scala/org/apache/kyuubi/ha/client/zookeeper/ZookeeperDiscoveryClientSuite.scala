@@ -34,8 +34,9 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client._
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
+import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, ServerSelectStrategyFactory}
 import org.apache.kyuubi.service._
-import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory
+import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
 import org.apache.kyuubi.shaded.zookeeper.ZooDefs
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
@@ -226,5 +227,42 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       service.stop()
       discovery.stop()
     }
+  }
+
+  test("server select strategy with zookeeper") {
+    val zkClient = CuratorFrameworkFactory.builder()
+      .connectString(getConnectString)
+      .sessionTimeoutMs(5000)
+      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+      .build
+    zkClient.start()
+
+    val namespace = "kyuubi-strategy-test"
+    val testServerHosts = Seq(
+      "testNode1",
+      "testNode2",
+      "testNode3").asJava
+    // test polling strategy
+    val pollingStrategy = ServerSelectStrategyFactory.createStrategy("polling")
+    1 to testServerHosts.size() * 2 foreach { _ =>
+      assertResult(f"testNode1")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+      assertResult(f"testNode2")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+      assertResult(f"testNode3")(pollingStrategy.chooseServer(testServerHosts, zkClient, namespace))
+    }
+
+    // test only get first serverHost strategy
+    val customStrategy = new ServerSelectStrategy {
+      override def chooseServer(
+          serverHosts: util.List[String],
+          zkClient: CuratorFramework,
+          namespace: String): String = serverHosts.get(0)
+    }
+    1 to testServerHosts.size() * 2 foreach { _ =>
+      assertResult("testNode1") {
+        customStrategy.chooseServer(testServerHosts, zkClient, namespace)
+      }
+    }
+
+    zkClient.close()
   }
 }

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>integration-tests</artifactId>
-        <version>1.10.0-SNAPSHOT</version>
+        <version>1.11.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -106,7 +106,7 @@
         <dependency>
             <groupId>com.clickhouse</groupId>
             <artifactId>clickhouse-jdbc</artifactId>
-            <classifier>http</classifier>
+            <classifier>shaded</classifier>
             <scope>test</scope>
         </dependency>
 
@@ -188,7 +188,7 @@
                                     <groupId>com.clickhouse</groupId>
                                     <artifactId>clickhouse-jdbc</artifactId>
                                     <version>${clickhouse-java.version}</version>
-                                    <classifier>http</classifier>
+                                    <classifier>shaded</classifier>
                                     <overWrite>true</overWrite>
                                     <outputDirectory>${project.build.directory}</outputDirectory>
                                 </artifactItem>

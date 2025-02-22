@@ -262,6 +262,7 @@ org.eclipse.jetty:jetty-proxy
 org.apache.logging.log4j:log4j-1.2-api
 org.apache.logging.log4j:log4j-api
 org.apache.logging.log4j:log4j-core
+org.apache.logging.log4j:log4j-layout-template-json
 org.apache.logging.log4j:log4j-slf4j-impl
 org.yaml:snakeyaml
 io.dropwizard.metrics:metrics-core
@@ -306,8 +307,6 @@ io.vertx:vertx-grpc
 com.squareup.retrofit2:retrofit
 com.squareup.okhttp3:okhttp
 org.apache.kafka:kafka-clients
-org.lz4:lz4-java
-org.xerial.snappy:snappy-java
 org.xerial:sqlite-jdbc
 
 BSD
@@ -319,7 +318,6 @@ jline:jline
 com.thoughtworks.paranamer:paranamer
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
-com.github.luben:zstd-jni
 org.postgresql:postgresql
 
 Eclipse Distribution License - v 1.0

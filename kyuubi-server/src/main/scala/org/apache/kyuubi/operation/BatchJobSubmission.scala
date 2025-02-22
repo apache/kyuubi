@@ -154,10 +154,20 @@ class BatchJobSubmission(
         engineId = appInfo.id,
         engineName = appInfo.name,
         engineUrl = appInfo.url.orNull,
-        engineState = appInfo.state.toString,
+        engineState = getAppState(state, appInfo.state).toString,
         engineError = appInfo.error,
         endTime = endTime)
       session.sessionManager.updateMetadata(metadataToUpdate)
+    }
+  }
+
+  private def getAppState(
+      opState: OperationState,
+      appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
+    if (opState == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
+      ApplicationState.UNKNOWN
+    } else {
+      appState
     }
   }
 
@@ -412,6 +422,14 @@ class BatchJobSubmission(
   private def cleanupUploadedResourceIfNeeded(): Unit = {
     if (session.isResourceUploaded) {
       Utils.deleteDirectoryRecursively(session.resourceUploadFolderPath.toFile)
+    }
+  }
+
+  def getPendingElapsedTime: Long = {
+    if (state == OperationState.PENDING) {
+      System.currentTimeMillis() - createTime
+    } else {
+      0L
     }
   }
 }

@@ -59,9 +59,9 @@ class PlanOnlyStatement(
   override protected def resultSchema: StructType = {
     if (result == null) {
       new StructType().add("plan", "string")
-    } else if (result.isEmpty) {
-      new StructType().add("result", "string")
-    } else result.schema
+    } else {
+      super.resultSchema
+    }
   }
 
   override protected def beforeRun(): Unit = {

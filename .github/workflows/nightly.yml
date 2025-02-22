@@ -25,7 +25,7 @@ jobs:
   build:
     name: Build
     if: ${{ startsWith(github.repository, 'apache/') }}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         profiles:
@@ -42,14 +42,13 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Build with Maven
         run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log
           path: |

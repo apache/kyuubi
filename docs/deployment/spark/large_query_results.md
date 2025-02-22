@@ -191,7 +191,7 @@ kyuubi-beeline -u 'jdbc:kyuubi://kyuubi:10009/' \
 Note: Arrow serialization requires the client to support deserializing Arrow format results, you must use Kyuubi
 JDBC driver v1.7.0 or higher, third-party clients like Apache Hive JDBC driver, PyHive does not work.
 
-## Sava query results into files
+## Save query results into files
 
 Since v1.9.0, Kyuubi Spark SQL engine supports saving the query results into files instead of collecting to the
 Spark driver memory before retrieving to client. This dramatically reduces the memory pressure of the Spark driver,

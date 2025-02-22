@@ -21,7 +21,7 @@ runs:
   using: composite
   steps:
     - name: Cache Engine Archives
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: /tmp/engine-archives
         key: engine-archives

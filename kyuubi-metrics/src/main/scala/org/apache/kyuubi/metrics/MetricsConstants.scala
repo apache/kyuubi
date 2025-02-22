@@ -37,6 +37,8 @@ object MetricsConstants {
   final private val THRIFT_BINARY_CONN = KYUUBI + "thrift.binary.connection."
   final private val REST_CONN = KYUUBI + "rest.connection."
 
+  final val THRIFT_SSL_CERT_EXPIRATION = KYUUBI + "thrift.ssl.cert.expiration"
+
   final val CONN_OPEN: String = CONN + "opened"
   final val CONN_FAIL: String = CONN + "failed"
   final val CONN_TOTAL: String = CONN + "total"
@@ -64,6 +66,7 @@ object MetricsConstants {
   final val OPERATION_TOTAL: String = OPERATION + "total"
   final val OPERATION_STATE: String = OPERATION + "state"
   final val OPERATION_EXEC_TIME: String = OPERATION + "exec_time"
+  final val OPERATION_BATCH_PENDING_MAX_ELAPSE: String = OPERATION + "batch_pending_max_elapse"
 
   final private val BACKEND_SERVICE = KYUUBI + "backend_service."
   final val BS_FETCH_LOG_ROWS_RATE = BACKEND_SERVICE + "fetch_log_rows_rate"

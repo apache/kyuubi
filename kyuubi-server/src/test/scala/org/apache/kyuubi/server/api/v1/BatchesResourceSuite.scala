@@ -136,7 +136,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
-    assert(proxyUserResponse.getStatus === 405)
+    assert(proxyUserResponse.getStatus === 403)
     var errorMessage = "Failed to validate proxy privilege of anonymous for root"
     assert(proxyUserResponse.readEntity(classOf[String]).contains(errorMessage))
 
@@ -211,7 +211,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(batch.getId))
       .delete()
-    assert(deleteBatchResponse.getStatus === 405)
+    assert(deleteBatchResponse.getStatus === 403)
     errorMessage = s"Failed to validate proxy privilege of ${batch.getId} for anonymous"
     assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
@@ -486,6 +486,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .queryParam("from", "0")
       .queryParam("size", "1")
       .queryParam("desc", "true")
+      .queryParam("createTime", "1")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
@@ -891,19 +892,19 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     // use kyuubi.session.proxy.user
     val proxyUserResponse1 = runOpenBatchExecutor(Option(normalUser), None)
-    assert(proxyUserResponse1.getStatus === 405)
+    assert(proxyUserResponse1.getStatus === 403)
     val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
     assert(proxyUserResponse1.readEntity(classOf[String]).contains(errorMessage))
 
     // it should be the same behavior as hive.server2.proxy.user
     val proxyUserResponse2 = runOpenBatchExecutor(None, Option(normalUser))
-    assert(proxyUserResponse2.getStatus === 405)
+    assert(proxyUserResponse2.getStatus === 403)
     assert(proxyUserResponse2.readEntity(classOf[String]).contains(errorMessage))
 
     // when both set, kyuubi.session.proxy.user takes precedence
     val proxyUserResponse3 =
       runOpenBatchExecutor(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-    assert(proxyUserResponse3.getStatus === 405)
+    assert(proxyUserResponse3.getStatus === 403)
     assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
   }
 }

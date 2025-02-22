@@ -25,7 +25,6 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
-import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
@@ -50,13 +49,6 @@ class ExecuteStatement(
 
   private var fetchOrcStatement: Option[FetchOrcStatement] = None
   private var saveFilePath: Option[Path] = None
-  override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
-      new StructType().add("Result", "string")
-    } else {
-      result.schema
-    }
-  }
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
@@ -132,6 +124,7 @@ class ExecuteStatement(
           val ke =
             KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {

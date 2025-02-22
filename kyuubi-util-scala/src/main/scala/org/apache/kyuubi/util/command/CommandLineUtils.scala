@@ -19,6 +19,7 @@ package org.apache.kyuubi.util.command
 
 import java.io.File
 
+import scala.collection.mutable.ListBuffer
 import scala.util.matching.Regex
 
 object CommandLineUtils {
@@ -71,5 +72,90 @@ object CommandLineUtils {
           case part => part
         }
     }
+  }
+
+  /**
+   * copy from org.apache.spark.launcher.CommandBuilderUtils#parseOptionString
+   * Parse a string as if it were a list of arguments, following bash semantics.
+   * For example:
+   *
+   * Input: "\"ab cd\" efgh 'i \" j'"
+   * Output: [ "ab cd", "efgh", "i \" j" ]
+   */
+  def parseOptionString(s: String): List[String] = {
+    val opts = ListBuffer[String]()
+    val opt = new StringBuilder()
+    var inOpt = false
+    var inSingleQuote = false
+    var inDoubleQuote = false
+    var escapeNext = false
+    var hasData = false
+
+    var i = 0
+    while (i < s.length) {
+      val c = s.codePointAt(i)
+      if (escapeNext) {
+        opt.appendAll(Character.toChars(c))
+        escapeNext = false
+      } else if (inOpt) {
+        c match {
+          case '\\' =>
+            if (inSingleQuote) {
+              opt.appendAll(Character.toChars(c))
+            } else {
+              escapeNext = true
+            }
+          case '\'' =>
+            if (inDoubleQuote) {
+              opt.appendAll(Character.toChars(c))
+            } else {
+              inSingleQuote = !inSingleQuote
+            }
+          case '"' =>
+            if (inSingleQuote) {
+              opt.appendAll(Character.toChars(c))
+            } else {
+              inDoubleQuote = !inDoubleQuote
+            }
+          case _ =>
+            if (!Character.isWhitespace(c) || inSingleQuote || inDoubleQuote) {
+              opt.appendAll(Character.toChars(c))
+            } else {
+              opts += opt.toString()
+              opt.setLength(0)
+              inOpt = false
+              hasData = false
+            }
+        }
+      } else {
+        c match {
+          case '\'' =>
+            inSingleQuote = true
+            inOpt = true
+            hasData = true
+          case '"' =>
+            inDoubleQuote = true
+            inOpt = true
+            hasData = true
+          case '\\' =>
+            escapeNext = true
+            inOpt = true
+            hasData = true
+          case _ =>
+            if (!Character.isWhitespace(c)) {
+              inOpt = true
+              hasData = true
+              opt.appendAll(Character.toChars(c))
+            }
+        }
+      }
+      i += Character.charCount(c)
+    }
+
+    require(!inSingleQuote && !inDoubleQuote && !escapeNext, s"Invalid option string: $s")
+    if (hasData) {
+      opts += opt.toString()
+    }
+    opts.toList
   }
 }

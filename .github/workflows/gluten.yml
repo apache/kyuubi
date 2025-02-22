@@ -22,31 +22,25 @@ on:
     - cron: 0 4 * * *
 
 env:
-  MVN_OPT: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
 
 jobs:
   gluten-build:
     name: Build Gluten
-    runs-on: ubuntu-22.04
+    if: ${{ startsWith(github.repository, 'apache/') }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
-      - name: Update and Upgrade
-        run: sudo apt-get update && sudo apt-get upgrade -y
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y software-properties-common
-          sudo apt-get install -y libunwind-dev build-essential cmake libssl-dev libre2-dev libcurl4-openssl-dev clang lldb lld libz-dev git ninja-build uuid-dev
       - name: Setup JDK 8
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Get gluten cache date
@@ -54,44 +48,62 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: gluten/package/target/
+          path: incubator-gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
-      - name: Build gluten project
+      - name: Get Ccache
+        id: gluten-ccache-cache
+        uses: actions/cache@v4
+        with:
+          path: incubator-gluten/.ccache
+          key: ccache-centos7-release-default-${{github.sha}}
+          restore-keys: |
+            ccache-centos7-release-default
+      - name: Build Gluten velox third party
         run: |
           if [[ "${{ steps.gluten-cache.outputs.cache-hit }}" != 'true' ]]; then
-            git clone https://github.com/oap-project/gluten.git
-            cd gluten
-            ./dev/buildbundle-veloxbe.sh
+            git clone https://github.com/apache/incubator-gluten.git --depth=1
+            cd incubator-gluten
+            docker run -v $GITHUB_WORKSPACE/incubator-gluten:/work -w /work apache/gluten:vcpkg-centos-7 bash -c "
+              df -a
+              cd /work
+              export CCACHE_DIR=/work/.ccache
+              bash dev/ci-velox-buildstatic-centos-7.sh
+              ccache -s
+              mkdir -p /work/.m2/repository/org/apache/arrow/
+              cp -r /root/.m2/repository/org/apache/arrow/* /work/.m2/repository/org/apache/arrow/
+            "
+            mkdir -p ~/.m2/repository/org/apache/arrow
+            cp -r $GITHUB_WORKSPACE/incubator-gluten/.m2/repository/org/apache/arrow/* ~/.m2/repository/org/apache/arrow/
+            mvn clean package -Pbackends-velox -Pceleborn -Puniffle -Pspark-3.5 -DskipTests
           fi
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
-          path: gluten/package/target/
+          path: incubator-gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
+      - name: Save Ccache
+        uses: actions/cache@v4
+        if: steps.gluten-ccache-cache.outputs.cache-hit != 'true'
+        with:
+          path: incubator-gluten/.ccache/
+          key: ccache-centos7-release-default-${{github.sha}}
 
   gluten-it:
     name: Gluten Integration TPC-H/DS Test
     needs: gluten-build
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
-        spark: [ '3.4', '3.3' ]
+        spark: [ '3.5' ]
     steps:
       - uses: actions/checkout@v4
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
-      - name: Update and Upgrade
-        run: sudo apt-get update && sudo apt-get upgrade -y
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y software-properties-common
-          sudo apt-get install -y libunwind-dev build-essential cmake libssl-dev libre2-dev libcurl4-openssl-dev clang lldb lld libz-dev git ninja-build uuid-dev
-          sudo apt-get install -y libsnappy-dev libthrift-dev libboost-all-dev libgflags-dev libgoogle-glog-dev
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Get gluten cache date
@@ -99,9 +111,9 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: gluten/package/target/
+          path: incubator-gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
       - name: Setup JDK 8
         uses: actions/setup-java@v4
@@ -109,17 +121,16 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-          check-latest: false
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Run Gluten Integration TPC-H/DS Test
         run: |
           TEST_MODULES="integration-tests/kyuubi-gluten-it"
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
-          ./build/mvn ${MVN_OPT} -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} -am clean install -DskipTests 
+          ./build/mvn -Pgluten-it -Pspark-${{ matrix.spark }} -pl ${TEST_MODULES} test
       - name: Upload test logs
         if: failure()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: unit-tests-log-spark-${{ matrix.spark }}-gluten
           path: |

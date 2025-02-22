@@ -22,10 +22,13 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
+    {{- if .Values.metrics.podMonitor.labels }}
+    {{- toYaml .Values.metrics.podMonitor.labels | nindent 4 }}
+    {{- end }}
 spec:
   selector:
     matchLabels:
-      app: {{ .Release.Name }}
+      {{- include "kyuubi.selectorLabels" . | nindent 6 }}
   podMetricsEndpoints:
     {{- toYaml .Values.metrics.podMonitor.podMetricsEndpoints | nindent 4 }}
 {{- end }}

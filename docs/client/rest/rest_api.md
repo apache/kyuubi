@@ -19,6 +19,16 @@
 
 Note that: now the api version is v1 and the base uri is `/api/v1`.
 
+## Authentication
+
+REST API supports the [Basic Authentication](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Authorization#basic_authentication) which relies on `Authorization` header in HTTP request.
+
+```
+Authorization: Basic <credentials>
+```
+
+The `<credentials>` value is the Base64 encoded string of `username:password`. For example, in the case of a user `aladdin` with the password `opensesame`, set the `Authorization` header to `Basic YWxhZGRpbjpvcGVuc2VzYW1l` as Base64 encoded `aladdin:opensesame`.
+
 ## Session Resource
 
 ### GET /sessions

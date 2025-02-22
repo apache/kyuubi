@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -29,9 +26,9 @@ public class BatchRequest {
   private String resource;
   private String className;
   private String name;
-  private Map<String, String> conf = Collections.emptyMap();
-  private List<String> args = Collections.emptyList();
-  private Map<String, String> extraResourcesMap = Collections.emptyMap();
+  private Map<String, String> conf = new HashMap<>(0);
+  private List<String> args = new ArrayList<>(0);
+  private Map<String, String> extraResourcesMap = new HashMap<>(0);
 
   public BatchRequest() {}
 
@@ -91,7 +88,7 @@ public class BatchRequest {
 
   public Map<String, String> getConf() {
     if (null == conf) {
-      return Collections.emptyMap();
+      return new HashMap<>(0);
     }
     return conf;
   }
@@ -102,7 +99,7 @@ public class BatchRequest {
 
   public List<String> getArgs() {
     if (null == args) {
-      return Collections.emptyList();
+      return new ArrayList<>(0);
     }
     return args;
   }

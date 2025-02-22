@@ -41,6 +41,8 @@ class ExecuteStatement(
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
+  override protected def supportProgress: Boolean = true
+
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
     setState(OperationState.PENDING)
@@ -74,6 +76,7 @@ class ExecuteStatement(
           val ke =
             KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {
