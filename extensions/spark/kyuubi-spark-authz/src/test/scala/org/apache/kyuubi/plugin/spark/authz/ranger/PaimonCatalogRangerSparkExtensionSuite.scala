@@ -121,6 +121,26 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Rename Table Name") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val renameTableNameSql2 =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 RENAME TO $namespace1.$table2
+           |""".stripMargin
+      val errorRenameTableSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 RENAME TO $namespace1.$table2
+           |""".stripMargin
+      doAs(someone, sql(renameTableNameSql2))
+//      doAs(admin, sql(renameTableNameSql2))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
