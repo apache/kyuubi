@@ -18,9 +18,10 @@
 package org.apache.kyuubi.plugin.spark.authz.rule.datamasking
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, UnaryNode}
 
 import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
+
 case class DataMaskingStage0Marker(child: LogicalPlan, scan: LogicalPlan)
   extends UnaryNode with WithInternalChild {
 
@@ -32,6 +33,11 @@ case class DataMaskingStage0Marker(child: LogicalPlan, scan: LogicalPlan)
 
   override def output: Seq[Attribute] = child.output
 
-  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = newChild match {
+    case p: Project =>
+      copy(child = newChild, scan = p.child)
+    case _ =>
+      copy(child = newChild)
+  }
 
 }
