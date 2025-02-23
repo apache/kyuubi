@@ -100,6 +100,10 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
   }
 
   def withListener(df: => DataFrame)(callback: DataWritingCommand => Unit): Unit = {
+    runWithListener(df.collect())(callback)
+  }
+
+  def runWithListener(func: => Unit)(callback: DataWritingCommand => Unit): Unit = {
     val listener = new QueryExecutionListener {
       override def onFailure(f: String, qe: QueryExecution, e: Exception): Unit = {}
 
@@ -112,7 +116,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     }
     spark.listenerManager.register(listener)
     try {
-      df.collect()
+      func
       sparkContext.listenerBus.waitUntilEmpty()
     } finally {
       spark.listenerManager.unregister(listener)

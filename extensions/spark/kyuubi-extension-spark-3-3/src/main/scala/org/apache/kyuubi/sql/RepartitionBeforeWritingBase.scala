@@ -128,6 +128,7 @@ trait RepartitionBeforeWriteHelper extends Rule[LogicalPlan] {
   def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = {
     def canInsert(p: LogicalPlan): Boolean = p match {
       case Project(_, child) => canInsert(child)
+      case WithCTE(plan, _) => canInsert(plan)
       case SubqueryAlias(_, child) => canInsert(child)
       case Limit(_, _) => false
       case _: Sort => false
