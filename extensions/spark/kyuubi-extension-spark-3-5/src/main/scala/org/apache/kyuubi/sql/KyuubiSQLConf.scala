@@ -262,4 +262,12 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .booleanConf
       .createWithDefault(true)
+
+  val COLLECT_METRICS_PRETTY_DISPLAY_ENABLED =
+    buildConf("spark.sql.optimizer.collectMetricsPrettyDisplay.enabled")
+      .doc("Display more detailed information such as name and metrics results" +
+        " for CollectMetrics node in the SQL Tab of Spark UI")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
 }
