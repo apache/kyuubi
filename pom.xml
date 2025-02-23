@@ -115,8 +115,9 @@
     <properties>
         <java.version>8</java.version>
         <maven.version>3.9.9</maven.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
         <scala.version>2.12.19</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.12.0</scala-collection-compat.version>
@@ -292,6 +293,8 @@
             --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
+            --add-opens=jdk.unsupported/sun.misc=ALL-UNNAMED
+            --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
             -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
 
@@ -1945,10 +1948,6 @@
             </activation>
             <properties>
                 <java.version>11</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -1959,10 +1958,6 @@
             </activation>
             <properties>
                 <java.version>17</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -1973,9 +1968,6 @@
             </activation>
             <properties>
                 <java.version>21</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
