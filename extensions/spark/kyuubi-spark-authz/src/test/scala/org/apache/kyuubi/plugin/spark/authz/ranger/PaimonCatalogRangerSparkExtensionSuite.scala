@@ -121,6 +121,34 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("ALTER TBLPROPERTIES") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val addTblPropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 SET TBLPROPERTIES(
+           |  'write-buffer-size' = '256 MB'
+           |)
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(addTblPropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(addTblPropertiesSql))
+      val changeTblPropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 SET TBLPROPERTIES(
+           |  'write-buffer-size' = '128 MB'
+           |)
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changeTblPropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changeTblPropertiesSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
