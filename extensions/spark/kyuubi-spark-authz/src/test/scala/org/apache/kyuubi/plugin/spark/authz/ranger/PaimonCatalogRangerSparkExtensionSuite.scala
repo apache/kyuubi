@@ -136,8 +136,10 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         s"""
            |ALTER TABLE $catalogV2.$namespace1.$table1 RENAME TO $namespace1.$table2
            |""".stripMargin
-      doAs(someone, sql(renameTableNameSql2))
-//      doAs(admin, sql(renameTableNameSql2))
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameTableNameSql2))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(renameTableNameSql2))
     }
   }
 
