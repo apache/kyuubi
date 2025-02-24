@@ -121,7 +121,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("changing/adding table properties") {
+  test("ALTER TBLPROPERTIES") {
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"))) {
       val createTable = createTableSql(namespace1, table1)
