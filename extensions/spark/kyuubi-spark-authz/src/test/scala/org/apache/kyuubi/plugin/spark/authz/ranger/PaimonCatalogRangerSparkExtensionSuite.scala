@@ -149,6 +149,27 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("CREATE PARTITIONED Table") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createPartitionTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+           |(id INT, name STRING, dt STRING, hh STRING)
+           | USING paimon
+           | PARTITIONED BY (dt, hh)
+           | OPTIONS (
+           |  'primary-key' = 'id'
+           | )
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(createPartitionTableSql))
+      }(s"does not have [create] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(createPartitionTableSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
