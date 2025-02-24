@@ -121,7 +121,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("Create Partioned Table") {
+  test("CREATE PARTITIONED Table") {
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"))) {
       val createPartitionTableSql =
