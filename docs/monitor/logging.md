@@ -15,7 +15,7 @@
 - limitations under the License.
 -->
 
-# Monitoring Kyuubi - Logging System
+# Logging
 
 Kyuubi uses [Apache Log4j2](https://logging.apache.org/log4j/2.x/) for logging since version v1.5.0. For versions v1.4.1 and below, it uses [Apache Log4j](https://logging.apache.org).
 
@@ -310,9 +310,8 @@ You will both get the final results and the corresponding operation logs telling
 
 ## Further Readings
 
-- [Monitoring Kyuubi - Events System](events.md)
-- [Monitoring Kyuubi - Server Metrics](metrics.md)
-- [Trouble Shooting](trouble_shooting.md)
+- [Metrics](metrics.md)
+- [Troubleshooting](troubleshooting.md)
 - Spark Online Documentation
   - [Monitoring and Instrumentation](https://spark.apache.org/docs/latest/monitoring.html)
 
