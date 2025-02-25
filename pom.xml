@@ -200,7 +200,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.4</spark.version>
+        <spark.version>3.5.5</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -1287,6 +1287,18 @@
             <name>Maven Repository</name>
             <url>https://repo.maven.apache.org/maven2</url>
         </repository>
+
+        <repository>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>staging</id>
+            <name>Spark 3.5.5 Staging Repository</name>
+            <url>https://repository.apache.org/content/repositories/orgapachespark-1476/</url>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -2044,11 +2056,12 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.4</spark.version>
+                <spark.version>3.5.5</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <delta.version>3.3.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.5.5-rc1-bin</spark.archive.mirror>
             </properties>
         </profile>
 
