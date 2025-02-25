@@ -124,7 +124,7 @@ object HiveConnectorUtils extends Logging {
           isSplitable,
           maxSplitBytes,
           partitionValues)
-    }.recover { case _: Exception => // SPARK-43039: 3.5.0 to 3.5.4
+    }.recover { case _: Exception => // SPARK-43039: 3.5.0
       val fileStatusWithMetadataClz = DynClasses.builder()
         .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
         .buildChecked()
