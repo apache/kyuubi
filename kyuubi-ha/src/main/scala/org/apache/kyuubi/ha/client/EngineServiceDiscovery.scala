@@ -19,7 +19,9 @@ package org.apache.kyuubi.ha.client
 
 import scala.util.control.NonFatal
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
 import org.apache.kyuubi.service.FrontendService
 
 /**
@@ -33,6 +35,10 @@ class EngineServiceDiscovery(
   override def stop(): Unit = synchronized {
     if (!isServerLost.get()) {
       discoveryClient.deregisterService()
+      val path = Utils.concatEngineMetricsPath(conf.get(HA_NAMESPACE))
+      if (discoveryClient.pathExists(path)) {
+        discoveryClient.delete(path)
+      }
       conf.get(ENGINE_SHARE_LEVEL) match {
         // For connection level, we should clean up the namespace in zk in case the disk stress.
         case "CONNECTION" =>
