@@ -170,6 +170,43 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Changing Column Position") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+           |(id int, name string, a int, b int)
+           |USING paimon
+           |OPTIONS (
+           |  'primary-key' = 'id'
+           |)
+           |""".stripMargin
+      doAs(admin, sql(createTableSql))
+      val changingColumnPositionToFirst =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN a FIRST
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnPositionToFirst))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnPositionToFirst))
+
+      val changingColumnPositionToAfter =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN a AFTER name
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnPositionToAfter))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnPositionToAfter))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
