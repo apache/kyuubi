@@ -170,6 +170,34 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("REMOVING TBLEPROPERTIES") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTableWithPropertiesSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+           |(id INT, name STRING)
+           | USING paimon
+           | TBLPROPERTIES (
+           |  'write-buffer-size' = '256 MB'
+           | )
+           | OPTIONS (
+           |  'primary-key' = 'id'
+           | )
+           |""".stripMargin
+      doAs(admin, sql(createTableWithPropertiesSql))
+      val removingTblpropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 UNSET TBLPROPERTIES ('write-buffer-size')
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(removingTblpropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(removingTblpropertiesSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
