@@ -170,6 +170,24 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Dropping Columns") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val droppingColumnsSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |DROP COLUMNS (name)
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(droppingColumnsSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(droppingColumnsSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
