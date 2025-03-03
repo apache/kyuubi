@@ -109,6 +109,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyAccessForDefaultBobSelect,
       policyAccessForPermViewAccessOnly,
       policyAccessForTable2AccessOnly,
+      policyAccessForPaimonNsTable1SelectOnly,
       // row filter
       policyFilterForSrcTableKeyLessThan20,
       policyFilterForPermViewKeyLessThan20,
@@ -356,6 +357,18 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     policyItems = List(
       KRangerPolicyItem(
         users = List(table2OnlyUser),
+        accesses = allowTypes(select),
+        delegateAdmin = true)))
+
+  private val policyAccessForPaimonNsTable1SelectOnly = KRangerPolicy(
+    name = "someone_access_table1_in_ns",
+    resources = Map(
+      databaseRes(icebergNamespace, hudiNamespace, paimonNamespace, deltaNamespace),
+      tableRes("table1"),
+      allColumnRes),
+    policyItems = List(
+      KRangerPolicyItem(
+        users = List(table1OnlyUserForNs),
         accesses = allowTypes(select),
         delegateAdmin = true)))
 }

@@ -29,6 +29,7 @@ object RangerTestUsers {
   val defaultTableOwner = "default_table_owner"
   val permViewOnlyUser = "user_perm_view_only"
   val table2OnlyUser = "user_table2_only"
+  val table1OnlyUserForNs = "user_table1_only_for_ns"
 
   // non-authorized users
   val invisibleUser = "i_am_invisible"
