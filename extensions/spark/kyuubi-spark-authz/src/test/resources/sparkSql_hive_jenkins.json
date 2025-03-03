@@ -474,6 +474,42 @@
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
+    "name" : "someone_access_table1_in_ns",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "isAuditEnabled" : true,
+    "resources" : {
+      "column" : {
+        "values" : [ "*" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "database" : {
+        "values" : [ "iceberg_ns", "hudi_ns", "paimon_ns", "delta_ns" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "table1" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "user_table1_only_for_ns" ],
+      "delegateAdmin" : true
+    } ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 10,
+    "guid" : "d3d94468-02a4-3259-b55d-38e6d163e820",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
     "name" : "src_key_less_than_20",
     "policyType" : 2,
     "policyPriority" : 0,
@@ -503,8 +539,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 10,
-    "guid" : "d3d94468-02a4-3259-b55d-38e6d163e820",
+    "id" : 11,
+    "guid" : "6512bd43-d9ca-36e0-ac99-0b0a82652dca",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -537,8 +573,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 11,
-    "guid" : "6512bd43-d9ca-36e0-ac99-0b0a82652dca",
+    "id" : 12,
+    "guid" : "c20ad4d7-6fe9-3759-aa27-a0c99bff6710",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -576,8 +612,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 12,
-    "guid" : "c20ad4d7-6fe9-3759-aa27-a0c99bff6710",
+    "id" : 13,
+    "guid" : "c51ce410-c124-310e-8db5-e4b97fc2af39",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -615,8 +651,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 13,
-    "guid" : "c51ce410-c124-310e-8db5-e4b97fc2af39",
+    "id" : 14,
+    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc56",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -654,8 +690,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 14,
-    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc56",
+    "id" : 15,
+    "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -693,8 +729,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 15,
-    "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
+    "id" : 16,
+    "guid" : "c74d97b0-1eae-357e-84aa-9d5bade97baf",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -732,8 +768,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 16,
-    "guid" : "c74d97b0-1eae-357e-84aa-9d5bade97baf",
+    "id" : 17,
+    "guid" : "70efdf2e-c9b0-3607-9795-c442636b55fb",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
