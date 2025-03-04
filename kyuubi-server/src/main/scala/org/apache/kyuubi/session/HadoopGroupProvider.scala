@@ -22,6 +22,7 @@ import java.util.{Map => JMap}
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.GroupProvider
 
 /**
@@ -29,8 +30,29 @@ import org.apache.kyuubi.plugin.GroupProvider
  * https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/GroupsMapping.html
  */
 class HadoopGroupProvider extends GroupProvider with Logging {
-  override def primaryGroup(user: String, sessionConf: JMap[String, String]): String =
-    groups(user, sessionConf).head
+  override def primaryGroup(user: String, sessionConf: JMap[String, String]): String = {
+    val preferredGroups: Option[Seq[String]] = if (sessionConf != null) {
+      Option(sessionConf.get(KyuubiConf.PREFERRED_GROUPS.key)).map(_.split(",").toSeq)
+    } else {
+      None
+    }
+
+    val userGroups: Array[String] = groups(user, sessionConf)
+
+    val primaryGroup = preferredGroups match {
+      case Some(groups) =>
+        groups.find(userGroups.contains) match {
+          case Some(group) => group
+          case None => userGroups.headOption.getOrElse {
+              throw new NoSuchElementException("No groups available for the user")
+            }
+        }
+      case None => userGroups.headOption.getOrElse {
+          throw new NoSuchElementException("No groups available for the user")
+        }
+    }
+    primaryGroup
+  }
 
   override def groups(user: String, sessionConf: JMap[String, String]): Array[String] =
     UserGroupInformation.createRemoteUser(user).getGroupNames match {
