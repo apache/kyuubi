@@ -15,6 +15,7 @@ import subprocess
 import time
 import unittest
 from decimal import Decimal
+import ssl
 
 import mock
 import pytest
@@ -237,6 +238,26 @@ class TestHive(unittest.TestCase, DBAPITestCase):
         finally:
             subprocess.check_call(['sudo', 'cp', orig_none, des])
             _restart_hs2()
+
+    @pytest.mark.skip(reason="Need a proper setup for SSL context testing")
+    def test_basic_ssl_context(self):
+        """Test that connection works with a custom SSL context that mimics the default behavior."""
+        # Create an SSL context similar to what Connection creates by default
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # Connect using the same parameters as self.connect() but with our custom context
+        with contextlib.closing(hive.connect(
+            host=_HOST,
+            port=10000,
+            configuration={'mapred.job.tracker': 'local'},
+            ssl_context=ssl_context
+        )) as connection:
+            with contextlib.closing(connection.cursor()) as cursor:
+                # Use the same query pattern as other tests
+                cursor.execute('SELECT 1 FROM one_row')
+                self.assertEqual(cursor.fetchall(), [(1,)])
 
 
 def _restart_hs2():

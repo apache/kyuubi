@@ -20,9 +20,8 @@ In this section, you will learn how to monitor Kyuubi with logging, metrics etc.
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 3
     :glob:
 
     logging
     metrics
-    trouble_shooting
+    troubleshooting
