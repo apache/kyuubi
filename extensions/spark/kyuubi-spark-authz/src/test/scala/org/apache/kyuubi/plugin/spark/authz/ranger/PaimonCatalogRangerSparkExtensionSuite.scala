@@ -252,6 +252,35 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Adding Column Position") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val addingColumnPositionFirst =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMN a INT FIRST
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(addingColumnPositionFirst))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(addingColumnPositionFirst))
+
+      val addingColumnPositionAfter =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMN b INT AFTER a
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(addingColumnPositionAfter))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(addingColumnPositionAfter))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
