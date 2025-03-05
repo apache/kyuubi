@@ -177,6 +177,11 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     Seq(tableNameDesc),
     ALTERTABLE_PROPERTIES)
 
+  val UnsetTableProperties = TableCommandSpec(
+    "org.apache.spark.sql.catalyst.plans.logical.UnsetTableProperties",
+    Seq(resolvedTableDesc),
+    ALTERTABLE_PROPERTIES)
+
   val AlterTableUnsetProperties = AlterTableSetProperties.copy(classname =
     "org.apache.spark.sql.execution.command.AlterTableUnsetPropertiesCommand")
 
@@ -699,6 +704,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AlterTableSetLocation,
     AlterTableSetProperties,
     AlterTableUnsetProperties,
+    UnsetTableProperties,
     AlterViewAs,
     AnalyzeColumn,
     AnalyzePartition,
