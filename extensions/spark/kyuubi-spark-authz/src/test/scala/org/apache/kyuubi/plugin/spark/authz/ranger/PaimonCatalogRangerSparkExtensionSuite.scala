@@ -281,6 +281,24 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Rename Table Name") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val renameTableNameSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 RENAME TO $namespace1.$table2
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameTableNameSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(renameTableNameSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
