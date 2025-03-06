@@ -299,6 +299,63 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("INSERT INTO") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val insertSql =
+        s"""
+           |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+           |(1, "a"), (2, "b");
+           |""".stripMargin
+      // Test user have select permission to insert
+      doAs(table1OnlyUserForNs, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1"))
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(insertSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+      // Test user have not any permission to insert
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(insertSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+      doAs(admin, sql(insertSql))
+    }
+  }
+
+  test("INSERT OVERWRITE") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      val createTable1 = createTableSql(namespace1, table1)
+      val createTable2 = createTableSql(namespace1, table2)
+      doAs(admin, sql(createTable1))
+      doAs(admin, sql(createTable2))
+
+      doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+
+      val insertOverwriteSql =
+        s"""
+           |INSERT OVERWRITE $catalogV2.$namespace1.$table2
+           |SELECT * FROM $catalogV2.$namespace1.$table1
+           |""".stripMargin
+      // Test user has select table1 permission to insert
+      doAs(table1OnlyUserForNs, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1"))
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(insertOverwriteSql))
+      }(s"does not have [update] privilege on [$namespace1/$table2]")
+
+      // Test user has not any permission to insert
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(insertOverwriteSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+
+      doAs(admin, sql(insertOverwriteSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
