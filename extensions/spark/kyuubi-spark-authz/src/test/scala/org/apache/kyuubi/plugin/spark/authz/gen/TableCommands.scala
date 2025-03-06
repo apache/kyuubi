@@ -43,6 +43,16 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES, uriDescs = uriDescs)
   }
 
+  val RenameTable = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.RenameTable"
+    val oldTableDesc =
+      TableDesc(
+        "child",
+        classOf[ResolvedTableTableExtractor])
+
+    TableCommandSpec(cmd, Seq(oldTableDesc), ALTERTABLE_RENAME)
+  }
+
   val AlterTableAddColumns = {
     val cmd = "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand"
     val columnDesc = ColumnDesc("colsToAdd", classOf[StructFieldSeqColumnExtractor])
@@ -165,6 +175,11 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   val AlterTableSetProperties = TableCommandSpec(
     "org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand",
     Seq(tableNameDesc),
+    ALTERTABLE_PROPERTIES)
+
+  val UnsetTableProperties = TableCommandSpec(
+    "org.apache.spark.sql.catalyst.plans.logical.UnsetTableProperties",
+    Seq(resolvedTableDesc),
     ALTERTABLE_PROPERTIES)
 
   val AlterTableUnsetProperties = AlterTableSetProperties.copy(classname =
@@ -674,6 +689,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     DropColumns,
     ReplaceColumns,
     RenameColumn,
+    RenameTable,
     AlterTable,
     AlterTableAddColumns,
     AlterTableAddPartition,
@@ -688,6 +704,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AlterTableSetLocation,
     AlterTableSetProperties,
     AlterTableUnsetProperties,
+    UnsetTableProperties,
     AlterViewAs,
     AnalyzeColumn,
     AnalyzePartition,
