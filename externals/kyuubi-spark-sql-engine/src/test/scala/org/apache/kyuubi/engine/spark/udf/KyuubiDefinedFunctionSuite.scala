@@ -56,7 +56,7 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
         | Name | Description | Return Type | Since
         | --- | --- | --- | ---
         |"""
-    KDFRegistry.registeredFunctions.foreach { func =>
+    new KyuubiDF().registeredFunctions.foreach { func =>
       builder += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
 
