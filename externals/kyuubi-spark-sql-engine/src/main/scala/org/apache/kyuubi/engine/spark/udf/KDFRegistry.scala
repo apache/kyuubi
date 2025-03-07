@@ -17,86 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.udf
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.expressions.UserDefinedFunction
-import org.apache.spark.sql.functions.udf
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_URL, KYUUBI_SESSION_USER_KEY}
-
-object KDFRegistry {
-
-  @transient
-  val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
-
-  lazy val appName = SparkEnv.get.conf.get("spark.app.name")
-  lazy val appId = SparkEnv.get.conf.get("spark.app.id")
-
-  val kyuubi_version: KyuubiDefinedFunction = create(
-    "kyuubi_version",
-    udf(() => KYUUBI_VERSION).asNonNullable(),
-    "Return the version of Kyuubi Server",
-    "string",
-    "1.3.0")
-
-  val engine_name: KyuubiDefinedFunction = create(
-    "engine_name",
-    udf(() => appName).asNonNullable(),
-    "Return the spark application name for the associated query engine",
-    "string",
-    "1.3.0")
-
-  val engine_id: KyuubiDefinedFunction = create(
-    "engine_id",
-    udf(() => appId).asNonNullable(),
-    "Return the spark application id for the associated query engine",
-    "string",
-    "1.4.0")
-
-  val system_user: KyuubiDefinedFunction = create(
-    "system_user",
-    udf(() => Utils.currentUser).asNonNullable(),
-    "Return the system user name for the associated query engine",
-    "string",
-    "1.3.0")
-
-  val session_user: KyuubiDefinedFunction = create(
-    "session_user",
-    udf { () =>
-      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_SESSION_USER_KEY))
-        .getOrElse(throw new RuntimeException("Unable to get session_user"))
-    },
-    "Return the session username for the associated query engine",
-    "string",
-    "1.4.0")
-
-  val engine_url: KyuubiDefinedFunction = create(
-    "engine_url",
-    udf { () =>
-      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_ENGINE_URL))
-        .getOrElse(throw new RuntimeException("Unable to get engine url"))
-    },
-    "Return the engine url for the associated query engine",
-    "string",
-    "1.8.0")
-
-  def create(
-      name: String,
-      udf: UserDefinedFunction,
-      description: String,
-      returnType: String,
-      since: String): KyuubiDefinedFunction = {
-    val kdf = KyuubiDefinedFunction(name, udf, description, returnType, since)
-    registeredFunctions += kdf
-    kdf
-  }
-
-  def registerAll(spark: SparkSession): Unit = {
-    for (func <- registeredFunctions) {
-      spark.udf.register(func.name, func.udf)
-    }
-  }
+trait KDFRegistry {
+  def registerAll(spark: SparkSession): Unit
 }
