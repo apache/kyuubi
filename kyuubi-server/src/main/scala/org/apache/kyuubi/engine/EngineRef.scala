@@ -98,7 +98,10 @@ private[kyuubi] class EngineRef(
   }
 
   // user for launching engine
-  private[kyuubi] val appUser: String = if (doAsEnabled) routingUser else Utils.currentUser
+  private[kyuubi] val appUser: String = shareLevel match {
+    case GROUP => if (doAsEnabled) sessionUser else Utils.currentUser
+    case _ => if (doAsEnabled) routingUser else Utils.currentUser
+  }
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
