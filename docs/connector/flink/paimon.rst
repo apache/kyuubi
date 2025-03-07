@@ -13,10 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-`Apache Paimon (Incubating)`_
-=============================
+Apache Paimon (Incubating)
+==========================
 
-Apache Paimon (Incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking, and efficient real-time analytics.
+`Apache Paimon (Incubating)`_ is a streaming data lake platform that supports high-speed data ingestion, change data tracking, and efficient real-time analytics.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
