@@ -429,7 +429,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
 
         val queryWithTimestamp =
           s"""
-             |SELECT id FROM $catalogV2.$namespace1.$table1 TIMESTAMP AS OF '$batchTimeTravelTimestamp'
+             |SELECT id FROM $catalogV2.$namespace1.$table1
+             |TIMESTAMP AS OF '$batchTimeTravelTimestamp'
              |""".stripMargin
         doAs(table1OnlyUserForNs, sql(queryWithTimestamp).collect())
         interceptEndsWith[AccessControlException] {
