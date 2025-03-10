@@ -54,7 +54,6 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectQueryStagePrepRule(DynamicShufflePartitions)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
-    extensions.injectQueryStageOptimizerRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
   }
 }
