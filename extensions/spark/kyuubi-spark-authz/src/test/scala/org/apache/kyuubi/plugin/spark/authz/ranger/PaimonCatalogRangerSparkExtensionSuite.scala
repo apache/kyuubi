@@ -78,7 +78,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createTable))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createTable)
+      doAs(admin, sql(createTable))
     }
   }
 
@@ -370,6 +370,74 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(changingColumnCommentSql))
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(changingColumnCommentSql))
+    }
+  }
+
+  test("Query") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val insertSql =
+        s"""
+           |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+           |(1, "a"), (2, "b");
+           |""".stripMargin
+      doAs(admin, sql(insertSql))
+      val querySql =
+        s"""
+           |SELECT id from $catalogV2.$namespace1.$table1
+           |""".stripMargin
+
+      doAs(table1OnlyUserForNs, sql(querySql).collect())
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(querySql).collect())
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+      doAs(admin, sql(querySql).collect())
+    }
+  }
+
+  test("Batch Time Travel") {
+    // Batch Time Travel requires Spark 3.3+
+    if (isSparkV33OrGreater) {
+      withCleanTmpResources(Seq(
+        (s"$catalogV2.$namespace1.$table1", "table"))) {
+        val createTable = createTableSql(namespace1, table1)
+        doAs(admin, sql(createTable))
+        val insertSql =
+          s"""
+             |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+             |(1, "a"), (2, "b");
+             |""".stripMargin
+        doAs(admin, sql(insertSql))
+
+        val querySnapshotVersionSql =
+          s"""
+             |SELECT id from $catalogV2.$namespace1.$table1 VERSION AS OF 1
+             |""".stripMargin
+        doAs(table1OnlyUserForNs, sql(querySnapshotVersionSql).collect())
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(querySnapshotVersionSql).collect())
+        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+        doAs(admin, sql(querySnapshotVersionSql).collect())
+
+        val batchTimeTravelTimestamp =
+          doAs(
+            admin,
+            sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
+              s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
+
+        val queryWithTimestamp =
+          s"""
+             |SELECT id FROM $catalogV2.$namespace1.$table1
+             |TIMESTAMP AS OF '$batchTimeTravelTimestamp'
+             |""".stripMargin
+        doAs(table1OnlyUserForNs, sql(queryWithTimestamp).collect())
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(queryWithTimestamp).collect())
+        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+        doAs(admin, sql(queryWithTimestamp).collect())
+      }
     }
   }
 
