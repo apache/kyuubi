@@ -223,7 +223,7 @@ The `FLINK_HADOOP_CLASSPATH` is required, too.
 
 For users who are using Hadoop 3.x, Hadoop shaded client is recommended instead of Hadoop vanilla jars.
 For users who are using Hadoop 2.x, `FLINK_HADOOP_CLASSPATH` should be set to hadoop classpath to use Hadoop
-vanilla jars. For users which does not use Hadoop services, e.g. HDFS, YARN at all, Hadoop client jars
+vanilla jars. For users who does not use Hadoop services, e.g. HDFS, YARN at all, Hadoop client jars
 is also required, and recommend to use Hadoop shaded client as Hadoop 3.x's users do.
 
 See [HADOOP-11656](https://issues.apache.org/jira/browse/HADOOP-11656) for details of Hadoop shaded client.
