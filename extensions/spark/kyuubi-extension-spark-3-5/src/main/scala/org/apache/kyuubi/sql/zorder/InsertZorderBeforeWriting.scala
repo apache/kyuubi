@@ -27,13 +27,21 @@ import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
-trait ZorderBuilder {
-  def buildZorder(children: Seq[Expression]): Zorder
-}
-
-trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
+trait InsertZorderBeforeWritingBase extends Rule[LogicalPlan] {
   private val KYUUBI_ZORDER_ENABLED = "kyuubi.zorder.enabled"
   private val KYUUBI_ZORDER_COLS = "kyuubi.zorder.cols"
+
+  def session: SparkSession
+
+  def applyInternal(plan: LogicalPlan): LogicalPlan
+
+  final override def apply(plan: LogicalPlan): LogicalPlan = {
+    if (conf.getConf(KyuubiSQLConf.INSERT_ZORDER_BEFORE_WRITING)) {
+      applyInternal(plan)
+    } else {
+      plan
+    }
+  }
 
   def isZorderEnabled(props: Map[String, String]): Boolean = {
     props.contains(KYUUBI_ZORDER_ENABLED) &&
@@ -71,7 +79,7 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
     val bound = cols.flatMap(col => output.find(attr => resolver(attr.name, col)))
     if (bound.size < cols.size) {
       logWarning(s"target table does not contain all zorder cols: ${cols.mkString(",")}, " +
-        s"please check your table properties ${KYUUBI_ZORDER_COLS}.")
+        s"please check your table properties $KYUUBI_ZORDER_COLS.")
       plan
     } else {
       if (conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED) &&
@@ -90,7 +98,7 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
         } else if (conf.getConf(KyuubiSQLConf.ZORDER_USING_ORIGINAL_ORDERING_ENABLED)) {
           bound.asInstanceOf[Seq[Expression]]
         } else {
-          buildZorder(bound) :: Nil
+          Zorder(bound) :: Nil
         }
       val (global, orderExprs, child) =
         if (conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED)) {
@@ -128,27 +136,14 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
       Sort(order, global, child)
     }
   }
-
-  override def buildZorder(children: Seq[Expression]): Zorder = Zorder(children)
-
-  def session: SparkSession
-  def applyInternal(plan: LogicalPlan): LogicalPlan
-
-  final override def apply(plan: LogicalPlan): LogicalPlan = {
-    if (conf.getConf(KyuubiSQLConf.INSERT_ZORDER_BEFORE_WRITING)) {
-      applyInternal(plan)
-    } else {
-      plan
-    }
-  }
 }
 
 case class InsertZorderBeforeWritingDatasource(session: SparkSession)
-  extends InsertZorderHelper {
+  extends InsertZorderBeforeWritingBase {
+
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
     case insert: InsertIntoHadoopFsRelationCommand
-        if insert.query.resolved &&
-          insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
+        if insert.query.resolved && insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
           isZorderEnabled(insert.catalogTable.get.properties) =>
       val dynamicPartition =
         insert.partitionColumns.filterNot(attr => insert.staticPartitions.contains(attr.name))
@@ -164,11 +159,12 @@ case class InsertZorderBeforeWritingDatasource(session: SparkSession)
 }
 
 case class InsertZorderBeforeWritingHive(session: SparkSession)
-  extends InsertZorderHelper {
+  extends InsertZorderBeforeWritingBase {
+
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
     case insert: InsertIntoHiveTable
-        if insert.query.resolved &&
-          insert.table.bucketSpec.isEmpty && isZorderEnabled(insert.table.properties) =>
+        if insert.query.resolved && insert.table.bucketSpec.isEmpty &&
+          isZorderEnabled(insert.table.properties) =>
       val dynamicPartition = insert.partition.filter(_._2.isEmpty).keys
         .flatMap(name => insert.query.output.find(_.name == name)).toSeq
       val newQuery = insertZorder(insert.table, insert.query, dynamicPartition)
