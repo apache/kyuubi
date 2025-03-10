@@ -48,13 +48,11 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     val targetTableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc)
-    )
+      actionTypeDesc = Some(actionTypeDesc))
     val sourceTableDesc = TableDesc(
       "sourceTable",
       classOf[DataSourceV2RelationTableExtractor],
-      isInput = true
-    )
+      isInput = true)
     TableCommandSpec(cmd, Seq(targetTableDesc, sourceTableDesc))
   }
 
