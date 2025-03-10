@@ -373,8 +373,7 @@ trait ZorderSuiteBase extends KyuubiSparkSQLExtensionTest with ExpressionEvalHel
         val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
         spark.sessionState.analyzer.checkAnalysis(plan)
       }.getMessage
-      // SPARK-36224 (3.2): use Void as the type name of NullType
-      assert(msg.contains("Unsupported z-order type:") && msg.contains("void"))
+      assert(msg.contains("Unsupported z-order type: void"))
     }
 
     checkZorderPlan(Zorder(Seq(Literal(null, NullType))))

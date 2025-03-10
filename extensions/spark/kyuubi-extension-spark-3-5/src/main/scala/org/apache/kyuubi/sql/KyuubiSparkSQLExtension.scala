@@ -20,6 +20,7 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
 
 import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
+import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
 
 // scalastyle:off line.size.limit
 /**
@@ -30,8 +31,16 @@ import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, KyuubiUnsupporte
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
+    // inject zorder parser and related rules
+    extensions.injectParser { case (_, parser) => new SparkKyuubiSparkSQLParser(parser) }
+    extensions.injectResolutionRule(ResolveZorder)
 
+    // Note that:
+    // InsertZorderBeforeWriting* should be applied before RebalanceBeforeWriting*
+    // because we can only apply one of them (i.e. GlobalSort or Rebalance)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
+    extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingHive)
     extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
@@ -41,7 +50,11 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule(ForcedMaxOutputRowsRule)
     extensions.injectPlannerStrategy(MaxScanStrategy)
 
+    extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
+    extensions.injectQueryStagePrepRule(DynamicShufflePartitions)
+    extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
+    extensions.injectQueryStageOptimizerRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
   }
 }

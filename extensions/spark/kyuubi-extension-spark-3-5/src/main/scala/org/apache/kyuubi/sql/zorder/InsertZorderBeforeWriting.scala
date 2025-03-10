@@ -28,7 +28,7 @@ import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
 trait ZorderBuilder {
-  def buildZorder(children: Seq[Expression]): ZorderBase
+  def buildZorder(children: Seq[Expression]): Zorder
 }
 
 trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
@@ -129,7 +129,7 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
     }
   }
 
-  override def buildZorder(children: Seq[Expression]): ZorderBase = Zorder(children)
+  override def buildZorder(children: Seq[Expression]): Zorder = Zorder(children)
 
   def session: SparkSession
   def applyInternal(plan: LogicalPlan): LogicalPlan
