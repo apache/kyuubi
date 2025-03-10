@@ -29,8 +29,9 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 /**
  * A runnable command for zorder, we delegate to real command to execute
  */
-abstract class OptimizeZorderCommandBase extends DataWritingCommand {
-  def catalogTable: CatalogTable
+case class OptimizeZorderCommand(
+    catalogTable: CatalogTable,
+    override val query: LogicalPlan) extends DataWritingCommand {
 
   override def outputColumnNames: Seq[String] = query.output.map(_.name)
 
@@ -63,16 +64,6 @@ abstract class OptimizeZorderCommandBase extends DataWritingCommand {
     DataWritingCommand.propogateMetrics(session.sparkContext, command, metrics)
     Seq.empty
   }
-}
 
-/**
- * A runnable command for zorder, we delegate to real command to execute
- */
-case class OptimizeZorderCommand(
-    catalogTable: CatalogTable,
-    query: LogicalPlan)
-  extends OptimizeZorderCommandBase {
-  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
-    copy(query = newChild)
-  }
+  override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(query = newChild)
 }

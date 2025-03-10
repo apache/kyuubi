@@ -41,7 +41,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     if (_spark.isEmpty) {
       _spark = Option(SparkSession.builder()
         .master("local[1]")
-        .config(sparkConf)
+        .config(sparkConf())
         .enableHiveSupport()
         .getOrCreate())
     }

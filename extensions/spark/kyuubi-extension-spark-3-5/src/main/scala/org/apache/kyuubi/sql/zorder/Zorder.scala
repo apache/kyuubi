@@ -26,7 +26,7 @@ import org.apache.spark.sql.types.{BinaryType, DataType}
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-abstract class ZorderBase extends Expression {
+case class Zorder(children: Seq[Expression]) extends Expression {
   override def foldable: Boolean = children.forall(_.foldable)
   override def nullable: Boolean = false
   override def dataType: DataType = BinaryType
@@ -87,9 +87,7 @@ abstract class ZorderBase extends Expression {
               |""".stripMargin,
       isNull = FalseLiteral)
   }
-}
 
-case class Zorder(children: Seq[Expression]) extends ZorderBase {
-  protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+  override def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
     copy(children = newChildren)
 }

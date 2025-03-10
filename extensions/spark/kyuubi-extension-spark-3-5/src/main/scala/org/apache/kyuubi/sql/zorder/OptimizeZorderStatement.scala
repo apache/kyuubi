@@ -29,6 +29,5 @@ case class OptimizeZorderStatement(
     query: LogicalPlan) extends UnaryNode {
   override def child: LogicalPlan = query
   override def output: Seq[Attribute] = child.output
-  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan =
-    copy(query = newChild)
+  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(query = newChild)
 }

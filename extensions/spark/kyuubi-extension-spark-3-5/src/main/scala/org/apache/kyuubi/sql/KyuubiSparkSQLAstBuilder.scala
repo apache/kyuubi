@@ -179,7 +179,7 @@ trait UnparsedExpressionLogicalPlan extends LogicalPlan {
 
   override def children: Seq[LogicalPlan] = throw new UnsupportedOperationException()
 
-  protected def withNewChildrenInternal(
+  override def withNewChildrenInternal(
       newChildren: IndexedSeq[LogicalPlan]): LogicalPlan =
     throw new UnsupportedOperationException()
 }
