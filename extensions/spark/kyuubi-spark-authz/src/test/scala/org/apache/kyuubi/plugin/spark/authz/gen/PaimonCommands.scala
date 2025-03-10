@@ -42,7 +42,24 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(paimonFileStoreTableDesc))
   }
 
+  val MergeIntoPaimonTable = {
+    val cmd = "org.apache.paimon.spark.commands.MergeIntoPaimonTable"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val targetTableDesc = TableDesc(
+      "targetTable",
+      classOf[DataSourceV2RelationTableExtractor],
+      actionTypeDesc = Some(actionTypeDesc)
+    )
+    val sourceTableDesc = TableDesc(
+      "sourceTable",
+      classOf[DataSourceV2RelationTableExtractor],
+      isInput = true
+    )
+    TableCommandSpec(cmd, Seq(targetTableDesc, sourceTableDesc))
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     UpdatePaimonTable,
-    DeleteFromPaimonTable)
+    DeleteFromPaimonTable,
+    MergeIntoPaimonTable)
 }

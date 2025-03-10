@@ -476,6 +476,38 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Merge Into") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      doAs(admin, sql(createTableSql(namespace1, table2)))
+
+      doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+      doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (2, 'c'), (3, 'd')"))
+
+      val mergeIntoSql =
+        s"""
+           |MERGE INTO $catalogV2.$namespace1.$table2
+           |USING $catalogV2.$namespace1.$table1
+           |ON
+           |$catalogV2.$namespace1.$table2.id = $catalogV2.$namespace1.$table1.id
+           |WHEN MATCHED THEN
+           |  UPDATE SET name = $catalogV2.$namespace1.$table1.name
+           |WHEN NOT MATCHED THEN
+           |  INSERT *
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(mergeIntoSql))
+      }(s"does not have [update] privilege on [$namespace1/$table2]")
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(mergeIntoSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(mergeIntoSql))
+    }
+  }
+
   def createTableSql(namespace: String, table: String): String =
     s"""
        |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace.$table
