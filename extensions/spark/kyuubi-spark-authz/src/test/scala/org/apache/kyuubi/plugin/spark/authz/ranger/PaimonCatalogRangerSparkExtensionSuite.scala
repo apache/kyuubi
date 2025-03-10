@@ -31,6 +31,8 @@ import org.apache.kyuubi.util.AssertionUtils._
 @PaimonTest
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val sqlExtensions: String =
+    "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
   private def isSupportedVersion = isScalaV212
 
   val catalogV2 = "paimon_catalog"
@@ -370,6 +372,39 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(changingColumnCommentSql))
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(changingColumnCommentSql))
+    }
+  }
+
+  test("UPDATE & DELETE") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+
+      val updateSql =
+        s"""
+           |UPDATE $catalogV2.$namespace1.$table1 SET name='c' where id=1
+           |""".stripMargin
+      val deleteSql =
+        s"""
+           |DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(updateSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(updateSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(updateSql))
+
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(deleteSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(deleteSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(deleteSql))
     }
   }
 
