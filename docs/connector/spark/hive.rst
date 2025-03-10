@@ -64,7 +64,7 @@ To activate functionality of Kyuubi Spark Hive connector, we can set the followi
    spark.sql.catalog.hive_catalog.<other.hadoop.conf>  <value>
 
 Hive Connector Operations
-------------------
+-------------------------
 
 Taking ``CREATE NAMESPACE`` as a example,
 

@@ -14,7 +14,7 @@
    limitations under the License.
 
 Configure Kyuubi to use Custom EventHandler
-=======================================
+===========================================
 
 Kyuubi provide event processing mechanism, it can help us to record some events. Beside the builtin ``JsonLoggingEventHandler``,
 Kyuubi supports custom event handler. It is usually used to write Kyuubi events to some external systems.
