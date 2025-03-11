@@ -13,10 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-`Apache Paimon (Incubating)`_
-==========
+Apache Paimon (Incubating)
+==========================
 
-Apache Paimon(incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
+`Apache Paimon (Incubating)`_ is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
@@ -28,7 +28,7 @@ convenient, easy to understand, and easy to expand than directly using
 spark to manipulate Apache Paimon (Incubating).
 
 Apache Paimon (Incubating) Integration
--------------------
+--------------------------------------
 
 To enable the integration of Kyuubi Spark SQL engine and Apache Paimon (Incubating) through
 Spark DataSource V2 API, you need to:
@@ -68,7 +68,7 @@ To activate functionality of Apache Paimon (Incubating), we can set the followin
    spark.sql.catalog.paimon.warehouse=file:/tmp/paimon
 
 Apache Paimon (Incubating) Operations
-------------------
+-------------------------------------
 
 
 Taking ``CREATE NAMESPACE`` as a example,

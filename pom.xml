@@ -177,7 +177,7 @@
         <kyuubi-relocated.version>0.4.1</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.24.2</log4j.version>
+        <log4j.version>2.24.3</log4j.version>
         <mysql.jdbc.version>8.4.0</mysql.jdbc.version>
         <mockito.version>4.11.0</mockito.version>
         <netty.version>4.1.108.Final</netty.version>
@@ -200,7 +200,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.4</spark.version>
+        <spark.version>3.5.5</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -246,7 +246,7 @@
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.17</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.19</maven.plugin.silencer.version>
         <!-- MSOURCES-121 breaks creating source artifacts for shaded modules,
              we should skip upgrading until MSOURCES-141 gets fixed. -->
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
@@ -1932,7 +1932,7 @@
                 <java.version>8</java.version>
                 <!--
                   Iceberg drops support for Java 8 since 1.7.0.
-                  And it may have compatible issue with Spark 3.5.4, see Iceberg #11731
+                  And it may have compatible issue with Spark 3.5.4+, see Iceberg #11731
                   -->
                 <iceberg.version>1.6.1</iceberg.version>
             </properties>
@@ -1997,7 +1997,7 @@
             <id>scala-2.13</id>
             <properties>
                 <scala.binary.version>2.13</scala.binary.version>
-                <scala.version>2.13.14</scala.version>
+                <scala.version>2.13.16</scala.version>
                 <spark.archive.scala.suffix>-scala${scala.binary.version}</spark.archive.scala.suffix>
             </properties>
         </profile>
@@ -2044,7 +2044,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.4</spark.version>
+                <spark.version>3.5.5</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <delta.version>3.3.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>

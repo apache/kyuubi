@@ -159,7 +159,8 @@ class Connection(object):
         password=None,
         check_hostname=None,
         ssl_cert=None,
-        thrift_transport=None
+        thrift_transport=None,
+        ssl_context=None
     ):
         """Connect to HiveServer2
 
@@ -172,19 +173,20 @@ class Connection(object):
         :param password: Use with auth='LDAP' or auth='CUSTOM' only
         :param thrift_transport: A ``TTransportBase`` for custom advanced usage.
             Incompatible with host, port, auth, kerberos_service_name, and password.
-
+        :param ssl_context: A custom SSL context to use for HTTPS connections. If provided,
+            this overrides check_hostname and ssl_cert parameters.
         The way to support LDAP and GSSAPI is originated from cloudera/Impyla:
         https://github.com/cloudera/impyla/blob/255b07ed973d47a3395214ed92d35ec0615ebf62
         /impala/_thrift_api.py#L152-L160
         """
         if scheme in ("https", "http") and thrift_transport is None:
             port = port or 1000
-            ssl_context = None
             if scheme == "https":
-                ssl_context = create_default_context()
-                ssl_context.check_hostname = check_hostname == "true"
-                ssl_cert = ssl_cert or "none"
-                ssl_context.verify_mode = ssl_cert_parameter_map.get(ssl_cert, CERT_NONE)
+                if ssl_context is None:
+                    ssl_context = create_default_context()
+                    ssl_context.check_hostname = check_hostname == "true"
+                    ssl_cert = ssl_cert or "none"
+                    ssl_context.verify_mode = ssl_cert_parameter_map.get(ssl_cert, CERT_NONE)
             thrift_transport = thrift.transport.THttpClient.THttpClient(
                 uri_or_host="{scheme}://{host}:{port}/cliservice/".format(
                     scheme=scheme, host=host, port=port

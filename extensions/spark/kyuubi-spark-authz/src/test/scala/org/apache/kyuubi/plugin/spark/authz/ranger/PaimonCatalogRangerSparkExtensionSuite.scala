@@ -78,7 +78,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       interceptEndsWith[AccessControlException] {
         doAs(someone, sql(createTable))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
-      doAs(admin, createTable)
+      doAs(admin, sql(createTable))
     }
   }
 
@@ -167,6 +167,277 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(createPartitionTableSql))
       }(s"does not have [create] privilege on [$namespace1/$table1]")
       doAs(admin, sql(createPartitionTableSql))
+    }
+  }
+
+  test("Rename Column Name") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val renameColumnSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |RENAME COLUMN name TO name1
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameColumnSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(renameColumnSql))
+    }
+  }
+
+  test("Changing Column Position") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTableSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+           |(id int, name string, a int, b int)
+           |USING paimon
+           |OPTIONS (
+           |  'primary-key' = 'id'
+           |)
+           |""".stripMargin
+      doAs(admin, sql(createTableSql))
+      val changingColumnPositionToFirst =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN a FIRST
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnPositionToFirst))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnPositionToFirst))
+
+      val changingColumnPositionToAfter =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN a AFTER name
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnPositionToAfter))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnPositionToAfter))
+    }
+  }
+
+  test("REMOVING TBLEPROPERTIES") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTableWithPropertiesSql =
+        s"""
+           |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+           |(id INT, name STRING)
+           | USING paimon
+           | TBLPROPERTIES (
+           |  'write-buffer-size' = '256 MB'
+           | )
+           | OPTIONS (
+           |  'primary-key' = 'id'
+           | )
+           |""".stripMargin
+      doAs(admin, sql(createTableWithPropertiesSql))
+      val removingTblpropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 UNSET TBLPROPERTIES ('write-buffer-size')
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(removingTblpropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(removingTblpropertiesSql))
+    }
+  }
+
+  test("Adding Column Position") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val addingColumnPositionFirst =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMN a INT FIRST
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(addingColumnPositionFirst))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(addingColumnPositionFirst))
+
+      val addingColumnPositionAfter =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMN b INT AFTER a
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(addingColumnPositionAfter))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(addingColumnPositionAfter))
+    }
+  }
+
+  test("Rename Table Name") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val renameTableNameSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1 RENAME TO $namespace1.$table2
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameTableNameSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(renameTableNameSql))
+    }
+  }
+
+  test("INSERT INTO") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val insertSql =
+        s"""
+           |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+           |(1, "a"), (2, "b");
+           |""".stripMargin
+      // Test user have select permission to insert
+      doAs(table1OnlyUserForNs, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1"))
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(insertSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+      // Test user have not any permission to insert
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(insertSql))
+      }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+      doAs(admin, sql(insertSql))
+    }
+  }
+
+  test("INSERT OVERWRITE") {
+    val table2 = "table2"
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"),
+      (s"$catalogV2.$namespace1.$table2", "table"))) {
+      val createTable1 = createTableSql(namespace1, table1)
+      val createTable2 = createTableSql(namespace1, table2)
+      doAs(admin, sql(createTable1))
+      doAs(admin, sql(createTable2))
+
+      doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+
+      val insertOverwriteSql =
+        s"""
+           |INSERT OVERWRITE $catalogV2.$namespace1.$table2
+           |SELECT * FROM $catalogV2.$namespace1.$table1
+           |""".stripMargin
+      // Test user has select table1 permission to insert
+      doAs(table1OnlyUserForNs, sql(s"SELECT * FROM $catalogV2.$namespace1.$table1"))
+      interceptEndsWith[AccessControlException] {
+        doAs(table1OnlyUserForNs, sql(insertOverwriteSql))
+      }(s"does not have [update] privilege on [$namespace1/$table2]")
+
+      // Test user has not any permission to insert
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(insertOverwriteSql))
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+
+      doAs(admin, sql(insertOverwriteSql))
+    }
+  }
+
+  test("Changing Column Comment") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val changingColumnCommentSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN name COMMENT "test comment"
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnCommentSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnCommentSql))
+    }
+  }
+
+  test("Query") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val insertSql =
+        s"""
+           |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+           |(1, "a"), (2, "b");
+           |""".stripMargin
+      doAs(admin, sql(insertSql))
+      val querySql =
+        s"""
+           |SELECT id from $catalogV2.$namespace1.$table1
+           |""".stripMargin
+
+      doAs(table1OnlyUserForNs, sql(querySql).collect())
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(querySql).collect())
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+      doAs(admin, sql(querySql).collect())
+    }
+  }
+
+  test("Batch Time Travel") {
+    // Batch Time Travel requires Spark 3.3+
+    if (isSparkV33OrGreater) {
+      withCleanTmpResources(Seq(
+        (s"$catalogV2.$namespace1.$table1", "table"))) {
+        val createTable = createTableSql(namespace1, table1)
+        doAs(admin, sql(createTable))
+        val insertSql =
+          s"""
+             |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+             |(1, "a"), (2, "b");
+             |""".stripMargin
+        doAs(admin, sql(insertSql))
+
+        val querySnapshotVersionSql =
+          s"""
+             |SELECT id from $catalogV2.$namespace1.$table1 VERSION AS OF 1
+             |""".stripMargin
+        doAs(table1OnlyUserForNs, sql(querySnapshotVersionSql).collect())
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(querySnapshotVersionSql).collect())
+        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+        doAs(admin, sql(querySnapshotVersionSql).collect())
+
+        val batchTimeTravelTimestamp =
+          doAs(
+            admin,
+            sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
+              s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
+
+        val queryWithTimestamp =
+          s"""
+             |SELECT id FROM $catalogV2.$namespace1.$table1
+             |TIMESTAMP AS OF '$batchTimeTravelTimestamp'
+             |""".stripMargin
+        doAs(table1OnlyUserForNs, sql(queryWithTimestamp).collect())
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(queryWithTimestamp).collect())
+        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+        doAs(admin, sql(queryWithTimestamp).collect())
+      }
     }
   }
 
