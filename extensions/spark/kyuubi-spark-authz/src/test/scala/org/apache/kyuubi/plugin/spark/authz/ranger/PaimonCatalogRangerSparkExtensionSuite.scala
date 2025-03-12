@@ -32,6 +32,9 @@ import org.apache.kyuubi.util.AssertionUtils._
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   private def isSupportedVersion = isScalaV212
+  override protected val sqlExtensions: String =
+    if (isSupportedVersion) "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
+    else ""
 
   val catalogV2 = "paimon_catalog"
   val namespace1 = "paimon_ns"
@@ -456,6 +459,75 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(someone, sql(droppingColumnsSql))
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(droppingColumnsSql))
+    }
+  }
+
+  test("UPDATE & DELETE FROM") {
+    if (isSupportedVersion) {
+      withCleanTmpResources(Seq(
+        (s"$catalogV2.$namespace1.$table1", "table"))) {
+        val createTable = createTableSql(namespace1, table1)
+        doAs(admin, sql(createTable))
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+
+        val updateSql =
+          s"""
+             |UPDATE $catalogV2.$namespace1.$table1 SET name='c' where id=1
+             |""".stripMargin
+        val deleteSql =
+          s"""
+             |DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=1
+             |""".stripMargin
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(updateSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(updateSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(updateSql))
+
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(deleteSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(deleteSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(deleteSql))
+      }
+    }
+  }
+
+  test("MERGE INTO") {
+    if (isSupportedVersion) {
+      val table2 = "table2"
+      withCleanTmpResources(Seq(
+        (s"$catalogV2.$namespace1.$table1", "table"),
+        (s"$catalogV2.$namespace1.$table2", "table"))) {
+        doAs(admin, sql(createTableSql(namespace1, table1)))
+        doAs(admin, sql(createTableSql(namespace1, table2)))
+
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (2, 'c'), (3, 'd')"))
+
+        val mergeIntoSql =
+          s"""
+             |MERGE INTO $catalogV2.$namespace1.$table2
+             |USING $catalogV2.$namespace1.$table1
+             |ON
+             |$catalogV2.$namespace1.$table2.id = $catalogV2.$namespace1.$table1.id
+             |WHEN MATCHED THEN
+             |  UPDATE SET name = $catalogV2.$namespace1.$table1.name
+             |WHEN NOT MATCHED THEN
+             |  INSERT *
+             |""".stripMargin
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(mergeIntoSql))
+        }(s"does not have [update] privilege on [$namespace1/$table2]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(mergeIntoSql))
+        }(s"does not have [select] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(mergeIntoSql))
+      }
     }
   }
 
