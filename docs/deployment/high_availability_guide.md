@@ -93,10 +93,10 @@ Kyuubi supports hot upgrade one of server in a HA cluster which is transparent t
   You can just start the new Kyuubi Server, and then run cmd using `bin/kyuubi-ctl`:
 
   ```shell
-  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${PORT_FPR_OLD_KYUUBI_SERVER}"
+  ./bin/kyuubi-ctl delete server --host "kyuubi.host" --port "${PORT_FOR_OLD_KYUUBI_SERVER}"
   ```
 
-  The `${PORT_FPR_OLD_KYUUBI_SERVER}` can be found by:
+  The `${PORT_FOR_OLD_KYUUBI_SERVER}` can be found by:
 
   ```shell
   grep "server.KyuubiThriftBinaryFrontendService: Starting and exposing JDBC connection at" logs/kyuubi-*.out
