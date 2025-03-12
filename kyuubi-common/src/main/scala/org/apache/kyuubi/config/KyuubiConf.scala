@@ -2364,12 +2364,29 @@ object KyuubiConf {
         "a session. <ul>" +
         "<li>RANDOM - Randomly use the engine in the pool</li>" +
         "<li>POLLING - Polling use the engine in the pool</li>" +
+        "<li>ADAPTIVE - ADAPTIVE use the engine in the pool</li>" +
         "</ul>")
       .version("1.7.0")
       .stringConf
       .transformToUpperCase
-      .checkValues(Set("RANDOM", "POLLING"))
+      .checkValues(Set("RANDOM", "POLLING", "ADAPTIVE"))
       .createWithDefault("RANDOM")
+
+  val ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.pool.adaptive.session.threshold")
+      .doc("The threshold of a engine open session count for adaptive engine pool select policy.")
+      .version("1.10.0")
+      .intConf
+      .checkValue(_ >= 1, "must be positive number")
+      .createWithDefault(10)
+
+  val ENGINE_REPORT_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.report.interval")
+      .doc("The interval for the engine to report metrics when using the ADAPTIVE select policy.")
+      .version("1.10.0")
+      .timeConf
+      .checkValue(_ >= Duration.ofSeconds(1).toMillis, "Minimum 1 seconds")
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.initialize.sql")
