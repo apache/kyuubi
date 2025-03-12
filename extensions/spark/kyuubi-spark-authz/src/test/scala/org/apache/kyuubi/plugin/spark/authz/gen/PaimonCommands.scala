@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.gen
 
+import org.apache.kyuubi.plugin.spark.authz.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
@@ -56,8 +57,14 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(targetTableDesc, sourceTableDesc))
   }
 
+  val PaimonCallCommand = {
+    val cmd = "org.apache.paimon.spark.catalyst.plans.logical.PaimonCallCommand"
+    val td = TableDesc("args", classOf[ExpressionSeqTableExtractor], comment = "Paimon")
+    TableCommandSpec(cmd, Seq(td), opType = OperationType.ALTERTABLE_PROPERTIES)
+  }
   override def specs: Seq[TableCommandSpec] = Seq(
     UpdatePaimonTable,
     DeleteFromPaimonTable,
-    MergeIntoPaimonTable)
+    MergeIntoPaimonTable,
+    PaimonCallCommand)
 }
