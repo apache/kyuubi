@@ -21,7 +21,6 @@ import java.util.regex.Pattern
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.types.StructField
 import org.apache.kyuubi.Logging
