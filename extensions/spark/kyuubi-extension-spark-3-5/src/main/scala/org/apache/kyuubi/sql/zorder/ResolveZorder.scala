@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.zorder
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeSet
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -29,11 +29,7 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 /**
  * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
  */
-abstract class ResolveZorderBase extends Rule[LogicalPlan] {
-  def session: SparkSession
-  def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable,
-      query: LogicalPlan): OptimizeZorderCommandBase
+case class ResolveZorder(session: SparkSession) extends Rule[LogicalPlan] {
 
   protected def checkQueryAllowed(query: LogicalPlan): Unit = query foreach {
     case Filter(condition, SubqueryAlias(_, tableRelation: HiveTableRelation)) =>
@@ -61,19 +57,8 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
       checkQueryAllowed(statement.query)
       val tableIdentifier = getTableIdentifier(statement.tableIdentifier)
       val catalogTable = session.sessionState.catalog.getTableMetadata(tableIdentifier)
-      buildOptimizeZorderCommand(catalogTable, statement.query)
+      OptimizeZorderCommand(catalogTable, statement.query)
 
     case _ => plan
-  }
-}
-
-/**
- * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
- */
-case class ResolveZorder(session: SparkSession) extends ResolveZorderBase {
-  override def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable,
-      query: LogicalPlan): OptimizeZorderCommandBase = {
-    OptimizeZorderCommand(catalogTable, query)
   }
 }
