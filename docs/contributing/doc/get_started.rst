@@ -75,9 +75,6 @@ Editing And Testing
 Make the necessary changes to the documentation files using a text editor.
 `Build and verify`_ the changes you have made to see if they look fine.
 
-.. note::
-   :class: dropdown, toggle
-
 Create A Pull Request
 ~~~~~~~~~~~~~~~~~~~~~
 
