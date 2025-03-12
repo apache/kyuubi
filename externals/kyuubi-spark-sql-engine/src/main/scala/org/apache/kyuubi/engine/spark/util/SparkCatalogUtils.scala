@@ -24,7 +24,6 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.types.StructField
-
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.schema.SchemaHelper
 import org.apache.kyuubi.util.reflect.ReflectUtils._
@@ -89,14 +88,12 @@ object SparkCatalogUtils extends Logging {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    if (catalogName == SparkCatalogUtils.SESSION_CATALOG) {
-      (spark.sessionState.catalog.listDatabases(schemaPattern) ++
-        getGlobalTempViewManager(spark, schemaPattern))
-        .map(Row(_, SparkCatalogUtils.SESSION_CATALOG))
-    } else {
-      val catalog = getCatalog(spark, catalogName)
-      getSchemasWithPattern(catalog, schemaPattern).map(Row(_, catalog.name))
-    }
+    val catalog = getCatalog(spark, catalogName)
+    val showSql = s"SHOW DATABASES IN ${catalog.name} LIKE '${schemaPattern}'"
+    val databaseResult = spark.sql(showSql)
+    val databases = databaseResult.collect().toSeq
+    val globalTempViewsAsRows = getGlobalTempViewManager(spark, schemaPattern).map(Row(_))
+    (databases ++ globalTempViewsAsRows).map(row => Row(row(0), catalog.name))
   }
 
   private def getGlobalTempViewManager(
@@ -157,71 +154,63 @@ object SparkCatalogUtils extends Logging {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      tableTypes: Set[String],
       ignoreTableProperties: Boolean = false): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
-    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
-    catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG =>
-        val sessionCatalog = spark.sessionState.catalog
-        val databases = sessionCatalog.listDatabases(schemaPattern)
-
-        def isMatchedTableType(tableTypes: Set[String], tableType: String): Boolean = {
-          val typ = if (tableType.equalsIgnoreCase(VIEW)) VIEW else TABLE
-          tableTypes.exists(typ.equalsIgnoreCase)
-        }
-
-        databases.flatMap { db =>
-          val identifiers =
-            sessionCatalog.listTables(db, tablePattern, includeLocalTempViews = false)
-          if (ignoreTableProperties) {
-            identifiers.map { ti: TableIdentifier =>
+    val databases = getSchemas(spark, catalog.name, schemaPattern)
+    databases.flatMap {
+      row =>
+        try {
+          val database = row.getString(0)
+          val catalogRes = row.getString(1)
+          val showSql = s"SHOW TABLES IN ${catalogRes}.${database} LIKE '${tablePattern}'"
+          val tables = spark.sql(showSql).collect().toSeq
+          tables.map { row =>
+            val table = row.getString(1)
+            if (ignoreTableProperties) {
               Row(
-                catalogName,
-                ti.database.getOrElse("default"),
-                ti.table,
-                TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
+                catalogRes,
+                database,
+                table,
+                TABLE,
                 "",
                 null,
                 null,
                 null,
                 null,
                 null)
-            }
-          } else {
-            sessionCatalog.getTablesByName(identifiers)
-              .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
-                val typ = if (t.tableType.name == VIEW) VIEW else TABLE
-                Row(
-                  catalogName,
-                  t.database,
-                  t.identifier.table,
-                  typ,
-                  t.comment.getOrElse(""),
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
+            } else {
+              val descSql = s"DESC EXTENDED ${catalogRes}.${database}.${table}"
+              val tblInfo = spark.sql(descSql).collect
+              var tblType = ""
+              var comment = ""
+              tblInfo.foreach { row =>
+                val elements = row.toSeq
+                if (elements.length >= 2 && elements(0).toString.equalsIgnoreCase("type")) {
+                  tblType = elements(1).toString
+                }
+                if (elements.length >= 2 && elements(0).toString.equalsIgnoreCase("comment")) {
+                  comment = elements(1).toString
+                }
               }
+              val typ = if (tblType.equalsIgnoreCase(VIEW)) VIEW else TABLE
+              Row(
+                catalogRes,
+                database,
+                table,
+                typ,
+                comment,
+                null,
+                null,
+                null,
+                null,
+                null)
+            }
           }
+        } catch {
+          case e: Exception =>
+            error(s"Failed to get tables from catalog $catalogName", e)
+            Seq.empty[Row]
         }
-      case tc: TableCatalog =>
-        val tp = tablePattern.r.pattern
-        val identifiers = namespaces.flatMap { ns =>
-          tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
-        }
-        identifiers.map { ident =>
-          // TODO: restore view type for session catalog
-          val comment = if (ignoreTableProperties) ""
-          else { // load table is a time consuming operation
-            tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
-          }
-          val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
-          val tableName = quoteIfNeeded(ident.name())
-          Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
-        }
-      case _ => Seq.empty[Row]
     }
   }
 
@@ -261,29 +250,6 @@ object SparkCatalogUtils extends Logging {
               }
           }
         }
-    }
-  }
-
-  def getTempViews(
-      spark: SparkSession,
-      catalogName: String,
-      schemaPattern: String,
-      tablePattern: String): Seq[Row] = {
-    val views = getViews(spark, schemaPattern, tablePattern)
-    views.map { ident =>
-      Row(catalogName, ident.database.orNull, ident.table, VIEW, "", null, null, null, null, null)
-    }
-  }
-
-  private def getViews(
-      spark: SparkSession,
-      schemaPattern: String,
-      tablePattern: String): Seq[TableIdentifier] = {
-    val db = getGlobalTempViewManager(spark, schemaPattern)
-    if (db.nonEmpty) {
-      spark.sessionState.catalog.listTables(db.head, tablePattern)
-    } else {
-      spark.sessionState.catalog.listLocalTempViews(tablePattern)
     }
   }
 
