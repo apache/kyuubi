@@ -123,14 +123,6 @@ object KyuubiSQLConf {
       .bytesConf(ByteUnit.BYTE)
       .createOptional
 
-  val WATCHDOG_FORCED_MAXOUTPUTROWS =
-    buildConf("spark.sql.watchdog.forcedMaxOutputRows")
-      .doc("Add ForcedMaxOutputRows rule to avoid huge output rows of non-limit query " +
-        "unexpectedly, it's optional that works with defined")
-      .version("1.4.0")
-      .intConf
-      .createOptional
-
   val DROP_IGNORE_NONEXISTENT =
     buildConf("spark.sql.optimizer.dropIgnoreNonExistent")
       .doc("Do not report an error if DROP DATABASE/TABLE/VIEW/FUNCTION/PARTITION specifies " +
