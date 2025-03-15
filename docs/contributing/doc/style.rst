@@ -130,7 +130,7 @@ third-party references, depending on the nature of your question:
 .. References
 
 .. _ASF 3RD PARTY LICENSE POLICY: https://www.apache.org/legal/resolved.html#asf-3rd-party-license-policy
-.. _directive rubric :https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-rubric
+.. _directive rubric: https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-rubric
 .. _ReStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Markdown: https://en.wikipedia.org/wiki/Markdown
 .. _draw.io: https://www.diagrams.net/
