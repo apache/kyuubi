@@ -49,7 +49,7 @@ libraryDependencies += "org.apache.hive" % "hive-jdbc" % "2.3.8"
 
 - **gradle**
 
-```gradle
+```groovy
 implementation group: 'org.apache.hive', name: 'hive-jdbc', version: '2.3.8'
 ```
 
