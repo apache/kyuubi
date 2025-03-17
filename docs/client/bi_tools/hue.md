@@ -27,7 +27,7 @@
 
 [Get the server Started](../../quick_start/quick_start.html) first before your try Hue with Kyuubi.
 
-```bash
+```
 Welcome to
   __  __                           __
  /\ \/\ \                         /\ \      __

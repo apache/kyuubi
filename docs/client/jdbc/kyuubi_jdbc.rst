@@ -108,7 +108,7 @@ Basic Connection URL format
 Use the connection URL to supply connection information to the kyuubi server or cluster that you are
 accessing. The following is the format of the connection URL for the Kyuubi Hive JDBC Driver
 
-.. code-block:: jdbc
+.. code-block::
 
    jdbc:subprotocol://host:port[/catalog]/[schema];<clientProperties;><[#|?]sessionProperties>
 
@@ -131,7 +131,7 @@ Connection URL over HTTP
 
 .. versionadded:: 1.6.0
 
-.. code-block:: jdbc
+.. code-block::
 
    jdbc:subprotocol://host:port/schema;transportMode=http;httpPath=<http_endpoint>
 
@@ -140,7 +140,7 @@ Connection URL over HTTP
 Connection URL over Service Discovery
 *************************************
 
-.. code-block:: jdbc
+.. code-block::
 
    jdbc:subprotocol://<zookeeper quorum>/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi
 
@@ -160,7 +160,7 @@ to server by default.
 If you need to connect to HiveServer2 before 2.3.0,
 please set client property `clientProtocolVersion` to a lower number.
 
-.. code-block:: jdbc
+.. code-block::
 
    jdbc:subprotocol://host:port[/catalog]/[schema];clientProtocolVersion=9;
 
