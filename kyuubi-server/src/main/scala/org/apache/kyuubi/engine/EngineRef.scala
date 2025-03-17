@@ -30,7 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.EngineType._
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, SERVER_LOCAL, ShareLevel}
 import org.apache.kyuubi.engine.chat.ChatProcessBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
@@ -43,6 +43,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, 
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
+import org.apache.kyuubi.util.JavaUtils
 
 /**
  * The description and functionality of an engine at server side
@@ -92,7 +93,7 @@ private[kyuubi] class EngineRef(
 
   // user for routing session to the engine
   private[kyuubi] val routingUser: String = shareLevel match {
-    case SERVER => Utils.currentUser
+    case SERVER | SERVER_LOCAL => Utils.currentUser
     case GROUP => groupProvider.primaryGroup(sessionUser, conf.getAll.asJava)
     case _ => sessionUser
   }
@@ -101,30 +102,42 @@ private[kyuubi] class EngineRef(
   private[kyuubi] val appUser: String = if (doAsEnabled) routingUser else Utils.currentUser
 
   @VisibleForTesting
-  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    case subdomain if clientPoolSize > 0 && (subdomain.isEmpty || enginePoolIgnoreSubdomain) =>
-      val poolSize = math.min(clientPoolSize, poolThreshold)
-      if (poolSize < clientPoolSize) {
-        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
-          s"system threshold $poolThreshold")
+  private[kyuubi] val subdomain: String = shareLevel match {
+    case SERVER_LOCAL =>
+      val localHostAddr = JavaUtils.findLocalInetAddress.getHostAddress
+      if (localHostAddr != null && localHostAddr.nonEmpty) {
+        s"${JavaUtils.findLocalInetAddress.getHostAddress}"
+      } else {
+        throw KyuubiSQLException(
+          s"Local host address can not be empty if ShareLevel set to SERVER_LOCAL")
       }
-      val seqNum = enginePoolSelectPolicy match {
-        case "POLLING" =>
-          val snPath =
-            DiscoveryPaths.makePath(
-              s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seqNum",
-              routingUser,
-              clientPoolName)
-          DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
-            client.getAndIncrement(snPath)
+    case _ =>
+      conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+        case subdomain if clientPoolSize > 0 && (subdomain.isEmpty || enginePoolIgnoreSubdomain) =>
+          val poolSize = math.min(clientPoolSize, poolThreshold)
+          if (poolSize < clientPoolSize) {
+            warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
+              s"system threshold $poolThreshold")
           }
-        case "RANDOM" =>
-          Random.nextInt(poolSize)
-      }
-      s"$clientPoolName-${seqNum % poolSize}"
-    case Some(_subdomain) => _subdomain
-    case _ => "default" // [KYUUBI #1293]
+          val seqNum = enginePoolSelectPolicy match {
+            case "POLLING" =>
+              val snPath =
+                DiscoveryPaths.makePath(
+                  s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seqNum",
+                  routingUser,
+                  clientPoolName)
+              DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+                client.getAndIncrement(snPath)
+              }
+            case "RANDOM" =>
+              Random.nextInt(poolSize)
+          }
+          s"$clientPoolName-${seqNum % poolSize}"
+        case Some(_subdomain) => _subdomain
+        case _ => "default" // [KYUUBI #1293]
+    }
   }
+
 
   /**
    * The default engine name, used as default `spark.app.name` if not set
@@ -147,6 +160,8 @@ private[kyuubi] class EngineRef(
    *   /`serverSpace_version_USER_engineType`/`user`[/`subdomain`]
    * For `GROUP` share level:
    *   /`serverSpace_version_GROUP_engineType`/`primary group name`[/`subdomain`]
+   * For `SERVER_LOCAL` share level:
+   *   /`serverSpace_version_SERVER_LOCAL_engineType`/`kyuubi server user`/`hostAddress`
    * For `SERVER` share level:
    *   /`serverSpace_version_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
