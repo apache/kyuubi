@@ -255,6 +255,25 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Add New Column") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val alterTableSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMNS (
+           |  city STRING
+           |)
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(alterTableSql))
+    }
+  }
+
   test("Adding Column Position") {
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"))) {
