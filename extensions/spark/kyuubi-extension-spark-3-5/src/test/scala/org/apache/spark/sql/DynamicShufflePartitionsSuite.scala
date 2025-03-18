@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.{CommandResultExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, ShuffleQueryStageExec}
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeExec}
@@ -51,6 +52,15 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
       sql("ANALYZE TABLE table2 COMPUTE STATISTICS")
 
       val initialPartitionNum: Int = 2
+      val advisoryPartitionSizeInBytes: Long = 500
+
+      val t1Size = spark.sessionState.catalog.getTableMetadata(TableIdentifier("table1"))
+        .stats.get.sizeInBytes.toLong
+      val t2Size = spark.sessionState.catalog.getTableMetadata(TableIdentifier("table2"))
+        .stats.get.sizeInBytes.toLong
+      val scanSize = t1Size + t2Size
+      val expectedJoinPartitionNum = Math.ceil(scanSize.toDouble / advisoryPartitionSizeInBytes)
+
       Seq(false, true).foreach { dynamicShufflePartitions =>
         val maxDynamicShufflePartitions = if (dynamicShufflePartitions) {
           Seq(8, 2000)
@@ -63,7 +73,7 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
             DYNAMIC_SHUFFLE_PARTITIONS_MAX_NUM.key -> maxDynamicShufflePartitionNum.toString,
             AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
             COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> initialPartitionNum.toString,
-            ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "500") {
+            ADVISORY_PARTITION_SIZE_IN_BYTES.key -> advisoryPartitionSizeInBytes.toString) {
             val df = sql("insert overwrite table3 " +
               " select a.c1 as c1, b.c2 as c2 from table1 a join table2 b on a.c1 = b.c1")
 
@@ -75,7 +85,7 @@ class DynamicShufflePartitionsSuite extends KyuubiSparkSQLExtensionTest {
             if (dynamicShufflePartitions) {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions
-                  == Math.min(22, maxDynamicShufflePartitionNum)))
+                  == Math.min(expectedJoinPartitionNum, maxDynamicShufflePartitionNum)))
             } else {
               joinExchanges.foreach(e =>
                 assert(e.outputPartitioning.numPartitions == initialPartitionNum))
