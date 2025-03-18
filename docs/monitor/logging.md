@@ -57,7 +57,7 @@ $ cd ~/svn-kyuubi/v1.3.1-incubating-rc0/apache-kyuubi-1.3.1-incubating-bin
 $ bin/kyuubi start
 ```
 
-```log
+```
 Starting Kyuubi Server from /Users/kentyao/svn-kyuubi/v1.3.1-incubating-rc0/apache-kyuubi-1.3.1-incubating-bin
 Warn: Not find kyuubi environment file /Users/kentyao/svn-kyuubi/v1.3.1-incubating-rc0/apache-kyuubi-1.3.1-incubating-bin/conf/kyuubi-env.sh, using default ones...
 JAVA_HOME: /Library/Java/JavaVirtualMachines/jdk1.8.0_251.jdk/Contents/Home
@@ -96,7 +96,7 @@ $ mkdir /Users/kentyao/tmp
 $ KYUUBI_LOG_DIR=/Users/kentyao/tmp bin/kyuubi start
 ```
 
-```log
+```
 Starting org.apache.kyuubi.server.KyuubiServer, logging to /Users/kentyao/tmp/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
 ```
 
@@ -233,7 +233,7 @@ kyuubi-beeline -u 'jdbc:kyuubi://10.242.189.214:2181/;serviceDiscoveryMode=zooKe
 
 You will both get the final results and the corresponding operation logs telling you the journey of the query.
 
-```log
+```
 0: jdbc:kyuubi://10.242.189.214:2181/> select * from src;
 2021-10-27 17:00:19.399 INFO operation.ExecuteStatement: Processing kent's query[fb5f57d2-2b50-4a46-961b-3a5c6a2d2597]: INITIALIZED_STATE -> PENDING_STATE, statement: select * from src
 2021-10-27 17:00:19.401 INFO operation.ExecuteStatement: Processing kent's query[fb5f57d2-2b50-4a46-961b-3a5c6a2d2597]: PENDING_STATE -> RUNNING_STATE, statement: select * from src
