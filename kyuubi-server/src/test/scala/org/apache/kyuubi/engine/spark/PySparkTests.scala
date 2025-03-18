@@ -154,8 +154,8 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
           "{\"name\":\"2\",\"type\":\"MAP_TYPE\"}" +
           "]," +
           "\"data\":[" +
-          "[1,\"a\",{\\\"k1\\\":\\\"v1\\\"}]," +
-          "[3,\"b\",{\\\"k2\\\":\\\"v2\\\"}]" +
+          "[1,\"a\",{\"k1\":\"v1\"}]," +
+          "[3,\"b\",{\"k2\":\"v2\"}]" +
           "]}}")
 
         Seq("table", "json", "matplot").foreach { magic =>
