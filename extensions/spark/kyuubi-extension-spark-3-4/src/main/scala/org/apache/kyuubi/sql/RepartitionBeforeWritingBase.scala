@@ -20,8 +20,9 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
-import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
+import org.apache.spark.sql.hive.execution.{InsertIntoHiveDirCommand, InsertIntoHiveTable}
 import org.apache.spark.sql.internal.StaticSQLConf
 
 trait RepartitionBuilder extends Rule[LogicalPlan] with RepartitionBeforeWriteHelper {
@@ -52,6 +53,10 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
       val dynamicPartitionColumns = pc.filterNot(attr => sp.contains(attr.name))
       i.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
+    case i @ InsertIntoDataSourceDirCommand(_, _, query, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      i.copy(query = buildRepartition(Seq.empty, query))
+
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
 
@@ -81,6 +86,10 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
       val dynamicPartitionColumns = partition.filter(_._2.isEmpty).keys
         .flatMap(name => query.output.find(_.name == name)).toSeq
       i.copy(query = buildRepartition(dynamicPartitionColumns, query))
+
+    case i @ InsertIntoHiveDirCommand(_, _, query, _, _)
+        if query.resolved && canInsertRepartitionByExpression(query) =>
+      i.copy(query = buildRepartition(Seq.empty, query))
 
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
