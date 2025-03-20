@@ -18,6 +18,7 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
+import org.apache.spark.sql.execution.listener.CollectMetricsPrettyDisplayListener
 
 import org.apache.kyuubi.sql.watchdog.{KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
 import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
@@ -54,5 +55,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
+
+    CollectMetricsPrettyDisplayListener.register()
   }
 }
