@@ -2067,6 +2067,7 @@
         <profile>
             <id>spark-4.0</id>
             <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-0</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
@@ -2080,8 +2081,10 @@
                 <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
                 <!-- TODO: update once Iceberg support Spark 4.0 -->
                 <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
-                <!-- TODO: update once Paimon support Spark 4.0 -->
-                <paimon.artifact>paimon-spark-3.5</paimon.artifact>
+                <!-- TODO: update once Paimon support Spark 4.0.
+                           paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13
+                -->
+                <paimon.artifact>paimon-common</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.0.0-rc3-bin</spark.archive.mirror>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
