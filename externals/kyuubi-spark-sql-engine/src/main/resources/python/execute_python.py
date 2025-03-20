@@ -314,7 +314,7 @@ def magic_table_convert_map(m):
     last_value_type = None
     converted_items = {}
 
-    for key, value in m:
+    for key, value in m.items():
         key_type, key = magic_table_convert(key)
         value_type, value = magic_table_convert(value)
 
