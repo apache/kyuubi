@@ -15,17 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.sql.watchdog
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.spark.sql.catalyst.SQLConfHelper
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ScriptTransformation}
 
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
+import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-    // TODO adapt to SPARK-49249 in Scala mode
-    .set("spark.sql.artifact.isolation.enabled", "false")
+object KyuubiUnsupportedOperationsCheck extends (LogicalPlan => Unit) with SQLConfHelper {
+  override def apply(plan: LogicalPlan): Unit =
+    conf.getConf(KyuubiSQLConf.SCRIPT_TRANSFORMATION_ENABLED) match {
+      case false => plan foreach {
+          case _: ScriptTransformation =>
+            throw new KyuubiSQLExtensionException("Script transformation is not allowed")
+          case _ =>
+        }
+      case true =>
+    }
 }

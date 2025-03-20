@@ -14,18 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.spark.sql.hive
 
-package org.apache.kyuubi.operation
-
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
-
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-    // TODO adapt to SPARK-49249 in Scala mode
-    .set("spark.sql.artifact.isolation.enabled", "false")
+object HiveSparkPlanHelper {
+  type HiveTableScanExec = org.apache.spark.sql.hive.execution.HiveTableScanExec
 }
