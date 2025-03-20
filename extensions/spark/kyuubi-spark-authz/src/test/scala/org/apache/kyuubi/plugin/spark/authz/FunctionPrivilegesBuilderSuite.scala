@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 // scalastyle:off
@@ -24,6 +25,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.util.AssertionUtils.assertEqualsIgnoreCase
 
 abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -58,8 +60,12 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
     checkColumns(sql(query).queryExecution.optimizedPlan, cols)
   }
 
+  protected val HIVE_MASK_HASH_CLASS = "org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash"
+  protected val HIVE_FUNCTION_NAME_BASE = "hive_func"
+  protected val OBJECT_NAME_SEPARATOR = "_"
+
   protected val reusedDb: String = getClass.getSimpleName
-  protected val reusedDb2: String = getClass.getSimpleName + "2"
+  protected val reusedDb2: String = s"${getClass.getSimpleName}${OBJECT_NAME_SEPARATOR}2"
   protected val reusedTable: String = reusedDb + "." + getClass.getSimpleName
   protected val reusedTableShort: String = reusedTable.split("\\.").last
   protected val reusedPartTable: String = reusedTable + "_part"
@@ -79,9 +85,9 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
     // scalastyle:off
     (0 until functionCount).foreach { index =>
       {
-        sql(s"CREATE FUNCTION ${reusedDb}.${functionNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-        sql(s"CREATE FUNCTION ${reusedDb2}.${functionNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
-        sql(s"CREATE TEMPORARY FUNCTION ${tempFunNamePrefix}${index} AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'")
+        sql(s"CREATE FUNCTION ${reusedDb}.${functionNamePrefix}${index} AS '${HIVE_MASK_HASH_CLASS}'")
+        sql(s"CREATE FUNCTION ${reusedDb2}.${functionNamePrefix}${index} AS '${HIVE_MASK_HASH_CLASS}'")
+        sql(s"CREATE TEMPORARY FUNCTION ${tempFunNamePrefix}${index} AS '${HIVE_MASK_HASH_CLASS}'")
       }
     }
     sql(s"USE ${reusedDb2}")
@@ -104,11 +110,125 @@ abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
     spark.stop()
     super.afterAll()
   }
+
+  protected def checkFunctions(sql: String, count: Int, spark: SparkSession): Unit = {
+
+    val funcNames = {
+      0.until(count).map(index => {
+        s"${if (index % 2 == 0) reusedDb else reusedDb2}" +
+          s".${HIVE_FUNCTION_NAME_BASE}${OBJECT_NAME_SEPARATOR}$index"
+      })
+    }
+
+    withCleanTmpResources(funcNames.map(funcName =>
+      (s"$funcName", "function"))) {
+      funcNames.foreach(func =>
+        spark.sql(s"CREATE FUNCTION $func AS '$HIVE_MASK_HASH_CLASS'"))
+      val plan = spark.sql(sql.format(funcNames: _*)).queryExecution.analyzed
+      val (inputs, _, operationType) = PrivilegesBuilder.buildFunctions(plan, spark)
+      assert(inputs.size === count)
+      inputs.foreach { po =>
+        assert(po.actionType === PrivilegeObjectActionType.OTHER)
+        assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+        assert(po.catalog.isEmpty)
+        assertEqualsIgnoreCase(reusedDb)(getObjectBaseName(po.dbname))
+        assertEqualsIgnoreCase(HIVE_FUNCTION_NAME_BASE)(getObjectBaseName(po.objectName))
+        assert(po.columns.isEmpty)
+        val accessType = ranger.AccessType(po, operationType, isInput = true)
+        assert(accessType === AccessType.SELECT)
+      }
+    }
+  }
+
+  private def getObjectBaseName(name: String): String = {
+    val nameParts: Array[String] = name.split(OBJECT_NAME_SEPARATOR)
+    val parts: Array[String] = if (nameParts.length > 1) {
+      nameParts.dropRight(1)
+    } else {
+      nameParts
+    }
+    parts.mkString(OBJECT_NAME_SEPARATOR)
+  }
+
 }
 
 class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite {
 
   override protected val catalogImpl: String = "hive"
+
+  test("built-in function") {
+    val plan = sql(s"SELECT max(value) FROM $reusedTable").queryExecution.analyzed
+    val (inputs, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
+    assert(inputs.size === 0)
+  }
+
+  test("temporary function") {
+    val funcName = "temp_fun"
+    sql(s"CREATE TEMPORARY FUNCTION $funcName AS '$HIVE_MASK_HASH_CLASS'")
+    val plan = sql(s"SELECT $funcName(value) FROM $reusedTable").queryExecution.analyzed
+    val (inputs, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
+    assert(inputs.size === 0)
+  }
+
+  test("hive permanent function: projection") {
+    checkFunctions(s"SELECT %s(value), %s(value), %s(value) FROM $reusedTable", 3, spark)
+  }
+
+  test("hive permanent function: alias") {
+    checkFunctions(s"SELECT %s(value) AS c1, %s('mask') AS c2 FROM $reusedTable", 2, spark)
+  }
+
+  test("hive permanent function: literal") {
+    checkFunctions(s"SELECT %s('1') AS c1, %s('2') AS c2", 2, spark)
+  }
+
+  test("hive permanent function: where") {
+    checkFunctions(
+      s"SELECT %s('1') AS c1, %s('2') AS c2, key" +
+        s" FROM $reusedTable WHERE %s(key) = 1",
+      3,
+      spark)
+
+  }
+
+  test("hive permanent function: CTE") {
+    checkFunctions(
+      s"WITH table(mask_1, mask_2) AS" +
+        s" (SELECT %s(value) AS c1, %s(value) AS c2 FROM $reusedTable)" +
+        s" SELECT * FROM table",
+      2,
+      spark)
+  }
+
+  test("hive permanent function: command") {
+    val tableName = "create_table"
+    withCleanTmpResources(Seq((tableName, "table"))) {
+      checkFunctions(
+        s"CREATE TABLE $tableName AS" +
+          s" SELECT %s(value) AS c1, %s(value) AS c2 FROM $reusedTable",
+        2,
+        spark)
+    }
+  }
+
+  test("non-exists function") {
+    val funcName = "non_exists_fun"
+    val e1 = intercept[AnalysisException](
+      sql(s"SELECT $reusedDb.$funcName(value) FROM $reusedTable").queryExecution.analyzed)
+    e1.getMessage().contains("This function is neither a built-in/temporary function")
+
+  }
+
+  test("unresolved function") {
+    val funcName = "hive_func"
+    withCleanTmpResources(Seq((funcName, "function"))) {
+      sql(s"CREATE FUNCTION $funcName AS '$HIVE_MASK_HASH_CLASS'")
+      val plan: LogicalPlan = sql(s"SELECT $funcName(key), value FROM $reusedTable")
+        .queryExecution.logical
+      val (inputs, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
+      assert(inputs.isEmpty)
+    }
+  }
 
   test("Function Call Query") {
     val plan = sql(s"SELECT kyuubi_fun_1('data'), " +
