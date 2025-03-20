@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
@@ -52,7 +53,7 @@ public class TestBufferedRows {
 
   @Test
   public void testNormalizeWidths() throws SQLException {
-    setupMockData();
+    setupMockData(false);
 
     BufferedRows bfRows = new BufferedRows(mockBeeline, mockResultSet);
     bfRows.normalizeWidths();
@@ -64,7 +65,19 @@ public class TestBufferedRows {
     }
   }
 
-  private void setupMockData() throws SQLException {
+  @Test
+  public void testCancel() throws SQLException {
+    setupMockData(true);
+
+    BufferedRows bfRows = new BufferedRows(mockBeeline, mockResultSet);
+    // skip scheam row
+    bfRows.next();
+    while (bfRows.hasNext()) {
+      throw new SQLException("Should not fetch any data when cancel is called");
+    }
+  }
+
+  private void setupMockData(boolean cancelStatement) throws SQLException {
     // Mock BeeLine
     mockBeeline = mock(BeeLine.class);
     // Mock BeeLineOpts
@@ -72,6 +85,7 @@ public class TestBufferedRows {
     when(mockBeeLineOpts.getMaxColumnWidth()).thenReturn(BeeLineOpts.DEFAULT_MAX_COLUMN_WIDTH);
     when(mockBeeLineOpts.getNumberFormat()).thenReturn("default");
     when(mockBeeLineOpts.getNullString()).thenReturn("NULL");
+    when(mockBeeLineOpts.getCancelImmediate()).thenReturn(cancelStatement);
     when(mockBeeline.getOpts()).thenReturn(mockBeeLineOpts);
 
     // MockResultSet
@@ -82,6 +96,10 @@ public class TestBufferedRows {
     when(mockResultSetMetaData.getColumnLabel(1)).thenReturn("Key");
     when(mockResultSetMetaData.getColumnLabel(2)).thenReturn("Value");
     when(mockResultSet.getMetaData()).thenReturn(mockResultSetMetaData);
+
+    KyuubiStatement mockKyuubiStatement = mock(KyuubiStatement.class);
+    when(mockKyuubiStatement.getIsCancelled()).thenReturn(cancelStatement);
+    when(mockResultSet.getStatement()).thenReturn(mockKyuubiStatement);
 
     mockRow = new MockRow();
     // returns true as long as there is more data in mockResultData array
