@@ -2060,6 +2060,7 @@
         <profile>
             <id>spark-4.0</id>
             <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-0</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
