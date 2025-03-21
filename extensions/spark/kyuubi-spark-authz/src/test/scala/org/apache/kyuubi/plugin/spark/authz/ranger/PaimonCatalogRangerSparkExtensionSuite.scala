@@ -532,60 +532,60 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("Producers") {
-    if (isSparkV34OrGreater) {
-      withCleanTmpResources(Seq(
-        (s"$catalogV2.$namespace1.$table1", "table"))) {
-        try {
-          doAs(admin, sql(createTableSql(namespace1, table1)))
-          doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
 
-          var currentCatalogName =
-            doAs(admin, spark.sessionState.catalogManager.currentCatalog.name())
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      try {
+        doAs(admin, sql(createTableSql(namespace1, table1)))
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (1, 'a'), (2, 'b')"))
 
-          doAs(admin, sql(s"use $catalogV2"))
-          currentCatalogName = doAs(admin, spark.sessionState.catalogManager.currentCatalog.name())
-          assert(currentCatalogName.equals(catalogV2))
+        var currentCatalogName =
+          doAs(admin, spark.sessionState.catalogManager.currentCatalog.name())
 
-          // Create Tag
-          val createTagSql = s"Call sys.create_tag(table =>" +
-            s"'$catalogV2.$namespace1.$table1', tag => 'test_tag', snapshot => 1)"
-          interceptEndsWith[AccessControlException] {
-            doAs(table1OnlyUserForNs, sql(createTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          interceptEndsWith[AccessControlException] {
-            doAs(someone, sql(createTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          doAs(admin, sql(createTagSql))
+        doAs(admin, sql(s"use $catalogV2"))
+        currentCatalogName = doAs(admin, spark.sessionState.catalogManager.currentCatalog.name())
+        assert(currentCatalogName.equals(catalogV2))
 
-          // Delete Tag
-          val deleteTagSql = s"Call sys.delete_tag(table =>" +
-            s"'$catalogV2.$namespace1.$table1', tag => 'test_tag')"
-          interceptEndsWith[AccessControlException] {
-            doAs(table1OnlyUserForNs, sql(deleteTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          interceptEndsWith[AccessControlException] {
-            doAs(someone, sql(deleteTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          doAs(admin, sql(deleteTagSql))
+        // Create Tag
+        val createTagSql = s"Call sys.create_tag(table =>" +
+          s"'$catalogV2.$namespace1.$table1', tag => 'test_tag', snapshot => 1)"
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(createTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(createTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(createTagSql))
 
-          // Rollback
-          doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (3, 'a'), (4, 'b')"))
-          doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (5, 'a'), (6, 'b')"))
-          val rollbackTagSql = s"Call sys.rollback(table =>" +
-            s"'$catalogV2.$namespace1.$table1', version => '2')"
-          interceptEndsWith[AccessControlException] {
-            doAs(table1OnlyUserForNs, sql(rollbackTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          interceptEndsWith[AccessControlException] {
-            doAs(someone, sql(rollbackTagSql))
-          }(s"does not have [alter] privilege on [$namespace1/$table1]")
-          doAs(admin, sql(rollbackTagSql))
+        // Delete Tag
+        val deleteTagSql = s"Call sys.delete_tag(table =>" +
+          s"'$catalogV2.$namespace1.$table1', tag => 'test_tag')"
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(deleteTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(deleteTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(deleteTagSql))
 
-        } finally {
-          doAs(admin, sql(s"use spark_catalog"))
-        }
+        // Rollback
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (3, 'a'), (4, 'b')"))
+        doAs(admin, sql(s"INSERT INTO $catalogV2.$namespace1.$table1 VALUES (5, 'a'), (6, 'b')"))
+        val rollbackTagSql = s"Call sys.rollback(table =>" +
+          s"'$catalogV2.$namespace1.$table1', version => '2')"
+        interceptEndsWith[AccessControlException] {
+          doAs(table1OnlyUserForNs, sql(rollbackTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(rollbackTagSql))
+        }(s"does not have [alter] privilege on [$namespace1/$table1]")
+        doAs(admin, sql(rollbackTagSql))
+
+      } finally {
+        doAs(admin, sql(s"use spark_catalog"))
       }
     }
+
   }
 
   def createTableSql(namespace: String, table: String): String =
