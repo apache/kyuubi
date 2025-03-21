@@ -28,7 +28,7 @@ To enable LDAP authentication for Kyuubi, LDAP-related configurations is require
 
 For example,
 
-```properties example
+```properties
 kyuubi.authentication=LDAP
 kyuubi.authentication.ldap.baseDN=dc=org
 kyuubi.authentication.ldap.domain=apache.org
@@ -43,7 +43,7 @@ Kyuubi also supports complex LDAP cases as [Apache Hive](https://cwiki.apache.or
 
 For example,
 
-```properties example
+```properties
 # Group Membership
 kyuubi.authentication.ldap.groupClassKey=groupOfNames
 kyuubi.authentication.ldap.groupDNPattern=CN=%s,OU=Groups,DC=apache,DC=org

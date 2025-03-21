@@ -137,22 +137,25 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     withSessionConf()(Map(KyuubiConf.ENGINE_SPARK_PYTHON_MAGIC_ENABLED.key -> "true"))() {
       withMultipleConnectionJdbcStatement()({ stmt =>
         val statement = stmt.asInstanceOf[KyuubiStatement]
-        statement.executePython("x = [[1, 'a'], [3, 'b']]")
+        statement.executePython("x = [[1, 'a', {'k1':'v1'}], [3, 'b', {'k2':'v2'}]]")
 
         val resultSet1 = statement.executePython("%json x")
         assert(resultSet1.next())
         val output1 = resultSet1.getString("output")
-        assert(output1 == "{\"application/json\":[[1,\"a\"],[3,\"b\"]]}")
+        assert(output1 == """{"application/json":[[1,"a",{"k1":"v1"}],[3,"b",{"k2":"v2"}]]}""")
 
         val resultSet2 = statement.executePython("%table x")
         assert(resultSet2.next())
         val output2 = resultSet2.getString("output")
         assert(output2 == "{\"application/vnd.livy.table.v1+json\":{" +
           "\"headers\":[" +
-          "{\"name\":\"0\",\"type\":\"INT_TYPE\"},{\"name\":\"1\",\"type\":\"STRING_TYPE\"}" +
+          "{\"name\":\"0\",\"type\":\"INT_TYPE\"}," +
+          "{\"name\":\"1\",\"type\":\"STRING_TYPE\"}," +
+          "{\"name\":\"2\",\"type\":\"MAP_TYPE\"}" +
           "]," +
           "\"data\":[" +
-          "[1,\"a\"],[3,\"b\"]" +
+          "[1,\"a\",{\"k1\":\"v1\"}]," +
+          "[3,\"b\",{\"k2\":\"v2\"}]" +
           "]}}")
 
         Seq("table", "json", "matplot").foreach { magic =>

@@ -45,3 +45,4 @@ notifications:
   commits: commits@kyuubi.apache.org
   issues: notifications@kyuubi.apache.org
   pullrequests: notifications@kyuubi.apache.org
+  discussions: notifications@kyuubi.apache.org

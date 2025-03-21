@@ -108,7 +108,8 @@ If you don't have time to fix the doc issue and submit a pull request on your ow
 - Choose the documentation report template
 - Fill out the required field in the documentation report
 
-.. _Home Page: https://kyuubi.apache.org
+.. _Github repository: https://github.com/apache/kyuubi
+.. _Read The Docs: https://kyuubi.rtfd.io
 .. _Fork: https://github.com/apache/kyuubi/fork
 .. _Build and verify: build.html
 .. _Create A Pull Request: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request

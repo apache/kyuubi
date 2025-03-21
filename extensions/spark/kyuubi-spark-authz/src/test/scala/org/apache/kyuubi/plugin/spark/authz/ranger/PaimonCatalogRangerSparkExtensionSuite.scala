@@ -255,6 +255,25 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("Add New Column") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val alterTableSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ADD COLUMNS (
+           |  city STRING
+           |)
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(alterTableSql))
+    }
+  }
+
   test("Adding Column Position") {
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"))) {
@@ -528,6 +547,24 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         }(s"does not have [select] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSql))
       }
+    }
+  }
+
+  test("Changing Column Type") {
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val changingColumnTypeSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table1
+           |ALTER COLUMN id TYPE DOUBLE
+           |""".stripMargin
+
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(changingColumnTypeSql))
+      }(s"does not have [alter] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(changingColumnTypeSql))
     }
   }
 

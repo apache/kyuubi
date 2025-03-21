@@ -72,7 +72,7 @@ To enable the custom authentication method, we need to
 - Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
   on each node where kyuubi server is installed.
 
-.. code-block:: property
+.. code-block:: properties
 
    kyuubi.authentication=CUSTOM
    kyuubi.authentication.custom.class=YourAuthenticationProvider

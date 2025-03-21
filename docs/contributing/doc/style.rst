@@ -59,17 +59,20 @@ ReStructuredText
 Headings
 ~~~~~~~~
 
-- Use **Pascal Case**, every word starts with an uppercase letter,
-  e.g., 'Documentation Style Guide'
+- Use **Pascal Case**, every word starts with an uppercase letter, e.g., 'Documentation Style Guide'
 - Use a max of **three levels**
- - Split into multiple files when there comes an H4
- - Prefer `directive rubric`_ than H4
+
+  - Split into multiple files when there comes an H4
+  - Prefer `directive rubric`_ than H4
+
 - Use underline-only adornment styles, **DO NOT** use overline
- - The length of underline characters **SHOULD** match the title
- - H1 should be underlined with '='
- - H2 should be underlined with '-'
- - H3 should be underlined with '~'
- - H4 should be underlined with '^', but it's better to avoid using H4
+
+  - The length of underline characters **SHOULD** match the title
+  - H1 should be underlined with '='
+  - H2 should be underlined with '-'
+  - H3 should be underlined with '~'
+  - H4 should be underlined with '^', but it's better to avoid using H4
+
 - **DO NOT** use numbering for sections
 - **DO NOT** use "Kyuubi" in titles if possible
 
@@ -100,10 +103,11 @@ Markdown
 Headings
 ~~~~~~~~
 
-- Use **Pascal Case**, every word starts with an uppercase letter,
-  e.g., 'Documentation Style Guide'
+- Use **Pascal Case**, every word starts with an uppercase letter, e.g., 'Documentation Style Guide'
 - Use a max of **three levels**
- - Split into multiple files when there comes an H4
+
+  - Split into multiple files when there comes an H4
+
 - **DO NOT** use numbering for sections
 - **DO NOT** use "Kyuubi" in titles if possible
 
@@ -126,7 +130,7 @@ third-party references, depending on the nature of your question:
 .. References
 
 .. _ASF 3RD PARTY LICENSE POLICY: https://www.apache.org/legal/resolved.html#asf-3rd-party-license-policy
-.. _directive rubric :https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-rubric
+.. _directive rubric: https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-rubric
 .. _ReStructuredText: https://docutils.sourceforge.io/rst.html
 .. _Markdown: https://en.wikipedia.org/wiki/Markdown
 .. _draw.io: https://www.diagrams.net/
