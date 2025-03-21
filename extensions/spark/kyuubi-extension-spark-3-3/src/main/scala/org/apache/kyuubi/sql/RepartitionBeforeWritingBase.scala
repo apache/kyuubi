@@ -62,6 +62,7 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
     case i @ InsertIntoDataSourceDirCommand(_, _, query, _)
         if query.resolved && canInsertRepartitionByExpression(query) =>
       i.copy(query = buildRepartition(Seq.empty, query))
+
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
 
