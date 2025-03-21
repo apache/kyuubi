@@ -303,7 +303,7 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       withTempDir(tmpDir => {
         spark.range(0, 1000, 1, 10).createOrReplaceTempView("tmp_table")
         val df = sql(s"INSERT OVERWRITE DIRECTORY '${tmpDir.getPath}' " +
-          s"STORED AS parquet select * from tmp_table")
+          s"STORED AS PARQUET SELECT * FROM tmp_table")
         val insertHiveDirCommand = df.queryExecution.analyzed.collect {
           case _: InsertIntoHiveDirCommand => true
         }
@@ -318,13 +318,11 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
   test("Test rebalance in InsertIntoDataSourceDirCommand") {
     withSQLConf(
-      HiveUtils.CONVERT_METASTORE_PARQUET.key -> "false",
-      HiveUtils.CONVERT_METASTORE_CTAS.key -> "false",
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
       withTempDir(tmpDir => {
         spark.range(0, 1000, 1, 10).createOrReplaceTempView("tmp_table")
         val df = sql(s"INSERT OVERWRITE DIRECTORY '${tmpDir.getPath}' " +
-          s"Using parquet select * from tmp_table")
+          s"USING PARQUET SELECT * FROM tmp_table")
         assert(df.queryExecution.analyzed.isInstanceOf[InsertIntoDataSourceDirCommand])
         val repartition =
           df.queryExecution.analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.collect {

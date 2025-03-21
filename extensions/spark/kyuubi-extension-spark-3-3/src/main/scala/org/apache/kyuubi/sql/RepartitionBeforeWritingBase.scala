@@ -58,6 +58,7 @@ abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
       c.copy(query = buildRepartition(dynamicPartitionColumns, query))
+
     case i @ InsertIntoDataSourceDirCommand(_, _, query, _)
         if query.resolved && canInsertRepartitionByExpression(query) =>
       i.copy(query = buildRepartition(Seq.empty, query))
@@ -102,9 +103,11 @@ abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
       c.copy(query = buildRepartition(dynamicPartitionColumns, query))
+
     case c @ InsertIntoHiveDirCommand(_, _, query, _, _)
         if query.resolved && canInsertRepartitionByExpression(query) =>
       c.copy(query = buildRepartition(Seq.empty, query))
+
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRepartition))
 
