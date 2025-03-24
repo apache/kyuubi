@@ -19,9 +19,9 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RebalancePartitions, Sort}
-import org.apache.spark.sql.execution.command.DataWritingCommand
+import org.apache.spark.sql.execution.command.{DataWritingCommand, InsertIntoDataSourceDirCommand}
 import org.apache.spark.sql.hive.HiveUtils
-import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
+import org.apache.spark.sql.hive.execution.{InsertIntoHiveDirCommand, OptimizedCreateHiveTableAsSelectCommand}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
@@ -270,6 +270,44 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
           checkShuffleAndSort(df5.queryExecution.analyzed, 1, 1)
         }
       }
+    }
+  }
+
+  test("Test rebalance in InsertIntoHiveDirCommand") {
+    withSQLConf(
+      HiveUtils.CONVERT_METASTORE_PARQUET.key -> "false",
+      HiveUtils.CONVERT_METASTORE_CTAS.key -> "false",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+      withTempDir(tmpDir => {
+        spark.range(0, 1000, 1, 10).createOrReplaceTempView("tmp_table")
+        val df = sql(s"INSERT OVERWRITE DIRECTORY '${tmpDir.getPath}' " +
+          s"STORED AS PARQUET SELECT * FROM tmp_table")
+        val insertHiveDirCommand = df.queryExecution.analyzed.collect {
+          case _: InsertIntoHiveDirCommand => true
+        }
+        assert(insertHiveDirCommand.size == 1)
+        val repartition = df.queryExecution.analyzed.collect {
+          case _: RebalancePartitions => true
+        }
+        assert(repartition.size == 1)
+      })
+    }
+  }
+
+  test("Test rebalance in InsertIntoDataSourceDirCommand") {
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
+      withTempDir(tmpDir => {
+        spark.range(0, 1000, 1, 10).createOrReplaceTempView("tmp_table")
+        val df = sql(s"INSERT OVERWRITE DIRECTORY '${tmpDir.getPath}' " +
+          s"USING PARQUET SELECT * FROM tmp_table")
+        assert(df.queryExecution.analyzed.isInstanceOf[InsertIntoDataSourceDirCommand])
+        val repartition =
+          df.queryExecution.analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.collect {
+            case _: RebalancePartitions => true
+          }
+        assert(repartition.size == 1)
+      })
     }
   }
 }

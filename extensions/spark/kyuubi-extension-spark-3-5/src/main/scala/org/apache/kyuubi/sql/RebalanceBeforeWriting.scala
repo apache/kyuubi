@@ -23,8 +23,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
-import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
+import org.apache.spark.sql.hive.execution.{InsertIntoHiveDirCommand, InsertIntoHiveTable}
 import org.apache.spark.sql.internal.StaticSQLConf
 
 trait RebalanceBeforeWritingBase extends Rule[LogicalPlan] {
@@ -112,6 +113,10 @@ case class RebalanceBeforeWritingDatasource(session: SparkSession)
       val dynamicPartitionColumns = pc.filterNot(attr => sp.contains(attr.name))
       i.copy(query = buildRebalance(dynamicPartitionColumns, query))
 
+    case i @ InsertIntoDataSourceDirCommand(_, _, query, _)
+        if query.resolved && canInsertRebalance(query) =>
+      i.copy(query = buildRebalance(Seq.empty, query))
+
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRebalance))
 
@@ -143,6 +148,10 @@ case class RebalanceBeforeWritingHive(session: SparkSession)
       val dynamicPartitionColumns = partition.filter(_._2.isEmpty).keys
         .flatMap(name => query.output.find(_.name == name)).toSeq
       i.copy(query = buildRebalance(dynamicPartitionColumns, query))
+
+    case i @ InsertIntoHiveDirCommand(_, _, query, _, _)
+        if query.resolved && canInsertRebalance(query) =>
+      i.copy(query = buildRebalance(Seq.empty, query))
 
     case u @ Union(children, _, _) =>
       u.copy(children = children.map(addRebalance))
