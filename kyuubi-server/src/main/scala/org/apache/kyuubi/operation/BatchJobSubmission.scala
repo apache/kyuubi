@@ -166,7 +166,7 @@ class BatchJobSubmission(
       appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
     if (opState == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
       withOperationLog(error(s"Batch $batchId state is $opState," +
-        s" but the application state is $appState and not terminated."))
+        s" but the application state is $appState and not terminated, set to UNKNOWN."))
       ApplicationState.UNKNOWN
     } else {
       appState
@@ -275,7 +275,7 @@ class BatchJobSubmission(
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
 
-      // get the current application info after the process is terminated
+      // get the current application info after the process terminated
       _applicationInfo = currentApplicationInfo()
 
       if (applicationFailed(_applicationInfo)) {
