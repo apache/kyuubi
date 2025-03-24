@@ -252,53 +252,58 @@ class BatchJobSubmission(
   private def submitAndMonitorBatchJob(): Unit = {
     var appStatusFirstUpdated = false
     var lastStarvationCheckTime = createTime
+
+    def doUpdateApplicationInfoMetadataIfNeeded(): Unit = {
+      updateApplicationInfoMetadataIfNeeded()
+      if (!appStatusFirstUpdated) {
+        // only the ApplicationInfo with non-empty id indicates that batch is RUNNING
+        if (applicationId(_applicationInfo).isDefined) {
+          setStateIfNotCanceled(OperationState.RUNNING)
+          updateBatchMetadata()
+          appStatusFirstUpdated = true
+        } else {
+          val currentTime = System.currentTimeMillis()
+          if (currentTime - lastStarvationCheckTime > applicationStarvationTimeout) {
+            lastStarvationCheckTime = currentTime
+            warn(s"Batch[$batchId] has not started, check the Kyuubi server to ensure" +
+              s" that batch jobs can be submitted.")
+          }
+        }
+      }
+    }
+
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      while (!applicationFailed(_applicationInfo) && process.isAlive) {
-        updateApplicationInfoMetadataIfNeeded()
-        if (!appStatusFirstUpdated) {
-          // only the ApplicationInfo with non-empty id indicates that batch is RUNNING
-          if (applicationId(_applicationInfo).isDefined) {
-            setStateIfNotCanceled(OperationState.RUNNING)
-            updateBatchMetadata()
-            appStatusFirstUpdated = true
-          } else {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime - lastStarvationCheckTime > applicationStarvationTimeout) {
-              lastStarvationCheckTime = currentTime
-              warn(s"Batch[$batchId] has not started, check the Kyuubi server to ensure" +
-                s" that batch jobs can be submitted.")
-            }
-          }
-        }
+      while (process.isAlive && !applicationFailed(_applicationInfo)) {
+        doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
 
-      // get the current application info after the process terminated
-      _applicationInfo = currentApplicationInfo()
+      if (!process.isAlive) {
+        doUpdateApplicationInfoMetadataIfNeeded()
+      }
 
       if (applicationFailed(_applicationInfo)) {
         Utils.terminateProcess(process, applicationStartupDestroyTimeout)
         throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
-      } else {
-        process.waitFor()
-        if (process.exitValue() != 0) {
-          throw new KyuubiException(s"Process exit with value ${process.exitValue()}")
-        }
+      }
 
-        while (!appStarted && applicationId(_applicationInfo).isEmpty &&
-          !applicationTerminated(_applicationInfo)) {
-          Thread.sleep(applicationCheckInterval)
-          updateApplicationInfoMetadataIfNeeded()
-        }
+      if (process.waitFor() != 0) {
+        throw new KyuubiException(s"Process exit with value ${process.exitValue}")
+      }
 
-        applicationId(_applicationInfo) match {
-          case Some(appId) => monitorBatchJob(appId)
-          case None if !appStarted =>
-            throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
-          case None =>
-        }
+      while (!appStarted && applicationId(_applicationInfo).isEmpty &&
+        !applicationTerminated(_applicationInfo)) {
+        Thread.sleep(applicationCheckInterval)
+        doUpdateApplicationInfoMetadataIfNeeded()
+      }
+
+      applicationId(_applicationInfo) match {
+        case Some(appId) => monitorBatchJob(appId)
+        case None if !appStarted =>
+          throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+        case None =>
       }
     } finally {
       val waitCompletion = batchConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
