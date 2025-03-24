@@ -24,7 +24,6 @@ import org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.{InsertIntoHiveDirCommand, InsertIntoHiveTable}
-import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
