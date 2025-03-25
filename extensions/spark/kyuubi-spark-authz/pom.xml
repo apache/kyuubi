@@ -209,9 +209,16 @@
                     <groupId>org.apache.logging.log4j</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <!--
+                  RANGER-4831 (2.5.0) switches from aws-java-sdk-bundle to aws-java-sdk-logs
+                  -->
                 <exclusion>
                     <groupId>com.amazonaws</groupId>
                     <artifactId>aws-java-sdk-bundle</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.amazonaws</groupId>
+                    <artifactId>aws-java-sdk-logs</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
