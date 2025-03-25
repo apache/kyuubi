@@ -28,7 +28,7 @@ import org.scalatestplus.mockito.MockitoSugar
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE, KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME, KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -38,15 +38,17 @@ import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
-  private def conf = KyuubiConf().set("kyuubi.on", "off")
+  private def conf = KyuubiConf()
+    .set(SESSION_ENGINE_STARTUP_MAX_LOG_LINES, 4096)
+    .set("kyuubi.on", "off")
 
   test("spark process builder") {
     val builder = new SparkProcessBuilder("kentyao", true, conf)
     val commands = builder.toString.split(' ')
     assert(commands(2) === "org.apache.kyuubi.engine.spark.SparkSQLEngine")
     assert(commands.contains("spark.kyuubi.on=off"))
-    builder.toString.contains("\\\n\t--class")
-    builder.toString.contains("\\\n\t--conf spark.kyuubi.on=off")
+    assert(builder.toString.contains("\\\n\t--class"))
+    assert(builder.toString.contains("\\\n\t--conf spark.kyuubi.on=off"))
     val pb = new ProcessBuilder(commands.head, "--help")
     assert(pb.start().waitFor() === 0)
     assert(Files.exists(Paths.get(commands.last)))
