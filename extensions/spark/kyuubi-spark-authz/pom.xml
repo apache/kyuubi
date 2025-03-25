@@ -213,6 +213,10 @@
                     <groupId>com.amazonaws</groupId>
                     <artifactId>aws-java-sdk-bundle</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>com.amazonaws</groupId>
+                    <artifactId>aws-java-sdk-logs</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
