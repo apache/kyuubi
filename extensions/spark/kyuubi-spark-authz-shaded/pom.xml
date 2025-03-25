@@ -117,27 +117,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <!-- Add profile here to exclude jna when enable scala-2.13. -->
-        <profile>
-            <id>scala-2.13</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <configuration>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>net.java.dev.jna:jna</exclude>
-                                    <exclude>net.java.dev.jna:jna-platform</exclude>
-                                </excludes>
-                            </artifactSet>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
