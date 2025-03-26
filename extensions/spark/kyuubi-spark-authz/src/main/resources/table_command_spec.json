@@ -2590,6 +2590,22 @@
     "comment" : "Delta"
   } ]
 }, {
+  "classname" : "org.apache.paimon.spark.catalyst.plans.logical.PaimonCallCommand",
+  "tableDescs" : [ {
+    "fieldName" : "args",
+    "fieldExtractor" : "ExpressionSeqTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Paimon"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.paimon.spark.commands.DeleteFromPaimonTableCommand",
   "tableDescs" : [ {
     "fieldName" : "relation",
