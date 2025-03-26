@@ -51,11 +51,7 @@
                             <include>org.apache.ranger:*</include>
                             <include>org.codehaus.jackson:*</include>
                             <include>com.sun.jersey:*</include>
-                            <include>com.kstruct:gethostname4j</include>
                             <include>javax.ws.rs:jsr311-api</include>
-                            <!-- JNA is the transitive dependency of gethostname4j -->
-                            <include>net.java.dev.jna:jna</include>
-                            <include>net.java.dev.jna:jna-platform</include>
                         </includes>
                     </artifactSet>
                     <filters>
