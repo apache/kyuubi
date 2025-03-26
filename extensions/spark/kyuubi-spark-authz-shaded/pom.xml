@@ -49,7 +49,11 @@
                         <includes>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.apache.ranger:*</include>
+                            <!-- RANGER-4225 (2.5.0) upgrades Jackson from 1.x to 2.x -->
                             <include>org.codehaus.jackson:*</include>
+                            <include>com.fasterxml.jackson.core:*</include>
+                            <include>com.fasterxml.jackson.module:*</include>
+                            <include>com.fasterxml.jackson.jaxrs:*</include>
                             <include>com.sun.jersey:*</include>
                             <include>javax.ws.rs:jsr311-api</include>
                         </includes>
@@ -82,12 +86,20 @@
                             <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
+                        </relocation>
+                        <relocation>
                             <pattern>com.sun.jersey</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.sun.jersey</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.sun.ws.rs.ext</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.sun.ws.rs.ext</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>javax.xml.bind</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.javax.xml.bind</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>javax.ws.rs</pattern>
