@@ -33,10 +33,7 @@
 
     <properties>
         <ranger.version>2.5.0</ranger.version>
-        <!-- the following components' version may need to tune to align w/ the ranger.version-->
-        <gethostname4j.version>1.0.0</gethostname4j.version>
         <jersey.client.version>1.19.4</jersey.client.version>
-        <jna.version>5.7.0</jna.version>
     </properties>
 
     <dependencies>
@@ -106,24 +103,6 @@
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-client</artifactId>
             <version>${jersey.client.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.kstruct</groupId>
-            <artifactId>gethostname4j</artifactId>
-            <version>${gethostname4j.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>${jna.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>net.java.dev.jna</groupId>
-            <artifactId>jna-platform</artifactId>
-            <version>${jna.version}</version>
         </dependency>
 
         <dependency>
