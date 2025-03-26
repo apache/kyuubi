@@ -98,10 +98,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.sun.ws.rs.ext</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>javax.xml.bind</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.javax.xml.bind</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>javax.ws.rs</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.javax.ws.rs</shadedPattern>
                         </relocation>
