@@ -15,17 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.sql
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.{SparkPlan, UnionExec}
+import org.apache.spark.sql.execution.command.DataWritingCommandExec
+import org.apache.spark.sql.execution.datasources.v2.V2TableWriteExec
 
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-    // TODO adapt to SPARK-49249 in Scala mode
-    .set("spark.sql.artifact.isolation.enabled", "false")
+object WriteUtils {
+  def isWrite(session: SparkSession, plan: SparkPlan): Boolean = {
+    plan match {
+      case _: DataWritingCommandExec => true
+      case _: V2TableWriteExec => true
+      case u: UnionExec if u.children.nonEmpty => u.children.forall(isWrite(session, _))
+      case _ => false
+    }
+  }
 }

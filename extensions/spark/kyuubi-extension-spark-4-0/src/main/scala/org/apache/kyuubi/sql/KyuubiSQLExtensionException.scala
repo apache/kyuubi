@@ -15,17 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.sql
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import java.sql.SQLException
 
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
+class KyuubiSQLExtensionException(reason: String, cause: Throwable)
+  extends SQLException(reason, cause) {
 
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-    // TODO adapt to SPARK-49249 in Scala mode
-    .set("spark.sql.artifact.isolation.enabled", "false")
+  def this(reason: String) = {
+    this(reason, null)
+  }
 }
