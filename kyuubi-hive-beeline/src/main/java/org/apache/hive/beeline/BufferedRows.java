@@ -28,6 +28,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 
 /** Rows implementation which buffers all rows */
 class BufferedRows extends Rows {
@@ -35,6 +36,7 @@ class BufferedRows extends Rows {
   private final Iterator<Row> iterator;
   private int columnCount;
   private int maxColumnWidth;
+  private boolean cancelImmediate;
 
   BufferedRows(BeeLine beeLine, ResultSet rs) throws SQLException {
     this(beeLine, rs, Optional.<Integer>absent());
@@ -42,6 +44,7 @@ class BufferedRows extends Rows {
 
   BufferedRows(BeeLine beeLine, ResultSet rs, Optional<Integer> limit) throws SQLException {
     super(beeLine, rs);
+    cancelImmediate = beeLine.getOpts().getCancelImmediate();
     list = new ArrayList<Row>();
     columnCount = rsMeta.getColumnCount();
     list.add(new Row(columnCount));
@@ -49,7 +52,11 @@ class BufferedRows extends Rows {
     int numRowsBuffered = 0;
     int maxRowsBuffered = limit.or(Integer.MAX_VALUE);
 
-    while (numRowsBuffered++ < maxRowsBuffered && rs.next()) {
+    while (numRowsBuffered++ < maxRowsBuffered
+        && !((rs.getStatement() instanceof KyuubiStatement)
+            && ((KyuubiStatement) rs.getStatement()).getIsCancelled()
+            && cancelImmediate)
+        && rs.next()) {
       this.list.add(new Row(columnCount, rs));
     }
 
