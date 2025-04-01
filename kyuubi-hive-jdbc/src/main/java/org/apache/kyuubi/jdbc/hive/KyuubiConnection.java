@@ -146,7 +146,11 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // hive_conf_list -> hiveConfMap
     // hive_var_list -> hiveVarMap
     if (isKerberosAuthMode()) {
-      host = Utils.getCanonicalHostName(connParams.getHost());
+      if (isEnableCanonicalHostnameCheck()) {
+        host = Utils.getCanonicalHostName(connParams.getHost());
+      } else {
+        host = connParams.getHost();
+      }
     } else {
       host = connParams.getHost();
     }
@@ -213,7 +217,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           }
           // Update with new values
           jdbcUriString = connParams.getJdbcUriString();
-          if (isKerberosAuthMode()) {
+          if (isKerberosAuthMode() && isEnableCanonicalHostnameCheck()) {
             host = Utils.getCanonicalHostName(connParams.getHost());
           } else {
             host = connParams.getHost();
@@ -1001,6 +1005,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isKerberosAuthMode() {
     return isSaslAuthMode() && hasSessionValue(AUTH_PRINCIPAL);
+  }
+
+  private boolean isEnableCanonicalHostnameCheck() {
+    return Boolean.parseBoolean(
+        sessConfMap.getOrDefault(
+            JdbcConnectionParams.AUTH_KERBEROS_ENABLE_CANONICAL_HOSTNAME_CHECK, "true"));
   }
 
   private Subject createSubject() {
