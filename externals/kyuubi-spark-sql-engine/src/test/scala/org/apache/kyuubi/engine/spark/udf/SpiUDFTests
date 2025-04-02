@@ -17,8 +17,28 @@
 
 package org.apache.kyuubi.engine.spark.udf
 
+import java.util.ServiceLoader
+
+import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
+
 import org.apache.spark.sql.SparkSession
 
-trait KDFRegistry {
-  def registerAll(spark: SparkSession): Unit
+import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+
+
+class SpiUDFTests extends WithSparkSQLEngine {
+  override def withKyuubiConf: Map[String, String] = Map.empty
+
+  test("spi udf register") {
+    ServiceLoader.load(classOf[KDFRegistry])
+      .foreach(_.registerAll(spark))
+
+    assert(spark.sql("select spi_test()").first().getString(0) == "success")
+  }
+}
+
+class SpiUDF extends KDFRegistry{
+  override def registerAll(spark: SparkSession): Unit = {
+    spark.udf.register("spi_test", () => "success")
+  }
 }
