@@ -15,17 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.sql.zorder
 
-import org.apache.kyuubi.WithKyuubiServer
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = KyuubiConf()
-    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
-    // TODO adapt to SPARK-49249 in Scala mode
-    .set("spark.sql.artifact.isolation.enabled", "false")
+/**
+ * A zorder statement that contains we parsed from SQL.
+ * We should convert this plan to certain command at Analyzer.
+ */
+case class OptimizeZorderStatement(
+    tableIdentifier: Seq[String],
+    query: LogicalPlan) extends UnaryNode {
+  override def child: LogicalPlan = query
+  override def output: Seq[Attribute] = child.output
+  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(query = newChild)
 }
