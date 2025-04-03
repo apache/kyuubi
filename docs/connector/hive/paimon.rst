@@ -13,10 +13,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-`Apache Paimon (Incubating)`_
-==========
+Apache Paimon (Incubating)
+==========================
 
-Apache Paimon(incubating) is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
+`Apache Paimon (Incubating)`_ is a streaming data lake platform that supports high-speed data ingestion, change data tracking and efficient real-time analytics.
 
 .. tip::
    This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
@@ -28,7 +28,7 @@ convenient, easy to understand, and easy to expand than directly using
 Hive to manipulate Apache Paimon (Incubating).
 
 Apache Paimon (Incubating) Integration
--------------------
+--------------------------------------
 
 To enable the integration of kyuubi hive sql engine and Apache Paimon (Incubating), you need to:
 
@@ -69,8 +69,8 @@ Configurations
 
 If you are using HDFS, make sure that the environment variable HADOOP_HOME or HADOOP_CONF_DIR is set.
 
-Apache Paimon (Incubating)  Operations
-------------------
+Apache Paimon (Incubating) Operations
+-------------------------------------
 
 Apache Paimon (Incubating) only supports only reading table store tables through Hive.
 A common scenario is to write data with Spark or Flink and read data with Hive.

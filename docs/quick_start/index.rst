@@ -25,6 +25,4 @@ Quick Start
 
     quick_start
     quick_start_with_helm
-    quick_start_with_beeline
     quick_start_with_jdbc
-

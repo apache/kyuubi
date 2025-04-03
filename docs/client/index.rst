@@ -31,8 +31,6 @@ In addition, APIs like REST, Thrift, etc., allow developers to access kyuubi dir
     jdbc/index
     cli/index
     bi_tools/index
-    odbc/index
-    thrift/index
     rest/index
     ui/index
     python/index

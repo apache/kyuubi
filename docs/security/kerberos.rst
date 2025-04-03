@@ -101,7 +101,7 @@ Configure the authentication properties
 Configure the following properties to ``$KYUUBI_HOME/conf/kyuubi-defaults.conf``
 on each node where kyuubi server is installed.
 
-.. code-block:: property
+.. code-block:: properties
 
    kyuubi.authentication=KERBEROS
    kyuubi.kinit.principal=superuser/FQDN@REALM

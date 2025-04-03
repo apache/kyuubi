@@ -192,7 +192,6 @@ What's Next
    :glob:
 
    Clients & APIs <client/index>
-   SQL References <sql/index>
 
 .. toctree::
    :caption: Extension Guide

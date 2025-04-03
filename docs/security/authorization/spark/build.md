@@ -20,7 +20,7 @@
 ## Build with Apache Maven
 
 Kyuubi Spark AuthZ Plugin is built using [Apache Maven](https://maven.apache.org).
-To build it, `cd` to the root direct of kyuubi project and run:
+To build it, `cd` to the root directory of kyuubi project and run:
 
 ```shell
 build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests
@@ -34,7 +34,7 @@ After a while, if everything goes well, you will get the plugin finally in two p
 ## Build shaded jar with Apache Maven
 
 Apache Kyuubi also provides the shaded jar for the Spark AuthZ plugin, You can run the AuthZ plugin using just a shaded jar without the additional dependency of jars,
-To build it, `cd` to the root direct of kyuubi project and run:
+To build it, `cd` to the root directory of kyuubi project and run:
 
 ```shell
 build/mvn clean package -pl :kyuubi-spark-authz-shaded_2.12 -am -DskipTests

@@ -19,7 +19,7 @@ Getting Started
 
 .. note::
 
-   This page covers how to start with kyuubi quickly on you
+   This page covers how to start with kyuubi quickly on your
    laptop in about 3~5 minutes.
 
 Requirements

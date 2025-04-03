@@ -15,7 +15,7 @@
 - limitations under the License.
 -->
 
-# Monitoring Kyuubi - Server Metrics
+# Metrics
 
 Kyuubi has a configurable metrics system based on the [Dropwizard Metrics Library](https://metrics.dropwizard.io/).
 This allows users to report Kyuubi metrics to a variety of `kyuubi.metrics.reporters`.
@@ -90,7 +90,7 @@ These metrics include:
 | `kyuubi.metadata.request.total`                  |                                        | meter     | 1.6.0  | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests time and rate </div>                                                                                                                                                                                |
 | `kyuubi.metadata.request.failed`                 |                                        | meter     | 1.6.0  | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> metadata requests failure time and rate </div>                                                                                                                                                                        |
 | `kyuubi.metadata.request.retrying`               |                                        | meter     | 1.6.0  | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> retrying metadata requests time and rate, it is not cumulative </div>                                                                                                                                                 |
-| `kyuubi.operartion.batch_pending_max_elapse`     |                                        | gauge     | 1.10.1 | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> the batch pending max elapsed time on current kyuubi instance </div>                                                                                                                                                  |
+| `kyuubi.operation.batch_pending_max_elapse`      |                                        | gauge     | 1.10.1 | <div style='width: 150pt;word-wrap: break-word;white-space: normal'> the batch pending max elapsed time on current kyuubi instance </div>                                                                                                                                                  |
 
 Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`

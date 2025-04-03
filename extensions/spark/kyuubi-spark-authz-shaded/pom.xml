@@ -49,13 +49,13 @@
                         <includes>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.apache.ranger:*</include>
+                            <!-- RANGER-4225 (2.5.0) upgrades Jackson from 1.x to 2.x -->
                             <include>org.codehaus.jackson:*</include>
+                            <include>com.fasterxml.jackson.core:*</include>
+                            <include>com.fasterxml.jackson.module:*</include>
+                            <include>com.fasterxml.jackson.jaxrs:*</include>
                             <include>com.sun.jersey:*</include>
-                            <include>com.kstruct:gethostname4j</include>
                             <include>javax.ws.rs:jsr311-api</include>
-                            <!-- JNA is the transitive dependency of gethostname4j -->
-                            <include>net.java.dev.jna:jna</include>
-                            <include>net.java.dev.jna:jna-platform</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -84,6 +84,10 @@
                         <relocation>
                             <pattern>org.codehaus.jackson</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.fasterxml.jackson</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.sun.jersey</pattern>
@@ -117,27 +121,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <!-- Add profile here to exclude jna when enable scala-2.13. -->
-        <profile>
-            <id>scala-2.13</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <configuration>
-                            <artifactSet>
-                                <excludes>
-                                    <exclude>net.java.dev.jna:jna</exclude>
-                                    <exclude>net.java.dev.jna:jna-platform</exclude>
-                                </excludes>
-                            </artifactSet>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

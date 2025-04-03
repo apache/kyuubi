@@ -40,7 +40,7 @@ So the whole thing here is to let Spark applications use this copy of Hive confi
 By default, Kyuubi launches Spark SQL engines pointing to a dummy embedded [Apache Derby](https://db.apache.org/derby/)-based metastore for each application,
 and this metadata can only be seen by one user at a time, e.g.
 
-```shell script
+```shell
 bin/kyuubi-beeline -u 'jdbc:kyuubi://localhost:10009/' -n kentyao
 Connecting to jdbc:kyuubi://localhost:10009/
 Connected to: Spark SQL (version 3.4.2)
@@ -175,7 +175,7 @@ For example, Spark 3.0 was released with a built-in Hive client (2.3.7), so, ide
 
 If you do have a legacy Hive metastore server that cannot be easily upgraded, and you may face the issue by default like this,
 
-```java
+```
 Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
 	at org.apache.thrift.TServiceClient.receiveBase(TServiceClient.java:79)
 	at org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore$Client.recv_get_table_req(ThriftHiveMetastore.java:1567)

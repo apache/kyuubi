@@ -56,7 +56,7 @@ Send bug-reports to heimdal-bugs@h5l.org
 
 Windows command and output:
 
-```cmd
+```shell
 > klist -V
 Kerberos for Windows
 ```
