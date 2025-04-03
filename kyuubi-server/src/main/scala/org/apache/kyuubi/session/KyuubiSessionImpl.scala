@@ -179,9 +179,9 @@ class KyuubiSessionImpl(
               KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
             _engineSessionHandle =
               engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
+            _client = engineClient
             logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
               s" with ${_engineSessionHandle}]")
-            _client = engineClient
             shouldRetry = false
           } catch {
             case e: TTransportException
