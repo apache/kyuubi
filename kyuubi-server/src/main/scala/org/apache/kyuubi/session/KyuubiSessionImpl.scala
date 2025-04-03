@@ -54,7 +54,6 @@ class KyuubiSessionImpl(
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
-  def engineLaunched: Boolean = _engineLaunched
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
@@ -181,7 +180,7 @@ class KyuubiSessionImpl(
             logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
               s" with ${_engineSessionHandle}]")
             shouldRetry = false
-            _engineLaunched = true
+            engineLaunched = true
           } catch {
             case e: TTransportException
                 if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
@@ -245,10 +244,10 @@ class KyuubiSessionImpl(
     super.runOperation(operation)
   }
 
-  @volatile private var _engineLaunched: Boolean = false
+  @volatile private var engineLaunched: Boolean = false
 
   private def waitForEngineLaunched(): Unit = {
-    if (!_engineLaunched) {
+    if (!engineLaunched) {
       Option(launchEngineOp).foreach { op =>
         val waitingStartTime = System.currentTimeMillis()
         logSessionInfo(s"Starting to wait the launch engine operation finished")
@@ -264,7 +263,7 @@ class KyuubiSessionImpl(
           throw ex
         }
 
-        _engineLaunched = true
+        engineLaunched = true
       }
     }
   }
