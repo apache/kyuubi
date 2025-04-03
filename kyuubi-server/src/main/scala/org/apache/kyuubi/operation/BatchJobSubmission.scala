@@ -163,8 +163,8 @@ class BatchJobSubmission(
       opState: OperationState,
       appState: ApplicationState.ApplicationState): ApplicationState.ApplicationState = {
     if (opState == OperationState.ERROR && !ApplicationState.isTerminated(appState)) {
-      withOperationLog(error(s"Batch $batchId state is $opState," +
-        s" but the application state is $appState and not terminated, set to UNKNOWN."))
+      error(s"Batch $batchId state is $opState," +
+        s" but the application state is $appState and not terminated, set to UNKNOWN.")
       ApplicationState.UNKNOWN
     } else {
       appState

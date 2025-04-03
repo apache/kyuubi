@@ -103,7 +103,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def setOperationException(opEx: KyuubiSQLException): Unit = {
     this.operationException = opEx
-    withOperationLog(error(s"Error operating $opType: ${opEx.getMessage}", opEx))
+    error(s"Error operating $opType: ${opEx.getMessage}", opEx)
   }
 
   def getOperationJobProgress: TProgressUpdateResp = operationJobProgress
