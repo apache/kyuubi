@@ -167,6 +167,7 @@ class KyuubiSessionImpl(
                 warn(s"Error on de-registering engine [${engine.engineSpace} $host:$port]", e)
             }
 
+          var engineClient: KyuubiSyncThriftClient = null
           try {
             val passwd =
               if (sessionManager.getConf.get(ENGINE_SECURITY_ENABLED)) {
@@ -174,9 +175,11 @@ class KyuubiSessionImpl(
               } else {
                 Option(password).filter(_.nonEmpty).getOrElse("anonymous")
               }
-            _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+            engineClient =
+              KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
             _engineSessionHandle =
-              _client.openSession(protocol, user, passwd, openEngineSessionConf)
+              engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
+            _client = engineClient
             logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
               s" with ${_engineSessionHandle}]")
             shouldRetry = false
@@ -207,9 +210,9 @@ class KyuubiSessionImpl(
               throw e
           } finally {
             attempt += 1
-            if (shouldRetry && _client != null) {
+            if (shouldRetry && engineClient != null) {
               try {
-                _client.closeSession()
+                engineClient.closeSession()
               } catch {
                 case e: Throwable =>
                   warn(
