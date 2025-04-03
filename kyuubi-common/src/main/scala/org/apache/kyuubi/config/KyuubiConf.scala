@@ -2294,6 +2294,8 @@ object KyuubiConf {
       " computing resources/data of the team. It follows the" +
       " [Hadoop GroupsMapping](https://reurl.cc/xE61Y5) to map user to a primary group. If the" +
       " primary group is not found, it fallback to the USER level." +
+      " <li>SERVER_LOCAL: the engine will be shared by the same Kyuubi server which launched " +
+      " this engine.</li>" +
       " <li>SERVER: the engine will be shared by Kyuubi servers, and the engine will be launched" +
       " by Server's user.</li>" +
       " </ul>" +
