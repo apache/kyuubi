@@ -174,13 +174,14 @@ class KyuubiSessionImpl(
               } else {
                 Option(password).filter(_.nonEmpty).getOrElse("anonymous")
               }
-            _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
+            val engineClient =
+              KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
             _engineSessionHandle =
-              _client.openSession(protocol, user, passwd, openEngineSessionConf)
+              engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
+            _client = engineClient
             logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
               s" with ${_engineSessionHandle}]")
             shouldRetry = false
-            engineLaunched = true
           } catch {
             case e: TTransportException
                 if attempt < maxAttempts && e.getCause.isInstanceOf[java.net.ConnectException] &&
@@ -320,7 +321,7 @@ class KyuubiSessionImpl(
   }
 
   def checkEngineConnectionAlive(): Boolean = {
-    if (!engineLaunched || client == null) return true // client has not been initialized
+    if (client == null) return true // client has not been initialized
     if (client.engineConnectionClosed) return false
     !client.remoteEngineBroken
   }
