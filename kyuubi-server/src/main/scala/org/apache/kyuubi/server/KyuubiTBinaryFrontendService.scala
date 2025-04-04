@@ -77,7 +77,7 @@ final class KyuubiTBinaryFrontendService(
             .map(_.asInstanceOf[KyuubiSessionImpl])
             .flatMap(_.getSessionEvent).foreach { sessionEvent =>
               sessionEvent.exception = Some(new KyuubiException(
-                s"Session between client and Kyuubi server disconnected without closing properly"))
+                s"Session between client and Kyuubi server disconnected without closing properly."))
               EventBus.post(sessionEvent)
             }
         }
