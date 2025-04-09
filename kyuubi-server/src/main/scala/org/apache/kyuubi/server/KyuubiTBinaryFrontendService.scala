@@ -26,7 +26,6 @@ import org.apache.kyuubi.cli.Handle
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE
 import org.apache.kyuubi.config.KyuubiReservedKeys._
-import org.apache.kyuubi.events.EventBus
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -78,7 +77,6 @@ final class KyuubiTBinaryFrontendService(
             .flatMap(_.getSessionEvent).foreach { sessionEvent =>
               sessionEvent.exception = Some(new KyuubiException(
                 s"Session between client and Kyuubi server disconnected without closing properly."))
-              EventBus.post(sessionEvent)
             }
         }
         super.deleteContext(serverContext, input, output)
