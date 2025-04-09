@@ -22,12 +22,13 @@ import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.util.JavaUtils
 
 private[kyuubi] class JettyServer(
     server: Server,
     connector: ServerConnector,
-    rootHandler: ContextHandlerCollection) {
+    rootHandler: ContextHandlerCollection) extends Logging {
 
   def start(): Unit = synchronized {
     try {
@@ -54,8 +55,11 @@ private[kyuubi] class JettyServer(
   }
 
   @volatile private var _serverUri: String = _
-  def getServerUri: String =
-    Option(_serverUri).getOrElse(connector.getHost + ":" + connector.getLocalPort)
+  def getServerUri: String = Option(_serverUri).getOrElse {
+    val uri = connector.getHost + ":" + connector.getLocalPort
+    warn("Jetty server is not started yet, returning " + uri)
+    uri
+  }
 
   def addHandler(handler: Handler): Unit = synchronized {
     rootHandler.addHandler(handler)
