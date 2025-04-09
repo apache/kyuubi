@@ -49,7 +49,7 @@ private[kyuubi] class JettyServer(
       case _ =>
     }
   }
-  val serverUri: String = connector.getHost + ":" + connector.getLocalPort
+  def getServerUri: String = connector.getHost + ":" + connector.getLocalPort
 
   def addHandler(handler: Handler): Unit = synchronized {
     rootHandler.addHandler(handler)

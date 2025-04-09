@@ -65,7 +65,7 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
     checkInitialized()
     conf.get(FRONTEND_ADVERTISED_HOST) match {
       case Some(advertisedHost) => s"$advertisedHost:$port"
-      case None => server.serverUri
+      case None => server.getServerUri
     }
   }
 
@@ -79,7 +79,7 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
       try {
         server.start()
         isStarted.set(true)
-        info(s"$getName has started at ${server.serverUri}")
+        info(s"$getName has started at ${server.getServerUri}")
         startInternal()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)

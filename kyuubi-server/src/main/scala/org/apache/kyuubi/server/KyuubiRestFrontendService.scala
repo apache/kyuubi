@@ -109,7 +109,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     checkInitialized()
     conf.get(FRONTEND_ADVERTISED_HOST) match {
       case Some(advertisedHost) => s"$advertisedHost:$port"
-      case None => server.serverUri
+      case None => server.getServerUri
     }
   }
 
@@ -238,7 +238,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       }
     }
     super.start()
-    info(s"Exposing REST endpoint at: http://${server.serverUri}")
+    info(s"Exposing REST endpoint at: http://${server.getServerUri}")
   }
 
   override def stop(): Unit = synchronized {
