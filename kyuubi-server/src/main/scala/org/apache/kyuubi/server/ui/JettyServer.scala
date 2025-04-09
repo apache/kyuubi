@@ -34,6 +34,9 @@ private[kyuubi] class JettyServer(
       server.start()
       connector.start()
       server.addConnector(connector)
+      val localPort = connector.getLocalPort
+      require(localPort > 0, "Jetty server port should be positive, but got " + localPort)
+      _serverUri = connector.getHost + ":" + localPort
     } catch {
       case e: Exception =>
         stop()
@@ -49,7 +52,10 @@ private[kyuubi] class JettyServer(
       case _ =>
     }
   }
-  def getServerUri: String = connector.getHost + ":" + connector.getLocalPort
+
+  @volatile private var _serverUri: String = _
+  def getServerUri: String =
+    Option(_serverUri).getOrElse(connector.getHost + ":" + connector.getLocalPort)
 
   def addHandler(handler: Handler): Unit = synchronized {
     rootHandler.addHandler(handler)
