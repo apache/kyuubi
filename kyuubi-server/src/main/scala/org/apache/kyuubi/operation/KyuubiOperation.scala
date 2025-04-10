@@ -172,7 +172,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   }
 
   override def getResultSetMetadata: TGetResultSetMetadataResp = {
-    if (_remoteOpHandle == null) {
+    if (_remoteOpHandle == null || !hasResultSet) {
       val tColumnDesc = new TColumnDesc()
       tColumnDesc.setColumnName("Result")
       val desc = new TTypeDesc
