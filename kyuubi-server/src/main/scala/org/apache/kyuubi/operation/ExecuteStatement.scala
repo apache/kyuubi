@@ -76,6 +76,9 @@ class ExecuteStatement(
 
   private def waitStatementComplete(): Unit =
     try {
+      if (shouldRunAsync) {
+        executeStatement()
+      }
       setState(OperationState.RUNNING)
       var statusResp: TGetOperationStatusResp = null
 
@@ -147,7 +150,18 @@ class ExecuteStatement(
       }
       // see if anymore log could be fetched
       fetchQueryLog()
-    } catch onError()
+    } catch onError().andThen(_ => {
+        if (isClosedOrCanceled && _remoteOpHandle != null) {
+          // close remote operation in case user cancels before engine launched.
+          // In this case, CANCELED/CLOSED -> RUNNING transition will definitely throw Exception.
+          client.cancelOperation(_remoteOpHandle)
+        }
+        if (getSession.sessionManager.getSessionOption(getSession.handle).isEmpty) {
+          // close remote session in case user closes session before engine launched
+          logger.warn(s"Session ${getSession.handle} has been closed, close remote session now")
+          client.closeSession()
+        }
+      })
     finally {
       shutdownTimeoutMonitor()
     }
@@ -168,7 +182,9 @@ class ExecuteStatement(
     if (isTimeoutMonitorEnabled) {
       addTimeoutMonitor(queryTimeout)
     }
-    executeStatement()
+    if (!shouldRunAsync) {
+      executeStatement()
+    }
     val sessionManager = session.sessionManager
     val asyncOperation: Runnable = () => waitStatementComplete()
     try {

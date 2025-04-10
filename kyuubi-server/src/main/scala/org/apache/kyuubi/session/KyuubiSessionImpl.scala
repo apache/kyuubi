@@ -104,7 +104,14 @@ class KyuubiSessionImpl(
   }
 
   @volatile private var _client: KyuubiSyncThriftClient = _
-  def client: KyuubiSyncThriftClient = _client
+  def client: KyuubiSyncThriftClient = {
+    if (sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)) {
+      // When `SESSION_ENGINE_LAUNCH_ASYNC` is set to true,
+      // launch engine when client used for the first time.
+      waitForEngineLaunched()
+    }
+    _client
+  }
 
   @volatile private var _engineSessionHandle: SessionHandle = _
 
@@ -180,8 +187,9 @@ class KyuubiSessionImpl(
             _engineSessionHandle =
               engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
             _client = engineClient
-            logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
-              s" with ${_engineSessionHandle}]")
+            logSessionInfo(
+              s"Connected to engine [$host:$port]/[${_client.engineId.getOrElse("")}]" +
+                s" with ${_engineSessionHandle}]")
             shouldRetry = false
           } catch {
             case e: TTransportException
@@ -234,12 +242,14 @@ class KyuubiSessionImpl(
 
   override protected def runOperation(operation: Operation): OperationHandle = {
     if (operation != launchEngineOp) {
-      try {
-        waitForEngineLaunched()
-      } catch {
-        case t: Throwable =>
-          operation.close()
-          throw t
+      if (!sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)) {
+        try {
+          waitForEngineLaunched()
+        } catch {
+          case t: Throwable =>
+            operation.close()
+            throw t
+        }
       }
       sessionEvent.totalOperations += 1
     }
