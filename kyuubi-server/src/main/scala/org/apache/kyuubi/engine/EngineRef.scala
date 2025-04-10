@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
@@ -64,6 +66,8 @@ private[kyuubi] class EngineRef(
   private val serverSpace: String = conf.get(HA_NAMESPACE)
 
   private val timeout: Long = conf.get(ENGINE_INIT_TIMEOUT)
+
+  private val objectMapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
@@ -118,6 +122,10 @@ private[kyuubi] class EngineRef(
           DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
             client.getAndIncrement(snPath)
           }
+
+        case "ADAPTIVE" =>
+          getAdaptivePoolId(clientPoolSize)
+
         case "RANDOM" =>
           Random.nextInt(poolSize)
       }
@@ -372,6 +380,50 @@ private[kyuubi] class EngineRef(
       } catch {
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
+      }
+    }
+  }
+
+  private def getAdaptivePoolId(poolSize: Int): Int = {
+    val sessionThreshold = conf.get(ENGINE_POOL_ADAPTIVE_SESSION_THRESHOLD)
+    val metricsSpace = Utils.concatEngineMetricsPath(
+      s"/${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType/$sessionUser")
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+      tryWithLock(client) {
+        if (client.pathNonExists(metricsSpace)) {
+          client.create(metricsSpace, "PERSISTENT")
+        }
+      }
+      val metrics = client.getChildren(metricsSpace)
+      if (metrics.isEmpty) {
+        return Random.nextInt(poolSize)
+      } else {
+        engineType match {
+          case SPARK_SQL =>
+            val engineMetricsMap = metrics.map { p =>
+              objectMapper.readValue(
+                new String(client.getData(s"$metricsSpace/$p")),
+                classOf[Map[String, Int]])
+            }
+            if (engineMetricsMap.isEmpty) {
+              return Random.nextInt(poolSize)
+            } else {
+              val candidate = engineMetricsMap.filter(_.contains("poolID"))
+                .minBy { map =>
+                  (
+                    map.getOrElse("openSessionCount", 0),
+                    map.getOrElse("activeTask", 0))
+                }
+              if ((candidate.nonEmpty && candidate("openSessionCount") < sessionThreshold) ||
+                metrics.size == poolSize) {
+                candidate("poolID")
+              } else {
+                Random.nextInt(poolSize)
+              }
+            }
+          // TODO: other engine support adaptive
+          case _ => Random.nextInt(poolSize)
+        }
       }
     }
   }

@@ -225,7 +225,6 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       }
     } finally {
       service.stop()
-      discovery.stop()
     }
   }
 
