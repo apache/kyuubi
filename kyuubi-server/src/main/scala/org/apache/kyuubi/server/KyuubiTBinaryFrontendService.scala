@@ -21,7 +21,7 @@ import java.util.Base64
 
 import org.apache.hadoop.conf.Configuration
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.cli.Handle
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE
@@ -69,6 +69,16 @@ final class KyuubiTBinaryFrontendService(
           serverContext: ServerContext,
           input: TProtocol,
           output: TProtocol): Unit = {
+        val handle = serverContext.getSessionHandle
+        if (handle != null) {
+          be.sessionManager
+            .getSessionOption(handle)
+            .map(_.asInstanceOf[KyuubiSessionImpl])
+            .flatMap(_.getSessionEvent).foreach { sessionEvent =>
+              sessionEvent.exception = Some(new KyuubiException(
+                s"Session between client and Kyuubi server disconnected without closing properly."))
+            }
+        }
         super.deleteContext(serverContext, input, output)
         MetricsSystem.tracing { ms =>
           ms.decCount(THRIFT_BINARY_CONN_OPEN)
