@@ -46,7 +46,6 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
 import org.apache.kyuubi.util.JavaUtils
 
-
 /**
  * The description and functionality of an engine at server side
  *
