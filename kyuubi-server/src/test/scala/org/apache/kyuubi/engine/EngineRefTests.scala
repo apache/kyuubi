@@ -183,8 +183,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
         user,
-        localHostAddress,
-        "default"))
+        localHostAddress + "_default"))
     assert(appName.defaultEngineName ===
       s"kyuubi_${SERVER_LOCAL}_${SPARK_SQL}_${user}_${localHostAddress}_default_$id")
 
@@ -194,8 +193,7 @@ trait EngineRefTests extends KyuubiFunSuite {
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
         user,
-        localHostAddress,
-        "abc"))
+        localHostAddress + "_abc"))
     assert(appName2.defaultEngineName ===
       s"kyuubi_${SERVER_LOCAL}_${SPARK_SQL}_${user}_${localHostAddress}_abc_$id")
   }

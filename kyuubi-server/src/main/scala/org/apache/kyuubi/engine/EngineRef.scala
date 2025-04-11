@@ -24,6 +24,7 @@ import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -44,6 +45,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
 import org.apache.kyuubi.util.JavaUtils
+
 
 /**
  * The description and functionality of an engine at server side
@@ -83,12 +85,13 @@ private[kyuubi] class EngineRef(
 
   private val enginePoolSelectPolicy: String = conf.get(ENGINE_POOL_SELECT_POLICY)
 
-  private lazy val localHostAddr = JavaUtils.findLocalInetAddress.getHostAddress
-  if (shareLevel == SERVER_LOCAL) {
-    if (localHostAddr == null || localHostAddr.isEmpty) {
+  private lazy val localHostAddr = {
+    val host = JavaUtils.findLocalInetAddress.getHostAddress
+    if (StringUtils.isBlank(host)) {
       throw KyuubiSQLException(
         s"Local host address can not be empty if ShareLevel set to SERVER_LOCAL")
     }
+    host
   }
 
   // In case the multi kyuubi instances have the small gap of timeout, here we add
@@ -158,8 +161,7 @@ private[kyuubi] class EngineRef(
    * For `GROUP` share level:
    *   /`serverSpace_version_GROUP_engineType`/`primary group name`[/`subdomain`]
    * For `SERVER_LOCAL` share level:
-   *   /`serverSpace_version_SERVER_LOCAL_engineType`
-   *   /`kyuubi server user`/`hostAddress`[/`subdomain`]
+   *   /`serverSpace_version_SERVER_LOCAL_engineType`/`kyuubi server user`/`hostAddress_subdomain`
    * For `SERVER` share level:
    *   /`serverSpace_version_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
@@ -169,7 +171,7 @@ private[kyuubi] class EngineRef(
     shareLevel match {
       case CONNECTION => DiscoveryPaths.makePath(commonParent, routingUser, engineRefId)
       case SERVER_LOCAL =>
-        DiscoveryPaths.makePath(commonParent, routingUser, localHostAddr, subdomain)
+        DiscoveryPaths.makePath(commonParent, routingUser, s"${localHostAddr}_$subdomain")
       case _ => DiscoveryPaths.makePath(commonParent, routingUser, subdomain)
     }
   }
@@ -186,8 +188,7 @@ private[kyuubi] class EngineRef(
           DiscoveryPaths.makePath(
             s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
             routingUser,
-            localHostAddr,
-            subdomain)
+            s"${localHostAddr}_$subdomain")
         discoveryClient.tryWithLock(
           lockPath,
           timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
