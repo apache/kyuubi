@@ -55,7 +55,7 @@ class KyuubiSessionImpl(
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
-  private[kyuubi] val optimizedConf: Map[String, String] = {
+  override val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedConf.asJava).asScala).reduce(_ ++ _)

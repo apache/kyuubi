@@ -29,6 +29,7 @@ public class SessionData {
   private String user;
   private String ipAddr;
   private Map<String, String> conf;
+  private Map<String, String> optimizedConf;
   private Long createTime;
   private Long duration;
   private Long idleTime;
@@ -49,6 +50,7 @@ public class SessionData {
       String user,
       String ipAddr,
       Map<String, String> conf,
+      Map<String, String> optimizedConf,
       Long createTime,
       Long duration,
       Long idleTime,
@@ -65,6 +67,7 @@ public class SessionData {
     this.user = user;
     this.ipAddr = ipAddr;
     this.conf = conf;
+    this.optimizedConf = optimizedConf;
     this.createTime = createTime;
     this.duration = duration;
     this.idleTime = idleTime;
@@ -119,6 +122,14 @@ public class SessionData {
 
   public void setConf(Map<String, String> conf) {
     this.conf = conf;
+  }
+
+  public Map<String, String> getOptimizedConf() {
+    return optimizedConf;
+  }
+
+  public void setOptimizedConf(Map<String, String> optimizedConf) {
+    this.optimizedConf = optimizedConf;
   }
 
   public Long getCreateTime() {

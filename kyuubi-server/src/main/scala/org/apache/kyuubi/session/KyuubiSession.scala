@@ -40,6 +40,8 @@ abstract class KyuubiSession(
 
   val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
 
+  val optimizedConf: Map[String, String]
+
   def getSessionEvent: Option[KyuubiSessionEvent]
 
   def checkSessionAccessPathURIs(): Unit

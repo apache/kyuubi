@@ -48,6 +48,7 @@ case class KyuubiSessionEvent(
     clientIP: String,
     serverIP: String,
     conf: Map[String, String],
+    optimizedConf: Map[String, String],
     eventTime: Long,
     startTime: Long,
     var remoteSessionId: String = "",
@@ -73,6 +74,7 @@ object KyuubiSessionEvent {
       session.ipAddress,
       session.connectionUrl,
       session.conf,
+      session.optimizedConf,
       System.currentTimeMillis(),
       session.createTime)
   }
