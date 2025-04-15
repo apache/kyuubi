@@ -51,7 +51,7 @@ object KubernetesApplicationAuditLogger extends Logging {
     sb.append(s"containers=$containerStatuses").append("\t")
     sb.append(s"appId=${pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)}").append("\t")
     val (appState, appError) =
-      toApplicationStateAndError(pod, appStateSource, appStateContainer)
+      toApplicationStateAndError(pod, appStateSource, appStateContainer, eventType)
     sb.append(s"appState=$appState").append("\t")
     sb.append(s"appError='${appError.getOrElse("")}'")
     info(sb.toString())
