@@ -502,8 +502,12 @@ object KubernetesApplicationOperation extends Logging {
       .map(_.getState)
       .map(containerStateToApplicationState)
 
-    // When the pod app state is terminated, the container app state will be ignored
-    val applicationState = if (ApplicationState.isTerminated(podAppState)) {
+    // 1. if the container state is already terminated, use the container state
+    // 2. if the pod state is terminated, use the pod state and ignore the container state
+    // 3. otherwise, use the container state if it exists or the pod state
+    val applicationState = if (containerAppState.exists(ApplicationState.isTerminated)) {
+      containerAppState.get
+    } else if (ApplicationState.isTerminated(podAppState)) {
       podAppState
     } else {
       containerAppState.getOrElse(podAppState)
