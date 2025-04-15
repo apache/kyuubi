@@ -294,6 +294,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (isSparkEnginePod(pod)) {
         updateApplicationState(kubernetesInfo, pod)
         KubernetesApplicationAuditLogger.audit(
+          KubernetesResourceEventTypes.ADD,
           kubernetesInfo,
           pod,
           appStateSource,
@@ -312,6 +313,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           markApplicationTerminated(newPod)
         }
         KubernetesApplicationAuditLogger.audit(
+          KubernetesResourceEventTypes.UPDATE,
           kubernetesInfo,
           newPod,
           appStateSource,
@@ -327,6 +329,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         updateApplicationState(kubernetesInfo, pod)
         markApplicationTerminated(pod)
         KubernetesApplicationAuditLogger.audit(
+          KubernetesResourceEventTypes.DELETE,
           kubernetesInfo,
           pod,
           appStateSource,

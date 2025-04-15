@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.api.model.Pod
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{toApplicationStateAndError, LABEL_KYUUBI_UNIQUE_KEY, SPARK_APP_ID_LABEL}
+import org.apache.kyuubi.engine.KubernetesResourceEventTypes.KubernetesResourceEventType
 
 object KubernetesApplicationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
@@ -31,12 +32,14 @@ object KubernetesApplicationAuditLogger extends Logging {
   }
 
   def audit(
+      eventType: KubernetesResourceEventType,
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
       appStateSource: KubernetesApplicationStateSource,
       appStateContainer: String): Unit = {
     val sb = AUDIT_BUFFER.get()
     sb.setLength(0)
+    sb.append("eventType=").append(eventType).append("\t")
     sb.append(s"label=${pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)}").append("\t")
     sb.append(s"context=${kubernetesInfo.context.orNull}").append("\t")
     sb.append(s"namespace=${kubernetesInfo.namespace.orNull}").append("\t")
