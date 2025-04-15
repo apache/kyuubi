@@ -173,7 +173,7 @@
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
-        <kubernetes-client.version>7.1.0</kubernetes-client.version>
+        <kubernetes-client.version>6.13.5</kubernetes-client.version>
         <kyuubi-relocated.version>0.4.1</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
