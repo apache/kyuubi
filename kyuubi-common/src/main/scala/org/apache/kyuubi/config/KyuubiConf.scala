@@ -1236,6 +1236,17 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
+  val KUBERNETES_CLIENT_INITIALIZE_LIST: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.kubernetes.client.initialize.list")
+      .doc("The kubernetes client initialize list to register kubernetes resource informers" +
+        " during Kyuubi server startup. This ensure the Kyuubi server is promptly informed for" +
+        " any Kubernetes resource changes after startup. It is highly recommend to set it for" +
+        " multiple Kyuubi instances mode. The format is `context1:namespace1,context2:namespace2`.")
+      .version("1.11.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")
       .doc("The internal Kubernetes master (API server) address to be used for kyuubi.")

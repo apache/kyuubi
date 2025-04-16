@@ -96,6 +96,11 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       case None => None
     }
   }
+
+  private[kyuubi] def getKubernetesApplicationOperation: Option[KubernetesApplicationOperation] = {
+    operations.find(_.isInstanceOf[KubernetesApplicationOperation])
+      .map(_.asInstanceOf[KubernetesApplicationOperation])
+  }
 }
 
 object KyuubiApplicationManager {
