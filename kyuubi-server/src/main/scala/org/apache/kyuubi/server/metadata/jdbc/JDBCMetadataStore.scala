@@ -35,7 +35,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
@@ -419,6 +419,142 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
+  private def insertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+    val insertQuery =
+      s"""
+         |INSERT INTO $KUBERNETES_ENGINE_INFO_TABLE(
+         |identifier,
+         |context,
+         |namespace,
+         |pod_name,
+         |pod_state,
+         |container_state,
+         |engine_id,
+         |engine_name,
+         |engine_state,
+         |engine_error,
+         |create_time,
+         |update_time
+         |)
+         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?
+         |WHERE NOT EXISTS (
+         |  SELECT 1 FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?
+         |)
+         |""".stripMargin
+    JdbcUtils.withConnection { connection =>
+      val currentTime = System.currentTimeMillis()
+      execute(
+        connection,
+        insertQuery,
+        engineInfo.identifier,
+        engineInfo.context.orNull,
+        engineInfo.namespace.orNull,
+        engineInfo.podName,
+        engineInfo.podState,
+        engineInfo.containerState,
+        engineInfo.engineId,
+        engineInfo.engineName,
+        engineInfo.engineState,
+        engineInfo.engineError.orNull,
+        currentTime,
+        currentTime,
+        engineInfo.identifier)
+    }
+  }
+
+  private def updateKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+    val queryBuilder = new StringBuilder
+    val params = ListBuffer[Any]()
+
+    queryBuilder.append(s"UPDATE $KUBERNETES_ENGINE_INFO_TABLE")
+    val setClauses = ListBuffer[String]()
+    engineInfo.context.foreach { context =>
+      setClauses += "context = ?"
+      params += context
+    }
+    engineInfo.namespace.foreach { namespace =>
+      setClauses += "namespace = ?"
+      params += namespace
+    }
+    Option(engineInfo.podName).foreach { pod =>
+      setClauses += "pod_name = ?"
+      params += pod
+    }
+    Option(engineInfo.podState).foreach { podState =>
+      setClauses += "pod_state = ?"
+      params += podState
+    }
+    Option(engineInfo.containerState).foreach { containerState =>
+      setClauses += "container_state = ?"
+      params += containerState
+    }
+    Option(engineInfo.engineId).foreach { appId =>
+      setClauses += "engine_id = ?"
+      params += appId
+    }
+    Option(engineInfo.engineName).foreach { appName =>
+      setClauses += "engine_name = ?"
+      params += appName
+    }
+    Option(engineInfo.engineState).foreach { appState =>
+      setClauses += "engine_state = ?"
+      params += appState
+    }
+    engineInfo.engineError.foreach { appError =>
+      setClauses += "engine_error = ?"
+      params += appError
+    }
+    setClauses += "update_time = ?"
+    params += System.currentTimeMillis()
+
+    queryBuilder.append(setClauses.mkString(" SET ", ", ", ""))
+    queryBuilder.append(" WHERE identifier = ?")
+    params += engineInfo.identifier
+
+    val query = queryBuilder.toString()
+    JdbcUtils.withConnection { connection =>
+      withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
+        if (updateCount == 0) {
+          throw new KyuubiException(
+            s"Error updating kubernetes engine info for ${engineInfo.identifier} by SQL: $query, " +
+              s"with params: ${params.mkString(", ")}")
+        }
+      }
+    }
+
+  }
+
+  override def upsertKubernetesEngineInfo(metadata: KubernetesEngineInfo): Unit = {
+    insertKubernetesEngineInfo(metadata)
+    updateKubernetesEngineInfo(metadata)
+  }
+
+  override def getKubernetesMetaEngineInfo(identifier: String): KubernetesEngineInfo = {
+    val query =
+      s"SELECT $KUBERNETES_ENGINE_INFO_COLUMNS FROM" +
+        s" $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, identifier) { rs =>
+        buildKubernetesMetadata(rs).headOption.orNull
+      }
+    }
+  }
+
+  override def cleanupKubernetesEngineInfoByIdentifier(identifier: String): Unit = {
+    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      execute(connection, query, identifier)
+    }
+  }
+
+  override def cleanupKubernetesEngineInfoByAge(maxAge: Long): Unit = {
+    val minUpdateTime = System.currentTimeMillis() - maxAge
+    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE update_time < ?"
+    JdbcUtils.withConnection { connection =>
+      execute(connection, query, minUpdateTime)
+    }
+  }
+
   private def buildMetadata(resultSet: ResultSet): Seq[Metadata] = {
     try {
       val metadataList = ListBuffer[Metadata]()
@@ -471,6 +607,44 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineError = engineError,
           endTime = endTime,
           peerInstanceClosed = peerInstanceClosed)
+        metadataList += metadata
+      }
+      metadataList.toSeq
+    } finally {
+      Utils.tryLogNonFatalError(resultSet.close())
+    }
+  }
+
+  private def buildKubernetesMetadata(resultSet: ResultSet): Seq[KubernetesEngineInfo] = {
+    try {
+      val metadataList = ListBuffer[KubernetesEngineInfo]()
+      while (resultSet.next()) {
+        val identifier = resultSet.getString("identifier")
+        val context = Option(resultSet.getString("context"))
+        val namespace = Option(resultSet.getString("namespace"))
+        val pod = resultSet.getString("pod_name")
+        val podState = resultSet.getString("pod_state")
+        val containerState = resultSet.getString("container_state")
+        val appId = resultSet.getString("engine_id")
+        val appName = resultSet.getString("engine_name")
+        val appState = resultSet.getString("engine_state")
+        val appError = Option(resultSet.getString("engine_error"))
+        val createTime = resultSet.getLong("create_time")
+        val updateTime = resultSet.getLong("update_time")
+
+        val metadata = KubernetesEngineInfo(
+          identifier = identifier,
+          context = context,
+          namespace = namespace,
+          podName = pod,
+          podState = podState,
+          containerState = containerState,
+          engineId = appId,
+          engineName = appName,
+          engineState = appState,
+          engineError = appError,
+          createTime = createTime,
+          updateTime = updateTime)
         metadataList += metadata
       }
       metadataList.toSeq
@@ -610,4 +784,18 @@ object JDBCMetadataStore {
     "engine_error",
     "end_time",
     "peer_instance_closed").mkString(",")
+  private val KUBERNETES_ENGINE_INFO_TABLE = "k8s_engine_info"
+  private val KUBERNETES_ENGINE_INFO_COLUMNS = Seq(
+    "identifier",
+    "context",
+    "namespace",
+    "pod_name",
+    "pod_state",
+    "container_state",
+    "engine_id",
+    "engine_name",
+    "engine_state",
+    "engine_error",
+    "create_time",
+    "update_time").mkString(",")
 }

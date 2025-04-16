@@ -26,9 +26,10 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.METADATA_MAX_AGE
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.{ClassUtils, JdbcUtils, ThreadUtils}
@@ -134,6 +135,15 @@ class MetadataManager extends AbstractService("MetadataManager") {
       .filter(_.sessionType == SessionType.BATCH)
   }
 
+  def getKubernetesApplicationInfo(identifier: String): Option[ApplicationInfo] = {
+    Option(withMetadataRequestMetrics(_metadataStore.getKubernetesMetaEngineInfo(identifier))).map {
+      metadata =>
+        val appInfo = buildApplicationInfo(metadata)
+        info(s"Retrieve $appInfo from kubernetes engine info store: $metadata")
+        appInfo
+    }
+  }
+
   def getBatches(
       filter: MetadataFilter,
       from: Int,
@@ -204,8 +214,23 @@ class MetadataManager extends AbstractService("MetadataManager") {
     }
   }
 
+  def upsertKubernetesMetadata(kubernetesEngineInfo: KubernetesEngineInfo): Unit = {
+    try {
+      withMetadataRequestMetrics(_metadataStore.upsertKubernetesEngineInfo(kubernetesEngineInfo))
+    } catch {
+      case e: Throwable =>
+        error(
+          s"Error updating kubernetes engine info for session ${kubernetesEngineInfo.identifier}",
+          e)
+    }
+  }
+
   def cleanupMetadataById(batchId: String): Unit = {
     withMetadataRequestMetrics(_metadataStore.cleanupMetadataByIdentifier(batchId))
+  }
+
+  def cleanupKubernetesMetadataById(identifier: String): Unit = {
+    withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByIdentifier(identifier))
   }
 
   private def startMetadataCleaner(): Unit = {
@@ -214,6 +239,7 @@ class MetadataManager extends AbstractService("MetadataManager") {
     val cleanerTask: Runnable = () => {
       try {
         withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
+        withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByAge(stateMaxAge))
       } catch {
         case e: Throwable => error("Error cleaning up the metadata by age", e)
       }
@@ -355,5 +381,13 @@ object MetadataManager extends Logging {
       batchMetadata.createTime,
       batchMetadata.endTime,
       Map.empty[String, String].asJava)
+  }
+
+  def buildApplicationInfo(metadata: KubernetesEngineInfo): ApplicationInfo = {
+    ApplicationInfo(
+      id = metadata.engineId,
+      name = metadata.engineName,
+      state = ApplicationState.withName(metadata.engineState),
+      error = metadata.engineError)
   }
 }
