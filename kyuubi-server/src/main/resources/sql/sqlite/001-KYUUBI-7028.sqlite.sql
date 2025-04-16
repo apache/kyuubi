@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS kubernetes_metadata(
     namespace varchar(255), -- the kubernetes namespace
     pod_name varchar(255) NOT NULL, -- the kubernetes pod name
     app_id varchar(128), -- the application id
+    app_name mediumtext, -- the application name
     app_state varchar(32), -- the application state
     app_error mediumtext, -- the application diagnose
     create_time bigint, -- the metadata create time
