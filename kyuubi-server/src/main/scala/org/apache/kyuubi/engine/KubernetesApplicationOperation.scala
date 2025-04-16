@@ -498,19 +498,18 @@ object KubernetesApplicationOperation extends Logging {
     }
 
     val podAppState = podStateToApplicationState(pod.getStatus.getPhase)
-    val containerAppState = containerStatusToBuildAppState
+    val containerAppStateOpt = containerStatusToBuildAppState
       .map(_.getState)
       .map(containerStateToApplicationState)
 
-    // 1. if the container state is already terminated, use the container state
-    // 2. if the pod state is terminated, use the pod state and ignore the container state
-    // 3. otherwise, use the container state if it exists or the pod state
-    val applicationState = if (containerAppState.exists(ApplicationState.isTerminated)) {
-      containerAppState.get
-    } else if (ApplicationState.isTerminated(podAppState)) {
-      podAppState
-    } else {
-      containerAppState.getOrElse(podAppState)
+    val applicationState = containerAppStateOpt match {
+      // for cases that spark container already terminated, but sidecar containers live
+      case Some(containerAppState)
+          if ApplicationState.isTerminated(containerAppState) => containerAppState
+      // we don't need to care about container state if pod is already terminated
+      case _ if ApplicationState.isTerminated(podAppState) => podAppState
+      case Some(containerAppState) => containerAppState
+      case None => podAppState
     }
     val applicationError =
       if (ApplicationState.isFailed(applicationState)) {
