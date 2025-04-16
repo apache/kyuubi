@@ -94,6 +94,7 @@ object ApplicationState extends Enumeration {
   def isFailed(state: ApplicationState): Boolean = state match {
     case FAILED => true
     case KILLED => true
+    case NOT_FOUND => true
     case _ => false
   }
 
