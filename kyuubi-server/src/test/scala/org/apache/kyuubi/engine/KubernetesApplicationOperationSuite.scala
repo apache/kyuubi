@@ -96,4 +96,21 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
       sparkUiPort) ===
       s"http://$sparkDriverSvc.$kubernetesNamespace.svc.$kubernetesContext.k8s.io:$sparkUiPort")
   }
+
+  test("get kubernetes client initialization info") {
+    val kyuubiConf = KyuubiConf()
+    kyuubiConf.set(
+      KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST.key,
+      "c1:ns1,c1:ns2,c2:ns1,c2:ns2,c1:,:ns1")
+
+    val operation = new KubernetesApplicationOperation()
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf) ===
+      Array(
+        KubernetesInfo(Some("c1"), Some("ns1")),
+        KubernetesInfo(Some("c1"), Some("ns2")),
+        KubernetesInfo(Some("c2"), Some("ns1")),
+        KubernetesInfo(Some("c2"), Some("ns2")),
+        KubernetesInfo(Some("c1"), None),
+        KubernetesInfo(None, Some("ns1"))))
+  }
 }
