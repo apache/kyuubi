@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.metadata
 
 import java.io.Closeable
 
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.api.{KubernetesMetadata, Metadata, MetadataFilter}
 
 trait MetadataStore extends Closeable {
 
@@ -83,6 +83,18 @@ trait MetadataStore extends Closeable {
   def updateMetadata(metadata: Metadata): Unit
 
   /**
+   * Upsert the kubernetes metadata. Insert if not exists, otherwise update.
+   */
+  def upsertKubernetesMetadata(metadata: KubernetesMetadata): Unit
+
+  /**
+   * Get the persisted kubernetes metadata by unique identifier.
+   * @param identifier the identifier.
+   * @return selected metadata.
+   */
+  def getKubernetesMetadata(identifier: String): KubernetesMetadata
+
+  /**
    * Cleanup meta data by identifier.
    */
   def cleanupMetadataByIdentifier(identifier: String): Unit
@@ -92,4 +104,15 @@ trait MetadataStore extends Closeable {
    * @param maxAge the batch state info maximum age.
    */
   def cleanupMetadataByAge(maxAge: Long): Unit
+
+  /**
+   * Cleanup kubernetes metadata by identifier.
+   */
+  def cleanupKubernetesMetadataByIdentifier(identifier: String): Unit
+
+  /**
+   * Check and cleanup the kubernetes metadata with maxAge limitation.
+   * @param maxAge the kubernetes metadata maximum age.
+   */
+  def cleanupKubernetesMetadataByAge(maxAge: Long): Unit
 }

@@ -35,7 +35,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.api.{KubernetesMetadata, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
@@ -419,6 +419,123 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
+  private def insertKubernetesMetadata(metadata: KubernetesMetadata): Unit = {
+    val insertQuery =
+      s"""
+         |INSERT INTO $KUBERNETES_METADATA_TABLE(
+         |identifier,
+         |context,
+         |namespace,
+         |pod_name,
+         |app_id,
+         |app_state,
+         |app_error,
+         |create_time,
+         |update_time
+         |)
+         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+         |WHERE NOT EXISTS (
+         |  SELECT 1 FROM $KUBERNETES_METADATA_TABLE WHERE identifier = ?
+         |)
+         |""".stripMargin
+    JdbcUtils.withConnection { connection =>
+      val currentTime = System.currentTimeMillis()
+      execute(
+        connection,
+        insertQuery,
+        metadata.identifier,
+        metadata.context.orNull,
+        metadata.namespace.orNull,
+        metadata.podName,
+        metadata.appId,
+        metadata.appState,
+        metadata.appError.orNull,
+        currentTime,
+        currentTime,
+        metadata.identifier)
+    }
+  }
+
+  private def updateKubernetesMetadata(metadata: KubernetesMetadata): Unit = {
+    val queryBuilder = new StringBuilder
+    val params = ListBuffer[Any]()
+
+    queryBuilder.append(s"UPDATE $KUBERNETES_METADATA_TABLE")
+    val setClauses = ListBuffer[String]()
+    metadata.context.foreach { context =>
+      setClauses += "context = ?"
+      params += context
+    }
+    metadata.namespace.foreach { namespace =>
+      setClauses += "namespace = ?"
+      params += namespace
+    }
+    Option(metadata.podName).foreach { pod =>
+      setClauses += "pod_name = ?"
+      params += pod
+    }
+    Option(metadata.appId).foreach { appId =>
+      setClauses += "app_id = ?"
+      params += appId
+    }
+    Option(metadata.appState).foreach { appState =>
+      setClauses += "app_state = ?"
+      params += appState
+    }
+    metadata.appError.foreach { appError =>
+      setClauses += "app_error = ?"
+      params += appError
+    }
+    setClauses += "update_time = ?"
+    params += System.currentTimeMillis()
+
+    queryBuilder.append(setClauses.mkString(" SET ", ", ", ""))
+    queryBuilder.append(" WHERE identifier = ?")
+    params += metadata.identifier
+
+    val query = queryBuilder.toString()
+    JdbcUtils.withConnection { connection =>
+      withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
+        if (updateCount == 0) {
+          throw new KyuubiException(
+            s"Error updating kubernetes metadata for ${metadata.identifier} by SQL: $query, " +
+              s"with params: ${params.mkString(", ")}")
+        }
+      }
+    }
+
+  }
+
+  override def upsertKubernetesMetadata(metadata: KubernetesMetadata): Unit = {
+    insertKubernetesMetadata(metadata)
+    updateKubernetesMetadata(metadata)
+  }
+
+  override def getKubernetesMetadata(identifier: String): KubernetesMetadata = {
+    val query =
+      s"SELECT $KUBERNETES_METADATA_COLUMNS FROM $KUBERNETES_METADATA_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, identifier) { rs =>
+        buildKubernetesMetadata(rs).headOption.orNull
+      }
+    }
+  }
+
+  override def cleanupKubernetesMetadataByIdentifier(identifier: String): Unit = {
+    val query = s"DELETE FROM $KUBERNETES_METADATA_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      execute(connection, query, identifier)
+    }
+  }
+
+  override def cleanupKubernetesMetadataByAge(maxAge: Long): Unit = {
+    val minUpdateTime = System.currentTimeMillis() - maxAge
+    val query = s"DELETE FROM $KUBERNETES_METADATA_TABLE WHERE update_time < ?"
+    JdbcUtils.withConnection { connection =>
+      execute(connection, query, minUpdateTime)
+    }
+  }
+
   private def buildMetadata(resultSet: ResultSet): Seq[Metadata] = {
     try {
       val metadataList = ListBuffer[Metadata]()
@@ -471,6 +588,38 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineError = engineError,
           endTime = endTime,
           peerInstanceClosed = peerInstanceClosed)
+        metadataList += metadata
+      }
+      metadataList.toSeq
+    } finally {
+      Utils.tryLogNonFatalError(resultSet.close())
+    }
+  }
+
+  private def buildKubernetesMetadata(resultSet: ResultSet): Seq[KubernetesMetadata] = {
+    try {
+      val metadataList = ListBuffer[KubernetesMetadata]()
+      while (resultSet.next()) {
+        val identifier = resultSet.getString("identifier")
+        val context = Option(resultSet.getString("context"))
+        val namespace = Option(resultSet.getString("namespace"))
+        val pod = resultSet.getString("pod_name")
+        val appId = resultSet.getString("app_id")
+        val appState = resultSet.getString("app_state")
+        val appError = Option(resultSet.getString("app_error"))
+        val createTime = resultSet.getLong("create_time")
+        val updateTime = resultSet.getLong("update_time")
+
+        val metadata = KubernetesMetadata(
+          identifier = identifier,
+          context = context,
+          namespace = namespace,
+          podName = pod,
+          appId = appId,
+          appState = appState,
+          appError = appError,
+          createTime = createTime,
+          updateTime = updateTime)
         metadataList += metadata
       }
       metadataList.toSeq
@@ -610,4 +759,15 @@ object JDBCMetadataStore {
     "engine_error",
     "end_time",
     "peer_instance_closed").mkString(",")
+  private val KUBERNETES_METADATA_TABLE = "kubernetes_metadata"
+  private val KUBERNETES_METADATA_COLUMNS = Seq(
+    "identifier",
+    "context",
+    "namespace",
+    "pod_name",
+    "app_id",
+    "app_state",
+    "app_error",
+    "create_time",
+    "update_time").mkString(",")
 }
