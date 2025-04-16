@@ -124,6 +124,8 @@ object KyuubiServer extends Logging {
     val refreshedKubernetesConf =
       createKyuubiConf().getAll.filter(_._1.startsWith(KYUUBI_KUBERNETES_CONF_PREFIX))
     refreshConfig("kubernetes", existedKubernetesConf, refreshedKubernetesConf)
+    kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager].applicationManager
+      .getKubernetesApplicationOperation.foreach(_.initializeKubernetesClient(kyuubiServer.conf))
   }
 
   private def refreshConfig(

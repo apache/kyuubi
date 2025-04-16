@@ -167,6 +167,29 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       TimeUnit.MILLISECONDS)
     cleanupCanceledAppPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
       "cleanup-canceled-app-pod-thread")
+    initializeKubernetesClient(kyuubiConf)
+  }
+
+  private[kyuubi] def getKubernetesClientInitializeInfo(
+      kyuubiConf: KyuubiConf): Seq[KubernetesInfo] = {
+    kyuubiConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
+      val (context, namespace) = init.split(":") match {
+        case Array(ctx, ns) => (Some(ctx).filterNot(_.isEmpty), Some(ns).filterNot(_.isEmpty))
+        case Array(ctx) => (Some(ctx).filterNot(_.isEmpty), None)
+        case _ => (None, None)
+      }
+      KubernetesInfo(context, namespace)
+    }
+  }
+
+  private[kyuubi] def initializeKubernetesClient(kyuubiConf: KyuubiConf): Unit = {
+    getKubernetesClientInitializeInfo(kyuubiConf).foreach { kubernetesInfo =>
+      try {
+        getOrCreateKubernetesClient(kubernetesInfo)
+      } catch {
+        case e: Throwable => error(s"Failed to initialize Kubernetes client for $kubernetesInfo", e)
+      }
+    }
   }
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
