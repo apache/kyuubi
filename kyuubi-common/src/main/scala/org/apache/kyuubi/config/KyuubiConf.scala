@@ -1243,6 +1243,7 @@ object KyuubiConf {
         " any Kubernetes resource changes after startup. It is highly recommend to set it for" +
         " multiple Kyuubi instances mode. The format is `context1:namespace1,context2:namespace2`.")
       .version("1.11.0")
+      .serverOnly
       .stringConf
       .toSequence()
       .createWithDefault(Nil)
