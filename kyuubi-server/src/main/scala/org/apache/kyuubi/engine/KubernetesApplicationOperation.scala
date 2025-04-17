@@ -136,7 +136,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           val shouldDelete = cleanupDriverPodStrategy match {
             case NONE => false
             case ALL => true
-            case COMPLETED => !ApplicationState.isFailed(notification.getValue)
+            case COMPLETED => !ApplicationState.isFailed(notification.getValue, Some(this))
           }
           if (shouldDelete) {
             deletePod(kubernetesInfo, removed.podName.orNull, appLabel)
@@ -573,8 +573,9 @@ object KubernetesApplicationOperation extends Logging {
       case Some(containerAppState) => containerAppState
       case None => podAppState
     }
-    val applicationError =
-      if (ApplicationState.isFailed(applicationState)) {
+    val applicationError = {
+      // here the applicationState could not been NOT_FOUND, safe to use None ApplicationOperation
+      if (ApplicationState.isFailed(applicationState, appOperation = None)) {
         val errorMap = containerStatusToBuildAppState.map { cs =>
           Map(
             "Pod" -> podName,
@@ -588,6 +589,7 @@ object KubernetesApplicationOperation extends Logging {
       } else {
         None
       }
+    }
     applicationState -> applicationError
   }
 

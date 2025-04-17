@@ -91,10 +91,17 @@ object ApplicationState extends Enumeration {
   type ApplicationState = Value
   val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
 
-  def isFailed(state: ApplicationState): Boolean = state match {
+  def isFailed(
+      state: ApplicationState,
+      appOperation: Option[ApplicationOperation]): Boolean = state match {
     case FAILED => true
     case KILLED => true
-    case NOT_FOUND => true
+    case NOT_FOUND => appOperation match {
+        // For YARN and Kubernetes operations, if the application is not found, treat it as failed
+        // to prevent mistakenly set unsuccessful applications to the finished state.
+        case Some(_: YarnApplicationOperation) | Some(_: KubernetesApplicationOperation) => true
+        case _ => false
+      }
     case _ => false
   }
 
