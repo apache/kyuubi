@@ -25,7 +25,7 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -98,6 +98,8 @@ class BatchJobSubmission(
       batchArgs,
       getOperationLog)
   }
+
+  private lazy val appOperation = applicationManager.getApplicationOperation(builder.appMgrInfo())
 
   def startupProcessAlive: Boolean =
     builder.processLaunched && Option(builder.process).exists(_.isAlive)
@@ -275,7 +277,7 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      while (process.isAlive && !applicationFailed(_applicationInfo)) {
+      while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
         doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
@@ -284,7 +286,7 @@ class BatchJobSubmission(
         doUpdateApplicationInfoMetadataIfNeeded()
       }
 
-      if (applicationFailed(_applicationInfo)) {
+      if (applicationFailed(_applicationInfo, appOperation)) {
         Utils.terminateProcess(process, applicationStartupDestroyTimeout)
         throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
       }
@@ -332,7 +334,7 @@ class BatchJobSubmission(
       info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
       return
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
     updateBatchMetadata()
@@ -341,7 +343,7 @@ class BatchJobSubmission(
       Thread.sleep(applicationCheckInterval)
       updateApplicationInfoMetadataIfNeeded()
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
   }
@@ -445,8 +447,12 @@ class BatchJobSubmission(
 }
 
 object BatchJobSubmission {
-  def applicationFailed(applicationStatus: Option[ApplicationInfo]): Boolean = {
-    applicationStatus.map(_.state).exists(ApplicationState.isFailed)
+  def applicationFailed(
+      applicationStatus: Option[ApplicationInfo],
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    applicationStatus.map(_.state).exists { state =>
+      ApplicationState.isFailed(state, appOperation)
+    }
   }
 
   def applicationTerminated(applicationStatus: Option[ApplicationInfo]): Boolean = {
