@@ -408,16 +408,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         appInfoStore.put(
           kyuubiUniqueKey,
           kubernetesInfo -> appInfo.copy(
-            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
-            name = pod.getMetadata.getName,
+            id = getPodAppId(pod),
+            name = getPodAppName(pod),
             state = appState,
             error = appError))
       }.getOrElse {
         appInfoStore.put(
           kyuubiUniqueKey,
           kubernetesInfo -> ApplicationInfo(
-            id = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
-            name = pod.getMetadata.getName,
+            id = getPodAppId(pod),
+            name = getPodAppName(pod),
             state = appState,
             error = appError))
       }
@@ -506,7 +506,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
-  val SPARK_APP_ID_LABEL = "spark-app-selector"
+  private val SPARK_APP_ID_LABEL = "spark-app-selector"
+  private val SPARK_APP_NAME_LABEL = "spark-app-name"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
   val SPARK_UI_PORT_NAME = "spark-ui"
@@ -633,5 +634,13 @@ object KubernetesApplicationOperation extends Logging {
       .replace("{{KUBERNETES_CONTEXT}}", kubernetesContext)
       .replace("{{KUBERNETES_NAMESPACE}}", kubernetesNamespace)
       .replace("{{SPARK_UI_PORT}}", sparkUiPort.toString)
+  }
+
+  def getPodAppId(pod: Pod): String = {
+    pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)
+  }
+
+  def getPodAppName(pod: Pod): String = {
+    Option(pod.getMetadata.getLabels.get(SPARK_APP_NAME_LABEL)).getOrElse(pod.getMetadata.getName)
   }
 }
