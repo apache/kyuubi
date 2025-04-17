@@ -45,6 +45,8 @@ public class KyuubiSessionEvent {
 
   private Map<String, String> conf;
 
+  private Map<String, String> optimizedConf;
+
   private long eventTime;
 
   private long openedTime;
@@ -72,6 +74,7 @@ public class KyuubiSessionEvent {
       String clientIp,
       String serverIp,
       Map<String, String> conf,
+      Map<String, String> optimizedConf,
       long eventTime,
       long openedTime,
       long startTime,
@@ -90,6 +93,7 @@ public class KyuubiSessionEvent {
     this.clientIp = clientIp;
     this.serverIp = serverIp;
     this.conf = conf;
+    this.optimizedConf = optimizedConf;
     this.eventTime = eventTime;
     this.openedTime = openedTime;
     this.startTime = startTime;
@@ -126,6 +130,8 @@ public class KyuubiSessionEvent {
     private String serverIp;
 
     private Map<String, String> conf;
+
+    private Map<String, String> optimizedConf;
 
     private long eventTime;
 
@@ -202,6 +208,12 @@ public class KyuubiSessionEvent {
       return this;
     }
 
+    public KyuubiSessionEvent.KyuubiSessionEventBuilder optimizedConf(
+        final Map<String, String> optimizedConf) {
+      this.optimizedConf = optimizedConf;
+      return this;
+    }
+
     public KyuubiSessionEvent.KyuubiSessionEventBuilder eventTime(final long eventTime) {
       this.eventTime = eventTime;
       return this;
@@ -246,6 +258,7 @@ public class KyuubiSessionEvent {
           clientIp,
           serverIp,
           conf,
+          optimizedConf,
           eventTime,
           openedTime,
           startTime,
@@ -349,6 +362,14 @@ public class KyuubiSessionEvent {
 
   public void setConf(Map<String, String> conf) {
     this.conf = conf;
+  }
+
+  public Map<String, String> getOptimizedConf() {
+    return optimizedConf;
+  }
+
+  public void setOptimizedConf(Map<String, String> optimizedConf) {
+    this.optimizedConf = optimizedConf;
   }
 
   public long getEventTime() {

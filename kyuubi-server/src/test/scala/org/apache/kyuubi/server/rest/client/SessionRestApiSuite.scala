@@ -30,10 +30,14 @@ import org.apache.kyuubi.client.{KyuubiRestClient, SessionRestApi}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.exception.KyuubiRestException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TGetInfoType
 
 class SessionRestApiSuite extends RestClientTestHelper {
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SESSION_CONF_ADVISOR, Seq(classOf[TestSessionConfAdvisor].getName))
+
   test("get/close/list/count session") {
     withSessionRestApi { sessionRestApi =>
       {
@@ -74,6 +78,8 @@ class SessionRestApiSuite extends RestClientTestHelper {
       val kyuubiEvent = sessionRestApi.getSessionEvent(
         sessionHandle.getIdentifier.toString)
       assert(kyuubiEvent.getConf.get("testConfig").equals("testValue"))
+      assert(kyuubiEvent.getConf.get("spark.optimized") == null)
+      assert(kyuubiEvent.getOptimizedConf.get("spark.optimized").equals("true"))
       assert(kyuubiEvent.getSessionType.equals(SessionType.INTERACTIVE.toString))
     }
   }
@@ -206,5 +212,13 @@ class SessionRestApiSuite extends RestClientTestHelper {
         .build()
     val sessionRestApi = new SessionRestApi(basicKyuubiRestClient)
     f(sessionRestApi)
+  }
+}
+
+class TestSessionConfAdvisor extends SessionConfAdvisor {
+  override def getConfOverlay(
+      user: String,
+      sessionConf: java.util.Map[String, String]): java.util.Map[String, String] = {
+    Map("spark.optimized" -> "true").asJava
   }
 }

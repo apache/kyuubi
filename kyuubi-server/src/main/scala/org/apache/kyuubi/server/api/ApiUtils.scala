@@ -38,6 +38,7 @@ object ApiUtils extends Logging {
         .clientIp(event.clientIP)
         .serverIp(event.serverIP)
         .conf(event.conf.asJava)
+        .optimizedConf(event.optimizedConf.asJava)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
         .engineName(event.engineName)
@@ -59,6 +60,7 @@ object ApiUtils extends Logging {
       session.user,
       session.ipAddress,
       session.conf.asJava,
+      session.normalizedConf.asJava,
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,

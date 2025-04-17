@@ -35,10 +35,14 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
+
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.SESSION_CONF_ADVISOR, Seq(classOf[TestSessionConfAdvisor].getName))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -126,6 +130,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(200 == sessionOpenResp.getStatus)
     val sessions = response.readEntity(classOf[dto.KyuubiSessionEvent])
     assert(sessions.getConf.get("testConfig").equals("testValue"))
+    assert(sessions.getConf.get("spark.optimized") == null)
+    assert(sessions.getOptimizedConf.get("spark.optimized").equals("true"))
     assert(sessions.getSessionType.equals(SessionType.INTERACTIVE.toString))
     assert(sessions.getUser.equals("kyuubi"))
 
@@ -388,5 +394,13 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val operations = response.readEntity(new GenericType[Seq[OperationData]]() {})
     assert(operations.size == 1)
     assert(sessionHandle.toString.equals(operations.head.getSessionId))
+  }
+}
+
+class TestSessionConfAdvisor extends SessionConfAdvisor {
+  override def getConfOverlay(
+      user: String,
+      sessionConf: java.util.Map[String, String]): java.util.Map[String, String] = {
+    Map("spark.optimized" -> "true").asJava
   }
 }
