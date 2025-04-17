@@ -278,6 +278,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       namespace = Some("namespace"),
       podName = "podName",
       appId = "appId",
+      appName = "appName",
       appState = "FINISHED",
       appError = Some("appError"))
 
@@ -289,6 +290,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(metadata2.namespace == metadata.namespace)
     assert(metadata2.podName == metadata.podName)
     assert(metadata2.appId == metadata.appId)
+    assert(metadata2.appName == metadata.appName)
     assert(metadata2.appState == metadata.appState)
     assert(metadata2.appError == metadata.appError)
     assert(metadata2.createTime > 0)
@@ -300,6 +302,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       namespace = Some("namespace2"),
       podName = "podName2",
       appId = "appId2",
+      appName = "appName2",
       appState = "FAILED",
       appError = Some("appError2"))
     jdbcMetadataStore.upsertKubernetesMetadata(metadata3)
@@ -310,6 +313,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(metadata4.namespace == metadata3.namespace)
     assert(metadata4.podName == metadata3.podName)
     assert(metadata4.appId == metadata3.appId)
+    assert(metadata4.appName == metadata3.appName)
     assert(metadata4.appState == metadata3.appState)
     assert(metadata4.appError == metadata3.appError)
     assert(metadata4.createTime == metadata2.createTime)
@@ -318,7 +322,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     val applicationInfo =
       MetadataManager.buildApplicationInfo(jdbcMetadataStore.getKubernetesMetadata(tag))
     assert(applicationInfo.id == "appId2")
-    assert(applicationInfo.name == "podName2")
+    assert(applicationInfo.name == "appName2")
     assert(applicationInfo.state == ApplicationState.FAILED)
     assert(applicationInfo.error == Some("appError2"))
 

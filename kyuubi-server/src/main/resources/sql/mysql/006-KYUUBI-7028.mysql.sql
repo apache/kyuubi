@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS kubernetes_metadata(
     app_id varchar(128) COMMENT 'the application id',
     app_name mediumtext COMMENT 'the application name',
     app_state varchar(32) COMMENT 'the application state',
-    app_error mediumtext COMMENT NOT NULL COMMENT 'the application diagnose',
+    app_error mediumtext COMMENT 'the application diagnose',
     create_time bigint COMMENT 'the metadata create time',
     update_time bigint COMMENT 'the metadata update time',
     UNIQUE INDEX unique_identifier_index(identifier)

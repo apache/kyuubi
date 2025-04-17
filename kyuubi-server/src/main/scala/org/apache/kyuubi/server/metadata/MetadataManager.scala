@@ -136,8 +136,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
   }
 
   def getKubernetesApplicationInfo(identifier: String): Option[ApplicationInfo] = {
-    Option(withMetadataRequestMetrics(
-      _metadataStore.getKubernetesMetadata(identifier))).map(buildApplicationInfo)
+    Option(withMetadataRequestMetrics(_metadataStore.getKubernetesMetadata(identifier))).map {
+      metadata =>
+        val appInfo = buildApplicationInfo(metadata)
+        info(s"Retrieve $appInfo from kubernetes metadata store: $metadata")
+        appInfo
+    }
   }
 
   def getBatches(
@@ -380,7 +384,7 @@ object MetadataManager extends Logging {
   def buildApplicationInfo(metadata: KubernetesMetadata): ApplicationInfo = {
     ApplicationInfo(
       id = metadata.appId,
-      name = metadata.podName,
+      name = metadata.appName,
       state = ApplicationState.withName(metadata.appState),
       error = metadata.appError)
   }

@@ -428,12 +428,13 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
          |namespace,
          |pod_name,
          |app_id,
+         |app_name,
          |app_state,
          |app_error,
          |create_time,
          |update_time
          |)
-         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?
+         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          |WHERE NOT EXISTS (
          |  SELECT 1 FROM $KUBERNETES_METADATA_TABLE WHERE identifier = ?
          |)
@@ -448,6 +449,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         metadata.namespace.orNull,
         metadata.podName,
         metadata.appId,
+        metadata.appName,
         metadata.appState,
         metadata.appError.orNull,
         currentTime,
@@ -477,6 +479,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     Option(metadata.appId).foreach { appId =>
       setClauses += "app_id = ?"
       params += appId
+    }
+    Option(metadata.appName).foreach { appName =>
+      setClauses += "app_name = ?"
+      params += appName
     }
     Option(metadata.appState).foreach { appState =>
       setClauses += "app_state = ?"
@@ -605,6 +611,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val namespace = Option(resultSet.getString("namespace"))
         val pod = resultSet.getString("pod_name")
         val appId = resultSet.getString("app_id")
+        val appName = resultSet.getString("app_name")
         val appState = resultSet.getString("app_state")
         val appError = Option(resultSet.getString("app_error"))
         val createTime = resultSet.getLong("create_time")
@@ -616,6 +623,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           namespace = namespace,
           podName = pod,
           appId = appId,
+          appName = appName,
           appState = appState,
           appError = appError,
           createTime = createTime,
@@ -766,6 +774,7 @@ object JDBCMetadataStore {
     "namespace",
     "pod_name",
     "app_id",
+    "app_name",
     "app_state",
     "app_error",
     "create_time",

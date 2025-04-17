@@ -25,6 +25,7 @@ package org.apache.kyuubi.server.metadata.api
  * @param namespace the kubernetes namespace.
  * @param podName the kubernetes pod name.
  * @param appId the application id.
+ * @param appName the application name.
  * @param appState the application state.
  * @param appError the application error diagnose.
  * @param createTime the metadata create time.
@@ -36,6 +37,7 @@ case class KubernetesMetadata(
     namespace: Option[String],
     podName: String,
     appId: String,
+    appName: String,
     appState: String,
     appError: Option[String],
     createTime: Long = 0L,

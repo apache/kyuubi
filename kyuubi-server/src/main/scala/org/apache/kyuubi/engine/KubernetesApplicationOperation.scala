@@ -469,7 +469,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         context = kubernetesInfo.context,
         namespace = kubernetesInfo.namespace,
         podName = pod.getMetadata.getName,
-        appId = pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL),
+        appId = getPodAppId(pod),
+        appName = getPodAppName(pod),
         appState = appState.toString,
         appError = appError)))
     if (cleanupTerminatedAppInfoTrigger.getIfPresent(key) == null) {
