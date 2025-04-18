@@ -238,7 +238,7 @@ class KyuubiSessionImpl(
         waitForEngineLaunched()
       } catch {
         case t: Throwable =>
-          operation.close()
+          sessionManager.operationManager.closeOperation(operation.getHandle)
           throw t
       }
       sessionEvent.totalOperations += 1
