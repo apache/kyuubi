@@ -38,6 +38,7 @@ import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState
 import org.apache.kyuubi.engine.KubernetesResourceEventTypes.KubernetesResourceEventType
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.server.metadata.api.KubernetesMetadata
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.{KubernetesUtils, ThreadUtils}
 
@@ -251,8 +252,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     try {
       // need to initialize the kubernetes client if not exists
       getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
-      val (_, appInfo) =
-        appInfoStore.getOrDefault(tag, appMgrInfo.kubernetesInfo -> ApplicationInfo.NOT_FOUND)
+      val appInfo = appInfoStore.get(tag) match {
+        case (_, info) => info
+        case _ =>
+          // try to get the application info from kubernetes metadata
+          metadataManager.flatMap(
+            _.getKubernetesApplicationInfo(tag)).getOrElse(ApplicationInfo.NOT_FOUND)
+      }
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
         case (NOT_FOUND, Some(_submitTime)) =>
@@ -336,7 +342,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         updateApplicationState(kubernetesInfo, newPod, eventType)
         val appState = toApplicationState(newPod, appStateSource, appStateContainer, eventType)
         if (isTerminated(appState)) {
-          markApplicationTerminated(newPod, eventType)
+          markApplicationTerminated(kubernetesInfo, newPod, eventType)
         }
         KubernetesApplicationAuditLogger.audit(
           eventType,
@@ -354,7 +360,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       if (isSparkEnginePod(pod)) {
         val eventType = KubernetesResourceEventTypes.DELETE
         updateApplicationState(kubernetesInfo, pod, eventType)
-        markApplicationTerminated(pod, eventType)
+        markApplicationTerminated(kubernetesInfo, pod, eventType)
         KubernetesApplicationAuditLogger.audit(
           eventType,
           kubernetesInfo,
@@ -450,13 +456,25 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private def markApplicationTerminated(
+      kubernetesInfo: KubernetesInfo,
       pod: Pod,
       eventType: KubernetesResourceEventType): Unit = synchronized {
     val key = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+    val (appState, appError) =
+      toApplicationStateAndError(pod, appStateSource, appStateContainer, eventType)
+    // upsert the kubernetes metadata when the application is terminated
+    metadataManager.foreach(_.upsertKubernetesMetadata(
+      KubernetesMetadata(
+        identifier = key,
+        context = kubernetesInfo.context,
+        namespace = kubernetesInfo.namespace,
+        podName = pod.getMetadata.getName,
+        appId = getPodAppId(pod),
+        appName = getPodAppName(pod),
+        appState = appState.toString,
+        appError = appError)))
     if (cleanupTerminatedAppInfoTrigger.getIfPresent(key) == null) {
-      cleanupTerminatedAppInfoTrigger.put(
-        key,
-        toApplicationState(pod, appStateSource, appStateContainer, eventType))
+      cleanupTerminatedAppInfoTrigger.put(key, appState)
     }
   }
 
