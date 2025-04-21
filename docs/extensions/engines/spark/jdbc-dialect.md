@@ -43,7 +43,7 @@ Notes: this is an inefficient way to access data stored in Hive warehouse, you c
 
 Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
-| Driver                                                    |            Driver Class Name            | Remarks                                                                                                  |
+|                          Driver                           |            Driver Class Name            |                                                 Remarks                                                  |
 |-----------------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
 | Kyuubi Hive JDBC Driver ([doc](../jdbc/kyuubi_jdbc.html)) | org.apache.kyuubi.jdbc.KyuubiHiveDriver | Use v1.6.1 or later versions, which includes [KYUUBI #3484](https://github.com/apache/kyuubi/pull/3485). |
 | Hive JDBC Driver ([doc](../jdbc/hive_jdbc.html))          | org.apache.hive.jdbc.HiveDriver         | The Hive JDBC driver is already included in official Spark binary distribution.                          |
@@ -69,6 +69,7 @@ Or, compile the extension by executing
 ```
 build/mvn clean package -pl :kyuubi-extension-spark-jdbc-dialect_2.12 -DskipTests
 ```
+
 then get the extension jar under `extensions/spark/kyuubi-extension-spark-jdbc-dialect/target`.
 
 If you like, you can compile the extension jar with the corresponding Maven's profile on you compile command,
@@ -141,3 +142,4 @@ INSERT OVERWRITE kyuubi_table SELECT ...
 -- write data in append mode
 INSERT INTO kyuubi_table SELECT ...
 ```
+
