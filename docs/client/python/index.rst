@@ -21,5 +21,4 @@ Python
     :maxdepth: 2
 
     pyhive
-    pyspark
     jaydebeapi
