@@ -630,6 +630,99 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       Int.MaxValue).size === 2)
   }
 
+  test("reassign batch") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val kyuubiInstance = fe.connectionUrl
+
+    assert(sessionManager.getActiveUserSessionCount === 0)
+    val batchId1 = UUID.randomUUID().toString
+    val batchId2 = UUID.randomUUID().toString
+
+    val batchMetadata = Metadata(
+      identifier = batchId1,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "localhost",
+      kyuubiInstance = "other_kyuubi_instance:10099",
+      state = OperationState.PENDING.toString,
+      resource = sparkBatchTestResource.get,
+      className = sparkBatchTestMainClass,
+      requestName = "PENDING_RECOVERY",
+      requestConf = Map("spark.master" -> "local"),
+      requestArgs = Seq.empty,
+      createTime = System.currentTimeMillis(),
+      engineType = "SPARK")
+
+    val batchMetadata2 = batchMetadata.copy(
+      identifier = batchId2,
+      requestName = "RUNNING_RECOVERY")
+    sessionManager.insertMetadata(batchMetadata)
+    sessionManager.insertMetadata(batchMetadata2)
+
+    assert(sessionManager.getBatchFromMetadataStore(batchId1).map(_.getState).contains("PENDING"))
+    assert(sessionManager.getBatchFromMetadataStore(batchId2).map(_.getState).contains("PENDING"))
+
+    val sparkBatchProcessBuilder = new SparkBatchProcessBuilder(
+      "kyuubi",
+      conf,
+      batchId2,
+      "RUNNING_RECOVERY",
+      sparkBatchTestResource,
+      sparkBatchTestMainClass,
+      batchMetadata2.requestConf,
+      batchMetadata2.requestArgs,
+      None)
+    sparkBatchProcessBuilder.start
+
+    var applicationStatus: Option[ApplicationInfo] = None
+    eventually(timeout(5.seconds)) {
+      applicationStatus =
+        sessionManager.applicationManager.getApplicationInfo(ApplicationManagerInfo(None), batchId2)
+      assert(applicationStatus.isDefined)
+    }
+
+    val metadataToUpdate = Metadata(
+      identifier = batchId2,
+      state = OperationState.RUNNING.toString,
+      engineId = applicationStatus.get.id,
+      engineName = applicationStatus.get.name,
+      engineUrl = applicationStatus.get.url.orNull,
+      engineState = applicationStatus.get.state.toString,
+      engineError = applicationStatus.get.error)
+    sessionManager.updateMetadata(metadataToUpdate)
+
+    webTarget.path(s"api/v1/batches/other_kyuubi_instance:10099/${batchId1}/reassign")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    assert(sessionManager.getBatchMetadata(batchId1).map(_.kyuubiInstance).contains(kyuubiInstance))
+    assert(sessionManager.getBatchMetadata(batchId2).map(_.kyuubiInstance).contains(kyuubiInstance))
+    assert(sessionManager.getActiveUserSessionCount === 2)
+
+    val sessionHandle1 = SessionHandle.fromUUID(batchId1)
+    val sessionHandle2 = SessionHandle.fromUUID(batchId2)
+    val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
+    val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
+    assert(session1.createTime === batchMetadata.createTime)
+    assert(session2.createTime === batchMetadata2.createTime)
+
+    eventually(timeout(10.seconds)) {
+      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+        session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+      assert(session1.batchJobSubmissionOp.builder.processLaunched)
+
+      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
+        session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+      assert(!session2.batchJobSubmissionOp.builder.processLaunched)
+    }
+
+    assert(sessionManager.getBatchesFromMetadataStore(
+      MetadataFilter(engineType = "SPARK"),
+      0,
+      Int.MaxValue).size === 2)
+  }
+
   test("get local log internal redirection") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
     val metadata = Metadata(

@@ -563,6 +563,58 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ReassignBatchResponse]))),
+    description = "Reassign instance's all batch sessions to a new instance")
+  @GET
+  @Path("{kyuubiInstance}/{batchId}/reassign")
+  def reassignBatchSessions(
+      @PathParam("kyuubiInstance") kyuubiInstance: String,
+      @PathParam("batchId") batchId: String,
+      @QueryParam("force")
+      @DefaultValue("false") force: Boolean): ReassignBatchResponse = {
+    sessionManager.getBatchMetadata(batchId).map { metadata =>
+      val batchInstance = metadata.kyuubiInstance
+      if (batchInstance != kyuubiInstance) {
+        throw new IllegalStateException(s":parameter $kyuubiInstance needs to match $batchInstance")
+      }
+      val url = fe.connectionUrl
+      if (kyuubiInstance == url) {
+        throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+      }
+      if (!force && checkInstanceNetwork(kyuubiInstance, batchId)) {
+        throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance," +
+          s"please use force option to bypass this check")
+      }
+      try {
+        sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl)
+        fe.recoverBatchSessions()
+      } catch {
+        case e: Exception =>
+          error(s"Error reassign batches $kyuubiInstance to $url", e)
+          new ReassignBatchResponse(false, Utils.stringifyException(e))
+      }
+      new ReassignBatchResponse(true, s"Reassigned batches from $kyuubiInstance to $url.")
+    }.getOrElse {
+      error(s"Invalid batchId: $batchId")
+      throw new NotFoundException(s"Invalid batchId: $batchId")
+    }
+  }
+
+  private def checkInstanceNetwork(kyuubiInstance: String, batchId: String): Boolean = {
+    try {
+      val userName = fe.getSessionUser(Map.empty[String, String])
+      val internalRestClient = getInternalRestClient(kyuubiInstance)
+      internalRestClient.getBatch(userName, fe.getIpAddress, batchId)
+      true
+    } catch {
+      case _: Exception => false
+    }
+  }
+
   private def handleUploadingFiles(
       batchId: String,
       request: BatchRequest,
