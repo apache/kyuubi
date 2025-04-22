@@ -204,6 +204,46 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  @VisibleForTesting
+  private[kyuubi] def recoverBatchSessions(batchIds: Seq[String]): Unit = {
+    val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
+    val batchRecoveryExecutor =
+      ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
+    try {
+      val batchSessionsToRecover = sessionManager.
+      getSpecificBatchSessionsToRecover(batchIds)
+      val pendingRecoveryTasksCount = new AtomicInteger(0)
+      val tasks = batchSessionsToRecover.flatMap { batchSession =>
+        val batchId = batchSession.batchJobSubmissionOp.batchId
+        try {
+          val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
+            Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
+          Some(task -> batchId)
+        } catch {
+          case e: Throwable =>
+            error(s"Error while submitting batch[$batchId] for recovery", e)
+            None
+        }
+      }
+
+      pendingRecoveryTasksCount.addAndGet(tasks.size)
+
+      tasks.foreach { case (task, batchId) =>
+        try {
+          task.get()
+        } catch {
+          case e: Throwable =>
+            error(s"Error while recovering batch[$batchId]", e)
+        } finally {
+          val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
+          info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+        }
+      }
+    } finally {
+      ThreadUtils.shutdown(batchRecoveryExecutor)
+    }
+  }
+
   private def getBatchPendingMaxElapse(): Long = {
     val batchPendingElapseTimes = sessionManager.allSessions().map {
       case session: KyuubiBatchSession => session.batchJobSubmissionOp.getPendingElapsedTime

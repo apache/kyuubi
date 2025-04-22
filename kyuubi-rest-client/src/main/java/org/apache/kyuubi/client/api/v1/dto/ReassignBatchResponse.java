@@ -17,35 +17,46 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
-import java.util.Objects;
+import java.util.*;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public class ReassignBatchResponse {
-  private boolean success = false;
-  private String msg = null;
+  private List<String> batchIds = new ArrayList<>(0);
+  private String originalKyuubiInstance = null;
+  private String newKyuubiInstance = null;
 
   public ReassignBatchResponse() {}
 
-  public ReassignBatchResponse(boolean success, String msg) {
-    this.success = success;
-    this.msg = msg;
+  public ReassignBatchResponse(
+      List<String> batchIds, String originalKyuubiInstance, String newKyuubiInstance) {
+    this.originalKyuubiInstance = originalKyuubiInstance;
+    this.newKyuubiInstance = newKyuubiInstance;
+    this.batchIds = batchIds;
   }
 
-  public boolean isSuccess() {
-    return success;
+  public List<String> getBatchIds() {
+    return batchIds;
   }
 
-  public void setSuccess(boolean success) {
-    this.success = success;
+  public void setBatchIds(List<String> batchIds) {
+    this.batchIds = batchIds;
   }
 
-  public String getMsg() {
-    return msg;
+  public String getOriginalKyuubiInstance() {
+    return originalKyuubiInstance;
   }
 
-  public void setMsg(String msg) {
-    this.msg = msg;
+  public void setOriginalKyuubiInstance(String originalKyuubiInstance) {
+    this.originalKyuubiInstance = originalKyuubiInstance;
+  }
+
+  public String getNewKyuubiInstance() {
+    return newKyuubiInstance;
+  }
+
+  public void setNewKyuubiInstance(String newKyuubiInstance) {
+    this.newKyuubiInstance = newKyuubiInstance;
   }
 
   @Override
@@ -53,12 +64,14 @@ public class ReassignBatchResponse {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ReassignBatchResponse that = (ReassignBatchResponse) o;
-    return success == that.success && Objects.equals(msg, that.msg);
+    return Objects.equals(getBatchIds(), that.getBatchIds())
+        && Objects.equals(getOriginalKyuubiInstance(), that.getOriginalKyuubiInstance())
+        && Objects.equals(getNewKyuubiInstance(), that.getNewKyuubiInstance());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(success, msg);
+    return Objects.hash(batchIds, originalKyuubiInstance, newKyuubiInstance);
   }
 
   @Override

@@ -568,39 +568,33 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[ReassignBatchResponse]))),
-    description = "Reassign instance's all batch sessions to a new instance")
+    description = "Reassign batches to a new instance")
   @GET
-  @Path("{kyuubiInstance}/{batchId}/reassign")
+  @Path("{kyuubiInstance}/reassign")
   def reassignBatchSessions(
       @PathParam("kyuubiInstance") kyuubiInstance: String,
-      @PathParam("batchId") batchId: String,
+      @QueryParam("size") @DefaultValue("2147483647") size: Int,
       @QueryParam("force")
       @DefaultValue("false") force: Boolean): ReassignBatchResponse = {
-    sessionManager.getBatchMetadata(batchId).map { metadata =>
-      val batchInstance = metadata.kyuubiInstance
-      if (batchInstance != kyuubiInstance) {
-        throw new IllegalStateException(s":parameter $kyuubiInstance needs to match $batchInstance")
-      }
-      val url = fe.connectionUrl
-      if (kyuubiInstance == url) {
-        throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
-      }
-      if (!force && checkInstanceNetwork(kyuubiInstance, batchId)) {
-        throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance," +
-          s"please use force option to bypass this check")
-      }
-      try {
-        sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl)
-        fe.recoverBatchSessions()
-      } catch {
-        case e: Exception =>
-          error(s"Error reassign batches $kyuubiInstance to $url", e)
-          new ReassignBatchResponse(false, Utils.stringifyException(e))
-      }
-      new ReassignBatchResponse(true, s"Reassigned batches from $kyuubiInstance to $url.")
-    }.getOrElse {
-      error(s"Invalid batchId: $batchId")
-      throw new NotFoundException(s"Invalid batchId: $batchId")
+    val batchIds = sessionManager.getBatchIdsToRecover(kyuubiInstance)
+    if (batchIds.isEmpty) {
+      throw new IllegalStateException(s"No PENDING or RUNNING Batch Session from $kyuubiInstance")
+    }
+    val url = fe.connectionUrl
+    if (kyuubiInstance == url) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+    }
+    if (!force && checkInstanceNetwork(kyuubiInstance, batchIds.head)) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance," +
+        s"please use force option to bypass this check")
+    }
+    try {
+      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl, size)
+      fe.recoverBatchSessions(batchIds)
+      new ReassignBatchResponse(batchIds.asJava, kyuubiInstance, url)
+    } catch {
+      case e: Exception =>
+        throw new Exception(s"Error reassign batches from $kyuubiInstance to $url", e)
     }
   }
 

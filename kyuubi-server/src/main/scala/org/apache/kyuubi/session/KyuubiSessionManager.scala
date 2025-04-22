@@ -328,16 +328,52 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def reassignBatchSessions(kyuubiInstance: String, newKyuubiInstance: String): Unit = {
+  def getSpecificBatchSessionsToRecover(batchIds: Seq[String]): Seq[KyuubiBatchSession] = {
+    batchIds.flatMap { batchId =>
+      getBatchMetadata(batchId).map { metadata =>
+        Seq(
+          createBatchSession(
+            metadata.username,
+            "anonymous",
+            metadata.ipAddress,
+            metadata.requestConf,
+            metadata.engineType,
+            Option(metadata.requestName),
+            metadata.resource,
+            metadata.className,
+            metadata.requestArgs,
+            Some(metadata),
+            fromRecovery = true))
+      }.getOrElse(Seq.empty)
+    }
+  }
+
+  def getBatchIdsToRecover(kyuubiInstance: String): Seq[String] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
       metadataManager.map(_.getBatchesRecoveryMetadata(
         stateToRecover.toString,
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
+        metadata.identifier
+      }).getOrElse(Seq.empty)
+    }
+  }
+
+  def reassignBatchSessions(
+      kyuubiInstance: String,
+      newKyuubiInstance: String,
+      size: Int): Seq[String] = {
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
+      metadataManager.map(_.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        size).map { metadata =>
         updateMetadata(Metadata(
           identifier = metadata.identifier,
           kyuubiInstance = newKyuubiInstance))
+        metadata.identifier
       }).getOrElse(Seq.empty)
     }
   }

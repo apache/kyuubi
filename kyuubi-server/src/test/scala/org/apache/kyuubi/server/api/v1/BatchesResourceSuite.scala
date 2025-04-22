@@ -692,7 +692,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       engineError = applicationStatus.get.error)
     sessionManager.updateMetadata(metadataToUpdate)
 
-    webTarget.path(s"api/v1/batches/other_kyuubi_instance:10099/${batchId1}/reassign")
+    webTarget.path(s"api/v1/batches/other_kyuubi_instance:10099/reassign")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
