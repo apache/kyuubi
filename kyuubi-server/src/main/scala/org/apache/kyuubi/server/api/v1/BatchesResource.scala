@@ -569,43 +569,26 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       mediaType = MediaType.APPLICATION_JSON,
       schema = new Schema(implementation = classOf[ReassignBatchResponse]))),
     description = "Reassign batches to a new instance")
-  @GET
-  @Path("{kyuubiInstance}/reassign")
-  def reassignBatchSessions(
-      @PathParam("kyuubiInstance") kyuubiInstance: String,
-      @QueryParam("size") @DefaultValue("2147483647") size: Int,
-      @QueryParam("force")
-      @DefaultValue("false") force: Boolean): ReassignBatchResponse = {
-    val batchIds = sessionManager.getBatchIdsToRecover(kyuubiInstance)
-    if (batchIds.isEmpty) {
-      throw new IllegalStateException(s"No PENDING or RUNNING Batch Session from $kyuubiInstance")
-    }
+  @POST
+  @Path("/reassign")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def reassignBatchSessions(request: ReassignBatchRequest): ReassignBatchResponse = {
     val url = fe.connectionUrl
+    val kyuubiInstance = request.getKyuubiInstance
     if (kyuubiInstance == url) {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
-    if (!force && checkInstanceNetwork(kyuubiInstance, batchIds.head)) {
-      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance," +
-        s"please use force option to bypass this check")
+    val internalRestClient = getInternalRestClient(kyuubiInstance)
+    if (!Utils.isTesting && internalRestClient.pingAble()) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
     try {
-      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl, size)
-      fe.recoverBatchSessions(batchIds)
-      new ReassignBatchResponse(batchIds.asJava, kyuubiInstance, url)
+      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl)
+      val recoveredBatchIds = fe.recoverBatchSessionsFromReassign(batchIds)
+      new ReassignBatchResponse(recoveredBatchIds.asJava, kyuubiInstance, url)
     } catch {
       case e: Exception =>
         throw new Exception(s"Error reassign batches from $kyuubiInstance to $url", e)
-    }
-  }
-
-  private def checkInstanceNetwork(kyuubiInstance: String, batchId: String): Boolean = {
-    try {
-      val userName = fe.getSessionUser(Map.empty[String, String])
-      val internalRestClient = getInternalRestClient(kyuubiInstance)
-      internalRestClient.getBatch(userName, fe.getIpAddress, batchId)
-      true
-    } catch {
-      case _: Exception => false
     }
   }
 

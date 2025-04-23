@@ -348,28 +348,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def getBatchIdsToRecover(kyuubiInstance: String): Seq[String] = {
+  def reassignBatchSessions(
+      kyuubiInstance: String,
+      newKyuubiInstance: String): Seq[String] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
       metadataManager.map(_.getBatchesRecoveryMetadata(
         stateToRecover.toString,
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        metadata.identifier
-      }).getOrElse(Seq.empty)
-    }
-  }
-
-  def reassignBatchSessions(
-      kyuubiInstance: String,
-      newKyuubiInstance: String,
-      size: Int): Seq[String] = {
-    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
-      metadataManager.map(_.getBatchesRecoveryMetadata(
-        stateToRecover.toString,
-        kyuubiInstance,
-        0,
-        size).map { metadata =>
         updateMetadata(Metadata(
           identifier = metadata.identifier,
           kyuubiInstance = newKyuubiInstance))

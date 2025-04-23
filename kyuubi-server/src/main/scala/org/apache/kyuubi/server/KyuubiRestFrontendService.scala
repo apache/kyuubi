@@ -205,7 +205,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   @VisibleForTesting
-  private[kyuubi] def recoverBatchSessions(batchIds: Seq[String]): Unit = {
+  private[kyuubi] def recoverBatchSessionsFromReassign(batchIds: Seq[String]): Seq[String] = {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
@@ -228,17 +228,21 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
       pendingRecoveryTasksCount.addAndGet(tasks.size)
 
-      tasks.foreach { case (task, batchId) =>
+      val finishedBatchIds: Seq[String] = tasks.flatMap { case (task, batchId) =>
         try {
           task.get()
+          val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
+          info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+          Some(batchId)
         } catch {
           case e: Throwable =>
             error(s"Error while recovering batch[$batchId]", e)
-        } finally {
-          val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
-          info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+            val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
+            info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+            None
         }
       }
+      finishedBatchIds
     } finally {
       ThreadUtils.shutdown(batchRecoveryExecutor)
     }
