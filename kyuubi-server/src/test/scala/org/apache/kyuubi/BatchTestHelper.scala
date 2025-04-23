@@ -22,7 +22,6 @@ import java.nio.file.Paths
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest
-import org.apache.kyuubi.client.api.v1.dto.ReassignBatchRequest
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 
@@ -65,10 +64,5 @@ trait BatchTestHelper {
       sparkBatchTestAppName,
       conf,
       args)
-  }
-
-  def newReassignBatchRequest(
-      kyuubiInstance: String): ReassignBatchRequest = {
-    new ReassignBatchRequest(kyuubiInstance)
   }
 }

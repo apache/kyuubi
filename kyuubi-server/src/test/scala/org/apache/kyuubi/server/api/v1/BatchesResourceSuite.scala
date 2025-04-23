@@ -692,7 +692,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       engineError = applicationStatus.get.error)
     sessionManager.updateMetadata(metadataToUpdate)
 
-    val requestObj = newReassignBatchRequest("other_kyuubi_instance:10099")
+    val requestObj = new ReassignBatchRequest("other_kyuubi_instance:10099")
     val response = webTarget.path("api/v1/batches/reassign")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
