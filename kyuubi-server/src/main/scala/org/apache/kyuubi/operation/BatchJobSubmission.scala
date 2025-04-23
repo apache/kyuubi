@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -214,6 +215,20 @@ class BatchJobSubmission(
         metadata match {
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
+          case Some(metadata)
+              // in case it has been updated by peer kyuubi instance, see KYUUBI-6278
+              if StringUtils.isNotBlank(metadata.engineState) &&
+                ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)) =>
+            _applicationInfo = Some(new ApplicationInfo(
+              id = metadata.engineId,
+              name = metadata.engineName,
+              state = ApplicationState.withName(metadata.engineState),
+              url = Option(metadata.engineUrl),
+              error = metadata.engineError))
+            if (applicationFailed(_applicationInfo, appOperation)) {
+              throw new KyuubiException(
+                s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+            }
           case Some(metadata) if metadata.state == OperationState.PENDING.toString =>
             // case 1: new batch job created using batch impl v2
             // case 2: batch job from recovery, do submission only when previous state is
@@ -331,8 +346,7 @@ class BatchJobSubmission(
       setStateIfNotCanceled(OperationState.RUNNING)
     }
     if (_applicationInfo.isEmpty) {
-      info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-      return
+      _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
     }
     if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
