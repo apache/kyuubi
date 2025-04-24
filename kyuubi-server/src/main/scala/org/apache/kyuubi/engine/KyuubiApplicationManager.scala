@@ -31,10 +31,12 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
-class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager") {
+class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
+  extends AbstractService("KyuubiApplicationManager") {
 
   // TODO: maybe add a configuration is better
   private val operations =
@@ -43,7 +45,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   override def initialize(conf: KyuubiConf): Unit = {
     operations.foreach { op =>
       try {
-        op.initialize(conf)
+        op.initialize(conf, metadataManager)
       } catch {
         case NonFatal(e) => warn(s"Error starting ${op.getClass.getSimpleName}: ${e.getMessage}")
       }

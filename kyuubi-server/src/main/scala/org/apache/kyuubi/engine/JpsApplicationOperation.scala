@@ -22,13 +22,14 @@ import java.nio.file.Paths
 import scala.sys.process._
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.metadata.MetadataManager
 
 class JpsApplicationOperation extends ApplicationOperation {
   import ApplicationOperation._
 
   private var runner: String = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
     val jps = sys.env.get("JAVA_HOME").orElse(sys.props.get("java.home"))
       .map(Paths.get(_, "bin", "jps").toString)
       .getOrElse("jps")
