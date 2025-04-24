@@ -105,6 +105,8 @@ object MetricsSystem {
 
   @volatile private var maybeSystem: Option[MetricsSystem] = None
 
+  private[kyuubi] def getMetricsRegistry: Option[MetricRegistry] = maybeSystem.map(_.registry)
+
   def tracing[T](func: MetricsSystem => T): Unit = {
     maybeSystem.foreach(func(_))
   }

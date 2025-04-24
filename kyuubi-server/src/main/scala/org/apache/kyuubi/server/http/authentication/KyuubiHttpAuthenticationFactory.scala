@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.http.authentication
 import java.security.PrivilegedAction
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
+import com.codahale.metrics.jetty9.InstrumentedHandler
 import org.apache.hadoop.security.UserGroupInformation
 import org.eclipse.jetty.server.{Handler, Request}
 import org.eclipse.jetty.server.handler.HandlerWrapper
@@ -45,7 +46,7 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
 
   class HttpHandlerWrapperFactory(ugi: UserGroupInformation, kerberosEnabled: Boolean) {
     def wrapHandler(handler: Handler): HandlerWrapper = {
-      new HandlerWrapper {
+      val handlerWrapper = new HandlerWrapper {
         _handler = handler
 
         override def handle(
@@ -91,6 +92,12 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
           handler.start()
         }
       }
+
+      MetricsSystem.getMetricsRegistry.map { metricRegistry =>
+        val instrumentedHandler = new InstrumentedHandler(metricRegistry)
+        instrumentedHandler.setHandler(handlerWrapper)
+        instrumentedHandler
+      }.getOrElse(handlerWrapper)
     }
   }
 }
