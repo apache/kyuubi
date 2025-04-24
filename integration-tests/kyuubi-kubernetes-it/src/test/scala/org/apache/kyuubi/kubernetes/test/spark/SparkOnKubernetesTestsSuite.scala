@@ -230,7 +230,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         appMgrInfo,
         sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
-      assert(appInfo.name.startsWith(driverPodNamePrefix))
+      // See KYUUBI-7034: prefer to use pod `spark-app-name` label instead of pod name
+      // assert(appInfo.name.startsWith(driverPodNamePrefix))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(
