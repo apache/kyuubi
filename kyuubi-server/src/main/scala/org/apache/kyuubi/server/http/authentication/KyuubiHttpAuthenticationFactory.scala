@@ -45,7 +45,7 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
     new HttpHandlerWrapperFactory(ugi, kerberosEnabled)
 
   class HttpHandlerWrapperFactory(ugi: UserGroupInformation, kerberosEnabled: Boolean) {
-    def wrapHandler(handler: Handler): HandlerWrapper = {
+    def wrapHandler(handler: Handler, metricPrefix: Option[String] = None): HandlerWrapper = {
       val handlerWrapper = new HandlerWrapper {
         _handler = handler
 
@@ -93,11 +93,13 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
         }
       }
 
-      MetricsSystem.getMetricsRegistry.map { metricRegistry =>
-        val instrumentedHandler = new InstrumentedHandler(metricRegistry)
-        instrumentedHandler.setHandler(handlerWrapper)
-        instrumentedHandler
-      }.getOrElse(handlerWrapper)
+      (MetricsSystem.getMetricsRegistry, metricPrefix) match {
+        case (Some(metricRegistry), Some(prefix)) =>
+          val instrumentedHandler = new InstrumentedHandler(metricRegistry, prefix)
+          instrumentedHandler.setHandler(handlerWrapper)
+          instrumentedHandler
+        case _ => handlerWrapper
+      }
     }
   }
 }

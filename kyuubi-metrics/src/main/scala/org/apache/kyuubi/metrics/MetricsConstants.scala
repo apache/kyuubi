@@ -95,4 +95,7 @@ object MetricsConstants {
   final val METADATA_REQUEST_TOTAL = METADATA_REQUEST + "total"
   final val METADATA_REQUEST_FAIL = METADATA_REQUEST + "failed"
   final val METADATA_REQUEST_RETRYING = METADATA_REQUEST + "retrying"
+
+  final private val JETTY = KYUUBI + "jetty."
+  final val JETTY_API_V1 = JETTY + "api.v1"
 }
