@@ -51,12 +51,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
-  val applicationManager = new KyuubiApplicationManager()
 
   // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
   // so we initialize it only when Kyuubi starts with the REST frontend.
-  lazy val metadataManager: Option[MetadataManager] =
-    if (conf.isRESTEnabled) Some(new MetadataManager()) else None
+  var metadataManager: Option[MetadataManager] = None
+  var applicationManager: KyuubiApplicationManager = _
 
   // lazy is required for plugins since the conf is null when this class initialization
   lazy val sessionConfAdvisor: Seq[SessionConfAdvisor] = PluginLoader.loadSessionConfAdvisor(conf)
@@ -73,6 +72,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
+    if (conf.isRESTEnabled) metadataManager = Some(new MetadataManager())
+    applicationManager = new KyuubiApplicationManager(metadataManager)
     addService(applicationManager)
     addService(credentialsManager)
     metadataManager.foreach(addService)

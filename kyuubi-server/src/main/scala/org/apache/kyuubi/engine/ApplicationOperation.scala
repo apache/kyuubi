@@ -19,13 +19,14 @@ package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.server.metadata.MetadataManager
 
 trait ApplicationOperation {
 
   /**
    * Step for initializing the instance.
    */
-  def initialize(conf: KyuubiConf): Unit
+  def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit
 
   /**
    * Step to clean up the instance

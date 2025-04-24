@@ -36,8 +36,7 @@ import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.Kube
 import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, KILLED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.util.{KubernetesUtils, ThreadUtils}
 
 class KubernetesApplicationOperation extends ApplicationOperation with Logging {
@@ -77,8 +76,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
-  private def metadataManager = KyuubiServer.kyuubiServer.backendService
-    .sessionManager.asInstanceOf[KyuubiSessionManager].metadataManager
+  private var metadataManager: Option[MetadataManager] = _
 
   // Visible for testing
   private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
@@ -113,8 +111,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
     kyuubiConf = conf
+    this.metadataManager = metadataManager
     info("Start initializing Kubernetes application operation.")
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information

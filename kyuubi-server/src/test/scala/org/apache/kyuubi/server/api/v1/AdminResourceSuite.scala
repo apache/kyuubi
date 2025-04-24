@@ -49,7 +49,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CL
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  private val engineMgr = new KyuubiApplicationManager()
+  private val engineMgr = new KyuubiApplicationManager(None)
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(AUTHENTICATION_METHOD, Seq("CUSTOM"))
