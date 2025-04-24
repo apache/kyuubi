@@ -573,9 +573,9 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   @Path("/reassign")
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def reassignBatchSessions(request: ReassignBatchRequest): ReassignBatchResponse = {
-    val url = fe.connectionUrl
     val kyuubiInstance = request.getKyuubiInstance
-    if (kyuubiInstance == url) {
+    val newKyuubiInstance = fe.connectionUrl
+    if (kyuubiInstance == newKyuubiInstance) {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
     val internalRestClient = getInternalRestClient(kyuubiInstance)
@@ -583,12 +583,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
     try {
-      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, fe.connectionUrl)
+      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, newKyuubiInstance)
       val recoveredBatchIds = fe.recoverBatchSessionsFromReassign(batchIds)
-      new ReassignBatchResponse(recoveredBatchIds.asJava, kyuubiInstance, url)
+      new ReassignBatchResponse(recoveredBatchIds.asJava, kyuubiInstance, newKyuubiInstance)
     } catch {
       case e: Exception =>
-        throw new Exception(s"Error reassign batches from $kyuubiInstance to $url", e)
+        throw new Exception(s"Error reassign batches from $kyuubiInstance to $newKyuubiInstance", e)
     }
   }
 

@@ -204,20 +204,22 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
-  @VisibleForTesting
   private[kyuubi] def recoverBatchSessionsFromReassign(batchIds: Seq[String]): Seq[String] = {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val batchRecoveryExecutor =
-      ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
+      ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-reassign-recovery-executor")
     try {
-      val batchSessionsToRecover = sessionManager.
-      getSpecificBatchSessionsToRecover(batchIds)
+      val batchSessionsToRecover =
+        sessionManager.getSpecificBatchSessionsToRecover(batchIds, connectionUrl)
       val pendingRecoveryTasksCount = new AtomicInteger(0)
       val tasks = batchSessionsToRecover.flatMap { batchSession =>
         val batchId = batchSession.batchJobSubmissionOp.batchId
         try {
           val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
-            Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
+            Utils.tryLogNonFatalError {
+              info(s"Recovering batch[$batchId] from reassign")
+              sessionManager.openBatchSession(batchSession)
+            })
           Some(task -> batchId)
         } catch {
           case e: Throwable =>

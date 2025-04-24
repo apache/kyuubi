@@ -328,23 +328,29 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     }
   }
 
-  def getSpecificBatchSessionsToRecover(batchIds: Seq[String]): Seq[KyuubiBatchSession] = {
+  def getSpecificBatchSessionsToRecover(
+      batchIds: Seq[String],
+      kyuubiInstance: String): Seq[KyuubiBatchSession] = {
+    val batchStatesToRecovery = Set(OperationState.PENDING, OperationState.RUNNING)
     batchIds.flatMap { batchId =>
-      getBatchMetadata(batchId).map { metadata =>
-        Seq(
-          createBatchSession(
-            metadata.username,
-            "anonymous",
-            metadata.ipAddress,
-            metadata.requestConf,
-            metadata.engineType,
-            Option(metadata.requestName),
-            metadata.resource,
-            metadata.className,
-            metadata.requestArgs,
-            Some(metadata),
-            fromRecovery = true))
-      }.getOrElse(Seq.empty)
+      getBatchMetadata(batchId)
+        .filter(m =>
+          m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
+        .map { metadata =>
+          Seq(
+            createBatchSession(
+              metadata.username,
+              "anonymous",
+              metadata.ipAddress,
+              metadata.requestConf,
+              metadata.engineType,
+              Option(metadata.requestName),
+              metadata.resource,
+              metadata.className,
+              metadata.requestArgs,
+              Some(metadata),
+              fromRecovery = true))
+        }.getOrElse(Seq.empty)
     }
   }
 
@@ -360,6 +366,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         updateMetadata(Metadata(
           identifier = metadata.identifier,
           kyuubiInstance = newKyuubiInstance))
+        info(s"Reassign batch ${metadata.identifier} from $kyuubiInstance to $newKyuubiInstance")
         metadata.identifier
       }).getOrElse(Seq.empty)
     }
