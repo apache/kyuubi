@@ -1951,6 +1951,16 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("1")
 
+  val BATCH_INFO_INTERNAL_REDIRECT = buildConf("kyuubi.batch.info.internal.redirect")
+    .serverOnly
+    .doc("When set to true, the batch info is retrieved by forwarding the request to the " +
+      "corresponding Kyuubi instance using the internal REST client. If false, the batch info is " +
+      "constructed directly from the metadata store. It is recommended to set this to false to " +
+      "reduce the RPC latency for multiple kyuubi instances HA mode.")
+    .version("1.11.0")
+    .booleanConf
+    .createWithDefault(true)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
