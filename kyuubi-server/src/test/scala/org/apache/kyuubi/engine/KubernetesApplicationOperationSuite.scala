@@ -28,7 +28,7 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     kyuubiConf.set(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST.key, "ns1,ns2")
 
     val operation = new KubernetesApplicationOperation()
-    operation.initialize(kyuubiConf)
+    operation.initialize(kyuubiConf, None)
 
     operation.checkKubernetesInfo(KubernetesInfo(None, None))
     operation.checkKubernetesInfo(KubernetesInfo(Some("1"), None))

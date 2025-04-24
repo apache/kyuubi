@@ -32,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy._
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
@@ -40,7 +41,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   @volatile private var adminYarnClient: Option[YarnClient] = None
   private var submitTimeout: Long = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
     submitTimeout = conf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
 
