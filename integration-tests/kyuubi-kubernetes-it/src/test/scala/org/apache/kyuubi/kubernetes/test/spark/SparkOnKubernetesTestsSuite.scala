@@ -126,6 +126,7 @@ class SparkClusterModeOnKubernetesSuiteBase
       .set("spark.kubernetes.driver.podTemplateFile", driverTemplate.getPath)
       .set(ZK_CLIENT_PORT_ADDRESS.key, localhostAddress)
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, localhostAddress)
+      .set(BATCH_APPLICATION_CHECK_INTERVAL.key, "100")
   }
 }
 
@@ -224,7 +225,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       batchRequest)
 
     // wait for driver pod start
-    eventually(timeout(3.minutes), interval(5.second)) {
+    eventually(timeout(3.minutes), interval(100.milliseconds)) {
       // trigger k8sOperation init here
       val appInfo = k8sOperation.getApplicationInfoByTag(
         appMgrInfo,
