@@ -28,7 +28,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationInfo, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
@@ -126,7 +126,6 @@ class SparkClusterModeOnKubernetesSuiteBase
       .set("spark.kubernetes.driver.podTemplateFile", driverTemplate.getPath)
       .set(ZK_CLIENT_PORT_ADDRESS.key, localhostAddress)
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, localhostAddress)
-      .set(BATCH_APPLICATION_CHECK_INTERVAL.key, "100")
   }
 }
 
@@ -225,14 +224,14 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       batchRequest)
 
     // wait for driver pod start
-    eventually(timeout(3.minutes), interval(100.milliseconds)) {
+    eventually(timeout(3.minutes), interval(5.second)) {
       // trigger k8sOperation init here
       val appInfo = k8sOperation.getApplicationInfoByTag(
         appMgrInfo,
         sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
-      // See KYUUBI-7034: prefer to use pod `spark-app-name` label instead of pod name
-      // assert(appInfo.name.startsWith(driverPodNamePrefix))
+      assert(
+        appInfo.asInstanceOf[KubernetesApplicationInfo].podName.startsWith(driverPodNamePrefix))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(

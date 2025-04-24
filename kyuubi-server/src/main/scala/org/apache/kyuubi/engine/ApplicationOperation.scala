@@ -129,6 +129,33 @@ object ApplicationInfo {
   val UNKNOWN: ApplicationInfo = ApplicationInfo(null, null, ApplicationState.UNKNOWN)
 }
 
+class KubernetesApplicationInfo(
+    id: String,
+    name: String,
+    state: ApplicationState,
+    url: Option[String] = None,
+    error: Option[String] = None,
+    val podName: String) extends ApplicationInfo(id, name, state, url, error) {
+  override def toMap: Map[String, String] = super.toMap ++ Map("podName" -> podName)
+}
+
+object KubernetesApplicationInfo {
+  val NOT_FOUND: KubernetesApplicationInfo = new KubernetesApplicationInfo(
+    null,
+    null,
+    ApplicationState.NOT_FOUND,
+    None,
+    None,
+    null)
+  val UNKNOWN: KubernetesApplicationInfo = new KubernetesApplicationInfo(
+    null,
+    null,
+    ApplicationState.UNKNOWN,
+    None,
+    None,
+    null)
+}
+
 object ApplicationOperation {
   val NOT_FOUND = "APPLICATION_NOT_FOUND"
 }
