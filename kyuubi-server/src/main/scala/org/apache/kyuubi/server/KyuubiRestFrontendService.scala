@@ -31,8 +31,8 @@ import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
-import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
@@ -118,7 +118,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     val holder = new FilterHolder(new AuthenticationFilter(conf))
     contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
-    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(contextHandler))
+    server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(
+      contextHandler,
+      Some(MetricsConstants.JETTY_API_V1)))
 
     val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
