@@ -54,9 +54,9 @@ class MySQLDatabaseDialect extends GenericDatabaseDialect {
     Some(
       s"""
          |INSERT INTO $table (${colsToInsert.mkString(",")})
-         |VALUES (${colsToInsert.map(_ => "?").mkString(",")})
+         |VALUES (${colsToInsert.map(_ => "?").mkString(",")}) AS new
          |ON DUPLICATE KEY UPDATE
-         |${colsToReplace.map(c => s"$c = VALUES($c)").mkString(",")}
+         |${colsToReplace.map(c => s"$c = new.$c").mkString(",")}
          |""".stripMargin)
   }
 }

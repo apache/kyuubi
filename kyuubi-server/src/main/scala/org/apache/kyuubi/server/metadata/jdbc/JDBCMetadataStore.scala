@@ -436,7 +436,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
          |create_time,
          |update_time
          |)
-         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?
+         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          |WHERE NOT EXISTS (
          |  SELECT 1 FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?
          |)
