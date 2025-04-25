@@ -113,7 +113,9 @@ case class ApplicationInfo(
     name: String,
     state: ApplicationState,
     url: Option[String] = None,
-    error: Option[String] = None) {
+    error: Option[String] = None,
+    // only used for K8s and still possible to be None for cases like NOT_FOUND state for K8s cases
+    podName: Option[String] = None) {
 
   def toMap: Map[String, String] = {
     Map(
@@ -121,7 +123,8 @@ case class ApplicationInfo(
       "name" -> name,
       "state" -> state.toString,
       "url" -> url.orNull,
-      "error" -> error.orNull)
+      "error" -> error.orNull) ++
+      podName.map("podName" -> _).toMap
   }
 }
 
