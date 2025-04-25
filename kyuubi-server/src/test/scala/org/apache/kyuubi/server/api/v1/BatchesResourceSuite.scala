@@ -695,7 +695,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val requestObj = new ReassignBatchRequest("other_kyuubi_instance:10099")
     val response = webTarget.path("api/v1/batches/reassign")
       .request(MediaType.APPLICATION_JSON_TYPE)
-      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(Utils.currentUser))
       .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
     assert(response.getStatus === 200)
     val batch = response.readEntity(classOf[ReassignBatchResponse])
