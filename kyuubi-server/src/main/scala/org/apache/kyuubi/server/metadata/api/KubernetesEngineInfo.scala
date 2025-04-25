@@ -30,7 +30,6 @@ package org.apache.kyuubi.server.metadata.api
  * @param engineName the engine name.
  * @param engineState the engine state.
  * @param engineError the engine error diagnose.
- * @param createTime the metadata create time.
  * @param updateTime the metadata update time.
  */
 case class KubernetesEngineInfo(
@@ -44,5 +43,4 @@ case class KubernetesEngineInfo(
     engineName: String,
     engineState: String,
     engineError: Option[String],
-    createTime: Long = 0L,
     updateTime: Long = 0L)

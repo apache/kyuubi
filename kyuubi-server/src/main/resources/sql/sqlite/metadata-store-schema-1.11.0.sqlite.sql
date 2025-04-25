@@ -51,7 +51,6 @@ CREATE TABLE IF NOT EXISTS k8s_engine_info(
     engine_name mediumtext, -- the engine name
     engine_state varchar(32), -- the engine state
     engine_error mediumtext, -- the engine diagnose
-    create_time bigint, -- the metadata create time
     update_time bigint -- the metadata update time
 );
 

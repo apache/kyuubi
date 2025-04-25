@@ -419,7 +419,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  private def insertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+  // Visible for testing.
+  private[kyuubi] def insertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
     val insertQuery =
       s"""
          |INSERT INTO $KUBERNETES_ENGINE_INFO_TABLE(
@@ -433,16 +434,14 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
          |engine_name,
          |engine_state,
          |engine_error,
-         |create_time,
          |update_time
          |)
-         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
          |WHERE NOT EXISTS (
          |  SELECT 1 FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?
          |)
          |""".stripMargin
     JdbcUtils.withConnection { connection =>
-      val currentTime = System.currentTimeMillis()
       execute(
         connection,
         insertQuery,
@@ -456,13 +455,13 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         engineInfo.engineName,
         engineInfo.engineState,
         engineInfo.engineError.orNull,
-        currentTime,
-        currentTime,
+        System.currentTimeMillis(),
         engineInfo.identifier)
     }
   }
 
-  private def updateKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+  // Visible for testing.
+  private[kyuubi] def updateKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
 
@@ -532,7 +531,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       KUBERNETES_ENGINE_INFO_KEY_COLUMN) match {
       case Some(query) =>
         JdbcUtils.withConnection { connection =>
-          val currentTime = System.currentTimeMillis()
           execute(
             connection,
             query,
@@ -546,8 +544,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
             engineInfo.engineName,
             engineInfo.engineState,
             engineInfo.engineError.orNull,
-            currentTime,
-            currentTime)
+            System.currentTimeMillis())
         }
       case None =>
         insertKubernetesEngineInfo(engineInfo)
@@ -655,7 +652,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val appName = resultSet.getString("engine_name")
         val appState = resultSet.getString("engine_state")
         val appError = Option(resultSet.getString("engine_error"))
-        val createTime = resultSet.getLong("create_time")
         val updateTime = resultSet.getLong("update_time")
 
         val metadata = KubernetesEngineInfo(
@@ -669,7 +665,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineName = appName,
           engineState = appState,
           engineError = appError,
-          createTime = createTime,
           updateTime = updateTime)
         metadataList += metadata
       }
@@ -823,7 +818,6 @@ object JDBCMetadataStore {
     "engine_name",
     "engine_state",
     "engine_error",
-    "create_time",
     "update_time")
   private val KUBERNETES_ENGINE_INFO_COLUMNS_TO_REPLACE = Seq(
     "context",

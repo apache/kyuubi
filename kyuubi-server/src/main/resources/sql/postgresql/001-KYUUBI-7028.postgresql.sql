@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS k8s_engine_info(
     engine_name text,
     engine_state varchar(32),
     engine_error text,
-    create_time bigint NOT NULL,
     update_time bigint NOT NULL
     );
 
@@ -27,7 +26,6 @@ COMMENT ON COLUMN k8s_engine_info.engine_id IS 'the engine id';
 COMMENT ON COLUMN k8s_engine_info.engine_name IS 'the engine name';
 COMMENT ON COLUMN k8s_engine_info.engine_state IS 'the engine state';
 COMMENT ON COLUMN k8s_engine_info.engine_error IS 'the engine diagnose';
-COMMENT ON COLUMN k8s_engine_info.create_time IS 'the metadata create time';
 COMMENT ON COLUMN k8s_engine_info.update_time IS 'the metadata update time';
 
 CREATE UNIQUE INDEX IF NOT EXISTS k8s_engine_info_unique_identifier_index ON k8s_engine_info(identifier);

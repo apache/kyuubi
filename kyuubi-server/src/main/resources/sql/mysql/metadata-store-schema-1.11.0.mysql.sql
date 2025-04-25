@@ -46,7 +46,6 @@ CREATE TABLE IF NOT EXISTS k8s_engine_info(
     engine_name mediumtext COMMENT 'the engine name',
     engine_state varchar(32) COMMENT 'the engine state',
     engine_error mediumtext COMMENT 'the engine diagnose',
-    create_time bigint COMMENT 'the metadata create time',
     update_time bigint COMMENT 'the metadata update time',
     UNIQUE INDEX unique_identifier_index(identifier)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
