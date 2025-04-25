@@ -169,7 +169,7 @@
         <jakarta.activation.version>1.2.2</jakarta.activation.version>
         <jersey.version>2.40</jersey.version>
         <jetcd.version>0.7.7</jetcd.version>
-        <jetty.version>9.4.56.v20240826</jetty.version>
+        <jetty.version>9.4.57.v20241219</jetty.version>
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
