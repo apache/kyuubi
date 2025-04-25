@@ -68,6 +68,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private lazy val resourceFileMaxSize = fe.getConf.get(BATCH_RESOURCE_FILE_MAX_SIZE)
   private lazy val extraResourceFileMaxSize = fe.getConf.get(BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE)
   private lazy val metadataSearchWindow = fe.getConf.get(METADATA_SEARCH_WINDOW)
+  private lazy val batchInfoInternalRedirect = fe.getConf.get(BATCH_INFO_INTERNAL_REDIRECT)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -355,7 +356,8 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         val isApplicationTerminated = (StringUtils.isNotBlank(metadata.engineState)
           && ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)))
 
-        if (batchV2Enabled(metadata.requestConf) ||
+        if (!batchInfoInternalRedirect ||
+          batchV2Enabled(metadata.requestConf) ||
           isOperationTerminated ||
           isApplicationTerminated ||
           metadata.kyuubiInstance == fe.connectionUrl) {
