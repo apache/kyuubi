@@ -1954,7 +1954,7 @@ object KyuubiConf {
   val BATCH_INFO_INTERNAL_REDIRECT = buildConf("kyuubi.batch.info.internal.redirect")
     .serverOnly
     .doc("When set to true, the batch info is retrieved by forwarding the request to the " +
-      "corresponding Kyuubi instance using the internal REST client. If false, the batch info is " +
+      "Kyuubi instance that submitted this job via internal RPC. If false, the batch info is " +
       "constructed directly from the metadata store. It is recommended to set this to false to " +
       "reduce the RPC latency for multiple kyuubi instances HA mode.")
     .version("1.11.0")
