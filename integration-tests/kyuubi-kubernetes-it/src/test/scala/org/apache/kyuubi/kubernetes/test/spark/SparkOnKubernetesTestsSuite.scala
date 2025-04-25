@@ -28,7 +28,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationInfo, KubernetesApplicationOperation}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, KubernetesApplicationOperation}
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, NOT_FOUND, RUNNING}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
@@ -230,8 +230,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         appMgrInfo,
         sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
-      assert(
-        appInfo.asInstanceOf[KubernetesApplicationInfo].podName.startsWith(driverPodNamePrefix))
+      assert(appInfo.podName.exists(_.startsWith(driverPodNamePrefix)))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(
