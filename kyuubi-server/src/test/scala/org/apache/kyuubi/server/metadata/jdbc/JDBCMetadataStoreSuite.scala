@@ -334,6 +334,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(applicationInfo.name == "appName2")
     assert(applicationInfo.state == ApplicationState.FAILED)
     assert(applicationInfo.error == Some("appError2"))
+    assert(applicationInfo.podName == Some("podName2"))
 
     // test generic update
     jdbcMetadataStore.updateKubernetesEngineInfo(metadata)

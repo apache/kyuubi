@@ -388,6 +388,7 @@ object MetadataManager extends Logging {
       id = metadata.engineId,
       name = metadata.engineName,
       state = ApplicationState.withName(metadata.engineState),
-      error = metadata.engineError)
+      error = metadata.engineError,
+      podName = Option(metadata.podName))
   }
 }
