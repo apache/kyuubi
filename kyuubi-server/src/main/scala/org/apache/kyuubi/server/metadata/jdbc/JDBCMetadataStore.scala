@@ -526,8 +526,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   override def upsertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
     dialect.insertOrReplace(
       KUBERNETES_ENGINE_INFO_TABLE,
-      KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT,
-      KUBERNETES_ENGINE_INFO_COLUMNS_TO_REPLACE,
+      KUBERNETES_ENGINE_INFO_COLUMNS,
       KUBERNETES_ENGINE_INFO_KEY_COLUMN) match {
       case Some(query) =>
         JdbcUtils.withConnection { connection =>
@@ -554,7 +553,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   override def getKubernetesMetaEngineInfo(identifier: String): KubernetesEngineInfo = {
     val query =
-      s"SELECT $KUBERNETES_ENGINE_INFO_COLUMNS FROM" +
+      s"SELECT $KUBERNETES_ENGINE_INFO_COLUMNS_STR FROM" +
         s" $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?"
     JdbcUtils.withConnection { connection =>
       withResultSet(connection, query, identifier) { rs =>
@@ -807,8 +806,8 @@ object JDBCMetadataStore {
     "peer_instance_closed").mkString(",")
   private val KUBERNETES_ENGINE_INFO_TABLE = "k8s_engine_info"
   private val KUBERNETES_ENGINE_INFO_KEY_COLUMN = "identifier"
-  private val KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT = Seq(
-    "identifier",
+  private val KUBERNETES_ENGINE_INFO_COLUMNS = Seq(
+    KUBERNETES_ENGINE_INFO_KEY_COLUMN,
     "context",
     "namespace",
     "pod_name",
@@ -819,18 +818,5 @@ object JDBCMetadataStore {
     "engine_state",
     "engine_error",
     "update_time")
-  private val KUBERNETES_ENGINE_INFO_COLUMNS_TO_REPLACE = Seq(
-    "context",
-    "namespace",
-    "pod_name",
-    "pod_state",
-    "container_state",
-    "engine_id",
-    "engine_name",
-    "engine_state",
-    "engine_error",
-    "update_time")
-  private val KUBERNETES_ENGINE_INFO_COLUMNS =
-    KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT.mkString(",")
-
+  private val KUBERNETES_ENGINE_INFO_COLUMNS_STR = KUBERNETES_ENGINE_INFO_COLUMNS.mkString(",")
 }

@@ -21,8 +21,7 @@ trait JdbcDatabaseDialect {
   def limitClause(limit: Int, offset: Int): String
   def insertOrReplace(
       table: String,
-      colsToInsert: Seq[String],
-      colsToReplace: Seq[String],
+      cols: Seq[String],
       keyCol: String): Option[String] = None
 }
 
@@ -35,44 +34,41 @@ class GenericDatabaseDialect extends JdbcDatabaseDialect {
 class SQLiteDatabaseDialect extends GenericDatabaseDialect {
   override def insertOrReplace(
       table: String,
-      colsToInsert: Seq[String],
-      colsToReplace: Seq[String],
+      cols: Seq[String],
       keyCol: String): Option[String] = {
     Some(
       s"""
-         |INSERT OR REPLACE INTO $table (${colsToInsert.mkString(",")})
-         |VALUES (${colsToInsert.map(_ => "?").mkString(",")})
+         |INSERT OR REPLACE INTO $table (${cols.mkString(",")})
+         |VALUES (${cols.map(_ => "?").mkString(",")})
          |""".stripMargin)
   }
 }
 class MySQLDatabaseDialect extends GenericDatabaseDialect {
   override def insertOrReplace(
       table: String,
-      colsToInsert: Seq[String],
-      colsToReplace: Seq[String],
+      cols: Seq[String],
       keyCol: String): Option[String] = {
     Some(
       s"""
-         |INSERT INTO $table (${colsToInsert.mkString(",")})
-         |VALUES (${colsToInsert.map(_ => "?").mkString(",")}) AS new
+         |INSERT INTO $table (${cols.mkString(",")})
+         |VALUES (${cols.map(_ => "?").mkString(",")}) AS new
          |ON DUPLICATE KEY UPDATE
-         |${colsToReplace.map(c => s"$c = new.$c").mkString(",")}
+         |${cols.filterNot(_ == keyCol).map(c => s"$c = new.$c").mkString(",")}
          |""".stripMargin)
   }
 }
 class PostgreSQLDatabaseDialect extends GenericDatabaseDialect {
   override def insertOrReplace(
       table: String,
-      colsToInsert: Seq[String],
-      colsToReplace: Seq[String],
+      cols: Seq[String],
       keyCol: String): Option[String] = {
     Some(
       s"""
-         |INSERT INTO $table (${colsToInsert.mkString(",")})
-         |VALUES (${colsToInsert.map(_ => "?").mkString(",")})
+         |INSERT INTO $table (${cols.mkString(",")})
+         |VALUES (${cols.map(_ => "?").mkString(",")})
          |ON CONFLICT ($keyCol)
          |DO UPDATE SET
-         |${colsToReplace.map(c => s"$c = EXCLUDED.$c").mkString(",")}
+         |${cols.filterNot(_ == keyCol).map(c => s"$c = EXCLUDED.$c").mkString(",")}
          |""".stripMargin)
   }
 }
