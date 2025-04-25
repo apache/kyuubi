@@ -575,6 +575,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   def reassignBatchSessions(request: ReassignBatchRequest): ReassignBatchResponse = {
     val kyuubiInstance = request.getKyuubiInstance
     val newKyuubiInstance = fe.connectionUrl
+    info(s"Received request to reassign batch sessions from $kyuubiInstance to $newKyuubiInstance")
     if (kyuubiInstance == newKyuubiInstance) {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }

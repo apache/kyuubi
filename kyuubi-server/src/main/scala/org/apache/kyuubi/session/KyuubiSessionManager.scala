@@ -333,24 +333,30 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       kyuubiInstance: String): Seq[KyuubiBatchSession] = {
     val batchStatesToRecovery = Set(OperationState.PENDING, OperationState.RUNNING)
     batchIds.flatMap { batchId =>
-      getBatchMetadata(batchId)
-        .filter(m =>
-          m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
-        .map { metadata =>
-          Seq(
-            createBatchSession(
-              metadata.username,
-              "anonymous",
-              metadata.ipAddress,
-              metadata.requestConf,
-              metadata.engineType,
-              Option(metadata.requestName),
-              metadata.resource,
-              metadata.className,
-              metadata.requestArgs,
-              Some(metadata),
-              fromRecovery = true))
-        }.getOrElse(Seq.empty)
+      getBatchSession(SessionHandle.fromUUID(batchId)) match {
+        case Some(_) =>
+          warn(s"Batch session $batchId is already active, skipping recovery.")
+          None
+        case None =>
+          getBatchMetadata(batchId)
+            .filter(m =>
+              m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
+            .flatMap { metadata =>
+              Some(
+                createBatchSession(
+                  metadata.username,
+                  "anonymous",
+                  metadata.ipAddress,
+                  metadata.requestConf,
+                  metadata.engineType,
+                  Option(metadata.requestName),
+                  metadata.resource,
+                  metadata.className,
+                  metadata.requestArgs,
+                  Some(metadata),
+                  fromRecovery = true))
+            }
+      }
     }
   }
 
