@@ -473,11 +473,12 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       podLabelUniqueKey: String): Unit = {
     try {
       val kubernetesClient = getOrCreateKubernetesClient(kubernetesInfo)
-      val deleted = Option(podName) match {
-        case Some(_) => !kubernetesClient.pods().withName(podName).delete().isEmpty
-        case None => !kubernetesClient.pods().withLabel(
-            LABEL_KYUUBI_UNIQUE_KEY,
-            podLabelUniqueKey).delete().isEmpty
+      val deleted = if (podName == null) {
+        !kubernetesClient.pods()
+          .withLabel(LABEL_KYUUBI_UNIQUE_KEY, podLabelUniqueKey)
+          .delete().isEmpty
+      } else {
+        !kubernetesClient.pods().withName(podName).delete().isEmpty
       }
       if (deleted) {
         info(s"[$kubernetesInfo] Operation of delete pod $podName with" +
