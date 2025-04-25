@@ -167,7 +167,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   }
 
   private val batchRecoveryLock: ReentrantLock = new ReentrantLock()
-  private[kyuubi] def withBatchRecoveryLockRequired[T](block: => T): T = {
+  private def withBatchRecoveryLockRequired[T](block: => T): T = {
     batchRecoveryLock.lock()
     try {
       block
