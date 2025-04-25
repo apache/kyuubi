@@ -524,9 +524,35 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   }
 
-  override def upsertKubernetesEngineInfo(metadata: KubernetesEngineInfo): Unit = {
-    insertKubernetesEngineInfo(metadata)
-    updateKubernetesEngineInfo(metadata)
+  override def upsertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+    dialect.insertOrReplace(
+      KUBERNETES_ENGINE_INFO_TABLE,
+      KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT,
+      KUBERNETES_ENGINE_INFO_COLUMNS_TO_REPLACE,
+      KUBERNETES_ENGINE_INFO_KEY_COLUMN) match {
+      case Some(query) =>
+        JdbcUtils.withConnection { connection =>
+          val currentTime = System.currentTimeMillis()
+          execute(
+            connection,
+            query,
+            engineInfo.identifier,
+            engineInfo.context.orNull,
+            engineInfo.namespace.orNull,
+            engineInfo.podName,
+            engineInfo.podState,
+            engineInfo.containerState,
+            engineInfo.engineId,
+            engineInfo.engineName,
+            engineInfo.engineState,
+            engineInfo.engineError.orNull,
+            currentTime,
+            currentTime)
+        }
+      case None =>
+        insertKubernetesEngineInfo(engineInfo)
+        updateKubernetesEngineInfo(engineInfo)
+    }
   }
 
   override def getKubernetesMetaEngineInfo(identifier: String): KubernetesEngineInfo = {
@@ -785,7 +811,8 @@ object JDBCMetadataStore {
     "end_time",
     "peer_instance_closed").mkString(",")
   private val KUBERNETES_ENGINE_INFO_TABLE = "k8s_engine_info"
-  private val KUBERNETES_ENGINE_INFO_COLUMNS = Seq(
+  private val KUBERNETES_ENGINE_INFO_KEY_COLUMN = "identifier"
+  private val KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT = Seq(
     "identifier",
     "context",
     "namespace",
@@ -797,5 +824,19 @@ object JDBCMetadataStore {
     "engine_state",
     "engine_error",
     "create_time",
-    "update_time").mkString(",")
+    "update_time")
+  private val KUBERNETES_ENGINE_INFO_COLUMNS_TO_REPLACE = Seq(
+    "context",
+    "namespace",
+    "pod_name",
+    "pod_state",
+    "container_state",
+    "engine_id",
+    "engine_name",
+    "engine_state",
+    "engine_error",
+    "update_time")
+  private val KUBERNETES_ENGINE_INFO_COLUMNS =
+    KUBERNETES_ENGINE_INFO_COLUMNS_TO_INSERT.mkString(",")
+
 }
