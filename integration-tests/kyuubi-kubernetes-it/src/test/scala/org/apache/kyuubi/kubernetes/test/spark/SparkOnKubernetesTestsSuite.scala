@@ -230,7 +230,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         appMgrInfo,
         sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
-      assert(appInfo.name.startsWith(driverPodNamePrefix))
+      assert(appInfo.podName.exists(_.startsWith(driverPodNamePrefix)))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(

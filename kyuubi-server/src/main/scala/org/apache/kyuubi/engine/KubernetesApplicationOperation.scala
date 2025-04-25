@@ -139,7 +139,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             case COMPLETED => !ApplicationState.isFailed(notification.getValue)
           }
           if (shouldDelete) {
-            deletePod(kubernetesInfo, removed.name, appLabel)
+            deletePod(kubernetesInfo, removed.podName.orNull, appLabel)
           }
           info(s"Remove terminated application $removed with ${toLabel(appLabel)}")
         }
@@ -218,8 +218,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
                 false,
                 s"[$kubernetesInfo] Target application[${toLabel(tag)}] is in ${info.state} state")
             case _ =>
+              val deleted = info.podName match {
+                case Some(podName) => !kubernetesClient.pods.withName(podName).delete().isEmpty
+                case None =>
+                  !kubernetesClient.pods.withLabel(LABEL_KYUUBI_UNIQUE_KEY, tag).delete().isEmpty
+              }
               (
-                !kubernetesClient.pods.withName(info.name).delete().isEmpty,
+                deleted,
                 s"[$kubernetesInfo] Operation of deleted" +
                   s" application[appId: ${info.id}, ${toLabel(tag)}] is completed")
           }
@@ -410,7 +415,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             id = getPodAppId(pod),
             name = getPodAppName(pod),
             state = appState,
-            error = appError))
+            error = appError,
+            podName = Some(pod.getMetadata.getName)))
       }.getOrElse {
         appInfoStore.put(
           kyuubiUniqueKey,
@@ -418,7 +424,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             id = getPodAppId(pod),
             name = getPodAppName(pod),
             state = appState,
-            error = appError))
+            error = appError,
+            podName = Some(pod.getMetadata.getName)))
       }
     }
   }
