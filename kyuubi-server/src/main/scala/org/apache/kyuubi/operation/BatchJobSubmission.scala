@@ -22,10 +22,11 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -98,6 +99,8 @@ class BatchJobSubmission(
       batchArgs,
       getOperationLog)
   }
+
+  private lazy val appOperation = applicationManager.getApplicationOperation(builder.appMgrInfo())
 
   def startupProcessAlive: Boolean =
     builder.processLaunched && Option(builder.process).exists(_.isAlive)
@@ -212,6 +215,20 @@ class BatchJobSubmission(
         metadata match {
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
+          case Some(metadata)
+              // in case it has been updated by peer kyuubi instance, see KYUUBI #6278
+              if StringUtils.isNotBlank(metadata.engineState) &&
+                ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)) =>
+            _applicationInfo = Some(new ApplicationInfo(
+              id = metadata.engineId,
+              name = metadata.engineName,
+              state = ApplicationState.withName(metadata.engineState),
+              url = Option(metadata.engineUrl),
+              error = metadata.engineError))
+            if (applicationFailed(_applicationInfo, appOperation)) {
+              throw new KyuubiException(
+                s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+            }
           case Some(metadata) if metadata.state == OperationState.PENDING.toString =>
             // case 1: new batch job created using batch impl v2
             // case 2: batch job from recovery, do submission only when previous state is
@@ -275,7 +292,7 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      while (process.isAlive && !applicationFailed(_applicationInfo)) {
+      while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
         doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
@@ -284,7 +301,7 @@ class BatchJobSubmission(
         doUpdateApplicationInfoMetadataIfNeeded()
       }
 
-      if (applicationFailed(_applicationInfo)) {
+      if (applicationFailed(_applicationInfo, appOperation)) {
         Utils.terminateProcess(process, applicationStartupDestroyTimeout)
         throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
       }
@@ -329,10 +346,9 @@ class BatchJobSubmission(
       setStateIfNotCanceled(OperationState.RUNNING)
     }
     if (_applicationInfo.isEmpty) {
-      info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-      return
+      _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
     updateBatchMetadata()
@@ -341,7 +357,7 @@ class BatchJobSubmission(
       Thread.sleep(applicationCheckInterval)
       updateApplicationInfoMetadataIfNeeded()
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
   }
@@ -445,8 +461,12 @@ class BatchJobSubmission(
 }
 
 object BatchJobSubmission {
-  def applicationFailed(applicationStatus: Option[ApplicationInfo]): Boolean = {
-    applicationStatus.map(_.state).exists(ApplicationState.isFailed)
+  def applicationFailed(
+      applicationStatus: Option[ApplicationInfo],
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    applicationStatus.map(_.state).exists { state =>
+      ApplicationState.isFailed(state, appOperation)
+    }
   }
 
   def applicationTerminated(applicationStatus: Option[ApplicationInfo]): Boolean = {
