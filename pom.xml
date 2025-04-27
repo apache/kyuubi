@@ -129,7 +129,7 @@
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.14.15</byte-buddy.version>
         <bouncycastle.version>1.78</bouncycastle.version>
-        <codahale.metrics.version>4.2.26</codahale.metrics.version>
+        <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
