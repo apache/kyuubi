@@ -99,10 +99,14 @@ object ApplicationState extends Enumeration {
 
   def isFailed(
       state: ApplicationState,
-      appOperation: Option[ApplicationOperation]): Boolean = state match {
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    isFailed(state, appOperation.exists(_.supportPersistedAppState))
+  }
+
+  def isFailed(state: ApplicationState, supportPersistedAppState: Boolean): Boolean = state match {
     case FAILED => true
     case KILLED => true
-    case NOT_FOUND => appOperation.exists(_.supportPersistedAppState)
+    case NOT_FOUND => supportPersistedAppState
     case _ => false
   }
 
