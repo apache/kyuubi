@@ -103,6 +103,11 @@ class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
     operations.find(_.isInstanceOf[KubernetesApplicationOperation])
       .map(_.asInstanceOf[KubernetesApplicationOperation])
   }
+
+  private[kyuubi] def getApplicationOperation(appMgrInfo: ApplicationManagerInfo)
+      : Option[ApplicationOperation] = {
+    operations.find(_.isSupported(appMgrInfo))
+  }
 }
 
 object KyuubiApplicationManager {

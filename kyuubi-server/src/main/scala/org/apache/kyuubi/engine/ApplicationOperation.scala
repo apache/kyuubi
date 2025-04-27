@@ -85,15 +85,28 @@ trait ApplicationOperation {
       tag: String,
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo
+
+  /**
+   * Whether the application state can be persisted and retrieved after finished.
+   * @return true if the application state can be persisted
+   */
+  def supportPersistedAppState: Boolean
 }
 
 object ApplicationState extends Enumeration {
   type ApplicationState = Value
   val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
 
-  def isFailed(state: ApplicationState): Boolean = state match {
+  def isFailed(
+      state: ApplicationState,
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    isFailed(state, appOperation.exists(_.supportPersistedAppState))
+  }
+
+  def isFailed(state: ApplicationState, supportPersistedAppState: Boolean): Boolean = state match {
     case FAILED => true
     case KILLED => true
+    case NOT_FOUND if supportPersistedAppState => true
     case _ => false
   }
 

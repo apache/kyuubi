@@ -165,6 +165,8 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
+  override def supportPersistedAppState: Boolean = true
+
   override def stop(): Unit = adminYarnClient.foreach { yarnClient =>
     Utils.tryLogNonFatalError(yarnClient.stop())
   }
