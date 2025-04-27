@@ -24,7 +24,9 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.engine.ApplicationState
+import org.apache.kyuubi.server.metadata.MetadataManager
+import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
 
@@ -43,6 +45,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       batch =>
         jdbcMetadataStore.cleanupMetadataByIdentifier(batch.identifier)
     }
+    jdbcMetadataStore.cleanupKubernetesEngineInfoByAge(0)
     jdbcMetadataStore.close()
   }
 
@@ -265,5 +268,72 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4)).get === url4)
     assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url3, url4, url2)).get === url4)
     assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4, url5)).get === url5)
+  }
+
+  test("kubernetes engine info") {
+    val tag = UUID.randomUUID().toString
+    val metadata = KubernetesEngineInfo(
+      identifier = tag,
+      context = Some("context"),
+      namespace = Some("namespace"),
+      podName = "podName",
+      podState = "podState",
+      containerState = "containerState",
+      engineId = "appId",
+      engineName = "appName",
+      engineState = "FINISHED",
+      engineError = Some("appError"))
+
+    jdbcMetadataStore.upsertKubernetesEngineInfo(metadata)
+
+    val metadata2 = jdbcMetadataStore.getKubernetesMetaEngineInfo(tag)
+    assert(metadata2.identifier == metadata.identifier)
+    assert(metadata2.context == metadata.context)
+    assert(metadata2.namespace == metadata.namespace)
+    assert(metadata2.podName == metadata.podName)
+    assert(metadata2.podState == metadata.podState)
+    assert(metadata2.containerState == metadata.containerState)
+    assert(metadata2.engineId == metadata.engineId)
+    assert(metadata2.engineName == metadata.engineName)
+    assert(metadata2.engineState == metadata.engineState)
+    assert(metadata2.engineError == metadata.engineError)
+    assert(metadata2.updateTime > 0)
+
+    val metadata3 = KubernetesEngineInfo(
+      identifier = tag,
+      context = Some("context2"),
+      namespace = Some("namespace2"),
+      podName = "podName2",
+      podState = "podState2",
+      containerState = "containerState2",
+      engineId = "appId2",
+      engineName = "appName2",
+      engineState = "FAILED",
+      engineError = Some("appError2"))
+    jdbcMetadataStore.upsertKubernetesEngineInfo(metadata3)
+
+    val metadata4 = jdbcMetadataStore.getKubernetesMetaEngineInfo(tag)
+    assert(metadata4.identifier == metadata3.identifier)
+    assert(metadata4.context == metadata3.context)
+    assert(metadata4.namespace == metadata3.namespace)
+    assert(metadata4.podName == metadata3.podName)
+    assert(metadata4.podState == metadata3.podState)
+    assert(metadata4.containerState == metadata3.containerState)
+    assert(metadata4.engineId == metadata3.engineId)
+    assert(metadata4.engineName == metadata3.engineName)
+    assert(metadata4.engineState == metadata3.engineState)
+    assert(metadata4.engineError == metadata3.engineError)
+    assert(metadata4.updateTime > metadata2.updateTime)
+
+    val applicationInfo =
+      MetadataManager.buildApplicationInfo(jdbcMetadataStore.getKubernetesMetaEngineInfo(tag))
+    assert(applicationInfo.id == "appId2")
+    assert(applicationInfo.name == "appName2")
+    assert(applicationInfo.state == ApplicationState.FAILED)
+    assert(applicationInfo.error == Some("appError2"))
+    assert(applicationInfo.podName == Some("podName2"))
+
+    jdbcMetadataStore.cleanupKubernetesEngineInfoByIdentifier(tag)
+    assert(jdbcMetadataStore.getKubernetesMetaEngineInfo(tag) == null)
   }
 }
