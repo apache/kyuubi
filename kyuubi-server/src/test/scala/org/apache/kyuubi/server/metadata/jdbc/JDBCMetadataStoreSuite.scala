@@ -312,9 +312,6 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       engineError = Some("appError2"))
     jdbcMetadataStore.upsertKubernetesEngineInfo(metadata3)
 
-    // test generic insert if not exist
-    jdbcMetadataStore.insertKubernetesEngineInfo(metadata)
-
     val metadata4 = jdbcMetadataStore.getKubernetesMetaEngineInfo(tag)
     assert(metadata4.identifier == metadata3.identifier)
     assert(metadata4.context == metadata3.context)
@@ -335,21 +332,6 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(applicationInfo.state == ApplicationState.FAILED)
     assert(applicationInfo.error == Some("appError2"))
     assert(applicationInfo.podName == Some("podName2"))
-
-    // test generic update
-    jdbcMetadataStore.updateKubernetesEngineInfo(metadata)
-    val metadata5 = jdbcMetadataStore.getKubernetesMetaEngineInfo(tag)
-    assert(metadata5.identifier == metadata.identifier)
-    assert(metadata5.context == metadata.context)
-    assert(metadata5.namespace == metadata.namespace)
-    assert(metadata5.podName == metadata.podName)
-    assert(metadata5.podState == metadata.podState)
-    assert(metadata5.containerState == metadata.containerState)
-    assert(metadata5.engineId == metadata.engineId)
-    assert(metadata5.engineName == metadata.engineName)
-    assert(metadata5.engineState == metadata.engineState)
-    assert(metadata5.engineError == metadata.engineError)
-    assert(metadata5.updateTime > 0)
 
     jdbcMetadataStore.cleanupKubernetesEngineInfoByIdentifier(tag)
     assert(jdbcMetadataStore.getKubernetesMetaEngineInfo(tag) == null)

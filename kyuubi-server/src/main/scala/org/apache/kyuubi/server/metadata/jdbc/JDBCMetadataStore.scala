@@ -419,32 +419,16 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  // Visible for testing.
-  private[kyuubi] def insertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
-    val insertQuery =
-      s"""
-         |INSERT INTO $KUBERNETES_ENGINE_INFO_TABLE(
-         |identifier,
-         |context,
-         |namespace,
-         |pod_name,
-         |pod_state,
-         |container_state,
-         |engine_id,
-         |engine_name,
-         |engine_state,
-         |engine_error,
-         |update_time
-         |)
-         |SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-         |WHERE NOT EXISTS (
-         |  SELECT 1 FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?
-         |)
-         |""".stripMargin
+  override def upsertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+    val query = dialect.insertOrReplace(
+      KUBERNETES_ENGINE_INFO_TABLE,
+      KUBERNETES_ENGINE_INFO_COLUMNS,
+      KUBERNETES_ENGINE_INFO_KEY_COLUMN,
+      engineInfo.identifier)
     JdbcUtils.withConnection { connection =>
       execute(
         connection,
-        insertQuery,
+        query,
         engineInfo.identifier,
         engineInfo.context.orNull,
         engineInfo.namespace.orNull,
@@ -455,99 +439,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         engineInfo.engineName,
         engineInfo.engineState,
         engineInfo.engineError.orNull,
-        System.currentTimeMillis(),
-        engineInfo.identifier)
-    }
-  }
-
-  // Visible for testing.
-  private[kyuubi] def updateKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
-    val queryBuilder = new StringBuilder
-    val params = ListBuffer[Any]()
-
-    queryBuilder.append(s"UPDATE $KUBERNETES_ENGINE_INFO_TABLE")
-    val setClauses = ListBuffer[String]()
-    engineInfo.context.foreach { context =>
-      setClauses += "context = ?"
-      params += context
-    }
-    engineInfo.namespace.foreach { namespace =>
-      setClauses += "namespace = ?"
-      params += namespace
-    }
-    Option(engineInfo.podName).foreach { pod =>
-      setClauses += "pod_name = ?"
-      params += pod
-    }
-    Option(engineInfo.podState).foreach { podState =>
-      setClauses += "pod_state = ?"
-      params += podState
-    }
-    Option(engineInfo.containerState).foreach { containerState =>
-      setClauses += "container_state = ?"
-      params += containerState
-    }
-    Option(engineInfo.engineId).foreach { appId =>
-      setClauses += "engine_id = ?"
-      params += appId
-    }
-    Option(engineInfo.engineName).foreach { appName =>
-      setClauses += "engine_name = ?"
-      params += appName
-    }
-    Option(engineInfo.engineState).foreach { appState =>
-      setClauses += "engine_state = ?"
-      params += appState
-    }
-    engineInfo.engineError.foreach { appError =>
-      setClauses += "engine_error = ?"
-      params += appError
-    }
-    setClauses += "update_time = ?"
-    params += System.currentTimeMillis()
-
-    queryBuilder.append(setClauses.mkString(" SET ", ", ", ""))
-    queryBuilder.append(" WHERE identifier = ?")
-    params += engineInfo.identifier
-
-    val query = queryBuilder.toString()
-    JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
-        if (updateCount == 0) {
-          throw new KyuubiException(
-            s"Error updating kubernetes engine info for ${engineInfo.identifier} by SQL: $query, " +
-              s"with params: ${params.mkString(", ")}")
-        }
-      }
-    }
-
-  }
-
-  override def upsertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
-    dialect.insertOrReplace(
-      KUBERNETES_ENGINE_INFO_TABLE,
-      KUBERNETES_ENGINE_INFO_COLUMNS,
-      KUBERNETES_ENGINE_INFO_KEY_COLUMN) match {
-      case Some(query) =>
-        JdbcUtils.withConnection { connection =>
-          execute(
-            connection,
-            query,
-            engineInfo.identifier,
-            engineInfo.context.orNull,
-            engineInfo.namespace.orNull,
-            engineInfo.podName,
-            engineInfo.podState,
-            engineInfo.containerState,
-            engineInfo.engineId,
-            engineInfo.engineName,
-            engineInfo.engineState,
-            engineInfo.engineError.orNull,
-            System.currentTimeMillis())
-        }
-      case None =>
-        insertKubernetesEngineInfo(engineInfo)
-        updateKubernetesEngineInfo(engineInfo)
+        System.currentTimeMillis())
     }
   }
 
