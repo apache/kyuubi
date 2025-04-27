@@ -105,5 +105,7 @@ class JpsApplicationOperation extends ApplicationOperation {
     // TODO check if the process is zombie
   }
 
+  override def supportPersistedAppState: Boolean = false
+
   override def stop(): Unit = {}
 }

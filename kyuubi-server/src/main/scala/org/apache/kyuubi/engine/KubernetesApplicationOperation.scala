@@ -283,6 +283,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
+  override def supportPersistedAppState: Boolean = true
+
   override def stop(): Unit = {
     enginePodInformers.asScala.foreach { case (_, informer) =>
       Utils.tryLogNonFatalError(informer.stop())

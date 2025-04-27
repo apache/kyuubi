@@ -85,6 +85,12 @@ trait ApplicationOperation {
       tag: String,
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo
+
+  /**
+   * Whether the application state can be persisted and retrieved after finished.
+   * @return true if the application state can be persisted
+   */
+  def supportPersistedAppState: Boolean
 }
 
 object ApplicationState extends Enumeration {
@@ -96,12 +102,7 @@ object ApplicationState extends Enumeration {
       appOperation: Option[ApplicationOperation]): Boolean = state match {
     case FAILED => true
     case KILLED => true
-    case NOT_FOUND => appOperation match {
-        // For YARN and Kubernetes operations, if the application is not found, treat it as failed
-        // to prevent mistakenly set unsuccessful applications to the finished state.
-        case Some(_: YarnApplicationOperation) | Some(_: KubernetesApplicationOperation) => true
-        case _ => false
-      }
+    case NOT_FOUND => appOperation.exists(_.supportPersistedAppState)
     case _ => false
   }
 

@@ -216,7 +216,7 @@ class BatchJobSubmission(
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
           case Some(metadata)
-              // in case it has been updated by peer kyuubi instance, see KYUUBI-6278
+              // in case it has been updated by peer kyuubi instance, see KYUUBI #6278
               if StringUtils.isNotBlank(metadata.engineState) &&
                 ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)) =>
             _applicationInfo = Some(new ApplicationInfo(
