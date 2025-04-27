@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS k8s_engine_info(
     engine_state varchar(32),
     engine_error text,
     update_time bigint NOT NULL
-    );
+);
 
 COMMENT ON COLUMN k8s_engine_info.key_id IS 'the auto increment key id';
 COMMENT ON COLUMN k8s_engine_info.identifier IS 'the identifier id, which is an UUID';
