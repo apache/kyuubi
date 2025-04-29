@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
+import scala.util.{Failure, Success, Try}
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
@@ -129,6 +130,7 @@ object PrivilegesBuilder {
               spark)
           }
         }
+        checkHivePermanentUDF(p, privilegeObjects)
     }
   }
 
@@ -340,5 +342,49 @@ object PrivilegesBuilder {
         OperationType.QUERY
     }
     (inputObjs, outputObjs, opType)
+  }
+
+  def checkHivePermanentUDF(plan: LogicalPlan,
+                            privilegeObjects: ArrayBuffer[PrivilegeObject]): Unit = {
+
+    def checkExpressionForUDF(expr: Expression): Unit = {
+      expr match {
+        case udfExpr if udfExpr.nodeName.equals("HiveGenericUDF") ||
+          udfExpr.nodeName.equals("HiveGenericUDTF") ||
+          udfExpr.nodeName.equals("HiveSimpleUDF") ||
+          udfExpr.nodeName.equals("HiveUDAFFunction") =>
+          val funName: String = getFieldValNoError(udfExpr, "name")
+          val isFun: Boolean = getFieldValNoError(udfExpr, "isUDFDeterministic")
+          if (isFun && funName != null) {
+            val nameParts = funName.split("\\.")
+            if (nameParts.length == 2) {
+              val dbName = nameParts(0)
+              val funcName = nameParts(1)
+              privilegeObjects += PrivilegeObject(Function(None, Option(dbName), funcName))
+            }
+          }
+        case otherExpr =>
+          otherExpr.children.foreach(checkExpressionForUDF)
+      }
+    }
+
+    plan match {
+      case p: Project =>
+        p.projectList.foreach(expr => checkExpressionForUDF(expr))
+
+      case _ =>
+        plan.children.foreach(child => checkHivePermanentUDF(child, privilegeObjects))
+    }
+  }
+
+  def getFieldValNoError[T](o: Any, name: String): T = {
+    Try {
+      val field = o.getClass.getDeclaredField(name)
+      field.setAccessible(true)
+      field.get(o)
+    } match {
+      case Success(value) => value.asInstanceOf[T]
+      case Failure(e) => null.asInstanceOf[T]
+    }
   }
 }
