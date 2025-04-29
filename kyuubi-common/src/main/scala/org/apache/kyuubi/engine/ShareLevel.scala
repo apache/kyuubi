@@ -36,6 +36,11 @@ object ShareLevel extends Enumeration {
    */
   GROUP,
   /**
+   * In this level, All sessions of the same engine type from one Kyuubi server's will share
+   * one single APP launched on the same server
+   */
+  SERVER_LOCAL,
+  /**
    * In this level, All sessions from one or more Kyuubi server's will share one single APP
    */
   SERVER = Value
