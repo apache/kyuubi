@@ -378,4 +378,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(admin, sql(callSetCurrentSnapshot))
     }
   }
+
+  test("ALTER TABLE RENAME COLUMN") {
+    val alterTable = s"ALTER TABLE $catalogV2.$namespace1.$table1 RENAME COLUMN name TO full_name"
+
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(alterTable))
+    }(s"does not have [alter] privilege on [$namespace1/$table1]")
+
+    doAs(admin, sql(alterTable))
+  }
 }

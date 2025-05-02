@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import java.nio.file.Files
 import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -41,15 +40,11 @@ trait SparkSessionProvider {
   protected val extraSparkConf: SparkConf = new SparkConf()
 
   protected lazy val spark: SparkSession = {
-    val metastore = {
-      val path = Utils.createTempDir(prefix = "hms")
-      Files.deleteIfExists(path)
-      path
-    }
     val ret = SparkSession.builder()
       .master("local")
       .config("spark.ui.enabled", "false")
-      .config("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
+      // 使用一个基础的内存数据库作为模板
+      .config("javax.jdo.option.ConnectionURL", "jdbc:derby:memory:template_db;create=true")
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
