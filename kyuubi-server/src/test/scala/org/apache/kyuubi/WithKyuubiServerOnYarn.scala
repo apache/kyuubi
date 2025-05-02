@@ -82,6 +82,8 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with HiveJD
       .set(s"$KYUUBI_BATCH_CONF_PREFIX.spark.spark.master", "yarn")
       .set(BATCH_CONF_IGNORE_LIST, Set("spark.master"))
       .set(BATCH_APPLICATION_CHECK_INTERVAL, 3000L)
+      // TODO adapt to SPARK-49249 in Scala mode
+      .set("spark.sql.artifact.isolation.enabled", "false")
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
