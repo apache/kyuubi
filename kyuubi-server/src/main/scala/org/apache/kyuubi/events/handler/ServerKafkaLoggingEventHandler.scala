@@ -28,4 +28,5 @@ case class ServerKafkaLoggingEventHandler(
 
 object ServerKafkaLoggingEventHandler {
   val KAFKA_SERVER_EVENT_HANDLER_PREFIX = "kyuubi.backend.server.event.kafka"
+  KyuubiConf.registerServerOnlyConfigPrefix(KAFKA_SERVER_EVENT_HANDLER_PREFIX)
 }

@@ -197,7 +197,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     val cloned = KyuubiConf(false)
 
     for (e <- settings.entrySet().asScala if !e.getKey.startsWith(USER_DEFAULTS_CONF_QUOTE)) {
-      cloned.set(e.getKey, e.getValue)
+      if (!serverOnlyConfigPrefixes.exists(prefix => e.getKey.startsWith(prefix))) {
+        cloned.set(e.getKey, e.getValue)
+      }
     }
 
     for ((k, v) <-
@@ -249,6 +251,7 @@ object KyuubiConf {
     java.util.Collections.emptyMap()
 
   private var serverOnlyConfEntries: Set[ConfigEntry[_]] = Set()
+  private var serverOnlyConfigPrefixes: Set[String] = Set(KYUUBI_KUBERNETES_CONF_PREFIX)
 
   private[config] def register(entry: ConfigEntry[_]): Unit =
     kyuubiConfEntriesUpdateLock.synchronized {
@@ -262,6 +265,10 @@ object KyuubiConf {
         serverOnlyConfEntries += entry
       }
     }
+
+  private[kyuubi] def registerServerOnlyConfigPrefix(prefix: String): Unit = {
+    serverOnlyConfigPrefixes += prefix
+  }
 
   // For testing only
   private[config] def unregister(entry: ConfigEntry[_]): Unit =

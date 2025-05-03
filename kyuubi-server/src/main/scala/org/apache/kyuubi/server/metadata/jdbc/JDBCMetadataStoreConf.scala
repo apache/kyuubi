@@ -25,6 +25,7 @@ import org.apache.kyuubi.util.JavaUtils
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
+  KyuubiConf.registerServerOnlyConfigPrefix(METADATA_STORE_JDBC_DATASOURCE_PREFIX)
 
   def getMetadataStoreJdbcUrl(conf: KyuubiConf): String = {
     val rawJdbcUrl = conf.get(METADATA_STORE_JDBC_URL)
