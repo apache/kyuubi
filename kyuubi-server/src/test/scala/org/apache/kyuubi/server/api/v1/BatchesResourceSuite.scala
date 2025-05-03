@@ -714,12 +714,12 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(session2.createTime === batchMetadata2.createTime)
 
     eventually(timeout(10.seconds)) {
-      assert(session1.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session1.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+      val batch1State = session1.batchJobSubmissionOp.getStatus.state
+      assert(batch1State === OperationState.RUNNING || OperationState.isTerminal(batch1State))
       assert(session1.batchJobSubmissionOp.builder.processLaunched)
 
-      assert(session2.batchJobSubmissionOp.getStatus.state === OperationState.RUNNING ||
-        session2.batchJobSubmissionOp.getStatus.state === OperationState.FINISHED)
+      val batch2State = session2.batchJobSubmissionOp.getStatus.state
+      assert(batch2State === OperationState.RUNNING || OperationState.isTerminal(batch2State))
       assert(!session2.batchJobSubmissionOp.builder.processLaunched)
     }
 

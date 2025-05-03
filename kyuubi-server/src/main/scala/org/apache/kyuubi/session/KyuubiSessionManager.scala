@@ -312,18 +312,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        createBatchSession(
-          metadata.username,
-          "anonymous",
-          metadata.ipAddress,
-          metadata.requestConf,
-          metadata.engineType,
-          Option(metadata.requestName),
-          metadata.resource,
-          metadata.className,
-          metadata.requestArgs,
-          Some(metadata),
-          fromRecovery = true)
+        createBatchSessionFromRecovery(metadata)
       }).getOrElse(Seq.empty)
     }
   }
@@ -341,23 +330,24 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           getBatchMetadata(batchId)
             .filter(m =>
               m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
-            .flatMap { metadata =>
-              Some(
-                createBatchSession(
-                  metadata.username,
-                  "anonymous",
-                  metadata.ipAddress,
-                  metadata.requestConf,
-                  metadata.engineType,
-                  Option(metadata.requestName),
-                  metadata.resource,
-                  metadata.className,
-                  metadata.requestArgs,
-                  Some(metadata),
-                  fromRecovery = true))
-            }
+            .flatMap { metadata => Some(createBatchSessionFromRecovery(metadata)) }
       }
     }
+  }
+
+  private def createBatchSessionFromRecovery(metadata: Metadata): KyuubiBatchSession = {
+    createBatchSession(
+      metadata.username,
+      "anonymous",
+      metadata.ipAddress,
+      metadata.requestConf,
+      metadata.engineType,
+      Option(metadata.requestName),
+      metadata.resource,
+      metadata.className,
+      metadata.requestArgs,
+      Some(metadata),
+      fromRecovery = true)
   }
 
   def reassignBatchSessions(
