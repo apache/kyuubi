@@ -1251,7 +1251,6 @@ object KyuubiConf {
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")
-      .serverOnly
       .doc("The desired context from your kubernetes config file used to configure the K8s " +
         "client for interacting with the cluster.")
       .version("1.6.0")
@@ -1270,7 +1269,6 @@ object KyuubiConf {
 
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
-      .serverOnly
       .doc("The namespace that will be used for running the kyuubi pods and find engines.")
       .version("1.7.0")
       .stringConf
@@ -1300,7 +1298,6 @@ object KyuubiConf {
 
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")
-      .serverOnly
       .doc("The internal Kubernetes master (API server) address to be used for kyuubi.")
       .version("1.7.0")
       .stringConf
@@ -1308,7 +1305,6 @@ object KyuubiConf {
 
   val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.oauthTokenFile")
-      .serverOnly
       .doc("Path to the file containing the OAuth token to use when authenticating against " +
         "the Kubernetes API server. Specify this as a path as opposed to a URI " +
         "(i.e. do not provide a scheme)")
@@ -1318,7 +1314,6 @@ object KyuubiConf {
 
   val KUBERNETES_AUTHENTICATE_OAUTH_TOKEN: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.oauthToken")
-      .serverOnly
       .doc("The OAuth token to use when authenticating against the Kubernetes API server. " +
         "Note that unlike, the other authentication options, this must be the exact string value" +
         " of the token to use for the authentication.")
@@ -1328,7 +1323,6 @@ object KyuubiConf {
 
   val KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.clientKeyFile")
-      .serverOnly
       .doc("Path to the client key file for connecting to the Kubernetes API server " +
         "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
         "(i.e. do not provide a scheme)")
@@ -1338,7 +1332,6 @@ object KyuubiConf {
 
   val KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.clientCertFile")
-      .serverOnly
       .doc("Path to the client cert file for connecting to the Kubernetes API server " +
         "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
         "(i.e. do not provide a scheme)")
@@ -1348,7 +1341,6 @@ object KyuubiConf {
 
   val KUBERNETES_AUTHENTICATE_CA_CERT_FILE: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.authenticate.caCertFile")
-      .serverOnly
       .doc("Path to the CA cert file for connecting to the Kubernetes API server " +
         "over TLS from the kyuubi. Specify this as a path as opposed to a URI " +
         "(i.e. do not provide a scheme)")
@@ -1358,7 +1350,6 @@ object KyuubiConf {
 
   val KUBERNETES_TRUST_CERTIFICATES: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.trust.certificates")
-      .serverOnly
       .doc("If set to true then client can submit to kubernetes cluster only with token")
       .version("1.7.0")
       .booleanConf
@@ -1366,7 +1357,6 @@ object KyuubiConf {
 
   val KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD: ConfigEntry[Long] =
     buildConf("kyuubi.kubernetes.terminatedApplicationRetainPeriod")
-      .serverOnly
       .doc("The period for which the Kyuubi server retains application information after " +
         "the application terminates.")
       .version("1.7.1")
@@ -1376,7 +1366,6 @@ object KyuubiConf {
 
   val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.checkInterval")
-      .serverOnly
       .doc("Kyuubi server use guava cache as the cleanup trigger with time-based eviction, " +
         "but the eviction would not happened until any get/put operation happened. " +
         "This option schedule a daemon thread evict cache periodically.")
@@ -1386,7 +1375,6 @@ object KyuubiConf {
 
   val KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.spark.cleanupTerminatedDriverPod.kind")
-      .serverOnly
       .doc("Kyuubi server will delete the spark driver pod after " +
         s"the application terminates for ${KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD.key}. " +
         "Available options are NONE, ALL, COMPLETED and " +
@@ -1397,7 +1385,6 @@ object KyuubiConf {
 
   val KUBERNETES_SPARK_APP_URL_PATTERN: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.spark.appUrlPattern")
-      .serverOnly
       .doc("The pattern to generate the spark on kubernetes application UI URL. " +
         "The pattern should contain placeholders for the application variables. " +
         "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`, " +
@@ -1423,7 +1410,6 @@ object KyuubiConf {
 
   val KUBERNETES_APPLICATION_STATE_CONTAINER: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.application.state.container")
-      .serverOnly
       .doc("The container name to retrieve the application state from.")
       .version("1.8.1")
       .stringConf
@@ -1431,7 +1417,6 @@ object KyuubiConf {
 
   val KUBERNETES_APPLICATION_STATE_SOURCE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.application.state.source")
-      .serverOnly
       .doc("The source to retrieve the application state from. The valid values are " +
         "pod and container. When the pod is in a terminated state, the container state" +
         " will be ignored, and the application state will be determined based on the pod state." +
@@ -1770,7 +1755,6 @@ object KyuubiConf {
       .createWithDefault(true)
 
   val BATCH_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("kyuubi.batch.session.idle.timeout")
-    .serverOnly
     .doc("Batch session idle timeout, it will be closed when it's not accessed for this duration")
     .version("1.6.2")
     .fallbackConf(SESSION_IDLE_TIMEOUT)
@@ -1879,7 +1863,6 @@ object KyuubiConf {
 
   val BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.check.interval")
-      .serverOnly
       .doc("The interval to check batch job application information.")
       .version("1.6.0")
       .timeConf
@@ -1887,7 +1870,6 @@ object KyuubiConf {
 
   val BATCH_APPLICATION_STARVATION_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.starvation.timeout")
-      .serverOnly
       .doc("Threshold above which to warn batch application may be starved.")
       .version("1.7.0")
       .timeConf
@@ -1949,7 +1931,6 @@ object KyuubiConf {
 
   val BATCH_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.check.interval")
-      .serverOnly
       .internal
       .doc("The interval to check the batch session state. For batch session, it is not" +
         " stateless, and some operations, such as close batch session, must be processed in the" +
@@ -2881,7 +2862,6 @@ object KyuubiConf {
 
   val SESSION_CONF_ADVISOR: OptionalConfigEntry[Seq[String]] =
     buildConf("kyuubi.session.conf.advisor")
-      .serverOnly
       .doc("A config advisor plugin for Kyuubi Server. This plugin can provide a list of custom " +
         "configs for different users or session configs and overwrite the session configs before " +
         "opening a new session. This config value should be a subclass of " +
@@ -2893,7 +2873,6 @@ object KyuubiConf {
 
   val GROUP_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.session.group.provider")
-      .serverOnly
       .doc("A group provider plugin for Kyuubi Server. This plugin can provide primary group " +
         "and groups information for different users or session configs. This config value " +
         "should be a subclass of `org.apache.kyuubi.plugin.GroupProvider` which " +
@@ -3488,7 +3467,6 @@ object KyuubiConf {
 
   val YARN_USER_STRATEGY: ConfigEntry[String] =
     buildConf("kyuubi.yarn.user.strategy")
-      .serverOnly
       .doc("Determine which user to use to construct YARN client for application management, " +
         "e.g. kill application. Options: <ul>" +
         "<li>NONE: use Kyuubi server user.</li>" +
@@ -3502,7 +3480,6 @@ object KyuubiConf {
 
   val YARN_USER_ADMIN: ConfigEntry[String] =
     buildConf("kyuubi.yarn.user.admin")
-      .serverOnly
       .doc(s"When ${YARN_USER_STRATEGY.key} is set to ADMIN, use this admin user to " +
         "construct YARN client for application management, e.g. kill application.")
       .version("1.8.0")
