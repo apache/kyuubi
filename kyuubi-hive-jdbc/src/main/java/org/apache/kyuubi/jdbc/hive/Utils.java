@@ -669,7 +669,6 @@ public class Utils {
         hadoopCredentialProviderAvailable = true;
       } catch (Exception exception) {
         LOG.warn("Hadoop credential provider is unavailable", exception);
-        throw new RuntimeException(exception);
       }
     }
     if (password == null && hadoopCredentialProviderAvailable) {
