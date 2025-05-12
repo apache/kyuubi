@@ -193,6 +193,16 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
+  private lazy val serverOnlyPrefixes = get(KyuubiConf.SERVER_ONLY_PREFIXES)
+  private lazy val serverOnlyPrefixConfigKeys = settings.keys().asScala
+    // for ConfigEntry, respect the serverOnly flag and exclude it here
+    .filter(key => getConfigEntry(key) == null)
+    .filter { key =>
+      serverOnlyPrefixes.exists { prefix =>
+        key.startsWith(prefix)
+      }
+    }
+
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
 
@@ -205,6 +215,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       cloned.set(k, v)
     }
     serverOnlyConfEntries.foreach(cloned.unset)
+    serverOnlyPrefixConfigKeys.foreach(cloned.unset)
     cloned
   }
 
@@ -2904,6 +2915,22 @@ object KyuubiConf {
       .version("1.6.1")
       .stringConf
       .createWithDefault("ENGINE")
+
+  val SERVER_ONLY_PREFIXES: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.config.server.only.prefixes")
+      .internal
+      .serverOnly
+      .doc("A comma-separated list of prefixes for server-only configs. It's used to filter out " +
+        "the server-only configs to prevent passing them to the engine end. Note that, " +
+        "it only take affects for the configs that is not defined as a Kyuubi ConfigEntry. " +
+        "For example, you can exclude `kyuubi.kubernetes.28.master.address=k8s://master` by " +
+        "setting it to `kyuubi.kubernetes.28.`.")
+      .version("1.11.0")
+      .stringConf
+      .toSet()
+      .createWithDefault(Set(
+        "kyuubi.backend.server.event.kafka.",
+        "kyuubi.metadata.store.jdbc.datasource."))
 
   val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.spark.showProgress")
