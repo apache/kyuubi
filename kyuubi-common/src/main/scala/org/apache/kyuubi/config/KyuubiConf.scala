@@ -2861,8 +2861,8 @@ object KyuubiConf {
       .doc("A comma-separated list of prefixes for server-only configs. It's used to filter out " +
         "the server-only configs to prevent passing them to the engine end. Note that, " +
         "it only take affects for the configs that is not defined as a Kyuubi ConfigEntry. " +
-        "For example, you can exclude `kyuubi.kubernetes.28.master.address=k8s://master` by" +
-        " setting it to `kyuubi.kubernetes.28.`.")
+        "For example, you can exclude `kyuubi.kubernetes.28.master.address=k8s://master` by " +
+        "setting it to `kyuubi.kubernetes.28.`.")
       .version("1.11.0")
       .stringConf
       .toSet()
