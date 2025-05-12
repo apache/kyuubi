@@ -344,15 +344,17 @@ object PrivilegesBuilder {
     (inputObjs, outputObjs, opType)
   }
 
-  def checkHivePermanentUDF(plan: LogicalPlan,
-                            privilegeObjects: ArrayBuffer[PrivilegeObject]): Unit = {
+  def checkHivePermanentUDF(
+      plan: LogicalPlan,
+      privilegeObjects: ArrayBuffer[PrivilegeObject]): Unit = {
 
     def checkExpressionForUDF(expr: Expression): Unit = {
       expr match {
-        case udfExpr if udfExpr.nodeName.equals("HiveGenericUDF") ||
-          udfExpr.nodeName.equals("HiveGenericUDTF") ||
-          udfExpr.nodeName.equals("HiveSimpleUDF") ||
-          udfExpr.nodeName.equals("HiveUDAFFunction") =>
+        case udfExpr
+            if udfExpr.nodeName.equals("HiveGenericUDF") ||
+              udfExpr.nodeName.equals("HiveGenericUDTF") ||
+              udfExpr.nodeName.equals("HiveSimpleUDF") ||
+              udfExpr.nodeName.equals("HiveUDAFFunction") =>
           val funName: String = getFieldValNoError(udfExpr, "name")
           val isFun: Boolean = getFieldValNoError(udfExpr, "isUDFDeterministic")
           if (isFun && funName != null) {
