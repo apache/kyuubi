@@ -110,12 +110,14 @@ abstract class KyuubiSparkSQLParserBase extends ParserInterface with SQLConfHelp
     delegate.parseDataType(sqlText)
   }
 
-  /**
-   * This functions was introduced since spark-3.3, for more details, please see
-   * https://github.com/apache/spark/pull/34543
-   */
+  // SPARK-37266 (3.3.0)
   override def parseQuery(sqlText: String): LogicalPlan = {
     delegate.parseQuery(sqlText)
+  }
+
+  // SPARK-51439 (4.0.0)
+  override def parseRoutineParam(sqlText: String): StructType = {
+    delegate.parseRoutineParam(sqlText)
   }
 }
 
