@@ -26,7 +26,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
-import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SQLExecution}
+import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkPlanHelper, SQLExecution}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.arrow.KyuubiArrowConverters
 import org.apache.spark.sql.execution.metric.{SQLMetric, SQLMetrics}
@@ -83,8 +83,9 @@ object SparkDatasetHelper extends Logging {
    */
   def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
     val schemaCaptured = plan.schema
-    val maxRecordsPerBatch = plan.session.sessionState.conf.arrowMaxRecordsPerBatch
-    val timeZoneId = plan.session.sessionState.conf.sessionLocalTimeZone
+    val spark = SparkPlanHelper.sparkSession(plan)
+    val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
+    val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
     // note that, we can't pass the lazy variable `maxBatchSize` directly, this is because input
     // arguments are serialized and sent to the executor side for execution.
     val maxBatchSizePerBatch = maxBatchSize
@@ -169,8 +170,9 @@ object SparkDatasetHelper extends Logging {
   }
 
   private def doCollectLimit(collectLimit: CollectLimitExec): Array[Array[Byte]] = {
-    val timeZoneId = collectLimit.session.sessionState.conf.sessionLocalTimeZone
-    val maxRecordsPerBatch = collectLimit.session.sessionState.conf.arrowMaxRecordsPerBatch
+    val spark = SparkPlanHelper.sparkSession(collectLimit)
+    val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
+    val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
 
     val batches = KyuubiArrowConverters.takeAsArrowBatches(
       collectLimit,
@@ -199,7 +201,7 @@ object SparkDatasetHelper extends Logging {
   }
 
   private def doCommandResultExec(commandResult: CommandResultExec): Array[Array[Byte]] = {
-    val spark = commandResult.session
+    val spark = SparkPlanHelper.sparkSession(commandResult)
     commandResult.longMetric("numOutputRows").add(commandResult.rows.size)
     sendDriverMetrics(spark.sparkContext, commandResult.metrics)
     KyuubiArrowConverters.toBatchIterator(
@@ -212,7 +214,7 @@ object SparkDatasetHelper extends Logging {
   }
 
   private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
-    val spark = localTableScan.session
+    val spark = SparkPlanHelper.sparkSession(localTableScan)
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
     KyuubiArrowConverters.toBatchIterator(
