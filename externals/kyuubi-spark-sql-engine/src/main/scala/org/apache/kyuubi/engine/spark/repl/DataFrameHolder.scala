@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-import java.util
+import java.util.HashMap
 
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -29,7 +29,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
  */
 class DataFrameHolder(spark: SparkSession) {
 
-  private val results = new util.HashMap[String, DataFrame]()
+  private val results = new HashMap[String, DataFrame]()
 
   private def currentId: String = {
     SparkContextHelper.getCurrentStatementId(spark.sparkContext)
