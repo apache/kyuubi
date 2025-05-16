@@ -17,17 +17,19 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
+import java.lang.{Boolean => JBoolean, Long => JLong}
 import java.net.URI
 import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.util.Try
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.{SQLConfHelper, TableIdentifier}
+import org.apache.spark.sql.catalyst.{CurrentUserContext, SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NamespaceAlreadyExistsException, NoSuchDatabaseException, NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
@@ -44,9 +46,10 @@ import org.apache.spark.sql.internal.StaticSQLConf.{CATALOG_IMPLEMENTATION, GLOB
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
-import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSQLConf
+import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 /**
  * A [[TableCatalog]] that wrap HiveExternalCatalog to as V2 CatalogPlugin instance to access Hive.
@@ -100,6 +103,20 @@ class HiveTableCatalog(sparkSession: SparkSession)
     catalogName
   }
 
+  private def newHiveMetastoreCatalog(sparkSession: SparkSession): HiveMetastoreCatalog = {
+    val sparkSessionClz = DynClasses.builder()
+      .impl("org.apache.spark.sql.classic.SparkSession") // SPARK-49700 (4.0.0)
+      .impl("org.apache.spark.sql.SparkSession")
+      .buildChecked()
+
+    val hiveMetastoreCatalogCtor =
+      DynConstructors.builder()
+        .impl("org.apache.spark.sql.hive.HiveMetastoreCatalog", sparkSessionClz)
+        .buildChecked[HiveMetastoreCatalog]()
+
+    hiveMetastoreCatalogCtor.newInstanceChecked(sparkSession)
+  }
+
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     assert(catalogName == null, "The Hive table catalog is already initialed.")
     assert(
@@ -110,7 +127,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     catalog = new HiveSessionCatalog(
       externalCatalogBuilder = () => externalCatalog,
       globalTempViewManagerBuilder = () => globalTempViewManager,
-      metastoreCatalog = new HiveMetastoreCatalog(sparkSession),
+      metastoreCatalog = newHiveMetastoreCatalog(sparkSession),
       functionRegistry = sessionState.functionRegistry,
       tableFunctionRegistry = sessionState.tableFunctionRegistry,
       hadoopConf = hadoopConf,
@@ -148,7 +165,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override val defaultNamespace: Array[String] = Array("default")
 
   override def listTables(namespace: Array[String]): Array[Identifier] =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           catalog
@@ -162,16 +179,139 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def loadTable(ident: Identifier): Table =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       HiveTable(sparkSession, catalog.getTableMetadata(ident.asTableIdentifier), this)
     }
+
+  // scalastyle:off
+  private def newCatalogTable(
+      identifier: TableIdentifier,
+      tableType: CatalogTableType,
+      storage: CatalogStorageFormat,
+      schema: StructType,
+      provider: Option[String] = None,
+      partitionColumnNames: Seq[String] = Seq.empty,
+      bucketSpec: Option[BucketSpec] = None,
+      owner: String = Option(CurrentUserContext.CURRENT_USER.get()).getOrElse(""),
+      createTime: JLong = System.currentTimeMillis,
+      lastAccessTime: JLong = -1,
+      createVersion: String = "",
+      properties: Map[String, String] = Map.empty,
+      stats: Option[CatalogStatistics] = None,
+      viewText: Option[String] = None,
+      comment: Option[String] = None,
+      collation: Option[String] = None,
+      unsupportedFeatures: Seq[String] = Seq.empty,
+      tracksPartitionsInCatalog: JBoolean = false,
+      schemaPreservesCase: JBoolean = true,
+      ignoredProperties: Map[String, String] = Map.empty,
+      viewOriginalText: Option[String] = None): CatalogTable = {
+    // scalastyle:on
+    Try { // SPARK-50675 (4.0.0)
+      DynConstructors.builder()
+        .impl(
+          classOf[CatalogTable],
+          classOf[TableIdentifier],
+          classOf[CatalogTableType],
+          classOf[CatalogStorageFormat],
+          classOf[StructType],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Option[BucketSpec]],
+          classOf[String],
+          classOf[Long],
+          classOf[Long],
+          classOf[String],
+          classOf[Map[String, String]],
+          classOf[Option[CatalogStatistics]],
+          classOf[Option[String]],
+          classOf[Option[String]],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Boolean],
+          classOf[Boolean],
+          classOf[Map[String, String]],
+          classOf[Option[String]])
+        .buildChecked()
+        .invokeChecked[CatalogTable](
+          null,
+          identifier,
+          tableType,
+          storage,
+          schema,
+          provider,
+          partitionColumnNames,
+          bucketSpec,
+          owner,
+          createTime,
+          lastAccessTime,
+          createVersion,
+          properties,
+          stats,
+          viewText,
+          comment,
+          collation,
+          unsupportedFeatures,
+          tracksPartitionsInCatalog,
+          schemaPreservesCase,
+          ignoredProperties,
+          viewOriginalText)
+    }.recover { case _: Exception => // Spark 3.5 and previous
+      DynConstructors.builder()
+        .impl(
+          classOf[CatalogTable],
+          classOf[TableIdentifier],
+          classOf[CatalogTableType],
+          classOf[CatalogStorageFormat],
+          classOf[StructType],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Option[BucketSpec]],
+          classOf[String],
+          classOf[Long],
+          classOf[Long],
+          classOf[String],
+          classOf[Map[String, String]],
+          classOf[Option[CatalogStatistics]],
+          classOf[Option[String]],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Boolean],
+          classOf[Boolean],
+          classOf[Map[String, String]],
+          classOf[Option[String]])
+        .buildChecked()
+        .invokeChecked[CatalogTable](
+          null,
+          identifier,
+          tableType,
+          storage,
+          schema,
+          provider,
+          partitionColumnNames,
+          bucketSpec,
+          owner,
+          createTime,
+          lastAccessTime,
+          createVersion,
+          properties,
+          stats,
+          viewText,
+          comment,
+          unsupportedFeatures,
+          tracksPartitionsInCatalog,
+          schemaPreservesCase,
+          ignoredProperties,
+          viewOriginalText)
+    }.get
+  }
 
   override def createTable(
       ident: Identifier,
       schema: StructType,
       partitions: Array[Transform],
       properties: util.Map[String, String]): Table =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.TransformHelper
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
@@ -190,7 +330,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
           CatalogTableType.MANAGED
         }
 
-      val tableDesc = CatalogTable(
+      val tableDesc = newCatalogTable(
         identifier = ident.asTableIdentifier,
         tableType = tableType,
         storage = storage,
@@ -213,7 +353,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def alterTable(ident: Identifier, changes: TableChange*): Table =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       val catalogTable =
         try {
           catalog.getTableMetadata(ident.asTableIdentifier)
@@ -253,7 +393,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def dropTable(ident: Identifier): Boolean =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
         if (loadTable(ident) != null) {
           catalog.dropTable(
@@ -271,7 +411,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       if (tableExists(newIdent)) {
         throw new TableAlreadyExistsException(newIdent)
       }
@@ -288,12 +428,12 @@ class HiveTableCatalog(sparkSession: SparkSession)
   }
 
   override def listNamespaces(): Array[Array[String]] =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       catalog.listDatabases().map(Array(_)).toArray
     }
 
   override def listNamespaces(namespace: Array[String]): Array[Array[String]] =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array() =>
           listNamespaces()
@@ -305,7 +445,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def loadNamespaceMetadata(namespace: Array[String]): util.Map[String, String] =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           try {
@@ -323,7 +463,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override def createNamespace(
       namespace: Array[String],
       metadata: util.Map[String, String]): Unit =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) if !catalog.databaseExists(db) =>
           catalog.createDatabase(
@@ -339,7 +479,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) =>
           // validate that this catalog's reserved properties are not removed
@@ -379,7 +519,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override def dropNamespace(
       namespace: Array[String],
       cascade: Boolean): Boolean =
-    withSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
+    withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       namespace match {
         case Array(db) if catalog.databaseExists(db) =>
           catalog.dropDatabase(db, ignoreIfNotExists = false, cascade)
