@@ -58,11 +58,24 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(td), opType = OperationType.ALTERTABLE_PROPERTIES)
   }
 
+  val AddPartitionFiled = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddPartitionField"
+    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
+    val tableDesc =
+      TableDesc(
+        "table",
+        classOf[ArrayBufferTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Iceberg")
+    TableCommandSpec(cmd, Seq(tableDesc), opType = OperationType.ALTERTABLE_PROPERTIES)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     CallProcedure,
     DeleteFromIcebergTable,
     UpdateIcebergTable,
     MergeIntoIcebergTable,
+    AddPartitionFiled,
     MergeIntoIcebergTable.copy(classname =
       "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }

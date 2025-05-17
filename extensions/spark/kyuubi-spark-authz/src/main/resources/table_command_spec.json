@@ -1810,6 +1810,27 @@
     "comment" : ""
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitionField",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
   "tableDescs" : [ {
     "fieldName" : "args",

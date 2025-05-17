@@ -378,4 +378,17 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(admin, sql(callSetCurrentSnapshot))
     }
   }
+
+  test("ALTER TABLE ADD PARTITION FIELD for Iceberg") {
+    val table = s"$catalogV2.$namespace1.partitioned_table"
+    doAs(
+      admin,
+      sql(
+        s"CREATE TABLE $table (id int, name string, city string) USING iceberg PARTITIONED BY (city)"))
+    val addPartitionSql = s"ALTER TABLE $table ADD PARTITION FIELD id"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(addPartitionSql))
+    }(s"does not have [alter] privilege on [$namespace1/partitioned_table]")
+    doAs(someone, sql(addPartitionSql))
+  }
 }
