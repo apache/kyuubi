@@ -1815,12 +1815,7 @@
     "fieldName" : "table",
     "fieldExtractor" : "ArrayBufferTableExtractor",
     "columnDesc" : null,
-    "actionTypeDesc" : {
-      "fieldName" : null,
-      "fieldExtractor" : null,
-      "actionType" : "UPDATE",
-      "comment" : ""
-    },
+    "actionTypeDesc" : null,
     "tableTypeDesc" : null,
     "catalogDesc" : null,
     "isInput" : false,

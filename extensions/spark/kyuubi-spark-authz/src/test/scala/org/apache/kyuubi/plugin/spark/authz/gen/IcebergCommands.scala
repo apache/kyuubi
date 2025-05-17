@@ -60,12 +60,10 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
 
   val AddPartitionFiled = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddPartitionField"
-    val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE))
     val tableDesc =
       TableDesc(
         "table",
         classOf[ArrayBufferTableExtractor],
-        actionTypeDesc = Some(actionTypeDesc),
         comment = "Iceberg")
     TableCommandSpec(cmd, Seq(tableDesc), opType = OperationType.ALTERTABLE_PROPERTIES)
   }
