@@ -1863,6 +1863,38 @@
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitionField",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
   "tableDescs" : [ {
     "fieldName" : "targetTable",
@@ -1886,6 +1918,54 @@
     "fieldExtractor" : "LogicalPlanQueryExtractor",
     "comment" : ""
   } ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "ArrayBufferTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Iceberg"
+  } ],
+  "opType" : "ALTERTABLE_PROPERTIES",
+  "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable",
