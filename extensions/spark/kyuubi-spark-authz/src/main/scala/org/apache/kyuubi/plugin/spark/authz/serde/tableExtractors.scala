@@ -190,15 +190,11 @@ class ExpressionSeqTableExtractor extends TableExtractor {
 class ArrayBufferTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     // Iceberg will transform table to ArrayBuffer[String]
-    val expressions = v1.asInstanceOf[Seq[String]]
-    val maybeTable = expressions.length match {
-      case 1 => Table(None, None, expressions.head, None)
-      case 2 => Table(None, Some(expressions.head), expressions(1), None)
-      case 3 => Table(
-          Some(expressions.head),
-          Some(expressions(1)),
-          expressions(2),
-          None)
+    val maybeTable = v1.asInstanceOf[Seq[String]] match {
+      case Seq(tblName) => Table(None, None, tblName, None)
+      case Seq(dbName, tblName) => Table(None, Some(dbName), tblName, None)
+      case Seq(catalogName, dbName, tblName) =>
+        Table(Some(catalogName), Some(dbName), tblName, None)
     }
     Option(maybeTable)
   }
