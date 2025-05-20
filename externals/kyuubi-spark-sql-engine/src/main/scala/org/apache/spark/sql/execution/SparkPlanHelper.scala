@@ -15,33 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.spark.sql.execution
 
-/**
- * A SQL Engine APP will be shared by different levels
- */
-object ShareLevel extends Enumeration {
-  type ShareLevel = Value
-  val
-  /**
-   * In this level, An APP will not be shared and used only for a single session
-   */
-  CONNECTION,
-  /*
-   * DEFAULT level, An APP will be shared for all sessions created by a user
-   */
-  USER,
-  /**
-   * In this level, An APP will be shared for all sessions created by a user's default group
-   */
-  GROUP,
-  /**
-   * In this level, All sessions of the same engine type from one Kyuubi server's will share
-   * one single APP launched on the same server
-   */
-  SERVER_LOCAL,
-  /**
-   * In this level, All sessions from one or more Kyuubi server's will share one single APP
-   */
-  SERVER = Value
+import org.apache.spark.sql.SparkSession
+
+import org.apache.kyuubi.util.reflect.DynMethods
+
+object SparkPlanHelper {
+
+  private val sparkSessionMethod = DynMethods.builder("session")
+    .impl(classOf[SparkPlan])
+    .buildChecked()
+
+  def sparkSession(sparkPlan: SparkPlan): SparkSession = {
+    sparkSessionMethod.invokeChecked[SparkSession](sparkPlan)
+  }
 }

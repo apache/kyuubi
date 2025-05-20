@@ -230,4 +230,10 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(kubernetesConf2.get(KyuubiConf.KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE) ==
       Some("/var/run/secrets/kubernetes.io/token.ns2"))
   }
+
+  test("KYUUBI #7053 - Support to exclude server only configs with prefixes") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("kyuubi.backend.server.event.kafka.broker", "localhost:9092")
+    assert(kyuubiConf.getUserDefaults("kyuubi").getAll.size == 0)
+  }
 }

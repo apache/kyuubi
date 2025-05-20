@@ -32,7 +32,7 @@ import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.catalyst.expressions.UnsafeRow
-import org.apache.spark.sql.execution.CollectLimitExec
+import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlanHelper}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
 import org.apache.spark.util.Utils
@@ -157,7 +157,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         val partsToScan =
           partsScanned.until(math.min(partsScanned + numPartsToTry, totalParts))
 
-        val sc = collectLimitExec.session.sparkContext
+        val sc = SparkPlanHelper.sparkSession(collectLimitExec).sparkContext
         val res = sc.runJob(
           childRDD,
           (it: Iterator[InternalRow]) => {
