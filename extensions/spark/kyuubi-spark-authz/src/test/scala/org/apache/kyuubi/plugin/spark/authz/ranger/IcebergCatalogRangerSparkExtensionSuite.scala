@@ -58,7 +58,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2",
       "org.apache.iceberg.spark.SparkCatalog")
-    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2.warehouse",
       Utils.createTempDir("iceberg-hadoop").toString)
@@ -484,4 +483,11 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(admin, sql(dropIdentifierSql))
     }
   }
+
+  test("RENAME TABLE for Iceberg") {
+    withSingleCallEnabled {
+      doAs(admin, sql(s"alter table $catalogV2.$namespace1.$table1 rename to $catalogV2.$namespace1.table_new_1"))
+    }
+  }
+
 }
