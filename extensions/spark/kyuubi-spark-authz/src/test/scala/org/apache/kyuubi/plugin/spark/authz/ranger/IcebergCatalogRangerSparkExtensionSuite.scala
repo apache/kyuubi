@@ -486,7 +486,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("RENAME TABLE for Iceberg") {
     withSingleCallEnabled {
-      doAs(admin, sql(s"alter table $catalogV2.$namespace1.$table1 rename to $catalogV2.$namespace1.table_new_1"))
+      doAs(admin, sql(s"alter table $catalogV2.$namespace1.$table1 " +
+        s"rename to $catalogV2.$namespace1.table_new_1"))
     }
   }
 
