@@ -93,6 +93,26 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     AddPartitionFiled.copy(cmd)
   }
 
+  val CreateOrReplaceBranch = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceBranch"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val CreateOrReplaceTag = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceTag"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val DropBranch = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropBranch"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val DropTag = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropTag"
+    AddPartitionFiled.copy(cmd)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     CallProcedure,
     DeleteFromIcebergTable,
@@ -104,6 +124,10 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     WriteDistributionAndOrdering,
     SetIdentifierFields,
     DropIdentifierFields,
+    CreateOrReplaceBranch,
+    CreateOrReplaceTag,
+    DropBranch,
+    DropTag,
     MergeIntoIcebergTable.copy(classname =
       "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }
