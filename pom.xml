@@ -2170,7 +2170,9 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
-                        <inherited>true</inherited>
+                        <configuration>
+                            <retryFailedDeploymentCount>3</retryFailedDeploymentCount>
+                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
