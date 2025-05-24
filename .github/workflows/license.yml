@@ -41,10 +41,10 @@ jobs:
           distribution: temurin
           java-version: 8
           cache: 'maven'
-      - run: >-
-          build/mvn org.apache.rat:apache-rat-plugin:check
-          -Ptpcds -Pkubernetes-it
-          -Pspark-3.3 -Pspark-3.4 -Pspark-3.5
+      - run: |
+          build/mvn org.apache.rat:apache-rat-plugin:check \
+            -Ptpcds -Pkubernetes-it \
+            -Pspark-3.3 -Pspark-3.4 -Pspark-3.5 -Pspark-4.0
       - name: Upload rat report
         if: failure()
         uses: actions/upload-artifact@v4
