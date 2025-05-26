@@ -9,7 +9,7 @@ By default, Kyuubi server enables metrics system and exposes Prometheus endpoint
 to use the Kyuubi Grafana Dashboard, you are supposed to have an available Prometheus and Grafana service, then
 configure Prometheus to scrape Kyuubi metrics, add the Prometheus data source into Grafana, and then import the
 `dashboard-template.json` into Grafana and customize. For more details, please read the
-[Kyuubi Docs](https://kyuubi.readthedocs.io/en/master/monitor/metrics.html#grafana-and-prometheus) 
+[Kyuubi Docs](https://kyuubi.readthedocs.io/en/master/monitor/metrics.html#grafana-and-prometheus)
 
 ## For Developers
 
