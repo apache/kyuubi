@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.planning.ScanOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.connector.read.SupportsReportStatistics
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.{CatalogFileIndex, HadoopFsRelation, InMemoryFileIndex, LogicalRelation}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
@@ -237,7 +238,7 @@ case class MaxScanStrategy(session: SparkSession)
             _,
             _,
             _,
-            relation @ DataSourceV2ScanRelation(_, _, _, _, _)) =>
+            relation @ DataSourceV2ScanRelation(_, _: SupportsReportStatistics, _, _, _)) =>
         val table = relation.relation.table
         if (table.partitioning().nonEmpty) {
           val partitionColumnNames = table.partitioning().map(_.describe())
