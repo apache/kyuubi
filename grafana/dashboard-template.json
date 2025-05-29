@@ -823,6 +823,123 @@
         "x": 16,
         "y": 7
       },
+      "id": 104,
+      "maxPerRow": 2,
+      "options": {
+        "alertThreshold": true,
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": " kyuubi_engine_startup_permit_limit_total{$baseFilter,instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "${baseLegend}-limit",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": " kyuubi_engine_startup_permit_waiting{$baseFilter,instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "${baseLegend}-waiting",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": "${DS_PROMETHEUS}",
+          "editorMode": "code",
+          "expr": " kyuubi_engine_startup_permit_available{$baseFilter,instance=~\"$instance\"}",
+          "hide": false,
+          "legendFormat": "${baseLegend}-available",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Engine startup permit",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${DS_PROMETHEUS}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "links": [],
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 13
+      },
       "id": 75,
       "maxPerRow": 2,
       "options": {
@@ -918,7 +1035,7 @@
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 0,
+        "x": 8,
         "y": 13
       },
       "id": 77,
@@ -1025,7 +1142,7 @@
       "gridPos": {
         "h": 7,
         "w": 8,
-        "x": 8,
+        "x": 16,
         "y": 13
       },
       "id": 79,
@@ -1130,10 +1247,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
+        "h": 6,
         "w": 8,
-        "x": 16,
-        "y": 13
+        "x": 0,
+        "y": 20
       },
       "id": 80,
       "maxPerRow": 2,
@@ -1236,7 +1353,7 @@
       "gridPos": {
         "h": 6,
         "w": 8,
-        "x": 0,
+        "x": 8,
         "y": 20
       },
       "id": 34,
@@ -1335,7 +1452,7 @@
       "gridPos": {
         "h": 6,
         "w": 8,
-        "x": 8,
+        "x": 16,
         "y": 20
       },
       "id": 71,
@@ -1430,8 +1547,8 @@
       "gridPos": {
         "h": 6,
         "w": 8,
-        "x": 16,
-        "y": 20
+        "x": 0,
+        "y": 26
       },
       "id": 76,
       "maxPerRow": 2,
@@ -1478,7 +1595,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 32
       },
       "id": 88,
       "panels": [],
@@ -1549,7 +1666,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 33
       },
       "id": 89,
       "maxPerRow": 2,
@@ -1646,7 +1763,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 33
       },
       "id": 92,
       "maxPerRow": 2,
@@ -1743,7 +1860,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 35
+        "y": 41
       },
       "id": 90,
       "maxPerRow": 2,
@@ -1849,7 +1966,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 35
+        "y": 41
       },
       "id": 91,
       "maxPerRow": 2,
@@ -1899,7 +2016,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 48
       },
       "id": 93,
       "panels": [],
@@ -1970,7 +2087,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 43
+        "y": 49
       },
       "id": 94,
       "maxPerRow": 2,
@@ -2076,7 +2193,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 43
+        "y": 49
       },
       "id": 99,
       "maxPerRow": 2,
@@ -2173,7 +2290,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 51
+        "y": 57
       },
       "id": 98,
       "maxPerRow": 2,
@@ -2271,7 +2388,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 51
+        "y": 57
       },
       "id": 97,
       "maxPerRow": 2,
@@ -2321,7 +2438,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 59
+        "y": 65
       },
       "id": 68,
       "panels": [],
@@ -2392,7 +2509,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 60
+        "y": 66
       },
       "id": 100,
       "options": {
@@ -2511,7 +2628,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 60
+        "y": 66
       },
       "id": 101,
       "options": {
@@ -2601,7 +2718,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 68
+        "y": 74
       },
       "id": 49,
       "options": {
@@ -2653,7 +2770,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 68
+        "y": 82
       },
       "id": 60,
       "panels": [
