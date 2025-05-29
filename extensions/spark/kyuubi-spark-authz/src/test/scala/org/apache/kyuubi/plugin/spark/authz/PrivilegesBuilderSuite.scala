@@ -30,6 +30,8 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
+import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
@@ -113,6 +115,53 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   override def beforeEach(): Unit = {
     sql("CLEAR CACHE")
     super.beforeEach()
+  }
+
+  test("Hive permanent UDF detection via PrivilegesBuilder.build") {
+    val sqlStr = s"SELECT my_udf(id) FROM test_table"
+    val plan: LogicalPlan = spark.sql(sqlStr).queryExecution.analyzed
+    val (inputObjs, outputObjs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
+
+    assert(inputObjs.size === 1)
+    val privilegeObject = inputObjs.head
+    assert(privilegeObject.actionType === OTHER)
+    assert(privilegeObject.privilegeObjectType === FUNCTION)
+    assert(privilegeObject.dbname === "default")
+    assert(privilegeObject.objectName === "my_udf")
+
+    assert(outputObjs.isEmpty)
+  }
+
+  test("Nested Hive UDF detection via PrivilegesBuilder.build") {
+    val sqlStr =
+      s"""
+         |SELECT my_udf(id)
+         |FROM (
+         |  SELECT id, value
+         |  FROM test_table
+         |) t
+         |""".stripMargin
+    val plan: LogicalPlan = spark.sql(sqlStr).queryExecution.analyzed
+
+    val (inputObjs, outputObjs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
+    assert(inputObjs.size === 1)
+    val privilegeObject = inputObjs.head
+    assert(privilegeObject.actionType === OTHER)
+    assert(privilegeObject.privilegeObjectType === FUNCTION)
+    assert(privilegeObject.dbname === "default")
+    assert(privilegeObject.objectName === "my_udf")
+    assert(outputObjs.isEmpty)
+  }
+
+  test("No Hive UDF detection via PrivilegesBuilder.build") {
+    val sqlStr = s"SELECT id FROM test_table"
+    val plan: LogicalPlan = spark.sql(sqlStr).queryExecution.analyzed
+    val (inputObjs, outputObjs, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === QUERY)
+    assert(inputObjs.isEmpty)
+    assert(outputObjs.isEmpty)
   }
 
   test("AlterDatabasePropertiesCommand") {
