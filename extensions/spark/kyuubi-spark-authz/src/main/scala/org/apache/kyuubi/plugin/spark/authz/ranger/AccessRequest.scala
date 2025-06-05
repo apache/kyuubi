@@ -27,7 +27,7 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
-import org.apache.kyuubi.util.reflect.{DynMethods, ReflectUtils}
+import org.apache.kyuubi.util.reflect.DynMethods
 import org.apache.kyuubi.util.reflect.DynMethods.UnboundMethod
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
