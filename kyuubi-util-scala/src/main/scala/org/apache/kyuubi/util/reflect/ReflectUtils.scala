@@ -24,8 +24,6 @@ import scala.language.existentials
 import scala.reflect.ClassTag
 import scala.util.Try
 
-import org.apache.kyuubi.util.reflect.DynMethods.UnboundMethod
-
 object ReflectUtils {
 
   /**
@@ -63,27 +61,6 @@ object ReflectUtils {
     } catch {
       case e: Exception =>
         throw new RuntimeException(s"$clz does not have $fieldName field", e)
-    }
-  }
-
-  /**
-   * Get a method with the given name and argument classes from the given class.
-   * @param clz the class to get the method from
-   * @param methodName the method name from declared field names
-   * @param argClasses the classes of the arguments
-   * @return an unbound method that can be invoked later
-   */
-  def getMethod(clz: Class[_], methodName: String, argClasses: Class[_]*): UnboundMethod = {
-    try {
-      DynMethods.builder(methodName)
-        .hiddenImpl(clz, argClasses: _*)
-        .impl(clz, argClasses: _*)
-        .buildChecked
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(
-          s"$clz does not have $methodName${argClasses.map(_.getName).mkString("(", ", ", ")")}",
-          e)
     }
   }
 

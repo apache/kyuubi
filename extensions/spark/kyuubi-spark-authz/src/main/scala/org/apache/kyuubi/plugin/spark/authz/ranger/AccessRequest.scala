@@ -27,8 +27,8 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.util.reflect.{DynMethods, ReflectUtils}
 import org.apache.kyuubi.util.reflect.DynMethods.UnboundMethod
-import org.apache.kyuubi.util.reflect.ReflectUtils
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
@@ -72,11 +72,10 @@ object AccessRequest {
 
   private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] = {
     try {
-      Some(ReflectUtils.getMethod(
-        SparkRangerAdminPlugin.getClass,
-        "getRolesFromUserAndGroups",
-        classOf[String],
-        classOf[JSet[String]]))
+      Some(DynMethods.builder("getRolesFromUserAndGroups")
+        .hiddenImpl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
+        .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
+        .buildChecked)
     } catch {
       case _: Exception => None
     }
@@ -84,7 +83,10 @@ object AccessRequest {
 
   private val setUserRolesMethod: Option[UnboundMethod] = {
     try {
-      Some(ReflectUtils.getMethod(classOf[AccessRequest], "setUserRoles", classOf[JSet[String]]))
+      Some(DynMethods.builder("setUserRoles")
+        .hiddenImpl(classOf[AccessRequest], classOf[JSet[String]])
+        .impl(classOf[AccessRequest], classOf[JSet[String]])
+        .buildChecked)
     } catch {
       case _: Exception => None
     }
