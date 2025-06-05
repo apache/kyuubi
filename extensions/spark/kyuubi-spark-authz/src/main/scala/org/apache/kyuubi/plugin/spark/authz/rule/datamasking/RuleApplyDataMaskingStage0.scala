@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.datamasking
 
+import org.apache.spark.authz.AuthzConf.dataMaskingEnabled
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
@@ -45,15 +46,19 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
 case class RuleApplyDataMaskingStage0(spark: SparkSession) extends RuleHelper {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    val newPlan = mapChildren(plan) {
-      case p: DataMaskingStage0Marker => p
-      case p: DataMaskingStage1Marker => p
-      case scan if isKnownScan(scan) && scan.resolved =>
-        val tables = getScanSpec(scan).tables(scan, spark)
-        tables.headOption.map(applyMasking(scan, _)).getOrElse(scan)
-      case other => apply(other)
+    if (!dataMaskingEnabled(conf)) {
+      plan
+    } else {
+      val newPlan = mapChildren(plan) {
+        case p: DataMaskingStage0Marker => p
+        case p: DataMaskingStage1Marker => p
+        case scan if isKnownScan(scan) && scan.resolved =>
+          val tables = getScanSpec(scan).tables(scan, spark)
+          tables.headOption.map(applyMasking(scan, _)).getOrElse(scan)
+        case other => apply(other)
+      }
+      newPlan
     }
-    newPlan
   }
 
   private def applyMasking(

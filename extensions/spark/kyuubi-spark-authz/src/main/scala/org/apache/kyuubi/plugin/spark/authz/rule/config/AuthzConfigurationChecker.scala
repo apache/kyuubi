@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.config
 
+import org.apache.spark.authz.AuthzConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
@@ -28,11 +29,9 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
  */
 case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan => Unit) {
 
-  final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
-
   private val restrictedConfList: Set[String] =
-    Set(RESTRICT_LIST_KEY, "spark.sql.runSQLOnFiles", "spark.sql.extensions") ++
-      spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toSet).getOrElse(Set.empty)
+    Set(CONF_RESTRICTED_LIST.key, "spark.sql.runSQLOnFiles", "spark.sql.extensions") ++
+      confRestrictedList(spark.sparkContext.getConf).map(_.split(',').toSet).getOrElse(Set.empty)
 
   override def apply(plan: LogicalPlan): Unit = plan match {
     case SetCommand(Some((
