@@ -46,7 +46,6 @@ object AccessRequest {
     req.setUser(userName)
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
-
     try {
       getRolesFromUserAndGroupsMethod.zip(setUserRolesMethod).foreach {
         case (getMethod, setMethod) =>
