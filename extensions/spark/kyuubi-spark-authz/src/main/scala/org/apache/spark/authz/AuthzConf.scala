@@ -43,14 +43,14 @@ object AuthzConf {
 
   val DATA_MASKING_ENABLED =
     ConfigBuilder("spark.sql.authz.dataMasking.enabled")
-      .doc("")
+      .doc("Whether to enable data masking rule for authz plugin.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
 
   val ROW_FILTER_ENABLED =
     ConfigBuilder("spark.sql.authz.rowFilter.enabled")
-      .doc("")
+      .doc("Whether to enable row filter rule for authz plugin.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
