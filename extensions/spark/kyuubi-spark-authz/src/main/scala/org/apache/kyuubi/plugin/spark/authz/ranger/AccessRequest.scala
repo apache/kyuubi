@@ -95,13 +95,13 @@ object AccessRequest {
     user.getGroupNames.toSet.asJava
   }
 
-  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
+  private lazy val userGroupMappingOpt: Option[JHashMap[String, JSet[String]]] = {
     try {
       val storeEnricher = invokeAs[AnyRef](SparkRangerAdminPlugin, "getUserStoreEnricher")
       val userStore = invokeAs[AnyRef](storeEnricher, "getRangerUserStore")
       val userGroupMapping =
         invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
-      Some(userGroupMapping.get(user.getShortUserName))
+      Some(userGroupMapping)
     } catch {
       case _: NoSuchMethodException =>
         None
@@ -110,7 +110,7 @@ object AccessRequest {
 
   private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
-      getUserGroupsFromUserStore(user)
+      userGroupMappingOpt.map(_.get(user.getShortUserName))
         .getOrElse(getUserGroupsFromUgi(user))
     } else {
       getUserGroupsFromUgi(user)
