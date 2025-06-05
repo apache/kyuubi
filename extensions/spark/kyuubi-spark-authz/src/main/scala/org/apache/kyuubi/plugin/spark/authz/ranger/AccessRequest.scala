@@ -27,6 +27,8 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.util.reflect.DynMethods
+import org.apache.kyuubi.util.reflect.DynMethods.UnboundMethod
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
@@ -45,12 +47,11 @@ object AccessRequest {
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
     try {
-      val roles = invokeAs[JSet[String]](
-        SparkRangerAdminPlugin,
-        "getRolesFromUserAndGroups",
-        (classOf[String], userName),
-        (classOf[JSet[String]], userGroups))
-      invokeAs[Unit](req, "setUserRoles", (classOf[JSet[String]], roles))
+      getRolesFromUserAndGroupsMethod.zip(setUserRolesMethod).foreach {
+        case (getMethod, setMethod) =>
+          val roles = getMethod.invoke[JSet[String]](SparkRangerAdminPlugin, userName, userGroups)
+          setMethod.invoke[Unit](req, roles)
+      }
     } catch {
       case _: Exception =>
     }
@@ -68,17 +69,39 @@ object AccessRequest {
     req
   }
 
+  private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] = {
+    try {
+      Some(DynMethods.builder("getRolesFromUserAndGroups")
+        .hiddenImpl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
+        .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
+        .buildChecked)
+    } catch {
+      case _: Exception => None
+    }
+  }
+
+  private val setUserRolesMethod: Option[UnboundMethod] = {
+    try {
+      Some(DynMethods.builder("setUserRoles")
+        .hiddenImpl(classOf[AccessRequest], classOf[JSet[String]])
+        .impl(classOf[AccessRequest], classOf[JSet[String]])
+        .buildChecked)
+    } catch {
+      case _: Exception => None
+    }
+  }
+
   private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {
     user.getGroupNames.toSet.asJava
   }
 
-  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
+  private lazy val userGroupMappingOpt: Option[JHashMap[String, JSet[String]]] = {
     try {
       val storeEnricher = invokeAs[AnyRef](SparkRangerAdminPlugin, "getUserStoreEnricher")
       val userStore = invokeAs[AnyRef](storeEnricher, "getRangerUserStore")
       val userGroupMapping =
         invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
-      Some(userGroupMapping.get(user.getShortUserName))
+      Some(userGroupMapping)
     } catch {
       case _: NoSuchMethodException =>
         None
@@ -87,7 +110,7 @@ object AccessRequest {
 
   private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
-      getUserGroupsFromUserStore(user)
+      userGroupMappingOpt.map(_.get(user.getShortUserName))
         .getOrElse(getUserGroupsFromUgi(user))
     } else {
       getUserGroupsFromUgi(user)
