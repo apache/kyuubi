@@ -27,6 +27,8 @@ import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPol
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
+import org.apache.kyuubi.util.reflect.DynMethods.UnboundMethod
+import org.apache.kyuubi.util.reflect.ReflectUtils
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
@@ -44,13 +46,13 @@ object AccessRequest {
     req.setUser(userName)
     req.setUserGroups(userGroups)
     req.setAction(opType.toString)
+
     try {
-      val roles = invokeAs[JSet[String]](
-        SparkRangerAdminPlugin,
-        "getRolesFromUserAndGroups",
-        (classOf[String], userName),
-        (classOf[JSet[String]], userGroups))
-      invokeAs[Unit](req, "setUserRoles", (classOf[JSet[String]], roles))
+      getRolesFromUserAndGroupsMethod.zip(setUserRolesMethod).foreach {
+        case (getMethod, setMethod) =>
+          val roles = getMethod.invoke[JSet[String]](SparkRangerAdminPlugin, userName, userGroups)
+          setMethod.invoke[Unit](req, roles)
+      }
     } catch {
       case _: Exception =>
     }
@@ -66,6 +68,26 @@ object AccessRequest {
       case _: Exception =>
     }
     req
+  }
+
+  private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] = {
+    try {
+      Some(ReflectUtils.getMethod(
+        SparkRangerAdminPlugin.getClass,
+        "getRolesFromUserAndGroups",
+        classOf[String],
+        classOf[JSet[String]]))
+    } catch {
+      case _: Exception => None
+    }
+  }
+
+  private val setUserRolesMethod: Option[UnboundMethod] = {
+    try {
+      Some(ReflectUtils.getMethod(classOf[AccessRequest], "setUserRoles", classOf[JSet[String]]))
+    } catch {
+      case _: Exception => None
+    }
   }
 
   private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {

@@ -47,6 +47,6 @@ trait RuleHelper extends Rule[LogicalPlan] {
     plan.withNewChildren(newChildren)
   }
 
-  def ugi: UserGroupInformation = AuthZUtils.getAuthzUgi(spark.sparkContext)
+  lazy val ugi: UserGroupInformation = AuthZUtils.getAuthzUgi(spark.sparkContext)
 
 }
