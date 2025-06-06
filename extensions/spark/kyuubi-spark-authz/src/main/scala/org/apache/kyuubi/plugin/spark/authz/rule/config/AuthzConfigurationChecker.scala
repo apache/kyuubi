@@ -30,7 +30,12 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan => Unit) {
 
   private val restrictedConfList: Set[String] =
-    Set(CONF_RESTRICTED_LIST.key, "spark.sql.runSQLOnFiles", "spark.sql.extensions") ++
+    Set(
+      CONF_RESTRICTED_LIST.key,
+      DATA_MASKING_ENABLED.key,
+      ROW_FILTER_ENABLED.key,
+      "spark.sql.runSQLOnFiles",
+      "spark.sql.extensions") ++
       confRestrictedList(spark.sparkContext.getConf).map(_.split(',').toSet).getOrElse(Set.empty)
 
   override def apply(plan: LogicalPlan): Unit = plan match {
