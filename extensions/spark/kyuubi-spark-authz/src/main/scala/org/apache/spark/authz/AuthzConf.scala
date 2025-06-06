@@ -19,6 +19,7 @@ package org.apache.spark.authz
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.config.ConfigBuilder
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.internal.SQLConf.buildConf
 
 object AuthzConf {
   val CONF_RESTRICTED_LIST =
@@ -29,14 +30,14 @@ object AuthzConf {
       .createOptional
 
   val DATA_MASKING_ENABLED =
-    ConfigBuilder("spark.sql.authz.dataMasking.enabled")
+    buildConf("spark.sql.authz.dataMasking.enabled")
       .doc("Whether to enable data masking rule for authz plugin.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
 
   val ROW_FILTER_ENABLED =
-    ConfigBuilder("spark.sql.authz.rowFilter.enabled")
+    buildConf("spark.sql.authz.rowFilter.enabled")
       .doc("Whether to enable row filter rule for authz plugin.")
       .version("1.11.0")
       .booleanConf
