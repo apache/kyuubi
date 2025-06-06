@@ -56,7 +56,8 @@ class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvid
     val e = intercept[AnalysisException] {
       sql("set spark.kyuubi.conf.restricted.list=123")
     }
-    assert(e.getMessage.contains("CANNOT_MODIFY_CONFIG"))
+    assert(e.getMessage.contains("Cannot modify the value of") && e.getMessage.contains(
+      CONF_RESTRICTED_LIST.key))
     val p7 = sql("set spark.sql.efg=hijk").queryExecution.analyzed
     extension.apply(p7)
     val p8 = sql(
