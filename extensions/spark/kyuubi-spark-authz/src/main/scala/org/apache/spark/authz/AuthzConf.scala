@@ -21,19 +21,6 @@ import org.apache.spark.internal.config.ConfigBuilder
 import org.apache.spark.sql.internal.SQLConf
 
 object AuthzConf {
-
-  def confRestrictedList(conf: SparkConf): Option[String] = {
-    conf.get(CONF_RESTRICTED_LIST)
-  }
-
-  def dataMaskingEnabled(conf: SQLConf): Boolean = {
-    conf.getConf(DATA_MASKING_ENABLED)
-  }
-
-  def rowFilterEnabled(conf: SQLConf): Boolean = {
-    conf.getConf(ROW_FILTER_ENABLED)
-  }
-
   val CONF_RESTRICTED_LIST =
     ConfigBuilder("spark.kyuubi.conf.restricted.list")
       .doc("The config key in the restricted list cannot set dynamic configuration via SET syntax.")
@@ -55,4 +42,15 @@ object AuthzConf {
       .booleanConf
       .createWithDefault(true)
 
+  def confRestrictedList(conf: SparkConf): Option[String] = {
+    conf.get(CONF_RESTRICTED_LIST)
+  }
+
+  def dataMaskingEnabled(conf: SQLConf): Boolean = {
+    conf.getConf(DATA_MASKING_ENABLED)
+  }
+
+  def rowFilterEnabled(conf: SQLConf): Boolean = {
+    conf.getConf(ROW_FILTER_ENABLED)
+  }
 }
