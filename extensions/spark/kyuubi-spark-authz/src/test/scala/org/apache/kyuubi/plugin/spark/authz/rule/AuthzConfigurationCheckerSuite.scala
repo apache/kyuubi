@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.spark.SparkConf
 import org.apache.spark.authz.AuthzConf.CONF_RESTRICTED_LIST
+import org.apache.spark.sql.AnalysisException
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -52,8 +53,10 @@ class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvid
     intercept[AccessControlException](extension.apply(p4))
     val p5 = sql("set spark.sql.xyz=abc").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p5))
-    val p6 = sql("set spark.kyuubi.conf.restricted.list=123").queryExecution.analyzed
-    intercept[AccessControlException](extension.apply(p6))
+    val e = intercept[AnalysisException] {
+      sql("set spark.kyuubi.conf.restricted.list=123")
+    }
+    assert(e.getMessage.contains("CANNOT_MODIFY_CONFIG"))
     val p7 = sql("set spark.sql.efg=hijk").queryExecution.analyzed
     extension.apply(p7)
     val p8 = sql(
