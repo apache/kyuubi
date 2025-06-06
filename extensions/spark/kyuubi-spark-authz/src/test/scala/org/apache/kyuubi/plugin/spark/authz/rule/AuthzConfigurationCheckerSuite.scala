@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule
 
+import org.apache.spark.SparkConf
+import org.apache.spark.authz.AuthzConf.CONF_RESTRICTED_LIST
 import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
@@ -29,13 +31,16 @@ class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvid
   with BeforeAndAfterAll {
 
   override protected val catalogImpl: String = "in-memory"
+
+  override protected val extraSparkConf: SparkConf = new SparkConf()
+    .set(CONF_RESTRICTED_LIST.key, "spark.sql.abc,spark.sql.xyz")
+
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
   }
 
   test("apply spark configuration restriction rules") {
-    sql("set spark.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
     val extension = AuthzConfigurationChecker(spark)
     val p1 = sql("set spark.sql.runSQLOnFiles=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p1))
