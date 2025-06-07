@@ -300,6 +300,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
       ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
+      this.engineStartupProcessSemaphore.foreach { semaphore =>
+        ms.markMeter(ENGINE_STARTUP_PERMIT_LIMIT, semaphore.availablePermits)
+        ms.registerGauge(
+          ENGINE_STARTUP_PERMIT_AVAILABLE,
+          semaphore.availablePermits,
+          semaphore.availablePermits)
+        ms.registerGauge(ENGINE_STARTUP_PERMIT_WAITING, semaphore.getQueueLength, 0)
+      }
     }
     super.start()
     startEngineAliveChecker()
