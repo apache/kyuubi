@@ -24,8 +24,8 @@ import scala.util.Try
 import org.apache.spark.sql.Row
 import org.scalatest.Outcome
 
-// scalastyle:off
 import org.apache.kyuubi.Utils
+// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -39,11 +39,12 @@ import org.apache.kyuubi.util.AssertionUtils._
  */
 @IcebergTest
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "hive"
+  override protected val useMysqlEnv: Boolean = true
+  override protected val catalogImpl: String = "in-memory"
   override protected val sqlExtensions: String =
     "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
-  val catalogV2 = "local"
+  val catalogV2 = "jdbc_catalog"
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
@@ -55,14 +56,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2",
       "org.apache.iceberg.spark.SparkCatalog")
     spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.type",
+      "jdbc")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.uri", getMysqlJdbcUrl)
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.jdbc.user", getMysqlUsername)
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.jdbc.password", getMysqlPassword)
+    spark.conf.set(
       s"spark.sql.catalog.$catalogV2.warehouse",
       Utils.createTempDir("iceberg-hadoop").toString)
-
-    super.beforeAll()
 
     doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
     doAs(
@@ -485,11 +491,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   test("RENAME TABLE for Iceberg") {
-    withSingleCallEnabled {
+    val table = "partitioned_table"
+    withCleanTmpResources(Seq((table, "table"))) {
       doAs(
         admin,
-        sql(s"alter table $catalogV2.$namespace1.$table1 " +
-          s"rename to $catalogV2.$namespace1.table_new_1"))
+        sql(
+          s"CREATE TABLE $catalogV2.$namespace1.$table" +
+            s"(id int NOT NULL, name string, city string) USING iceberg"))
+      val renameSql = s"alter table $catalogV2.$namespace1.$table " +
+        s"rename to $namespace1.new_table"
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameSql))
+      }(s"does not have [alter] privilege on [$namespace1/partitioned_table]")
+      doAs(admin, sql(renameSql))
     }
   }
 

@@ -38,6 +38,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.MysqlContainerEnv
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
@@ -45,13 +46,40 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll {
+  with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv {
   // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
+
+  var mysqlJdbcUrl = ""
+  var mysqlUsername = ""
+  var mysqlPassword = ""
+  var driverClassName = ""
+
+  override def getMysqlJdbcUrl: String = mysqlJdbcUrl
+
+  override def getMysqlUsername: String = mysqlUsername
+
+  override def getMysqlPassword: String = mysqlPassword
+
+  override def getDriverClassName: String = driverClassName
 
   override def afterAll(): Unit = {
     spark.stop()
     super.afterAll()
+    if (useMysqlEnv) {
+      stopEngine()
+    }
+  }
+
+  override def beforeAll(): Unit = {
+    if (useMysqlEnv) {
+      startEngine()
+      this.mysqlJdbcUrl = containerDef.jdbcUrl
+      this.mysqlUsername = containerDef.username
+      this.mysqlPassword = containerDef.password
+      this.driverClassName = containerDef.driverClassName
+    }
+    super.beforeAll()
   }
 
   protected def errorMessage(

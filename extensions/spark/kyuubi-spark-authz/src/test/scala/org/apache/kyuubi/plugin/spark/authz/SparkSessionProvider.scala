@@ -40,16 +40,20 @@ trait SparkSessionProvider {
 
   protected val extraSparkConf: SparkConf = new SparkConf()
 
+  protected val useMysqlEnv: Boolean = false
+
+  def getMysqlJdbcUrl: String = ""
+
+  def getMysqlUsername: String = ""
+
+  def getMysqlPassword: String = ""
+
+  def getDriverClassName: String = ""
+
   protected lazy val spark: SparkSession = {
-    val metastore = {
-      val path = Utils.createTempDir(prefix = "hms")
-      Files.deleteIfExists(path)
-      path
-    }
-    val ret = SparkSession.builder()
+    val sessionBuilder = SparkSession.builder()
       .master("local")
       .config("spark.ui.enabled", "false")
-      .config("javax.jdo.option.ConnectionURL", s"jdbc:derby:;databaseName=$metastore;create=true")
       .config("spark.sql.catalogImplementation", catalogImpl)
       .config(
         "spark.sql.warehouse.dir",
@@ -57,7 +61,19 @@ trait SparkSessionProvider {
       .config("spark.sql.extensions", sqlExtensions)
       .withExtensions(extension)
       .config(extraSparkConf)
-      .getOrCreate()
+
+    if (!useMysqlEnv) {
+      val metastore = {
+        val path = Utils.createTempDir(prefix = "hms")
+        Files.deleteIfExists(path)
+        path
+      }
+      sessionBuilder.config(
+        "javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastore;create=true")
+    }
+
+    val ret = sessionBuilder.getOrCreate()
     if (catalogImpl == "hive") {
       // Ensure HiveExternalCatalog.client.userName is defaultTableOwner
       UserGroupInformation.createRemoteUser(defaultTableOwner).doAs(
