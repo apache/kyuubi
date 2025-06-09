@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
+import org.apache.spark.internal.Logging
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
@@ -33,7 +34,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 case class AccessRequest private (accessType: AccessType) extends RangerAccessRequestImpl
 
-object AccessRequest {
+object AccessRequest extends Logging {
   def apply(
       resource: AccessResource,
       user: UserGroupInformation,
@@ -69,39 +70,43 @@ object AccessRequest {
     req
   }
 
-  private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] = {
-    try {
-      Some(DynMethods.builder("getRolesFromUserAndGroups")
-        .hiddenImpl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
-        .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
-        .buildChecked)
-    } catch {
-      case _: Exception => None
-    }
-  }
+  private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] =
+    getMethod(
+      SparkRangerAdminPlugin.getClass,
+      "getRolesFromUserAndGroups",
+      classOf[String],
+      classOf[JSet[String]])
 
-  private val setUserRolesMethod: Option[UnboundMethod] = {
-    try {
-      Some(DynMethods.builder("setUserRoles")
-        .hiddenImpl(classOf[AccessRequest], classOf[JSet[String]])
-        .impl(classOf[AccessRequest], classOf[JSet[String]])
-        .buildChecked)
-    } catch {
-      case _: Exception => None
-    }
-  }
+  private val setUserRolesMethod: Option[UnboundMethod] =
+    getMethod(classOf[AccessRequest], "setUserRoles", classOf[JSet[String]])
 
   private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {
     user.getGroupNames.toSet.asJava
   }
 
-  private lazy val userGroupMappingOpt: Option[JHashMap[String, JSet[String]]] = {
+  private lazy val getUserStoreEnricherMethod: Option[UnboundMethod] =
+    getMethod(SparkRangerAdminPlugin.getClass, "getUserStoreEnricher")
+
+  private lazy val getRangerUserStoreMethod: Option[UnboundMethod] =
+    getMethod(
+      Class.forName("org.apache.ranger.plugin.contextenricher.RangerUserStoreEnricher"),
+      "getRangerUserStore")
+
+  private lazy val getUserGroupMappingMethod: Option[UnboundMethod] =
+    getMethod(
+      Class.forName("org.apache.ranger.plugin.util.RangerUserStore"),
+      "getUserGroupMapping")
+
+  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     try {
-      val storeEnricher = invokeAs[AnyRef](SparkRangerAdminPlugin, "getUserStoreEnricher")
-      val userStore = invokeAs[AnyRef](storeEnricher, "getRangerUserStore")
-      val userGroupMapping =
-        invokeAs[JHashMap[String, JSet[String]]](userStore, "getUserGroupMapping")
-      Some(userGroupMapping)
+      getUserStoreEnricherMethod.zip(getRangerUserStoreMethod)
+        .zip(getUserGroupMappingMethod).map {
+          case ((getEnricher, getUserStore), getMapping) =>
+            val enricher = getEnricher.invoke[AnyRef](SparkRangerAdminPlugin)
+            val userStore = getUserStore.invoke[AnyRef](enricher)
+            val userGroupMapping = getMapping.invoke[JHashMap[String, JSet[String]]](userStore)
+            userGroupMapping.get(user.getShortUserName)
+        }.headOption
     } catch {
       case _: NoSuchMethodException =>
         None
@@ -110,11 +115,28 @@ object AccessRequest {
 
   private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
-      userGroupMappingOpt.map(_.get(user.getShortUserName))
+      getUserGroupsFromUserStore(user)
         .getOrElse(getUserGroupsFromUgi(user))
     } else {
       getUserGroupsFromUgi(user)
     }
   }
 
+  private def getMethod(
+      clz: Class[_],
+      methodName: String,
+      argClasses: Class[_]*): Option[UnboundMethod] = {
+    try {
+      Some(DynMethods.builder(methodName)
+        .hiddenImpl(clz, argClasses: _*)
+        .impl(clz, argClasses: _*)
+        .buildChecked)
+    } catch {
+      case e: Exception =>
+        logWarning(
+          s"$clz does not have $methodName${argClasses.map(_.getName).mkString("(", ", ", ")")}",
+          e)
+        None
+    }
+  }
 }
