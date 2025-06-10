@@ -415,7 +415,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     val minEndTime = System.currentTimeMillis() - maxAge
     val query = s"DELETE FROM $METADATA_TABLE WHERE state IN ($terminalStates) AND end_time < ?"
     JdbcUtils.withConnection { connection =>
-      execute(connection, query, minEndTime)
+      withUpdateCount(connection, query, minEndTime) { count =>
+        info(s"Cleaned up $count records older than $maxAge ms from $METADATA_TABLE.")
+      }
     }
   }
 
@@ -465,7 +467,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     val minUpdateTime = System.currentTimeMillis() - maxAge
     val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE update_time < ?"
     JdbcUtils.withConnection { connection =>
-      execute(connection, query, minUpdateTime)
+      withUpdateCount(connection, query, minUpdateTime) { count =>
+        info(s"Cleaned up $count records older than $maxAge ms from $KUBERNETES_ENGINE_INFO_TABLE.")
+      }
     }
   }
 
