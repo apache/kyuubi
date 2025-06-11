@@ -362,7 +362,18 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           isOperationTerminated ||
           isApplicationTerminated ||
           metadata.kyuubiInstance == fe.connectionUrl) {
-          MetadataManager.buildBatch(metadata)
+          if (isApplicationTerminated) {
+            buildBatch(
+              metadata,
+              Some(ApplicationInfo(
+                metadata.engineId,
+                metadata.engineName,
+                metadata.appState.orNull,
+                Option(metadata.engineUrl),
+                metadata.engineError)))
+          } else {
+            MetadataManager.buildBatch(metadata)
+          }
         } else {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
