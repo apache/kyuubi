@@ -362,7 +362,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           isOperationTerminated ||
           isApplicationTerminated ||
           metadata.kyuubiInstance == fe.connectionUrl) {
-          if (isApplicationTerminated) {
+          if (isApplicationTerminated && !isOperationTerminated) {
             buildBatch(
               metadata,
               Some(ApplicationInfo(
