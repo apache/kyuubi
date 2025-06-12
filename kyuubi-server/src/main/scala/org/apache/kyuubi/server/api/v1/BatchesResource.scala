@@ -91,7 +91,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  private def buildBatch(session: KyuubiBatchSession): Batch = {
+  private def buildBatchFromSession(session: KyuubiBatchSession): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
 
@@ -125,7 +125,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       Map.empty[String, String].asJava)
   }
 
-  private def buildBatch(
+  private def buildBatchFromMetadataAndAppInfo(
       metadata: Metadata,
       batchAppStatus: Option[ApplicationInfo]): Batch = {
     batchAppStatus.map { appStatus =>
@@ -316,7 +316,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } match {
           case Success(sessionHandle) =>
             sessionManager.getBatchSession(sessionHandle) match {
-              case Some(batchSession) => buildBatch(batchSession)
+              case Some(batchSession) => buildBatchFromSession(batchSession)
               case None => throw new IllegalStateException(
                   s"can not find batch $batchId from metadata store")
             }
@@ -349,7 +349,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-      buildBatch(batchSession)
+      buildBatchFromSession(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
         val isOperationTerminated = (StringUtils.isNotBlank(metadata.state)
@@ -363,7 +363,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
           isApplicationTerminated ||
           metadata.kyuubiInstance == fe.connectionUrl) {
           if (isApplicationTerminated && !isOperationTerminated) {
-            buildBatch(
+            buildBatchFromMetadataAndAppInfo(
               metadata,
               Some(ApplicationInfo(
                 metadata.engineId,
@@ -398,7 +398,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                   engineState = appInfo.state.toString,
                   engineError = appInfo.error))
               }
-              buildBatch(metadata, batchAppStatus)
+              buildBatchFromMetadataAndAppInfo(metadata, batchAppStatus)
           }
         }
       }.getOrElse {
