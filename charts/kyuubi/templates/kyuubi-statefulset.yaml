@@ -40,6 +40,9 @@ spec:
       annotations:
         checksum/conf: {{ include (print $.Template.BasePath "/kyuubi-configmap.yaml") . | sha256sum }}
         checksum/conf-hadoop: {{ include (print $.Template.BasePath "/kyuubi-hadoop-configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}

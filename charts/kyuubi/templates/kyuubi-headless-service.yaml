@@ -21,6 +21,10 @@ metadata:
   name: {{ .Release.Name }}-headless
   labels:
     {{- include "kyuubi.labels" $ | nindent 4 }}
+  {{- with .Values.service.headless.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   type: ClusterIP
   clusterIP: None
