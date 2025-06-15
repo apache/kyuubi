@@ -24,8 +24,8 @@ import scala.util.Try
 import org.apache.spark.sql.Row
 import org.scalatest.Outcome
 
-// scalastyle:off
 import org.apache.kyuubi.Utils
+// scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -39,11 +39,12 @@ import org.apache.kyuubi.util.AssertionUtils._
  */
 @IcebergTest
 class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
-  override protected val catalogImpl: String = "hive"
+  override protected val useMysqlEnv: Boolean = true
+  override protected val catalogImpl: String = "in-memory"
   override protected val sqlExtensions: String =
     "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions"
 
-  val catalogV2 = "local"
+  val catalogV2 = "jdbc_catalog"
   val namespace1 = icebergNamespace
   val table1 = "table1"
   val outputTable1 = "outputTable1"
@@ -55,15 +56,19 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2",
       "org.apache.iceberg.spark.SparkCatalog")
-    spark.conf.set(s"spark.sql.catalog.$catalogV2.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$catalogV2.type",
+      "jdbc")
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.uri", getMysqlJdbcUrl)
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.jdbc.user", getMysqlUsername)
+    spark.conf.set(s"spark.sql.catalog.$catalogV2.jdbc.password", getMysqlPassword)
     spark.conf.set(
       s"spark.sql.catalog.$catalogV2.warehouse",
       Utils.createTempDir("iceberg-hadoop").toString)
-
-    super.beforeAll()
 
     doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
     doAs(
@@ -586,4 +591,102 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(admin, sql(dropTagSql))
     }
   }
+
+  test("RENAME TABLE for Iceberg") {
+    val table = "tablex"
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs(
+        admin,
+        sql(
+          s"CREATE TABLE $catalogV2.$namespace1.$table" +
+            s"(id int NOT NULL, name string, city string) USING iceberg"))
+      val renameSql = s"alter table $catalogV2.$namespace1.$table " +
+        s"rename to $namespace1.new_table"
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(renameSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(renameSql))
+    }
+  }
+
+  test("ALTER TABLE CHANGE PROPERTIES for Iceberg") {
+    val table = "tablex"
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
+      doAs(
+        admin,
+        sql(
+          s"CREATE TABLE $catalogV2.$namespace1.$table" +
+            s"(id int NOT NULL, name string, city string) USING iceberg"))
+      val alterTableSetPropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |SET TBLPROPERTIES (
+           | 'read.split.target-size' = '123456'
+           |)
+           |""".stripMargin
+      val alterTableUnsetPropertiesSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |UNSET TBLPROPERTIES (
+           | 'read.split.target-size'
+           | )
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableSetPropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableSetPropertiesSql))
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableUnsetPropertiesSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableUnsetPropertiesSql))
+    }
+  }
+
+  test("ALTER TABLE CHANGE COLUMN for Iceberg") {
+    val table = "tablex"
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
+      doAs(
+        admin,
+        sql(
+          s"CREATE TABLE $catalogV2.$namespace1.$table" +
+            s"(id int NOT NULL, name string, city string) USING iceberg"))
+      val alterTableAddColumnSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |ADD COLUMN country int;
+           |""".stripMargin
+      val alterTableRenameColumnSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |RENAME COLUMN country to country_code;
+           |""".stripMargin
+      val alterTableAlterColumnSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |ALTER COLUMN country_code type bigint;
+           |""".stripMargin
+      val alterTableDropColumnSql =
+        s"""
+           |ALTER TABLE $catalogV2.$namespace1.$table
+           |DROP COLUMN country_code;
+           |""".stripMargin
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableAddColumnSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableAddColumnSql))
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableRenameColumnSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableRenameColumnSql))
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableAlterColumnSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableAlterColumnSql))
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(alterTableDropColumnSql))
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
+      doAs(admin, sql(alterTableDropColumnSql))
+    }
+  }
+
 }
