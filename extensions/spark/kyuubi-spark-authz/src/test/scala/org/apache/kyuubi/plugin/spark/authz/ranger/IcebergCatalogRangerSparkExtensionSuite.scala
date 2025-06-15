@@ -604,14 +604,14 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         s"rename to $namespace1.new_table"
       interceptEndsWith[AccessControlException] {
         doAs(someone, sql(renameSql))
-      }(s"does not have [alter] privilege on [$namespace1/partitioned_table]")
+      }(s"does not have [alter] privilege on [$namespace1/tablex]")
       doAs(admin, sql(renameSql))
     }
   }
 
   test("ALTER TABLE CHANGE PROPERTIES for Iceberg") {
     val table = "tablex"
-    withCleanTmpResources(Seq((table, "table"))) {
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
       doAs(
         admin,
         sql(
@@ -644,7 +644,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
   test("ALTER TABLE CHANGE COLUMN for Iceberg") {
     val table = "tablex"
-    withCleanTmpResources(Seq((table, "table"))) {
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
       doAs(
         admin,
         sql(
