@@ -77,7 +77,29 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
-    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
+    kubernetesClients.computeIfAbsent(
+      kubernetesInfo,
+      kInfo => {
+        val kubernetesClient = buildKubernetesClient(kInfo)
+        val existingPods =
+          kubernetesClient.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY).list().getItems
+        info(s"[$kInfo] Found ${existingPods.size()} existing pods with label " +
+          s"$LABEL_KYUUBI_UNIQUE_KEY")
+        val eventType = KubernetesResourceEventTypes.UPDATE
+        existingPods.asScala.foreach { pod =>
+          val appState = toApplicationState(pod, appStateSource, appStateContainer, eventType)
+          if (isTerminated(appState)) {
+            val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
+            info(s"[$kInfo] Found existing pod ${pod.getMetadata.getName} with " +
+              s"${toLabel(kyuubiUniqueKey)} in app state $appState, marking it as terminated")
+            if (appInfoStore.get(kyuubiUniqueKey) == null) {
+              updateApplicationState(kubernetesInfo, pod, eventType)
+            }
+            markApplicationTerminated(kubernetesInfo, pod, eventType)
+          }
+        }
+        kubernetesClient
+      })
   }
 
   private var metadataManager: Option[MetadataManager] = _
