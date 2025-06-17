@@ -23,7 +23,7 @@ metadata:
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
     {{- if .Values.metrics.podMonitor.labels }}
-    {{- toYaml .Values.metrics.podMonitor.labels | nindent 4 }}
+      {{- toYaml .Values.metrics.podMonitor.labels | nindent 4 }}
     {{- end }}
 spec:
   selector:
