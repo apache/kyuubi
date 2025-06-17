@@ -27,6 +27,9 @@ replicaCount: 2
 # The default policy is `OrderedReady`, alternative policy is `Parallel`.
 podManagementPolicy: OrderedReady
 
+# Optional additional annotations to add to Kyuubi server pods
+podAnnotations: {}
+
 # Minimum number of seconds for which a newly created kyuubi server
 # should be ready without any of its container crashing for it to be considered available.
 minReadySeconds: 30
@@ -75,6 +78,12 @@ rbac:
     - apiGroups: [""]
       resources: ["pods"]
       verbs: ["create", "list", "delete"]
+
+service:
+  # configuration of the headless service
+  headless:
+    # Optional additional annotations to add to the headless service
+    annotations: {}
 
 server:
   # Thrift Binary protocol (HiveServer2 compatible)
