@@ -52,6 +52,15 @@ class HiveQuerySuite extends KyuubiHiveTest {
     finally spark.sql(s"DROP TABLE $table")
   }
 
+  def withTempPushFilterPartitionedTable(
+      spark: SparkSession,
+      table: String,
+      createTableSql: String)(f: => Unit): Unit = {
+    spark.sql(createTableSql).collect()
+    try f
+    finally spark.sql(s"DROP TABLE $table")
+  }
+
   def checkQueryResult(
       sql: String,
       sparkSession: SparkSession,
@@ -257,6 +266,90 @@ class HiveQuerySuite extends KyuubiHiveTest {
            |""".stripMargin).collect()
 
       checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "08")))
+    }
+  }
+
+  test("ORC filter pushdown") {
+    var table = "hive.default.orc_filter_pushdown"
+    withTempPushFilterPartitionedTable(
+      spark,
+      table,
+      s"""
+        CREATE TABLE $table (
+          id INT,
+          data STRING,
+          value INT
+        ) PARTITIONED BY (dt STRING, region STRING)
+       STORED AS ORC
+      """) {
+
+      // Insert test data with partitions
+      spark.sql(s"""
+        INSERT INTO $table PARTITION (dt='2024-01-01', region='east')
+        VALUES (1, 'a', 100), (2, 'b', 200), (11, 'aa', 100), (22, 'b', 200)
+      """)
+      spark.sql(s"""
+        INSERT INTO $table PARTITION (dt='2024-01-01', region='west')
+        VALUES (3, 'c', 300), (4, 'd', 400), (33, 'cc', 300), (44, 'dd', 400)
+      """)
+      spark.sql(s"""
+        INSERT INTO $table PARTITION (dt='2024-01-02', region='east')
+        VALUES (5, 'e', 500), (6, 'f', 600), (55, 'ee', 500), (66, 'ff', 600)
+      """)
+
+      // Test multiple partition filters
+      val df1 = spark.sql(s"""
+        SELECT * FROM $table
+        WHERE dt = '2024-01-01' AND region = 'east' AND value > 1500
+      """)
+      assert(df1.count() === 0)
+
+      // Test multiple partition filters
+      val df2 = spark.sql(s"""
+        SELECT * FROM $table
+        WHERE dt = '2024-01-01' AND region = 'east' AND value > 150
+      """)
+      assert(df2.count() === 2)
+      assert(df2.collect().map(_.getInt(0)).toSet === Set(2, 22))
+
+      // Test explain
+      val df3 = spark.sql(s"""
+       EXPLAIN SELECT count(*) as total_rows
+        FROM $table
+        WHERE dt = '2024-01-01' AND region = 'east' AND value > 1
+      """)
+      assert(df3.count() === 1)
+      // contains like : PushedFilters: [IsNotNull(value), GreaterThan(value,1)]
+      assert(df3.collect().map(_.getString(0))
+        .map(s => s.contains("PushedFilters") && !s.contains("PushedFilters: []")).toSet.size > 0)
+
+      // Test aggregation pushdown partition filters
+      spark.conf.set("spark.sql.orc.aggregatePushdown", true)
+
+      // Test aggregation pushdown partition filters
+      val df4 = spark.sql(s"""
+        SELECT count(*) as total_rows
+        FROM $table
+        WHERE dt = '2024-01-01' AND region = 'east'
+        group by dt, region
+      """)
+      assert(df4.count() === 1)
+      assert(df4.collect().map(_.getLong(0)).toSet === Set(4L))
+
+      val df5 = spark.sql(s"""
+        EXPLAIN SELECT count(*) as total_rows
+        FROM $table
+        WHERE dt = '2024-01-01' AND region = 'east'
+        group by dt, region
+      """)
+      assert(df5.count() === 1)
+      // contains like :  PushedAggregation: [COUNT(*)],
+      assert(df3.collect().map(_.getString(0))
+        .map(s =>
+          s.contains("PushedAggregation") && !s.contains("PushedAggregation: []")).toSet.size > 0)
+
+      spark.conf.set("spark.sql.orc.aggregatePushdown", false)
+
     }
   }
 
