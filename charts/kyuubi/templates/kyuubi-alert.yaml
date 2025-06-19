@@ -22,6 +22,9 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
+    {{- if .Values.metrics.prometheusRule.labels }}
+      {{- toYaml .Values.metrics.prometheusRule.labels | nindent 4 }}
+    {{- end }}
 spec:
   groups:
     {{- toYaml .Values.metrics.prometheusRule.groups | nindent 4 }}
