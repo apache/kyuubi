@@ -508,14 +508,17 @@ class Cursor(common.DBAPICursor):
         _check_status(response)
         schema = self.description
         assert not response.results.rows, 'expected data in columnar format'
-        columns = [_unwrap_column(col, col_schema[1]) for col, col_schema in
-                   zip(response.results.columns, schema)]
-        new_data = list(zip(*columns))
-        self._data += new_data
+        has_new_data = False
+        if response.results.columns:
+            columns = [_unwrap_column(col, col_schema[1]) for col, col_schema in
+                       zip(response.results.columns, schema)]
+            new_data = list(zip(*columns))
+            self._data += new_data
+            has_new_data = (True if new_data else False)
         # response.hasMoreRows seems to always be False, so we instead check the number of rows
         # https://github.com/apache/hive/blob/release-1.2.1/service/src/java/org/apache/hive/service/cli/thrift/ThriftCLIService.java#L678
         # if not response.hasMoreRows:
-        if not new_data:
+        if not has_new_data:
             self._state = self._STATE_FINISHED
 
     def poll(self, get_progress_update=True):
