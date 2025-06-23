@@ -346,3 +346,5 @@ metrics:
     enabled: false
     # Content of Prometheus rule file
     groups: []
+    # Additional labels to be used to make PrometheusRule discovered by Prometheus
+    labels: {}
