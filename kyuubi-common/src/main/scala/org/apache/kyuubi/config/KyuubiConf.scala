@@ -193,15 +193,15 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
-  private lazy val serverOnlyPrefixes = get(KyuubiConf.SERVER_ONLY_PREFIXES)
-  private lazy val serverOnlyPrefixConfigKeys = settings.keys().asScala
+  private lazy val serverOnlyPrefixes: Set[String] = get(KyuubiConf.SERVER_ONLY_PREFIXES)
+  private lazy val serverOnlyPrefixConfigKeys: Set[String] = settings.keys().asScala
     // for ConfigEntry, respect the serverOnly flag and exclude it here
     .filter(key => getConfigEntry(key) == null)
     .filter { key =>
       serverOnlyPrefixes.exists { prefix =>
         key.startsWith(prefix)
       }
-    }
+    }.toSet
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
