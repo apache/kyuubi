@@ -320,18 +320,58 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        createBatchSession(
-          metadata.username,
-          "anonymous",
-          metadata.ipAddress,
-          metadata.requestConf,
-          metadata.engineType,
-          Option(metadata.requestName),
-          metadata.resource,
-          metadata.className,
-          metadata.requestArgs,
-          Some(metadata),
-          fromRecovery = true)
+        createBatchSessionFromRecovery(metadata)
+      }).getOrElse(Seq.empty)
+    }
+  }
+
+  def getSpecificBatchSessionsToRecover(
+      batchIds: Seq[String],
+      kyuubiInstance: String): Seq[KyuubiBatchSession] = {
+    val batchStatesToRecovery = Set(OperationState.PENDING, OperationState.RUNNING)
+    batchIds.flatMap { batchId =>
+      getBatchSession(SessionHandle.fromUUID(batchId)) match {
+        case Some(_) =>
+          warn(s"Batch session $batchId is already active, skipping recovery.")
+          None
+        case None =>
+          getBatchMetadata(batchId)
+            .filter(m =>
+              m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
+            .flatMap { metadata => Some(createBatchSessionFromRecovery(metadata)) }
+      }
+    }
+  }
+
+  private def createBatchSessionFromRecovery(metadata: Metadata): KyuubiBatchSession = {
+    createBatchSession(
+      metadata.username,
+      "anonymous",
+      metadata.ipAddress,
+      metadata.requestConf,
+      metadata.engineType,
+      Option(metadata.requestName),
+      metadata.resource,
+      metadata.className,
+      metadata.requestArgs,
+      Some(metadata),
+      fromRecovery = true)
+  }
+
+  def reassignBatchSessions(
+      kyuubiInstance: String,
+      newKyuubiInstance: String): Seq[String] = {
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
+      metadataManager.map(_.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue).map { metadata =>
+        updateMetadata(Metadata(
+          identifier = metadata.identifier,
+          kyuubiInstance = newKyuubiInstance))
+        info(s"Reassign batch ${metadata.identifier} from $kyuubiInstance to $newKyuubiInstance")
+        metadata.identifier
       }).getOrElse(Seq.empty)
     }
   }

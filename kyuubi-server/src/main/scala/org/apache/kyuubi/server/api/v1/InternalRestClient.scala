@@ -20,8 +20,9 @@ package org.apache.kyuubi.server.api.v1
 import java.util.Base64
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
-import org.apache.kyuubi.client.{BatchRestApi, KyuubiRestClient}
+import org.apache.kyuubi.client.{BaseRestApi, BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, CloseBatchResponse, OperationLog}
 import org.apache.kyuubi.client.auth.AuthHeaderGenerator
 import org.apache.kyuubi.server.http.authentication.AuthSchemes
@@ -53,6 +54,9 @@ class InternalRestClient(
   }
 
   private val internalBatchRestApi = new BatchRestApi(initKyuubiRestClient())
+  private val internalBaseRestApi = new BaseRestApi(initKyuubiRestClient())
+
+  def pingAble(): Boolean = Try(internalBaseRestApi.ping()).isSuccess
 
   def getBatch(user: String, clientIp: String, batchId: String): Batch = {
     withAuthUser(user) {

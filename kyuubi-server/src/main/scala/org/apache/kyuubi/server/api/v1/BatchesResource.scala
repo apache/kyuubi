@@ -575,6 +575,42 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ReassignBatchResponse]))),
+    description =
+      "Reassign batch sessions on an unreachable kyuubi instance to the current kyuubi instance")
+  @POST
+  @Path("/reassign")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def reassignBatchSessions(request: ReassignBatchRequest): ReassignBatchResponse = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    val kyuubiInstance = request.getKyuubiInstance
+    val newKyuubiInstance = fe.connectionUrl
+    info(s"Received reassign $kyuubiInstance batch sessions request from $userName/$ipAddress")
+    if (!fe.isAdministrator(userName)) {
+      throw new ForbiddenException(s"$userName is not allowed to reassign the batches")
+    }
+    if (kyuubiInstance == newKyuubiInstance) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+    }
+    val internalRestClient = getInternalRestClient(kyuubiInstance)
+    if (!Utils.isTesting && internalRestClient.pingAble()) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+    }
+    try {
+      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, newKyuubiInstance)
+      val recoveredBatchIds = fe.recoverBatchSessionsFromReassign(batchIds)
+      new ReassignBatchResponse(recoveredBatchIds.asJava, kyuubiInstance, newKyuubiInstance)
+    } catch {
+      case e: Exception =>
+        throw new Exception(s"Error reassign batches from $kyuubiInstance to $newKyuubiInstance", e)
+    }
+  }
+
   private def handleUploadingFiles(
       batchId: String,
       request: BatchRequest,
