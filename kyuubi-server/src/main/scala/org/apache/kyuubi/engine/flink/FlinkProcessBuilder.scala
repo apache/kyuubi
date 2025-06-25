@@ -229,18 +229,15 @@ class FlinkProcessBuilder(
         val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
         extraCp.foreach(classpathEntries.add)
 
-        val flinkLibDir = Paths.get(flinkHome)
+        val hasHadoopJar = Paths.get(flinkHome)
           .resolve("lib")
           .toFile
-
-        val hadoopJars = Option(flinkLibDir.listFiles(new FilenameFilter {
-          override def accept(dir: File, name: String): Boolean = {
-            name.toLowerCase.contains("hadoop") ||
-            name.toLowerCase.contains("flink-shaded-hadoop")
-          }
-        })).getOrElse(Array.empty)
-
-        val hasHadoopJar = hadoopJars.nonEmpty
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              name.startsWith("hadoop-client") ||
+              name.startsWith("flink-shaded-hadoop")
+            }
+          }).nonEmpty
 
         if (!hasHadoopJar && hadoopCp.isEmpty && extraCp.isEmpty) {
           warn(s"The conf of ${FLINK_HADOOP_CLASSPATH_KEY} and " +
