@@ -239,9 +239,13 @@ class FlinkProcessBuilder(
             }
           }).nonEmpty
 
+        if (!hasHadoopJar) {
+          hadoopCp.foreach(classpathEntries.add)
+        }
+
         if (!hasHadoopJar && hadoopCp.isEmpty && extraCp.isEmpty) {
-          warn(s"The conf of ${FLINK_HADOOP_CLASSPATH_KEY} and " +
-            s"${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty.")
+          warn(s"No Hadoop jar detected, and the conf of ${FLINK_HADOOP_CLASSPATH_KEY} " +
+            s"and ${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty.")
           debug("Detected development environment.")
           mainResource.foreach { path =>
             val devHadoopJars = Paths.get(path).getParent
