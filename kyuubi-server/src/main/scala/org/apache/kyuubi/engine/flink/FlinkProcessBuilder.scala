@@ -244,17 +244,20 @@ class FlinkProcessBuilder(
         }
 
         if (!hasHadoopJar && hadoopCp.isEmpty && extraCp.isEmpty) {
-          warn(s"No Hadoop jar detected, and the conf of ${FLINK_HADOOP_CLASSPATH_KEY} " +
-            s"and ${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty.")
+          warn(s"No Hadoop client jars found in $flinkHome/lib, and the conf of " +
+            s"$FLINK_HADOOP_CLASSPATH_KEY and ${ENGINE_FLINK_EXTRA_CLASSPATH.key} is empty.")
           debug("Detected development environment.")
           mainResource.foreach { path =>
             val devHadoopJars = Paths.get(path).getParent
               .resolve(s"scala-$SCALA_COMPILE_VERSION")
               .resolve("jars")
             if (!Files.exists(devHadoopJars)) {
-              throw new KyuubiException(s"The path $devHadoopJars does not exists. " +
-                s"Please set ${FLINK_HADOOP_CLASSPATH_KEY} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key}" +
-                s" for configuring location of hadoop client jars, etc.")
+              throw new KyuubiException(
+                s"The path $devHadoopJars does not exist. Please set " +
+                  s"${FLINK_HADOOP_CLASSPATH_KEY} or ${ENGINE_FLINK_EXTRA_CLASSPATH.key} " +
+                  s"to configure the location of Hadoop client jars. Alternatively," +
+                  s"you can place the required hadoop-client or flink-shaded-hadoop jars " +
+                  s"directly into the Flink lib directory: $flinkHome/lib.")
             }
             classpathEntries.add(s"$devHadoopJars${File.separator}*")
           }
