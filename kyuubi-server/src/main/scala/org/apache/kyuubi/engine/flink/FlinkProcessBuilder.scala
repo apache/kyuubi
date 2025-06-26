@@ -225,7 +225,6 @@ class FlinkProcessBuilder(
         env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
         env.get("HIVE_CONF_DIR").foreach(classpathEntries.add)
         val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH_KEY)
-        hadoopCp.foreach(classpathEntries.add)
         val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
         extraCp.foreach(classpathEntries.add)
 
