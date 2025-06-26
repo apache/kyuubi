@@ -107,7 +107,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
               if (appInfoStore.get(kyuubiUniqueKey) == null) {
                 updateApplicationState(kubernetesInfo, pod, eventType)
               }
-              markApplicationTerminated(kubernetesInfo, pod, eventType)
+              markApplicationTerminated(pod, eventType)
             }
           }
         }
