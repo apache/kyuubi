@@ -79,7 +79,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = processBuilder1.getError
       assert(
-        error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:"))
+        error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:") ||
+          error1.getMessage.contains("Unable to instantiate " +
+            "org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient"))
     }
   }
 
