@@ -219,7 +219,11 @@ $ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUUBI_HOME/conf/kyuubi
 
 #### Required Environment Variable
 
-The `FLINK_HADOOP_CLASSPATH` is required, too.
+The `FLINK_HADOOP_CLASSPATH` is required unless the necessary Hadoop client jars (such as `hadoop-client` or
+`flink-shaded-hadoop`) have already been placed in the Flink lib directory (`$FLINK_HOME/lib`).
+
+If the jars are not present in `$FLINK_HOME/lib`, you must set `FLINK_HADOOP_CLASSPATH` to include the appropriate
+Hadoop client jars.
 
 For users who are using Hadoop 3.x, Hadoop shaded client is recommended instead of Hadoop vanilla jars.
 For users who are using Hadoop 2.x, `FLINK_HADOOP_CLASSPATH` should be set to hadoop classpath to use Hadoop
