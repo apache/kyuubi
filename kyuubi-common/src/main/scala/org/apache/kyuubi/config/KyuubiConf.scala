@@ -2212,6 +2212,33 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_TIMEOUT_EXECUTOR_TYPE: ConfigEntry[String] =
+    buildConf("kyuubi.operation.timeout.executor.type")
+      .doc("The type of timeout executor to use for operation timeout management. " +
+        "Use 'thread-pool' for a shared thread pool or 'per-operation' to create a new thread " +
+        "for each operation.")
+      .version("1.11.0")
+      .stringConf
+      .checkValues(Set("thread-pool", "per-operation"))
+      .createWithDefault("per-operation")
+
+  val OPERATION_TIMEOUT_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.timeout.pool.size")
+      .doc("The number of threads in the shared timeout executor pool. " +
+        "This is only used when 'kyuubi.operation.timeout.executor.type' is 'thread-pool'.")
+      .version("1.11.0")
+      .intConf
+      .createWithDefault(8)
+
+  val OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.timeout.pool.keepalive.time")
+      .doc("The keep-alive time in milliseconds for idle threads in the shared timeout " +
+        "executor pool. This is only used when 'kyuubi.operation.timeout.executor.type' " +
+        "is 'thread-pool'.")
+      .version("1.11.0")
+      .longConf
+      .createWithDefault(60000L)
+
   val OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.query.timeout.monitor.enabled")
       .doc("Whether to monitor timeout query timeout check on server side.")
