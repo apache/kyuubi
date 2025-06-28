@@ -26,6 +26,8 @@
 *.swp
 *~
 .DS_Store
+.bloop/
+.metals/
 .cache
 .classpath
 .ensime
