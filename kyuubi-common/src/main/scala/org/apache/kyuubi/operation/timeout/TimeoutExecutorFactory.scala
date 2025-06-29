@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation.timeout
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -60,6 +62,22 @@ object TimeoutExecutorFactory extends Logging {
   def shutdown(): Unit = {
     if (threadPoolExecutor != null && !threadPoolExecutor.isShutdown) {
       threadPoolExecutor.shutdown()
+    }
+  }
+
+  /**
+   * Reset the factory state. This is mainly for testing purposes.
+   * Should only be called when no operations are using the executors.
+   */
+  @VisibleForTesting
+  private[kyuubi] def reset(): Unit = {
+    synchronized {
+      if (threadPoolExecutor != null) {
+        if (!threadPoolExecutor.isShutdown) {
+          threadPoolExecutor.shutdown()
+        }
+        threadPoolExecutor = null
+      }
     }
   }
 }
