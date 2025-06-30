@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchT
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
+import org.apache.spark.sql.execution.datasources.v2.orc.OrcScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -356,7 +357,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     orcProps.put(TableCatalog.PROP_PROVIDER, "orc")
     val ot = catalog.createTable(orc_table, schema, Array.empty[Transform], orcProps)
     val orcScan = ot.asInstanceOf[HiveTable]
-      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[OrcScan]
     assert(orcScan.isSplitable(new Path("empty")))
   }
 }
