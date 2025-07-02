@@ -32,7 +32,7 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <ranger.version>2.5.0</ranger.version>
+        <ranger.version>2.6.0</ranger.version>
         <jersey.client.version>1.19.4</jersey.client.version>
     </properties>
 
