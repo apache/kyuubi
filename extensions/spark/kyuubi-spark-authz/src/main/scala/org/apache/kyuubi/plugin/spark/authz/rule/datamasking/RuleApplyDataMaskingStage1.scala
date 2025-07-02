@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.datamasking
 
+import org.apache.spark.authz.AuthzConf.dataMaskingEnabled
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.NamedExpression
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
@@ -33,25 +34,28 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
 case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-
-    plan match {
-      case marker0: DataMaskingStage0Marker => marker0
-      case marker1: DataMaskingStage1Marker => marker1
-      case cmd if isKnownTableCommand(cmd) =>
-        val tableCommandSpec = getTableCommandSpec(cmd)
-        val queries = tableCommandSpec.queries(cmd)
-        cmd.mapChildren {
-          case marker0: DataMaskingStage0Marker => marker0
-          case marker1: DataMaskingStage1Marker => marker1
-          case query if queries.contains(query) && query.resolved =>
-            applyDataMasking(query)
-          case o => o
-        }
-      case cmd: Command if cmd.childrenResolved =>
-        cmd.mapChildren(applyDataMasking)
-      case cmd: Command => cmd
-      case other if other.resolved => applyDataMasking(other)
-      case other => other
+    if (!dataMaskingEnabled(conf)) {
+      plan
+    } else {
+      plan match {
+        case marker0: DataMaskingStage0Marker => marker0
+        case marker1: DataMaskingStage1Marker => marker1
+        case cmd if isKnownTableCommand(cmd) =>
+          val tableCommandSpec = getTableCommandSpec(cmd)
+          val queries = tableCommandSpec.queries(cmd)
+          cmd.mapChildren {
+            case marker0: DataMaskingStage0Marker => marker0
+            case marker1: DataMaskingStage1Marker => marker1
+            case query if queries.contains(query) && query.resolved =>
+              applyDataMasking(query)
+            case o => o
+          }
+        case cmd: Command if cmd.childrenResolved =>
+          cmd.mapChildren(applyDataMasking)
+        case cmd: Command => cmd
+        case other if other.resolved => applyDataMasking(other)
+        case other => other
+      }
     }
   }
 
