@@ -197,5 +197,17 @@ public class UtilsTest {
     assertEquals("--comments\n" + "select --? \n", splitSql.get(0));
     assertEquals(" from ", splitSql.get(1));
     assertEquals("", splitSql.get(2));
+
+    String inIdentifierQuoted =
+        "SELECT "
+            + "regexp_replace(col2, '\\n|\\r|\\t', '') as col2, "
+            + "`(col2|col2)?+.+` "
+            + "FROM ?";
+    splitSql = Utils.splitSqlStatement(inIdentifierQuoted);
+    assertEquals(2, splitSql.size());
+    assertEquals(
+        "SELECT regexp_replace(col2, '\\n|\\r|\\t', '') as col2, `(col2|col2)?+.+` FROM ",
+        splitSql.get(0));
+    assertEquals("", splitSql.get(1));
   }
 }
