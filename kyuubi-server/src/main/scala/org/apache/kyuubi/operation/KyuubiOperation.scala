@@ -147,6 +147,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
         }
       }
     }
+    // Clean up timeout monitor when operation is cancelled
+    shutdownTimeoutMonitor()
   }
 
   override def close(): Unit = withLockRequired {
@@ -162,6 +164,8 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
         }
       }
     }
+    // Clean up timeout monitor to prevent memory leaks
+    shutdownTimeoutMonitor()
     try {
       // For launch engine operation, we use OperationLog to pass engine submit log but
       // at that time we do not have remoteOpHandle

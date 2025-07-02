@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
+import org.apache.kyuubi.operation.timeout.ThreadPoolTimeoutExecutor
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.ThreadUtils
@@ -301,6 +302,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
     ThreadUtils.shutdown(timeoutChecker, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
     ThreadUtils.shutdown(execPool, Duration(shutdownTimeout, TimeUnit.MILLISECONDS))
+    ThreadPoolTimeoutExecutor.shutdown()
   }
 
   private def startTimeoutChecker(): Unit = {

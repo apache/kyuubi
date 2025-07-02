@@ -18,7 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.io.IOException
-import java.util.concurrent.{Future, ScheduledExecutorService, TimeUnit}
+import java.util.concurrent.{Future, ScheduledFuture}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
@@ -30,9 +30,9 @@ import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.operation.timeout.ThreadPoolTimeoutExecutor
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
-import org.apache.kyuubi.util.ThreadUtils
 
 abstract class AbstractOperation(session: Session) extends Operation with Logging {
 
@@ -45,7 +45,8 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   final private[kyuubi] val statementId = handle.identifier.toString
 
-  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
+  private var timeoutExecutor: Option[ThreadPoolTimeoutExecutor] = None
+  private var timeoutFuture: Option[ScheduledFuture[_]] = None
 
   private val lock: ReentrantLock = new ReentrantLock()
 
@@ -60,8 +61,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def addTimeoutMonitor(queryTimeout: Long): Unit = {
     if (queryTimeout > 0) {
-      val timeoutExecutor =
-        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread", false)
+      val executor = ThreadPoolTimeoutExecutor.getOrCreate(session.sessionManager.getConf)
       val action: Runnable = () =>
         // Clients less than version 2.1 have no HIVE-4924 Patch,
         // no queryTimeout parameter and no TIMEOUT status.
@@ -74,13 +74,19 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
         } else {
           cleanup(OperationState.TIMEOUT)
         }
-      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
-      statementTimeoutCleaner = Some(timeoutExecutor)
+
+      val future = executor.scheduleTimeout(action, queryTimeout)
+      timeoutExecutor = Some(executor)
+      timeoutFuture = Some(future)
     }
   }
 
   protected def shutdownTimeoutMonitor(): Unit = {
-    statementTimeoutCleaner.foreach(_.shutdown())
+    timeoutFuture.foreach { future =>
+      timeoutExecutor.foreach(_.cancelTimeout(future))
+    }
+    timeoutExecutor = None
+    timeoutFuture = None
   }
 
   override def getOperationLog: Option[OperationLog] = None
