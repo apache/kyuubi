@@ -139,3 +139,4 @@ kyuubi.engine.share.level.subdomain=analytics_team
 kyuubi.engine.share.level=CONNECTION
 # Each connection gets its own engine
 ```
+
