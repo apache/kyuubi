@@ -26,7 +26,7 @@
 ## Build
 
 ```shell
-build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.version=3.2.1 -Dranger.version=2.6.0
+build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.version=3.5.6 -Dranger.version=2.6.0
 ```
 
 ### Supported Apache Spark Versions
