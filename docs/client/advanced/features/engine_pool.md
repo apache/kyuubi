@@ -44,7 +44,7 @@ configured `kyuubi.engine.share.level.subdomain`:
 
 ## Configuration Parameters
 
-| Parameter                           | Default Value | Required | Description                                                                                                                                                                                                                  |
+|              Parameter              | Default Value | Required |                                                                                                         Description                                                                                                          |
 |-------------------------------------|---------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `kyuubi.engine.pool.size`           | -1 (disabled) | Yes      | The size of the engine pool. Must be greater than 0 to enable engine pool                                                                                                                                                    |
 | `kyuubi.engine.share.level`         | USER          | No       | Engine sharing level. Supports USER, GROUP, SERVER, SERVER_LOCAL. **NOT** supported with CONNECTION                                                                                                                          |
@@ -109,3 +109,4 @@ kyuubi.engine.pool.name=spark-engine-pool
 kyuubi.engine.pool.selectPolicy=POLLING
 kyuubi.engine.pool.size.threshold=10
 ```
+
