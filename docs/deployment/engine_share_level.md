@@ -45,7 +45,7 @@ With this feature, Kyuubi give you a more flexible way to handle different big d
 
 The current supported share levels are,
 
-| Share Level      | Syntax                       | Scenario                     | Isolation Degree                             | Shareability          |
+|   Share Level    |            Syntax            |           Scenario           |               Isolation Degree               |     Shareability      |
 |------------------|------------------------------|------------------------------|----------------------------------------------|-----------------------|
 | **CONNECTION**   | One engine per session       | Large-scale ETL </br> Ad hoc | High                                         | Low                   |
 | **USER**         | One engine per user          | Ad hoc </br> Small-scale ETL | Medium                                       | Medium                |
@@ -240,46 +240,46 @@ All supported share levels can be used together in a single Kyuubi server or clu
 ## Related Configurations
 
 - kyuubi.engine.share.level(kyuubi.session.engine.share.level)
-    - Default: USER
-    - Candidates: USER, CONNECTION, GROUP, SERVER_LOCAL, SERVER
-    - Meaning: The base level for how an engine is created, cached and shared to sessions.
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: USER
+  - Candidates: USER, CONNECTION, GROUP, SERVER_LOCAL, SERVER
+  - Meaning: The base level for how an engine is created, cached and shared to sessions.
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.session.engine.idle.timeout
-    - Default: PT30M (30 min)
-    - Candidates: a proper timeout
-    - Meaning: Time to live since engine becomes idle
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: PT30M (30 min)
+  - Candidates: a proper timeout
+  - Meaning: Time to live since engine becomes idle
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.engine.share.level.subdomain(kyuubi.engine.share.level.sub.domain)
-    - Default: <none>
-    - Candidates: a valid zookeeper a child node
-    - Meaning: Add a subdomain under the base level to make further isolation for engines
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: <none>
+  - Candidates: a valid zookeeper a child node
+  - Meaning: Add a subdomain under the base level to make further isolation for engines
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.engine.pool.size
-    - Default: -1
-    - Candidates: a positive integer
-    - Meaning: The number of engine pools
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: -1
+  - Candidates: a positive integer
+  - Meaning: The number of engine pools
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.engine.pool.name
-    - Default: engine-pool
-    - Candidates: a valid name
-    - Meaning: The name of the engine pool
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: engine-pool
+  - Candidates: a valid name
+  - Meaning: The name of the engine pool
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.engine.pool.selectPolicy
-    - Default: RANDOM
-    - Candidates: RANDOM, POLLING
-    - Meaning: The selection policy of the engine pool
-    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
-      priority.
+  - Default: RANDOM
+  - Candidates: RANDOM, POLLING
+  - Meaning: The selection policy of the engine pool
+  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+    priority.
 - kyuubi.engine.pool.size.threshold
-    - Default: 9
-    - Candidates: a positive integer
-    - Meaning: The threshold of the engine pool size
-    - Usage: It can be set only in the server configuration file.
+  - Default: 9
+  - Candidates: a positive integer
+  - Meaning: The threshold of the engine pool size
+  - Usage: It can be set only in the server configuration file.
 
 ## Conclusion
 
