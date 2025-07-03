@@ -21,19 +21,20 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor
 
 class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
 
   override def beforeEach(): Unit = {
     super.beforeEach()
     // Ensure clean state before each test
-    ThreadPoolTimeoutExecutor.reset()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.reset()
   }
 
   override def afterEach(): Unit = {
     super.afterEach()
     // Clean up after each test
-    ThreadPoolTimeoutExecutor.reset()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.reset()
   }
 
   test("thread-pool timeout executor is default and functional") {
@@ -41,7 +42,7 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE, 2)
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME, 30000L)
 
-    val executor = ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
     assert(executor.isInstanceOf[ThreadPoolTimeoutExecutor])
     assert(!executor.isShutdown)
   }
@@ -50,8 +51,8 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE, 2)
 
-    val executor1 = ThreadPoolTimeoutExecutor.getOrCreate(conf)
-    val executor2 = ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor1 = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor2 = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
 
     // Should return the same instance for thread-pool type
     assert(executor1 eq executor2)
@@ -63,7 +64,7 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE, 2)
 
     // Get the thread-pool executor to initialize it
-    val executor = ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
     assert(executor.isInstanceOf[ThreadPoolTimeoutExecutor])
     assert(!executor.isShutdown)
 
@@ -79,7 +80,7 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     assert(latch.await(5, TimeUnit.SECONDS), "Timeout action should have executed")
 
     // Now shutdown the factory
-    ThreadPoolTimeoutExecutor.shutdown()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.shutdown()
 
     // Verify the executor is shutdown
     assert(
@@ -92,23 +93,23 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE, 2)
 
     // Initialize the thread-pool executor
-    val executor = ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
     assert(!executor.isShutdown)
 
     // Multiple shutdown calls should be safe
-    ThreadPoolTimeoutExecutor.shutdown()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.shutdown()
     assert(executor.isShutdown)
 
     // Additional shutdown calls should not cause issues
-    ThreadPoolTimeoutExecutor.shutdown()
-    ThreadPoolTimeoutExecutor.shutdown()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.shutdown()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.shutdown()
 
     assert(executor.isShutdown)
   }
 
   test("timeout executor factory shutdown - no executor initialized") {
     // Calling shutdown when no executor has been initialized should be safe
-    ThreadPoolTimeoutExecutor.shutdown()
+    org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.shutdown()
     // No assertion needed, just verify no exception is thrown
   }
 
@@ -117,7 +118,7 @@ class ThreadPoolTimeoutExecutorSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE, 3)
     conf.set(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME, 60000L)
 
-    val executor = ThreadPoolTimeoutExecutor.getOrCreate(conf)
+    val executor = org.apache.kyuubi.operation.ThreadPoolTimeoutExecutor.getOrCreate(conf)
 
     // Test scheduling multiple timeout actions
     val latch = new CountDownLatch(2)

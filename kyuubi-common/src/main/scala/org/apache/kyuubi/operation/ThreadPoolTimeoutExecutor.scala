@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.timeout
+package org.apache.kyuubi.operation
 
 import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture, ScheduledThreadPoolExecutor, TimeUnit}
 
@@ -108,6 +108,7 @@ object ThreadPoolTimeoutExecutor extends Logging {
     _instance.foreach { inst =>
       if (!inst.isShutdown) inst.shutdown()
     }
+    _instance = None
   }
 
   /** Reset singleton for unit tests. */
