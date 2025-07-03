@@ -19,7 +19,9 @@
 
 The share level of Kyuubi engines describes the relationship between sessions and engines.
 It determines whether a new session can share an existing backend engine with other sessions or not.
-The sessions are also known as JDBC/ODBC/Thrift connections from clients that end-users create, and the engines are standalone applications with the full capabilities of Spark SQL, Flink SQL(under dev), running on single-node machines or clusters.
+The sessions are also known as JDBC/ODBC/Thrift connections from clients that end-users create, and the engines are
+standalone applications with the full capabilities of Spark SQL, Flink SQL(under dev), running on single-node machines
+or clusters.
 
 The share level of Kyuubi engines works the same whether in HA or single node mode.
 In other words, an engine is cluster widely shared by all Kyuubi server peers if could.
@@ -33,7 +35,8 @@ However,
 - Cars have their limit of 0-60 times.
   In a similar way, all Spark applications also have to warm up before go full speed.
 - Cars have a constant number of seats and are not allowed to be overloaded.
-  Due to the master-slave architecture of Spark and the resource configured ahead, the overall workload of a single application is predictable.
+  Due to the master-slave architecture of Spark and the resource configured ahead, the overall workload of a single
+  application is predictable.
 - Cars have various shapes to meet our needs.
 
 With this feature, Kyuubi give you a more flexible way to handle different big data workloads.
@@ -42,12 +45,13 @@ With this feature, Kyuubi give you a more flexible way to handle different big d
 
 The current supported share levels are,
 
-|  Share Level   |            Syntax            |           Scenario           |               Isolation Degree               |     Shareability      |
-|----------------|------------------------------|------------------------------|----------------------------------------------|-----------------------|
-| **CONNECTION** | One engine per session       | Large-scale ETL </br> Ad hoc | High                                         | Low                   |
-| **USER**       | One engine per user          | Ad hoc </br> Small-scale ETL | Medium                                       | Medium                |
-| **GROUP**      | One engine per primary group | Ad hoc </br> Small-scale ETL | Low                                          | High                  |
-| **SERVER**     | One engine per cluster       | Admin                        | Highest If Secured </br> Lowest If Unsecured | Admin ONLY If Secured |
+| Share Level      | Syntax                       | Scenario                     | Isolation Degree                             | Shareability          |
+|------------------|------------------------------|------------------------------|----------------------------------------------|-----------------------|
+| **CONNECTION**   | One engine per session       | Large-scale ETL </br> Ad hoc | High                                         | Low                   |
+| **USER**         | One engine per user          | Ad hoc </br> Small-scale ETL | Medium                                       | Medium                |
+| **GROUP**        | One engine per primary group | Ad hoc </br> Small-scale ETL | Low                                          | High                  |
+| **SERVER_LOCAL** | One engine per Kyuubi server | Resource load balancing      | Very Low                                     | Very High             |
+| **SERVER**       | One engine per cluster       | Admin                        | Highest If Secured </br> Lowest If Unsecured | Admin ONLY If Secured |
 
 - Better isolation degree of engines gives us better stability of an engine and the query executions running on it.
 - Better shareability of engines means we are more likely to reuse an engine which is already in full speed.
@@ -64,7 +68,8 @@ The current supported share levels are,
 </div>
 
 Each session with CONNECTION share level has a standalone engine for itself which is unreachable for anyone else.
-Within the session, a user or client can send multiple operation request, including metadata calls or queries, to the corresponding engine.
+Within the session, a user or client can send multiple operation request, including metadata calls or queries, to the
+corresponding engine.
 
 Although it is still an interactive form, this model does allow for more practical batch processing jobs as well.
 
@@ -83,9 +88,12 @@ When closing session, the corresponding engine will be shutdown at the same time
 
 All sessions with USER share level use the same engine if and only if the session user is the same.
 
-Those sessions share the same engine with objects belong to the one and only `SparkContext` instance, including `Classes/Classloaders`, `SparkConf`, `Driver`/`Executor`s, `Hive Metastore Client`, etc.
-But each session can still have its own `SparkSession` instance, which contains separate session state, including temporary views, SQL config, UDFs etc.
-Setting `kyuubi.engine.single.spark.session` to true will make `SparkSession` instance a singleton and share across sessions.
+Those sessions share the same engine with objects belong to the one and only `SparkContext` instance,
+including `Classes/Classloaders`, `SparkConf`, `Driver`/`Executor`s, `Hive Metastore Client`, etc.
+But each session can still have its own `SparkSession` instance, which contains separate session state, including
+temporary views, SQL config, UDFs etc.
+Setting `kyuubi.engine.single.spark.session` to true will make `SparkSession` instance a singleton and share across
+sessions.
 
 When closing session, the corresponding engine will not be shutdown.
 When all sessions are closed, the corresponding engine still has a time-to-live lifespan.
@@ -103,69 +111,94 @@ This TTL allows new sessions to be established quickly without waiting for the e
 </div>
 
 An engine will be shared by all sessions created by all users belong to the same primary group name.
-The engine will be launched by the group name as the effective username, so here the group name is kind of special user who is able to visit the compute resources/data of a team.
-It follows the [Hadoop GroupsMapping](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/GroupsMapping.html) to map user to a primary group. If the primary group is not found, it falls back to the USER level.
+The engine will be launched by the group name as the effective username, so here the group name is kind of special user
+who is able to visit the compute resources/data of a team.
+It follows
+the [Hadoop GroupsMapping](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/GroupsMapping.html)
+to map user to a primary group. If the primary group is not found, it falls back to the USER level.
 
 The mechanisms of `SparkContext`, `SparkSession` and TTL works similarly to USER share level.
 
 Here is an example to configure `HadoopGroupProvider` to use LDAP-based group mapping.
-1. Add the properties shown in the example below to the `core-site.xml` file. You will need to provide the value for the bind user, the bind password, and other properties specific to your LDAP instance, and make sure that object class, user, and group filters match the values specified in your LDAP instance.
+
+1. Add the properties shown in the example below to the `core-site.xml` file. You will need to provide the value for the
+   bind user, the bind password, and other properties specific to your LDAP instance, and make sure that object class,
+   user, and group filters match the values specified in your LDAP instance.
 
 ```xml
+
 <property>
-  <name>hadoop.security.group.mapping</name>
-  <value>org.apache.hadoop.security.LdapGroupsMapping</value>
+    <name>hadoop.security.group.mapping</name>
+    <value>org.apache.hadoop.security.LdapGroupsMapping</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.url</name>
-  <value>ldap://localhost:389</value>
+<name>hadoop.security.group.mapping.ldap.url</name>
+<value>ldap://localhost:389</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.base</name>
-  <value>dc=example,dc=com</value>
+<name>hadoop.security.group.mapping.ldap.base</name>
+<value>dc=example,dc=com</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.bind.user</name>
-  <value>cn=Manager,dc=example,dc=com</value>
+<name>hadoop.security.group.mapping.ldap.bind.user</name>
+<value>cn=Manager,dc=example,dc=com</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.bind.password</name>
-  <value>example</value>
+<name>hadoop.security.group.mapping.ldap.bind.password</name>
+<value>example</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.search.filter.user</name>
-  <value>(&(objectClass=posixAccount)(cn={0}))</value>
+<name>hadoop.security.group.mapping.ldap.search.filter.user</name>
+<value>(&(objectClass=posixAccount)(cn={0}))</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.search.filter.group</name>
-  <value>(objectClass=posixGroup)</value>
+<name>hadoop.security.group.mapping.ldap.search.filter.group</name>
+<value>(objectClass=posixGroup)</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.search.attr.member</name>
-  <value>memberuid</value>
+<name>hadoop.security.group.mapping.ldap.search.attr.member</name>
+<value>memberuid</value>
 </property>
 
 <property>
-  <name>hadoop.security.group.mapping.ldap.search.attr.group.name</name>
-  <value>cn</value>
+<name>hadoop.security.group.mapping.ldap.search.attr.group.name</name>
+<value>cn</value>
 </property>
 ```
 
 2. Use the applicable instructions to re-start the HDFS NameNode and the YARN ResourceManager.
-3. Verify LDAP group mapping by running the `hdfs groups` command. This command will fetch groups from LDAP for the current user. Note that with LDAP group mapping configured, the HDFS permissions can leverage groups defined in LDAP for access control.
+3. Verify LDAP group mapping by running the `hdfs groups` command. This command will fetch groups from LDAP for the
+   current user. Note that with LDAP group mapping configured, the HDFS permissions can leverage groups defined in LDAP
+   for access control.
 
 **Tips for authorization in GROUP share level**:
 
 The session user and the primary group name(as sparkUser/execute user) will be both accessible at engine-side.
 By default, the sparkUser will be used to check the YARN/HDFS ACLs.
-If you want fine-grained access control for session user, you need to get it from `SparkContext.getLocalProperty("kyuubi.session.user")` and send it to security service, like Apache Ranger.
+If you want fine-grained access control for session user, you need to get it
+from `SparkContext.getLocalProperty("kyuubi.session.user")` and send it to security service, like Apache Ranger.
+
+### SERVER_LOCAL
+
+<body><div class="mxgraph" style="max-width:100%;border:1px solid transparent;" data-mxgraph="{&quot;highlight&quot;:&quot;#0000ff&quot;,&quot;nav&quot;:true,&quot;resize&quot;:true,&quot;dark-mode&quot;:&quot;auto&quot;,&quot;toolbar&quot;:&quot;zoom layers tags lightbox&quot;,&quot;edit&quot;:&quot;_blank&quot;,&quot;xml&quot;:&quot;&lt;mxfile host=\&quot;app.diagrams.net\&quot; agent=\&quot;Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36\&quot; version=\&quot;27.2.0\&quot;&gt;\n  &lt;diagram id=\&quot;RaWIMvdSY7jaPepMtQGd\&quot; name=\&quot;第 1 页\&quot;&gt;\n    &lt;mxGraphModel dx=\&quot;1678\&quot; dy=\&quot;941\&quot; grid=\&quot;1\&quot; gridSize=\&quot;10\&quot; guides=\&quot;1\&quot; tooltips=\&quot;1\&quot; connect=\&quot;1\&quot; arrows=\&quot;1\&quot; fold=\&quot;1\&quot; page=\&quot;1\&quot; pageScale=\&quot;1\&quot; pageWidth=\&quot;827\&quot; pageHeight=\&quot;1169\&quot; math=\&quot;0\&quot; shadow=\&quot;0\&quot;&gt;\n      &lt;root&gt;\n        &lt;mxCell id=\&quot;0\&quot; /&gt;\n        &lt;mxCell id=\&quot;1\&quot; parent=\&quot;0\&quot; /&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-8\&quot; value=\&quot;&amp;lt;font face=&amp;quot;Comic Sans MS&amp;quot; style=&amp;quot;font-size: 20px&amp;quot;&amp;gt;&amp;lt;b&amp;gt;Kyuubi Server(s)&amp;lt;/b&amp;gt;&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;sketch=1;fillColor=#FFFFFF;strokeColor=#B266FF;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;678\&quot; width=\&quot;754\&quot; height=\&quot;60\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-40\&quot; style=\&quot;edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;elbow=vertical;html=1;entryX=0.082;entryY=-0.021;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeWidth=2;sketch=1;strokeColor=#B266FF;\&quot; parent=\&quot;1\&quot; source=\&quot;iYp413I9VlZigljaK2V1-17\&quot; target=\&quot;iYp413I9VlZigljaK2V1-8\&quot; edge=\&quot;1\&quot;&gt;\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;101\&quot; y=\&quot;660\&quot; /&gt;\n              &lt;mxPoint x=\&quot;101\&quot; y=\&quot;650\&quot; /&gt;\n              &lt;mxPoint x=\&quot;101\&quot; y=\&quot;640\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-17\&quot; value=\&quot;&amp;lt;font style=&amp;quot;font-size: 15px&amp;quot;&amp;gt;client&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;sketch=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;align=center;verticalAlign=middle;shadow=0;glass=0;strokeColor=#B266FF;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;40\&quot; y=\&quot;550\&quot; width=\&quot;120\&quot; height=\&quot;60\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-18\&quot; value=\&quot;&amp;lt;font style=&amp;quot;font-size: 15px&amp;quot;&amp;gt;client&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;sketch=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;align=center;verticalAlign=middle;shadow=0;glass=0;strokeColor=#B266FF;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;354\&quot; y=\&quot;550\&quot; width=\&quot;120\&quot; height=\&quot;60\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-19\&quot; value=\&quot;&amp;lt;font style=&amp;quot;font-size: 15px&amp;quot;&amp;gt;client&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;labelBackgroundColor=none;sketch=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;align=center;verticalAlign=middle;shadow=0;glass=0;strokeColor=#9933FF;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;674\&quot; y=\&quot;550\&quot; width=\&quot;120\&quot; height=\&quot;60\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-37\&quot; value=\&quot;\&quot; style=\&quot;group\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot; connectable=\&quot;0\&quot;&gt;\n          &lt;mxGeometry x=\&quot;170\&quot; y=\&quot;800\&quot; width=\&quot;120\&quot; height=\&quot;90.76999999999998\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-38\&quot; value=\&quot;&amp;lt;span style=&amp;quot;font-family: &amp;amp;#34;comic sans ms&amp;amp;#34; ; font-size: 14px&amp;quot;&amp;gt;&amp;lt;font color=&amp;quot;#9933ff&amp;quot;&amp;gt;Kyuubi Engine&amp;lt;/font&amp;gt;&amp;lt;/span&amp;gt;\&quot; style=\&quot;sketch=0;outlineConnect=0;fontColor=#66B2FF;gradientColor=none;fillColor=#A166FF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.emr_engine;\&quot; parent=\&quot;iYp413I9VlZigljaK2V1-37\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry width=\&quot;120\&quot; height=\&quot;90.77\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-39\&quot; value=\&quot;\&quot; style=\&quot;shape=image;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;image=data:image/png,iVBORw0KGgoAAAANSUhEUgAAAIEAAABoCAMAAADhNWMoAAAANlBMVEVHcEz/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQFG3dScAAAAEXRSTlMAgDAgwNBg8BBA4KBwsFCQdK406l0AAAAJcEhZcwAACxIAAAsSAdLdfvwAAAPuSURBVGiBxVvZtqsgDBUFBEW9/P/P3uVwWrGEhADtflbZzTzQjgyrxSLl5L33k5SL0Jb+bjEGPSsfgZq1+cbxLnr6H5Qbmh5vdPL4E1K3O1+M+Pk7RtFEG7TzlbDWWr25+hxI589vI+grn28nivDbOaTZCOd7/8dSylmsVV2ipwjgUyJLNcfUnPMvqWw1zGHmE9ihSqODkWUEiqODIcTAphzqENgNYv0xgd1FWY5RkYD3I8MkC73gA3OuNQjwU6wItXtmniYs9J3RdVwXHXMClIFyoeq7bmAyyKKwQAQOZdJSVQxke1yTBDrDNQXviVKAdPCSImglKIiKgKTsXk/AnoJSoHgEZGnT7RnIUHAoQlyAvO1uRtkhe9RD11uhvJ9RApCSx4A86K8IfStxh4DC8RI+1udReNexDjMFMN64x4N5FG6VtF2eZ4YAw81HNZ5lC3ftr+l6Afxln55sMjwisKJkawGFQ+9jTzs6BZH83TfAPyvqxz1ZEyO1PoA/AYiO2lJThQArAXRjQ62mylKC934DXxpoclAkBgm1Tqn3NMUtKHowqQ8g7fk6o5Ig9A3JxC/R1zVSQhKqg3TeJ8wobJoDTiFt1hPFpdNBCqWASBFP7WjGwihgtkSjkP5GujyA3lLDnEEBqSKT/RvwjjSvgZqk2AIiykQ3Dzjj9cPPoe74rFTyheC9hNwqHpDe4Xhwu6lOAqu4CX0dxCEivmfnb/bBLSYESrKaRMwtPt9UrIncQEvZ03xbjfSr+BcRH7myeSCjePJKSikPyjud0Iao4x+3yKdIOUOGM/veCoSFOKu+aubQtjj99WVx9vxexsLm9XODGiazowkKkEELmzF2ugWRoCvNpsCcOobVdeA59Dr6AF5+QHCn/nsr5CP15XQ0tMECCrMuYQ2x0u2RrYMnhtCByBs6uBIvB6mMJmX9AlgxyxMAAcpopwogB11+TaC1ClAC7TbVD+g4AV76ZwCITpSarw5cVACN1vSfMDoaGtVXLm1APXXFrTCM3lrrtkgMEsI2Ot1YJ8R+R0em03Ij4zPY7OCmgSYSIE/UfJsskFkN1acARLsUhbqBkHNJomosZK69VLWyLHfZ8sa01bm+w995+eNmX7E6+KvHC8XBoUwE/Ob8BfYW/AJpRJlEwXWlA+W2WHhTo0KfUnZZhbZxSKOIQJUkWcSgSkAqIVCnT/g5gQJLrNWqsUNicSz8Q87k8o56vSIvKnNuqYFgzU6r1miMxFB7XpErhPrdMrLXeoJ3VzKNHD1w74siIGfoduMK4rXyluMCQtO0tJH/C0NaE63/XXJg2IAh9vSdf9icJLS4Nlan3UkpXM6qpOu6/6Oid8iTIdKBAAAAAElFTkSuQmCC;base64,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;base64,iVBORw0KGgoAAAANSUhEUgAAAU0AAABlCAMAAAD+pkEZAAAANlBMVEVHcEz///////////////////////////////////////////////////////////////////+GUsxbAAAAEXRSTlMAYDCgQPDQgMAQUOAgkLBwH4KzbGIAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAkgSURBVHic7V3rmqI6EJRLBAT1+P4ve75BkKSqOgRkdsbd1M+RQNKXSnfnMqcMRndp2vPjiXPbXLoso73o7rMgF7RFFugelBWJ8olq+LzB/DCGVkryXNSnsrj806LZjK4xzLKu6zqb5jaUzJehhVZFFmkqirgsZ5/P01EKrinCfDwersnyXIU1lUt5/vKx/Dg2CPPL38t/XFxxJHGmj/tvHs0PowZZ3fpVcVb/tMBi6FwgKFeQeJW358lI4xbK6cJ/yuJMBhjiOGN3676enV0iFFz/fKSMS7Jv+0nuGQFgPp9n6+g0335VSBpXZ0kiwKdfqXhMnE+rHNpMnQCcvpdfC2fI8vE4P5/octgJgCyo9X4t7ako+7gGGGDvP9SZpZB2wxf+IVxQTuHQS12Mz6mlBlkfrlcMV0mfLheOBcj2RExeKoHmVEiAxSQnGDG/Z3ESRMqjpdTxolEWJwKjzX6TOFeLxmjRxXeP57uAg9er4RccbeMsKakq3UqmTk0+derqcCDaLe/+I66cN85USp4qWOqja5i4Pt9Hnv3VwCz7rDvr8+ZiknWtpiIKTZ8qqF6bvob/VuT/sTU8XDa7Gs8tyeN6fc2K5B+u/QLbPz73sbSJKba1iaicJoqbQWmX/tHPcu7sMog0PaLNTw0ChuSBDJV7tI01PQyjAGcOKOPixJcgbRps8/uBtLm3SjElni5FnEQmyAwW2/x6IG3uXXQYpTgUVT+JszO5U4Sp+MTHbllE2ny3Htm9XlAb8nQUVP29tHnoy++3tj+34PSsr0ybez/BlplpcwOCJErnougfmTYNdOFeELmlk1KnTJsSXeNzpjNOa2BV/++jzbq+NJf6rd2X3aXyZNlXZtkDi1gebZYNg/6GK08D/F6fTtjEe7rmp0fsaCJps7y+xuduxGHY1yClLut70zTXr2Q8mMljeTcVsZZPqhzgylUAeCEOqqRSdx95eurqjiZUpK1PpwI6i/MGmvOScw+VmQD1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;base64,iVBORw0KGgoAAAANSUhEUgAAAIEAAABpCAMAAAAqabCNAAAANlBMVEVHcEz///////////////////////////////////////////////////////////////////+GUsxbAAAAEXRSTlMAYNAwQKDAgBDw4FAgcJCwPNOBDRoAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAP6SURBVGiBxVvpeqwgDBVFFtf6/i97P6TOiBJIIPSev3XgQPaQdhQMUq5aa71KOZB+yIBFbMoeASal5+WPtp/H6QAwjfMfbG+h7T1sUxJGg6cPBKJNm/2X3PE9lFKqb8HBaMz+lwgWIbkJCMz+qp0xLApz/5P2mCU7kxWlAAH6ceXzUmYn7+9hd8GikAPKAiHs9d5hpksgRK13EJX7O9gaDhwEHIf1PxNwtlHmofgIHMexFYhCchI4jp7sIIZaK3jCChoB00MrTaggEcNGYjCCy5huLb2GkUBghhY5r7LYTyq0Pi7QRXtZlitpj6UARSP9+/etmAJSEJAM1PUBrKdMFCA5f1OPClvFuGhI1+/0QVUFMW16PJOtvIc20PkCr0b12fsvc3XYrDZqYI0+/IyojZ+Ty0lFNg0AacHTpYFOK82gM3tGFcDrfWVcJN94jwpjWg5gav7WIEqEuMvQ6NdSNyzgGpGPKXksOkmBFSz2NSGXz+rfBfhU8RRjRl8D8hJgIUAr4IratzVDSOg3qD5YDkn9+yAh1x3+lVlRoQqVKqZOk7TiAUECkx0MqQVyt7hkSSSu8UIy3uRDSiczrYZ8dgBFJQ9MsivT1pmlkDkCxqRNOmLlKGQEaVHanKawp2UJU7cECulzpOs36FfiamdZjCCSFpU2KsAn+5MLr2OYKjgXr+BqPk7+c/XylIVdsxzyeayCOEQJ3zeU66ZULs1C1XUq3mqL6BCt4kVfgsMuwuan+Yn4RFvYj0O1Yd36ynVhpZRa7/1ZzTwuIZNTfjDIx4dg7ZuEWyQoxxSy83JmrA/dKulCeX/5aWPbEduhvjYLm+sF9fX1ezn2h9rw8v9WeaHS0CoaYoslwD2eBmZKpIAI/gB6db4r+MI4OAdNF4o7rzdI3YcUBkKnA5E/oTA8nvvQzyNToxe6rjMCVdLgwn4pBp33kOyPcy8s8gQUtokd33IA9tlWBHcABOht90JAlT42+lUD8A1T+4kBDxOvhaqewUiIO4VmgwJPLNHBhbbDEl8YFytemyvOd+kXnOMRLli6YYhoVGg2JTC/JnQAoLtqJCCHVDxwDSUaiO9v7GGAPqPATKHkzYfVFZc9Ok2M10DOyj8cmO6B/uL0hdJr/WAf+CqFRbU00v2/PJD97gSqZnU4UtTaOYmi/kiASiEw1CnYXgkAhhhdZwkcxWoVgeKGAReDekOsZICex0ijXA+YCJTbAlupVjqRwnUDxZGRj0ChIrCY4YUSMXA4oi/oDWT2dgE1NpVMKmZASlSxzXISCHkaZ4J8B3ZAq9X+ThsxguibduxMzibt1rxflvoHi2lr3zF1MCLyPzb2D//Hx+O3fXJCSOLRu677BysDd+/WXX5sAAAAAElFTkSuQmCC;rounded=1;shadow=0;glass=0;labelBackgroundColor=none;sketch=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeColor=default;\&quot; parent=\&quot;iYp413I9VlZigljaK2V1-37\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;30\&quot; width=\&quot;54.12\&quot; height=\&quot;43.63\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-45\&quot; value=\&quot;Tom\&quot; style=\&quot;text;html=1;resizable=0;autosize=1;align=center;verticalAlign=middle;points=[];fillColor=none;strokeColor=none;rounded=0;shadow=0;glass=0;labelBackgroundColor=none;sketch=0;fontFamily=Comic Sans MS;fontSize=17;fontColor=#330000;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;75\&quot; y=\&quot;515\&quot; width=\&quot;50\&quot; height=\&quot;30\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-46\&quot; style=\&quot;edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;elbow=vertical;html=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeWidth=2;sketch=1;strokeColor=#B266FF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot;&gt;\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;224\&quot; y=\&quot;738\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;224\&quot; y=\&quot;800\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;259\&quot; y=\&quot;770\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-47\&quot; value=\&quot;&amp;lt;font color=&amp;quot;#202122&amp;quot;&amp;gt;&amp;lt;span style=&amp;quot;font-size: 15.008px ; background-color: rgb(255 , 255 , 255)&amp;quot;&amp;gt;Tom&amp;lt;/span&amp;gt;&amp;lt;/font&amp;gt;\&quot; style=\&quot;text;html=1;resizable=0;autosize=1;align=center;verticalAlign=middle;points=[];rounded=0;shadow=0;glass=0;labelBackgroundColor=none;sketch=0;fontFamily=Comic Sans MS;fontSize=17;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;389\&quot; y=\&quot;514\&quot; width=\&quot;50\&quot; height=\&quot;30\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-48\&quot; value=\&quot;Jerry\&quot; style=\&quot;text;html=1;resizable=0;autosize=1;align=center;verticalAlign=middle;points=[];fillColor=none;strokeColor=none;rounded=0;shadow=0;glass=0;labelBackgroundColor=none;sketch=0;fontFamily=Comic Sans MS;fontSize=17;fontColor=#330000;strokeWidth=2;\&quot; parent=\&quot;1\&quot; vertex=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;700\&quot; y=\&quot;514\&quot; width=\&quot;60\&quot; height=\&quot;30\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-49\&quot; style=\&quot;edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;elbow=vertical;html=1;entryX=0.088;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeWidth=2;sketch=1;strokeColor=#B266FF;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot;&gt;\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;413.62\&quot; y=\&quot;610\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;413.5000000000001\&quot; y=\&quot;678\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;413.62\&quot; y=\&quot;640\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-52\&quot; style=\&quot;edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;elbow=vertical;html=1;entryX=0.088;entryY=0;entryDx=0;entryDy=0;entryPerimeter=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeWidth=2;sketch=1;strokeColor=#B266FF;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot;&gt;\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;733.6199999999999\&quot; y=\&quot;610\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;733.5\&quot; y=\&quot;678\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;733.62\&quot; y=\&quot;640\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-53\&quot; style=\&quot;edgeStyle=elbowEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;elbow=vertical;html=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeWidth=2;sketch=1;strokeColor=#B266FF;exitX=0.5;exitY=1;exitDx=0;exitDy=0;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot; source=\&quot;HtqI43X2x09Ri4B_hNKH-2\&quot;&gt;\n          &lt;mxGeometry relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;738\&quot; y=\&quot;738\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;610\&quot; y=\&quot;800\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;570\&quot; y=\&quot;760\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;HtqI43X2x09Ri4B_hNKH-1\&quot; value=\&quot;&amp;lt;font face=&amp;quot;Comic Sans MS&amp;quot; style=&amp;quot;font-size: 18px;&amp;quot;&amp;gt;&amp;lt;b style=&amp;quot;&amp;quot;&amp;gt;Server&amp;lt;/b&amp;gt;&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;sketch=1;fillColor=#FFFFFF;strokeColor=#B266FF;strokeWidth=2;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;125\&quot; y=\&quot;688\&quot; width=\&quot;200\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;HtqI43X2x09Ri4B_hNKH-2\&quot; value=\&quot;&amp;lt;font face=&amp;quot;Comic Sans MS&amp;quot; style=&amp;quot;font-size: 18px;&amp;quot;&amp;gt;&amp;lt;b&amp;gt;Server&amp;lt;/b&amp;gt;&amp;lt;/font&amp;gt;\&quot; style=\&quot;rounded=1;whiteSpace=wrap;html=1;sketch=1;fillColor=#FFFFFF;strokeColor=#B266FF;strokeWidth=2;\&quot; vertex=\&quot;1\&quot; parent=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;510\&quot; y=\&quot;688\&quot; width=\&quot;200\&quot; height=\&quot;40\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;HtqI43X2x09Ri4B_hNKH-3\&quot; value=\&quot;\&quot; style=\&quot;group\&quot; vertex=\&quot;1\&quot; connectable=\&quot;0\&quot; parent=\&quot;1\&quot;&gt;\n          &lt;mxGeometry x=\&quot;560\&quot; y=\&quot;800\&quot; width=\&quot;120\&quot; height=\&quot;90.76999999999998\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;HtqI43X2x09Ri4B_hNKH-4\&quot; value=\&quot;&amp;lt;span style=&amp;quot;font-family: &amp;amp;#34;comic sans ms&amp;amp;#34; ; font-size: 14px&amp;quot;&amp;gt;&amp;lt;font color=&amp;quot;#9933ff&amp;quot;&amp;gt;Kyuubi Engine&amp;lt;/font&amp;gt;&amp;lt;/span&amp;gt;\&quot; style=\&quot;sketch=0;outlineConnect=0;fontColor=#66B2FF;gradientColor=none;fillColor=#A166FF;strokeColor=none;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=12;fontStyle=0;aspect=fixed;pointerEvents=1;shape=mxgraph.aws4.emr_engine;\&quot; vertex=\&quot;1\&quot; parent=\&quot;HtqI43X2x09Ri4B_hNKH-3\&quot;&gt;\n          &lt;mxGeometry width=\&quot;120\&quot; height=\&quot;90.77\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;HtqI43X2x09Ri4B_hNKH-5\&quot; value=\&quot;\&quot; style=\&quot;shape=image;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;image=data:image/png,iVBORw0KGgoAAAANSUhEUgAAAIEAAABoCAMAAADhNWMoAAAANlBMVEVHcEz/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQH/AQFG3dScAAAAEXRSTlMAgDAgwNBg8BBA4KBwsFCQdK406l0AAAAJcEhZcwAACxIAAAsSAdLdfvwAAAPuSURBVGiBxVvZtqsgDBUFBEW9/P/P3uVwWrGEhADtflbZzTzQjgyrxSLl5L33k5SL0Jb+bjEGPSsfgZq1+cbxLnr6H5Qbmh5vdPL4E1K3O1+M+Pk7RtFEG7TzlbDWWr25+hxI589vI+grn28nivDbOaTZCOd7/8dSylmsVV2ipwjgUyJLNcfUnPMvqWw1zGHmE9ihSqODkWUEiqODIcTAphzqENgNYv0xgd1FWY5RkYD3I8MkC73gA3OuNQjwU6wItXtmniYs9J3RdVwXHXMClIFyoeq7bmAyyKKwQAQOZdJSVQxke1yTBDrDNQXviVKAdPCSImglKIiKgKTsXk/AnoJSoHgEZGnT7RnIUHAoQlyAvO1uRtkhe9RD11uhvJ9RApCSx4A86K8IfStxh4DC8RI+1udReNexDjMFMN64x4N5FG6VtF2eZ4YAw81HNZ5lC3ftr+l6Afxln55sMjwisKJkawGFQ+9jTzs6BZH83TfAPyvqxz1ZEyO1PoA/AYiO2lJThQArAXRjQ62mylKC934DXxpoclAkBgm1Tqn3NMUtKHowqQ8g7fk6o5Ig9A3JxC/R1zVSQhKqg3TeJ8wobJoDTiFt1hPFpdNBCqWASBFP7WjGwihgtkSjkP5GujyA3lLDnEEBqSKT/RvwjjSvgZqk2AIiykQ3Dzjj9cPPoe74rFTyheC9hNwqHpDe4Xhwu6lOAqu4CX0dxCEivmfnb/bBLSYESrKaRMwtPt9UrIncQEvZ03xbjfSr+BcRH7myeSCjePJKSikPyjud0Iao4x+3yKdIOUOGM/veCoSFOKu+aubQtjj99WVx9vxexsLm9XODGiazowkKkEELmzF2ugWRoCvNpsCcOobVdeA59Dr6AF5+QHCn/nsr5CP15XQ0tMECCrMuYQ2x0u2RrYMnhtCByBs6uBIvB6mMJmX9AlgxyxMAAcpopwogB11+TaC1ClAC7TbVD+g4AV76ZwCITpSarw5cVACN1vSfMDoaGtVXLm1APXXFrTCM3lrrtkgMEsI2Ot1YJ8R+R0em03Ij4zPY7OCmgSYSIE/UfJsskFkN1acARLsUhbqBkHNJomosZK69VLWyLHfZ8sa01bm+w995+eNmX7E6+KvHC8XBoUwE/Ob8BfYW/AJpRJlEwXWlA+W2WHhTo0KfUnZZhbZxSKOIQJUkWcSgSkAqIVCnT/g5gQJLrNWqsUNicSz8Q87k8o56vSIvKnNuqYFgzU6r1miMxFB7XpErhPrdMrLXeoJ3VzKNHD1w74siIGfoduMK4rXyluMCQtO0tJH/C0NaE63/XXJg2IAh9vSdf9icJLS4Nlan3UkpXM6qpOu6/6Oid8iTIdKBAAAAAElFTkSuQmCC;base64,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;base64,iVBORw0KGgoAAAANSUhEUgAAAU0AAABlCAMAAAD+pkEZAAAANlBMVEVHcEz///////////////////////////////////////////////////////////////////+GUsxbAAAAEXRSTlMAYDCgQPDQgMAQUOAgkLBwH4KzbGIAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAkgSURBVHic7V3rmqI6EJRLBAT1+P4ve75BkKSqOgRkdsbd1M+RQNKXSnfnMqcMRndp2vPjiXPbXLoso73o7rMgF7RFFugelBWJ8olq+LzB/DCGVkryXNSnsrj806LZjK4xzLKu6zqb5jaUzJehhVZFFmkqirgsZ5/P01EKrinCfDwersnyXIU1lUt5/vKx/Dg2CPPL38t/XFxxJHGmj/tvHs0PowZZ3fpVcVb/tMBi6FwgKFeQeJW358lI4xbK6cJ/yuJMBhjiOGN3676enV0iFFz/fKSMS7Jv+0nuGQFgPp9n6+g0335VSBpXZ0kiwKdfqXhMnE+rHNpMnQCcvpdfC2fI8vE4P5/octgJgCyo9X4t7ako+7gGGGDvP9SZpZB2wxf+IVxQTuHQS12Mz6mlBlkfrlcMV0mfLheOBcj2RExeKoHmVEiAxSQnGDG/Z3ESRMqjpdTxolEWJwKjzX6TOFeLxmjRxXeP57uAg9er4RccbeMsKakq3UqmTk0+derqcCDaLe/+I66cN85USp4qWOqja5i4Pt9Hnv3VwCz7rDvr8+ZiknWtpiIKTZ8qqF6bvob/VuT/sTU8XDa7Gs8tyeN6fc2K5B+u/QLbPz73sbSJKba1iaicJoqbQWmX/tHPcu7sMog0PaLNTw0ChuSBDJV7tI01PQyjAGcOKOPixJcgbRps8/uBtLm3SjElni5FnEQmyAwW2/x6IG3uXXQYpTgUVT+JszO5U4Sp+MTHbllE2ny3Htm9XlAb8nQUVP29tHnoy++3tj+34PSsr0ybez/BlplpcwOCJErnougfmTYNdOFeELmlk1KnTJsSXeNzpjNOa2BV/++jzbq+NJf6rd2X3aXyZNlXZtkDi1gebZYNg/6GK08D/F6fTtjEe7rmp0fsaCJps7y+xuduxGHY1yClLut70zTXr2Q8mMljeTcVsZZPqhzgylUAeCEOqqRSdx95eurqjiZUpK1PpwI6i/MGmvOScw+VmQD1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;base64,iVBORw0KGgoAAAANSUhEUgAAAIEAAABpCAMAAAAqabCNAAAANlBMVEVHcEz///////////////////////////////////////////////////////////////////+GUsxbAAAAEXRSTlMAYNAwQKDAgBDw4FAgcJCwPNOBDRoAAAAJcEhZcwAACxIAAAsSAdLdfvwAAAP6SURBVGiBxVvpeqwgDBVFFtf6/i97P6TOiBJIIPSev3XgQPaQdhQMUq5aa71KOZB+yIBFbMoeASal5+WPtp/H6QAwjfMfbG+h7T1sUxJGg6cPBKJNm/2X3PE9lFKqb8HBaMz+lwgWIbkJCMz+qp0xLApz/5P2mCU7kxWlAAH6ceXzUmYn7+9hd8GikAPKAiHs9d5hpksgRK13EJX7O9gaDhwEHIf1PxNwtlHmofgIHMexFYhCchI4jp7sIIZaK3jCChoB00MrTaggEcNGYjCCy5huLb2GkUBghhY5r7LYTyq0Pi7QRXtZlitpj6UARSP9+/etmAJSEJAM1PUBrKdMFCA5f1OPClvFuGhI1+/0QVUFMW16PJOtvIc20PkCr0b12fsvc3XYrDZqYI0+/IyojZ+Ty0lFNg0AacHTpYFOK82gM3tGFcDrfWVcJN94jwpjWg5gav7WIEqEuMvQ6NdSNyzgGpGPKXksOkmBFSz2NSGXz+rfBfhU8RRjRl8D8hJgIUAr4IratzVDSOg3qD5YDkn9+yAh1x3+lVlRoQqVKqZOk7TiAUECkx0MqQVyt7hkSSSu8UIy3uRDSiczrYZ8dgBFJQ9MsivT1pmlkDkCxqRNOmLlKGQEaVHanKawp2UJU7cECulzpOs36FfiamdZjCCSFpU2KsAn+5MLr2OYKjgXr+BqPk7+c/XylIVdsxzyeayCOEQJ3zeU66ZULs1C1XUq3mqL6BCt4kVfgsMuwuan+Yn4RFvYj0O1Yd36ynVhpZRa7/1ZzTwuIZNTfjDIx4dg7ZuEWyQoxxSy83JmrA/dKulCeX/5aWPbEduhvjYLm+sF9fX1ezn2h9rw8v9WeaHS0CoaYoslwD2eBmZKpIAI/gB6db4r+MI4OAdNF4o7rzdI3YcUBkKnA5E/oTA8nvvQzyNToxe6rjMCVdLgwn4pBp33kOyPcy8s8gQUtokd33IA9tlWBHcABOht90JAlT42+lUD8A1T+4kBDxOvhaqewUiIO4VmgwJPLNHBhbbDEl8YFytemyvOd+kXnOMRLli6YYhoVGg2JTC/JnQAoLtqJCCHVDxwDSUaiO9v7GGAPqPATKHkzYfVFZc9Ok2M10DOyj8cmO6B/uL0hdJr/WAf+CqFRbU00v2/PJD97gSqZnU4UtTaOYmi/kiASiEw1CnYXgkAhhhdZwkcxWoVgeKGAReDekOsZICex0ijXA+YCJTbAlupVjqRwnUDxZGRj0ChIrCY4YUSMXA4oi/oDWT2dgE1NpVMKmZASlSxzXISCHkaZ4J8B3ZAq9X+ThsxguibduxMzibt1rxflvoHi2lr3zF1MCLyPzb2D//Hx+O3fXJCSOLRu677BysDd+/WXX5sAAAAAElFTkSuQmCC;rounded=1;shadow=0;glass=0;labelBackgroundColor=none;sketch=1;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;strokeColor=default;\&quot; vertex=\&quot;1\&quot; parent=\&quot;HtqI43X2x09Ri4B_hNKH-3\&quot;&gt;\n          &lt;mxGeometry x=\&quot;36\&quot; y=\&quot;30\&quot; width=\&quot;54.12\&quot; height=\&quot;43.63\&quot; as=\&quot;geometry\&quot; /&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-44\&quot; value=\&quot;\&quot; style=\&quot;endArrow=none;dashed=1;html=1;rounded=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;elbow=vertical;strokeColor=#B266FF;strokeWidth=3;exitX=0.245;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot; source=\&quot;iYp413I9VlZigljaK2V1-8\&quot;&gt;\n          &lt;mxGeometry width=\&quot;50\&quot; height=\&quot;50\&quot; relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;210\&quot; y=\&quot;640\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;100\&quot; y=\&quot;680\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;225\&quot; y=\&quot;720\&quot; /&gt;\n              &lt;mxPoint x=\&quot;225\&quot; y=\&quot;708\&quot; /&gt;\n              &lt;mxPoint x=\&quot;100\&quot; y=\&quot;708\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-51\&quot; value=\&quot;\&quot; style=\&quot;endArrow=none;dashed=1;html=1;rounded=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;elbow=vertical;strokeColor=#B266FF;strokeWidth=3;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot;&gt;\n          &lt;mxGeometry width=\&quot;50\&quot; height=\&quot;50\&quot; relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;230\&quot; y=\&quot;708\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;413\&quot; y=\&quot;670\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;240\&quot; y=\&quot;708\&quot; /&gt;\n              &lt;mxPoint x=\&quot;413\&quot; y=\&quot;710\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n        &lt;mxCell id=\&quot;iYp413I9VlZigljaK2V1-54\&quot; value=\&quot;\&quot; style=\&quot;endArrow=none;dashed=1;html=1;rounded=0;fontFamily=Comic Sans MS;fontSize=14;fontColor=#330000;elbow=vertical;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeColor=#B266FF;strokeWidth=3;\&quot; parent=\&quot;1\&quot; edge=\&quot;1\&quot; source=\&quot;HtqI43X2x09Ri4B_hNKH-2\&quot;&gt;\n          &lt;mxGeometry width=\&quot;50\&quot; height=\&quot;50\&quot; relative=\&quot;1\&quot; as=\&quot;geometry\&quot;&gt;\n            &lt;mxPoint x=\&quot;733.8600000000001\&quot; y=\&quot;731\&quot; as=\&quot;sourcePoint\&quot; /&gt;\n            &lt;mxPoint x=\&quot;733.5\&quot; y=\&quot;670\&quot; as=\&quot;targetPoint\&quot; /&gt;\n            &lt;Array as=\&quot;points\&quot;&gt;\n              &lt;mxPoint x=\&quot;610\&quot; y=\&quot;708\&quot; /&gt;\n              &lt;mxPoint x=\&quot;734\&quot; y=\&quot;708\&quot; /&gt;\n            &lt;/Array&gt;\n          &lt;/mxGeometry&gt;\n        &lt;/mxCell&gt;\n      &lt;/root&gt;\n    &lt;/mxGraphModel&gt;\n  &lt;/diagram&gt;\n&lt;/mxfile&gt;\n&quot;}"></div>
+<script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
+</body>
+<div align=center>
+
+*Figure.4 SERVER_LOCAL Share Level*
+
+</div>
+
+An engine with SERVER_LOCAL share level is private to a single Kyuubi Server instance and is shared by all user sessions
+on that instance.In this mode, an engine instance is created when it is first needed by the Kyuubi Server and is
+associated with the host address of that server.
 
 ### SERVER
 
@@ -174,7 +207,7 @@ If you want fine-grained access control for session user, you need to get it fro
 </body>
 <div align=center>
 
-*Figure.4 SERVER Share Level*
+*Figure.5 SERVER Share Level*
 
 </div>
 
@@ -182,11 +215,23 @@ Literally, this model is similar to Spark Thrift Server with High availability.
 
 ### Subdomain
 
-For USER, GROUP, or SERVER share levels, you can further use `kyuubi.engine.share.level.subdomain` to isolate the engine.
+For USER, GROUP, or SERVER share levels, you can further use `kyuubi.engine.share.level.subdomain` to isolate the
+engine.
 That is, you can also create multiple engines for a single user, group or server(cluster).
-For example, in USER share level, you can use `kyuubi.engine.share.level.subdomain=sd1` and `kyuubi.engine.share.level.subdomain=sd2` to create two standalone engines for user `Tom`.
+For example, in USER share level, you can use `kyuubi.engine.share.level.subdomain=sd1`
+and `kyuubi.engine.share.level.subdomain=sd2` to create two standalone engines for user `Tom`.
 
-The `kyuubi.engine.share.level.subdomain` shall be configured in the JDBC connection URL to tell the Kyuubi server which engine you want to use.
+The `kyuubi.engine.share.level.subdomain` shall be configured in the JDBC connection URL to tell the Kyuubi server which
+engine you want to use.
+
+### Engine Pool
+
+Engine pool works by creating multiple engine subdomains (e.g.,
+`engine-pool-0`, `engine-pool-1`) and distributing sessions across these
+subdomains.
+
+The Engine Pool's configurations will not take effect when `kyuubi.engine.share.level.subdomain` is set
+or `kyuubi.engine.share.level` is set as `CONNECTION`.
 
 ### Hybrid
 
@@ -195,21 +240,48 @@ All supported share levels can be used together in a single Kyuubi server or clu
 ## Related Configurations
 
 - kyuubi.engine.share.level(kyuubi.session.engine.share.level)
-  - Default: USER
-  - Candidates: USER, CONNECTION, GROUP, SERVER
-  - Meaning: The base level for how an engine is created, cached and shared to sessions.
-  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher priority.
+    - Default: USER
+    - Candidates: USER, CONNECTION, GROUP, SERVER_LOCAL, SERVER
+    - Meaning: The base level for how an engine is created, cached and shared to sessions.
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
 - kyuubi.session.engine.idle.timeout
-  - Default: PT30M (30 min)
-  - Candidates: a proper timeout
-  - Meaning: Time to live since engine becomes idle
-  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher priority.
+    - Default: PT30M (30 min)
+    - Candidates: a proper timeout
+    - Meaning: Time to live since engine becomes idle
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
 - kyuubi.engine.share.level.subdomain(kyuubi.engine.share.level.sub.domain)
-  - Default: <none>
-  - Candidates: a valid zookeeper a child node
-  - Meaning: Add a subdomain under the base level to make further isolation for engines
-  - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher priority.
+    - Default: <none>
+    - Candidates: a valid zookeeper a child node
+    - Meaning: Add a subdomain under the base level to make further isolation for engines
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
+- kyuubi.engine.pool.size
+    - Default: -1
+    - Candidates: a positive integer
+    - Meaning: The number of engine pools
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
+- kyuubi.engine.pool.name
+    - Default: engine-pool
+    - Candidates: a valid name
+    - Meaning: The name of the engine pool
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
+- kyuubi.engine.pool.selectPolicy
+    - Default: RANDOM
+    - Candidates: RANDOM, POLLING
+    - Meaning: The selection policy of the engine pool
+    - Usage: It can be set both in the server configuration file and also connection URL. The latter has higher
+      priority.
+- kyuubi.engine.pool.size.threshold
+    - Default: 9
+    - Candidates: a positive integer
+    - Meaning: The threshold of the engine pool size
+    - Usage: It can be set only in the server configuration file.
 
 ## Conclusion
 
-With this feature, end-users are able to leverage engines in different ways to handle their different workloads, such as large-scale ETL jobs and interactive ad hoc queries.
+With this feature, end-users are able to leverage engines in different ways to handle their different workloads, such as
+large-scale ETL jobs and interactive ad hoc queries.
