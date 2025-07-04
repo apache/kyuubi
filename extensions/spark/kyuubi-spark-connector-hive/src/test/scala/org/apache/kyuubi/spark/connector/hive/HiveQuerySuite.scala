@@ -320,8 +320,8 @@ class HiveQuerySuite extends KyuubiHiveTest {
       """)
       assert(df3.count() === 1)
       // contains like : PushedFilters: [IsNotNull(value), GreaterThan(value,1)]
-      assert(df3.collect().map(_.getString(0))
-        .map(s => s.contains("PushedFilters") && !s.contains("PushedFilters: []")).toSet.size > 0)
+      assert(df3.collect().map(_.getString(0)).filter(s =>
+        s.contains("PushedFilters") && !s.contains("PushedFilters: []")).toSet.size == 1)
 
       // Test aggregation pushdown partition filters
       spark.conf.set("spark.sql.orc.aggregatePushdown", true)
@@ -344,9 +344,8 @@ class HiveQuerySuite extends KyuubiHiveTest {
       """)
       assert(df5.count() === 1)
       // contains like :  PushedAggregation: [COUNT(*)],
-      assert(df3.collect().map(_.getString(0))
-        .map(s =>
-          s.contains("PushedAggregation") && !s.contains("PushedAggregation: []")).toSet.size > 0)
+      assert(df5.collect().map(_.getString(0)).filter(s =>
+        s.contains("PushedAggregation") && !s.contains("PushedAggregation: []")).toSet.size == 1)
 
       spark.conf.set("spark.sql.orc.aggregatePushdown", false)
 
