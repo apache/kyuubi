@@ -54,6 +54,13 @@ class HiveCatalogFileIndex(
 
   override def partitionSchema: StructType = table.partitionSchema
 
+  override def listFiles(
+      partitionFilters: Seq[Expression],
+      dataFilters: Seq[Expression]): Seq[PartitionDirectory] = {
+    val fileIndex = filterPartitions(partitionFilters)
+    fileIndex.listFiles(partitionFilters, dataFilters)
+  }
+
   private[hive] def listHiveFiles(partitionFilters: Seq[Expression], dataFilters: Seq[Expression])
       : (Seq[PartitionDirectory], Map[PartitionDirectory, CatalogTablePartition]) = {
     val fileIndex = filterPartitions(partitionFilters)

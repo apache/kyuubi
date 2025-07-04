@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import java.util
+import java.util.Locale
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -31,6 +32,7 @@ import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
+import org.apache.spark.sql.execution.datasources.v2.orc.OrcScanBuilder
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{BucketSpecHelper, LogicalExpressions}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -59,6 +61,20 @@ case class HiveTable(
       catalogTable.stats.map(_.sizeInBytes.toLong).getOrElse(defaultTableSize))
   }
 
+  lazy val finalTableType: Option[String] = {
+    val serde = catalogTable.storage.serde.getOrElse("").toLowerCase(Locale.ROOT)
+    val parquet = serde.contains("parquet")
+    val orc = serde.contains("orc")
+    val provider = catalogTable.provider.map(_.toUpperCase(Locale.ROOT))
+    if (orc | provider.contains("ORC")) {
+      Some("ORC")
+    } else if (parquet | provider.contains("PARQUET")) {
+      Some("PARQUET")
+    } else {
+      None
+    }
+  }
+
   override def name(): String = catalogTable.identifier.unquotedString
 
   override def schema(): StructType = catalogTable.schema
@@ -77,7 +93,10 @@ case class HiveTable(
   }
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
+    finalTableType match {
+      case Some("ORC") => OrcScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
+      case _ => HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
+    }
   }
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
