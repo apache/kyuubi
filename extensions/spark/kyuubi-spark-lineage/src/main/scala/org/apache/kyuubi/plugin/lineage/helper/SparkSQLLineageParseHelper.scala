@@ -35,7 +35,6 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
-import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
@@ -49,7 +48,6 @@ trait LineageParser {
   val LOCAL_TABLE_IDENTIFIER = "__local__"
   val METADATA_COL_ATTR_KEY = "__metadata_col"
   val ORIGINAL_ROW_ID_VALUE_PREFIX: String = "__original_row_id_"
-  private val LOG = LoggerFactory.getLogger(classOf[LineageParser])
 
   type AttributeMap[A] = ListMap[Attribute, A]
 

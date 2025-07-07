@@ -30,15 +30,12 @@ class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
   test("columns lineage extract - MergeIntoTable") {
     val ddls =
       """
-        |drop table if exists v2_catalog.db.target_t;
-        |drop table if exists v2_catalog.db.source_t;
-        |drop table if exists v2_catalog.db.pivot_t;
         |create table v2_catalog.db.target_t(id int, name string, price float)
         |create table v2_catalog.db.source_t(id int, name string, price float)
         |create table v2_catalog.db.pivot_t(id int, price float)
         |""".stripMargin
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
-    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t") { _ =>
+    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t", "v2_catalog.db.pivot_t") { _ =>
       val ret0 = extractLineageWithoutExecuting("MERGE INTO v2_catalog.db.target_t AS target " +
         "USING v2_catalog.db.source_t AS source " +
         "ON target.id = source.id " +

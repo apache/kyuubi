@@ -34,13 +34,10 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
 
   test("columns lineage extract - WriteDelta") {
     assume(
-      SPARK_RUNTIME_VERSION >= "3.4",
-      "WriteDelta is only supported in SPARK_RUNTIME_VERSION >= 3.4")
+      SPARK_RUNTIME_VERSION >= "3.5",
+      "WriteDelta is only supported in SPARK_RUNTIME_VERSION >= 3.5")
     val ddls =
       """
-        |drop table if exists v2_catalog.db.target_t;
-        |drop table if exists v2_catalog.db.source_t;
-        |drop table if exists v2_catalog.db.pivot_t;
         |create table v2_catalog.db.target_t(pk int not null, name string, price float)
         | TBLPROPERTIES ('supports-deltas'='true');
         |create table v2_catalog.db.source_t(pk int not null, name string, price float)
@@ -50,7 +47,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         |""".stripMargin
     ddls.split(";").filter(_.nonEmpty).foreach(spark.sql(_).collect())
 
-    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t") { _ =>
+    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t", "v2_catalog.db.pivot_t") { _ =>
       val ret0 = extractLineageWithoutExecuting(
         "MERGE INTO v2_catalog.db.target_t AS target " +
           "USING v2_catalog.db.source_t AS source " +
@@ -118,19 +115,16 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
 
   test("columns lineage extract - ReplaceData") {
     assume(
-      SPARK_RUNTIME_VERSION >= "3.3",
-      "ReplaceData is only supported in SPARK_RUNTIME_VERSION >= 3.3")
+      SPARK_RUNTIME_VERSION >= "3.5",
+      "ReplaceData[SPARK-43963] for merge into is supported in SPARK_RUNTIME_VERSION >= 3.5")
     val ddls =
       """
-        |drop table if exists v2_catalog.db.target_t;
-        |drop table if exists v2_catalog.db.source_t;
-        |drop table if exists v2_catalog.db.pivot_t;
         |create table v2_catalog.db.target_t(id int, name string, price float)
         |create table v2_catalog.db.source_t(id int, name string, price float)
         |create table v2_catalog.db.pivot_t(id int, price float)
         |""".stripMargin
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
-    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t") { _ =>
+    withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t", "v2_catalog.db.pivot_t") { _ =>
       val ret0 = extractLineageWithoutExecuting("MERGE INTO v2_catalog.db.target_t AS target " +
         "USING v2_catalog.db.source_t AS source " +
         "ON target.id = source.id " +
