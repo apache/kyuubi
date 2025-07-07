@@ -41,11 +41,14 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         |drop table if exists v2_catalog.db.target_t;
         |drop table if exists v2_catalog.db.source_t;
         |drop table if exists v2_catalog.db.pivot_t;
-        |create table v2_catalog.db.target_t(pk int not null, name string, price float) TBLPROPERTIES ('supports-deltas'='true')
-        |create table v2_catalog.db.source_t(pk int not null, name string, price float) TBLPROPERTIES ('supports-deltas'='true')
-        |create table v2_catalog.db.pivot_t(pk int not null, price float) TBLPROPERTIES ('supports-deltas'='true')
+        |create table v2_catalog.db.target_t(pk int not null, name string, price float)
+        | TBLPROPERTIES ('supports-deltas'='true');
+        |create table v2_catalog.db.source_t(pk int not null, name string, price float)
+        | TBLPROPERTIES ('supports-deltas'='true');
+        |create table v2_catalog.db.pivot_t(pk int not null, price float)
+        | TBLPROPERTIES ('supports-deltas'='true')
         |""".stripMargin
-    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    ddls.split(";").filter(_.nonEmpty).foreach(spark.sql(_).collect())
 
     withTable("v2_catalog.db.target_t", "v2_catalog.db.source_t") { _ =>
       val ret0 = extractLineageWithoutExecuting(
