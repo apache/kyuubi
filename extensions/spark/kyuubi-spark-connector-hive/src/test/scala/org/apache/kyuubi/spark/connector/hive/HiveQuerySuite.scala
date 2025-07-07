@@ -270,54 +270,55 @@ class HiveQuerySuite extends KyuubiHiveTest {
   }
 
   test("ORC filter pushdown") {
-    var table = "hive.default.orc_filter_pushdown"
+    val table = "hive.default.orc_filter_pushdown"
     withTempPushFilterPartitionedTable(
       spark,
       table,
       s"""
-        CREATE TABLE $table (
-          id INT,
-          data STRING,
-          value INT
-        ) PARTITIONED BY (dt STRING, region STRING)
-       STORED AS ORC
-      """) {
+         | CREATE TABLE $table (
+         |  id INT,
+         |  data STRING,
+         |  value INT
+         |  ) PARTITIONED BY (dt STRING, region STRING)
+         |  STORED AS ORC
+      """.stripMargin) {
 
       // Insert test data with partitions
       spark.sql(s"""
-        INSERT INTO $table PARTITION (dt='2024-01-01', region='east')
-        VALUES (1, 'a', 100), (2, 'b', 200), (11, 'aa', 100), (22, 'b', 200)
-      """)
+                   | INSERT INTO $table PARTITION (dt='2024-01-01', region='east')
+                   | VALUES (1, 'a', 100), (2, 'b', 200), (11, 'aa', 100), (22, 'b', 200)
+      """.stripMargin)
+
       spark.sql(s"""
-        INSERT INTO $table PARTITION (dt='2024-01-01', region='west')
-        VALUES (3, 'c', 300), (4, 'd', 400), (33, 'cc', 300), (44, 'dd', 400)
-      """)
+                   | INSERT INTO $table PARTITION (dt='2024-01-01', region='west')
+                   | VALUES (3, 'c', 300), (4, 'd', 400), (33, 'cc', 300), (44, 'dd', 400)
+      """.stripMargin)
       spark.sql(s"""
-        INSERT INTO $table PARTITION (dt='2024-01-02', region='east')
-        VALUES (5, 'e', 500), (6, 'f', 600), (55, 'ee', 500), (66, 'ff', 600)
-      """)
+                   | INSERT INTO $table PARTITION (dt='2024-01-02', region='east')
+                   | VALUES (5, 'e', 500), (6, 'f', 600), (55, 'ee', 500), (66, 'ff', 600)
+      """.stripMargin)
 
       // Test multiple partition filters
       val df1 = spark.sql(s"""
-        SELECT * FROM $table
-        WHERE dt = '2024-01-01' AND region = 'east' AND value > 1500
-      """)
+                             | SELECT * FROM $table
+                             | WHERE dt = '2024-01-01' AND region = 'east' AND value > 1500
+      """.stripMargin)
       assert(df1.count() === 0)
 
       // Test multiple partition filters
       val df2 = spark.sql(s"""
-        SELECT * FROM $table
-        WHERE dt = '2024-01-01' AND region = 'east' AND value > 150
-      """)
+                             | SELECT * FROM $table
+                             | WHERE dt = '2024-01-01' AND region = 'east' AND value > 150
+      """.stripMargin)
       assert(df2.count() === 2)
       assert(df2.collect().map(_.getInt(0)).toSet === Set(2, 22))
 
       // Test explain
       val df3 = spark.sql(s"""
-       EXPLAIN SELECT count(*) as total_rows
-        FROM $table
-        WHERE dt = '2024-01-01' AND region = 'east' AND value > 1
-      """)
+                             | EXPLAIN SELECT count(*) as total_rows
+                             | FROM $table
+                             | WHERE dt = '2024-01-01' AND region = 'east' AND value > 1
+      """.stripMargin)
       assert(df3.count() === 1)
       // contains like : PushedFilters: [IsNotNull(value), GreaterThan(value,1)]
       assert(df3.collect().map(_.getString(0)).filter(s =>
@@ -328,20 +329,20 @@ class HiveQuerySuite extends KyuubiHiveTest {
 
       // Test aggregation pushdown partition filters
       val df4 = spark.sql(s"""
-        SELECT count(*) as total_rows
-        FROM $table
-        WHERE dt = '2024-01-01' AND region = 'east'
-        group by dt, region
-      """)
+                             | SELECT count(*) as total_rows
+                             | FROM $table
+                             | WHERE dt = '2024-01-01' AND region = 'east'
+                             | group by dt, region
+      """.stripMargin)
       assert(df4.count() === 1)
       assert(df4.collect().map(_.getLong(0)).toSet === Set(4L))
 
       val df5 = spark.sql(s"""
-        EXPLAIN SELECT count(*) as total_rows
-        FROM $table
-        WHERE dt = '2024-01-01' AND region = 'east'
-        group by dt, region
-      """)
+                             | EXPLAIN SELECT count(*) as total_rows
+                             | FROM $table
+                             | WHERE dt = '2024-01-01' AND region = 'east'
+                             | group by dt, region
+      """.stripMargin)
       assert(df5.count() === 1)
       // contains like :  PushedAggregation: [COUNT(*)],
       assert(df5.collect().map(_.getString(0)).filter(s =>

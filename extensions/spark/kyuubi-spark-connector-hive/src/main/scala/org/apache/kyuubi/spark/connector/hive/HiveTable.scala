@@ -37,6 +37,7 @@ import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{BucketSpecHe
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.READ_CONVERT_METASTORE_ORC
 import org.apache.kyuubi.spark.connector.hive.read.{HiveCatalogFileIndex, HiveScanBuilder}
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 
@@ -61,14 +62,14 @@ case class HiveTable(
       catalogTable.stats.map(_.sizeInBytes.toLong).getOrElse(defaultTableSize))
   }
 
-  lazy val finalTableType: Option[String] = {
-    val serde = catalogTable.storage.serde.getOrElse("").toLowerCase(Locale.ROOT)
-    val parquet = serde.contains("parquet")
-    val orc = serde.contains("orc")
+  lazy val convertedProvider: Option[String] = {
+    val serde = catalogTable.storage.serde.getOrElse("").toUpperCase(Locale.ROOT)
+    val parquet = serde.contains("PARQUET")
+    val orc = serde.contains("ORC")
     val provider = catalogTable.provider.map(_.toUpperCase(Locale.ROOT))
-    if (orc | provider.contains("ORC")) {
+    if (orc || provider.contains("ORC")) {
       Some("ORC")
-    } else if (parquet | provider.contains("PARQUET")) {
+    } else if (parquet || provider.contains("PARQUET")) {
       Some("PARQUET")
     } else {
       None
@@ -93,8 +94,9 @@ case class HiveTable(
   }
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    finalTableType match {
-      case Some("ORC") => OrcScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
+    convertedProvider match {
+      case Some("ORC") if sparkSession.sessionState.conf.getConf(READ_CONVERT_METASTORE_ORC) =>
+        OrcScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
       case _ => HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
     }
   }

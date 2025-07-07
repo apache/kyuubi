@@ -19,6 +19,8 @@ package org.apache.kyuubi.spark.connector.hive
 
 import java.util.Locale
 
+import org.apache.spark.sql.internal.SQLConf.buildConf
+
 object KyuubiHiveConnectorConf {
 
   import org.apache.spark.sql.internal.SQLConf.buildStaticConf
@@ -39,4 +41,12 @@ object KyuubiHiveConnectorConf {
         "Invalid value for 'spark.sql.kyuubi.hive.connector.externalCatalog.share.policy'." +
           "Valid values are 'ONE_FOR_ONE', 'ONE_FOR_ALL'.")
       .createWithDefault(OneForAllPolicy.name)
+
+  val READ_CONVERT_METASTORE_ORC =
+    buildConf("spark.sql.kyuubi.hive.connector.read.convertMetastoreOrc")
+      .doc(s"When set to true, the built-in ORC reader are used to process " +
+        "ORC tables created by using the HiveQL syntax, instead of Hive serde.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(true)
 }

@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.READ_CONVERT_METASTORE_ORC
 import org.apache.kyuubi.spark.connector.hive.read.HiveScan
 
 class HiveCatalogSuite extends KyuubiHiveTest {
@@ -356,8 +357,17 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     val orcProps: util.Map[String, String] = new util.HashMap[String, String]()
     orcProps.put(TableCatalog.PROP_PROVIDER, "orc")
     val ot = catalog.createTable(orc_table, schema, Array.empty[Transform], orcProps)
+
     val orcScan = ot.asInstanceOf[HiveTable]
       .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[OrcScan]
     assert(orcScan.isSplitable(new Path("empty")))
+
+    withSparkSession(Map(READ_CONVERT_METASTORE_ORC.key -> "false")) {
+      _ =>
+        val orcScan = ot.asInstanceOf[HiveTable]
+          .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+        assert(orcScan.isSplitable(new Path("empty")))
+    }
+
   }
 }
