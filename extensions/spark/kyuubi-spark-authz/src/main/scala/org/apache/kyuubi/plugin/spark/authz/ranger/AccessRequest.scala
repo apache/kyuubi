@@ -21,7 +21,7 @@ import java.util.{HashMap => JHashMap, Set => JSet}
 import java.util.Date
 
 import scala.collection.JavaConverters._
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.policyengine.{RangerAccessRequestImpl, RangerPolicyEngine}
@@ -71,38 +71,76 @@ object AccessRequest extends Logging {
     req
   }
 
+  private def logWarningForUserGroupRole(
+      clazzName: String,
+      methodName: String,
+      cause: Throwable): Unit = {
+    logWarning(
+      s"Unable to find method $methodName from class $clazzName. " +
+        s"The feature of user group roles requires Ranger 2.1 or above.",
+      cause)
+  }
+
   private val getRolesFromUserAndGroupsMethod: Option[BoundMethod] = Try {
     DynMethods.builder("getRolesFromUserAndGroups")
       .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
       .build(SparkRangerAdminPlugin)
+  }.recoverWith { case rethrow: Exception =>
+    logWarningForUserGroupRole("SparkRangerAdminPlugin", "getRolesFromUserAndGroups", rethrow)
+    Failure(rethrow)
   }.toOption
 
   private val setUserRolesMethod: Option[UnboundMethod] = Try {
     DynMethods.builder("setUserRoles")
       .impl(classOf[AccessRequest], classOf[JSet[String]])
       .buildChecked()
+  }.recoverWith { case rethrow: Exception =>
+    logWarningForUserGroupRole("AccessRequest", "setUserRoles", rethrow)
+    Failure(rethrow)
   }.toOption
 
   private def getUserGroupsFromUgi(user: UserGroupInformation): JSet[String] = {
     user.getGroupNames.toSet.asJava
   }
 
+  private def logWarningForUserStore(
+      clazzName: String,
+      methodName: String,
+      cause: Throwable): Unit = {
+    val svcType = SparkRangerAdminPlugin.getServiceType
+    val confKey = s"ranger.plugin.$svcType.use.usergroups.from.userstore.enabled"
+    logWarning(
+      s"Unable to find method $methodName from class $clazzName. " +
+        s"The feature of UserStore requires Ranger 2.1 or above, " +
+        s"consider diabling '$confKey' if you don't use this feature.",
+      cause)
+  }
+
   private lazy val getUserStoreEnricherMethod: Option[BoundMethod] = Try {
     DynMethods.builder("getUserStoreEnricher")
       .impl(SparkRangerAdminPlugin.getClass)
       .build(SparkRangerAdminPlugin)
+  }.recoverWith { case rethrow: Exception =>
+    logWarningForUserStore("SparkRangerAdminPlugin", "getUserStoreEnricher", rethrow)
+    Failure(rethrow)
   }.toOption
 
   private lazy val getRangerUserStoreMethod: Option[UnboundMethod] = Try {
     DynMethods.builder("getRangerUserStore")
       .impl("org.apache.ranger.plugin.contextenricher.RangerUserStoreEnricher")
       .build()
+  }.recoverWith { case rethrow: Exception =>
+    logWarningForUserStore("RangerUserStoreEnricher", "getRangerUserStore", rethrow)
+    Failure(rethrow)
   }.toOption
 
   private lazy val getUserGroupMappingMethod: Option[UnboundMethod] = Try {
     DynMethods.builder("getUserGroupMapping")
       .impl("org.apache.ranger.plugin.util.RangerUserStore")
       .build()
+  }.recoverWith { case rethrow: Exception =>
+    logWarningForUserStore("RangerUserStore", "getUserGroupMapping", rethrow)
+    Failure(rethrow)
   }.toOption
 
   private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
