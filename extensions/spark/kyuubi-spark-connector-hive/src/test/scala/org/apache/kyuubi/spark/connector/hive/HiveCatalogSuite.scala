@@ -374,6 +374,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
               scan.isInstanceOf[HiveScan],
               s"Expected HiveScan, got ${scan.getClass.getSimpleName}")
             scan.asInstanceOf[HiveScan]
+          case _ =>
+            throw new IllegalArgumentException(
+              s"Unexpected value: '$value'. Only 'true' or 'false' are allowed.")
         }
         assert(orcScan.isSplitable(new Path("empty")))
       }
