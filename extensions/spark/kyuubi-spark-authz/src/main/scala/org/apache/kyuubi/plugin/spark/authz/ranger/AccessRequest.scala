@@ -105,7 +105,7 @@ object AccessRequest extends Logging {
       .build()
   }.toOption
 
-  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] =
+  private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     (getUserStoreEnricherMethod, getRangerUserStoreMethod, getUserGroupMappingMethod) match {
       case (Some(getEnricher), Some(getUserStore), Some(getMapping)) => Try {
           val enricher = getEnricher.invoke()
@@ -119,6 +119,7 @@ object AccessRequest extends Logging {
         logWarning(s"Unable to use Ranger's userstore though '$confKey' is true.")
         None
     }
+  }
 
   private def getUserGroups(user: UserGroupInformation): JSet[String] = {
     if (SparkRangerAdminPlugin.useUserGroupsFromUserStoreEnabled) {
@@ -127,4 +128,5 @@ object AccessRequest extends Logging {
       getUserGroupsFromUgi(user)
     }
   }
+
 }
