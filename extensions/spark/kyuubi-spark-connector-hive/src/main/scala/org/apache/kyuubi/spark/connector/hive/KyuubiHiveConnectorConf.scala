@@ -44,8 +44,8 @@ object KyuubiHiveConnectorConf {
 
   val READ_CONVERT_METASTORE_ORC =
     buildConf("spark.sql.kyuubi.hive.connector.read.convertMetastoreOrc")
-      .doc(s"When set to true, the built-in ORC reader are used to process " +
-        "ORC tables created by using the HiveQL syntax, instead of Hive serde.")
+      .doc("When enabled, the data source ORC reader is used to process " +
+        "ORC tables created by using the HiveQL syntax, instead of Hive SerDe.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
