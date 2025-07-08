@@ -85,7 +85,7 @@ object AccessRequest extends Logging {
   }
 
   private lazy val getUserStoreEnricherMethod: Option[UnboundMethod] =
-    getMethod(SparkRangerAdminPlugin.getClass, "getUserStoreEnricher")
+    getMethod(classOf[SparkRangerAdminPlugin], "getUserStoreEnricher")
 
   private lazy val getRangerUserStoreMethod: Option[UnboundMethod] =
     getMethod(
