@@ -2214,8 +2214,8 @@ object KyuubiConf {
 
   val OPERATION_TIMEOUT_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.operation.timeout.pool.size")
-      .doc("The number of threads in the shared timeout executor pool used for operation " +
-        "timeout monitoring.")
+      .doc("Number of threads in the per-OperationManager timeout scheduler used for " +
+        "operation-level timeout monitoring.")
       .version("1.11.0")
       .intConf
       .createWithDefault(8)
@@ -2223,10 +2223,10 @@ object KyuubiConf {
   val OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.operation.timeout.pool.keepalive.time")
       .doc(
-        "The keep-alive time in seconds for idle threads in the shared timeout executor pool.")
+        "Keep-alive time for idle threads in the per-OperationManager timeout scheduler.")
       .version("1.11.0")
-      .longConf
-      .createWithDefault(60L)
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   val OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.query.timeout.monitor.enabled")

@@ -44,7 +44,6 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   final private[kyuubi] val statementId = handle.identifier.toString
 
-  private var timeoutExecutor: Option[ThreadPoolTimeoutExecutor] = None
   private var timeoutFuture: Option[ScheduledFuture[_]] = None
 
   private val lock: ReentrantLock = new ReentrantLock()
@@ -60,7 +59,6 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def addTimeoutMonitor(queryTimeout: Long): Unit = {
     if (queryTimeout > 0) {
-      val executor = ThreadPoolTimeoutExecutor.getOrCreate(session.sessionManager.getConf)
       val action: Runnable = () =>
         // Clients less than version 2.1 have no HIVE-4924 Patch,
         // no queryTimeout parameter and no TIMEOUT status.
@@ -74,17 +72,15 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
           cleanup(OperationState.TIMEOUT)
         }
 
-      val future = executor.scheduleTimeout(action, queryTimeout)
-      timeoutExecutor = Some(executor)
+      val future = session.sessionManager.operationManager.scheduleTimeout(action, queryTimeout)
       timeoutFuture = Some(future)
     }
   }
 
   protected def shutdownTimeoutMonitor(): Unit = {
     timeoutFuture.foreach { future =>
-      timeoutExecutor.foreach(_.cancelTimeout(future))
+      session.sessionManager.operationManager.cancelTimeout(future)
     }
-    timeoutExecutor = None
     timeoutFuture = None
   }
 

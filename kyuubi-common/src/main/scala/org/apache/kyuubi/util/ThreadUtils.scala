@@ -67,6 +67,24 @@ object ThreadUtils extends Logging {
     Executors.newCachedThreadPool(threadFactory).asInstanceOf[ThreadPoolExecutor]
   }
 
+  def newDaemonScheduledThreadPool(
+      poolSize: Int,
+      keepAliveSec: Long,
+      prefix: String,
+      removeOnCancel: Boolean = true,
+      executeDelayedTasksAfterShutdown: Boolean = false): ScheduledThreadPoolExecutor = {
+    val threadFactory = new NamedThreadFactory(prefix, daemon = true)
+    val executor = new ScheduledThreadPoolExecutor(poolSize, threadFactory)
+    executor.setRemoveOnCancelPolicy(removeOnCancel)
+    executor.setExecuteExistingDelayedTasksAfterShutdownPolicy(executeDelayedTasksAfterShutdown)
+    if (keepAliveSec > 0) {
+      executor.setKeepAliveTime(keepAliveSec, TimeUnit.SECONDS)
+      executor.allowCoreThreadTimeOut(true)
+    }
+    info(s"$prefix: pool size: $poolSize, keepalive time: $keepAliveSec s")
+    executor
+  }
+
   def awaitResult[T](awaitable: Awaitable[T], atMost: Duration): T = {
     try {
       // `awaitPermission` is not actually used anywhere so it's safe to pass in null here.
