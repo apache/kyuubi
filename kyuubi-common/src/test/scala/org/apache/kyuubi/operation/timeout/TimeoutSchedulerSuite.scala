@@ -16,7 +16,9 @@
  */
 package org.apache.kyuubi.operation.timeout
 
-import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.concurrent.CountDownLatch
+
+import scala.concurrent.duration._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -34,14 +36,13 @@ class TimeoutSchedulerSuite extends KyuubiFunSuite {
     manager.start()
 
     val latch = new CountDownLatch(1)
-    val future = manager.scheduleTimeout(
-      new Runnable {
-        override def run(): Unit = latch.countDown()
-      },
-      1)
+    val future =
+      manager.scheduleTimeout(new Runnable { override def run(): Unit = latch.countDown() }, 1)
 
-    // Ensure the task completed
-    assert(latch.await(5, TimeUnit.SECONDS))
+    // wait until latch count becomes 0
+    eventually(timeout(5.seconds), interval(100.millis)) {
+      assert(latch.getCount == 0)
+    }
     assert(!future.isCancelled)
 
     // Test cancellation path

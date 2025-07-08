@@ -54,11 +54,11 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     LogDivertAppender.initialize(skipOperationLog)
     super.initialize(conf)
 
-    val poolSize = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
-    val keepAlive = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
+    val timeoutPoolSize = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
+    val timeoutPoolKeepAliveTime = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
     timeoutScheduler = ThreadUtils.newDaemonScheduledThreadPool(
-      poolSize,
-      keepAlive,
+      timeoutPoolSize,
+      timeoutPoolKeepAliveTime,
       "operation-timeout")
   }
 
