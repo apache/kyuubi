@@ -72,7 +72,7 @@ object AccessRequest extends Logging {
 
   private val getRolesFromUserAndGroupsMethod: Option[UnboundMethod] =
     getMethod(
-      classOf[SparkRangerAdminPlugin],
+      SparkRangerAdminPlugin.getClass,
       "getRolesFromUserAndGroups",
       classOf[String],
       classOf[JSet[String]])
