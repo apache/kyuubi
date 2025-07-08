@@ -23,7 +23,7 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME
 class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
   override def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.1") "org.apache.spark.sql.connector.InMemoryTableCatalog"
+    if (SPARK_RUNTIME_VERSION <= "3.3") "org.apache.spark.sql.connector.InMemoryTableCatalog"
     else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
   }
 

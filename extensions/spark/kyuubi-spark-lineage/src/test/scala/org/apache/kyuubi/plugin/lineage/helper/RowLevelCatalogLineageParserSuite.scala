@@ -23,9 +23,7 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME
 class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
   override def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.1") {
-      "org.apache.spark.sql.connector.InMemoryTableCatalog"
-    } else if (SPARK_RUNTIME_VERSION <= "3.2") {
+    if (SPARK_RUNTIME_VERSION <= "3.3") {
       "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
     } else {
       "org.apache.spark.sql.connector.catalog.InMemoryRowLevelOperationTableCatalog"
@@ -108,7 +106,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.target_t.pk")),
-          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.target_t.name")),
+          ("v2_catalog.db.target_t.name", Set()),
           ("v2_catalog.db.target_t.price", Set("v2_catalog.db.target_t.price")))))
     }
   }
@@ -198,12 +196,26 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
 
       val ret3 = extractLineageWithoutExecuting(
         "update v2_catalog.db.target_t AS set name='abc' where price < 10 ")
+      // For tables that do not support row-level deletion,
+      // duplicate data of the same group may be included when writing.
+      // plan is:
+      // ReplaceData
+      // +- Project [if ((price#1160 < cast(10 as float))) id#1158 else id#1158 AS id#1163,
+      //    if ((price#1160 < cast(10 as float))) abc else name#1159 AS name#1164,
+      //    if ((price#1160 < cast(10 as float))) price#1160 else price#1160 AS price#1165,
+      //    _partition#1162]
+      // +- RelationV2[id#1158, name#1159, price#1160, _partition#1162]
+      //    v2_catalog.db.target_t v2_catalog.db.target_t
       assert(ret3 == Lineage(
         List("v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
-          ("v2_catalog.db.target_t.id", Set("v2_catalog.db.target_t.id")),
-          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.target_t.name")),
+          (
+            "v2_catalog.db.target_t.id",
+            Set("v2_catalog.db.target_t.price", "v2_catalog.db.target_t.id")),
+          (
+            "v2_catalog.db.target_t.name",
+            Set("v2_catalog.db.target_t.price", "v2_catalog.db.target_t.name")),
           ("v2_catalog.db.target_t.price", Set("v2_catalog.db.target_t.price")))))
     }
   }

@@ -35,7 +35,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
 
   def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.1") "org.apache.spark.sql.connector.InMemoryTableCatalog"
+    if (SPARK_RUNTIME_VERSION <= "3.3") "org.apache.spark.sql.connector.InMemoryTableCatalog"
     else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
   }
 
@@ -1393,31 +1393,33 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   test("test directory to table") {
     val inputFile = getClass.getResource("/").getPath + "input_file"
     val sourceFile = File(inputFile).createFile()
-    withView("temp_view") { _ => {
-      spark.sql(
-        s"""
-           |CREATE OR REPLACE TEMPORARY VIEW temp_view (
-           | `a` STRING COMMENT '',
-           | `b` STRING COMMENT ''
-           |) USING csv OPTIONS(
-           |  sep='\t',
-           |  path='${sourceFile.path}'
-           |);
-           |""".stripMargin).collect()
+    withView("temp_view") { _ =>
+      {
+        spark.sql(
+          s"""
+             |CREATE OR REPLACE TEMPORARY VIEW temp_view (
+             | `a` STRING COMMENT '',
+             | `b` STRING COMMENT ''
+             |) USING csv OPTIONS(
+             |  sep='\t',
+             |  path='${sourceFile.path}'
+             |);
+             |""".stripMargin).collect()
 
-      val ret0 = extractLineageWithoutExecuting(
-        s"""
-           |INSERT OVERWRITE TABLE test_db.test_table_from_dir
-           |SELECT `a`, `b` FROM temp_view
-           |""".stripMargin)
+        val ret0 = extractLineageWithoutExecuting(
+          s"""
+             |INSERT OVERWRITE TABLE test_db.test_table_from_dir
+             |SELECT `a`, `b` FROM temp_view
+             |""".stripMargin)
 
-      assert(ret0 == Lineage(
-        List(),
-        List(s"spark_catalog.test_db.test_table_from_dir"),
-        List(
-          (s"spark_catalog.test_db.test_table_from_dir.a0", Set()),
-          (s"spark_catalog.test_db.test_table_from_dir.b0", Set()))))
-    }}
+        assert(ret0 == Lineage(
+          List(),
+          List(s"spark_catalog.test_db.test_table_from_dir"),
+          List(
+            (s"spark_catalog.test_db.test_table_from_dir.a0", Set()),
+            (s"spark_catalog.test_db.test_table_from_dir.b0", Set()))))
+      }
+    }
   }
 
   protected def extractLineageWithoutExecuting(sql: String): Lineage = {

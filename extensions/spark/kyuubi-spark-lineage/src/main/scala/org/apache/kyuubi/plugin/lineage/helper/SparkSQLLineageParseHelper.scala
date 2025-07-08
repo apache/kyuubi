@@ -48,6 +48,7 @@ trait LineageParser {
   val LOCAL_TABLE_IDENTIFIER = "__local__"
   val METADATA_COL_ATTR_KEY = "__metadata_col"
   val ORIGINAL_ROW_ID_VALUE_PREFIX: String = "__original_row_id_"
+  val OPERATION_COLUMN: String = "__row_operation"
 
   type AttributeMap[A] = ListMap[Attribute, A]
 
@@ -332,23 +333,12 @@ trait LineageParser {
       case p if p.nodeName == "WriteDelta" || p.nodeName == "ReplaceData" =>
         val table = getV2TableName(getField[NamedRelation](plan, "table"))
         val query = getQuery(plan)
-        query match {
-          case mergeRows if mergeRows.nodeName == "MergeRows" =>
-            val columnsLineage = extractColumnsLineage(query, parentColumnsLineage)
-            columnsLineage
-              .filter { case (k, _) => !isMetadataAttr(k) }
-              .map { case (k, v) =>
-                k.withName(s"$table.${k.name}") -> v
-              }
-          case p => // Expand or Project
-            val columnsLineage = p.children.map(
-              extractColumnsLineage(_, parentColumnsLineage)).reduce(mergeColumnsLineage)
-            columnsLineage
-              .filter { case (k, _) => !isMetadataAttr(k) }
-              .map { case (k, v) =>
-                k.withName(s"$table.${k.name}") -> v
-              }
-        }
+        val columnsLineage = extractColumnsLineage(query, parentColumnsLineage)
+        columnsLineage
+          .filter { case (k, _) => !isMetadataAttr(k) }
+          .map { case (k, v) =>
+            k.withName(s"$table.${k.name}") -> v
+          }
       case p if p.nodeName == "MergeIntoTable" =>
         val matchedActions = getField[Seq[MergeAction]](plan, "matchedActions")
         val notMatchedActions = getField[Seq[MergeAction]](plan, "notMatchedActions")
@@ -551,7 +541,8 @@ trait LineageParser {
 
   private def isMetadataAttr(attr: Attribute): Boolean = {
     attr.metadata.contains(METADATA_COL_ATTR_KEY) ||
-    attr.name.startsWith(ORIGINAL_ROW_ID_VALUE_PREFIX)
+    attr.name.startsWith(ORIGINAL_ROW_ID_VALUE_PREFIX) ||
+    attr.name.startsWith(OPERATION_COLUMN)
   }
 
   private def extractInstructionOutputs(instruction: Expression): Seq[Expression] = {
