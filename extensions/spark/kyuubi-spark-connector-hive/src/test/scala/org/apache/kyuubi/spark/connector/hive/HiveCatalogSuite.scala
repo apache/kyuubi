@@ -358,16 +358,16 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     orcProps.put(TableCatalog.PROP_PROVIDER, "orc")
     val ot = catalog.createTable(orc_table, schema, Array.empty[Transform], orcProps)
 
-    val orcScan = ot.asInstanceOf[HiveTable]
-      .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[OrcScan]
-    assert(orcScan.isSplitable(new Path("empty")))
-
-    withSparkSession(Map(READ_CONVERT_METASTORE_ORC.key -> "false")) {
-      _ =>
-        val orcScan = ot.asInstanceOf[HiveTable]
-          .newScanBuilder(CaseInsensitiveStringMap.empty()).build().asInstanceOf[HiveScan]
+    Seq("true", "false").foreach { value =>
+      withSparkSession(Map(READ_CONVERT_METASTORE_ORC.key -> value)) { _ =>
+        val scan = ot.asInstanceOf[HiveTable]
+          .newScanBuilder(CaseInsensitiveStringMap.empty()).build()
+        val orcScan = value match {
+          case "true" => scan.asInstanceOf[OrcScan]
+          case "false" => scan.asInstanceOf[HiveScan]
+        }
         assert(orcScan.isSplitable(new Path("empty")))
+      }
     }
-
   }
 }

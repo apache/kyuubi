@@ -271,45 +271,43 @@ class HiveQuerySuite extends KyuubiHiveTest {
 
   test("ORC filter pushdown") {
     val table = "hive.default.orc_filter_pushdown"
-    withTempPushFilterPartitionedTable(
-      spark,
-      table,
-      s"""
-         | CREATE TABLE $table (
-         |  id INT,
-         |  data STRING,
-         |  value INT
-         |  ) PARTITIONED BY (dt STRING, region STRING)
-         |  STORED AS ORC
-      """.stripMargin) {
+    withTable(table) {
+      spark.sql(s"""
+                   | CREATE TABLE $table (
+                   |  id INT,
+                   |  data STRING,
+                   |  value INT
+                   |  ) PARTITIONED BY (dt STRING, region STRING)
+                   |  STORED AS ORC
+                   | """.stripMargin).collect()
 
       // Insert test data with partitions
       spark.sql(s"""
                    | INSERT INTO $table PARTITION (dt='2024-01-01', region='east')
                    | VALUES (1, 'a', 100), (2, 'b', 200), (11, 'aa', 100), (22, 'b', 200)
-      """.stripMargin)
+                   |""".stripMargin)
 
       spark.sql(s"""
                    | INSERT INTO $table PARTITION (dt='2024-01-01', region='west')
                    | VALUES (3, 'c', 300), (4, 'd', 400), (33, 'cc', 300), (44, 'dd', 400)
-      """.stripMargin)
+                   |""".stripMargin)
       spark.sql(s"""
                    | INSERT INTO $table PARTITION (dt='2024-01-02', region='east')
                    | VALUES (5, 'e', 500), (6, 'f', 600), (55, 'ee', 500), (66, 'ff', 600)
-      """.stripMargin)
+                   | """.stripMargin)
 
       // Test multiple partition filters
       val df1 = spark.sql(s"""
                              | SELECT * FROM $table
                              | WHERE dt = '2024-01-01' AND region = 'east' AND value > 1500
-      """.stripMargin)
+                             |""".stripMargin)
       assert(df1.count() === 0)
 
       // Test multiple partition filters
       val df2 = spark.sql(s"""
                              | SELECT * FROM $table
                              | WHERE dt = '2024-01-01' AND region = 'east' AND value > 150
-      """.stripMargin)
+                             |""".stripMargin)
       assert(df2.count() === 2)
       assert(df2.collect().map(_.getInt(0)).toSet === Set(2, 22))
 
@@ -318,11 +316,12 @@ class HiveQuerySuite extends KyuubiHiveTest {
                              | EXPLAIN SELECT count(*) as total_rows
                              | FROM $table
                              | WHERE dt = '2024-01-01' AND region = 'east' AND value > 1
-      """.stripMargin)
+                             |""".stripMargin)
       assert(df3.count() === 1)
       // contains like : PushedFilters: [IsNotNull(value), GreaterThan(value,1)]
-      assert(df3.collect().map(_.getString(0)).filter(s =>
-        s.contains("PushedFilters") && !s.contains("PushedFilters: []")).toSet.size == 1)
+      assert(df3.collect().map(_.getString(0)).filter { s =>
+        s.contains("PushedFilters") && !s.contains("PushedFilters: []")
+      }.toSet.size == 1)
 
       // Test aggregation pushdown partition filters
       spark.conf.set("spark.sql.orc.aggregatePushdown", true)
@@ -333,7 +332,7 @@ class HiveQuerySuite extends KyuubiHiveTest {
                              | FROM $table
                              | WHERE dt = '2024-01-01' AND region = 'east'
                              | group by dt, region
-      """.stripMargin)
+                             | """.stripMargin)
       assert(df4.count() === 1)
       assert(df4.collect().map(_.getLong(0)).toSet === Set(4L))
 
@@ -342,11 +341,12 @@ class HiveQuerySuite extends KyuubiHiveTest {
                              | FROM $table
                              | WHERE dt = '2024-01-01' AND region = 'east'
                              | group by dt, region
-      """.stripMargin)
+                             | """.stripMargin)
       assert(df5.count() === 1)
       // contains like :  PushedAggregation: [COUNT(*)],
-      assert(df5.collect().map(_.getString(0)).filter(s =>
-        s.contains("PushedAggregation") && !s.contains("PushedAggregation: []")).toSet.size == 1)
+      assert(df5.collect().map(_.getString(0)).filter { s =>
+        s.contains("PushedAggregation") && !s.contains("PushedAggregation: []")
+      }.toSet.size == 1)
 
       spark.conf.set("spark.sql.orc.aggregatePushdown", false)
 

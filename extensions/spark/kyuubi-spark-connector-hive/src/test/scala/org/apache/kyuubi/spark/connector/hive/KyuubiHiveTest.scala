@@ -21,6 +21,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.{QueryTest, SparkSession}
 import org.apache.spark.sql.connector.catalog.{SupportsNamespaces, TableCatalog}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.Utils
 
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession
 
@@ -75,6 +76,17 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       case (k, v) => innerSpark.sessionState.conf.setConfString(k, v)
     }
     f(innerSpark)
+  }
+
+  /**
+   * Drops table `tableName` after calling `f`.
+   */
+  protected def withTable(tableNames: String*)(f: => Unit): Unit = {
+    Utils.tryWithSafeFinally(f) {
+      tableNames.foreach { name =>
+        spark.sql(s"DROP TABLE IF EXISTS $name")
+      }
+    }
   }
 
   override def spark: SparkSession = innerSpark

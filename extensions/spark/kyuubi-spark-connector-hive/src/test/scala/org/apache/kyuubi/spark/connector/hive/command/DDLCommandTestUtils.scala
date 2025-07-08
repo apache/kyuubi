@@ -78,19 +78,6 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
     fs.makeQualified(hadoopPath).toUri
   }
 
-  /**
-   * Drops table `tableName` after calling `f`.
-   */
-  protected def withTable(tableNames: String*)(f: => Unit): Unit = {
-    try {
-      f
-    } finally {
-      tableNames.foreach { name =>
-        spark.sql(s"DROP TABLE IF EXISTS $name")
-      }
-    }
-  }
-
   protected def withNamespaceAndTable(
       ns: String,
       tableName: String,
