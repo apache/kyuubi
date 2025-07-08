@@ -18,13 +18,11 @@
 package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
   override def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.3") "org.apache.spark.sql.connector.InMemoryTableCatalog"
-    else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
+    "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
   }
 
   test("columns lineage extract - MergeIntoTable") {

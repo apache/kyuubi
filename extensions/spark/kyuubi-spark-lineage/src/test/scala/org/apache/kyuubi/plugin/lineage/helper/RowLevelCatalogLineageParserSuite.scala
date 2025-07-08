@@ -23,11 +23,7 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME
 class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
   override def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.3") {
-      "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
-    } else {
-      "org.apache.spark.sql.connector.catalog.InMemoryRowLevelOperationTableCatalog"
-    }
+    "org.apache.spark.sql.connector.catalog.InMemoryRowLevelOperationTableCatalog"
   }
 
   test("columns lineage extract - WriteDelta") {
