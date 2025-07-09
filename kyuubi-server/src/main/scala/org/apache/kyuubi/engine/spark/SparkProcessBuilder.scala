@@ -41,7 +41,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, KyuubiHadoopUtils, Validator}
+import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, Validator}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
@@ -287,7 +288,7 @@ class SparkProcessBuilder(
           // Create the `uploadPath` using permission 777, otherwise, spark just creates the
           // `$uploadPath/spark-upload-$uuid` using default permission 511, which might prevent
           // other users from creating the staging dir under `uploadPath` later.
-          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, loadDefaults = false)
+          val hadoopConf = KyuubiServer.getHadoopConf()
           val path = new Path(uploadPath)
           var fs: FileSystem = null
           try {
