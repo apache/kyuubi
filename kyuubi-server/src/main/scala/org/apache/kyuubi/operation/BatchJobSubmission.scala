@@ -292,13 +292,23 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
+
+      // continue polling if process is alive and application not started yet
+      // or application is not failed
+      while (process.isAlive && (
+          applicationId(_applicationInfo).isEmpty ||
+            !applicationFailed(_applicationInfo, appOperation))) {
         doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
 
       if (!process.isAlive) {
         doUpdateApplicationInfoMetadataIfNeeded()
+        val exitValue = process.exitValue()
+        if (exitValue != 0) {
+          throw new KyuubiException(
+            s"Process exit with value $exitValue, application info: $_applicationInfo")
+        }
       }
 
       if (applicationFailed(_applicationInfo, appOperation)) {
