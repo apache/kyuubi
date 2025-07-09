@@ -2212,6 +2212,20 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_TIMEOUT_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.timeout.pool.size")
+      .doc("Number of threads in the timeout scheduler pool used for operation timeout monitoring.")
+      .version("1.11.0")
+      .intConf
+      .createWithDefault(8)
+
+  val OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.timeout.pool.keepalive.time")
+      .doc("Keep-alive time for idle threads in the timeout scheduler pool.")
+      .version("1.11.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
   val OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.query.timeout.monitor.enabled")
       .doc("Whether to monitor timeout query timeout check on server side.")
