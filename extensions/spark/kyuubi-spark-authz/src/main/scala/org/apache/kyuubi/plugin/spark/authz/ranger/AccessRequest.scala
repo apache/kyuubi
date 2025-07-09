@@ -71,13 +71,13 @@ object AccessRequest extends Logging {
     req
   }
 
-  private def logWarningForUserGroupRole(
+  private def logWarningForUserGroupRoles(
       clazzName: String,
       methodName: String,
       cause: Throwable): Unit = {
     logWarning(
       s"Unable to find method $methodName from class $clazzName. " +
-        s"The feature of user group roles requires Ranger 2.1 or above.",
+        s"The UserGroupRoles feature requires Ranger 2.1 or above.",
       cause)
   }
 
@@ -86,7 +86,7 @@ object AccessRequest extends Logging {
       .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
       .build(SparkRangerAdminPlugin)
   }.recoverWith { case rethrow: Exception =>
-    logWarningForUserGroupRole("SparkRangerAdminPlugin", "getRolesFromUserAndGroups", rethrow)
+    logWarningForUserGroupRoles("SparkRangerAdminPlugin", "getRolesFromUserAndGroups", rethrow)
     Failure(rethrow)
   }.toOption
 
@@ -95,7 +95,7 @@ object AccessRequest extends Logging {
       .impl(classOf[AccessRequest], classOf[JSet[String]])
       .buildChecked()
   }.recoverWith { case rethrow: Exception =>
-    logWarningForUserGroupRole("AccessRequest", "setUserRoles", rethrow)
+    logWarningForUserGroupRoles("AccessRequest", "setUserRoles", rethrow)
     Failure(rethrow)
   }.toOption
 
@@ -111,7 +111,7 @@ object AccessRequest extends Logging {
     val confKey = s"ranger.plugin.$svcType.use.usergroups.from.userstore.enabled"
     logWarning(
       s"Unable to find method $methodName from class $clazzName. " +
-        s"The feature of UserStore requires Ranger 2.1 or above, " +
+        s"The UserStore feature requires Ranger 2.1 or above, " +
         s"consider diabling '$confKey' if you don't use this feature.",
       cause)
   }
@@ -154,7 +154,7 @@ object AccessRequest extends Logging {
       case _ =>
         val svcType = SparkRangerAdminPlugin.getServiceType
         val confKey = s"ranger.plugin.$svcType.use.usergroups.from.userstore.enabled"
-        logWarning(s"Unable to use Ranger's userstore though '$confKey' is true.")
+        logWarning(s"Unable to use Ranger's UserStore though '$confKey' is true.")
         None
     }
   }
