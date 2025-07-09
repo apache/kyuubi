@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import java.util
+import java.util.Locale
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -31,10 +32,12 @@ import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
+import org.apache.spark.sql.execution.datasources.v2.orc.OrcScanBuilder
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{BucketSpecHelper, LogicalExpressions}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.READ_CONVERT_METASTORE_ORC
 import org.apache.kyuubi.spark.connector.hive.read.{HiveCatalogFileIndex, HiveScanBuilder}
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 
@@ -59,6 +62,20 @@ case class HiveTable(
       catalogTable.stats.map(_.sizeInBytes.toLong).getOrElse(defaultTableSize))
   }
 
+  lazy val convertedProvider: Option[String] = {
+    val serde = catalogTable.storage.serde.getOrElse("").toUpperCase(Locale.ROOT)
+    val parquet = serde.contains("PARQUET")
+    val orc = serde.contains("ORC")
+    val provider = catalogTable.provider.map(_.toUpperCase(Locale.ROOT))
+    if (orc || provider.contains("ORC")) {
+      Some("ORC")
+    } else if (parquet || provider.contains("PARQUET")) {
+      Some("PARQUET")
+    } else {
+      None
+    }
+  }
+
   override def name(): String = catalogTable.identifier.unquotedString
 
   override def schema(): StructType = catalogTable.schema
@@ -77,7 +94,11 @@ case class HiveTable(
   }
 
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
-    HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
+    convertedProvider match {
+      case Some("ORC") if sparkSession.sessionState.conf.getConf(READ_CONVERT_METASTORE_ORC) =>
+        OrcScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
+      case _ => HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
+    }
   }
 
   override def newWriteBuilder(info: LogicalWriteInfo): WriteBuilder = {
