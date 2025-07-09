@@ -85,7 +85,7 @@ object AccessRequest extends Logging {
     DynMethods.builder("getRolesFromUserAndGroups")
       .impl(SparkRangerAdminPlugin.getClass, classOf[String], classOf[JSet[String]])
       .build(SparkRangerAdminPlugin)
-  }.recoverWith { case rethrow: Exception =>
+  }.recoverWith { case rethrow: Throwable =>
     logWarningForUserGroupRoles("SparkRangerAdminPlugin", "getRolesFromUserAndGroups", rethrow)
     Failure(rethrow)
   }.toOption
@@ -94,7 +94,7 @@ object AccessRequest extends Logging {
     DynMethods.builder("setUserRoles")
       .impl(classOf[AccessRequest], classOf[JSet[String]])
       .buildChecked()
-  }.recoverWith { case rethrow: Exception =>
+  }.recoverWith { case rethrow: Throwable =>
     logWarningForUserGroupRoles("AccessRequest", "setUserRoles", rethrow)
     Failure(rethrow)
   }.toOption
@@ -120,7 +120,7 @@ object AccessRequest extends Logging {
     DynMethods.builder("getUserStoreEnricher")
       .impl(SparkRangerAdminPlugin.getClass)
       .build(SparkRangerAdminPlugin)
-  }.recoverWith { case rethrow: Exception =>
+  }.recoverWith { case rethrow: Throwable =>
     logWarningForUserStore("SparkRangerAdminPlugin", "getUserStoreEnricher", rethrow)
     Failure(rethrow)
   }.toOption
@@ -129,7 +129,7 @@ object AccessRequest extends Logging {
     DynMethods.builder("getRangerUserStore")
       .impl("org.apache.ranger.plugin.contextenricher.RangerUserStoreEnricher")
       .build()
-  }.recoverWith { case rethrow: Exception =>
+  }.recoverWith { case rethrow: Throwable =>
     logWarningForUserStore("RangerUserStoreEnricher", "getRangerUserStore", rethrow)
     Failure(rethrow)
   }.toOption
@@ -138,7 +138,7 @@ object AccessRequest extends Logging {
     DynMethods.builder("getUserGroupMapping")
       .impl("org.apache.ranger.plugin.util.RangerUserStore")
       .build()
-  }.recoverWith { case rethrow: Exception =>
+  }.recoverWith { case rethrow: Throwable =>
     logWarningForUserStore("RangerUserStore", "getUserGroupMapping", rethrow)
     Failure(rethrow)
   }.toOption
