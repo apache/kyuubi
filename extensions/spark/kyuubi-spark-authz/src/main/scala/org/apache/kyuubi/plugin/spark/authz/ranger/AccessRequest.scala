@@ -151,11 +151,7 @@ object AccessRequest extends Logging {
           val userGroupMapping: JHashMap[String, JSet[String]] = getMapping.bind(userStore).invoke()
           userGroupMapping.get(user.getShortUserName)
         }.toOption
-      case _ =>
-        val svcType = SparkRangerAdminPlugin.getServiceType
-        val confKey = s"ranger.plugin.$svcType.use.usergroups.from.userstore.enabled"
-        logWarning(s"Unable to use Ranger's UserStore though '$confKey' is true.")
-        None
+      case _ => None
     }
   }
 
