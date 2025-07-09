@@ -25,3 +25,6 @@ runs:
       with:
         path: /tmp/engine-archives
         key: engine-archives
+    - name: Show cached engine archives
+      shell: bash
+      run: ls -lh /tmp/engine-archives
