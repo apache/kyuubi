@@ -145,12 +145,11 @@ object AccessRequest extends Logging {
 
   private def getUserGroupsFromUserStore(user: UserGroupInformation): Option[JSet[String]] = {
     (getUserStoreEnricherMethod, getRangerUserStoreMethod, getUserGroupMappingMethod) match {
-      case (Some(getEnricher), Some(getUserStore), Some(getMapping)) => Try {
-          val enricher = getEnricher.invoke()
-          val userStore = getUserStore.bind(enricher).invoke()
-          val userGroupMapping: JHashMap[String, JSet[String]] = getMapping.bind(userStore).invoke()
-          userGroupMapping.get(user.getShortUserName)
-        }.toOption
+      case (Some(getEnricher), Some(getUserStore), Some(getMapping)) =>
+        val enricher = getEnricher.invoke()
+        val userStore = getUserStore.bind(enricher).invoke()
+        val userGroupMapping: JHashMap[String, JSet[String]] = getMapping.bind(userStore).invoke()
+        Some(userGroupMapping.get(user.getShortUserName))
       case _ => None
     }
   }
