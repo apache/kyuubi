@@ -306,14 +306,9 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      if (!waitEngineCompletion) {
-        process.waitFor()
+      while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
         doUpdateApplicationInfoMetadataIfNeeded()
-      } else {
-        while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
-          doUpdateApplicationInfoMetadataIfNeeded()
-          process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
-        }
+        process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
 
       if (!process.isAlive) {
