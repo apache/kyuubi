@@ -375,7 +375,7 @@ class SparkProcessBuilder(
   }
 
   private[spark] def getSparkOption(key: String): Option[String] = {
-    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
+    conf.getOption(key).orElse(defaultsConf.get(key))
   }
 
   override def waitEngineCompletion: Boolean = {
