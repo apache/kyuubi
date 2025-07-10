@@ -307,7 +307,7 @@ class BatchJobSubmission(
         val exitValue = process.exitValue()
         if (exitValue != 0) {
           throw new KyuubiException(
-            s"Process exit with value $exitValue, application info: $_applicationInfo")
+            s"Process exit with value $exitValue, application info: ${_applicationInfo}")
         }
       }
 
