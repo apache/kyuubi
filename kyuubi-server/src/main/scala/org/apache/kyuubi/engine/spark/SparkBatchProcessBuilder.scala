@@ -57,7 +57,8 @@ class SparkBatchProcessBuilder(
       sparkAppNameConf() ++
       engineLogPathConf() ++
       appendPodNameConf(batchConf) ++
-      prepareK8sFileUploadPath()).map { case (k, v) =>
+      prepareK8sFileUploadPath() ++
+      engineWaitCompletionConf()).map { case (k, v) =>
       buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 

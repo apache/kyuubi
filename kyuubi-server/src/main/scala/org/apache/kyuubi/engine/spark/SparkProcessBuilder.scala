@@ -150,7 +150,8 @@ class SparkProcessBuilder(
       engineLogPathConf ++
       extraYarnConf(allConf) ++
       appendPodNameConf(allConf) ++
-      prepareK8sFileUploadPath()).foreach {
+      prepareK8sFileUploadPath() ++
+      engineWaitCompletionConf).foreach {
       case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
@@ -376,6 +377,21 @@ class SparkProcessBuilder(
   private[spark] def getSparkOption(key: String): Option[String] = {
     conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
+
+  override def waitEngineCompletion: Boolean = {
+    !isClusterMode() || getSparkOption(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
+      .getOrElse(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.defaultValStr)
+      .toBoolean
+  }
+
+  def engineWaitCompletionConf(): Map[String, String] =
+    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
+      case Some(m) if m.startsWith("yarn") =>
+        Map(YARN_SUBMIT_WAIT_APP_COMPLETION -> waitEngineCompletion.toString)
+      case Some(m) if m.startsWith("k8s") =>
+        Map(KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION -> waitEngineCompletion.toString)
+      case _ => Map.empty
+    }
 }
 
 object SparkProcessBuilder {
@@ -387,7 +403,10 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION =
+    "spark.kubernetes.submission.waitAppCompletion"
   final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
+  final val YARN_SUBMIT_WAIT_APP_COMPLETION = "spark.yarn.submit.waitAppCompletion"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   final val KUBERNETES_FILE_UPLOAD_PATH = "spark.kubernetes.file.upload.path"
