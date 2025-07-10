@@ -3487,7 +3487,7 @@ object KyuubiConf {
         "after `spark-submit` is returned.")
       .version("1.7.1")
       .timeConf
-      .createWithDefaultString("PT30S")
+      .createWithDefaultString("PT5M")
 
   val ENGINE_KUBERNETES_SUBMIT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.kubernetes.submit.timeout")

@@ -289,15 +289,15 @@ class BatchJobSubmission(
       }
     }
 
+    val waitEngineCompletion = builder.waitEngineCompletion
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
 
-      // continue polling if process is alive and application not started yet
+      // continue polling if process is alive and wait engine completion is false
       // or application is not failed
       while (process.isAlive && (
-          applicationId(_applicationInfo).isEmpty ||
-            !applicationFailed(_applicationInfo, appOperation))) {
+          !waitEngineCompletion || !applicationFailed(_applicationInfo, appOperation))) {
         doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
@@ -333,7 +333,7 @@ class BatchJobSubmission(
         case None =>
       }
     } finally {
-      val destroyProcess = !builder.waitEngineCompletion
+      val destroyProcess = !waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")
