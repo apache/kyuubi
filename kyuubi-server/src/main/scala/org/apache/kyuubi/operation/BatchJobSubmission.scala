@@ -79,7 +79,15 @@ class BatchJobSubmission(
   def appStartTime: Long = _appStartTime
   def appStarted: Boolean = _appStartTime > 0
 
-  private lazy val _submitTime = if (appStarted) _appStartTime else System.currentTimeMillis
+  private lazy val _submitTime = System.currentTimeMillis
+  private lazy val waitEngineCompletion = builder.waitEngineCompletion
+  private def submitTime: Long = if (appStarted) {
+    _appStartTime
+  } else if (!waitEngineCompletion && !startupProcessTerminated) {
+    System.currentTimeMillis()
+  } else {
+    _submitTime
+  }
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -105,6 +113,9 @@ class BatchJobSubmission(
   def startupProcessAlive: Boolean =
     builder.processLaunched && Option(builder.process).exists(_.isAlive)
 
+  private def startupProcessTerminated: Boolean =
+    builder.processLaunched && Option(builder.process).forall(!_.isAlive)
+
   override def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
       return _applicationInfo
@@ -114,7 +125,7 @@ class BatchJobSubmission(
         builder.appMgrInfo(),
         batchId,
         Some(session.user),
-        Some(_submitTime))
+        Some(submitTime))
     applicationId(applicationInfo).foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
@@ -289,7 +300,6 @@ class BatchJobSubmission(
       }
     }
 
-    val waitEngineCompletion = builder.waitEngineCompletion
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
