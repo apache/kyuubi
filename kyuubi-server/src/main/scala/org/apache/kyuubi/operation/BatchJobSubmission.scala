@@ -84,6 +84,9 @@ class BatchJobSubmission(
   private def submitTime: Long = if (appStarted) {
     _appStartTime
   } else if (!waitEngineCompletion && !startupProcessTerminated) {
+    // if wait engine completion is false and the process is not terminated,
+    // use the current time as the submit time to prevent the application failed
+    // within NOT_FOUND state due to submit timeout
     System.currentTimeMillis()
   } else {
     _submitTime
