@@ -333,10 +333,7 @@ class BatchJobSubmission(
         case None =>
       }
     } finally {
-      val waitCompletion = batchConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
-        .map(_.toBoolean).getOrElse(
-          session.sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION))
-      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      val destroyProcess = !builder.waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")

@@ -325,11 +325,11 @@ class SparkProcessBuilder(
   }
 
   override def clusterManager(): Option[String] = {
-    conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
+    getSparkOption(MASTER_KEY)
   }
 
   def deployMode(): Option[String] = {
-    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+    getSparkOption(DEPLOY_MODE_KEY)
   }
 
   override def isClusterMode(): Boolean = {
@@ -346,16 +346,15 @@ class SparkProcessBuilder(
   }
 
   def kubernetesContext(): Option[String] = {
-    conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
+    getSparkOption(KUBERNETES_CONTEXT_KEY)
   }
 
   def kubernetesNamespace(): Option[String] = {
-    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
+    getSparkOption(KUBERNETES_NAMESPACE_KEY)
   }
 
   def kubernetesFileUploadPath(): Option[String] = {
-    conf.getOption(KUBERNETES_FILE_UPLOAD_PATH)
-      .orElse(defaultsConf.get(KUBERNETES_FILE_UPLOAD_PATH))
+    getSparkOption(KUBERNETES_FILE_UPLOAD_PATH)
   }
 
   override def validateConf(): Unit = Validator.validateConf(conf)
@@ -372,6 +371,10 @@ class SparkProcessBuilder(
 
   private[spark] def engineLogPathConf(): Map[String, String] = {
     Map(KYUUBI_ENGINE_LOG_PATH_KEY -> engineLog.getAbsolutePath)
+  }
+
+  private[spark] def getSparkOption(key: String): Option[String] = {
+    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
   }
 }
 
