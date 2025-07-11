@@ -18,8 +18,12 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.sql.SQLException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import org.junit.Assert;
 import org.junit.Test;
 
 public class KyuubiStatementTest {
@@ -52,6 +56,31 @@ public class KyuubiStatementTest {
   public void testaddBatch() throws SQLException {
     try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
       stmt.addBatch(null);
+    }
+  }
+
+  @Test
+  public void testThrowKyuubiSQLExceptionWhenExecuteSqlOnClosedStmt() throws SQLException {
+    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
+    try {
+      ExecutorService executorService = Executors.newFixedThreadPool(2);
+      executorService.submit(
+          () -> {
+            try {
+              stmt.close();
+            } catch (SQLException e) {
+              throw new RuntimeException(e);
+            }
+          });
+      executorService.submit(
+          () -> {
+            Assert.assertEquals(
+                "Can't exectue after statement has been closed",
+                assertThrows(KyuubiSQLException.class, () -> stmt.execute("SELECT 1"))
+                    .getMessage());
+          });
+    } finally {
+      stmt.close();
     }
   }
 }
