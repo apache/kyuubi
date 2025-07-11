@@ -137,14 +137,14 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       debug(s"Can't find target application from YARN cluster by tag: $tag")
       submitTime match {
         case Some(_submitTime) =>
-          val submitElapsedTime = startTime - _submitTime
-          if (submitElapsedTime < submitTimeout) {
+          val elapsedTime = startTime - _submitTime
+          if (elapsedTime < submitTimeout) {
             info(s"Wait for YARN application[tag: $tag] to be submitted, " +
-              s"elapsed time: ${submitElapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
+              s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
             ApplicationInfo.UNKNOWN
           } else {
             error(s"Can't find target application from YARN cluster by tag: $tag, " +
-              s"elapsed time: ${submitElapsedTime}ms exceeds ${ENGINE_YARN_SUBMIT_TIMEOUT.key}: " +
+              s"elapsed time: ${elapsedTime}ms exceeds ${ENGINE_YARN_SUBMIT_TIMEOUT.key}: " +
               s"${submitTimeout}ms, return ${ApplicationInfo.NOT_FOUND} status")
             ApplicationInfo.NOT_FOUND
           }
