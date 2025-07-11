@@ -49,4 +49,12 @@ object KyuubiHiveConnectorConf {
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
+
+  val READ_CONVERT_METASTORE_PARQUET =
+    buildConf("spark.sql.kyuubi.hive.connector.read.convertMetastoreParquet")
+      .doc("When enabled, the data source PARQUET reader is used to process " +
+        "PARQUET tables created by using the HiveQL syntax, instead of Hive SerDe.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(true)
 }
