@@ -292,6 +292,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
     debug(s"Getting application[${toLabel(tag)}]'s info from Kubernetes cluster")
+    val startTime = System.currentTimeMillis()
     try {
       // need to initialize the kubernetes client if not exists
       getOrCreateKubernetesClient(appMgrInfo.kubernetesInfo)
@@ -299,13 +300,19 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case (_, info) => info
         case _ =>
           // try to get the application info from kubernetes engine info store
-          metadataManager.flatMap(
-            _.getKubernetesApplicationInfo(tag)).getOrElse(ApplicationInfo.NOT_FOUND)
+          try {
+            metadataManager.flatMap(
+              _.getKubernetesApplicationInfo(tag)).getOrElse(ApplicationInfo.NOT_FOUND)
+          } catch {
+            case e: Exception =>
+              error(s"Failed to get application info from metadata manager for ${toLabel(tag)}", e)
+              ApplicationInfo.NOT_FOUND
+          }
       }
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
         case (NOT_FOUND, Some(_submitTime)) =>
-          val elapsedTime = System.currentTimeMillis - _submitTime
+          val elapsedTime = startTime - _submitTime
           if (elapsedTime > submitTimeout) {
             error(s"Can't find target driver pod by ${toLabel(tag)}, " +
               s"elapsed time: ${elapsedTime}ms exceeds ${submitTimeout}ms.")

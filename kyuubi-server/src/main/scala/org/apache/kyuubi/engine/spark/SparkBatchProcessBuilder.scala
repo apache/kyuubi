@@ -57,7 +57,8 @@ class SparkBatchProcessBuilder(
       sparkAppNameConf() ++
       engineLogPathConf() ++
       appendPodNameConf(batchConf) ++
-      prepareK8sFileUploadPath()).map { case (k, v) =>
+      prepareK8sFileUploadPath() ++
+      engineWaitCompletionConf()).map { case (k, v) =>
       buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
@@ -79,15 +80,7 @@ class SparkBatchProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-batch-submit"
 
-  override def clusterManager(): Option[String] = {
-    batchConf.get(MASTER_KEY).orElse(super.clusterManager())
-  }
-
-  override def kubernetesContext(): Option[String] = {
-    batchConf.get(KUBERNETES_CONTEXT_KEY).orElse(super.kubernetesContext())
-  }
-
-  override def kubernetesNamespace(): Option[String] = {
-    batchConf.get(KUBERNETES_NAMESPACE_KEY).orElse(super.kubernetesNamespace())
+  override private[spark] def getSparkOption(key: String) = {
+    batchConf.get(key).orElse(super.getSparkOption(key))
   }
 }

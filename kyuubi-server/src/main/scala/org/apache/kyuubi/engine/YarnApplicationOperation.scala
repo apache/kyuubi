@@ -131,12 +131,13 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo = withYarnClient(proxyUser) { yarnClient =>
     debug(s"Getting application info from YARN cluster by tag: $tag")
+    val startTime = System.currentTimeMillis()
     val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
     if (reports.isEmpty) {
       debug(s"Can't find target application from YARN cluster by tag: $tag")
       submitTime match {
         case Some(_submitTime) =>
-          val elapsedTime = System.currentTimeMillis - _submitTime
+          val elapsedTime = startTime - _submitTime
           if (elapsedTime < submitTimeout) {
             info(s"Wait for YARN application[tag: $tag] to be submitted, " +
               s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
