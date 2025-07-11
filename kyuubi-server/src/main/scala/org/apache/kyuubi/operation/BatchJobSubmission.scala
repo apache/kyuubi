@@ -82,12 +82,13 @@ class BatchJobSubmission(
   private lazy val _submitTime = System.currentTimeMillis
 
   /**
-   * If the application has been submitted (applicationId is not empty), return the application
-   * start time. Otherwise, if the builder process does not wait for the engine completion and
-   * the process is not terminated, return the current time as the submit time to prevent
-   * application failed within NOT_FOUND state due to the process duration exceeds the engine submit
-   * timeout. Otherwise, return the time that start to run the batch job submission operation.
-   * @return the time that start to count the application submit timeout.
+   * Return the time that start to count the application submit timeout.
+   * 1. If the application has been submitted to resource manager, return the time that application
+   * submitted to resource manager.
+   * 2. If the builder process does not wait for the engine completion and the process has not been
+   * terminated, return the current time to prevent application failed within NOT_FOUND state if the
+   * process duration exceeds the application submit timeout.
+   * 3. Otherwise, return the time that start to run the batch job submission operation.
    */
   private def submitTime: Long = if (appStarted) {
     _appStartTime
