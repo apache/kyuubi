@@ -82,7 +82,9 @@ class BatchJobSubmission(
   private lazy val _submitTime = System.currentTimeMillis
 
   /**
-   * Return the time that start to count the application submit timeout.
+   * Batch submission refers to the time interval from the start of the batch operation run
+   * to the application being started. This method returns the time within this interval based
+   * on the following conditions:
    * 1. If the application has been submitted to resource manager, return the time that application
    * submitted to resource manager.
    * 2. If the builder process does not wait for the engine completion and the process has not been
