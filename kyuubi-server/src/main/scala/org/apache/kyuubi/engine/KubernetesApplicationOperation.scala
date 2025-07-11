@@ -299,8 +299,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         case (_, info) => info
         case _ =>
           // try to get the application info from kubernetes engine info store
-          metadataManager.flatMap(
-            _.getKubernetesApplicationInfo(tag)).getOrElse(ApplicationInfo.NOT_FOUND)
+          try {
+            metadataManager.flatMap(
+              _.getKubernetesApplicationInfo(tag)).getOrElse(ApplicationInfo.NOT_FOUND)
+          } catch {
+            case e: Exception =>
+              error(s"Failed to get application info from metadata manager for ${toLabel(tag)}", e)
+              ApplicationInfo.NOT_FOUND
+          }
       }
       (appInfo.state, submitTime) match {
         // Kyuubi should wait second if pod is not be created
