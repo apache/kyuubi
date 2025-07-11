@@ -27,4 +27,4 @@ runs:
         key: engine-archives
     - name: Show cached engine archives
       shell: bash
-      run: ls -lh /tmp/engine-archives
+      run: ls -lh /tmp/engine-archives || echo ''
