@@ -937,13 +937,13 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       val tableName = "table_snapshot"
       val table = s"$catalogV2.$namespace1.$tableName"
       withCleanTmpResources(Seq((table, "table"))) {
-//         test compute_table_stats
+        // test compute_table_stats
         val computeTableStatsSql = s"CALL $catalogV2.system.compute_table_stats(table => '$table')"
         interceptEndsWith[AccessControlException](doAs(someone, sql(computeTableStatsSql)))(
           s"user [someone] does not have [alter] privilege on [$namespace1/$tableName]")
         doAs(admin, sql(computeTableStatsSql))
 
-//         test rewrite_table_stats
+        // test rewrite_table_stats
         val rewriteTableStatsSql = s"CALL $catalogV2.system.rewrite_table_stats(table => '$table')"
         interceptEndsWith[AccessControlException](doAs(someone, sql(rewriteTableStatsSql)))(
           s"user [someone] does not have [alter] privilege on [$namespace1/$tableName]")
