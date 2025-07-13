@@ -138,10 +138,11 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val newSparkSession = rootSparkSession.newSession()
     KyuubiSparkUtil.initializeSparkSession(
       newSparkSession,
-      conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL)) ++
-         sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key).filter(_.nonEmpty)
-           .map(_.split(";").toSeq
-           .getOrElse(Nil))
+      sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
+        .filter(_.nonEmpty)
+        .map(_.split(";")
+          .toSeq)
+        .getOrElse(conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL)))
     newSparkSession
   }
 
