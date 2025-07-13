@@ -56,7 +56,12 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
-  override val sessionIdleTimeoutThreshold: Long = sessionManager.getConf.get(SESSION_IDLE_TIMEOUT)
+  override val sessionIdleTimeoutThreshold: Long = {
+    conf.get(SESSION_IDLE_TIMEOUT.key)
+      .map(_.toLong)
+      .getOrElse(
+        sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))
+  }
 
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
