@@ -932,6 +932,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       doAs(admin, sql(createChangeLogViewSql))
     }
 
+    // TODO: Enable after upgrading Iceberg 1.10
     ignore("currently unsupported producers for iceberg") {
       val tableName = "table_snapshot"
       val table = s"$catalogV2.$namespace1.$tableName"
