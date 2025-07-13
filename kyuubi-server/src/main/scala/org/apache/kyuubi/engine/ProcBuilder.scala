@@ -355,6 +355,10 @@ trait ProcBuilder {
   def clusterManager(): Option[String] = None
 
   def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(None)
+
+  def waitEngineCompletion: Boolean = {
+    !isClusterMode() || conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+  }
 }
 
 object ProcBuilder extends Logging {

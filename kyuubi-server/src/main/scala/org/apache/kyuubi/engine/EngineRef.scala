@@ -324,8 +324,7 @@ private[kyuubi] class EngineRef(
       engineRef.get
     } finally {
       if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
-      val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
-      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      val destroyProcess = !builder.waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")
