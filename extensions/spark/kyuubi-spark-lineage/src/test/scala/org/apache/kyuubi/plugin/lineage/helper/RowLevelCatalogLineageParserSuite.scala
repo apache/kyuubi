@@ -50,7 +50,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  UPDATE SET target.name = source.name, target.price = source.price " +
           "WHEN NOT MATCHED THEN " +
           "  INSERT (pk, name, price) VALUES (cast(source.pk as int), source.name, source.price)" +
-          "WHEN NOT MATCHED BY SOURCE THEN delete")
+          "WHEN NOT MATCHED BY SOURCE THEN  UPDATE SET target.name = 'abc' ")
       assert(ret0 == Lineage(
         List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
@@ -59,7 +59,9 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
             "v2_catalog.db.target_t.pk",
             Set("v2_catalog.db.source_t.pk", "v2_catalog.db.target_t.pk")),
           ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
-          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
+          (
+            "v2_catalog.db.target_t.price",
+            Set("v2_catalog.db.source_t.price", "v2_catalog.db.target_t.price")))))
 
       val ret1 = extractLineageWithoutExecuting(
         "MERGE INTO v2_catalog.db.target_t AS target " +
