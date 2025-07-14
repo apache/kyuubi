@@ -21,9 +21,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
 import java.sql.SQLException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.junit.Assert;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 public class KyuubiStatementTest {
@@ -60,27 +59,45 @@ public class KyuubiStatementTest {
   }
 
   @Test
-  public void testThrowKyuubiSQLExceptionWhenExecuteSqlOnClosedStmt() throws SQLException {
-    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
-    try {
-      ExecutorService executorService = Executors.newFixedThreadPool(2);
-      executorService.submit(
-          () -> {
-            try {
-              stmt.close();
-            } catch (SQLException e) {
-              throw new RuntimeException(e);
-            }
-          });
-      executorService.submit(
-          () -> {
-            Assert.assertEquals(
-                "Can't exectue after statement has been closed",
-                assertThrows(KyuubiSQLException.class, () -> stmt.execute("SELECT 1"))
-                    .getMessage());
-          });
-    } finally {
-      stmt.close();
+  public void testThrowKyuubiSQLExceptionWhenExecuteSqlOnClosedStmt()
+      throws SQLException, InterruptedException {
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+      AtomicReference<Throwable> assertionFailure = new AtomicReference<>();
+      CountDownLatch latch = new CountDownLatch(1);
+
+      Thread thread1 =
+          new Thread(
+              () -> {
+                try {
+                  latch.countDown();
+                  stmt.close();
+                } catch (SQLException e) {
+                  assertionFailure.set(e);
+                }
+              });
+
+      Thread thread2 =
+          new Thread(
+              () -> {
+                try {
+                  latch.await();
+                  KyuubiSQLException ex =
+                      assertThrows(KyuubiSQLException.class, () -> stmt.execute("SELECT 1"));
+                  assertEquals("Can't execute after statement has been closed", ex.getMessage());
+                } catch (Throwable t) {
+                  assertionFailure.set(t);
+                }
+              });
+
+      thread1.start();
+      thread2.start();
+
+      thread1.join();
+      thread2.join();
+
+      if (assertionFailure.get() != null) {
+        throw new AssertionError("Assertion failed in thread", assertionFailure.get());
+      }
     }
   }
 }
