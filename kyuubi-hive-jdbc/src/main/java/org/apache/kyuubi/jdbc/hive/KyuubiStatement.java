@@ -45,7 +45,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private volatile TOperationHandle stmtHandle = null;
   // This lock must be acquired before modifying or judge stmt
   // to ensure there are no concurrent accesses or race conditions.
-  private final Lock stmtHandleChangeLock = new ReentrantLock();
+  private final Lock stmtHandleAccessLock = new ReentrantLock();
   private final TSessionHandle sessHandle;
   Map<String, String> sessConf = new HashMap<>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
@@ -130,11 +130,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public void cancel() throws SQLException {
     try {
+      stmtHandleAccessLock.lock();
       checkConnection("cancel");
       if (isCancelled) {
         return;
       }
-      stmtHandleChangeLock.lock();
       if (stmtHandle != null) {
         TCancelOperationReq cancelReq = new TCancelOperationReq(stmtHandle);
         TCancelOperationResp cancelResp = client.CancelOperation(cancelReq);
@@ -146,7 +146,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     } catch (Exception e) {
       throw new KyuubiSQLException(e.toString(), "08S01", e);
     } finally {
-      stmtHandleChangeLock.unlock();
+      stmtHandleAccessLock.unlock();
     }
   }
 
@@ -185,7 +185,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   @Override
   public void close() throws SQLException {
     try {
-      stmtHandleChangeLock.lock();
+      stmtHandleAccessLock.lock();
       if (isClosed) {
         return;
       }
@@ -194,7 +194,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
       closeResultSet();
       isClosed = true;
     } finally {
-      stmtHandleChangeLock.unlock();
+      stmtHandleAccessLock.unlock();
     }
   }
 
@@ -324,7 +324,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   private void runAsyncOnServer(String sql, Map<String, String> confOneTime) throws SQLException {
-    stmtHandleChangeLock.lock();
+    stmtHandleAccessLock.lock();
     try {
       checkConnection("execute");
 
@@ -360,7 +360,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
         throw new KyuubiSQLException(ex.toString(), "08S01", ex);
       }
     } finally {
-      stmtHandleChangeLock.unlock();
+      stmtHandleAccessLock.unlock();
     }
   }
 
