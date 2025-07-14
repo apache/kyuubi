@@ -49,7 +49,8 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "WHEN MATCHED THEN " +
           "  UPDATE SET target.name = source.name, target.price = source.price " +
           "WHEN NOT MATCHED THEN " +
-          "  INSERT (pk, name, price) VALUES (cast(source.pk as int), source.name, source.price)")
+          "  INSERT (pk, name, price) VALUES (cast(source.pk as int), source.name, source.price)" +
+          "WHEN NOT MATCHED BY SOURCE THEN delete")
       assert(ret0 == Lineage(
         List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),

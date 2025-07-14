@@ -315,6 +315,8 @@ trait LineageParser {
           getField[Seq[Expression]](p, "matchedInstructions")
             .map(extractInstructionOutputs) ++
             getField[Seq[Expression]](p, "notMatchedInstructions")
+              .map(extractInstructionOutputs) ++
+            getField[Seq[Expression]](p, "notMatchedBySourceInstructions")
               .map(extractInstructionOutputs)
         val nextColumnsLineage = ListMap(p.output.indices.map { index =>
           val keyAttr = p.output(index)
@@ -323,7 +325,7 @@ trait LineageParser {
         }.collect {
           case (keyAttr: Attribute, instructionsOutput)
               if instructionsOutput
-                .exists(!_.references.isEmpty) =>
+                .exists(_.references.nonEmpty) =>
             val attributeSet = AttributeSet.apply(instructionsOutput)
             keyAttr -> attributeSet
         }: _*)
