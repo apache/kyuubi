@@ -34,16 +34,18 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
         expectedRebalanceNumEnabled: Int = 1,
         expectedRebalanceNumDisabled: Int = 0): Unit = {
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
-        assert(
-          df.queryExecution.analyzed.collect {
+        withListener(df) { write =>
+          assert(write.collect {
             case r: RebalancePartitions => r
           }.size == expectedRebalanceNumEnabled)
+        }
       }
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
-        assert(
-          df.queryExecution.analyzed.collect {
+        withListener(df) { write =>
+          assert(write.collect {
             case r: RebalancePartitions => r
           }.size == expectedRebalanceNumDisabled)
+        }
       }
     }
 
