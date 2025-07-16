@@ -140,8 +140,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       newSparkSession,
       sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
         .filter(_.nonEmpty)
-        .map(_.split(";")
-          .toSeq)
+        .map(_.split(";").toSeq)
         .getOrElse(conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL)))
     newSparkSession
   }
