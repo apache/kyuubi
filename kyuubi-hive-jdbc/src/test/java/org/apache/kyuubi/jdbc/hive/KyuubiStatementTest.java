@@ -18,8 +18,11 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 import java.sql.SQLException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 
 public class KyuubiStatementTest {
@@ -52,6 +55,51 @@ public class KyuubiStatementTest {
   public void testaddBatch() throws SQLException {
     try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
       stmt.addBatch(null);
+    }
+  }
+
+  @Test
+  public void testThrowKyuubiSQLExceptionWhenExecuteSqlOnClosedStmt()
+      throws SQLException, InterruptedException {
+    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+      AtomicReference<Throwable> assertionFailure = new AtomicReference<>();
+      CountDownLatch latch = new CountDownLatch(1);
+
+      Thread thread1 =
+          new Thread(
+              () -> {
+                try {
+                  latch.countDown(); // 通知 thread2 可以开始了
+                  stmt.close();
+                } catch (SQLException e) {
+                  assertionFailure.set(e);
+                }
+              });
+
+      Thread thread2 =
+          new Thread(
+              () -> {
+                try {
+                  latch.await();
+                  KyuubiSQLException ex =
+                      assertThrows(KyuubiSQLException.class, () -> stmt.execute("SELECT 1"));
+                  assertEquals("Can't execute after statement has been closed", ex.getMessage());
+                } catch (Throwable t) {
+                  // 捕获所有异常，包括断言失败
+                  assertionFailure.set(t);
+                }
+              });
+
+      thread1.start();
+      thread2.start();
+
+      thread1.join();
+      thread2.join();
+
+      // 主线程判断是否有断言或异常
+      if (assertionFailure.get() != null) {
+        throw new AssertionError("Assertion failed in thread", assertionFailure.get());
+      }
     }
   }
 }
