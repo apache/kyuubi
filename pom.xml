@@ -115,8 +115,9 @@
     <properties>
         <java.version>8</java.version>
         <maven.version>3.9.10</maven.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <maven.compiler.release>8</maven.compiler.release>
         <scala.version>2.12.19</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.12.0</scala-collection-compat.version>
@@ -174,7 +175,7 @@
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.5.2</kafka.version>
         <kubernetes-client.version>6.13.5</kubernetes-client.version>
-        <kyuubi-relocated.version>0.5.0</kyuubi-relocated.version>
+        <kyuubi-relocated.version>0.6.0-SNAPSHOT</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.24.3</log4j.version>
@@ -308,6 +309,11 @@
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-relocated-util</artifactId>
                 <version>${kyuubi-relocated.version}</version>
             </dependency>
             <dependency>
@@ -1951,10 +1957,6 @@
             </activation>
             <properties>
                 <java.version>11</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -1965,10 +1967,6 @@
             </activation>
             <properties>
                 <java.version>17</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
             </properties>
         </profile>
 
@@ -1979,9 +1977,6 @@
             </activation>
             <properties>
                 <java.version>21</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
