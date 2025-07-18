@@ -35,6 +35,7 @@ import org.apache.kyuubi.config.KyuubiConf.{KubernetesApplicationStateSource, Ku
 import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource.KubernetesApplicationStateSource
 import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{ALL, COMPLETED, NONE}
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, KILLED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
+import org.apache.kyuubi.engine.KubernetesApplicationUrlSource._
 import org.apache.kyuubi.engine.KubernetesResourceEventTypes.KubernetesResourceEventType
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
@@ -64,6 +65,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_SOURCE))
   private def appStateContainer: String =
     kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
+
+  private lazy val sparkAppUrlPattern = kyuubiConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
+  private lazy val sparkAppUrlSource = if (sparkAppUrlPattern.contains("{{SPARK_DRIVER_SVC}}")) {
+    KubernetesApplicationUrlSource.SVC
+  } else {
+    KubernetesApplicationUrlSource.POD
+  }
 
   // key is kyuubi_unique_key
   private val appInfoStore: ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)] =
@@ -143,11 +151,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val enginePodInformer = client.pods()
           .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
           .inform(new SparkEnginePodEventHandler(kubernetesInfo))
-        info(s"[$kubernetesInfo] Start Kubernetes Client Informer.")
-        val engineSvcInformer = client.services()
-          .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+        info(s"[$kubernetesInfo] Start Kubernetes Client POD Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
-        engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
+        if (sparkAppUrlSource == KubernetesApplicationUrlSource.SVC) {
+          info(s"[$kubernetesInfo] Start Kubernetes Client SVC Informer.")
+          val engineSvcInformer = client.services()
+            .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+          engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
+        }
         client
 
       case None => throw new KyuubiException(s"Fail to build Kubernetes client for $kubernetesInfo")
@@ -474,6 +485,11 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             id = getPodAppId(pod),
             name = getPodAppName(pod),
             state = appState,
+            url = appInfo.url.orElse(getPodAppUrl(
+              sparkAppUrlSource,
+              sparkAppUrlPattern,
+              kubernetesInfo,
+              pod)),
             error = appError,
             podName = Some(pod.getMetadata.getName)))
       }.getOrElse {
@@ -483,6 +499,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             id = getPodAppId(pod),
             name = getPodAppName(pod),
             state = appState,
+            url = getPodAppUrl(sparkAppUrlSource, sparkAppUrlPattern, kubernetesInfo, pod),
             error = appError,
             podName = Some(pod.getMetadata.getName)))
       }
@@ -500,7 +517,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val appUrl = buildSparkAppUrl(
           appUrlPattern,
           sparkAppId,
-          sparkDriverSvc,
+          sparkDriverSvc = Some(sparkDriverSvc),
+          sparkDriverPodIp = None,
           kubernetesContext,
           kubernetesNamespace,
           sparkUiPort)
@@ -695,9 +713,17 @@ object KubernetesApplicationOperation extends Logging {
       UNKNOWN
   }
 
+  final private val SPARK_APP_ID_PATTERN = "{{SPARK_APP_ID}}"
+  final private val SPARK_DRIVER_SVC_PATTERN = "{{SPARK_DRIVER_SVC}}"
+  final private val SPARK_DRIVER_POD_IP_PATTERN = "{{SPARK_DRIVER_POD_IP}}"
+  final private val KUBERNETES_CONTEXT_PATTERN = "{{KUBERNETES_CONTEXT}}"
+  final private val KUBERNETES_NAMESPACE_PATTERN = "{{KUBERNETES_NAMESPACE}}"
+  final private val SPARK_UI_PORT_PATTERN = "{{SPARK_UI_PORT}}"
+
   /**
    * Replaces all the {{SPARK_APP_ID}} occurrences with the Spark App Id,
    * {{SPARK_DRIVER_SVC}} occurrences with the Spark Driver Service name,
+   * {{SPARK_DRIVER_POD_IP}} occurrences with the Spark Driver Pod IP,
    * {{KUBERNETES_CONTEXT}} occurrences with the Kubernetes Context,
    * {{KUBERNETES_NAMESPACE}} occurrences with the Kubernetes Namespace,
    * and {{SPARK_UI_PORT}} occurrences with the Spark UI Port.
@@ -705,20 +731,59 @@ object KubernetesApplicationOperation extends Logging {
   private[kyuubi] def buildSparkAppUrl(
       sparkAppUrlPattern: String,
       sparkAppId: String,
-      sparkDriverSvc: String,
+      sparkDriverSvc: Option[String],
+      sparkDriverPodIp: Option[String],
       kubernetesContext: String,
       kubernetesNamespace: String,
       sparkUiPort: Int): String = {
-    sparkAppUrlPattern
-      .replace("{{SPARK_APP_ID}}", sparkAppId)
-      .replace("{{SPARK_DRIVER_SVC}}", sparkDriverSvc)
-      .replace("{{KUBERNETES_CONTEXT}}", kubernetesContext)
-      .replace("{{KUBERNETES_NAMESPACE}}", kubernetesNamespace)
-      .replace("{{SPARK_UI_PORT}}", sparkUiPort.toString)
+    var appUrl = sparkAppUrlPattern
+      .replace(SPARK_APP_ID_PATTERN, sparkAppId)
+      .replace(KUBERNETES_CONTEXT_PATTERN, kubernetesContext)
+      .replace(KUBERNETES_NAMESPACE_PATTERN, kubernetesNamespace)
+      .replace(SPARK_UI_PORT_PATTERN, sparkUiPort.toString)
+    sparkDriverSvc match {
+      case Some(svc) => appUrl = appUrl.replace(SPARK_DRIVER_SVC_PATTERN, svc)
+      case None =>
+    }
+    sparkDriverPodIp match {
+      case Some(ip) => appUrl = appUrl.replace(SPARK_DRIVER_POD_IP_PATTERN, ip)
+      case None =>
+    }
+    appUrl
   }
 
   def getPodAppId(pod: Pod): String = {
     pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)
+  }
+
+  private[kyuubi] def getPodAppUrl(
+      sparkAppUrlSource: KubernetesApplicationUrlSource,
+      sparkAppUrlPattern: String,
+      kubernetesInfo: KubernetesInfo,
+      pod: Pod): Option[String] = {
+    sparkAppUrlSource match {
+      case KubernetesApplicationUrlSource.SVC => None
+      case KubernetesApplicationUrlSource.POD =>
+        val podIp = Option(pod.getStatus.getPodIP).filter(_.nonEmpty)
+        podIp match {
+          case Some(ip) => pod.getSpec.getContainers.asScala.flatMap(
+              _.getPorts.asScala).find(_.getName == SPARK_UI_PORT_NAME)
+              .map(_.getContainerPort).map { sparkUiPort =>
+                buildSparkAppUrl(
+                  sparkAppUrlPattern,
+                  getPodAppId(pod),
+                  sparkDriverSvc = None,
+                  sparkDriverPodIp = Some(ip),
+                  kubernetesContext = kubernetesInfo.context.orNull,
+                  kubernetesNamespace = kubernetesInfo.namespace.orNull,
+                  sparkUiPort = sparkUiPort)
+              }.orElse {
+                warn(s"Spark UI port not found in pod ${pod.getMetadata.getName}")
+                None
+              }
+          case None => None
+        }
+    }
   }
 
   def getPodAppName(pod: Pod): String = {
