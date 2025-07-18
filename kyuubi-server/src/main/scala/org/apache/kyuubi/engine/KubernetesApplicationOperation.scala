@@ -67,7 +67,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
 
   private lazy val sparkAppUrlPattern = kyuubiConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
-  private lazy val sparkAppUrlSource = if (sparkAppUrlPattern.contains("{{SPARK_DRIVER_SVC}}")) {
+  private lazy val sparkAppUrlSource = if (sparkAppUrlPattern.contains(SPARK_DRIVER_SVC_PATTERN)) {
     KubernetesApplicationUrlSource.SVC
   } else {
     KubernetesApplicationUrlSource.POD
