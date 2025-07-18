@@ -485,11 +485,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             id = getPodAppId(pod),
             name = getPodAppName(pod),
             state = appState,
-            url = appInfo.url.orElse(getPodAppUrl(
-              sparkAppUrlSource,
-              sparkAppUrlPattern,
-              kubernetesInfo,
-              pod)),
+            url = appInfo.url.orElse {
+              getPodAppUrl(sparkAppUrlSource, sparkAppUrlPattern, kubernetesInfo, pod)
+            },
             error = appError,
             podName = Some(pod.getMetadata.getName)))
       }.getOrElse {
