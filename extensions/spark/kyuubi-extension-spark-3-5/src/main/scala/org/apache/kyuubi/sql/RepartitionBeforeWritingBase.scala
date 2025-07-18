@@ -99,6 +99,7 @@ trait RepartitionBeforeWriteHelper extends Rule[LogicalPlan] {
       case _: Window => true
       case s: Sort if s.global => true
       case _: RepartitionOperation => true
+      case _: RebalancePartitions => true
       case _: GlobalLimit => true
       case _ => false
     }.isDefined
@@ -112,8 +113,8 @@ trait RepartitionBeforeWriteHelper extends Rule[LogicalPlan] {
       case SubqueryAlias(_, child) => canInsert(child)
       case Limit(_, _) => false
       case _: Sort => false
-      case _: RepartitionByExpression => false
-      case _: Repartition => false
+      case _: RepartitionOperation => false
+      case _: RebalancePartitions => false
       case _ => true
     }
 
