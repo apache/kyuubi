@@ -29,19 +29,22 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
   test("check rebalance exists") {
-    def check(df: => DataFrame, expectedRebalanceNum: Int = 1): Unit = {
+    def check(
+        df: => DataFrame,
+        expectedRebalanceNumEnabled: Int = 1,
+        expectedRebalanceNumDisabled: Int = 0): Unit = {
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true") {
         withListener(df) { write =>
           assert(write.collect {
             case r: RebalancePartitions => r
-          }.size == expectedRebalanceNum)
+          }.size == expectedRebalanceNumEnabled)
         }
       }
       withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "false") {
         withListener(df) { write =>
           assert(write.collect {
             case r: RebalancePartitions => r
-          }.isEmpty)
+          }.size == expectedRebalanceNumDisabled)
         }
       }
     }
@@ -70,6 +73,14 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
         withTable("tmp1") {
           sql(s"CREATE TABLE tmp1 (c1 int) $storage")
           check(sql("INSERT INTO TABLE tmp1 SELECT * FROM VALUES(1),(2),(3) AS t(c1)"))
+        }
+
+        withTable("tmp1") {
+          sql(s"CREATE TABLE tmp1 (c1 int) $storage")
+          check(
+            sql("INSERT INTO TABLE tmp1 SELECT /*+ REBALANCE */ * FROM VALUES(1),(2),(3) AS t(c1)"),
+            1,
+            1)
         }
 
         withTable("tmp1", "tmp2") {
