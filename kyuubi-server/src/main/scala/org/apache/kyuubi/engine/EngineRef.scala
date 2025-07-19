@@ -70,7 +70,7 @@ private[kyuubi] class EngineRef(
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
-  private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
+  private[kyuubi] val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
   // Server-side engine pool size threshold
   private val poolThreshold: Int =
