@@ -296,7 +296,8 @@ class SparkProcessBuilder(
             fs = path.getFileSystem(hadoopConf)
             if (!fs.exists(path)) {
               info(s"Try creating $KUBERNETES_FILE_UPLOAD_PATH: $uploadPath")
-              fs.mkdirs(path, KUBERNETES_UPLOAD_PATH_PERMISSION)
+              // SPARK-30860: use the class method to avoid the umask causing permission issues
+              FileSystem.mkdirs(fs, path, KUBERNETES_UPLOAD_PATH_PERMISSION)
             }
           } catch {
             case ioe: IOException =>
@@ -410,7 +411,8 @@ object SparkProcessBuilder {
   final val INTERNAL_RESOURCE = "spark-internal"
 
   final val KUBERNETES_FILE_UPLOAD_PATH = "spark.kubernetes.file.upload.path"
-  final val KUBERNETES_UPLOAD_PATH_PERMISSION = new FsPermission(Integer.parseInt("777", 8).toShort)
+  final val KUBERNETES_UPLOAD_PATH_PERMISSION =
+    FsPermission.createImmutable(Integer.parseInt("777", 8).toShort)
 
   final val YEAR_FMT = DateTimeFormatter.ofPattern("yyyy")
   final val MONTH_FMT = DateTimeFormatter.ofPattern("MM")
