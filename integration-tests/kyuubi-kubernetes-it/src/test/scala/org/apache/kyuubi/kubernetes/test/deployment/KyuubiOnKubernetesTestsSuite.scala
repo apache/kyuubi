@@ -117,11 +117,11 @@ class KyuubiOnKubernetesWithClusterSparkTestsSuite
   override def beforeAll(): Unit = {
     super.beforeAll()
     val fs = FileSystem.get(getHadoopConf)
-    fs.mkdirs(
+    FileSystem.mkdirs(
+      fs,
       new Path("/spark"),
       new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.setPermission(new Path("/"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
-    fs.setPermission(new Path("/spark"), new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     fs.copyFromLocalFile(new Path(driverTemplate.getPath), new Path("/spark/driver.yml"))
   }
 
