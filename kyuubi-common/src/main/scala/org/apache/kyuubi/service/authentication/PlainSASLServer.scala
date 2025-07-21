@@ -19,6 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
 import java.security.Provider
+import java.util
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
@@ -37,7 +38,7 @@ class PlainSASLServer(
     try {
       // parse the response
       // message = [authzid] UTF8NUL authcid UTF8NUL passwd'
-      val tokenList = new java.util.ArrayDeque[String]
+      val tokenList = new util.ArrayDeque[String]
       val messageToken: StringBuilder = new StringBuilder
       response.foreach {
         case 0 =>
@@ -109,9 +110,9 @@ object PlainSASLServer {
         mechanism: String,
         protocol: String,
         serverName: String,
-        props: java.util.Map[String, _],
+        props: util.Map[String, _],
         cbh: CallbackHandler): SaslServer = mechanism match {
-      case PLAIN_METHOD =>
+      case PLAIN_METHOD if props.containsKey("org.apache.kyuubi.service.name") =>
         try {
           new PlainSASLServer(cbh, AuthMethods.withName(protocol))
         } catch {
@@ -121,7 +122,7 @@ object PlainSASLServer {
       case _ => null
     }
 
-    override def getMechanismNames(props: java.util.Map[String, _]): Array[String] = {
+    override def getMechanismNames(props: util.Map[String, _]): Array[String] = {
       Array(PLAIN_METHOD)
     }
   }
