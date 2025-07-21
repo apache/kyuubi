@@ -64,6 +64,7 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     val sparkAppUrlPattern3 =
       "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc" +
         ".{{KUBERNETES_CONTEXT}}.k8s.io:{{SPARK_UI_PORT}}"
+    val sparkAppUrlPattern4 = "http://{{SPARK_DRIVER_POD_IP}}:{{SPARK_UI_PORT}}"
 
     val sparkAppId = "spark-123"
     val sparkDriverSvc = "spark-456-driver-svc"
@@ -74,7 +75,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern1,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkAppId.ingress.balabala")
@@ -82,7 +84,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern2,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort")
@@ -90,11 +93,22 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern3,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) ===
       s"http://$sparkDriverSvc.$kubernetesNamespace.svc.$kubernetesContext.k8s.io:$sparkUiPort")
+
+    assert(KubernetesApplicationOperation.buildSparkAppUrl(
+      sparkAppUrlPattern4,
+      sparkAppId,
+      None,
+      Some("10.69.234.1"),
+      kubernetesContext,
+      kubernetesNamespace,
+      sparkUiPort) ===
+      s"http://10.69.234.1:$sparkUiPort")
   }
 
   test("get kubernetes client initialization info") {
