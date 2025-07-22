@@ -30,7 +30,7 @@ arrow-vector/16.0.0//arrow-vector-16.0.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.17.1//commons-codec-1.17.1.jar
-commons-lang3/3.17.0//commons-lang3-3.17.0.jar
+commons-lang3/3.18.0//commons-lang3-3.18.0.jar
 error_prone_annotations/2.23.0//error_prone_annotations-2.23.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
 failureaccess/1.0.2//failureaccess-1.0.2.jar
