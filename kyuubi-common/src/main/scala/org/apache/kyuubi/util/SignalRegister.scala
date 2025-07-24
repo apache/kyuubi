@@ -17,18 +17,20 @@
 
 package org.apache.kyuubi.util
 
+import java.util
 import java.util.Collections
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.commons.lang3.SystemUtils
 import org.slf4j.Logger
-import sun.misc.{Signal, SignalHandler}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.shaded.util.{Signal, SignalHandler}
 
 object SignalRegister extends Logging {
-  private val handlers = new scala.collection.mutable.HashMap[String, ActionHandler]
+  private val handlers = new mutable.HashMap[String, ActionHandler]
 
   def registerLogger(log: Logger): Unit = {
     Seq("TERM", "HUP", "INT").foreach { sig =>
@@ -41,7 +43,7 @@ object SignalRegister extends Logging {
               ActionHandler(signal)
             })
           handler.register({
-            log.error(s"RECEIVED SIGNAL ${signal.getNumber}: " + sig)
+            log.error(s"RECEIVED SIGNAL ${signal.getNumber}: $sig")
             false
           })
         } catch {
@@ -52,7 +54,7 @@ object SignalRegister extends Logging {
   }
 
   case class ActionHandler(signal: Signal) extends SignalHandler {
-    private val actions = Collections.synchronizedList(new java.util.LinkedList[() => Boolean])
+    private val actions = Collections.synchronizedList(new util.LinkedList[() => Boolean])
     private val prevHandler: SignalHandler = Signal.handle(signal, this)
 
     override def handle(sig: Signal): Unit = {

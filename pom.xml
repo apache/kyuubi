@@ -113,10 +113,9 @@
     </distributionManagement>
 
     <properties>
-        <java.version>8</java.version>
         <maven.version>3.9.10</maven.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
         <scala.version>2.12.19</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.12.0</scala-collection-compat.version>
@@ -308,6 +307,11 @@
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-relocated-util</artifactId>
                 <version>${kyuubi-relocated.version}</version>
             </dependency>
             <dependency>
@@ -1891,7 +1895,8 @@
                         <configuration>
                             <rules>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>${java.version}</maxJdkVersion>
+                                    <maxJdkVersion>${maven.compiler.target}</maxJdkVersion>
+                                    <ignoredScopes>provided</ignoredScopes>
                                     <ignoredScopes>test</ignoredScopes>
                                     <ignoreClasses>
                                         <!--
@@ -1935,7 +1940,6 @@
                 <jdk>8</jdk>
             </activation>
             <properties>
-                <java.version>8</java.version>
                 <!--
                   Iceberg drops support for Java 8 since 1.7.0.
                   And it may have compatible issue with Spark 3.5.4+, see Iceberg #11731
@@ -1945,30 +1949,12 @@
         </profile>
 
         <profile>
-            <id>java-11</id>
+            <id>jdk9+</id>
             <activation>
-                <jdk>11</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <properties>
-                <java.version>11</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java-17</id>
-            <activation>
-                <jdk>17</jdk>
-            </activation>
-            <properties>
-                <java.version>17</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
+                <maven.compiler.release>8</maven.compiler.release>
             </properties>
         </profile>
 
@@ -1978,10 +1964,6 @@
                 <jdk>21</jdk>
             </activation>
             <properties>
-                <java.version>21</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
