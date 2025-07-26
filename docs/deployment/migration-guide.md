@@ -21,6 +21,8 @@
 
 * Since Kyuubi 1.11, the configuration `spark.sql.watchdog.forcedMaxOutputRows` provided by Kyuubi Spark extension is removed, consider using `kyuubi.operation.result.max.rows` instead. Note, the latter works without requirement of installing Kyuubi Spark extension.
 
+* Since Kyuubi 1.11, the configuration `kyuubi.session.engine.spark.initialize.sql` is now applied for every session in shared engines (USER/GROUP/SERVER), correcting previous behavior where it was only applied for the first session.
+
 ## Upgrading from Kyuubi 1.9 to 1.10
 
 * Since Kyuubi 1.10, `beeline` is deprecated and will be removed in the future, please use `kyuubi-beeline` instead.
