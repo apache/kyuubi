@@ -1398,8 +1398,9 @@ object KyuubiConf {
     buildConf("kyuubi.kubernetes.spark.appUrlPattern")
       .doc("The pattern to generate the spark on kubernetes application UI URL. " +
         "The pattern should contain placeholders for the application variables. " +
-        "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`, " +
-        "`{{KUBERNETES_NAMESPACE}}`, `{{KUBERNETES_CONTEXT}}` and `{{SPARK_UI_PORT}}`.")
+        "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`," +
+        " `{{SPARK_DRIVER_POD_IP}}`, `{{KUBERNETES_NAMESPACE}}`, `{{KUBERNETES_CONTEXT}}`" +
+        " and `{{SPARK_UI_PORT}}`.")
       .version("1.10.0")
       .stringConf
       .createWithDefault(

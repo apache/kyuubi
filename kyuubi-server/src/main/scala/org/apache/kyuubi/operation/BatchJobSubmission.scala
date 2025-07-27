@@ -79,7 +79,26 @@ class BatchJobSubmission(
   def appStartTime: Long = _appStartTime
   def appStarted: Boolean = _appStartTime > 0
 
-  private lazy val _submitTime = if (appStarted) _appStartTime else System.currentTimeMillis
+  private lazy val _submitTime = System.currentTimeMillis
+
+  /**
+   * Batch submission refers to the time interval from the start of the batch operation run
+   * to the application being started. This method returns the time within this interval based
+   * on the following conditions:
+   * 1. If the application has been submitted to resource manager, return the time that application
+   * submitted to resource manager.
+   * 2. If the builder process does not wait for the engine completion and the process has not been
+   * terminated, return the current time to prevent application failed within NOT_FOUND state if the
+   * process duration exceeds the application submit timeout.
+   * 3. Otherwise, return the time that start to run the batch job submission operation.
+   */
+  private def submitTime: Long = if (appStarted) {
+    _appStartTime
+  } else if (!waitEngineCompletion && !startupProcessTerminated) {
+    System.currentTimeMillis()
+  } else {
+    _submitTime
+  }
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -100,10 +119,15 @@ class BatchJobSubmission(
       getOperationLog)
   }
 
+  private lazy val waitEngineCompletion = builder.waitEngineCompletion
+
   private lazy val appOperation = applicationManager.getApplicationOperation(builder.appMgrInfo())
 
   def startupProcessAlive: Boolean =
     builder.processLaunched && Option(builder.process).exists(_.isAlive)
+
+  private def startupProcessTerminated: Boolean =
+    builder.processLaunched && Option(builder.process).forall(!_.isAlive)
 
   override def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
@@ -114,7 +138,7 @@ class BatchJobSubmission(
         builder.appMgrInfo(),
         batchId,
         Some(session.user),
-        Some(_submitTime))
+        Some(submitTime))
     applicationId(applicationInfo).foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
@@ -299,6 +323,11 @@ class BatchJobSubmission(
 
       if (!process.isAlive) {
         doUpdateApplicationInfoMetadataIfNeeded()
+        val exitValue = process.exitValue()
+        if (exitValue != 0) {
+          throw new KyuubiException(
+            s"Process exit with value $exitValue, application info: ${_applicationInfo}")
+        }
       }
 
       if (applicationFailed(_applicationInfo, appOperation)) {
@@ -323,10 +352,7 @@ class BatchJobSubmission(
         case None =>
       }
     } finally {
-      val waitCompletion = batchConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
-        .map(_.toBoolean).getOrElse(
-          session.sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION))
-      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      val destroyProcess = !waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")

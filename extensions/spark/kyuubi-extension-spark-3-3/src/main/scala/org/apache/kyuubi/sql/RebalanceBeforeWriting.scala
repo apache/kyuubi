@@ -45,15 +45,6 @@ trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
       }
     }
   }
-
-  override def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = {
-    super.canInsertRepartitionByExpression(plan) && {
-      plan match {
-        case _: RebalancePartitions => false
-        case _ => true
-      }
-    }
-  }
 }
 
 /**
