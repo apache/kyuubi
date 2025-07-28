@@ -24,8 +24,8 @@ package org.apache.hive.beeline;
 
 import java.sql.SQLException;
 import java.sql.Statement;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
+import org.apache.kyuubi.shaded.util.Signal;
+import org.apache.kyuubi.shaded.util.SignalHandler;
 
 public class SunSignalHandler implements BeeLineSignalHandler, SignalHandler {
   private Statement stmt = null;
