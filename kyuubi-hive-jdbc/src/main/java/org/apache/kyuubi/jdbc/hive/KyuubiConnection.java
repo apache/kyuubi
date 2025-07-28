@@ -88,7 +88,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private JdbcConnectionParams connParams;
   private TTransport transport;
   private TCLIService.Iface client;
-  private boolean isClosed = true;
+  private volatile boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
   private final List<TProtocolVersion> supportedProtocols = new LinkedList<>();
