@@ -23,7 +23,10 @@ import scala.util.Try
 
 // scalastyle:off
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
+import org.apache.spark.authz.AuthzConf
+import org.apache.spark.authz.AuthzConf.DATA_MASKING_ENABLED
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.internal.SQLConf
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -85,6 +88,17 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     super.afterAll()
   }
 
+  private def withEnabledDataMasking(enabled: Boolean)(f: => Unit): Unit = {
+    val conf = SQLConf.get
+    val oldValue = AuthzConf.dataMaskingEnabled(conf)
+    try {
+      conf.setConf(DATA_MASKING_ENABLED, enabled)
+      f
+    } finally {
+      conf.setConf(DATA_MASKING_ENABLED, oldValue)
+    }
+  }
+
   test("simple query with a user doesn't have mask rules") {
     checkAnswer(
       kent,
@@ -93,17 +107,24 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
   }
 
   test("simple query with a user has mask rules") {
-    val result =
-      Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
-    checkAnswer(
-      bob,
-      "SELECT value1, value2, value3, value4, value5 FROM default.src " +
-        "where key = 1",
-      result)
-    checkAnswer(
-      bob,
-      "SELECT value1 as key, value2, value3, value4, value5 FROM default.src where key = 1",
-      result)
+    Seq(true, false).foreach { enabled =>
+      withEnabledDataMasking(enabled) {
+        val result: Seq[Row] = if (enabled) {
+          Seq(Row(md5Hex("1"), "xxxxx", "worlx", Timestamp.valueOf("2018-01-01 00:00:00"), "Xorld"))
+        } else {
+          Seq(Row(1, "hello", "world", Timestamp.valueOf("2018-11-17 12:34:56"), "World"))
+        }
+        checkAnswer(
+          bob,
+          "SELECT value1, value2, value3, value4, value5 FROM default.src " +
+            "where key = 1",
+          result)
+        checkAnswer(
+          bob,
+          "SELECT value1 as key, value2, value3, value4, value5 FROM default.src where key = 1",
+          result)
+      }
+    }
   }
 
   test("star") {
