@@ -24,6 +24,7 @@ import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.ui.SparkUIUtils.formatDuration
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
@@ -55,6 +56,13 @@ class SparkSessionImpl(
     } catch {
       case e: AnalysisException => warn(e.getMessage())
     }
+  }
+
+  override val sessionIdleTimeoutThreshold: Long = {
+    conf.get(SESSION_IDLE_TIMEOUT.key)
+      .map(_.toLong)
+      .getOrElse(
+        sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))
   }
 
   private val sessionEvent = SessionEvent(this)
