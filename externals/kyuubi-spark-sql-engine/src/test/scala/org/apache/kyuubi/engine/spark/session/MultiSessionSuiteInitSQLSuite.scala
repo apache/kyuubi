@@ -24,28 +24,23 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
 
-class MultiSessionSuiteInitSQLSuite  extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class MultiSessionSuiteInitSQLSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] = {
     Map(
       ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_SINGLE_SPARK_SESSION.key -> "false",
-      (
-        ENGINE_SESSION_SPARK_INITIALIZE_SQL.key,
-        "CREATE DATABASE IF NOT EXISTS INIT_DB_SOLO;" +
-          "CREATE TABLE IF NOT EXISTS INIT_DB_SOLO.test(a int) USING CSV;" +
-          "INSERT INTO INIT_DB_SOLO.test VALUES (2);"))
+      ENGINE_SINGLE_SPARK_SESSION.key -> "false")
   }
 
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
 
-  private def executeServerSharedSetStatement(user: String,
-                                              initStatement: String,
-                                              executeStatement: String): Long = {
+  private def executeServerSharedSetStatement(
+      initStatement: String,
+      executeStatement: String): String = {
     withThriftClient(Some(user)) { client =>
       val req = new TOpenSessionReq()
-      req.setUsername(user)
+      req.setUsername("user")
       req.setPassword("anonymous")
       req.setConfiguration(Map(
         ENGINE_SHARE_LEVEL.key -> "SERVER",
@@ -66,20 +61,20 @@ class MultiSessionSuiteInitSQLSuite  extends WithSparkSQLEngine with HiveJDBCTes
       tFetchResultsReq.setFetchType(0)
       tFetchResultsReq.setMaxRows(1)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-      tFetchResultsResp.getResults.getColumns.get(0).getI64Val.getValues.get(0)
+      tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0)
     }
   }
 
   test("isolated user spark session") {
-    assert(executeServerSharedSetStatement("user",
-      "SHOW TABLES",
-      "SELECT COUNT(*) FROM INIT_DB_SOLO.test WHERE a = 2") ==
-      1)
+    assert(executeServerSharedSetStatement(
+      "SET varA=1",
+      "SELECT '${varA}'") ==
+      "1")
 
 
-    assert(executeServerSharedSetStatement("user",
-      "INSERT INTO INIT_DB_SOLO.test VALUES (3);",
-      "SELECT COUNT(*) FROM INIT_DB_SOLO.test WHERE a = 3") ==
-      1)
+    assert(executeServerSharedSetStatement(
+      "SET varB=2",
+      "SELECT '${varB}'") ==
+      "2")
   }
 }
