@@ -48,13 +48,12 @@ public class KyuubiJDBC {
   private static String kyuubiJdbcUrl = "jdbc:kyuubi://localhost:10009/default;";
 
   public static void main(String[] args) throws SQLException {
-    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
-      try (Statement stmt = conn.createStatement()) {
-        try (ResultSet rs = stmt.executeQuery("show databases")) {
-          while (rs.next()) {
-            System.out.println(rs.getString(1));
-          }
-        }   
+    try (
+      Connection conn = DriverManager.getConnection(kyuubiJdbcUrl);
+      Statement stmt = conn.createStatement();
+      ResultSet rs = stmt.executeQuery("show databases")) {
+      while (rs.next()) {
+        System.out.println(rs.getString(1));
       }
     }
   }
@@ -81,13 +80,12 @@ public class KyuubiJDBCDemo {
     String clientKeytab = args[1];    // Keytab file location
     String serverPrincipal = args[2]; // Kerberos principal used by Kyuubi Server
     String kyuubiJdbcUrl = String.format(kyuubiJdbcUrlTemplate, clientPrincipal, clientKeytab, serverPrincipal);
-    try (Connection conn = DriverManager.getConnection(kyuubiJdbcUrl)) {
-      try (Statement stmt = conn.createStatement()) {
-        try (ResultSet rs = stmt.executeQuery("show databases")) {
-          while (rs.next()) {
-            System.out.println(rs.getString(1));
-          }
-        }
+    try (
+      Connection conn = DriverManager.getConnection(kyuubiJdbcUrl);
+      Statement stmt = conn.createStatement();
+      ResultSet rs = stmt.executeQuery("show databases")) {
+      while (rs.next()) {
+        System.out.println(rs.getString(1));
       }
     }
   }
