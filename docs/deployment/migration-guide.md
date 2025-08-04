@@ -23,6 +23,8 @@
 
 * Since Kyuubi 1.11, if the engine is running in cluster mode, Kyuubi will respect the `kyuubi.session.engine.startup.waitCompletion` config to determine whether to wait for the engine completion or not. If the engine is running in client mode, Kyuubi will always wait for the engine completion. And for Spark engine, Kyuubi will append the `spark.yarn.submit.waitAppCompletion` and `spark.kubernetes.submission.waitAppCompletion` configs to the engine conf based on the value of `kyuubi.session.engine.startup.waitCompletion`.
 
+* Since Kyuubi 1.11, the configuration `kyuubi.session.engine.spark.initialize.sql` set by the client (via session configuration) is now correctly applied to every session in shared engines (USER, GROUP, SERVER). Previously, only the value set on the server side was applied and only for the first session when the engine started. Now, session-level settings provided by each client are respected.
+
 ## Upgrading from Kyuubi 1.9 to 1.10
 
 * Since Kyuubi 1.10, `beeline` is deprecated and will be removed in the future, please use `kyuubi-beeline` instead.

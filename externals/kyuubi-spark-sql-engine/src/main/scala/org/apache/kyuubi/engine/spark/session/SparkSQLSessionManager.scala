@@ -105,7 +105,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     userIsolatedSparkSessionThread.foreach(_.shutdown())
   }
 
-  private def getOrNewSparkSession(user: String): SparkSession = {
+  private def getOrNewSparkSession(user: String, sessionConf: Map[String, String]): SparkSession = {
     if (singleSparkSession) {
       spark
     } else {
@@ -113,8 +113,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         // it's unnecessary to create a new spark session in connection share level
         // since the session is only one
         case CONNECTION => spark
-        case USER => newSparkSession(spark)
-        case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark)
+        case USER => newSparkSession(spark, sessionConf)
+        case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark, sessionConf)
         case GROUP | SERVER =>
           userIsolatedCacheLock.synchronized {
             if (userIsolatedCache.containsKey(user)) {
@@ -123,7 +123,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
               userIsolatedCache.get(user)
             } else {
               userIsolatedCacheCount.put(user, (1, System.currentTimeMillis()))
-              val newSession = newSparkSession(spark)
+              val newSession = newSparkSession(spark, sessionConf)
               userIsolatedCache.put(user, newSession)
               newSession
             }
@@ -132,11 +132,16 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     }
   }
 
-  private def newSparkSession(rootSparkSession: SparkSession): SparkSession = {
+  private def newSparkSession(
+      rootSparkSession: SparkSession,
+      sessionConf: Map[String, String]): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
     KyuubiSparkUtil.initializeSparkSession(
       newSparkSession,
-      conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL))
+      sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
+        .filter(_.nonEmpty)
+        .map(_.split(";").toSeq)
+        .getOrElse(conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL)))
     newSparkSession
   }
 
@@ -150,7 +155,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       getSessionOption).getOrElse {
       val sparkSession =
         try {
-          getOrNewSparkSession(user)
+          getOrNewSparkSession(user, conf)
         } catch {
           case e: Exception => throw KyuubiSQLException(e)
         }
