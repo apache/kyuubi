@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.session
 
 import scala.jdk.CollectionConverters._
 
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SESSION_SPARK_INITIALIZE_SQL, ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION, ENGINE_USER_ISOLATED_SPARK_SESSION, ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL, ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
@@ -35,46 +35,32 @@ class MultiSessionSuiteInitSQLSuite extends WithSparkSQLEngine with HiveJDBCTest
   override protected def jdbcUrl: String =
     s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
 
-  private def executeServerSharedSetStatement(
-      initStatement: String,
-      executeStatement: String): String = {
-    withThriftClient(Some(user)) { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("user")
-      req.setPassword("anonymous")
-      req.setConfiguration(Map(
-        ENGINE_SHARE_LEVEL.key -> "SERVER",
-        ENGINE_SINGLE_SPARK_SESSION.key -> "false",
-        (
-          ENGINE_SESSION_SPARK_INITIALIZE_SQL.key,
-          initStatement)).asJava)
-      val tOpenSessionResp = client.OpenSession(req)
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      tExecuteStatementReq.setStatement(executeStatement)
-      tExecuteStatementReq.setRunAsync(false)
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-
-      val operationHandle = tExecuteStatementResp.getOperationHandle
-      val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(operationHandle)
-      tFetchResultsReq.setFetchType(0)
-      tFetchResultsReq.setMaxRows(1)
-      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-      tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0)
-    }
-  }
-
   test("isolated user spark session") {
-    assert(executeServerSharedSetStatement(
-      "SET varA=1",
-      "SELECT '${varA}'") ==
-      "1")
+    Seq("abc", "xyz").foreach { value =>
+      withThriftClient(Some(user)) { client =>
+        val req = new TOpenSessionReq()
+        req.setUsername("user")
+        req.setPassword("anonymous")
+        req.setConfiguration(Map(
+          ENGINE_SHARE_LEVEL.key -> "SERVER",
+          ENGINE_SINGLE_SPARK_SESSION.key -> "false",
+          ENGINE_SESSION_SPARK_INITIALIZE_SQL.key -> s"SET varA=$value").asJava)
+        val tOpenSessionResp = client.OpenSession(req)
+        val tExecuteStatementReq = new TExecuteStatementReq()
+        tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+        tExecuteStatementReq.setStatement("SELECT '${varA}'")
+        tExecuteStatementReq.setRunAsync(false)
+        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
-
-    assert(executeServerSharedSetStatement(
-      "SET varB=2",
-      "SELECT '${varB}'") ==
-      "2")
+        val operationHandle = tExecuteStatementResp.getOperationHandle
+        val tFetchResultsReq = new TFetchResultsReq()
+        tFetchResultsReq.setOperationHandle(operationHandle)
+        tFetchResultsReq.setFetchType(0)
+        tFetchResultsReq.setMaxRows(1)
+        val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+        val ret = tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0)
+        assert(ret === value)
+      }
+    }
   }
 }
