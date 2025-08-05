@@ -97,7 +97,7 @@ jetty-util-ajax/9.4.57.v20241219//jetty-util-ajax-9.4.57.v20241219.jar
 jetty-util/9.4.57.v20241219//jetty-util-9.4.57.v20241219.jar
 jline/2.14.6//jline-2.14.6.jar
 jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
-kafka-clients/3.5.2//kafka-clients-3.5.2.jar
+kafka-clients/3.9.1//kafka-clients-3.9.1.jar
 kubernetes-client-api/6.13.5//kubernetes-client-api-6.13.5.jar
 kubernetes-client/6.13.5//kubernetes-client-6.13.5.jar
 kubernetes-httpclient-okhttp/6.13.5//kubernetes-httpclient-okhttp-6.13.5.jar
