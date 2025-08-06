@@ -22,11 +22,11 @@ annotations/4.1.1.4//annotations-4.1.1.4.jar
 antlr-runtime/3.5.3//antlr-runtime-3.5.3.jar
 antlr4-runtime/4.9.3//antlr4-runtime-4.9.3.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
-arrow-format/16.0.0//arrow-format-16.0.0.jar
-arrow-memory-core/16.0.0//arrow-memory-core-16.0.0.jar
-arrow-memory-netty-buffer-patch/16.0.0//arrow-memory-netty-buffer-patch-16.0.0.jar
-arrow-memory-netty/16.0.0//arrow-memory-netty-16.0.0.jar
-arrow-vector/16.0.0//arrow-vector-16.0.0.jar
+arrow-format/18.3.0//arrow-format-18.3.0.jar
+arrow-memory-core/18.3.0//arrow-memory-core-18.3.0.jar
+arrow-memory-netty-buffer-patch/18.3.0//arrow-memory-netty-buffer-patch-18.3.0.jar
+arrow-memory-netty/18.3.0//arrow-memory-netty-18.3.0.jar
+arrow-vector/18.3.0//arrow-vector-18.3.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.17.1//commons-codec-1.17.1.jar
@@ -34,7 +34,7 @@ commons-lang3/3.18.0//commons-lang3-3.18.0.jar
 error_prone_annotations/2.23.0//error_prone_annotations-2.23.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
 failureaccess/1.0.2//failureaccess-1.0.2.jar
-flatbuffers-java/23.5.26//flatbuffers-java-23.5.26.jar
+flatbuffers-java/25.2.10//flatbuffers-java-25.2.10.jar
 fliptables/1.1.1//fliptables-1.1.1.jar
 grpc-api/1.65.1//grpc-api-1.65.1.jar
 grpc-context/1.65.1//grpc-context-1.65.1.jar
