@@ -127,7 +127,7 @@
         <antlr.st4.version>4.3.4</antlr.st4.version>
         <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
-        <byte-buddy.version>1.14.15</byte-buddy.version>
+        <byte-buddy.version>1.17.6</byte-buddy.version>
         <bouncycastle.version>1.78</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
@@ -1572,6 +1572,22 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.plugin.shade.version}</version>
+                    <dependencies>
+                        <!--
+                          TODO: Remove ASM version management once upstream change released
+                          https://github.com/apache/maven-shade-plugin/pull/744
+                          -->
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>9.8</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-commons</artifactId>
+                            <version>9.8</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
                 <plugin>
