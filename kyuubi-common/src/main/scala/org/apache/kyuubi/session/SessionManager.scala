@@ -351,7 +351,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
               info(s"Idled for more than $idleTimeout ms, terminating")
               stop()
             } else if (isEngineContextStopped) {
-              error(s"Engine's SparkContext is stopped, terminating")
+              error(s"Engine context is stopped, terminating")
               stop()
             }
           }
@@ -366,5 +366,5 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  private[kyuubi] def isEngineContextStopped: Boolean = !isServer && shutdown
+  private[kyuubi] def isEngineContextStopped: Boolean = false
 }
