@@ -222,4 +222,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       opHandle: OperationHandle): Path = {
     new Path(getSessionResultSavePath(sessionHandle), opHandle.identifier.toString)
   }
+
+  override private[kyuubi] def isEngineContextStopped = {
+    spark.sparkContext.isStopped
+  }
 }
