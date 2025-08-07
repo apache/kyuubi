@@ -23,6 +23,7 @@ import java.util.Locale
 
 import scala.util.Try
 
+import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 import org.apache.spark.{KyuubiSparkContextHelper, TaskContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.{QueryTest, Row, SparkSession}
@@ -60,6 +61,8 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   override def resultFormat: String = "arrow"
 
   override def beforeEach(): Unit = {
+    assume(SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_11), "Test requires Java 11 or later")
+
     super.beforeEach()
     withJdbcStatement() { statement =>
       checkResultSetFormat(statement, "arrow")
