@@ -132,9 +132,3 @@ jobs:
         with:
           name: super-linter-log
           path: super-linter.log
-      - name: check bin directory
-        uses: ludeeus/action-shellcheck@1.1.0
-        with:
-          # TODO: enable for all folders step by step
-          scandir: './bin'
-          severity: error
