@@ -345,10 +345,15 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (idleTimeout > 0) {
       val checkTask = new Runnable {
         override def run(): Unit = {
-          if (!shutdown && System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
-            getActiveUserSessionCount <= 0) {
-            info(s"Idled for more than $idleTimeout ms, terminating")
-            stop()
+          if (!shutdown) {
+            if (System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
+              getActiveUserSessionCount <= 0) {
+              info(s"Idled for more than $idleTimeout ms, terminating")
+              stop()
+            } else if (isEngineContextStopped) {
+              error(s"Engine context is stopped, terminating")
+              stop()
+            }
           }
         }
       }
@@ -360,4 +365,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         TimeUnit.MILLISECONDS)
     }
   }
+
+  private[kyuubi] def isEngineContextStopped: Boolean = false
 }
