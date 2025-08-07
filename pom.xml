@@ -245,7 +245,7 @@
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.shade.version>3.6.0</maven.plugin.shade.version>
+        <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.19</maven.plugin.silencer.version>
         <!-- MSOURCES-121 breaks creating source artifacts for shaded modules,
              we should skip upgrading until MSOURCES-141 gets fixed. -->
