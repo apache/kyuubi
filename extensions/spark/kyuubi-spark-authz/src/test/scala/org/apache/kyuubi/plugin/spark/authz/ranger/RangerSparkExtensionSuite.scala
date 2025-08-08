@@ -1491,6 +1491,31 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect sort agg input") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$table1 WHERE id > 1",
+          Row(0) :: Nil)
+        checkAnswer(
+          someone,
+          s"SELECT count(*) FROM $db1.$view1 WHERE id > 1",
+          Row(0) :: Nil)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$view1/id]")
+      }
+    }
+  }
+
   test("Test view lineage") {
     def extractLineage(sql: String): Lineage = {
       val parsed = spark.sessionState.sqlParser.parsePlan(sql)
