@@ -448,6 +448,13 @@ trait LineageParser {
             })
         }
 
+      // PermanentViewMarker is introduced by kyuubi authz plugin, which is a wrapper of View,
+      // so we just extract the columns lineage from its inner children (original view)
+      case pvm if pvm.nodeName == "PermanentViewMarker" =>
+        pvm.innerChildren.asInstanceOf[Seq[LogicalPlan]]
+          .map(extractColumnsLineage(_, parentColumnsLineage))
+          .reduce(mergeColumnsLineage)
+
       case p: View =>
         if (!p.isTempView && SparkContextHelper.getConf(
             LineageConf.SKIP_PARSING_PERMANENT_VIEW_ENABLED)) {
