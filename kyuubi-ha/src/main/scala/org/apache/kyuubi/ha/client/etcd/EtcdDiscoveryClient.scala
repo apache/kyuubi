@@ -151,6 +151,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     kvClient.get(ByteSequence.from(path.getBytes())).get().getKvs.isEmpty
   }
 
+  override def pathNonExists(path: String, isPrefix: Boolean): Boolean = {
+    kvClient.get(
+      ByteSequence.from(path.getBytes()),
+      GetOption.newBuilder().isPrefix(isPrefix).build()).get().getKvs.isEmpty
+  }
+
   override def delete(path: String, deleteChildren: Boolean = false): Unit = {
     kvClient.delete(
       ByteSequence.from(path.getBytes()),
