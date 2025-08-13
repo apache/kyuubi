@@ -20,7 +20,10 @@ package org.apache.kyuubi.plugin.spark.authz.ranger.rowfiltering
 // scalastyle:off
 import scala.util.Try
 
+import org.apache.spark.authz.AuthzConf
+import org.apache.spark.authz.AuthzConf.ROW_FILTER_ENABLED
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
+import org.apache.spark.sql.internal.SQLConf
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -57,19 +60,48 @@ trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with Be
     super.afterAll()
   }
 
+  private def withEnabledRowFilter(enabled: Boolean)(f: => Unit): Unit = {
+    val conf = SQLConf.get
+    val oldValue = AuthzConf.rowFilterEnabled(conf)
+    try {
+      conf.setConf(ROW_FILTER_ENABLED, enabled)
+      f
+    } finally {
+      conf.setConf(ROW_FILTER_ENABLED, oldValue)
+    }
+  }
+
   test("user without row filtering rule") {
     checkAnswer(
       kent,
-      "SELECT key FROM default.src order order by key",
+      "SELECT key FROM default.src order by key",
       Seq(Row(1), Row(20), Row(30)))
   }
 
   test("simple query projecting filtering column") {
-    checkAnswer(bob, "SELECT key FROM default.src", Seq(Row(1)))
+    Seq(true, false).foreach { enabled =>
+      withEnabledRowFilter(enabled) {
+        val result = if (enabled) {
+          Seq(Row(1))
+        } else {
+          Seq(Row(1), Row(20), Row(30))
+        }
+        checkAnswer(bob, "SELECT key FROM default.src order by key", result)
+      }
+    }
   }
 
   test("simple query projecting non filtering column") {
-    checkAnswer(bob, "SELECT value FROM default.src", Seq(Row(1)))
+    Seq(true, false).foreach { enabled =>
+      withEnabledRowFilter(enabled) {
+        val result = if (enabled) {
+          Seq(Row(1))
+        } else {
+          Seq(Row(1), Row(2), Row(3))
+        }
+        checkAnswer(bob, "SELECT value FROM default.src order by key", result)
+      }
+    }
   }
 
   test("simple query projecting non filtering column with udf max") {
