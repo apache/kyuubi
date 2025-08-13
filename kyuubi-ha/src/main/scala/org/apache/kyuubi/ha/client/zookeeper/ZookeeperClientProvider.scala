@@ -39,6 +39,10 @@ import org.apache.kyuubi.util.reflect.DynConstructors
 
 object ZookeeperClientProvider extends Logging {
 
+  /**
+   * Sharing jaas configuration for zookeeper client with same keytab and principal to
+   * avoid server oom due to nested jaas configuration. see KYUUBI #7154 for more details.
+   */
   val jaasConfigurationCache = new ConcurrentHashMap[(String, String), Configuration]()
 
   /**
@@ -116,7 +120,6 @@ object ZookeeperClientProvider extends Logging {
           System.setProperty("zookeeper.server.principal", zkServerPrincipal)
         }
         val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
-        // HDFS-16591 makes breaking change on JaasConfiguration
         val jaasConf = jaasConfigurationCache.computeIfAbsent(
           (principal, keytab),
           _ => {
