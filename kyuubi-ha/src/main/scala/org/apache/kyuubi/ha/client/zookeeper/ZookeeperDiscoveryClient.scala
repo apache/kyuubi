@@ -90,6 +90,10 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     zkClient.checkExists().forPath(path) == null
   }
 
+  override def pathNonExists(path: String, isPrefix: Boolean): Boolean = {
+    zkClient.checkExists().forPath(path) == null
+  }
+
   override def delete(path: String, deleteChildren: Boolean = false): Unit = {
     if (deleteChildren) {
       zkClient.delete().deletingChildrenIfNeeded().forPath(path)
