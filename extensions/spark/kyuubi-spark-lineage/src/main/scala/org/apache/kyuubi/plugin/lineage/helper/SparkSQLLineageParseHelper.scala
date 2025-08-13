@@ -46,6 +46,9 @@ trait LineageParser {
   val SUBQUERY_COLUMN_IDENTIFIER = "__subquery__"
   val AGGREGATE_COUNT_COLUMN_IDENTIFIER = "__count__"
   val LOCAL_TABLE_IDENTIFIER = "__local__"
+  val METADATA_COL_ATTR_KEY = "__metadata_col"
+  val ORIGINAL_ROW_ID_VALUE_PREFIX: String = "__original_row_id_"
+  val OPERATION_COLUMN: String = "__row_operation"
 
   type AttributeMap[A] = ListMap[Attribute, A]
 
@@ -307,7 +310,37 @@ trait LineageParser {
         extractColumnsLineage(getQuery(plan), parentColumnsLineage).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
+      case p if p.nodeName == "MergeRows" =>
+        val instructionsOutputs =
+          getField[Seq[Expression]](p, "matchedInstructions")
+            .map(extractInstructionOutputs) ++
+            getField[Seq[Expression]](p, "notMatchedInstructions")
+              .map(extractInstructionOutputs) ++
+            getField[Seq[Expression]](p, "notMatchedBySourceInstructions")
+              .map(extractInstructionOutputs)
+        val nextColumnsLineage = ListMap(p.output.indices.map { index =>
+          val keyAttr = p.output(index)
+          val instructionOutputs = instructionsOutputs.map(_(index))
+          (keyAttr, instructionOutputs)
+        }.collect {
+          case (keyAttr: Attribute, instructionsOutput)
+              if instructionsOutput
+                .exists(_.references.nonEmpty) =>
+            val attributeSet = AttributeSet.apply(instructionsOutput)
+            keyAttr -> attributeSet
+        }: _*)
+        p.children.map(
+          extractColumnsLineage(_, nextColumnsLineage)).reduce(mergeColumnsLineage)
 
+      case p if p.nodeName == "WriteDelta" || p.nodeName == "ReplaceData" =>
+        val table = getV2TableName(getField[NamedRelation](plan, "table"))
+        val query = getQuery(plan)
+        val columnsLineage = extractColumnsLineage(query, parentColumnsLineage)
+        columnsLineage
+          .filter { case (k, _) => !isMetadataAttr(k) }
+          .map { case (k, v) =>
+            k.withName(s"$table.${k.name}") -> v
+          }
       case p if p.nodeName == "MergeIntoTable" =>
         val matchedActions = getField[Seq[MergeAction]](plan, "matchedActions")
         val notMatchedActions = getField[Seq[MergeAction]](plan, "notMatchedActions")
@@ -512,6 +545,19 @@ trait LineageParser {
       case Array(database, table) =>
         Seq(LineageConf.DEFAULT_CATALOG, database, table).filter(_.nonEmpty).mkString(".")
       case _ => qualifiedName
+    }
+  }
+
+  private def isMetadataAttr(attr: Attribute): Boolean = {
+    attr.metadata.contains(METADATA_COL_ATTR_KEY) ||
+    attr.name.startsWith(ORIGINAL_ROW_ID_VALUE_PREFIX) ||
+    attr.name.startsWith(OPERATION_COLUMN)
+  }
+
+  private def extractInstructionOutputs(instruction: Expression): Seq[Expression] = {
+    instruction match {
+      case p if p.nodeName == "Split" => getField[Seq[Expression]](p, "otherOutput")
+      case p => getField[Seq[Expression]](p, "output")
     }
   }
 }
