@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.util.ServiceLoader
 import java.util.concurrent.atomic.AtomicLong
+
+import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
@@ -99,7 +102,8 @@ class SparkSessionImpl(
     otherConf.foreach {
       case (key, value) => setModifiableConfig(key, value)
     }
-    KDFRegistry.registerAll(spark)
+    ServiceLoader.load(classOf[KDFRegistry])
+      .foreach(_.registerAll(spark))
     EventBus.post(sessionEvent)
     super.open()
   }
