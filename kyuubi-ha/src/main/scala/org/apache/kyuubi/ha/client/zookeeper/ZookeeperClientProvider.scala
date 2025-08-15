@@ -40,8 +40,9 @@ import org.apache.kyuubi.util.reflect.DynConstructors
 object ZookeeperClientProvider extends Logging {
 
   /**
-   * Sharing jaas configuration for zookeeper client with same keytab and principal to
-   * avoid server oom due to nested jaas configuration. see KYUUBI #7154 for more details.
+   * Sharing JAAS configuration for Zookeeper client with same keytab and principal to
+   * avoid server OOM due to each new JAAS configuration references the previous instance.
+   * See KYUUBI #7154 for more details.
    */
   val jaasConfigurationCache = new ConcurrentHashMap[(String, String), Configuration]()
 
