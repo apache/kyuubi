@@ -349,7 +349,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         case Some(_) =>
           info(s"Listing engine nodes under $engineSpace")
           engineNodes ++= discoveryClient.getServiceNodesInfo(engineSpace)
-        case None if discoveryClient.pathNonExists(engineSpace) =>
+        case None if discoveryClient.pathNonExists(engineSpace, isPrefix = true) =>
           warn(s"Path $engineSpace does not exist. user: $userName, engine type: $engineType, " +
             s"share level: $shareLevel, subdomain: $subdomain")
         case None =>
