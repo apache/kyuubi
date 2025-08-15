@@ -40,7 +40,7 @@ import org.apache.kyuubi.util.reflect.DynConstructors
 object ZookeeperClientProvider extends Logging {
 
   /**
-   * Sharing JAAS configuration for Zookeeper client with same keytab and principal to
+   * Share JAAS configuration for Zookeeper client with same keytab and principal to
    * avoid server OOM due to each new JAAS configuration references the previous instance.
    * See KYUUBI #7154 for more details.
    */
