@@ -27,13 +27,16 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.EngineOpenOnFailure._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
-import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{EngineRef, EngineType, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.metadata.api.Metadata
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
+import org.apache.kyuubi.session.SessionState.SessionState
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException
@@ -54,6 +57,7 @@ class KyuubiSessionImpl(
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
+  @volatile protected var state: SessionState = SessionState.INITIALIZED
 
   private[kyuubi] val optimizedConf: Map[String, String] = {
     val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
@@ -72,6 +76,39 @@ class KyuubiSessionImpl(
     case (USE_DATABASE, _) =>
     case (key, value) => sessionConf.set(key, value)
   }
+
+  val (clusterManager, kubernetesInfo) = engine.engineType match {
+    case EngineType.SPARK_SQL =>
+      val builder =
+        new SparkProcessBuilder(user, doAsEnabled, sessionConf, handle.identifier.toString)
+      val cm = builder.clusterManager()
+      val k8sInfo = {
+        val appMgrInfo = builder.appMgrInfo()
+        appMgrInfo.kubernetesInfo.context.map { context =>
+          Map(KyuubiConf.KUBERNETES_CONTEXT.key -> context)
+        }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
+          Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
+        }.getOrElse(Map.empty) ++ builder.appendPodNameConf(optimizedConf)
+      }
+      (cm, k8sInfo)
+    case _ => (None, Map.empty[String, String])
+  }
+
+  private val newMetadata = Metadata(
+    identifier = handle.identifier.toString,
+    sessionType = sessionType,
+    realUser = realUser,
+    username = user,
+    ipAddress = ipAddress,
+    kyuubiInstance = connectionUrl,
+    state = state.toString,
+    requestName = name.orNull,
+    requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+    createTime = createTime,
+    engineType = engine.engineType.toString,
+    clusterManager = clusterManager)
+
+  sessionManager.insertMetadata(newMetadata)
 
   private lazy val engineCredentials = renewEngineCredentials()
 
@@ -114,6 +151,9 @@ class KyuubiSessionImpl(
     traceMetricsOnOpen()
 
     checkSessionAccessPathURIs()
+
+    setState(SessionState.PENDING)
+    updateMetadata()
 
     // we should call super.open before running launch engine operation
     super.open()
@@ -229,6 +269,9 @@ class KyuubiSessionImpl(
         _client.engineName.foreach(e => sessionEvent.engineName = e)
         _client.engineUrl.foreach(e => sessionEvent.engineUrl = e)
         EventBus.post(sessionEvent)
+
+        setState(SessionState.RUNNING)
+        updateMetadata()
       }
     }
 
@@ -281,6 +324,15 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
+    val terminalState = if (!checkEngineConnectionAlive()) {
+      SessionState.ERROR
+    } else if (isTimedOut) {
+      SessionState.TIMEOUT
+    } else {
+      SessionState.CLOSED
+    }
+    setState(terminalState)
+
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
@@ -289,6 +341,9 @@ class KyuubiSessionImpl(
       openSessionError.foreach { _ => if (engine != null) engine.close() }
       sessionEvent.endTime = System.currentTimeMillis()
       EventBus.post(sessionEvent)
+
+      updateMetadata()
+
       traceMetricsOnClose()
     }
   }
@@ -325,5 +380,41 @@ class KyuubiSessionImpl(
     if (client == null) return true // client has not been initialized
     if (client.engineConnectionClosed) return false
     !client.remoteEngineBroken
+  }
+
+  private def isTimedOut: Boolean = {
+    lastAccessTime + sessionIdleTimeoutThreshold <= System.currentTimeMillis &&
+    getNoOperationTime > sessionIdleTimeoutThreshold
+  }
+
+  private def setState(newState: SessionState): Unit = {
+    SessionState.validateTransition(state, newState)
+    newState match {
+      case SessionState.RUNNING =>
+        info(s"Session is ready.")
+      case SessionState.ERROR | SessionState.TIMEOUT | SessionState.CLOSED =>
+        info(s"Session is terminated.")
+      case _ =>
+    }
+    state = newState
+  }
+
+  private def updateMetadata(): Unit = {
+    val endTime = if (SessionState.isTerminal(state)) lastAccessTime else 0L
+
+    val metadataToUpdate = state match {
+      case SessionState.RUNNING => Metadata(
+          identifier = handle.identifier.toString,
+          state = state.toString,
+          engineOpenTime = sessionEvent.openedTime,
+          engineId = _client.engineId.toString,
+          engineName = _client.engineName.toString,
+          engineUrl = _client.engineUrl.toString,
+          endTime = endTime)
+      case _ => Metadata(
+          identifier = handle.identifier.toString,
+          state = state.toString)
+    }
+    sessionManager.updateMetadata(metadataToUpdate)
   }
 }
