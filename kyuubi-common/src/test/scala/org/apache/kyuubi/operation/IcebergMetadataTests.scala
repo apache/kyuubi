@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.{IcebergSuiteMixin, SPARK_COMPILE_VERSION}
+import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.SparkVersionUtil
@@ -51,12 +51,9 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
         checkGetSchemas(metaData.getSchemas("spark_catalog", pattern), dbDflts, "spark_catalog")
       }
 
-      Seq(null, catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         matchAllPatterns foreach { pattern =>
-          checkGetSchemas(
-            metaData.getSchemas(cg, pattern),
-            dbs,
-            catalog)
+          checkGetSchemas(metaData.getSchemas(cg, pattern), dbs, catalog)
         }
       }
 
@@ -87,7 +84,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq(null, catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
@@ -116,7 +113,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq(catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         dbs.foreach { db =>
           try {
             statement.execute(
@@ -156,12 +153,9 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "map<int, bigint>",
       "date",
       "timestamp",
-      // SPARK-37931
-      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") "struct<X: bigint, Y: double>"
-      else "struct<`X`: bigint, `Y`: double>",
+      "struct<X: bigint, Y: double>",
       "binary",
-      // SPARK-37931
-      if (SPARK_COMPILE_VERSION >= "3.3") "struct<X: string>" else "struct<`X`: string>")
+      "struct<X: string>")
     val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
     val (colNames, _) = cols.unzip
 
