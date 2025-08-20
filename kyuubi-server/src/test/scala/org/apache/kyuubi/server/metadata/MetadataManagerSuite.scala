@@ -214,10 +214,12 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
         // close the batch if not ended
         if (batch.getEndTime == 0) {
-          metadataManager.updateMetadata(Metadata(
-            identifier = batch.getId,
-            state = OperationState.CLOSED.toString,
-            endTime = System.currentTimeMillis()), false)
+          metadataManager.updateMetadata(
+            Metadata(
+              identifier = batch.getId,
+              state = OperationState.CLOSED.toString,
+              endTime = System.currentTimeMillis()),
+            false)
         }
       }
 

@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.server.metadata
 
-import com.google.common.annotations.VisibleForTesting
-
 import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.collection.JavaConverters._
+
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf

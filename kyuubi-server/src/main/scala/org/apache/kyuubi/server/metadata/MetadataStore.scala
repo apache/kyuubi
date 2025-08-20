@@ -106,6 +106,10 @@ trait MetadataStore extends Closeable {
    */
   def cleanupMetadataByAge(maxAge: Long, limit: Int): Int
 
+  def cleanupMetadataByAge(maxAge: Long): Int = {
+    cleanupMetadataByAge(maxAge, Int.MaxValue)
+  }
+
   /**
    * Cleanup kubernetes engine info by identifier.
    */
@@ -117,4 +121,8 @@ trait MetadataStore extends Closeable {
    * @param limit the maximum number of kubernetes engine info to be cleaned up.
    */
   def cleanupKubernetesEngineInfoByAge(maxAge: Long, limit: Int): Int
+
+  def cleanupKubernetesEngineInfoByAge(maxAge: Long): Int = {
+    cleanupKubernetesEngineInfoByAge(maxAge, Int.MaxValue)
+  }
 }
