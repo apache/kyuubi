@@ -84,8 +84,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
-  private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
-
   if (conf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
@@ -413,9 +411,10 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   override def cleanupMetadataByAge(maxAge: Long): Unit = {
     val minEndTime = System.currentTimeMillis() - maxAge
-    val query = s"DELETE FROM $METADATA_TABLE WHERE state IN ($terminalStates) AND end_time < ?"
+    val query =
+      s"DELETE FROM $METADATA_TABLE WHERE end_time > 0 AND end_time < ? AND create_time < ?"
     JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, minEndTime) { count =>
+      withUpdateCount(connection, query, minEndTime, minEndTime) { count =>
         info(s"Cleaned up $count records older than $maxAge ms from $METADATA_TABLE.")
       }
     }
