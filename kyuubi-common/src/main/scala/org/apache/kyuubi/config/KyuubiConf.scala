@@ -2086,7 +2086,7 @@ object KyuubiConf {
         "when there are too many expired metadata to be cleaned.")
       .version("1.11.0")
       .timeConf
-      .createWithDefault(Duration.ofMillis(100))
+      .createWithDefault(Duration.ofMillis(100).toMillis)
 
   val METADATA_CLEANER_BATCH_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.metadata.cleaner.batch.size")
