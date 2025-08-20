@@ -236,10 +236,31 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private def startMetadataCleaner(): Unit = {
     val stateMaxAge = conf.get(METADATA_MAX_AGE)
     val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
+    val batchSize = conf.get(KyuubiConf.METADATA_CLEANER_BATCH_SIZE)
+    val batchInterval = conf.get(KyuubiConf.METADATA_CLEANER_BATCH_INTERVAL)
     val cleanerTask: Runnable = () => {
       try {
-        withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
-        withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByAge(stateMaxAge))
+        var needToCleanMetadata = true
+        var needToCleanKubernetesInfo = true
+
+        while (needToCleanMetadata || needToCleanKubernetesInfo) {
+          if (needToCleanMetadata) {
+            needToCleanMetadata =
+              withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(
+                stateMaxAge,
+                batchSize)) >= batchSize
+          }
+          if (needToCleanKubernetesInfo) {
+            needToCleanKubernetesInfo =
+              withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByAge(
+                stateMaxAge,
+                batchSize)) >= batchSize
+          }
+          if (needToCleanMetadata || needToCleanKubernetesInfo) {
+            info("Sleep for " + batchInterval + "ms before next metadata cleanup batch")
+            Thread.sleep(batchInterval)
+          }
+        }
       } catch {
         case e: Throwable => error("Error cleaning up the metadata by age", e)
       }

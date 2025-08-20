@@ -2077,6 +2077,25 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
+  val METADATA_CLEANER_BATCH_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.cleaner.batch.interval")
+      .serverOnly
+      .internal
+      .doc("The interval to check and clean expired metadata in batch mode. " +
+        "This is used to avoid the metadata cleaner thread being blocked for a long time " +
+        "when there are too many expired metadata to be cleaned.")
+      .version("1.11.0")
+      .timeConf
+      .createWithDefault(Duration.ofMillis(100))
+
+  val METADATA_CLEANER_BATCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.cleaner.batch.size")
+      .serverOnly
+      .doc("The batch size for cleaning expired metadata.")
+      .version("1.11.0")
+      .intConf
+      .createWithDefault(Int.MaxValue)
+
   val METADATA_RECOVERY_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.metadata.recovery.threads")
       .serverOnly
