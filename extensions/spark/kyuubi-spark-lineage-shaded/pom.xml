@@ -50,6 +50,31 @@
                             <include>org.apache.kyuubi:*</include>
                         </includes>
                     </artifactSet>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>**/*.proto</exclude>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/LGPL2.1</exclude>
+                                <exclude>META-INF/AL2.0</exclude>
+                                <exclude>META-INF/ASL2.0</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/DEPENDENCIES</exclude>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                                <exclude>META-INF/maven/**</exclude>
+                                <exclude>LICENSE.txt</exclude>
+                                <exclude>NOTICE.txt</exclude>
+                                <exclude>mozilla/**</exclude>
+                                <exclude>**/module-info.class</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"></transformer>
+                    </transformers>
                 </configuration>
                 <executions>
                     <execution>
