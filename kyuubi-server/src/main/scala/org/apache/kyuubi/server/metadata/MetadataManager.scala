@@ -260,8 +260,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private[metadata] def cleanupMetadata(maxAge: Long, batchSize: Int, batchInterval: Long): Unit = {
     var needToCleanMetadata = true
     var needToCleanKubernetesInfo = true
-
-    while (needToCleanMetadata || needToCleanKubernetesInfo) {
+    var cleanupLoop = 0
+    while ((needToCleanMetadata || needToCleanKubernetesInfo) && cleanupLoop < MAX_CLEANUP_LOOPS) {
       if (needToCleanMetadata) {
         needToCleanMetadata =
           withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(
@@ -275,9 +275,10 @@ class MetadataManager extends AbstractService("MetadataManager") {
             batchSize)) >= batchSize
       }
       if (needToCleanMetadata || needToCleanKubernetesInfo) {
-        info("Sleep for " + batchInterval + "ms before next metadata cleanup batch")
+        info(s"Sleep for $batchInterval ms before next metadata cleanup batch")
         Thread.sleep(batchInterval)
       }
+      cleanupLoop += 1
     }
   }
 
@@ -374,6 +375,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
 }
 
 object MetadataManager extends Logging {
+  final val MAX_CLEANUP_LOOPS = 100
+
   def createMetadataStore(conf: KyuubiConf): MetadataStore = {
     val className = conf.get(KyuubiConf.METADATA_STORE_CLASS)
     if (className.isEmpty) {

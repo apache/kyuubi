@@ -242,7 +242,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       Int.MaxValue).isEmpty)
 
     eventually(Timeout(3.seconds)) {
-      jdbcMetadataStore.cleanupMetadataByAge(1000)
+      jdbcMetadataStore.cleanupMetadataByAge(1000, Int.MaxValue)
       assert(jdbcMetadataStore.getMetadata(batchId) == null)
     }
   }
