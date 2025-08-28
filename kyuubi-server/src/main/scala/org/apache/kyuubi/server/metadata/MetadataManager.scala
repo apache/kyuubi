@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
+import com.google.common.annotations.VisibleForTesting
+
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.client.api.v1.dto.Batch
 import org.apache.kyuubi.config.KyuubiConf
@@ -236,10 +238,11 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private def startMetadataCleaner(): Unit = {
     val stateMaxAge = conf.get(METADATA_MAX_AGE)
     val interval = conf.get(KyuubiConf.METADATA_CLEANER_INTERVAL)
+    val batchSize = conf.get(KyuubiConf.METADATA_CLEANER_BATCH_SIZE)
+    val batchInterval = conf.get(KyuubiConf.METADATA_CLEANER_BATCH_INTERVAL)
     val cleanerTask: Runnable = () => {
       try {
-        withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(stateMaxAge))
-        withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByAge(stateMaxAge))
+        cleanupMetadata(stateMaxAge, batchSize, batchInterval)
       } catch {
         case e: Throwable => error("Error cleaning up the metadata by age", e)
       }
@@ -251,6 +254,39 @@ class MetadataManager extends AbstractService("MetadataManager") {
       interval,
       interval,
       TimeUnit.MILLISECONDS)
+  }
+
+  @VisibleForTesting
+  private[metadata] def cleanupMetadata(maxAge: Long, batchSize: Int, batchInterval: Long): Unit = {
+    var needToCleanMetadata = true
+    var needToCleanKubernetesInfo = true
+    var cleanupLoop = 0
+
+    val MAX_CLEANUP_LOOPS = 100 // a guard in case it runs into an infinite loop
+    while ((needToCleanMetadata || needToCleanKubernetesInfo) && cleanupLoop < MAX_CLEANUP_LOOPS) {
+      cleanupLoop += 1
+      if (needToCleanMetadata) {
+        needToCleanMetadata =
+          withMetadataRequestMetrics(_metadataStore.cleanupMetadataByAge(
+            maxAge,
+            batchSize)) >= batchSize
+      }
+      if (needToCleanKubernetesInfo) {
+        needToCleanKubernetesInfo =
+          withMetadataRequestMetrics(_metadataStore.cleanupKubernetesEngineInfoByAge(
+            maxAge,
+            batchSize)) >= batchSize
+      }
+      if (needToCleanMetadata || needToCleanKubernetesInfo) {
+        if (cleanupLoop < MAX_CLEANUP_LOOPS) {
+          info(s"Sleep $batchInterval ms before next batch of metadata cleaning.")
+          Thread.sleep(batchInterval)
+        } else {
+          warn(s"Metadata cleaning reaches the maximum loop $MAX_CLEANUP_LOOPS, " +
+            s"will continue in the next round.")
+        }
+      }
+    }
   }
 
   def addMetadataRetryRequest(request: MetadataRequest): Unit = {

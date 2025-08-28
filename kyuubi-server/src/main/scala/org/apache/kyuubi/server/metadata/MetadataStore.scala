@@ -102,8 +102,9 @@ trait MetadataStore extends Closeable {
   /**
    * Check and cleanup the terminated batches information with maxAge limitation.
    * @param maxAge the batch state info maximum age.
+   * @param limit the maximum number of metadata to be cleaned up.
    */
-  def cleanupMetadataByAge(maxAge: Long): Unit
+  def cleanupMetadataByAge(maxAge: Long, limit: Int): Int
 
   /**
    * Cleanup kubernetes engine info by identifier.
@@ -113,6 +114,7 @@ trait MetadataStore extends Closeable {
   /**
    * Check and cleanup the kubernetes engine info with maxAge limitation.
    * @param maxAge the kubernetes engine info maximum age.
+   * @param limit the maximum number of kubernetes engine info to be cleaned up.
    */
-  def cleanupKubernetesEngineInfoByAge(maxAge: Long): Unit
+  def cleanupKubernetesEngineInfoByAge(maxAge: Long, limit: Int): Int
 }
