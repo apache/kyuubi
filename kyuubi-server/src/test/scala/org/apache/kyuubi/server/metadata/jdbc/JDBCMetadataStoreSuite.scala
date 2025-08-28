@@ -45,7 +45,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       batch =>
         jdbcMetadataStore.cleanupMetadataByIdentifier(batch.identifier)
     }
-    jdbcMetadataStore.cleanupKubernetesEngineInfoByAge(0)
+    jdbcMetadataStore.cleanupKubernetesEngineInfoByAge(0, Int.MaxValue)
     jdbcMetadataStore.close()
   }
 
