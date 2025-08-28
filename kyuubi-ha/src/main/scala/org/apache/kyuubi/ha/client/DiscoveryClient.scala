@@ -66,6 +66,8 @@ trait DiscoveryClient extends Logging {
    */
   def pathNonExists(path: String): Boolean
 
+  def pathNonExists(path: String, isPrefix: Boolean): Boolean
+
   /**
    * Delete a path.
    * @param path the path to be deleted

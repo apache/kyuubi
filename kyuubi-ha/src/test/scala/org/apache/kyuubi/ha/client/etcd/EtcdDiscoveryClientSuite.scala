@@ -92,4 +92,22 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       assert(!discoveryClient.pathExists(path))
     }
   }
+
+  test("etcd test: set, get with path prefix and delete") {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val path = "/kyuubi_version_USER_SPARK_SQL/test/default"
+      val pathPrefix = "/kyuubi_version_USER_SPARK_SQL/test"
+      // set
+      discoveryClient.create(path, "PERSISTENT")
+      assert(discoveryClient.pathExists(path))
+      assert(!discoveryClient.pathNonExists(pathPrefix, isPrefix = true))
+
+      // get
+      assert(new String(discoveryClient.getData(path), StandardCharsets.UTF_8) == path)
+
+      // delete
+      discoveryClient.delete(path)
+      assert(!discoveryClient.pathExists(path))
+    }
+  }
 }
