@@ -261,8 +261,8 @@ class MetadataManager extends AbstractService("MetadataManager") {
     var needToCleanMetadata = true
     var needToCleanKubernetesInfo = true
     var cleanupLoop = 0
-    val MAX_CLEANUP_LOOPS = 100
 
+    val MAX_CLEANUP_LOOPS = 100 // a guard in case it runs into an infinite loop
     while ((needToCleanMetadata || needToCleanKubernetesInfo) && cleanupLoop < MAX_CLEANUP_LOOPS) {
       cleanupLoop += 1
       if (needToCleanMetadata) {
