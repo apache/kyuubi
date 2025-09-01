@@ -100,7 +100,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       // set
       discoveryClient.create(path, "PERSISTENT")
       assert(discoveryClient.pathExists(path))
-      assert(!discoveryClient.pathNonExists(pathPrefix, isPrefix = true))
+      assert(!discoveryClient.pathNonExists(pathPrefix))
 
       // get
       assert(new String(discoveryClient.getData(path), StandardCharsets.UTF_8) == path)
