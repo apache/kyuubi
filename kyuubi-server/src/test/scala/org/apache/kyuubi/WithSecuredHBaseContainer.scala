@@ -120,6 +120,9 @@ object HBaseContainer {
       container.container.withExposedPorts(
         exposedKdcPort,
         exposedZkPort)
+      // The reason for using a fixed port here is that the addresses of the HBase Region Server
+      // and HBase Master Server are recorded in ZooKeeper and cannot be obtained through the
+      // method of container-mapped ports.
       container.container.withFixedExposedPort(
         exposedHbaseRegionServerPort,
         exposedHbaseRegionServerPort)

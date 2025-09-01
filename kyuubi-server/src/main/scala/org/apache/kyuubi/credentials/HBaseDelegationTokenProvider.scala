@@ -54,8 +54,6 @@ private class HBaseDelegationTokenProvider
         case e: Throwable =>
           error(createFailedToGetTokenMessage(serviceName, e), e)
           throw new KyuubiException(s"Failed to get hbase token owned by $owner", e)
-      } finally {
-        info(s"finish get token ...")
       }
     }
   }
