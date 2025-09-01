@@ -119,14 +119,15 @@ trait LineageParser {
     val exps = named.map {
       case exp: Alias =>
         val references =
-          if (exp.references.nonEmpty) exp.references
-          else {
+          if (exp.references.isEmpty || exp.child.isInstanceOf[ScalarSubquery]) {
             val attrRefs = getExpressionSubqueryPlans(exp.child)
               .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet]()))
               .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
               .foldLeft(AttributeSet.empty)(_ ++ _)
               .map(attr => attr.withQualifier(attr.qualifier :+ SUBQUERY_COLUMN_IDENTIFIER))
             AttributeSet(attrRefs)
+          } else {
+            exp.references
           }
         (
           exp.toAttribute,
