@@ -45,6 +45,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
 
   override def apply(v1: SparkSessionExtensions): Unit = {
     v1.injectCheckRule(AuthzConfigurationChecker)
+    v1.injectCheckRule(RuleFunctionAuthorization)
     v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
     v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
     v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)
