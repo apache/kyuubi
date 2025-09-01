@@ -62,11 +62,13 @@ trait DiscoveryClient extends Logging {
   def pathExists(path: String): Boolean
 
   /**
-   * Check if the path non exists.
+   * Checks whether the given path and all its child paths (prefix matches) do not exist.
+   * The isPrefix is set to true by default for Etcd to retrieve all entries under the given path.
+   * For other discovery service, it can be set false by default to only check the exact path.
+   * @param path The path to check
+   * @return true if the path and all its sub-paths are non-existent; false otherwise
    */
-  def pathNonExists(path: String): Boolean
-
-  def pathNonExists(path: String, isPrefix: Boolean): Boolean
+  def pathNonExists(path: String, isPrefix: Boolean = false): Boolean
 
   /**
    * Delete a path.
