@@ -66,6 +66,7 @@ trait DiscoveryClient extends Logging {
    * The isPrefix is set to true by default for Etcd to retrieve all entries under the given path.
    * For other discovery service, it can be set false by default to only check the exact path.
    * @param path The path to check
+   * @param isPrefix whether to check all paths with the given path as prefix
    * @return true if the path and all its sub-paths are non-existent; false otherwise
    */
   def pathNonExists(path: String, isPrefix: Boolean = false): Boolean
