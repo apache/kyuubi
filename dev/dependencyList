@@ -27,9 +27,12 @@ arrow-memory-core/16.0.0//arrow-memory-core-16.0.0.jar
 arrow-memory-netty-buffer-patch/16.0.0//arrow-memory-netty-buffer-patch-16.0.0.jar
 arrow-memory-netty/16.0.0//arrow-memory-netty-16.0.0.jar
 arrow-vector/16.0.0//arrow-vector-16.0.0.jar
+audience-annotations/0.13.0//audience-annotations-0.13.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.17.1//commons-codec-1.17.1.jar
+commons-crypto/1.1.0//commons-crypto-1.1.0.jar
+commons-io/2.16.1//commons-io-2.16.1.jar
 commons-lang3/3.18.0//commons-lang3-3.18.0.jar
 error_prone_annotations/2.23.0//error_prone_annotations-2.23.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
@@ -49,6 +52,20 @@ gson/2.10.1//gson-2.10.1.jar
 guava/33.3.1-jre//guava-33.3.1-jre.jar
 hadoop-client-api/3.3.6//hadoop-client-api-3.3.6.jar
 hadoop-client-runtime/3.3.6//hadoop-client-runtime-3.3.6.jar
+hbase-client/2.5.12-hadoop3//hbase-client-2.5.12-hadoop3.jar
+hbase-common/2.5.12-hadoop3//hbase-common-2.5.12-hadoop3.jar
+hbase-hadoop-compat/2.5.12-hadoop3//hbase-hadoop-compat-2.5.12-hadoop3.jar
+hbase-hadoop2-compat/2.5.12-hadoop3//hbase-hadoop2-compat-2.5.12-hadoop3.jar
+hbase-logging/2.5.12-hadoop3//hbase-logging-2.5.12-hadoop3.jar
+hbase-metrics-api/2.5.12-hadoop3//hbase-metrics-api-2.5.12-hadoop3.jar
+hbase-metrics/2.5.12-hadoop3//hbase-metrics-2.5.12-hadoop3.jar
+hbase-protocol-shaded/2.5.12-hadoop3//hbase-protocol-shaded-2.5.12-hadoop3.jar
+hbase-protocol/2.5.12-hadoop3//hbase-protocol-2.5.12-hadoop3.jar
+hbase-shaded-gson/4.1.11//hbase-shaded-gson-4.1.11.jar
+hbase-shaded-miscellaneous/4.1.11//hbase-shaded-miscellaneous-4.1.11.jar
+hbase-shaded-netty/4.1.11//hbase-shaded-netty-4.1.11.jar
+hbase-shaded-protobuf/4.1.11//hbase-shaded-protobuf-4.1.11.jar
+hbase-unsafe/4.1.11//hbase-unsafe-4.1.11.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
@@ -72,8 +89,10 @@ jakarta.validation-api/2.0.2//jakarta.validation-api-2.0.2.jar
 jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
 jakarta.xml.bind-api/2.3.2//jakarta.xml.bind-api-2.3.2.jar
 javassist/3.25.0-GA//javassist-3.25.0-GA.jar
+javax.activation-api/1.2.0//javax.activation-api-1.2.0.jar
 javax.servlet-api/4.0.1//javax.servlet-api-4.0.1.jar
 jcl-over-slf4j/1.7.36//jcl-over-slf4j-1.7.36.jar
+jcodings/1.0.55//jcodings-1.0.55.jar
 jersey-client/2.40//jersey-client-2.40.jar
 jersey-common/2.40//jersey-common-2.40.jar
 jersey-container-servlet-core/2.40//jersey-container-servlet-core-2.40.jar
@@ -96,6 +115,7 @@ jetty-servlet/9.4.57.v20241219//jetty-servlet-9.4.57.v20241219.jar
 jetty-util-ajax/9.4.57.v20241219//jetty-util-ajax-9.4.57.v20241219.jar
 jetty-util/9.4.57.v20241219//jetty-util-9.4.57.v20241219.jar
 jline/2.14.6//jline-2.14.6.jar
+joni/2.1.31//joni-2.1.31.jar
 jul-to-slf4j/1.7.36//jul-to-slf4j-1.7.36.jar
 kafka-clients/3.9.1//kafka-clients-3.9.1.jar
 kubernetes-client-api/6.13.5//kubernetes-client-api-6.13.5.jar
@@ -148,6 +168,7 @@ netty-handler/4.1.108.Final//netty-handler-4.1.108.Final.jar
 netty-resolver-dns/4.1.108.Final//netty-resolver-dns-4.1.108.Final.jar
 netty-resolver/4.1.108.Final//netty-resolver-4.1.108.Final.jar
 netty-transport-classes-epoll/4.1.108.Final//netty-transport-classes-epoll-4.1.108.Final.jar
+netty-transport-native-epoll/4.1.108.Final//netty-transport-native-epoll-4.1.108.Final.jar
 netty-transport-native-epoll/4.1.108.Final/linux-aarch_64/netty-transport-native-epoll-4.1.108.Final-linux-aarch_64.jar
 netty-transport-native-epoll/4.1.108.Final/linux-x86_64/netty-transport-native-epoll-4.1.108.Final-linux-x86_64.jar
 netty-transport-native-unix-common/4.1.108.Final//netty-transport-native-unix-common-4.1.108.Final.jar
@@ -155,6 +176,9 @@ netty-transport/4.1.108.Final//netty-transport-4.1.108.Final.jar
 okhttp-urlconnection/3.14.9//okhttp-urlconnection-3.14.9.jar
 okhttp/3.12.12//okhttp-3.12.12.jar
 okio/1.15.0//okio-1.15.0.jar
+opentelemetry-api/1.49.0//opentelemetry-api-1.49.0.jar
+opentelemetry-context/1.49.0//opentelemetry-context-1.49.0.jar
+opentelemetry-semconv/1.29.0-alpha//opentelemetry-semconv-1.29.0-alpha.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 perfmark-api/0.26.0//perfmark-api-0.26.0.jar
@@ -186,3 +210,5 @@ units/1.7//units-1.7.jar
 vertx-core/4.5.3//vertx-core-4.5.3.jar
 vertx-grpc/4.5.3//vertx-grpc-4.5.3.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
+zookeeper-jute/3.8.4//zookeeper-jute-3.8.4.jar
+zookeeper/3.8.4//zookeeper-3.8.4.jar
