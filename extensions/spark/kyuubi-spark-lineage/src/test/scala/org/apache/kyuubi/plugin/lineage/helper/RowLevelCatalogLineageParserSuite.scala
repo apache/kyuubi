@@ -127,7 +127,6 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
             ("v2_catalog.db.target_t.price", Set("v2_catalog.db.pivot_t.price")))))
       }
 
-
       val ret3 = extractLineageWithoutExecuting(
         "update v2_catalog.db.target_t AS set name='abc' where price < 10 ")
       assert(ret3 == Lineage(

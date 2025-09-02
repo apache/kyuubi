@@ -56,10 +56,12 @@ trait LineageParser {
   def parse(plan: LogicalPlan): Lineage = {
     val inputTablesInPlan = mutable.HashSet[String]()
     val columnsLineage = extractColumnsLineage(
-      plan, ListMap[Attribute, AttributeSet](), inputTablesInPlan).toList.collect {
-        case (k, attrs) =>
-          k.name -> attrs.map(attr => (attr.qualifier :+ attr.name).mkString(".")).toSet
-      }
+      plan,
+      ListMap[Attribute, AttributeSet](),
+      inputTablesInPlan).toList.collect {
+      case (k, attrs) =>
+        k.name -> attrs.map(attr => (attr.qualifier :+ attr.name).mkString(".")).toSet
+    }
     val (inputTables, outputTables) = columnsLineage.foldLeft((List[String](), List[String]())) {
       case ((inputs, outputs), (out, in)) =>
         val x = (inputs ++ in.map(_.split('.').init.mkString("."))).filter(_.nonEmpty)
@@ -196,9 +198,9 @@ trait LineageParser {
   }
 
   private def extractColumnsLineage(
-       plan: LogicalPlan,
-       parentColumnsLineage: AttributeMap[AttributeSet],
-       inputTablesInPlan: mutable.HashSet[String]): AttributeMap[AttributeSet] = {
+      plan: LogicalPlan,
+      parentColumnsLineage: AttributeMap[AttributeSet],
+      inputTablesInPlan: mutable.HashSet[String]): AttributeMap[AttributeSet] = {
 
     plan match {
       // For command
@@ -231,7 +233,9 @@ trait LineageParser {
           }
 
         val lineages = extractColumnsLineage(
-          query, parentColumnsLineage, inputTablesInPlan).zipWithIndex.map {
+          query,
+          parentColumnsLineage,
+          inputTablesInPlan).zipWithIndex.map {
           case ((k, v), i) if outputCols.nonEmpty => k.withName(s"$view.${outputCols(i)}") -> v
           case ((k, v), _) => k.withName(s"$view.${k.name}") -> v
         }.toSeq
@@ -240,7 +244,9 @@ trait LineageParser {
       case p if p.nodeName == "CreateDataSourceTableAsSelectCommand" =>
         val table = getV1TableName(getField[CatalogTable](plan, "table").qualifiedName)
         extractColumnsLineage(
-          getQuery(plan), parentColumnsLineage, inputTablesInPlan).map { case (k, v) =>
+          getQuery(plan),
+          parentColumnsLineage,
+          inputTablesInPlan).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
 
@@ -249,7 +255,9 @@ trait LineageParser {
             p.nodeName == "OptimizedCreateHiveTableAsSelectCommand" =>
         val table = getV1TableName(getField[CatalogTable](plan, "tableDesc").qualifiedName)
         extractColumnsLineage(
-          getQuery(plan), parentColumnsLineage, inputTablesInPlan).map { case (k, v) =>
+          getQuery(plan),
+          parentColumnsLineage,
+          inputTablesInPlan).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
 
@@ -271,7 +279,9 @@ trait LineageParser {
                 "catalog").name())
           }
         extractColumnsLineage(
-          getQuery(plan), parentColumnsLineage, inputTablesInPlan).map { case (k, v) =>
+          getQuery(plan),
+          parentColumnsLineage,
+          inputTablesInPlan).map { case (k, v) =>
           k.withName(Seq(catalog, namespace, table, k.name).filter(_.nonEmpty).mkString(".")) -> v
         }
 
@@ -308,7 +318,9 @@ trait LineageParser {
       case p if p.nodeName == "InsertIntoHiveTable" =>
         val table = getV1TableName(getField[CatalogTable](plan, "table").qualifiedName)
         extractColumnsLineage(
-          getQuery(plan), parentColumnsLineage, inputTablesInPlan).map { case (k, v) =>
+          getQuery(plan),
+          parentColumnsLineage,
+          inputTablesInPlan).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
 
@@ -321,7 +333,9 @@ trait LineageParser {
             || p.nodeName == "OverwritePartitionsDynamic" =>
         val table = getV2TableName(getField[NamedRelation](plan, "table"))
         extractColumnsLineage(
-          getQuery(plan), parentColumnsLineage, inputTablesInPlan).map { case (k, v) =>
+          getQuery(plan),
+          parentColumnsLineage,
+          inputTablesInPlan).map { case (k, v) =>
           k.withName(s"$table.${k.name}") -> v
         }
       case p if p.nodeName == "MergeRows" =>
@@ -345,7 +359,9 @@ trait LineageParser {
         }: _*)
         p.children.map(
           extractColumnsLineage(
-            _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+            _,
+            nextColumnsLineage,
+            inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p if p.nodeName == "WriteDelta" || p.nodeName == "ReplaceData" =>
         val table = getV2TableName(getField[NamedRelation](plan, "table"))
@@ -372,9 +388,12 @@ trait LineageParser {
         val sourceTable = getField[LogicalPlan](plan, "sourceTable")
         val targetColumnsLineage = extractColumnsLineage(
           targetTable,
-          nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) }, inputTablesInPlan)
+          nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) },
+          inputTablesInPlan)
         val sourceColumnsLineage = extractColumnsLineage(
-          sourceTable, nextColumnsLlineage, inputTablesInPlan)
+          sourceTable,
+          nextColumnsLlineage,
+          inputTablesInPlan)
         val targetColumnsWithTargetTable = targetColumnsLineage.values.flatten.map { column =>
           val unquotedQualifiedName = (column.qualifier :+ column.name).mkString(".")
           column.withName(unquotedQualifiedName)
@@ -388,17 +407,23 @@ trait LineageParser {
       // For query
       case p: Project =>
         val nextColumnsLineage =
-          joinColumnsLineage(parentColumnsLineage,
+          joinColumnsLineage(
+            parentColumnsLineage,
             getSelectColumnLineage(p.projectList, inputTablesInPlan))
         p.children.map(extractColumnsLineage(
-          _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          nextColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p: Aggregate =>
         val nextColumnsLineage =
-          joinColumnsLineage(parentColumnsLineage,
+          joinColumnsLineage(
+            parentColumnsLineage,
             getSelectColumnLineage(p.aggregateExpressions, inputTablesInPlan))
         p.children.map(extractColumnsLineage(
-          _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          nextColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p: Expand =>
         val references =
@@ -408,7 +433,9 @@ trait LineageParser {
         val nextColumnsLineage =
           joinColumnsLineage(parentColumnsLineage, childColumnsLineage)
         p.children.map(extractColumnsLineage(
-          _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          nextColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p: Generate =>
         val generateColumnsLineageWithId =
@@ -422,7 +449,9 @@ trait LineageParser {
                 AttributeSet(attr))))
         }
         p.children.map(extractColumnsLineage(
-          _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          nextColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p: Window =>
         val windowColumnsLineage =
@@ -440,7 +469,9 @@ trait LineageParser {
           }
         }
         p.children.map(extractColumnsLineage(
-          _, nextColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          nextColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
 
       case p: Join =>
         p.joinType match {
@@ -463,7 +494,9 @@ trait LineageParser {
             // merge all children in to one derivedColumns
             val childrenUnion =
               p.children.map(extractColumnsLineage(
-                _, ListMap[Attribute, AttributeSet](), inputTablesInPlan)).map(
+                _,
+                ListMap[Attribute, AttributeSet](),
+                inputTablesInPlan)).map(
                 _.values).reduce {
                 (left, right) =>
                   left.zip(right).map(attr => attr._1 ++ attr._2)
@@ -537,7 +570,9 @@ trait LineageParser {
           case Some(logicPlan) =>
             val relationColumnLineage =
               extractColumnsLineage(
-                logicPlan, ListMap[Attribute, AttributeSet](), inputTablesInPlan)
+                logicPlan,
+                ListMap[Attribute, AttributeSet](),
+                inputTablesInPlan)
             mergeRelationColumnLineage(parentColumnsLineage, p.output, relationColumnLineage)
           case _ =>
             joinRelationColumnLineage(
@@ -550,7 +585,9 @@ trait LineageParser {
 
       case p =>
         p.children.map(extractColumnsLineage(
-          _, parentColumnsLineage, inputTablesInPlan)).reduce(mergeColumnsLineage)
+          _,
+          parentColumnsLineage,
+          inputTablesInPlan)).reduce(mergeColumnsLineage)
     }
   }
 
