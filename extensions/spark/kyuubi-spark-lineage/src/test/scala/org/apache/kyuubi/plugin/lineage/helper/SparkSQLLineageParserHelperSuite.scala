@@ -1422,6 +1422,46 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
+  test("columns lineage extract - test collect input tables by plan") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tb1(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb2(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb3(col1 string, col2 string, col3 string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb3") { _ =>
+      val sql0 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select t1.col1, t1.col2 , t1.col3
+          |from v2_catalog.db.tb1 t1 join v2_catalog.db.tb2 t2
+          |on t1.col1 = t2.col1
+          |""".stripMargin
+
+      val ret0 = extractLineage(sql0)
+      if (SparkContextHelper.getConf(LineageConf.COLLECT_INPUT_TABLES_BY_PLAN_ENABLED)) {
+        assert(
+          ret0 == Lineage(
+            List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+            List("v2_catalog.db.tb3"),
+            List(
+              ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+              ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+              ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+      } else {
+        assert(
+          ret0 == Lineage(
+            List("v2_catalog.db.tb1"),
+            List("v2_catalog.db.tb3"),
+            List(
+              ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+              ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+              ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+      }
+    }
+  }
+
   protected def extractLineageWithoutExecuting(sql: String): Lineage = {
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
