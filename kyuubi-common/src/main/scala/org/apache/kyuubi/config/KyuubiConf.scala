@@ -2390,6 +2390,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_EXTERNAL_TOKEN_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.external.token.enabled")
+      .doc("Whether to start Kerberized engine with external delegation tokens.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("kyuubi.engine.share.level")
     .doc("Engines will be shared in different levels, available configs are: <ul>" +
       " <li>CONNECTION: the engine will not be shared but only used by the current client" +

@@ -30,8 +30,9 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder.{PROXY_USER, _}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
@@ -483,6 +484,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val commands1 = builder1.toString.split(' ')
     val toady = DateTimeFormatter.ofPattern("yyyyMMdd").format(LocalDate.now())
     assert(commands1.contains(s"spark.kubernetes.file.upload.path=hdfs:///spark-upload-$toady"))
+  }
+
+  test("spark engine with external token file") {
+    val conf1 = KyuubiConf(false)
+    val tokenStr = "SERUUwABDzEyNy4wLjAuMTo0NTQ2MkIKA3dobxopY2xpZW50L2xvY2FsaG9zdEBLRVJC" +
+      "RVJJWkVEVEVTVEhFTFBFUi5DT00guMuGgJEzKLjTuKCTMzABOAIUqTa2O5pYh2dBXFNnpqEgIJvWF5sTU" +
+      "k1fREVMRUdBVElPTl9UT0tFTg8xMjcuMC4wLjE6NDU0NjIA"
+    conf1.set(KYUUBI_ENGINE_CREDENTIALS_KEY, tokenStr)
+    conf1.set(ENGINE_EXTERNAL_TOKEN_ENABLED, true)
+    val builder1 = new SparkProcessBuilder("", true, conf1)
+    assert(builder1.env.contains(HADOOP_TOKEN_FILE_LOCATION))
+    assert(builder1.env.contains(ENV_KERBEROS_TGT) &&
+      builder1.env(ENV_KERBEROS_TGT).isEmpty)
+    assert(builder1.commands.forall(e => !e.contains(PROXY_USER)))
   }
 }
 

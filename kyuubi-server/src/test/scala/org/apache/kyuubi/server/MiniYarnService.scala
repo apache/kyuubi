@@ -31,11 +31,12 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
-class MiniYarnService extends AbstractService("TestMiniYarnService") {
+class MiniYarnService(configuration: Configuration = new Configuration())
+  extends AbstractService("TestMiniYarnService") {
 
   private val yarnConfDir: File = Utils.createTempDir().toFile
   private var yarnConf: YarnConfiguration = {
-    val yarnConfig = new YarnConfiguration()
+    val yarnConfig = new YarnConfiguration(configuration)
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
     yarnConfig.set(
