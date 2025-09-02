@@ -193,4 +193,25 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
     }
   }
 
+  test("Built-in and UDF Function Call Query") {
+    val plan = sql(s"SELECT kyuubi_fun_0('TESTSTRING'), " +
+      s"kyuubi_fun_0(value)," +
+      s"abs(key)," +
+      s"abs(-100)," +
+      s"lower(value)," +
+      s"lower('TESTSTRING') " +
+      s"FROM $reusedTable").queryExecution.analyzed
+    val (inputs, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
+    assert(inputs.size === 2)
+    inputs.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, QUERY, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+  }
+
+
 }
