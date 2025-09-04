@@ -50,7 +50,12 @@ case class RuleFunctionAuthorization(spark: SparkSession) extends (LogicalPlan =
     }
 
     addAccessRequest(inputs, isInput = true)
+    checkPrivileges(requests, auditHandler)
+  }
 
+  def checkPrivileges(
+      requests: mutable.ArrayBuffer[AccessRequest],
+      auditHandler: SparkRangerAuditHandler): Unit = {
     val requestArrays = requests.map(Seq(_))
     if (authorizeInSingleCall) {
       verify(requestArrays.flatten, auditHandler)

@@ -17,13 +17,19 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import scala.collection.mutable
+
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
-import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
+import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, RuleFunctionAuthorization, SparkRangerAuditHandler}
 
 abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -193,7 +199,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
     }
   }
 
-  test("Built-in and UDF Function Call Query") {
+  test("Built in and UDF Function Call Query") {
     val plan = sql(s"SELECT kyuubi_fun_0('TESTSTRING'), " +
       s"kyuubi_fun_0(value)," +
       s"abs(key)," +
@@ -213,5 +219,36 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
     }
   }
 
+  test("[KYUUBI #7186] Introduce RuleFunctionAuthorization") {
 
+    val ruleFunc = Mockito.spy[RuleFunctionAuthorization](RuleFunctionAuthorization(spark))
+    Mockito.doAnswer(new Answer[Unit] {
+      override def answer(invocation: InvocationOnMock): Unit = {
+        val requests = invocation.getArgument[mutable.ArrayBuffer[AccessRequest]](0)
+        requests.foreach { request =>
+          // deny udf `reusedDb.kyuubi_fun_0`
+          var database: String = request.getResource.asInstanceOf[AccessResource].getDatabase
+          var udf: String = request.getResource.asInstanceOf[AccessResource].getUdf
+          if (database.equalsIgnoreCase(reusedDb) && udf.equalsIgnoreCase("kyuubi_fun_0")) {
+            throw new AccessControlException("Access denied")
+          }
+        }
+      }
+    }).when(ruleFunc).checkPrivileges(
+      any[mutable.ArrayBuffer[AccessRequest]](),
+      any[SparkRangerAuditHandler]())
+
+    val query1 = sql(s"SELECT " +
+      s"${reusedDb}.kyuubi_fun_0('KYUUBI_STRING')," +
+      s"${reusedDb}.kyuubi_fun_1('KYUUBI_STRING') ").queryExecution.analyzed
+    intercept[AccessControlException] { ruleFunc.apply(query1) }
+
+    val query2 = sql(s"SELECT " +
+      s"${reusedDb}.kyuubi_fun_0('KYUUBI_STRING')").queryExecution.analyzed
+    intercept[AccessControlException] { ruleFunc.apply(query2) }
+
+    val query3 = sql(s"SELECT " +
+      s"${reusedDb}.kyuubi_fun_1('KYUUBI_STRING')").queryExecution.analyzed
+    ruleFunc.apply(query3)
+  }
 }
