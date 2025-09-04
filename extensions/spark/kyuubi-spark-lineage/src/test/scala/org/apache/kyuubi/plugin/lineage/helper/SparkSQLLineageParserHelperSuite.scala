@@ -1422,7 +1422,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
     }
   }
 
-  test("columns lineage extract - test collect input tables by plan") {
+  test("columns lineage extract - collect input tables by plan") {
     val ddls =
       """
         |create table v2_catalog.db.tb1(col1 string, col2 string, col3 string)
