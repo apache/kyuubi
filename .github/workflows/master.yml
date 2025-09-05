@@ -432,7 +432,7 @@ jobs:
           build-args: |
             CI=${CI}
             BASE_IMAGE=apache/spark:3.5.5
-            MVN_ARG="--spark-provided --flink-provided --hive-provided"
+            MVN_ARG=--spark-provided --flink-provided --hive-provided
           context: .
           file: build/Dockerfile.CI
           load: true
