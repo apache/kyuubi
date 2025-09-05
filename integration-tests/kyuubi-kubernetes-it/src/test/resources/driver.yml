@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-apiVersio: v1
+apiVersion: v1
 kind: Pod
 metadata:
   name: driver

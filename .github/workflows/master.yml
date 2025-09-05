@@ -422,17 +422,21 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           cache-binary: false
+      - name: Pull Spark image
+        run: |
+          docker pull apache/spark:3.5.5
       - name: Build Kyuubi Docker Image
         uses: docker/build-push-action@v6
         with:
           # passthrough CI into build container
           build-args: |
             CI=${CI}
-            MVN_ARG=--flink-provided --hive-provided
+            BASE_IMAGE=apache/spark:3.5.5
+            MVN_ARG="--spark-provided --flink-provided --hive-provided"
           context: .
           file: build/Dockerfile.CI
           load: true
-          tags: apache/kyuubi:latest
+          tags: apache/kyuubi:ci
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
@@ -442,9 +446,8 @@ jobs:
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
-          minikube image load apache/kyuubi:latest
+          minikube image load apache/kyuubi:ci
           # pre-install spark into minikube
-          docker pull apache/spark:3.5.5
           minikube image load apache/spark:3.5.5
       - name: kubectl pre-check
         run: |
