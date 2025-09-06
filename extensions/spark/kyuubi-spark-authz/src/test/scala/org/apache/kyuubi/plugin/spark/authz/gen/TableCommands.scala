@@ -674,6 +674,20 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
   }
 
+  val UnsetViewProperties = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.UnsetViewProperties"
+    val tableDesc =
+      TableDesc("child", classOf[ResolvedTableTableExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+  }
+
+  val SetViewProperties = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetViewProperties"
+    val tableDesc =
+      TableDesc("child", classOf[ResolvedTableTableExtractor], isInput = true)
+    TableCommandSpec(cmd, Seq(tableDesc), ALTERTABLE_PROPERTIES)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     AddArchivesCommand,
     AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
@@ -764,5 +778,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     ShowTablePropertiesV2,
     TruncateTable,
     TruncateTableV2,
+    SetViewProperties,
+    UnsetViewProperties,
     UpdateTable)
 }
