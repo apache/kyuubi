@@ -114,7 +114,7 @@
 
     <properties>
         <java.version>8</java.version>
-        <maven.version>3.9.10</maven.version>
+        <maven.version>3.9.11</maven.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.19</scala.version>
