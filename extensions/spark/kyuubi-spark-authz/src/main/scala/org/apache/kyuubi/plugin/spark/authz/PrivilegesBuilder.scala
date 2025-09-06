@@ -284,9 +284,7 @@ object PrivilegesBuilder {
         val spec = getTableCommandSpec(command)
         val functionPrivAndOpType = spec.queries(plan)
           .map(plan => buildFunctions(plan, spark))
-        functionPrivAndOpType.map(_._1)
-          .reduce(_ ++ _)
-          .foreach(functionPriv => inputObjs += functionPriv)
+        inputObjs ++= functionPrivAndOpType.flatMap(_._1)
 
       case plan => plan transformAllExpressions {
           case hiveFunction: Expression if isKnownFunction(hiveFunction) =>
