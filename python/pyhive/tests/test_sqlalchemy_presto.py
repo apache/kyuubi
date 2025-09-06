@@ -103,3 +103,30 @@ class TestSqlAlchemyPresto(unittest.TestCase, SqlAlchemyTestCase):
         else:
             self.assertFalse(Table('THIS_TABLE_DOSE_NOT_EXIST', MetaData(bind=engine)).exists())
             self.assertFalse(Table('THIS_TABLE_DOSE_not_exits', MetaData(bind=engine)).exists())
+
+    @with_engine_connection
+    def test_reflect_table_names(self, engine, connection):
+        sqlalchemy_version = float(re.search(r"^([\d]+\.[\d]+)\..+", sqlalchemy.__version__).group(1))
+        if sqlalchemy_version >= 1.4:
+            insp = sqlalchemy.inspect(engine)
+            table_names = insp.get_table_names()
+            self.assertIn("one_row", table_names)
+            self.assertIn("one_row_complex", table_names)
+            self.assertIn("many_rows", table_names)
+            self.assertNotIn("THIS_TABLE_DOES_not_exist", table_names)
+        else:
+            self.assertTrue(Table('one_row', MetaData(bind=engine)).exists())
+            self.assertTrue(Table('one_row_complex', MetaData(bind=engine)).exists())
+            self.assertTrue(Table('many_rows', MetaData(bind=engine)).exists())
+            self.assertFalse(Table('THIS_TABLE_DOES_not_exist', MetaData(bind=engine)).exists())
+
+    @with_engine_connection
+    def test_reflect_view_names(self, engine, connection):
+        sqlalchemy_version = float(re.search(r"^([\d]+\.[\d]+)\..+", sqlalchemy.__version__).group(1))
+        if sqlalchemy_version >= 1.4:
+            insp = sqlalchemy.inspect(engine)
+            view_names = insp.get_view_names()
+            self.assertNotIn("one_row", view_names)
+            self.assertNotIn("one_row_complex", view_names)
+            self.assertNotIn("many_rows", view_names)
+            self.assertNotIn("THIS_TABLE_DOES_not_exist", view_names)
