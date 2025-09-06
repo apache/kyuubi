@@ -25,7 +25,7 @@ spec:
   serviceAccountName: kyuubi
   containers:
     - name: kyuubi-server
-      image: apache/kyuubi:latest
+      image: apache/kyuubi:ci
       imagePullPolicy: IfNotPresent
       env:
         - name: KYUUBI_JAVA_OPTS
