@@ -1272,6 +1272,12 @@
                 <artifactId>hbase-shaded-client-byo-hadoop</artifactId>
                 <version>${hbase.version}</version>
                 <scope>${hbase.deps.scope}</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.yetus</groupId>
+                        <artifactId>audience-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

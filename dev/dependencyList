@@ -27,7 +27,6 @@ arrow-memory-core/16.0.0//arrow-memory-core-16.0.0.jar
 arrow-memory-netty-buffer-patch/16.0.0//arrow-memory-netty-buffer-patch-16.0.0.jar
 arrow-memory-netty/16.0.0//arrow-memory-netty-16.0.0.jar
 arrow-vector/16.0.0//arrow-vector-16.0.0.jar
-audience-annotations/0.13.0//audience-annotations-0.13.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.17.1//commons-codec-1.17.1.jar
@@ -50,7 +49,6 @@ gson/2.10.1//gson-2.10.1.jar
 guava/33.3.1-jre//guava-33.3.1-jre.jar
 hadoop-client-api/3.3.6//hadoop-client-api-3.3.6.jar
 hadoop-client-runtime/3.3.6//hadoop-client-runtime-3.3.6.jar
-hbase-shaded-client-byo-hadoop/2.5.12-hadoop3//hbase-shaded-client-byo-hadoop-2.5.12-hadoop3.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
@@ -157,9 +155,6 @@ netty-transport/4.1.108.Final//netty-transport-4.1.108.Final.jar
 okhttp-urlconnection/3.14.9//okhttp-urlconnection-3.14.9.jar
 okhttp/3.12.12//okhttp-3.12.12.jar
 okio/1.15.0//okio-1.15.0.jar
-opentelemetry-api/1.49.0//opentelemetry-api-1.49.0.jar
-opentelemetry-context/1.49.0//opentelemetry-context-1.49.0.jar
-opentelemetry-semconv/1.29.0-alpha//opentelemetry-semconv-1.29.0-alpha.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8//paranamer-2.8.jar
 perfmark-api/0.26.0//perfmark-api-0.26.0.jar
