@@ -47,9 +47,7 @@ ENV PATH=$PATH:$HBASE_HOME/bin
 RUN apt-get update && apt-get install -y \
     krb5-kdc \
     krb5-admin-server \
-    openjdk-8-jdk \
     wget \
-    supervisor \
     busybox \
     && mkdir /opt/busybox && \
     busybox --install /opt/busybox
@@ -190,16 +188,6 @@ COPY <<"EOF" ${HBASE_HOME}/conf/core-site.xml
 
 <configuration>
     <property>
-            <name>hadoop.security.authentication</name>
-            <value>kerberos</value>
-    </property>
-
-    <property>
-        <name>fs.defaultFS</name>
-        <value>hdfs://localhost:9000</value>
-    </property>
-
-    <property>
         <name>hadoop.security.authentication</name>
         <value>kerberos</value>
     </property>
@@ -313,7 +301,7 @@ mkdir -p ${HBASE_HOME}/logs/
 mkdir -p ${ZK_HOME}/logs/
 
 echo "Principals created. Starting supervisor..."
-# create kdc service
+# start kdc service
 echo "Start kdc ..."
 /etc/init.d/krb5-kdc start
 wait_for_service "kdc" 15 1 88
@@ -326,17 +314,15 @@ wait_for_service "zookeeper" 15 1 2181
 
 kinit -kt ${HBASE_CONF_DIR}/hbase.keytab hbase/localhost@${REALM}
 
-# # start hbase master server
+# start hbase master server
 nohup /opt/hbase/bin/hbase master start  > "/opt/hbase/logs/master.log" 2>&1 < /dev/null &
 wait_for_service "master" 15 1 16000
 
-# # start hbase region server
+# start hbase region server
 nohup /opt/hbase/bin/hbase regionserver start  > "/opt/hbase/logs/regionserver.log" 2>&1 < /dev/null &
 wait_for_service "master" 15 1 16020
 
 tail -F --follow=name --retry -v  /opt/zookeeper/logs/* /opt/hbase/logs/*
-
-
 EOF
 
 RUN chmod +x /entrypoint.sh
