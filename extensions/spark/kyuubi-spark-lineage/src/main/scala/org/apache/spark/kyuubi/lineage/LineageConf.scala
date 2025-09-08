@@ -46,10 +46,10 @@ object LineageConf {
       "Unsupported lineage dispatchers")
     .createWithDefault(Seq(LineageDispatcherType.SPARK_EVENT.toString))
 
-  val COLLECT_INPUT_TABLES_BY_PLAN_ENABLED =
-    ConfigBuilder("spark.kyuubi.plugin.lineage.collectInputTablesByPlan.enabled")
-      .doc("Whether to collect input tables by the plan." +
-        " By Default collect input tables by the column lineages.")
+  val LEGACY_COLLECT_INPUT_TABLES_ENABLED =
+    ConfigBuilder("spark.kyuubi.plugin.lineage.legacy.collectInputTablesByColumn")
+      .doc(" When true collect input tables by column lineage." +
+        " When false collect all the input tables by the plan.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(false)

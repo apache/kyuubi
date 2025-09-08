@@ -1440,25 +1440,32 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
 
       val ret0 = extractLineage(sql0)
-      if (SparkContextHelper.getConf(LineageConf.COLLECT_INPUT_TABLES_BY_PLAN_ENABLED)) {
-        assert(
-          ret0 == Lineage(
-            List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
-            List("v2_catalog.db.tb3"),
-            List(
-              ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
-              ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
-              ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
-      } else {
-        assert(
-          ret0 == Lineage(
-            List("v2_catalog.db.tb1"),
-            List("v2_catalog.db.tb3"),
-            List(
-              ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
-              ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
-              ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
-      }
+      assert(
+        ret0 == Lineage(
+          List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+          List("v2_catalog.db.tb3"),
+          List(
+            ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+            ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+            ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+
+      val sql1 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select t1.col1, t1.col2 , t1.col3
+          |from v2_catalog.db.tb1 t1 left semi join v2_catalog.db.tb2 t2
+          |on t1.col1 = t2.col1
+          |""".stripMargin
+
+      val ret1 = extractLineage(sql1)
+      assert(
+        ret1 == Lineage(
+          List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+          List("v2_catalog.db.tb3"),
+          List(
+            ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+            ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+            ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
     }
   }
 

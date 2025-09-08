@@ -17,10 +17,6 @@
 
 package org.apache.kyuubi.plugin.lineage.helper
 
-import org.apache.spark.SparkConf
-import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
-import org.apache.spark.kyuubi.lineage.LineageConf.COLLECT_INPUT_TABLES_BY_PLAN_ENABLED
-
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
@@ -28,11 +24,6 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
 
   override def catalogName: String = {
     "org.apache.spark.sql.connector.catalog.InMemoryRowLevelOperationTableCatalog"
-  }
-
-  override def sparkConf(): SparkConf = {
-    super.sparkConf()
-      .set(COLLECT_INPUT_TABLES_BY_PLAN_ENABLED.key, "true")
   }
 
   test("columns lineage extract - WriteDelta") {
@@ -61,7 +52,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  INSERT (pk, name, price) VALUES (cast(source.pk as int), source.name, source.price)" +
           "WHEN NOT MATCHED BY SOURCE THEN  UPDATE SET target.name = 'abc' ")
       assert(ret0 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
+        List("v2_catalog.db.source_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -80,23 +71,13 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  UPDATE SET * " +
           "WHEN NOT MATCHED THEN " +
           "  INSERT *")
-      if (SparkContextHelper.getConf(LineageConf.COLLECT_INPUT_TABLES_BY_PLAN_ENABLED)) {
-        assert(ret1 == Lineage(
-          List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
-          List("v2_catalog.db.target_t"),
-          List(
-            ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
-            ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
-            ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
-      } else {
-        assert(ret1 == Lineage(
-          List("v2_catalog.db.source_t"),
-          List("v2_catalog.db.target_t"),
-          List(
-            ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
-            ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
-            ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
-      }
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.target_t"),
+        List(
+          ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
+          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
+          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.source_t.price")))))
 
       val ret2 = extractLineageWithoutExecuting(
         "MERGE INTO v2_catalog.db.target_t AS target " +
@@ -109,28 +90,18 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "WHEN NOT MATCHED THEN " +
           "  INSERT *")
 
-      if (SparkContextHelper.getConf(LineageConf.COLLECT_INPUT_TABLES_BY_PLAN_ENABLED)) {
-        assert(ret2 == Lineage(
-          List("v2_catalog.db.target_t", "v2_catalog.db.pivot_t", "v2_catalog.db.source_t"),
-          List("v2_catalog.db.target_t"),
-          List(
-            ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
-            ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
-            ("v2_catalog.db.target_t.price", Set("v2_catalog.db.pivot_t.price")))))
-      } else {
-        assert(ret2 == Lineage(
-          List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
-          List("v2_catalog.db.target_t"),
-          List(
-            ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
-            ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
-            ("v2_catalog.db.target_t.price", Set("v2_catalog.db.pivot_t.price")))))
-      }
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.target_t"),
+        List(
+          ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
+          ("v2_catalog.db.target_t.name", Set("v2_catalog.db.source_t.name")),
+          ("v2_catalog.db.target_t.price", Set("v2_catalog.db.pivot_t.price")))))
 
       val ret3 = extractLineageWithoutExecuting(
         "update v2_catalog.db.target_t AS set name='abc' where price < 10 ")
       assert(ret3 == Lineage(
-        List("v2_catalog.db.target_t"),
+        List(),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.target_t.pk")),
@@ -165,7 +136,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
        * (refer to [[RewriteMergeIntoTable#buildReplaceDataMergeRowsPlan]])
        */
       assert(ret0 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
+        List("v2_catalog.db.source_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -186,7 +157,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         "WHEN NOT MATCHED THEN " +
         "  INSERT *")
       assert(ret1 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
+        List("v2_catalog.db.source_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -209,7 +180,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.target_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -235,7 +206,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
       // +- RelationV2[id#1158, name#1159, price#1160, _partition#1162]
       //    v2_catalog.db.target_t v2_catalog.db.target_t
       assert(ret3 == Lineage(
-        List("v2_catalog.db.target_t"),
+        List(),
         List("v2_catalog.db.target_t"),
         List(
           (
