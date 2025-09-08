@@ -238,8 +238,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] TRUNCATE TABLE") {
-    assume(isSparkV32OrGreater)
-
     val e1 = intercept[AccessControlException](
       doAs(
         someone,
@@ -249,8 +247,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] MSCK REPAIR TABLE") {
-    assume(isSparkV32OrGreater)
-
     val e1 = intercept[AccessControlException](
       doAs(
         someone,

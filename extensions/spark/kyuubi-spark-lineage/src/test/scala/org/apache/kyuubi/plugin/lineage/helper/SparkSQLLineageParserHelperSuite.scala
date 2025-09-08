@@ -34,9 +34,10 @@ import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
 
-  def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.3") "org.apache.spark.sql.connector.InMemoryTableCatalog"
-    else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
+  def catalogName: String = if (SPARK_RUNTIME_VERSION >= "3.4") {
+    "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
+  } else {
+    "org.apache.spark.sql.connector.InMemoryTableCatalog"
   }
 
   val DEFAULT_CATALOG = LineageConf.DEFAULT_CATALOG

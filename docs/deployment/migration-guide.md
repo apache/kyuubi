@@ -19,6 +19,7 @@
 
 ## Upgrading from Kyuubi 1.10 to 1.11
 
+* Since Kyuubi 1.11, the support of Spark engine for Spark 3.2 is removed.
 * Since Kyuubi 1.11, the support of Flink engine for Flink 1.17 and 1.18 are deprecated, and will be removed in the future.
 * Since Kyuubi 1.11, the configuration `spark.sql.watchdog.forcedMaxOutputRows` provided by Kyuubi Spark extension is removed, consider using `kyuubi.operation.result.max.rows` instead. Note, the latter works without requirement of installing Kyuubi Spark extension.
 * Since Kyuubi 1.11, if the engine is running in cluster mode, Kyuubi will respect the `kyuubi.session.engine.startup.waitCompletion` config to determine whether to wait for the engine completion or not. If the engine is running in client mode, Kyuubi will always wait for the engine completion. And for Spark engine, Kyuubi will append the `spark.yarn.submit.waitAppCompletion` and `spark.kubernetes.submission.waitAppCompletion` configs to the engine conf based on the value of `kyuubi.session.engine.startup.waitCompletion`.
