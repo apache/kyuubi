@@ -2066,7 +2066,7 @@
             </modules>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.0</spark.version>
+                <spark.version>4.0.1</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0</delta.version>
