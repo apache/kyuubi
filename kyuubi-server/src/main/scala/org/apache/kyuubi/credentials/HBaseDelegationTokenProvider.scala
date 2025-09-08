@@ -52,7 +52,6 @@ private class HBaseDelegationTokenProvider
         creds.addToken(token.getService, token)
       } catch {
         case e: Throwable =>
-          error(createFailedToGetTokenMessage(serviceName, e), e)
           throw new KyuubiException(s"Failed to get hbase token owned by $owner", e)
       }
     }
@@ -60,10 +59,5 @@ private class HBaseDelegationTokenProvider
 
   override def delegationTokensRequired(): Boolean = {
     tokenRequired
-  }
-
-  private def createFailedToGetTokenMessage(serviceName: String, e: scala.Throwable): String = {
-    val message = "Failed to get token from service %s due to %s. "
-    message.format(serviceName, e, serviceName, serviceName)
   }
 }
