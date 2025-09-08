@@ -2106,20 +2106,6 @@
         </profile>
 
         <profile>
-            <id>flink-1.17</id>
-            <properties>
-                <flink.version>1.17.2</flink.version>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>flink-1.18</id>
-            <properties>
-                <flink.version>1.18.1</flink.version>
-            </properties>
-        </profile>
-
-        <profile>
             <id>flink-1.19</id>
             <properties>
                 <flink.version>1.19.1</flink.version>
