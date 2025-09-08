@@ -48,8 +48,9 @@ object LineageConf {
 
   val LEGACY_COLLECT_INPUT_TABLES_ENABLED =
     ConfigBuilder("spark.kyuubi.plugin.lineage.legacy.collectInputTablesByColumn")
-      .doc(" When true collect input tables by column lineage." +
-        " When false collect all the input tables by the plan.")
+      .internal
+      .doc("When true, collect input tables by column lineage. " +
+        "When false, collect all the input tables by the plan.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(false)
