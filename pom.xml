@@ -198,7 +198,7 @@
         <clickhouse-java.version>0.6.5</clickhouse-java.version>
         <snakeyaml.version>2.2</snakeyaml.version>
         <hbase.version>2.5.12-hadoop3</hbase.version>
-        <hbase.deps.scope>compile</hbase.deps.scope>
+        <hbase.deps.scope>provided</hbase.deps.scope>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
@@ -1951,13 +1951,6 @@
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
                 <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
                 <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>hbase-provided</id>
-            <properties>
-                <hbase.deps.scope>provided</hbase.deps.scope>
             </properties>
         </profile>
 
