@@ -72,8 +72,7 @@ trait LineageParser {
     if (SparkContextHelper.getConf(LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED)) {
       Lineage(inputTablesByColumn.distinct, outputTables.distinct, columnsLineage)
     } else {
-      val filteredInputTables = inputTablesByPlan -- outputTables.distinct
-      Lineage(filteredInputTables.toList, outputTables.distinct, columnsLineage)
+      Lineage(inputTablesByPlan.toList, outputTables.distinct, columnsLineage)
     }
   }
 

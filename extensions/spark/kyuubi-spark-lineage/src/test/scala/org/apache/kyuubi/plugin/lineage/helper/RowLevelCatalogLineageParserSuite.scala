@@ -52,7 +52,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  INSERT (pk, name, price) VALUES (cast(source.pk as int), source.name, source.price)" +
           "WHEN NOT MATCHED BY SOURCE THEN  UPDATE SET target.name = 'abc' ")
       assert(ret0 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -72,7 +72,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "WHEN NOT MATCHED THEN " +
           "  INSERT *")
       assert(ret1 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
@@ -91,7 +91,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
@@ -101,7 +101,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
       val ret3 = extractLineageWithoutExecuting(
         "update v2_catalog.db.target_t AS set name='abc' where price < 10 ")
       assert(ret3 == Lineage(
-        List(),
+        List("v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.target_t.pk")),
@@ -136,7 +136,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
        * (refer to [[RewriteMergeIntoTable#buildReplaceDataMergeRowsPlan]])
        */
       assert(ret0 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -157,7 +157,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         "WHEN NOT MATCHED THEN " +
         "  INSERT *")
       assert(ret1 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -180,7 +180,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
@@ -206,7 +206,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
       // +- RelationV2[id#1158, name#1159, price#1160, _partition#1162]
       //    v2_catalog.db.target_t v2_catalog.db.target_t
       assert(ret3 == Lineage(
-        List(),
+        List("v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
