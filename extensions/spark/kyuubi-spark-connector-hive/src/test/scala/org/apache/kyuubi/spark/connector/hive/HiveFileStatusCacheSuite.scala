@@ -28,16 +28,6 @@ import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
 
 class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-    HiveFileStatusCache.resetForTesting()
-  }
-
-  override def afterEach(): Unit = {
-    super.afterEach()
-    HiveFileStatusCache.resetForTesting()
-  }
-
   test("cached by qualifiedName") {
     val previousValue = SQLConf.get.getConf(StaticSQLConf.METADATA_CACHE_TTL_SECONDS)
     try {
