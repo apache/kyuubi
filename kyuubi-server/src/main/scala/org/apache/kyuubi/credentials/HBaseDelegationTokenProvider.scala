@@ -37,7 +37,8 @@ private class HBaseDelegationTokenProvider
   override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
     this.kyuubiConf = kyuubiConf
     this.hbaseConf = hadoopConf
-    this.tokenRequired = hbaseConf.get("hbase.security.authentication").toLowerCase() == "kerberos"
+    this.tokenRequired =
+      hbaseConf.get("hbase.security.authentication", "simple").toLowerCase() == "kerberos"
   }
 
   override def obtainDelegationTokens(
