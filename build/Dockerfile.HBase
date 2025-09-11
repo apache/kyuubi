@@ -82,86 +82,86 @@ EOF
 COPY <<"EOF" ${HBASE_HOME}/conf/hbase-site.xml
 
 <configuration>
-	<property>
-		<name>hbase.cluster.distributed</name>
-		<value>true</value>
-	</property>
-	<property>
-		<name>hbase.rootdir</name>
-		<value>file:///tmp/hbase-data</value>
-	</property>
-	<property>
-		<name>hbase.security.authentication</name>
-		<value>kerberos</value>
-	</property>
-	<property>
-		<name>hbase.master.kerberos.principal</name>
-		<value>hbase/localhost@TEST.ORG</value>
-	</property>
-	<property>
-		<name>hbase.master.keytab.file</name>
-		<value>/opt/hbase/conf/hbase.keytab</value>
-	</property>
-	<property>
-		<name>hbase.regionserver.kerberos.principal</name>
-		<value>hbase/localhost@TEST.ORG</value>
-	</property>
-	<property>
-		<name>hbase.regionserver.keytab.file</name>
-		<value>/opt/hbase/conf/hbase.keytab</value>
-	</property>
-	<property>
-		<name>hbase.security.authorization</name>
-		<value>true</value>
-	</property>
-	<property>
-		<name>hbase.master.hostname</name>
-		<value>localhost</value>
-	</property>
-	<property>
-		<name>hbase.regionserver.hostname</name>
-		<value>localhost</value>
-	</property>
-	<property>
-		<name>hbase.unsafe.regionserver.hostname</name>
-		<value>localhost</value>
-	</property>
-	<property>
-		<name>hbase.regionserver.ipc.address</name>
-		<value>0.0.0.0</value>
-	</property>
-	<property>
-		<name>hbase.master.ipc.address</name>
-		<value>0.0.0.0</value>
-	</property>
-	<property>
-		<name>hbase.zookeeper.quorum</name>
-		<value>localhost</value>
-	</property>
-	<property>
-		<name>hbase.zookeeper.property.clientPort</name>
-		<value>2181</value>
-	</property>
-	<property>
-		<name>hbase.zookeeper.client.keytab.file</name>
-		<value>/opt/hbase/conf/hbase.keytab</value>
-	</property>
-	<property>
-		<name>hbase.zookeeper.client.kerberos.principal</name>
-		<value>hbase/localhost@TEST.ORG</value>
-	</property>
-	<property>
-		<name>hbase.unsafe.stream.capability.enforce</name>
-		<value>false</value>
-	</property>
-	<property>
-		<name>hbase.coprocessor.region.classes</name>
-		<value>org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController</value>
-	</property>
-	<property>
-		<name>hbase.coprocessor.master.classes</name>
-		<value>org.apache.hadoop.hbase.security.access.AccessController</value>
-	</property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>file:///tmp/hbase-data</value>
+    </property>
+    <property>
+        <name>hbase.security.authentication</name>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>hbase.master.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.master.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.security.authorization</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.master.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.unsafe.regionserver.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.ipc.address</name>
+        <value>0.0.0.0</value>
+    </property>
+    <property>
+        <name>hbase.master.ipc.address</name>
+        <value>0.0.0.0</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.client.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.client.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.unsafe.stream.capability.enforce</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>hbase.coprocessor.region.classes</name>
+        <value>org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController</value>
+    </property>
+    <property>
+        <name>hbase.coprocessor.master.classes</name>
+        <value>org.apache.hadoop.hbase.security.access.AccessController</value>
+    </property>
 </configuration>
 
 EOF
@@ -173,17 +173,14 @@ COPY <<"EOF" ${HBASE_HOME}/conf/core-site.xml
         <name>hadoop.security.authentication</name>
         <value>kerberos</value>
     </property>
-
     <property>
         <name>hadoop.security.authorization</name>
         <value>true</value>
     </property>
-
     <property>
         <name>hadoop.proxyuser.hbase.hosts</name>
         <value>*</value>
     </property>
-
     <property>
         <name>hadoop.proxyuser.hbase.groups</name>
         <value>*</value>
