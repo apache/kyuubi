@@ -72,7 +72,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "WHEN NOT MATCHED THEN " +
           "  INSERT *")
       assert(ret1 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
@@ -91,7 +91,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
           "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.pk", Set("v2_catalog.db.source_t.pk")),
@@ -180,7 +180,7 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
         "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.target_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           (
