@@ -29,7 +29,6 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {

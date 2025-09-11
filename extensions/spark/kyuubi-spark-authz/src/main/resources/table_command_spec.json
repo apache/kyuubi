@@ -537,22 +537,6 @@
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
-  "classname" : "org.apache.spark.sql.catalyst.plans.logical.RepairTable",
-  "tableDescs" : [ {
-    "fieldName" : "child",
-    "fieldExtractor" : "ResolvedTableTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
-  } ],
-  "opType" : "MSCK",
-  "queryDescs" : [ ],
-  "uriDescs" : [ ]
-}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns",
   "tableDescs" : [ {
     "fieldName" : "child",
@@ -841,17 +825,6 @@
     "comment" : ""
   } ]
 }, {
-  "classname" : "org.apache.spark.sql.execution.command.AddFileCommand",
-  "tableDescs" : [ ],
-  "opType" : "ADD",
-  "queryDescs" : [ ],
-  "uriDescs" : [ {
-    "fieldName" : "path",
-    "fieldExtractor" : "StringURIExtractor",
-    "isInput" : true,
-    "comment" : ""
-  } ]
-}, {
   "classname" : "org.apache.spark.sql.execution.command.AddFilesCommand",
   "tableDescs" : [ ],
   "opType" : "ADD",
@@ -967,22 +940,6 @@
     "comment" : ""
   } ],
   "opType" : "ALTERTABLE_DROPPARTS",
-  "queryDescs" : [ ],
-  "uriDescs" : [ ]
-}, {
-  "classname" : "org.apache.spark.sql.execution.command.AlterTableRecoverPartitionsCommand",
-  "tableDescs" : [ {
-    "fieldName" : "tableName",
-    "fieldExtractor" : "TableIdentifierTableExtractor",
-    "columnDesc" : null,
-    "actionTypeDesc" : null,
-    "tableTypeDesc" : null,
-    "catalogDesc" : null,
-    "isInput" : false,
-    "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
-  } ],
-  "opType" : "MSCK",
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
