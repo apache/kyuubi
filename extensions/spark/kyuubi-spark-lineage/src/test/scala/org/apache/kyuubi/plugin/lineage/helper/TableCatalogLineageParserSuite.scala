@@ -21,10 +21,6 @@ import org.apache.kyuubi.plugin.lineage.Lineage
 
 class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
-  override def catalogName: String = {
-    "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
-  }
-
   test("columns lineage extract - MergeIntoTable") {
     val ddls =
       """

@@ -33,7 +33,7 @@ import org.apache.kyuubi.plugin.lineage.Lineage
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
 
-  val catalogName = "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
+  def catalogName: String = "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
 
   val DEFAULT_CATALOG = LineageConf.DEFAULT_CATALOG
   override protected val catalogImpl: String = "hive"
