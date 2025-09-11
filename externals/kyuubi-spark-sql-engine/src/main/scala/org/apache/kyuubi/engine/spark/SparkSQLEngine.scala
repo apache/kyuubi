@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.{Locale, UUID}
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
@@ -45,17 +45,17 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadDumpUtils, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
-
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
-
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   private val shutdown = new AtomicBoolean(false)
   private val gracefulStopDeregistered = new AtomicBoolean(false)
-
+  @volatile private var watchdogThreadRef: AtomicReference[Thread] = new AtomicReference[Thread]()
+  private val EMERGENCY_SHUTDOWN_EXIT_CODE = 99
+  private val WATCHDOG_ERROR_EXIT_CODE = 98
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
   private lazy val engineSavePath =
@@ -98,6 +98,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
+    startShutdownWatchdog()
     super.stop()
     lifetimeTerminatingChecker.foreach(checker => {
       val shutdownTimeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
@@ -121,6 +122,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   }
 
   def gracefulStop(): Unit = if (gracefulStopDeregistered.compareAndSet(false, true)) {
+    startShutdownWatchdog()
     val stopTask: Runnable = () => {
       if (!shutdown.get) {
         info(s"Spark engine is de-registering from engine discovery space.")
@@ -212,6 +214,76 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         TimeUnit.MILLISECONDS)
     }
   }
+
+  /**
+   * Starts a shutdown watchdog thread as a failsafe mechanism.
+   *
+   * This thread monitors the shutdown process and will forcefully terminate
+   * the JVM if graceful shutdown takes too long. This prevents zombie processes
+   * caused by non-daemon threads that refuse to terminate.
+   */
+  private def startShutdownWatchdog(): Unit = {
+    if (org.apache.kyuubi.Utils.isTesting) {
+      info("Shutdown Watchdog is disabled in test mode.")
+      return
+    }
+
+    val shutdownWatchdogTimeout = conf.get(ENGINE_SHUTDOWN_WATCHDOG_TIMEOUT)
+    if (shutdownWatchdogTimeout <= 0) {
+      info("Shutdown Watchdog is disabled (timeout <= 0).")
+      return
+    }
+
+    // Prevent multiple watchdog threads
+    watchdogThreadRef.synchronized {
+      if (watchdogThreadRef.get() != null) {
+        warn("Shutdown Watchdog is already running, ignoring duplicate start request")
+        return
+      }
+    }
+
+    info(s"Shutdown Watchdog activated. Engine will be forcefully terminated if graceful " +
+      s"shutdown exceeds ${shutdownWatchdogTimeout} ms.")
+
+    val watchdogThread = new Thread("shutdown-watchdog") {
+      override def run(): Unit = {
+        debug("Shutdown Watchdog thread started, monitoring graceful shutdown process")
+        try {
+          TimeUnit.MILLISECONDS.sleep(shutdownWatchdogTimeout)
+
+          error(s"EMERGENCY SHUTDOWN TRIGGERED")
+          error(s"Graceful shutdown exceeded ${shutdownWatchdogTimeout} ms timeout")
+          error(s"Non-daemon threads are preventing JVM exit")
+          error(s"Initiating forced termination...")
+
+          // Thread dump for diagnostics
+          error(s"=== THREAD DUMP FOR DIAGNOSTIC ===")
+          ThreadDumpUtils.dumpToLogger(logger)
+          error(s"=== END OF THREAD DUMP ===")
+
+          error(s"Forcefully terminating JVM now...")
+          System.exit(EMERGENCY_SHUTDOWN_EXIT_CODE)
+
+        } catch {
+          case _: InterruptedException =>
+            warn("Shutdown Watchdog: Normal shutdown detected, watchdog exiting.")
+          case t: Throwable =>
+            error(
+              s"Shutdown Watchdog error: ${t.getClass.getSimpleName}: ${t.getMessage}")
+            t.printStackTrace(System.err)
+            error("Proceeding with emergency termination...")
+            System.exit(WATCHDOG_ERROR_EXIT_CODE) // Watchdog error
+        }
+      }
+    }
+
+    watchdogThread.setDaemon(true)
+    watchdogThread.start()
+    watchdogThreadRef.set(watchdogThread)
+
+    debug(s"Shutdown Watchdog thread started: ${watchdogThread.getName}")
+  }
+
 }
 
 object SparkSQLEngine extends Logging {
@@ -407,6 +479,7 @@ object SparkSQLEngine extends Logging {
           startEngine(spark)
           // blocking main thread
           countDownLatch.await()
+          currentEngine.foreach(_.startShutdownWatchdog())
         } catch {
           case e: KyuubiException =>
             currentEngine match {
