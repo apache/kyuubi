@@ -743,6 +743,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     OverwriteByExpression,
     OverwritePartitionsDynamic,
     RepairTable,
+    RepairTableV2,
     RefreshTable,
     RefreshTableV2,
     RefreshTable3d0,
