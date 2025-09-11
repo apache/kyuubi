@@ -45,7 +45,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       batch =>
         jdbcMetadataStore.cleanupMetadataByIdentifier(batch.identifier)
     }
-    jdbcMetadataStore.cleanupKubernetesEngineInfoByAge(0)
+    jdbcMetadataStore.cleanupKubernetesEngineInfoByAge(0, Int.MaxValue)
     jdbcMetadataStore.close()
   }
 
@@ -242,7 +242,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
       Int.MaxValue).isEmpty)
 
     eventually(Timeout(3.seconds)) {
-      jdbcMetadataStore.cleanupMetadataByAge(1000)
+      jdbcMetadataStore.cleanupMetadataByAge(1000, Int.MaxValue)
       assert(jdbcMetadataStore.getMetadata(batchId) == null)
     }
   }
