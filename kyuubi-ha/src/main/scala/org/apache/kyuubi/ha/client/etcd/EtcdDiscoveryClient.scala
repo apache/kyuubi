@@ -147,8 +147,10 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     !pathNonExists(path)
   }
 
-  override def pathNonExists(path: String): Boolean = {
-    kvClient.get(ByteSequence.from(path.getBytes())).get().getKvs.isEmpty
+  override def pathNonExists(path: String, isPrefix: Boolean = true): Boolean = {
+    kvClient.get(
+      ByteSequence.from(path.getBytes()),
+      GetOption.newBuilder().isPrefix(isPrefix).build()).get().getKvs.isEmpty
   }
 
   override def delete(path: String, deleteChildren: Boolean = false): Unit = {
@@ -311,7 +313,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   override def getAndIncrement(path: String, delta: Int = 1): Int = {
     val lockPath = s"${path}_tmp_for_lock"
     tryWithLock(lockPath, 60 * 1000) {
-      if (pathNonExists(path)) {
+      if (pathNonExists(path, isPrefix = false)) {
         create(path, "PERSISTENT")
         setData(path, String.valueOf(0).getBytes)
       }
