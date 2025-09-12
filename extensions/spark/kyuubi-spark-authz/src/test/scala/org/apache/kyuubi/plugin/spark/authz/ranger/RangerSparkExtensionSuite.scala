@@ -961,11 +961,36 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |AS
                |SELECT count(*) as cnt, sum(id) as sum_id FROM $db1.$table1
               """.stripMargin))
-        checkAnswer(someone, s"SELECT count(*) FROM $db1.$table1", Row(0) :: Nil)
 
-        checkAnswer(someone, s"SELECT count(*) FROM $db1.$view1", Row(0) :: Nil)
+        checkAnswer(admin, s"SELECT count(*) FROM $db1.$table1", Row(0) :: Nil)
 
-        checkAnswer(someone, s"SELECT count(*) FROM $db1.$view2", Row(1) :: Nil)
+        checkAnswer(admin, s"SELECT count(*) FROM $db1.$view1", Row(0) :: Nil)
+
+        checkAnswer(admin, s"SELECT count(*) FROM $db1.$view2", Row(1) :: Nil)
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$table1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(1) FROM $db1.$table1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view1").show()))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(1) FROM $db1.$view1").show()))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(*) FROM $db1.$view2").show()))(
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
+
+        interceptEndsWith[AccessControlException](
+          doAs(someone, sql(s"SELECT count(1) FROM $db1.$view2").show()))(
+          s"does not have [select] privilege on [$db1/$view2/cnt,$db1/$view2/sum_id]")
 
         interceptEndsWith[AccessControlException](
           doAs(someone, sql(s"SELECT count(id) FROM $db1.$table1 WHERE id > 10").show()))(
@@ -1500,13 +1525,33 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
         doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
         checkAnswer(
-          someone,
+          admin,
           s"SELECT count(*) FROM $db1.$table1 WHERE id > 1",
           Row(0) :: Nil)
         checkAnswer(
-          someone,
+          admin,
           s"SELECT count(*) FROM $db1.$view1 WHERE id > 1",
           Row(0) :: Nil)
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(*) FROM $db1.$table1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(1) FROM $db1.$table1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(*) FROM $db1.$view1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
+        interceptContains[AccessControlException](
+          doAs(
+            someone,
+            sql(s"SELECT count(1) FROM $db1.$view1 WHERE id > 1").collect()))(
+          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
         interceptContains[AccessControlException](
           doAs(
             someone,
@@ -1540,6 +1585,55 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         assert(lineage.columnLineage.size == 1)
         assert(lineage.columnLineage.head.originalColumns.head === s"spark_catalog.$db1.$table1.id")
       }
+    }
+  }
+
+  test("select count(*)/count(1) should not ignore privileges") {
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(
+          admin,
+          sql(
+            s"""CREATE TABLE IF NOT EXISTS $db1.$table1
+               |(id int, scope int, part string)
+               |PARTITIONED BY(part)
+               |""".stripMargin))
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"select count(*) from $db1.$table1").show()))(
+          s"does not have [select] privilege on " +
+            s"[$db1/$table1/id,$db1/$table1/scope,$db1/$table1/part]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"select count(id) from $db1.$table1").show()))(
+          s"does not have [select] privilege on [$db1/$table1/id]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(
+            s"""select count(1) from (
+               |  select id, part from $db1.$table1
+               |) t where part = 'part-1'
+               |""".stripMargin).show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/part]")
+
+        interceptContains[AccessControlException](
+          doAs(someone, sql(
+            s"""select cnt from (
+               |  select count(1) as cnt from (
+               |    select id from $db1.$table1 where part = 'part-1'
+               |  ) t1
+               |) t2
+               |""".stripMargin).show()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/part]")
+
+        // df.count() same with select count(*)
+        interceptContains[AccessControlException](
+          doAs(someone, sql(s"select id from $db1.$table1 where part = 'part-1'").toDF().count()))(
+          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/part]")
+      }
+
     }
   }
 }
