@@ -2105,6 +2105,9 @@
             </repositories>
         </profile>
 
+        <!-- The building support for Flink 1.17 and 1.18 is removed in [KYUUBI #7199],
+             but we need to keep these profiles in order to run integration tests for
+             cross-version verification. -->
         <profile>
             <id>flink-1.17</id>
             <properties>
