@@ -48,7 +48,8 @@ class HiveCatalogFileIndex(
   private val partPathToBindHivePart: mutable.Map[PartitionPath, CatalogTablePartition] =
     mutable.Map()
 
-  private val fileStatusCache = FileStatusCache.getOrCreate(sparkSession)
+  private val fileStatusCache =
+    HiveFileStatusCache.getOrCreate(sparkSession, catalogTable.qualifiedName)
 
   private val baseLocation: Option[URI] = table.storage.locationUri
 
