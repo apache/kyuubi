@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
+import org.apache.kyuubi.plugin.spark.authz.rule.plan.ChildOutputHolder
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -100,13 +101,15 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table)
 
       case p =>
+        val existsChildOutputHolder = p.exists(_.isInstanceOf[ChildOutputHolder])
         for (child <- p.children) {
           // If current plan's references don't have relation to it's input, have two cases
           //   1. `MapInPandas`, `ScriptTransformation`
           //   2. `Project` output only have constant value
           if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
             // If plan is project and output don't have relation to input, can ignore.
-            if (!p.isInstanceOf[Project]) {
+            // If plan tree exists ChildOutputHolder, we should build child logic plan.
+            if (!p.isInstanceOf[Project] || existsChildOutputHolder) {
               buildQuery(
                 child,
                 privilegeObjects,
