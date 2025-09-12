@@ -215,7 +215,7 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
     }
   }
 
-  test("Function Call in Crate Table/View") {
+  test("Function Call in Create Table/View") {
     val plan1 = sql(
       s"""
          |CREATE TABLE table1 AS
