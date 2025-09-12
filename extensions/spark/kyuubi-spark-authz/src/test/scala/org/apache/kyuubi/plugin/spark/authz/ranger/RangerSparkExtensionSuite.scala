@@ -47,6 +47,7 @@ import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
+
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv {
   // scalastyle:on
@@ -218,8 +219,16 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     val e = intercept[AccessControlException](sql(create))
     assert(e.getMessage === errorMessage("create", "mydb"))
     withCleanTmpResources(Seq((testDb, "database"))) {
-      doAs(admin, assert(Try { sql(create) }.isSuccess))
-      doAs(admin, assert(Try { sql(alter) }.isSuccess))
+      doAs(
+        admin,
+        assert(Try {
+          sql(create)
+        }.isSuccess))
+      doAs(
+        admin,
+        assert(Try {
+          sql(alter)
+        }.isSuccess))
       val e1 = intercept[AccessControlException](sql(alter))
       assert(e1.getMessage === errorMessage("alter", "mydb"))
       val e2 = intercept[AccessControlException](sql(drop))
@@ -241,14 +250,34 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     assert(e.getMessage === errorMessage("create"))
 
     withCleanTmpResources(Seq((s"$db.$table", "table"))) {
-      doAs(bob, assert(Try { sql(create0) }.isSuccess))
-      doAs(bob, assert(Try { sql(alter0) }.isSuccess))
+      doAs(
+        bob,
+        assert(Try {
+          sql(create0)
+        }.isSuccess))
+      doAs(
+        bob,
+        assert(Try {
+          sql(alter0)
+        }.isSuccess))
 
       val e1 = intercept[AccessControlException](sql(drop0))
       assert(e1.getMessage === errorMessage("drop"))
-      doAs(bob, assert(Try { sql(alter0) }.isSuccess))
-      doAs(bob, assert(Try { sql(select).collect() }.isSuccess))
-      doAs(kent, assert(Try { sql(s"SELECT key FROM $db.$table").collect() }.isSuccess))
+      doAs(
+        bob,
+        assert(Try {
+          sql(alter0)
+        }.isSuccess))
+      doAs(
+        bob,
+        assert(Try {
+          sql(select).collect()
+        }.isSuccess))
+      doAs(
+        kent,
+        assert(Try {
+          sql(s"SELECT key FROM $db.$table").collect()
+        }.isSuccess))
 
       Seq(
         select,
@@ -272,13 +301,50 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   test("auth: functions") {
     val db = defaultDb
     val func = "func"
-    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-    doAs(
-      kent, {
-        val e = intercept[AccessControlException](sql(create0))
-        assert(e.getMessage === errorMessage("create", "default/func"))
-      })
-    doAs(admin, assert(Try(sql(create0)).isSuccess))
+    val kyuubiFunc = "kyuubi_func1"
+    withCleanTmpResources(Seq(
+      (func, "function"),
+      (kyuubiFunc, "function"))) {
+      val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
+      doAs(
+        bob, {
+          val e = intercept[AccessControlException](sql(create0))
+          assert(e.getMessage === errorMessage("create", s"$db/$func"))
+        })
+      doAs(
+        kent, {
+          val e = intercept[AccessControlException](sql(create0))
+          assert(e.getMessage === errorMessage("create", s"$db/$func"))
+        })
+      doAs(admin, assert(Try(sql(create0)).isSuccess))
+
+      // [KYUUBI #7186] Introduce RuleFunctionAuthorization
+      val createKyuubiFunc =
+        s"""
+           |CREATE FUNCTION IF NOT EXISTS
+           |  $db.$kyuubiFunc
+           |  AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'
+           |""".stripMargin
+      doAs(
+        kent, {
+          val e = intercept[AccessControlException](sql(createKyuubiFunc))
+          assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
+        })
+      doAs(bob, assert(Try(sql(createKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(createKyuubiFunc)).isSuccess))
+
+      val selectKyuubiFunc =
+        s"""
+           |SELECT $db.$kyuubiFunc("KYUUBUI_TEST_STRING")""".stripMargin
+      doAs(
+        alice, {
+          val e = intercept[AccessControlException](sql(selectKyuubiFunc))
+          assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
+        })
+      doAs(kent, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(bob, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+    }
   }
 
   test("show tables") {
@@ -628,12 +694,18 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // query all columns of the permanent view
       // with access privileges to the permanent view but no privilege to the source table
       val sql1 = s"SELECT * FROM $db1.$permView"
-      doAs(userPermViewOnly, { sql(sql1).collect() })
+      doAs(
+        userPermViewOnly, {
+          sql(sql1).collect()
+        })
 
       // query the second column of permanent view with multiple columns
       // with access privileges to the permanent view but no privilege to the source table
       val sql2 = s"SELECT name FROM $db1.$permView"
-      doAs(userPermViewOnly, { sql(sql2).collect() })
+      doAs(
+        userPermViewOnly, {
+          sql(sql2).collect()
+        })
     }
   }
 

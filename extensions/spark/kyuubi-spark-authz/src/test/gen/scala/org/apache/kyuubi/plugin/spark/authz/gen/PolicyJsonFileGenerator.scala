@@ -110,6 +110,7 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyAccessForPermViewAccessOnly,
       policyAccessForTable2AccessOnly,
       policyAccessForPaimonNsTable1SelectOnly,
+      policyAccessForDefaultDbUDF,
       // row filter
       policyFilterForSrcTableKeyLessThan20,
       policyFilterForPermViewKeyLessThan20,
@@ -369,6 +370,22 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
     policyItems = List(
       KRangerPolicyItem(
         users = List(table1OnlyUserForNs),
+        accesses = allowTypes(select),
+        delegateAdmin = true)))
+
+  private val policyAccessForDefaultDbUDF = KRangerPolicy(
+    name = "defaultdb_udf",
+    description = "Policy for default db udf",
+    resources = Map(
+      databaseRes(defaultDb),
+      "udf" -> KRangerPolicyResource(values = List("kyuubi_func*"))),
+    policyItems = List(
+      KRangerPolicyItem(
+        users = List(bob),
+        accesses = allowTypes(select, update, create, drop, alter, index, lock, all, read, write),
+        delegateAdmin = true),
+      KRangerPolicyItem(
+        users = List(kent),
         accesses = allowTypes(select),
         delegateAdmin = true)))
 }

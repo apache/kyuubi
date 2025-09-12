@@ -17,19 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import scala.collection.mutable
-
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
-import org.apache.kyuubi.plugin.spark.authz.ranger.{AccessRequest, AccessResource, AccessType, RuleFunctionAuthorization, SparkRangerAuditHandler}
+import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 
 abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -200,13 +194,15 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
   }
 
   test("Built in and UDF Function Call Query") {
-    val plan = sql(s"SELECT kyuubi_fun_0('TESTSTRING'), " +
-      s"kyuubi_fun_0(value)," +
-      s"abs(key)," +
-      s"abs(-100)," +
-      s"lower(value)," +
-      s"lower('TESTSTRING') " +
-      s"FROM $reusedTable").queryExecution.analyzed
+    val plan = sql(
+      s"""
+         |SELECT
+         |  kyuubi_fun_0('TESTSTRING') AS col1,
+         |  kyuubi_fun_0(value) AS col2,
+         |  abs(key) AS col3, abs(-100) AS col4,
+         |  lower(value) AS col5,lower('TESTSTRING') AS col6
+         |FROM $reusedTable
+         |""".stripMargin).queryExecution.analyzed
     val (inputs, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
     assert(inputs.size === 2)
     inputs.foreach { po =>
@@ -219,36 +215,67 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
     }
   }
 
-  test("[KYUUBI #7186] Introduce RuleFunctionAuthorization") {
+  test("Function Call in Crate Table/View") {
+    val plan1 = sql(
+      s"""
+         |CREATE TABLE table1 AS
+         |SELECT
+         |  kyuubi_fun_0('KYUUBI_TESTSTRING'),
+         |  kyuubi_fun_0(value)
+         |FROM $reusedTable
+         |""".stripMargin).queryExecution.analyzed
+    val (inputs1, _, _) = PrivilegesBuilder.buildFunctions(plan1, spark)
+    assert(inputs1.size === 2)
+    inputs1.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, QUERY, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    val plan2 = sql("DROP TABLE IF EXISTS table1").queryExecution.analyzed
+    val (inputs2, _, _) = PrivilegesBuilder.buildFunctions(plan2, spark)
+    assert(inputs2.size === 0)
 
-    val ruleFunc = Mockito.spy[RuleFunctionAuthorization](RuleFunctionAuthorization(spark))
-    Mockito.doAnswer(new Answer[Unit] {
-      override def answer(invocation: InvocationOnMock): Unit = {
-        val requests = invocation.getArgument[mutable.ArrayBuffer[AccessRequest]](0)
-        requests.foreach { request =>
-          // deny udf `reusedDb.kyuubi_fun_0`
-          var database: String = request.getResource.asInstanceOf[AccessResource].getDatabase
-          var udf: String = request.getResource.asInstanceOf[AccessResource].getUdf
-          if (database.equalsIgnoreCase(reusedDb) && udf.equalsIgnoreCase("kyuubi_fun_0")) {
-            throw new AccessControlException("Access denied")
-          }
-        }
-      }
-    }).when(ruleFunc).checkPrivileges(
-      any[mutable.ArrayBuffer[AccessRequest]](),
-      any[SparkRangerAuditHandler]())
+    val plan3 = sql(
+      s"""
+         |CREATE VIEW view1 AS SELECT
+         |  kyuubi_fun_0('KYUUBI_TESTSTRING') AS fun1,
+         |  kyuubi_fun_0(value) AS fun2
+         |FROM $reusedTable
+         |""".stripMargin).queryExecution.analyzed
+    val (inputs3, _, _) = PrivilegesBuilder.buildFunctions(plan3, spark)
+    assert(inputs3.size === 2)
+    inputs3.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, QUERY, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
+    val plan4 = sql("DROP VIEW IF EXISTS view1").queryExecution.analyzed
+    val (inputs4, _, _) = PrivilegesBuilder.buildFunctions(plan4, spark)
+    assert(inputs4.size === 0)
+  }
 
-    val query1 = sql(s"SELECT " +
-      s"${reusedDb}.kyuubi_fun_0('KYUUBI_STRING')," +
-      s"${reusedDb}.kyuubi_fun_1('KYUUBI_STRING') ").queryExecution.analyzed
-    intercept[AccessControlException] { ruleFunc.apply(query1) }
-
-    val query2 = sql(s"SELECT " +
-      s"${reusedDb}.kyuubi_fun_0('KYUUBI_STRING')").queryExecution.analyzed
-    intercept[AccessControlException] { ruleFunc.apply(query2) }
-
-    val query3 = sql(s"SELECT " +
-      s"${reusedDb}.kyuubi_fun_1('KYUUBI_STRING')").queryExecution.analyzed
-    ruleFunc.apply(query3)
+  test("Function Call in INSERT OVERWRITE") {
+    val plan = sql(
+      s"""
+         |INSERT OVERWRITE TABLE $reusedTable
+         |SELECT key, kyuubi_fun_0(value)
+         |FROM $reusedPartTable
+         |""".stripMargin).queryExecution.analyzed
+    val (inputsUpdate, _, _) = PrivilegesBuilder.buildFunctions(plan, spark)
+    assert(inputsUpdate.size === 1)
+    inputsUpdate.foreach { po =>
+      assert(po.actionType === PrivilegeObjectActionType.OTHER)
+      assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
+      assert(po.dbname startsWith reusedDb.toLowerCase)
+      assert(po.objectName startsWith functionNamePrefix.toLowerCase)
+      val accessType = ranger.AccessType(po, QUERY, isInput = true)
+      assert(accessType === AccessType.SELECT)
+    }
   }
 }
