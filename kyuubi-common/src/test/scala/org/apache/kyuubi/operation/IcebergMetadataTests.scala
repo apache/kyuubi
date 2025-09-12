@@ -79,9 +79,8 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "`a.b`.c",
       "a.`b.c`",
       "`a.b.c`",
-      "`a.b``.c`",
       "db1.db2.db3",
-      "db4")
+      "db4") ++ (if (SPARK_ENGINE_RUNTIME_VERSION < "4.0") Seq("`a.b``.c`") else Nil)
 
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
@@ -109,9 +108,9 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "`a.b`.c",
       "a.`b.c`",
       "`a.b.c`",
-      "`a.b``.c`",
       "db1.db2.db3",
-      "db4")
+      "db4") ++ (if (SPARK_ENGINE_RUNTIME_VERSION < "4.0") Seq("`a.b``.c`") else Nil)
+
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData

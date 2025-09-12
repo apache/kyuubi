@@ -160,7 +160,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>1.0.1</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.8.0</iceberg.version>
+        <iceberg.version>1.10.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.15.4</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
@@ -2073,12 +2073,10 @@
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <!-- TODO: update once Hudi support Spark 4.0 -->
                 <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
-                <!-- TODO: update once Iceberg support Spark 4.0 -->
-                <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
                 <!-- TODO: update once Paimon support Spark 4.0.
                            paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
                 <paimon.artifact>paimon-common</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
