@@ -82,7 +82,7 @@ For the Scala version for Spark engines, the server will look up the `SPARK_SCAL
 
 ## Building With Apache dlcdn Site
 
-By default, we use `https://archive.apache.org/dist/` to download the built-in release packages of engines,
+By default, we use [`closer.lua`](https://infra.apache.org/release-download-pages.html#download-scripts) to download the built-in release packages of engines,
 such as Spark or Flink.
 But sometimes, you may find it hard to reach, or the download speed is too slow,
 then you can define the `apache.archive.dist` by `-Pmirror-cdn` to accelerate to download speed.
