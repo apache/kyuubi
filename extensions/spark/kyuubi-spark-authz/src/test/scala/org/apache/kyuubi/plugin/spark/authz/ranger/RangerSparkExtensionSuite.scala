@@ -1611,21 +1611,25 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"does not have [select] privilege on [$db1/$table1/id]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(
-            s"""select count(1) from (
-               |  select id, part from $db1.$table1
-               |) t where part = 'part-1'
-               |""".stripMargin).show()))(
+          doAs(
+            someone,
+            sql(
+              s"""select count(1) from (
+                 |  select id, part from $db1.$table1
+                 |) t where part = 'part-1'
+                 |""".stripMargin).show()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/part]")
 
         interceptContains[AccessControlException](
-          doAs(someone, sql(
-            s"""select cnt from (
-               |  select count(1) as cnt from (
-               |    select id from $db1.$table1 where part = 'part-1'
-               |  ) t1
-               |) t2
-               |""".stripMargin).show()))(
+          doAs(
+            someone,
+            sql(
+              s"""select cnt from (
+                 |  select count(1) as cnt from (
+                 |    select id from $db1.$table1 where part = 'part-1'
+                 |  ) t1
+                 |) t2
+                 |""".stripMargin).show()))(
           s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/part]")
 
         // df.count() same with select count(*)
