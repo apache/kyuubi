@@ -46,14 +46,14 @@ private class HBaseDelegationTokenProvider
       creds: Credentials): Unit = {
     doAsProxyUser(owner) {
       try {
-        info(s"Getting hbase token for ${owner} ...")
+        info(s"Getting HBase delegation token for ${owner} ...")
         val conn = ConnectionFactory.createConnection(hbaseConf)
         val token = ClientTokenUtil.obtainToken(conn)
-        info(s"Get hbase token ${token}")
+        info(s"Get HBase delegation token ${token}")
         creds.addToken(token.getService, token)
       } catch {
         case e: Throwable =>
-          throw new KyuubiException(s"Failed to get hbase token owned by $owner", e)
+          throw new KyuubiException(s"Failed to get HBase delegation token owned by $owner", e)
       }
     }
   }
