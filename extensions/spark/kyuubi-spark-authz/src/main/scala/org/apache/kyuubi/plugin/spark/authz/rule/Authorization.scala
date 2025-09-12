@@ -18,7 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -52,12 +52,7 @@ object Authorization {
 
   def markAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.setTagValue(KYUUBI_AUTHZ_TAG, ())
-    plan transformDown {
-      // TODO: Add this line Support for spark3.1, we can remove this
-      //       after spark 3.2 since https://issues.apache.org/jira/browse/SPARK-34269
-      case view: View =>
-        markAllNodesAuthChecked(view.child)
-    }
+    plan
   }
 
   protected def isAuthChecked(plan: LogicalPlan): Boolean = {

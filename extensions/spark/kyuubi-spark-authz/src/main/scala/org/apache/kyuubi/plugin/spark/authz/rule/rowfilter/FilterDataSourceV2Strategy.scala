@@ -17,18 +17,11 @@
 package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
 import org.apache.spark.sql.{SparkSession, Strategy}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 
 case class FilterDataSourceV2Strategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    // For Spark 3.1 and below, `ColumnPruning` rule will set `ObjectFilterPlaceHolder#child` to
-    // `Project`
-    case ObjectFilterPlaceHolder(Project(_, child)) if child.nodeName == "ShowNamespaces" =>
-      spark.sessionState.planner.plan(child)
-        .map(FilteredShowNamespaceExec(_, spark.sparkContext)).toSeq
-
-    // For Spark 3.2 and above
     case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
       spark.sessionState.planner.plan(child)
         .map(FilteredShowNamespaceExec(_, spark.sparkContext)).toSeq

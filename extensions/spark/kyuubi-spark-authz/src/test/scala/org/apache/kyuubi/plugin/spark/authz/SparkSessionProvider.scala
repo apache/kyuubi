@@ -29,7 +29,6 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 trait SparkSessionProvider {
   protected val catalogImpl: String
@@ -100,7 +99,7 @@ trait SparkSessionProvider {
         case (t, "table") => doAs(
             admin, {
               val purgeOption =
-                if (isSparkV32OrGreater && isCatalogSupportPurge(
+                if (isCatalogSupportPurge(
                     spark.sessionState.catalogManager.currentCatalog.name())) {
                   "PURGE"
                 } else ""
@@ -109,9 +108,7 @@ trait SparkSessionProvider {
         case (db, "database") => doAs(admin, sql(s"DROP DATABASE IF EXISTS $db"))
         case (fn, "function") => doAs(admin, sql(s"DROP FUNCTION IF EXISTS $fn"))
         case (view, "view") => doAs(admin, sql(s"DROP VIEW IF EXISTS $view"))
-        case (cacheTable, "cache") => if (isSparkV32OrGreater) {
-            doAs(admin, sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
-          }
+        case (cacheTable, "cache") => doAs(admin, sql(s"UNCACHE TABLE IF EXISTS $cacheTable"))
         case (_, e) =>
           throw new RuntimeException(s"the resource whose resource type is $e cannot be cleared")
       }

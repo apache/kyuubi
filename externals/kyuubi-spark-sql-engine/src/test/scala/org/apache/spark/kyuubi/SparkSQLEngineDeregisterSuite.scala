@@ -25,7 +25,6 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.{WithDiscoverySparkSQLEngine, WithEmbeddedZookeeper}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.service.ServiceState
 
 abstract class SparkSQLEngineDeregisterSuite
@@ -61,15 +60,9 @@ abstract class SparkSQLEngineDeregisterSuite
 
 class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
-      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") {
-        // see https://issues.apache.org/jira/browse/SPARK-35958
-        "org.apache.spark.SparkArithmeticException"
-      } else {
-        classOf[ArithmeticException].getCanonicalName
-      }
-    })
-
+    super.withKyuubiConf ++
+      Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
+        classOf[SparkArithmeticException].getCanonicalName)
   }
 }
 
@@ -95,14 +88,8 @@ class SparkSQLEngineDeregisterExceptionTTLSuite
     super.withKyuubiConf ++
       zookeeperConf ++ Map(
         ANSI_ENABLED.key -> "true",
-        ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> {
-          if (SPARK_ENGINE_RUNTIME_VERSION >= "3.3") {
-            // see https://issues.apache.org/jira/browse/SPARK-35958
-            "org.apache.spark.SparkArithmeticException"
-          } else {
-            classOf[ArithmeticException].getCanonicalName
-          }
-        },
+        ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
+          classOf[SparkArithmeticException].getCanonicalName,
         ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,
         ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString)
   }

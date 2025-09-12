@@ -31,7 +31,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{CatalogPlugin, Identifier}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
@@ -265,20 +265,10 @@ trait LineageParser {
       case p
           if p.nodeName == "CreateTableAsSelect" ||
             p.nodeName == "ReplaceTableAsSelect" =>
-        val (table, namespace, catalog) =
-          if (SPARK_RUNTIME_VERSION <= "3.2") {
-            (
-              getField[Identifier](plan, "tableName").name,
-              getField[Identifier](plan, "tableName").namespace.mkString("."),
-              getField[TableCatalog](plan, "catalog").name())
-          } else {
-            (
-              invokeAs[Identifier](plan, "tableName").name(),
-              invokeAs[Identifier](plan, "tableName").namespace().mkString("."),
-              getField[CatalogPlugin](
-                invokeAs[LogicalPlan](plan, "name"),
-                "catalog").name())
-          }
+        val (table, namespace, catalog) = (
+          invokeAs[Identifier](plan, "tableName").name(),
+          invokeAs[Identifier](plan, "tableName").namespace().mkString("."),
+          getField[CatalogPlugin](invokeAs[LogicalPlan](plan, "name"), "catalog").name())
         extractColumnsLineage(
           getQuery(plan),
           parentColumnsLineage,
