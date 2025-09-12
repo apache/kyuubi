@@ -33,7 +33,7 @@ trait WithSecuredHBaseContainer extends KerberizedTestHelper with TestContainerF
   final val HBASE_KERBEROS_REALM = "TEST.ORG"
   final val HBASE_KERBEROS_PRINCIPAL = "hbase/localhost"
   final val HBASE_KERBEROS_KEYTAB = "/opt/hbase/conf/hbase.keytab"
-  final val DOCKER_IMAGE_NAME = "z1wu97/kyuubi-hbase-cluster:latest"
+  final val DOCKER_IMAGE_NAME = "nekyuubi/kyuubi-hbase-cluster:latest"
 
   private val tempDir = Utils.createTempDir(prefix = "kyuubi-server-hbase")
   private val exposedKdcPort = 88
