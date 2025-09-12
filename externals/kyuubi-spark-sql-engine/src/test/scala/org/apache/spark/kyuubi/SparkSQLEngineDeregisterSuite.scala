@@ -61,8 +61,8 @@ abstract class SparkSQLEngineDeregisterSuite
 class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++
-      Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> "org.apache.spark.SparkArithmeticException")
-
+      Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
+        classOf[SparkArithmeticException].getCanonicalName)
   }
 }
 
@@ -88,7 +88,8 @@ class SparkSQLEngineDeregisterExceptionTTLSuite
     super.withKyuubiConf ++
       zookeeperConf ++ Map(
         ANSI_ENABLED.key -> "true",
-        ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> "org.apache.spark.SparkArithmeticException",
+        ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
+          classOf[SparkArithmeticException].getCanonicalName,
         ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,
         ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString)
   }
