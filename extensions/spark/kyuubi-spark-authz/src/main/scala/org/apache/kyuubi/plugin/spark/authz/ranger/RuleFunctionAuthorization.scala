@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.mutable
 
+import org.apache.ranger.plugin.policyengine.RangerAccessRequest
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
@@ -51,11 +52,13 @@ case class RuleFunctionAuthorization(spark: SparkSession) extends (LogicalPlan =
 
     addAccessRequest(inputs, isInput = true)
 
-    val requestArrays = requests.map(Seq(_))
+    val requestSeq: Seq[RangerAccessRequest] =
+      requests.map(_.asInstanceOf[RangerAccessRequest]).toSeq
+
     if (authorizeInSingleCall) {
-      verify(requestArrays.flatten, auditHandler)
+      verify(requestSeq, auditHandler)
     } else {
-      requestArrays.flatten.foreach { req =>
+      requestSeq.foreach { req =>
         verify(Seq(req), auditHandler)
       }
     }
