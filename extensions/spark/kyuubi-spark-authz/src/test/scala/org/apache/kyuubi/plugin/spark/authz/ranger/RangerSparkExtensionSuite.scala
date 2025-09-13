@@ -1586,7 +1586,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-
   test("[KYUUBI #7186] Introduce RuleFunctionAuthorization") {
     val db = defaultDb
     val kyuubiFunc = "kyuubi_func1"
