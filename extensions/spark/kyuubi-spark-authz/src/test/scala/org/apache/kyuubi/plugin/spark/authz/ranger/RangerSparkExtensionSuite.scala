@@ -301,10 +301,8 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   test("auth: functions") {
     val db = defaultDb
     val func = "func"
-    val kyuubiFunc = "kyuubi_func1"
     withCleanTmpResources(Seq(
-      (func, "function"),
-      (kyuubiFunc, "function"))) {
+      (func, "function"))) {
       val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
       doAs(
         bob, {
@@ -317,33 +315,6 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
           assert(e.getMessage === errorMessage("create", s"$db/$func"))
         })
       doAs(admin, assert(Try(sql(create0)).isSuccess))
-
-      // [KYUUBI #7186] Introduce RuleFunctionAuthorization
-      val createKyuubiFunc =
-        s"""
-           |CREATE FUNCTION IF NOT EXISTS
-           |  $db.$kyuubiFunc
-           |  AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'
-           |""".stripMargin
-      doAs(
-        kent, {
-          val e = intercept[AccessControlException](sql(createKyuubiFunc))
-          assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
-        })
-      doAs(bob, assert(Try(sql(createKyuubiFunc)).isSuccess))
-      doAs(admin, assert(Try(sql(createKyuubiFunc)).isSuccess))
-
-      val selectKyuubiFunc =
-        s"""
-           |SELECT $db.$kyuubiFunc("KYUUBUI_TEST_STRING")""".stripMargin
-      doAs(
-        alice, {
-          val e = intercept[AccessControlException](sql(selectKyuubiFunc))
-          assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
-        })
-      doAs(kent, assert(Try(sql(selectKyuubiFunc)).isSuccess))
-      doAs(bob, assert(Try(sql(selectKyuubiFunc)).isSuccess))
-      doAs(admin, assert(Try(sql(selectKyuubiFunc)).isSuccess))
     }
   }
 
@@ -1612,6 +1583,40 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         assert(lineage.columnLineage.size == 1)
         assert(lineage.columnLineage.head.originalColumns.head === s"spark_catalog.$db1.$table1.id")
       }
+    }
+  }
+
+
+  test("[KYUUBI #7186] Introduce RuleFunctionAuthorization") {
+    val db = defaultDb
+    val kyuubiFunc = "kyuubi_func1"
+    withCleanTmpResources(Seq(
+      (kyuubiFunc, "function"))) {
+      val createKyuubiFunc =
+        s"""
+           |CREATE FUNCTION IF NOT EXISTS
+           |  $db.$kyuubiFunc
+           |  AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'
+           |""".stripMargin
+      doAs(
+        kent, {
+          val e = intercept[AccessControlException](sql(createKyuubiFunc))
+          assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
+        })
+      doAs(bob, assert(Try(sql(createKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(createKyuubiFunc)).isSuccess))
+
+      val selectKyuubiFunc =
+        s"""
+           |SELECT $db.$kyuubiFunc("KYUUBUI_TEST_STRING")""".stripMargin
+      doAs(
+        alice, {
+          val e = intercept[AccessControlException](sql(selectKyuubiFunc))
+          assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
+        })
+      doAs(kent, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(bob, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(selectKyuubiFunc)).isSuccess))
     }
   }
 }
