@@ -22,10 +22,10 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
 import org.apache.kyuubi.plugin.spark.authz.util.WithInternalChild
 
-case class ChildOutputHolder(child: LogicalPlan, fixedOutput: Seq[Attribute])
+case class ChildOutputHolder(child: LogicalPlan, childOutput: Seq[Attribute])
   extends UnaryNode with WithInternalChild {
 
-  val output: Seq[Attribute] = fixedOutput
+  val output: Seq[Attribute] = childOutput
 
   override def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = copy(child = newChild)
 }

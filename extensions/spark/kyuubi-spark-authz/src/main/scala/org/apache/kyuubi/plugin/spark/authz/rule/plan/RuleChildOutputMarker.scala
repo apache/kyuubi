@@ -20,6 +20,13 @@ package org.apache.kyuubi.plugin.spark.authz.rule.plan
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 
+/**
+ * Rule to add [[ChildOutputHolder]] used to fixed logic plan's child node's output,
+ * now used for following cases:
+ *
+ *  1. Aggregate(count(*)/count(1)), it's child node will be pruned in Spark optimizer
+ *     rule [[org.apache.spark.sql.catalyst.optimizer.ColumnPruning]].
+ */
 object RuleChildOutputMarker extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transform {

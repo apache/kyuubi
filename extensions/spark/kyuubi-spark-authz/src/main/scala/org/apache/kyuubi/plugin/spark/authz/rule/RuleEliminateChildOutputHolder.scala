@@ -22,6 +22,9 @@ import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.plugin.spark.authz.rule.plan.ChildOutputHolder
 
+/**
+ * Transforming down [[ChildOutputHolder]]
+ */
 object RuleEliminateChildOutputHolder extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transform {

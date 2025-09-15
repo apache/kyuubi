@@ -107,8 +107,11 @@ object PrivilegesBuilder {
           //   1. `MapInPandas`, `ScriptTransformation`
           //   2. `Project` output only have constant value
           if (columnPrune(p.references.toSeq ++ p.output, p.inputSet).isEmpty) {
-            // If plan is project and output don't have relation to input, can ignore.
-            // If plan tree exists ChildOutputHolder, we should build child logic plan.
+            // 1. If plan is project and output don't have relation to input, can ignore.
+            // 2. If sub logic plan tree exists ChildOutputHolder node, it means that the output of
+            //    some nodes in the tree is fixed by RuleChildOutputMarker in some special
+            //    scenarios, such as the Aggregate(count(*)) child node. To avoid missing child node
+            //    permissions, we need to continue checking down.
             if (!p.isInstanceOf[Project] || existsChildOutputHolder) {
               buildQuery(
                 child,
