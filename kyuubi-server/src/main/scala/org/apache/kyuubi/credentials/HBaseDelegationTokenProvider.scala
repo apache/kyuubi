@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.credentials
 
+import java.io.Closeable
+
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.hbase.client.ConnectionFactory
+import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 import org.apache.hadoop.hbase.security.token.ClientTokenUtil
 import org.apache.hadoop.security.Credentials
 
@@ -45,15 +47,20 @@ private class HBaseDelegationTokenProvider
       owner: String,
       creds: Credentials): Unit = {
     doAsProxyUser(owner) {
+      var conn: Connection = null
       try {
         info(s"Getting HBase delegation token for ${owner} ...")
-        val conn = ConnectionFactory.createConnection(hbaseConf)
+        conn = ConnectionFactory.createConnection(hbaseConf)
         val token = ClientTokenUtil.obtainToken(conn)
         info(s"Get HBase delegation token ${token}")
         creds.addToken(token.getService, token)
       } catch {
         case e: Throwable =>
           throw new KyuubiException(s"Failed to get HBase delegation token owned by $owner", e)
+      } finally {
+        if (conn != null) {
+          conn.close()
+        }
       }
     }
   }
