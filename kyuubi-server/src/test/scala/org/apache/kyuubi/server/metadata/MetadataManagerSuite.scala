@@ -223,7 +223,7 @@ class MetadataManagerSuite extends KyuubiFunSuite {
         }
       }
 
-      metadataManager.cleanupMetadata(0, 1, 0)
+      metadataManager.cleanupMetadata(Int.MinValue, 1, 0)
 
       // ensure all metadata are cleaned up
       eventually(timeout(3.seconds), interval(200.milliseconds)) {
