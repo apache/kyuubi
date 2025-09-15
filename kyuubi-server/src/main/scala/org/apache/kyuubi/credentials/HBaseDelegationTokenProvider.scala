@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.credentials
 
-import java.io.Closeable
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hbase.client.{Connection, ConnectionFactory}
 import org.apache.hadoop.hbase.security.token.ClientTokenUtil
