@@ -197,6 +197,8 @@
         <slf4j.version>1.7.36</slf4j.version>
         <clickhouse-java.version>0.6.5</clickhouse-java.version>
         <snakeyaml.version>2.2</snakeyaml.version>
+        <hbase.version>2.5.12-hadoop3</hbase.version>
+        <hbase.deps.scope>provided</hbase.deps.scope>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
@@ -1261,6 +1263,19 @@
                     <exclusion>
                         <groupId>*</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hbase</groupId>
+                <artifactId>hbase-shaded-client-byo-hadoop</artifactId>
+                <version>${hbase.version}</version>
+                <scope>${hbase.deps.scope}</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.yetus</groupId>
+                        <artifactId>audience-annotations</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
