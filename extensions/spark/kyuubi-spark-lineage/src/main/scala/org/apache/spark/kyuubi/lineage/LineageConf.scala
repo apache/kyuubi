@@ -55,6 +55,15 @@ object LineageConf {
       .booleanConf
       .createWithDefault(false)
 
+  val COLLECT_FILTER_CONDITION_TABLES_ENABLED =
+    ConfigBuilder("spark.kyuubi.plugin.lineage.collectFilterTables")
+      .internal
+      .doc("Whether to collect the tables referenced in filter conditions as lineage input tables.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(true)
+
+
   val DEFAULT_CATALOG: String = SQLConf.get.getConf(SQLConf.DEFAULT_CATALOG)
 
 }

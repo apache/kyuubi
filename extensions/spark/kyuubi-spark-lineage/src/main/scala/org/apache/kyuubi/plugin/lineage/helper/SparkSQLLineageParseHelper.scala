@@ -27,7 +27,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, ScalarSubquery}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, ScalarSubquery, SubqueryExpression}
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -571,6 +571,25 @@ trait LineageParser {
               p.output,
               p.cacheBuilder.tableName.toSeq)
         }
+
+      case p: Filter =>
+        if (SparkContextHelper.getConf(
+            LineageConf.COLLECT_FILTER_CONDITION_TABLES_ENABLED)) {
+          p.condition.foreach {
+            case expression: SubqueryExpression =>
+              extractColumnsLineage(
+                expression.plan,
+                ListMap[Attribute, AttributeSet](),
+                inputTablesByPlan
+              )
+            case _ =>
+          }
+        }
+
+        p.children.map(extractColumnsLineage(
+          _,
+          parentColumnsLineage,
+          inputTablesByPlan)).reduce(mergeColumnsLineage)
 
       case p if p.children.isEmpty => ListMap[Attribute, AttributeSet]()
 

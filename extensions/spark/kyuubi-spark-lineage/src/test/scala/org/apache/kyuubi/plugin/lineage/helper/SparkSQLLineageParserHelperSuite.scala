@@ -986,6 +986,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         |""".stripMargin
     ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
     withTable("table0", "table1") { _ =>
+      SparkContextHelper.setConf(LineageConf.COLLECT_FILTER_CONDITION_TABLES_ENABLED, false)
       val sql0 =
         """
           |select a as aa, bb, cc from (select b as bb, c as cc from table1) t0, table0
@@ -1462,6 +1463,102 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
             ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
             ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+    }
+  }
+
+  test("columns lineage extract - extract condition tables") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tb1(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb2(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb3(col1 string, col2 string, col3 string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql)
+    withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb3") { _ =>
+      SparkContextHelper.setConf(LineageConf.COLLECT_FILTER_CONDITION_TABLES_ENABLED, true)
+      val sql0 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select *
+          |from v2_catalog.db.tb1 t1
+          |where exists (select 1 from v2_catalog.db.tb2 t2 where t2.col1 = t1.col1);
+          |""".stripMargin
+      val ret0 = extractLineage(sql0)
+      assert(ret0 == Lineage(
+        List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+        List("v2_catalog.db.tb3"),
+        List(
+          ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+          ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+          ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+
+      val sql1 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select col1, 'agg_flag' as col2, 'static' as col3
+          |from v2_catalog.db.tb1
+          |group by col1
+          |having count(*) > (select count(*) from v2_catalog.db.tb2)
+          |""".stripMargin
+      val ret1 = extractLineage(sql1)
+      assert(ret1 == Lineage(
+        List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+        List("v2_catalog.db.tb3"),
+        List(
+          ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+          ("v2_catalog.db.tb3.col2", Set()),
+          ("v2_catalog.db.tb3.col3", Set()))))
+
+      val sql2 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select *
+          |from v2_catalog.db.tb1
+          |where col1 > (select max(col1) from v2_catalog.db.tb2 where col2 = 'X')
+          |""".stripMargin
+      val ret2 = extractLineage(sql2)
+      assert(ret2 == Lineage(
+        List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+        List("v2_catalog.db.tb3"),
+        List(
+          ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+          ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+          ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+
+      val sql3 =
+        """
+          |insert into v2_catalog.db.tb3
+          |select *
+          |from v2_catalog.db.tb1
+          |where col1 not in (select col1 from v2_catalog.db.tb2 where col2 is not null)
+          |""".stripMargin
+      val ret3 = extractLineage(sql3)
+      assert(ret3 == Lineage(
+        List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+        List("v2_catalog.db.tb3"),
+        List(
+          ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+          ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+          ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+
+      val sql4 =
+        """
+          |insert into v2_catalog.db.tb3
+          |select *
+          |from v2_catalog.db.tb1
+          |where col3 in (
+          | select col3 from v2_catalog.db.tb2
+          | where col1 in (select col1 from v2_catalog.db.tb3 where col2 = 'V')
+          |)
+          |""".stripMargin
+      val ret4 = extractLineage(sql4)
+      assert(ret4 == Lineage(
+        List("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb3"),
+        List("v2_catalog.db.tb3"),
+        List(
+          ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+          ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+          ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
     }
   }
 
