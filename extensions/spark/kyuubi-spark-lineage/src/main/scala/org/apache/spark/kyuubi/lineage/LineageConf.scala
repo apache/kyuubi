@@ -63,7 +63,6 @@ object LineageConf {
       .booleanConf
       .createWithDefault(true)
 
-
   val DEFAULT_CATALOG: String = SQLConf.get.getConf(SQLConf.DEFAULT_CATALOG)
 
 }

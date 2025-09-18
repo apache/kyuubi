@@ -580,8 +580,7 @@ trait LineageParser {
               extractColumnsLineage(
                 expression.plan,
                 ListMap[Attribute, AttributeSet](),
-                inputTablesByPlan
-              )
+                inputTablesByPlan)
             case _ =>
           }
         }
