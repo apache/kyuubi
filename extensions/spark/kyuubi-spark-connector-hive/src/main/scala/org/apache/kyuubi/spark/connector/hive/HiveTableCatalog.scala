@@ -395,11 +395,15 @@ class HiveTableCatalog(sparkSession: SparkSession)
   override def dropTable(ident: Identifier): Boolean =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
-        if (loadTable(ident) != null) {
+        val table = loadTable(ident)
+        if (table != null) {
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
             purge = true /* skip HDFS trash */ )
+          if (table.isInstanceOf[HiveTable]) {
+            table.asInstanceOf[HiveTable].fileIndex.refresh()
+          }
           true
         } else {
           false
