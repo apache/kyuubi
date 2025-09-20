@@ -108,13 +108,11 @@ html_theme_options = {
     "use_fullscreen_button": True,
     "repository_branch": "master",
     "path_to_docs": "docs",
-    "logo_only": True,
     "home_page_in_toc": False,
     "show_navbar_depth": 1,
     "show_toc_level": 2,
     "announcement": "&#129418; Welcome to Kyuubi’s online documentation &#x2728;, v" + release,
     "toc_title": "",
-    "extra_navbar": "Version " + release,
 }
 
 html_logo = 'imgs/logo.png'
