@@ -23,7 +23,7 @@ except ImportError:
     from sqlalchemy.dialects import mysql
     mysql_tinyinteger = mysql.base.MSTinyInteger
 from sqlalchemy.engine import default
-from sqlalchemy.sql import compiler
+from sqlalchemy.sql import compiler, bindparam
 from sqlalchemy.sql.compiler import SQLCompiler
 
 from pyhive import presto
@@ -204,11 +204,44 @@ class PrestoDialect(default.DefaultDialect):
         else:
             return []
 
+    def _get_default_schema_name(self, connection):
+        #'SELECT CURRENT_SCHEMA()'
+        return super()._get_default_schema_name(connection)
+
     def get_table_names(self, connection, schema=None, **kw):
         query = 'SHOW TABLES'
+        # N.B. This is incorrect, if no schema is provided, the current/default schema should be used
+        #  with a call to an overridden self._get_default_schema_name(connection), but I could not
+        #  see how to implement that as there is no CURRENT_SCHEMA function
+        #  default_schema = self._get_default_schema_name(connection)
+
         if schema:
             query += ' FROM ' + self.identifier_preparer.quote_identifier(schema)
         return [row.Table for row in connection.execute(text(query))]
+
+    def get_view_names(self, connection, schema=None, **kw):
+        if schema:
+            view_name_query = """
+                SELECT table_name
+                FROM information_schema.views
+                WHERE table_schema = :schema
+            """
+            query = text(view_name_query).bindparams(
+                bindparam("schema", type_=types.Unicode)
+            )
+        else:
+            # N.B. This is incorrect, if no schema is provided, the current/default schema should
+            #  be used with a call to self._get_default_schema_name(connection), but I could not
+            #  see how to implement that
+            #  default_schema = self._get_default_schema_name(connection)
+            view_name_query = """
+                SELECT table_name
+                FROM information_schema.views
+            """
+            query = text(view_name_query)
+
+        result = connection.execute(query, dict(schema=schema))
+        return [row[0] for row in result]
 
     def do_rollback(self, dbapi_connection):
         # No transactions for Presto
