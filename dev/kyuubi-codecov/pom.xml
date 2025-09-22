@@ -173,6 +173,11 @@
                     <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -191,6 +196,11 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -213,6 +223,11 @@
                     <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -226,6 +241,12 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <!-- TODO: support authz -->
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
