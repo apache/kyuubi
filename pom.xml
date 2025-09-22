@@ -125,7 +125,7 @@
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.14.15</byte-buddy.version>
         <bouncycastle.version>1.78</bouncycastle.version>
@@ -143,6 +143,7 @@
         <flink.version>1.20.0</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.query>?action=download</flink.archive.query>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.65.1</grpc.version>
@@ -154,6 +155,7 @@
         <hive.version>3.1.3</hive.version>
         <hive.archive.name>apache-hive-${hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.version}</hive.archive.mirror>
+        <hive.archive.query>?action=download</hive.archive.query>
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
@@ -204,6 +206,7 @@
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.query>?action=download</spark.archive.query>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
@@ -1905,6 +1908,9 @@
             <properties>
                 <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <spark.archive.query></spark.archive.query>
+                <flink.archive.query></flink.archive.query>
+                <hive.archive.query></hive.archive.query>
                 <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
                 <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
