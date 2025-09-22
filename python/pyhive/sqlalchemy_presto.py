@@ -230,9 +230,10 @@ class PrestoDialect(default.DefaultDialect):
                 bindparam("schema", type_=types.Unicode)
             )
         else:
-            # N.B. This is incorrect, if no schema is provided, the current/default schema should be used
-            #  with a call to self._get_default_schema_name(connection), but I could not see how to implement that
-            #  default_schema = self._get_default_schema_name(connection)
+            # N.B. This is incorrect, if no schema is provided, the current/default schema should
+            #   be used with a call to self._get_default_schema_name(connection), but I could not
+            #   see how to implement that
+            #   default_schema = self._get_default_schema_name(connection)
             view_name_query = """
                 SELECT table_name
                 FROM information_schema.views
