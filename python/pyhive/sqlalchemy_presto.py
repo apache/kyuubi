@@ -211,8 +211,8 @@ class PrestoDialect(default.DefaultDialect):
     def get_table_names(self, connection, schema=None, **kw):
         query = 'SHOW TABLES'
         # N.B. This is incorrect, if no schema is provided, the current/default schema should be used
-        #  with a call to an overridden self._get_default_schema_name(connection), but I could not see how to implement
-        #  that as there is no CURRENT_SCHEMA function
+        #  with a call to an overridden self._get_default_schema_name(connection), but I could not
+        # see how to implement that as there is no CURRENT_SCHEMA function
         #  default_schema = self._get_default_schema_name(connection)
 
         if schema:
