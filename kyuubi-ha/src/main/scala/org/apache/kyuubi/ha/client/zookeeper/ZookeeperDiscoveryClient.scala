@@ -86,7 +86,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     zkClient.checkExists().forPath(path) != null
   }
 
-  override def pathNonExists(path: String): Boolean = {
+  override def pathNonExists(path: String, isPrefix: Boolean): Boolean = {
     zkClient.checkExists().forPath(path) == null
   }
 
