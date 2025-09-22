@@ -66,6 +66,7 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "hive")
       .set("spark.sql.catalog.hive", classOf[HiveTableCatalog].getName)
+      .set("spark.sql.catalog.hive2", classOf[HiveTableCatalog].getName)
       .set("javax.jdo.option.ConnectionURL", "jdbc:derby:memory:memorydb;create=true")
       .set("javax.jdo.option.ConnectionDriverName", "org.apache.derby.jdbc.EmbeddedDriver")
 

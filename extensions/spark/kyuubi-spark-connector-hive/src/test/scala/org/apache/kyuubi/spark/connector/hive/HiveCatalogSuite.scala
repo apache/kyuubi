@@ -39,7 +39,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.{READ_CONVERT_METASTORE_ORC, READ_CONVERT_METASTORE_PARQUET}
-import org.apache.kyuubi.spark.connector.hive.read.HiveScan
+import org.apache.kyuubi.spark.connector.hive.read.{HiveFileStatusCache, HiveScan}
 
 class HiveCatalogSuite extends KyuubiHiveTest {
 
@@ -284,16 +284,29 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   test("invalidateTable") {
-    val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
-    // Hive v2 don't cache table
-    catalog.invalidateTable(testIdent)
+    withSparkSession() { spark =>
+      val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
+      val qualifiedName = s"$catalogName.${testIdent.namespace().mkString(".")}.${testIdent.name()}"
+      val location = table.asInstanceOf[HiveTable].catalogTable.location
 
-    val loaded = catalog.loadTable(testIdent)
+      spark.sql(s"select * from $qualifiedName").collect()
+      assert(HiveFileStatusCache.getOrCreate(spark, qualifiedName)
+        .getLeafFiles(new Path(location)).isDefined)
 
-    assert(table.name == loaded.name)
-    assert(table.schema == loaded.schema)
-    assert(table.properties == loaded.properties)
-    catalog.dropTable(testIdent)
+      catalog.invalidateTable(testIdent)
+      assert(HiveFileStatusCache.getOrCreate(spark, qualifiedName)
+        .getLeafFiles(new Path(location)).isEmpty)
+
+      spark.sql(s"select * from $qualifiedName").collect()
+      assert(HiveFileStatusCache.getOrCreate(spark, qualifiedName)
+        .getLeafFiles(new Path(location)).isDefined)
+
+      val loaded = catalog.loadTable(testIdent)
+      assert(table.name == loaded.name)
+      assert(table.schema == loaded.schema)
+      assert(table.properties == loaded.properties)
+      catalog.dropTable(testIdent)
+    }
   }
 
   test("listNamespaces: fail if missing namespace") {
