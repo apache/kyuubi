@@ -78,7 +78,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern1,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkAppId.ingress.balabala")
@@ -86,7 +87,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern2,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort")
@@ -94,7 +96,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern3,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) ===
@@ -103,8 +106,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern4,
       sparkAppId,
-      sparkDriverSvc = None,
-      sparkDriverPodIp = Some("10.69.234.1"),
+      None,
+      Some("10.69.234.1"),
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) ===

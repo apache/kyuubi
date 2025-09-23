@@ -752,24 +752,6 @@ object KubernetesApplicationOperation extends Logging {
     appUrl
   }
 
-  // Overload for tests and convenience: build URL with a service name (no pod IP)
-  private[kyuubi] def buildSparkAppUrl(
-      sparkAppUrlPattern: String,
-      sparkAppId: String,
-      sparkDriverSvc: String,
-      kubernetesContext: String,
-      kubernetesNamespace: String,
-      sparkUiPort: Int): String = {
-    buildSparkAppUrl(
-      sparkAppUrlPattern = sparkAppUrlPattern,
-      sparkAppId = sparkAppId,
-      sparkDriverSvc = Some(sparkDriverSvc),
-      sparkDriverPodIp = None,
-      kubernetesContext = kubernetesContext,
-      kubernetesNamespace = kubernetesNamespace,
-      sparkUiPort = sparkUiPort)
-  }
-
   def getPodAppId(pod: Pod): String = {
     pod.getMetadata.getLabels.get(SPARK_APP_ID_LABEL)
   }
