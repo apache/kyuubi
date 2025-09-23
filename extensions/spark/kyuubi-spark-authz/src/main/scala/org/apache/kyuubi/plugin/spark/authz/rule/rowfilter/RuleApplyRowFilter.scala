@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.rowfilter
 
+import org.apache.spark.authz.AuthzConf.rowFilterEnabled
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan}
 
@@ -29,14 +30,18 @@ import org.apache.kyuubi.plugin.spark.authz.serde._
 case class RuleApplyRowFilter(spark: SparkSession) extends RuleHelper {
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    val newPlan = mapChildren(plan) {
-      case p: RowFilterMarker => p
-      case scan if isKnownScan(scan) && scan.resolved =>
-        val tables = getScanSpec(scan).tables(scan, spark)
-        tables.headOption.map(applyFilter(scan, _)).getOrElse(scan)
-      case other => apply(other)
+    if (!rowFilterEnabled(conf)) {
+      plan
+    } else {
+      val newPlan = mapChildren(plan) {
+        case p: RowFilterMarker => p
+        case scan if isKnownScan(scan) && scan.resolved =>
+          val tables = getScanSpec(scan).tables(scan, spark)
+          tables.headOption.map(applyFilter(scan, _)).getOrElse(scan)
+        case other => apply(other)
+      }
+      newPlan
     }
-    newPlan
   }
 
   private def applyFilter(
