@@ -24,6 +24,7 @@ import org.apache.spark.sql.connector.catalog.{SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.Utils
 
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession
+import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
 
 abstract class KyuubiHiveTest extends QueryTest with Logging {
 
@@ -49,11 +50,13 @@ abstract class KyuubiHiveTest extends QueryTest with Logging {
 
   override def beforeEach(): Unit = {
     super.beforeAll()
+    HiveFileStatusCache.resetForTesting()
     getOrCreateSpark()
   }
 
   override def afterEach(): Unit = {
     super.afterAll()
+    HiveFileStatusCache.resetForTesting()
     LocalSparkSession.stop(innerSpark)
   }
 
