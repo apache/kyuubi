@@ -29,7 +29,9 @@ import jline.console.completer.StringsCompleter;
 class TableNameCompletor implements Completer {
   private final BeeLine beeLine;
 
-  /** @param beeLine */
+  /**
+   * @param beeLine
+   */
   TableNameCompletor(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

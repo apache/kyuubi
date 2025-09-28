@@ -414,7 +414,9 @@ class BeeLineOpts implements Completer {
     return historyFile;
   }
 
-  /** @param numRows - the number of rows to store in history file */
+  /**
+   * @param numRows - the number of rows to store in history file
+   */
   public void setMaxHistoryRows(int numRows) {
     this.maxHistoryRows = numRows;
   }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.jdbc;
 
-/** @deprecated Use `KyuubiHiveDriver` instead. */
+/**
+ * @deprecated Use `KyuubiHiveDriver` instead.
+ */
 @Deprecated
 public class KyuubiDriver extends KyuubiHiveDriver {}

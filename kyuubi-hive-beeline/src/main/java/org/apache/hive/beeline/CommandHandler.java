@@ -30,13 +30,19 @@ import jline.console.completer.Completer;
  * {@link #matches(java.lang.String)} method.
  */
 interface CommandHandler {
-  /** @return the name of the command */
+  /**
+   * @return the name of the command
+   */
   public String getName();
 
-  /** @return all the possible names of this command. */
+  /**
+   * @return all the possible names of this command.
+   */
   public String[] getNames();
 
-  /** @return the short help description for this command. */
+  /**
+   * @return the short help description for this command.
+   */
   public String getHelpText();
 
   /**
