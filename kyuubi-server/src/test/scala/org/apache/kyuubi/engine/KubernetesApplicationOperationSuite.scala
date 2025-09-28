@@ -168,7 +168,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     val waitingEmpty = new ContainerStateWaiting()
     waitingEmpty.setReason(null)
     containerStateEmpty.setWaiting(waitingEmpty)
-    val resultEmpty = KubernetesApplicationOperation.containerStateToApplicationState(containerStateEmpty)
+    val resultEmpty =
+      KubernetesApplicationOperation.containerStateToApplicationState(containerStateEmpty)
     assert(resultEmpty === PENDING)
   }
 }
