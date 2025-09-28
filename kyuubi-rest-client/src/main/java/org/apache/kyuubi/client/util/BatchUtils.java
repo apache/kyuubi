@@ -24,26 +24,26 @@ import org.apache.kyuubi.client.api.v1.dto.Batch;
 
 public final class BatchUtils {
   /** The batch has not been submitted to resource manager yet. */
-  public static String PENDING_STATE = "PENDING";
+  public static final String PENDING_STATE = "PENDING";
 
   /** The batch has been submitted to resource manager and is running. */
-  public static String RUNNING_STATE = "RUNNING";
+  public static final String RUNNING_STATE = "RUNNING";
 
   /** The batch has been finished successfully. */
-  public static String FINISHED_STATE = "FINISHED";
+  public static final String FINISHED_STATE = "FINISHED";
 
   /** The batch met some issue and failed. */
-  public static String ERROR_STATE = "ERROR";
+  public static final String ERROR_STATE = "ERROR";
 
   /** The batch was closed by `DELETE /batches/${batchId}` api. */
-  public static String CANCELED_STATE = "CANCELED";
+  public static final String CANCELED_STATE = "CANCELED";
 
-  public static List<String> terminalBatchStates =
+  public static final List<String> terminalBatchStates =
       Arrays.asList(FINISHED_STATE, ERROR_STATE, CANCELED_STATE);
 
-  public static String KYUUBI_BATCH_ID_KEY = "kyuubi.batch.id";
+  public static final String KYUUBI_BATCH_ID_KEY = "kyuubi.batch.id";
 
-  public static String KYUUBI_BATCH_DUPLICATED_KEY = "kyuubi.batch.duplicated";
+  public static final String KYUUBI_BATCH_DUPLICATED_KEY = "kyuubi.batch.duplicated";
 
   public static boolean isPendingState(String state) {
     return PENDING_STATE.equalsIgnoreCase(state);
