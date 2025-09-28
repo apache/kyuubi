@@ -32,12 +32,14 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.{HIVE_CLI_SERVICE_PROTOCOL_V10, HIVE_CLI_SERVICE_PROTOCOL_V2}
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   override protected lazy val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.SERVER_LIMIT_CLIENT_FETCH_MAX_ROWS, 5000)
+
+  protected val SESSION_PROTOCOL_VERSION = HIVE_CLI_SERVICE_PROTOCOL_V2
 
   test("get an operation event") {
     val catalogsHandleStr = getOpHandleStr("")
@@ -55,7 +57,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
   test("apply an action for an operation") {
     val sessionHandle = fe.be.openSession(
-      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      SESSION_PROTOCOL_VERSION,
       "admin",
       "123456",
       "localhost",
@@ -207,7 +209,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
   test("support to return operation progress for REST api") {
     val sessionHandle = fe.be.openSession(
-      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      SESSION_PROTOCOL_VERSION,
       "admin",
       "123456",
       "localhost",
@@ -224,7 +226,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
   def getOpHandleStr(statement: String = "show tables"): String = {
     val sessionHandle = fe.be.openSession(
-      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      SESSION_PROTOCOL_VERSION,
       "admin",
       "123456",
       "localhost",
@@ -249,4 +251,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       assert(operationEvent.getState === state.name())
     }
   }
+}
+
+class OperationsResourceV10ProtocolSuite extends OperationsResourceSuite {
+  override protected val SESSION_PROTOCOL_VERSION = HIVE_CLI_SERVICE_PROTOCOL_V10
 }

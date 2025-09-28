@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.jdbc.hive.cli.{ColumnBasedSet, RowBasedSet, RowSet}
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
@@ -184,57 +185,29 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
         FetchOrientation.withName(fetchOrientation),
         maxRows,
         fetchLog = false)
-      val rowSet = fetchResultsResp.getResults
-      val rows = rowSet.getRows.asScala.map(i => {
-        new Row(i.getColVals.asScala.map(i => {
-          new Field(
-            i.getSetField.name(),
-            i.getSetField match {
-              case TColumnValue._Fields.STRING_VAL =>
-                if (i.getStringVal.isSetValue) {
-                  i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.BOOL_VAL =>
-                if (i.getBoolVal.isSetValue) {
-                  i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.BYTE_VAL =>
-                if (i.getByteVal.isSetValue) {
-                  i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.DOUBLE_VAL =>
-                if (i.getDoubleVal.isSetValue) {
-                  i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.I16_VAL =>
-                if (i.getI16Val.isSetValue) {
-                  i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.I32_VAL =>
-                if (i.getI32Val.isSetValue) {
-                  i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
-                } else {
-                  null
-                }
-              case TColumnValue._Fields.I64_VAL =>
-                if (i.getI64Val.isSetValue) {
-                  i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
-                } else {
-                  null
-                }
-            })
-        }).asJava)
-      })
+      val results = fetchResultsResp.getResults
+      if ((results.getRows != null && results.getRows.size() == 0) ||
+        (results.getColumns != null && results.getColumns.size() == 0)) {
+        return new ResultRowSet(List.empty.asJava, 0)
+      }
+
+      val (rowSet: RowSet, columnTypes: Array[String]) = if (results.getRows != null) {
+        (
+          new RowBasedSet(results),
+          results.getRows.get(0).getColVals.asScala.map(c => c.getSetField.name()).toArray)
+      } else {
+        (
+          new ColumnBasedSet(results),
+          results.getColumns.asScala.map(c => { c.getSetField.name() }).toArray)
+      }
+      val columnSize = rowSet.numColumns
+      val rows = rowSet.iterator().asScala.toSeq.map { r =>
+        new Row(
+          (0 until columnSize).map(i => {
+            val columnValue = r(i)
+            new Field(columnTypes(i), columnValue)
+          }).asJava)
+      }
       new ResultRowSet(rows.asJava, rows.size)
     } catch {
       case e: IllegalArgumentException =>
