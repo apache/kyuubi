@@ -99,9 +99,10 @@ Create a session
 
 #### Request Parameters
 
-| Name    | Description                      | Type |
-|:--------|:---------------------------------|:-----|
-| configs | The configuration of the session | Map  |
+| Name            | Description                                                  | Type |
+|:----------------|:-------------------------------------------------------------|:-----|
+| protocolVersion | The session thrift protocol version, default value is 0 (V1) | Map  |
+| configs         | The configuration of the session                             | Map  |
 
 #### Response Body
 
