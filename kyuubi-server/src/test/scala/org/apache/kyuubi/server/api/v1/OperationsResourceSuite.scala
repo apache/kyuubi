@@ -32,6 +32,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.{HIVE_CLI_SERVICE_PROTOCOL_V10, HIVE_CLI_SERVICE_PROTOCOL_V2}
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -221,6 +222,28 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       assert(response.getStatus === 200)
       val operationEvent = response.readEntity(classOf[dto.KyuubiOperationEvent])
       assert(operationEvent.getProgress != null)
+    }
+  }
+
+  test("support binary type in result set") {
+    val opHandleStr = getOpHandleStr("select binary('kyuubi')")
+    checkOpState(opHandleStr, FINISHED)
+    val response = webTarget.path(
+      s"api/v1/operations/$opHandleStr/rowset")
+      .request(MediaType.APPLICATION_JSON).get()
+    assert(200 == response.getStatus)
+    val logRowSet = response.readEntity(classOf[ResultRowSet])
+    assert(logRowSet.getRowCount == 1)
+    val result = logRowSet.getRows.asScala.head.getFields.asScala.head
+    if (SESSION_PROTOCOL_VERSION.getValue >=
+        TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
+      // for ColumnBasedSet, the data type is BINARY_VAL
+      assert(result.getDataType == "BINARY_VAL")
+      assert(result.getValue == "kyuubi".getBytes("UTF-8"))
+    } else {
+      // for RowBasedSet, the data type is STRING_VAL
+      assert(result.getDataType == "STRING_VAL")
+      assert(result == "kyuubi")
     }
   }
 
