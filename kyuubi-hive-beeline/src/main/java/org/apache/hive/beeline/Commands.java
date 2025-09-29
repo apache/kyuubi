@@ -67,9 +67,7 @@ public class Commands {
   private static final int DEFAULT_QUERY_PROGRESS_INTERVAL = 1000;
   private static final int DEFAULT_QUERY_PROGRESS_THREAD_TIMEOUT = 10 * 1000;
 
-  /**
-   * @param beeLine
-   */
+  /** @param beeLine */
   Commands(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

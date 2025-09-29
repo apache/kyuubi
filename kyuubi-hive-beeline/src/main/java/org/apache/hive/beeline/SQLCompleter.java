@@ -90,8 +90,7 @@ class SQLCompleter extends StringsCompleter {
 
     for (StringTokenizer tok = new StringTokenizer(keywords, ", ");
         tok.hasMoreTokens();
-        completions.add(tok.nextToken())) {
-      ;
+        completions.add(tok.nextToken())) {;
     }
 
     // now add the tables and columns from the current connection

@@ -25,9 +25,7 @@ package org.apache.hive.beeline;
 class XMLElementOutputFormat extends AbstractOutputFormat {
   private final BeeLine beeLine;
 
-  /**
-   * @param beeLine
-   */
+  /** @param beeLine */
   XMLElementOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

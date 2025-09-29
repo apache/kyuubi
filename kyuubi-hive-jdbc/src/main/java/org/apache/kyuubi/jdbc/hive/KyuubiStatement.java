@@ -48,7 +48,6 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private boolean isOperationComplete = false;
 
   private Map<String, String> properties = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
   /**
    * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);

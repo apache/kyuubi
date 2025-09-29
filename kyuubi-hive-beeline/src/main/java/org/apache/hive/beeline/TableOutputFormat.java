@@ -27,9 +27,7 @@ class TableOutputFormat implements OutputFormat {
   private final BeeLine beeLine;
   private final StringBuilder sb = new StringBuilder();
 
-  /**
-   * @param beeLine
-   */
+  /** @param beeLine */
   TableOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

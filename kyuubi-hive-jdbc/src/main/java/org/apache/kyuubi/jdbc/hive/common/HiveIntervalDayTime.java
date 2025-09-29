@@ -81,9 +81,7 @@ public class HiveIntervalDayTime implements Comparable<HiveIntervalDayTime> {
     return totalSeconds;
   }
 
-  /**
-   * @return double representation of the interval day time, accurate to nanoseconds
-   */
+  /** @return double representation of the interval day time, accurate to nanoseconds */
   public double getDouble() {
     return totalSeconds + nanos / 1000000000;
   }

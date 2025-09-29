@@ -29,9 +29,7 @@ import jline.console.completer.Completer;
 class BeeLineCompleter implements Completer {
   private final BeeLine beeLine;
 
-  /**
-   * @param beeLine
-   */
+  /** @param beeLine */
   BeeLineCompleter(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

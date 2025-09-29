@@ -3132,9 +3132,7 @@ public class FastHiveDecimalImpl extends FastHiveDecimal {
     }
   }
 
-  /**
-   * @return True when shortValue() will return a correct short.
-   */
+  /** @return True when shortValue() will return a correct short. */
 
   /**
    * Is the decimal value a short? Range -32,768 to 32,767. Short.MIN_VALUE Short.MAX_VALUE

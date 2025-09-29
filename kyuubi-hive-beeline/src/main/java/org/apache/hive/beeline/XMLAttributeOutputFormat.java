@@ -26,9 +26,7 @@ class XMLAttributeOutputFormat extends AbstractOutputFormat {
   private final BeeLine beeLine;
   private final StringBuilder buf = new StringBuilder();
 
-  /**
-   * @param beeLine
-   */
+  /** @param beeLine */
   XMLAttributeOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

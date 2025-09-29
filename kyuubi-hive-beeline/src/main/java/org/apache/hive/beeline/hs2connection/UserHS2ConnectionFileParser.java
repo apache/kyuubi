@@ -104,7 +104,6 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
   public boolean configExists() {
     return (getFileLocation() != null);
   }
-
   /*
    * This method looks in locations specified above and returns the first location where the file
    * exists. If the file does not exist in any one of the locations it returns null

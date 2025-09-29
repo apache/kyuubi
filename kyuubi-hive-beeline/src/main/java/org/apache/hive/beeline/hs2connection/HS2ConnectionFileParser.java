@@ -27,19 +27,14 @@ import java.util.Properties;
 public interface HS2ConnectionFileParser {
   /** prefix string used for the keys */
   public static final String BEELINE_CONNECTION_PROPERTY_PREFIX = "beeline.hs2.connection.";
-
   /** Property key used to provide the URL prefix for the connection URL */
   public static final String URL_PREFIX_PROPERTY_KEY = "url_prefix";
-
   /** Property key used to provide the default database in the connection URL */
   public static final String DEFAULT_DB_PROPERTY_KEY = "defaultDB";
-
   /** Property key used to provide the hosts in the connection URL */
   public static final String HOST_PROPERTY_KEY = "hosts";
-
   /** Property key used to provide the hive configuration key value pairs in the connection URL */
   public static final String HIVE_CONF_PROPERTY_KEY = "hiveconf";
-
   /** Property key used to provide the hive variables in the connection URL */
   public static final String HIVE_VAR_PROPERTY_KEY = "hivevar";
 
@@ -78,9 +73,6 @@ public interface HS2ConnectionFileParser {
    * @throws BeelineHS2ConnectionFileParseException if there is invalid key with appropriate message
    */
   Properties getConnectionProperties() throws BeelineConfFileParseException;
-
-  /**
-   * @return returns true if the configuration exists else returns false
-   */
+  /** @return returns true if the configuration exists else returns false */
   boolean configExists();
 }

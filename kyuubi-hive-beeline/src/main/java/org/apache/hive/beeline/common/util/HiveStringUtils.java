@@ -78,8 +78,7 @@ public class HiveStringUtils {
         // Jump to the end of current line. When a multiple line query is executed with -e
         // parameter,
         // it is passed in as one line string separated with '\n'
-        for (; index < line.length() && line.charAt(index) != '\n'; ++index)
-          ;
+        for (; index < line.length() && line.charAt(index) != '\n'; ++index) ;
         continue;
       }
 

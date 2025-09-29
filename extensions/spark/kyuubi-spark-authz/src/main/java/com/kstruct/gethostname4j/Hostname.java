@@ -29,9 +29,7 @@ public class Hostname {
   // set hostname for Ranger client
   public static final String RANGER_CLIENT_HOSTNAME = "RANGER_CLIENT_HOSTNAME";
 
-  /**
-   * @return the hostname the of the current machine
-   */
+  /** @return the hostname the of the current machine */
   public static String getHostname() {
     String hostname = System.getenv(RANGER_CLIENT_HOSTNAME);
     if (isValid(hostname)) return hostname;

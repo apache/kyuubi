@@ -37,14 +37,12 @@ import org.slf4j.LoggerFactory;
 
 public class Utils {
   static final Logger LOG = LoggerFactory.getLogger(Utils.class);
-
   /** The required prefix list for the connection URL. */
   public static final List<String> URL_PREFIX_LIST =
       Arrays.asList("jdbc:hive2://", "jdbc:kyuubi://");
 
   /** If host is provided, without a port. */
   static final String DEFAULT_PORT = "10009";
-
   // To parse the intermediate URI as a Java URI, we'll give a dummy authority(dummyhost:00000).
   // Later, we'll substitute the dummy authority for a resolved authority.
   static final String dummyAuthorityString = "dummyhost:00000";
