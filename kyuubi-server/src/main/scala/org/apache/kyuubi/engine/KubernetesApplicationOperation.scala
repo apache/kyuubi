@@ -199,13 +199,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       expireCleanUpTriggerCacheExecutor,
       () => {
         try {
-          Option(cleanupTerminatedAppInfoTrigger).foreach { trigger =>
-            trigger.asMap().asScala.foreach {
-              case (key, _) =>
-                // do get to trigger cache eviction
-                trigger.getIfPresent(key)
-            }
-          }
+          // Proactively remove expired entries from the cache
+          Option(cleanupTerminatedAppInfoTrigger).foreach(_.cleanUp())
         } catch {
           case NonFatal(e) => error("Failed to evict clean up terminated app cache", e)
         }
