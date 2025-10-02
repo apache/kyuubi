@@ -19,11 +19,12 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
+import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateChildOutputHolder, RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.expression.RuleApplyTypeOfMarker
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.RuleApplyPermanentViewMarker
+import org.apache.kyuubi.plugin.spark.authz.rule.plan.RuleChildOutputMarker
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.{FilterDataSourceV2Strategy, RuleApplyRowFilter, RuleReplaceShowObjectCommands}
 
 /**
@@ -48,6 +49,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
     v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
     v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)
+    v1.injectResolutionRule(_ => RuleChildOutputMarker)
     v1.injectResolutionRule(RuleApplyRowFilter)
     v1.injectResolutionRule(RuleApplyDataMaskingStage0)
     v1.injectResolutionRule(RuleApplyDataMaskingStage1)
@@ -55,6 +57,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     v1.injectOptimizerRule(RuleAuthorization)
     v1.injectOptimizerRule(RuleEliminatePermanentViewMarker)
     v1.injectOptimizerRule(_ => RuleEliminateTypeOf)
+    v1.injectOptimizerRule(_ => RuleEliminateChildOutputHolder)
     v1.injectPlannerStrategy(FilterDataSourceV2Strategy)
   }
 }
