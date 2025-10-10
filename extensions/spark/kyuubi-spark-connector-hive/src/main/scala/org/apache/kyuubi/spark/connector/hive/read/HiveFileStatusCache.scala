@@ -29,8 +29,20 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.datasources.{FileStatusCache, NoopCache}
 import org.apache.spark.util.SizeEstimator
 
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.HIVE_FILE_STATUS_CACHE_SCOPE
+
 /**
- * Use [[HiveFileStatusCache.getOrCreate()]] to construct a globally shared file status cache.
+ * Forked from Apache Spark's [[org.apache.spark.sql.execution.datasources.FileStatusCache]] 3.5.5.
+ *
+ * Because the original FileStatusCache cannot take effect (see https://github.com/apache/kyuubi
+ * /issues/7192).
+ *
+ * The main modification point is that at the session level, the cache key is the qualified name
+ * of the table (in the form of `catalog.database.table`) + path. The previous key was an
+ * object + path generated during initialization, and the current scenario is that FileStatusCache
+ * is not preserved by the outside, resulting in different keys and ineffective caching.
+ *
+ * Use [[HiveFileStatusCache.getOrCreate()]] to construct a session/none shared file status cache.
  */
 object HiveFileStatusCache {
   private var sharedCache: HiveSharedInMemoryCache = _
@@ -41,14 +53,17 @@ object HiveFileStatusCache {
    */
   def getOrCreate(session: SparkSession, qualifiedName: String): FileStatusCache =
     synchronized {
-      if (session.sessionState.conf.manageFilesourcePartitions &&
-        session.sessionState.conf.filesourcePartitionFileCacheSize > 0) {
+      val conf = session.sessionState.conf
+      if (conf.manageFilesourcePartitions && conf.filesourcePartitionFileCacheSize > 0) {
         if (sharedCache == null) {
           sharedCache = new HiveSharedInMemoryCache(
             session.sessionState.conf.filesourcePartitionFileCacheSize,
             session.sessionState.conf.metadataCacheTTL)
         }
-        sharedCache.createForNewClient(qualifiedName)
+        conf.getConf(HIVE_FILE_STATUS_CACHE_SCOPE) match {
+          case "SESSION" => sharedCache.createForNewClient(qualifiedName)
+          case "NONE" => NoopCache
+        }
       } else {
         NoopCache
       }

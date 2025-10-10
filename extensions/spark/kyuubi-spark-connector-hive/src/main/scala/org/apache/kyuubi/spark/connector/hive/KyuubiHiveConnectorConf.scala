@@ -57,4 +57,16 @@ object KyuubiHiveConnectorConf {
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
+
+  val HIVE_FILE_STATUS_CACHE_SCOPE =
+    buildConf("spark.sql.kyuubi.hive.file.status.cache.scope")
+      .doc("The scope of hive file status cache, global, session and none.")
+      .version("1.11.0")
+      .stringConf
+      .transform(policy => policy.toUpperCase(Locale.ROOT))
+      .checkValue(
+        policy => Set("SESSION", "NONE").contains(policy),
+        "Invalid value for 'spark.sql.kyuubi.hive.file.status.cache.scope'." +
+          "Valid values are 'SESSION', 'NONE'.")
+      .createWithDefault("SESSION")
 }

@@ -17,17 +17,47 @@
 
 package org.apache.kyuubi.spark.connector.hive
 
-import com.google.common.collect.Maps
 import scala.concurrent.duration.DurationInt
+
+import com.google.common.collect.Maps
 import org.apache.hadoop.fs.{FileStatus, Path}
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.scalatest.concurrent.Eventually.eventually
 import org.scalatest.concurrent.Futures.timeout
+
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.HIVE_FILE_STATUS_CACHE_SCOPE
 import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
-import org.apache.spark.sql.connector.catalog.Identifier
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 class HiveFileStatusCacheSuite extends KyuubiHiveTest {
+
+  test("use different cache scope") {
+    Seq("SESSION", "NONE").foreach { value =>
+      withSparkSession(Map(HIVE_FILE_STATUS_CACHE_SCOPE.key -> value)) { _ =>
+        val path = new Path("/dummy_tmp", "abc")
+        val files = (1 to 3).map(_ => new FileStatus())
+
+        HiveFileStatusCache.resetForTesting()
+        val fileStatusCacheTabel = HiveFileStatusCache.getOrCreate(spark, "catalog.db.catTable")
+        fileStatusCacheTabel.putLeafFiles(path, files.toArray)
+
+        value match {
+          // Exactly 3 files are cached.
+          case "SESSION" =>
+            assert(fileStatusCacheTabel.getLeafFiles(path).get.length === 3)
+          case "NONE" =>
+            assert(fileStatusCacheTabel.getLeafFiles(path).isEmpty)
+          case _ =>
+            throw new IllegalArgumentException(
+              s"Unexpected value: '$value'. Only 'SESSION' or 'NONE' are allowed.")
+        }
+
+        fileStatusCacheTabel.invalidateAll()
+        assert(fileStatusCacheTabel.getLeafFiles(path).isEmpty)
+      }
+    }
+  }
 
   test("cached by qualifiedName") {
     val previousValue = SQLConf.get.getConf(StaticSQLConf.METADATA_CACHE_TTL_SECONDS)
@@ -47,13 +77,13 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
       // Exactly 3 files are cached.
       assert(fileStatusCacheTabel1.getLeafFiles(path).get.length === 3)
       assert(fileStatusCacheTabel2.getLeafFiles(path).get.length === 3)
-      assert(fileStatusCacheTabel3.getLeafFiles(path).isEmpty === true)
+      assert(fileStatusCacheTabel3.getLeafFiles(path).isEmpty)
       // Wait until the cache expiration.
       eventually(timeout(3.seconds)) {
         // And the cache is gone.
-        assert(fileStatusCacheTabel1.getLeafFiles(path).isEmpty === true)
-        assert(fileStatusCacheTabel2.getLeafFiles(path).isEmpty === true)
-        assert(fileStatusCacheTabel3.getLeafFiles(path).isEmpty === true)
+        assert(fileStatusCacheTabel1.getLeafFiles(path).isEmpty)
+        assert(fileStatusCacheTabel2.getLeafFiles(path).isEmpty)
+        assert(fileStatusCacheTabel3.getLeafFiles(path).isEmpty)
       }
     } finally {
       SQLConf.get.setConf(StaticSQLConf.METADATA_CACHE_TTL_SECONDS, previousValue)
@@ -78,7 +108,7 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
       // Wait until the cache expiration.
       eventually(timeout(3.seconds)) {
         // And the cache is gone.
-        assert(fileStatusCache.getLeafFiles(path).isEmpty === true)
+        assert(fileStatusCache.getLeafFiles(path).isEmpty)
       }
     } finally {
       SQLConf.get.setConf(StaticSQLConf.METADATA_CACHE_TTL_SECONDS, previousValue)
@@ -112,15 +142,16 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
       assert(spark.sql(s"select * from $table").count() === 5)
       assert(HiveFileStatusCache.getOrCreate(spark, table)
-        .getLeafFiles(new Path(s"$location/city=ct")).get.length === 1)
+        .getLeafFiles(new Path(s"$location/city=ct")).isDefined)
 
+      // should clear cache
       spark.sql(s"insert into $table partition(city='ct') values(11),(21),(31),(41),(51)").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, table)
         .getLeafFiles(new Path(s"$location/city=ct")).isEmpty)
 
       assert(spark.sql(s"select * from $table").count() === 10)
       assert(HiveFileStatusCache.getOrCreate(spark, table)
-        .getLeafFiles(new Path(s"$location/city=ct")).get.length === 2)
+        .getLeafFiles(new Path(s"$location/city=ct")).isDefined)
     }
   }
 
@@ -142,8 +173,9 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
       assert(spark.sql(s"select * from $table").count() === 5)
       assert(HiveFileStatusCache.getOrCreate(spark, table)
-        .getLeafFiles(new Path(s"$location/city=ct")).get.length === 1)
+        .getLeafFiles(new Path(s"$location/city=ct")).isDefined)
 
+      // should clear cache
       spark.sql(s"insert overwrite $table partition(city='ct') values(11),(21),(31),(41),(51)")
         .collect()
       assert(HiveFileStatusCache.getOrCreate(spark, table)
@@ -151,7 +183,7 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
       assert(spark.sql(s"select * from $table").count() === 5)
       assert(HiveFileStatusCache.getOrCreate(spark, table)
-        .getLeafFiles(new Path(s"$location/city=ct")).get.length === 1)
+        .getLeafFiles(new Path(s"$location/city=ct")).isDefined)
     }
   }
 
@@ -170,8 +202,9 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
       spark.sql(s"insert into $table partition(city='ct') values(10),(20),(30),(40),(50)").collect()
       spark.sql(s"select * from $table").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, table)
-        .getLeafFiles(new Path(s"$location/city=ct")).get.length === 1)
+        .getLeafFiles(new Path(s"$location/city=ct")).isDefined)
 
+      // should clear cache
       spark.sql(s"ALTER TABLE $table ADD COLUMNS (name string)").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, table)
         .getLeafFiles(new Path(s"$location/city=ct")).isEmpty)
@@ -182,8 +215,8 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
     val dbName = "default"
     val oldTbName = "tbl_partition"
     val newTbName = "tbl_partition_new"
-    val oldTable = s"${catalogName}.${dbName}.${oldTbName}"
-    val newTable = s"${catalogName}.${dbName}.${newTbName}"
+    val oldTable = s"$catalogName.$dbName.$oldTbName"
+    val newTable = s"$catalogName.$dbName.$newTbName"
 
     withTable(newTable) {
       spark.sql(s"create table ${oldTable} (age int)partitioned by(city string) stored as orc")
@@ -197,7 +230,7 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
         .asInstanceOf[HiveTable]
         .catalogTable.location.toString
       assert(HiveFileStatusCache.getOrCreate(spark, oldTable)
-        .getLeafFiles(new Path(s"$oldLocation/city=ct")).get.length === 1)
+        .getLeafFiles(new Path(s"$oldLocation/city=ct")).isDefined)
 
       spark.sql(s"DROP TABLE IF EXISTS ${newTable}").collect()
       spark.sql(s"use ${catalogName}.${dbName}").collect()
@@ -228,7 +261,7 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
     withTable(cat1Table, cat2Table) {
       spark.sql(s"CREATE TABLE IF NOT EXISTS $cat1Table (age int)partitioned by(city string)" +
-          s" stored as orc").collect()
+        s" stored as orc").collect()
       val location = newCatalog()
         .loadTable(Identifier.of(Array(dbName), tbName))
         .asInstanceOf[HiveTable]
@@ -236,21 +269,21 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
       spark.sql(s"use $catalog1").collect()
       spark.sql(s"insert into $dbTableShortName partition(city='ct1') " +
-          s"values(11),(12),(13),(14),(15)").collect()
+        s"values(11),(12),(13),(14),(15)").collect()
       spark.sql(s"select * from $cat1Table where city='ct1'").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, cat1Table)
         .getLeafFiles(new Path(s"$location/city=ct1"))
-        .get.length === 1)
+        .isDefined)
 
       spark.sql(s"use $catalog2").collect()
       spark.sql(s"insert into $dbTableShortName partition(city='ct2') " +
-          s"values(21),(22),(23),(24),(25)").collect()
+        s"values(21),(22),(23),(24),(25)").collect()
       spark.sql(s"select * from $cat2Table where city='ct2'").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, cat2Table)
         .getLeafFiles(new Path(s"$location/city=ct1")).isEmpty)
       assert(HiveFileStatusCache.getOrCreate(spark, cat2Table)
         .getLeafFiles(new Path(s"$location/city=ct2"))
-        .get.length === 1)
+        .isDefined)
     }
   }
 }

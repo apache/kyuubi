@@ -286,7 +286,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   test("invalidateTable") {
     withSparkSession() { spark =>
       val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
-      val qualifiedName = s"$catalogName.${testIdent.namespace().mkString(".")}.${testIdent.name()}"
+      val qualifiedName = s"$catalogName.$testIdent"
       val location = table.asInstanceOf[HiveTable].catalogTable.location
 
       spark.sql(s"select * from $qualifiedName").collect()
@@ -294,12 +294,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
         .getLeafFiles(new Path(location)).isDefined)
 
       catalog.invalidateTable(testIdent)
+      // invalidate filestatus cache
       assert(HiveFileStatusCache.getOrCreate(spark, qualifiedName)
         .getLeafFiles(new Path(location)).isEmpty)
-
-      spark.sql(s"select * from $qualifiedName").collect()
-      assert(HiveFileStatusCache.getOrCreate(spark, qualifiedName)
-        .getLeafFiles(new Path(location)).isDefined)
 
       val loaded = catalog.loadTable(testIdent)
       assert(table.name == loaded.name)

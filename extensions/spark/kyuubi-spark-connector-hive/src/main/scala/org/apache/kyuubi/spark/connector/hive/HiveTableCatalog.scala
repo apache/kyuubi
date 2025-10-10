@@ -20,9 +20,11 @@ package org.apache.kyuubi.spark.connector.hive
 import java.lang.{Boolean => JBoolean, Long => JLong}
 import java.net.URI
 import java.util
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Try
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkConf
 import org.apache.spark.internal.Logging
@@ -33,7 +35,7 @@ import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
-import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.command.DDLUtils
@@ -43,8 +45,9 @@ import org.apache.spark.sql.internal.{HiveSerDe, SQLConf}
 import org.apache.spark.sql.internal.StaticSQLConf.{CATALOG_IMPLEMENTATION, GLOBAL_TEMP_DATABASE}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
+
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
-import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper, getStorageFormatAndProvider, toCatalogDatabase}
+import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
@@ -423,7 +426,8 @@ class HiveTableCatalog(sparkSession: SparkSession)
     }
 
   override def invalidateTable(ident: Identifier): Unit = {
-    val qualifiedName = s"$catalogName.${ident.namespace().mkString(".")}.${ident.name()}"
+    super.invalidateTable(ident)
+    val qualifiedName = s"$catalogName.$ident"
     HiveFileStatusCache.getOrCreate(sparkSession, qualifiedName).invalidateAll()
   }
 
