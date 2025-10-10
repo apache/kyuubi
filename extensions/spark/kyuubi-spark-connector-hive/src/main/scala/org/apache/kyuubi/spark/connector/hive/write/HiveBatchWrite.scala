@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.hive.write
 
 import scala.util.control.NonFatal
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hive.conf.HiveConf
@@ -26,13 +27,14 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage}
 import org.apache.spark.sql.execution.datasources.{WriteJobDescription, WriteTaskResult}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.toSQLValue
 import org.apache.spark.sql.types.StringType
+
 import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException}
-import org.apache.spark.sql.connector.catalog.Identifier
 
 class HiveBatchWrite(
     sparkSession: SparkSession,
@@ -69,8 +71,7 @@ class HiveBatchWrite(
     // un-cache this table.
     hiveTableCatalog.catalog.invalidateCachedTable(table.identifier)
     hiveTableCatalog.invalidateTable(
-      Identifier.of(Array(table.identifier.database.getOrElse("")), table.identifier.table)
-    )
+      Identifier.of(Array(table.identifier.database.getOrElse("")), table.identifier.table))
 
     val catalog = hiveTableCatalog.catalog
     if (sparkSession.sessionState.conf.autoSizeUpdateEnabled) {
