@@ -212,8 +212,24 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       f(metadataManager)
     } finally {
       metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).foreach { batch =>
-        metadataManager.cleanupMetadataById(batch.getId)
+        // close the batch if not ended
+        if (batch.getEndTime == 0) {
+          metadataManager.updateMetadata(
+            Metadata(
+              identifier = batch.getId,
+              state = OperationState.CLOSED.toString,
+              endTime = System.currentTimeMillis()),
+            false)
+        }
       }
+
+      metadataManager.cleanupMetadata(Int.MinValue, 1, 0)
+
+      // ensure all metadata are cleaned up
+      eventually(timeout(3.seconds), interval(200.milliseconds)) {
+        assert(metadataManager.getBatches(MetadataFilter(), 0, Int.MaxValue).isEmpty)
+      }
+
       // ensure no metadata request leak
       eventually(timeout(5.seconds), interval(200.milliseconds)) {
         assert(MetricsSystem.counterValue(METADATA_REQUEST_OPENED).getOrElse(0L) === 0)

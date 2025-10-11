@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.server.metadata.jdbc
 
+import org.apache.kyuubi.Logging
+
 trait JdbcDatabaseDialect {
   def limitClause(limit: Int, offset: Int): String
+  def deleteFromLimitClause(limit: Int): String
   def insertOrReplace(
       table: String,
       cols: Seq[String],
@@ -26,9 +29,14 @@ trait JdbcDatabaseDialect {
       keyVal: String): String
 }
 
-class GenericDatabaseDialect extends JdbcDatabaseDialect {
+class GenericDatabaseDialect extends JdbcDatabaseDialect with Logging {
   override def limitClause(limit: Int, offset: Int): String = {
     s"LIMIT $limit OFFSET $offset"
+  }
+
+  override def deleteFromLimitClause(limit: Int): String = {
+    warn("Generic dialect does not support LIMIT in DELETE statements")
+    ""
   }
 
   override def insertOrReplace(
@@ -70,6 +78,10 @@ class MySQLDatabaseDialect extends GenericDatabaseDialect {
        |ON DUPLICATE KEY UPDATE
        |${cols.filterNot(_ == keyCol).map(c => s"$c = new.$c").mkString(",")}
        |""".stripMargin
+  }
+
+  override def deleteFromLimitClause(limit: Int): String = {
+    s"LIMIT $limit"
   }
 }
 class PostgreSQLDatabaseDialect extends GenericDatabaseDialect {

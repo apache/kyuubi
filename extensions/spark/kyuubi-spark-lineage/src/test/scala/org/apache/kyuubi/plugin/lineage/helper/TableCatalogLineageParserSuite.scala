@@ -21,10 +21,6 @@ import org.apache.kyuubi.plugin.lineage.Lineage
 
 class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
-  override def catalogName: String = {
-    "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
-  }
-
   test("columns lineage extract - MergeIntoTable") {
     val ddls =
       """
@@ -42,7 +38,7 @@ class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
         "WHEN NOT MATCHED THEN " +
         "  INSERT (id, name, price) VALUES (cast(source.id as int), source.name, source.price)")
       assert(ret0 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),
@@ -57,7 +53,7 @@ class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
         "WHEN NOT MATCHED THEN " +
         "  INSERT *")
       assert(ret1 == Lineage(
-        List("v2_catalog.db.source_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),
@@ -74,7 +70,7 @@ class TableCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
         "  INSERT *")
 
       assert(ret2 == Lineage(
-        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t"),
+        List("v2_catalog.db.source_t", "v2_catalog.db.pivot_t", "v2_catalog.db.target_t"),
         List("v2_catalog.db.target_t"),
         List(
           ("v2_catalog.db.target_t.id", Set("v2_catalog.db.source_t.id")),

@@ -25,7 +25,6 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.spark.connector.common.LocalSparkSession.withSparkSession
-import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 
 class TPCDSCatalogSuite extends KyuubiFunSuite {
 
@@ -91,10 +90,7 @@ class TPCDSCatalogSuite extends KyuubiFunSuite {
       def assertStats(tableName: String, sizeInBytes: BigInt, rowCount: BigInt): Unit = {
         val stats = spark.table(tableName).queryExecution.analyzed.stats
         assert(stats.sizeInBytes == sizeInBytes)
-        // stats.rowCount only has value after SPARK-33954
-        if (SPARK_RUNTIME_VERSION >= "3.2") {
-          assert(stats.rowCount.contains(rowCount), tableName)
-        }
+        assert(stats.rowCount.contains(rowCount), tableName)
       }
 
       assertStats("tpcds.sf1.call_center", 1830, 6)

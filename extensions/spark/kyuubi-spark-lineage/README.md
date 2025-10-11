@@ -26,14 +26,14 @@
 ## Build
 
 ```shell
-build/mvn clean package -DskipTests -pl :kyuubi-spark-lineage_2.12 -am -Dspark.version=3.5.1
+build/mvn clean package -DskipTests -pl :kyuubi-spark-lineage_2.12 -am -Dspark.version=3.5.6
 ```
 
 ### Supported Apache Spark Versions
 
 `-Dspark.version=`
 
-- [x] master
+- [x] 4.0.x
 - [x] 3.5.x (default)
 - [x] 3.4.x
 - [x] 3.3.x

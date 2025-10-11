@@ -33,12 +33,9 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.dispatcher.atlas.AtlasEntityHelper.{buildColumnQualifiedName, buildTableQualifiedName, COLUMN_LINEAGE_TYPE, PROCESS_TYPE}
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 class AtlasLineageDispatcherSuite extends KyuubiFunSuite with SparkListenerExtensionTest {
-  val catalogName =
-    if (SPARK_RUNTIME_VERSION <= "3.1") "org.apache.spark.sql.connector.InMemoryTableCatalog"
-    else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
+  val catalogName = "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
 
   override protected val catalogImpl: String = "hive"
 

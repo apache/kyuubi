@@ -244,41 +244,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(accessType === AccessType.ALTER)
   }
 
-  test("AlterTableRecoverPartitionsCommand") {
-    // AlterTableRecoverPartitionsCommand exists in the version below 3.2
-    assume(!isSparkV32OrGreater)
-    val tableName = reusedDb + "." + "TableToMsck"
-    withTable(tableName) { _ =>
-      sql(
-        s"""
-           |CREATE TABLE $tableName
-           |(key int, value string, pid string)
-           |USING parquet
-           |PARTITIONED BY (pid)""".stripMargin)
-      val sqlStr =
-        s"""
-           |MSCK REPAIR TABLE $tableName
-           |""".stripMargin
-      val plan = sql(sqlStr).queryExecution.analyzed
-      val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
-      assert(operationType === MSCK)
-      assert(inputs.isEmpty)
-
-      assert(outputs.size === 1)
-      outputs.foreach { po =>
-        assert(po.actionType === PrivilegeObjectActionType.OTHER)
-        assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
-        assert(po.catalog.isEmpty)
-        assertEqualsIgnoreCase(reusedDb)(po.dbname)
-        assertEqualsIgnoreCase(tableName.split("\\.").last)(po.objectName)
-        assert(po.columns.isEmpty)
-        checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.ALTER)
-      }
-    }
-  }
-
   // ALTER TABLE default.StudentInfo PARTITION (age='10') RENAME TO PARTITION (age='15');
   test("AlterTableRenamePartitionCommand") {
     sql(s"ALTER TABLE $reusedPartTable ADD IF NOT EXISTS PARTITION (pid=1)")
@@ -367,11 +332,8 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po0.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
     assertEqualsIgnoreCase(reusedDb)(po0.dbname)
     assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
-    if (isSparkV32OrGreater) {
-      // Query in AlterViewAsCommand can not be resolved before SPARK-34698
-      assert(po0.columns === Seq("key", "pid", "value"))
-      checkTableOwner(po0)
-    }
+    assert(po0.columns === Seq("key", "pid", "value"))
+    checkTableOwner(po0)
     val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
     assert(accessType0 === AccessType.SELECT)
 
@@ -482,7 +444,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("AnalyzeTablesCommand") {
-    assume(isSparkV32OrGreater)
     val plan = sql(s"ANALYZE TABLES IN $reusedDb COMPUTE STATISTICS")
       .queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -626,7 +587,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) defaultDb else null
+    val db = defaultDb
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("CreateFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
@@ -658,7 +619,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) defaultDb else null
+    val db = defaultDb
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("DropFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
@@ -678,7 +639,7 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
     assert(po.actionType === PrivilegeObjectActionType.OTHER)
     assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
     assert(po.catalog.isEmpty)
-    val db = if (isSparkV33OrGreater) defaultDb else null
+    val db = defaultDb
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("RefreshFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
@@ -927,8 +888,6 @@ abstract class PrivilegesBuilderSuite extends AnyFunSuite
   }
 
   test("RepairTableCommand") {
-    // only spark 3.2 or greater has RepairTableCommand
-    assume(isSparkV32OrGreater)
     val tableName = reusedDb + "." + "TableToRepair"
     withTable(tableName) { _ =>
       sql(
