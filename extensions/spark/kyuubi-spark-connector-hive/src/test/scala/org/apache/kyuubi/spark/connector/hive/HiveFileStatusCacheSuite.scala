@@ -255,35 +255,35 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
     val catalog2 = "hive2"
     val dbName = "default"
     val tbName = "tbl_partition"
-    val dbTableShortName = s"${dbName}.${tbName}"
-    val cat1Table = s"${catalog1}.${dbTableShortName}"
-    val cat2Table = s"${catalog2}.${dbTableShortName}"
+    val cat1Table = s"${catalog1}.${dbName}.${tbName}"
+    val cat2Table = s"${catalog2}.${dbName}.${tbName}"
 
     withTable(cat1Table, cat2Table) {
       spark.sql(s"CREATE TABLE IF NOT EXISTS $cat1Table (age int)partitioned by(city string)" +
         s" stored as orc").collect()
+      spark.sql(s"CREATE TABLE IF NOT EXISTS $cat2Table (age int)partitioned by(city string)" +
+        s" stored as orc").collect()
+
       val location = newCatalog()
         .loadTable(Identifier.of(Array(dbName), tbName))
         .asInstanceOf[HiveTable]
         .catalogTable.location.toString
 
-      spark.sql(s"use $catalog1").collect()
-      spark.sql(s"insert into $dbTableShortName partition(city='ct1') " +
+      spark.sql(s"insert into $cat1Table partition(city='ct1') " +
         s"values(11),(12),(13),(14),(15)").collect()
       spark.sql(s"select * from $cat1Table where city='ct1'").collect()
       assert(HiveFileStatusCache.getOrCreate(spark, cat1Table)
-        .getLeafFiles(new Path(s"$location/city=ct1"))
-        .isDefined)
-
-      spark.sql(s"use $catalog2").collect()
-      spark.sql(s"insert into $dbTableShortName partition(city='ct2') " +
-        s"values(21),(22),(23),(24),(25)").collect()
-      spark.sql(s"select * from $cat2Table where city='ct2'").collect()
+        .getLeafFiles(new Path(s"$location/city=ct1")).isDefined)
       assert(HiveFileStatusCache.getOrCreate(spark, cat2Table)
         .getLeafFiles(new Path(s"$location/city=ct1")).isEmpty)
+
+      spark.sql(s"insert into $cat2Table partition(city='ct2') " +
+        s"values(21),(22),(23),(24),(25)").collect()
+      spark.sql(s"select * from $cat2Table where city='ct2'").collect()
+      assert(HiveFileStatusCache.getOrCreate(spark, cat1Table)
+        .getLeafFiles(new Path(s"$location/city=ct2")).isEmpty)
       assert(HiveFileStatusCache.getOrCreate(spark, cat2Table)
-        .getLeafFiles(new Path(s"$location/city=ct2"))
-        .isDefined)
+        .getLeafFiles(new Path(s"$location/city=ct2")).isDefined)
     }
   }
 }
