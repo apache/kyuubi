@@ -378,13 +378,27 @@ class HiveTableCatalog(sparkSession: SparkSession)
         }
 
       try {
-        catalog.alterTable(
-          catalogTable.copy(
-            properties = properties,
-            schema = schema,
-            owner = owner,
-            comment = comment,
-            storage = storage))
+        catalog.alterTable(newCatalogTable(
+          identifier = catalogTable.identifier,
+          tableType = catalogTable.tableType,
+          storage = storage,
+          schema = schema,
+          provider = catalogTable.provider,
+          partitionColumnNames = catalogTable.partitionColumnNames,
+          bucketSpec = catalogTable.bucketSpec,
+          owner = owner,
+          createTime = catalogTable.createTime,
+          lastAccessTime = catalogTable.lastAccessTime,
+          createVersion = catalogTable.createVersion,
+          properties = properties,
+          stats = catalogTable.stats,
+          viewText = catalogTable.viewText,
+          comment = comment,
+          unsupportedFeatures = catalogTable.unsupportedFeatures,
+          tracksPartitionsInCatalog = catalogTable.tracksPartitionsInCatalog,
+          schemaPreservesCase = catalogTable.schemaPreservesCase,
+          ignoredProperties = catalogTable.ignoredProperties,
+          viewOriginalText = catalogTable.viewOriginalText))
       } catch {
         case _: NoSuchTableException =>
           throw new NoSuchTableException(ident)
