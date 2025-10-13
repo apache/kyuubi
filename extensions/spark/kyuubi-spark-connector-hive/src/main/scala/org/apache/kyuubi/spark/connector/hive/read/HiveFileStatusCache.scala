@@ -37,12 +37,12 @@ import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.HIVE_FILE_
  * Because the original FileStatusCache cannot take effect (see https://github.com/apache/kyuubi
  * /issues/7192).
  *
- * The main modification point is that at the session level, the cache key is the qualified name
+ * The main modification point is that at the globally level, the cache key is the qualified name
  * of the table (in the form of `catalog.database.table`) + path. The previous key was an
  * object + path generated during initialization, and the current scenario is that FileStatusCache
  * is not preserved by the outside, resulting in different keys and ineffective caching.
  *
- * Use [[HiveFileStatusCache.getOrCreate()]] to construct a session/none shared file status cache.
+ * Use [[HiveFileStatusCache.getOrCreate()]] to construct a globe/none shared file status cache.
  */
 object HiveFileStatusCache {
   private var sharedCache: HiveSharedInMemoryCache = _
@@ -61,7 +61,7 @@ object HiveFileStatusCache {
             session.sessionState.conf.metadataCacheTTL)
         }
         conf.getConf(HIVE_FILE_STATUS_CACHE_SCOPE) match {
-          case "SESSION" => sharedCache.createForNewClient(qualifiedName)
+          case "GLOBE" => sharedCache.createForNewClient(qualifiedName)
           case "NONE" => NoopCache
         }
       } else {

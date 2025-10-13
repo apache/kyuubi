@@ -33,7 +33,7 @@ import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
 class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
   test("use different cache scope") {
-    Seq("SESSION", "NONE").foreach { value =>
+    Seq("GLOBE", "NONE").foreach { value =>
       withSparkSession(Map(HIVE_FILE_STATUS_CACHE_SCOPE.key -> value)) { _ =>
         val path = new Path("/dummy_tmp", "abc")
         val files = (1 to 3).map(_ => new FileStatus())
@@ -44,13 +44,13 @@ class HiveFileStatusCacheSuite extends KyuubiHiveTest {
 
         value match {
           // Exactly 3 files are cached.
-          case "SESSION" =>
+          case "GLOBE" =>
             assert(fileStatusCacheTabel.getLeafFiles(path).get.length === 3)
           case "NONE" =>
             assert(fileStatusCacheTabel.getLeafFiles(path).isEmpty)
           case _ =>
             throw new IllegalArgumentException(
-              s"Unexpected value: '$value'. Only 'SESSION' or 'NONE' are allowed.")
+              s"Unexpected value: '$value'. Only 'GLOBE' or 'NONE' are allowed.")
         }
 
         fileStatusCacheTabel.invalidateAll()
