@@ -23,7 +23,7 @@ import org.testcontainers.utility.DockerImageName
 trait MysqlContainerEnv {
 
   val containerDef: MySQLContainer = MySQLContainer.Def(
-    dockerImageName = DockerImageName.parse("mysql:5.7"),
+    dockerImageName = DockerImageName.parse("mysql:8"),
     databaseName = "hive_metastore",
     username = "root",
     password = "123456")
