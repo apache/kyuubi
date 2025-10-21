@@ -254,4 +254,53 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
   }
+  test("If spark batch reach timeout, it should have associated Kyuubi Application Operation be in TIMEOUT state with Spark Driver Engine be in NOT_FOUND state!") {
+    import scala.collection.JavaConverters._
+    // Configure a very small submit timeout to trigger the timeout => 1000ms!
+    val originalTimeout = conf.get(ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
+    conf.set(ENGINE_KUBERNETES_SUBMIT_TIMEOUT, 1000L)
+
+    try {
+      // Prepare a metadata row only (INITIALIZED), without actually launching a Spark driver
+      val batchId = UUID.randomUUID().toString
+      val batchRequest = newSparkBatchRequest(conf.getAll ++ Map(
+        KYUUBI_BATCH_ID_KEY -> batchId))
+
+      val user = "test-user"
+      val ipAddress = "test-ip"
+
+      // Insert the metadata so that subsequent update can find this record
+      sessionManager.initializeBatchState(
+        user,
+        ipAddress,
+        batchRequest.getConf.asScala.toMap,
+        batchRequest)
+
+      // Create a fresh KubernetesApplicationOperation that can trigger update to metadata upon timeout!
+      val operation = new KubernetesApplicationOperation
+      operation.initialize(conf, sessionManager.metadataManager)
+
+      // Use a submitTime far enough in the past to exceed the timeout
+      val submitTime = Some(System.currentTimeMillis() - 10000L)
+
+      // No driver pod exists for this random batch id, so this should hit the timeout path
+      operation.getApplicationInfoByTag(
+        appMgrInfo,
+        batchId,
+        Some(user),
+        submitTime)
+
+      eventually(timeout(30.seconds), interval(200.milliseconds)) {
+        val mdOpt = sessionManager.getBatchMetadata(batchId)
+        assert(mdOpt.isDefined)
+        val md = mdOpt.get
+        // Verify metadata reflects TIMEOUT and NOT_FOUND as set by the timeout handling
+        assert(md.state == org.apache.kyuubi.operation.OperationState.TIMEOUT.toString)
+        assert(md.engineState == NOT_FOUND.toString)
+      }
+    } finally {
+      // restore back original engine submit time out for kyuubi batch job submission!
+      conf.set(ENGINE_KUBERNETES_SUBMIT_TIMEOUT, originalTimeout)
+    }
+  }
 }
