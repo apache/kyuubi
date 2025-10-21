@@ -254,7 +254,9 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
       sessionHandle.identifier.toString)
     assert(!failKillResponse._1)
   }
-  test("If spark batch reach timeout, it should have associated Kyuubi Application Operation be in TIMEOUT state with Spark Driver Engine be in NOT_FOUND state!") {
+  test(
+    "If spark batch reach timeout, it should have associated Kyuubi Application Operation be " +
+      "in TIMEOUT state with Spark Driver Engine be in NOT_FOUND state!") {
     import scala.collection.JavaConverters._
     // Configure a very small submit timeout to trigger the timeout => 1000ms!
     val originalTimeout = conf.get(ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
@@ -276,7 +278,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         batchRequest.getConf.asScala.toMap,
         batchRequest)
 
-      // Create a fresh KubernetesApplicationOperation that can trigger update to metadata upon timeout!
+      // Create a fresh KubernetesApplicationOperation that can trigger update
+      // to metadata upon timeout!
       val operation = new KubernetesApplicationOperation
       operation.initialize(conf, sessionManager.metadataManager)
 
