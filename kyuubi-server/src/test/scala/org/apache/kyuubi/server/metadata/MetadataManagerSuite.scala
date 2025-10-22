@@ -141,6 +141,8 @@ class MetadataManagerSuite extends KyuubiFunSuite {
       assert(
         MetricsSystem.meterValue(MetricsConstants.METADATA_REQUEST_RETRYING)
           .getOrElse(0L) - retryingRequests === 1)
+
+      assert(MetricsSystem.gaugeValue(MetricsConstants.METADATA_COUNT).getOrElse(0) > 0)
     }
   }
 

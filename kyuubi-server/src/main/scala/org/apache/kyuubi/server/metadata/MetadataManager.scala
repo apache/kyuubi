@@ -82,6 +82,12 @@ class MetadataManager extends AbstractService("MetadataManager") {
     if (cleanerEnabled) {
       startMetadataCleaner()
     }
+    MetricsSystem.tracing { ms =>
+      ms.registerGauge(
+        MetricsConstants.METADATA_COUNT,
+        _metadataStore.countMetadata(MetadataFilter()),
+        0)
+    }
   }
 
   override def stop(): Unit = {
