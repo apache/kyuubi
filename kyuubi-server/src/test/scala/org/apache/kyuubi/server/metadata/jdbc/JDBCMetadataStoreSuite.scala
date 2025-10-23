@@ -224,6 +224,7 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     jdbcMetadataStore.updateMetadata(newBatchState)
 
     assert(jdbcMetadataStore.getMetadata(batchId) == newBatchState)
+    assert(jdbcMetadataStore.countMetadata(MetadataFilter()) > 0)
 
     assert(jdbcMetadataStore.getMetadataList(
       MetadataFilter(
