@@ -31,6 +31,7 @@ public class KyuubiServerEvent {
   private String serverIp;
   private Map<String, String> serverConf;
   private Map<String, String> serverEnv;
+  private Map<String, String> buildInfo;
 
   public KyuubiServerEvent() {}
 
@@ -41,7 +42,8 @@ public class KyuubiServerEvent {
       String state,
       String serverIp,
       Map<String, String> serverConf,
-      Map<String, String> serverEnv) {
+      Map<String, String> serverEnv,
+      Map<String, String> buildInfo) {
     this.serverName = serverName;
     this.startTime = startTime;
     this.eventTime = eventTime;
@@ -49,6 +51,7 @@ public class KyuubiServerEvent {
     this.serverIp = serverIp;
     this.serverConf = serverConf;
     this.serverEnv = serverEnv;
+    this.buildInfo = buildInfo;
   }
 
   public String getServerName() {
@@ -113,6 +116,17 @@ public class KyuubiServerEvent {
     this.serverEnv = serverEnv;
   }
 
+  public Map<String, String> getBuildInfo() {
+    if (null == buildInfo) {
+      return Collections.emptyMap();
+    }
+    return buildInfo;
+  }
+
+  public void setBuildInfo(Map<String, String> buildInfo) {
+    this.buildInfo = buildInfo;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -124,7 +138,8 @@ public class KyuubiServerEvent {
         && Objects.equals(getState(), that.getState())
         && Objects.equals(getServerIp(), that.getServerIp())
         && Objects.equals(getServerConf(), that.getServerConf())
-        && Objects.equals(getServerEnv(), that.getServerEnv());
+        && Objects.equals(getServerEnv(), that.getServerEnv())
+        && Objects.equals(getBuildInfo(), that.getBuildInfo());
   }
 
   @Override
@@ -136,7 +151,8 @@ public class KyuubiServerEvent {
         getState(),
         getServerIp(),
         getServerConf(),
-        getServerEnv());
+        getServerEnv(),
+        getBuildInfo());
   }
 
   @Override

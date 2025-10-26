@@ -146,7 +146,11 @@ object ApiUtils extends Logging {
       serverEvent.state,
       serverEvent.serverIP,
       serverEvent.serverConf.asJava,
-      serverEvent.serverEnv.asJava)
+      serverEvent.serverEnv.asJava,
+      (Map(
+        "BUILD_USER" -> serverEvent.BUILD_USER,
+        "BUILD_DATE" -> serverEvent.BUILD_DATE,
+        "REPO_URL" -> serverEvent.REPO_URL) ++ serverEvent.VERSION_INFO).asJava)
   }
 
   def logAndRefineErrorMsg(errorMsg: String, throwable: Throwable): String = {
