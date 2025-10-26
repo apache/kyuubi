@@ -20,6 +20,7 @@ package org.apache.kyuubi.client;
 import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.client.api.v1.dto.Engine;
+import org.apache.kyuubi.client.api.v1.dto.KyuubiServerEvent;
 import org.apache.kyuubi.client.api.v1.dto.OperationData;
 import org.apache.kyuubi.client.api.v1.dto.ServerData;
 import org.apache.kyuubi.client.api.v1.dto.SessionData;
@@ -163,6 +164,12 @@ public class AdminRestApi {
         this.getClient()
             .get(API_BASE_PATH + "/server", null, ServerData[].class, client.getAuthHeader());
     return Arrays.asList(result);
+  }
+
+  public KyuubiServerEvent getServerEvent() {
+    return this.getClient()
+        .get(
+            API_BASE_PATH + "/server/event", null, KyuubiServerEvent.class, client.getAuthHeader());
   }
 
   private IRestClient getClient() {

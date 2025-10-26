@@ -173,4 +173,14 @@ class AdminRestApiSuite extends RestClientTestHelper {
       assert(servers.map(s => s.getInstance()).contains(server.frontendServices.last.connectionUrl))
     }
   }
+
+  test("get server event") {
+    val spnegoKyuubiRestClient: KyuubiRestClient =
+      KyuubiRestClient.builder(baseUri.toString)
+        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+        .spnegoHost("localhost")
+        .build()
+    val adminRestApi = new AdminRestApi(spnegoKyuubiRestClient)
+    assert(adminRestApi.getServerEvent.getStartTime > 0)
+  }
 }
