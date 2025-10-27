@@ -291,7 +291,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
     val responseMsgBuilder = new StringBuilder()
 
     withDiscoveryClient(fe.getConf) { discoveryClient =>
-      val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace, silent = true)
+      val engineNodes = discoveryClient.getServiceNodesInfo(engineSpace)
       engineNodes.foreach { engineNode =>
         val nodePath = s"$engineSpace/${engineNode.nodeName}"
         val engineRefId = engineNode.engineRefId.orNull
