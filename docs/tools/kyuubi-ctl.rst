@@ -16,8 +16,6 @@
 Administrator CLI
 =================
 
-.. _usage:
-
 Usage
 -----
 .. code-block:: bash
@@ -88,14 +86,10 @@ Output
 
       -h, --help               Show help message and exit.
 
-.. _manage_kyuubi_servers:
-
 Manage kyuubi servers
 ---------------------
 
 You can specify the zookeeper address(``--zk-quorum``) and namespace(``--namespace``), version(``--version``) parameters to query a specific kyuubi server cluster.
-
-.. _list_servers:
 
 List server
 ***********
@@ -105,8 +99,6 @@ List all the service nodes for a particular domain.
 .. code-block:: bash
 
    bin/kyuubi-ctl list server
-
-.. _create_servers:
 
 Create server
 ***********
@@ -118,18 +110,14 @@ First read ``kyuubi.ha.namespace`` in ``conf/kyuubi-defaults.conf``, if there ar
 
    bin/kyuubi-ctl create server --namespace XXX
 
-.. _get_servers:
-
 Get server
-***********
+**********
 
 Get Kyuubi server info of domain.
 
 .. code-block:: bash
 
    bin/kyuubi-ctl get server --host XXX --port YYY
-
-.. _delete_servers:
 
 Delete server
 ***********
@@ -141,8 +129,6 @@ After the server node is deleted, the kyuubi server stops opening new sessions a
 .. code-block:: bash
 
    bin/kyuubi-ctl delete server --host XXX --port YYY
-
-.. _manage_kyuubi_engines:
 
 Manage kyuubi engines
 ---------------------
@@ -171,8 +157,6 @@ The ``--user`` parameter is the group name corresponding to the user.
 
 The ``--user`` parameter is the user who started the kyuubi server.
 
-.. _list_engines:
-
 List engine
 ***********
 
@@ -188,18 +172,14 @@ The management share level is SERVER, the user who starts the kyuubi server is A
 
    bin/kyuubi-ctl list engine --user A --engine-type TRINO --engine-subdomain adhoc --engine-share-level SERVER
 
-.. _get_engines:
-
 Get engine
-***********
+**********
 
 Get Kyuubi engine info belong to a user.
 
 .. code-block:: bash
 
    bin/kyuubi-ctl get engine --user AAA --host XXX --port YYY
-
-.. _delete_engines:
 
 Delete engine
 *************
