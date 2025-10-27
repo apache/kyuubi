@@ -28,7 +28,7 @@ public class KyuubiServerEvent {
   private Long startTime;
   private Long eventTime;
   private String state;
-  private String serverIp;
+  private String serverIP;
   private Map<String, String> serverConf;
   private Map<String, String> serverEnv;
   private Map<String, String> buildInfo;
@@ -40,7 +40,7 @@ public class KyuubiServerEvent {
       Long startTime,
       Long eventTime,
       String state,
-      String serverIp,
+      String serverIP,
       Map<String, String> serverConf,
       Map<String, String> serverEnv,
       Map<String, String> buildInfo) {
@@ -48,7 +48,7 @@ public class KyuubiServerEvent {
     this.startTime = startTime;
     this.eventTime = eventTime;
     this.state = state;
-    this.serverIp = serverIp;
+    this.serverIP = serverIP;
     this.serverConf = serverConf;
     this.serverEnv = serverEnv;
     this.buildInfo = buildInfo;
@@ -86,12 +86,12 @@ public class KyuubiServerEvent {
     this.state = state;
   }
 
-  public String getServerIp() {
-    return serverIp;
+  public String getServerIP() {
+    return serverIP;
   }
 
-  public void setServerIp(String serverIp) {
-    this.serverIp = serverIp;
+  public void setServerIP(String serverIP) {
+    this.serverIP = serverIP;
   }
 
   public Map<String, String> getServerConf() {
@@ -136,7 +136,7 @@ public class KyuubiServerEvent {
         && Objects.equals(getStartTime(), that.getStartTime())
         && Objects.equals(getEventTime(), that.getEventTime())
         && Objects.equals(getState(), that.getState())
-        && Objects.equals(getServerIp(), that.getServerIp())
+        && Objects.equals(getServerIP(), that.getServerIP())
         && Objects.equals(getServerConf(), that.getServerConf())
         && Objects.equals(getServerEnv(), that.getServerEnv())
         && Objects.equals(getBuildInfo(), that.getBuildInfo());
@@ -149,7 +149,7 @@ public class KyuubiServerEvent {
         getStartTime(),
         getEventTime(),
         getState(),
-        getServerIp(),
+        getServerIP(),
         getServerConf(),
         getServerEnv(),
         getBuildInfo());
