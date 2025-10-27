@@ -325,8 +325,12 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             val errorMsg =
               s"Driver pod not found for job with kyuubi-unique-tag: $tag after $elapsedTime ms " +
                 s"(submit-timeout: $submitTimeout ms)"
-            /* Update the metadata store to mark this operation as timed out and the Spark driver engine as not found.
-             * This prevents the restarted Kyuubi server from repeatedly polling for this batch job's status.
+            /* Update the metadata store to mark this
+            operation as timed out and the Spark driver
+            engine as not found.
+            This prevents the restarted Kyuubi server
+            from repeatedly polling for this
+            batch job's status.
              */
             try {
               metadataManager.foreach(_.updateMetadata(
