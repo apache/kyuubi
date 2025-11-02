@@ -88,7 +88,7 @@ abstract class SparkOperation(session: Session)
   }
 
   private val progressEnable: Boolean = getSessionConf(SESSION_PROGRESS_ENABLE, spark)
-
+  var asyncFetchHdfsResultMode: Boolean = false
   protected def supportProgress: Boolean = false
 
   protected def outputMode: EngineSparkOutputMode.EngineSparkOutputMode =
@@ -261,12 +261,18 @@ abstract class SparkOperation(session: Session)
     try {
       withLocalProperties {
         validateDefaultFetchOrientation(order)
+        if (asyncFetchHdfsResultMode && order != FETCH_NEXT) {
+          throw KyuubiSQLException(s"The fetch type ${order} is not support for this ResultSet.")
+        }
         assertState(OperationState.FINISHED)
         setHasResultSet(true)
         order match {
           case FETCH_NEXT => iter.fetchNext()
           case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
           case FETCH_FIRST => iter.fetchAbsolute(0);
+        }
+        if (iter.getPosition <= 0) {
+          info(s"fetching rowSet firstly, order: ${order.toString},rowSetSize: ${rowSetSize}")
         }
         resultRowSet =
           if (isArrowBasedOperation) {
@@ -280,11 +286,16 @@ abstract class SparkOperation(session: Session)
               ThriftUtils.newEmptyRowSet
             }
           } else {
-            val taken = iter.take(rowSetSize)
-            new SparkTRowSetGenerator().toTRowSet(
-              taken.toSeq.asInstanceOf[Seq[Row]],
-              resultSchema,
-              getProtocolVersion)
+            if (asyncFetchHdfsResultMode) {
+              val rowSet = iter.asInstanceOf[IterableAsyncFetchIterator[Row]].takeRowSet(rowSetSize)
+              rowSet
+            } else {
+              val taken = iter.take(rowSetSize)
+              new SparkTRowSetGenerator().toTRowSet(
+                taken.toSeq.asInstanceOf[Seq[Row]],
+                resultSchema,
+                getProtocolVersion)
+            }
           }
         resultRowSet.setStartRowOffset(iter.getPosition)
       }

@@ -27,7 +27,7 @@ import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_PREFETCH, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
@@ -195,7 +195,12 @@ class ExecuteStatement(
         }
         info(s"Save result to ${saveFilePath.get}")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
-        return fetchOrcStatement.get.getIterator(saveFilePath.get.toString, resultSchema)
+        asyncFetchHdfsResultMode = getSessionConf(OPERATION_RESULT_PREFETCH, spark)
+        return fetchOrcStatement.get.getIterator(
+          saveFilePath.get.toString,
+          resultSchema,
+          getProtocolVersion,
+          asyncFetchHdfsResultMode)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")
