@@ -51,7 +51,7 @@ class SparkProcessBuilder(
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder with Logging {
+  extends ProcBuilder {
 
   @VisibleForTesting
   def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
@@ -61,12 +61,23 @@ class SparkProcessBuilder(
   import SparkProcessBuilder._
 
   private[kyuubi] val sparkHome = getEngineHome(shortName)
+  private[kyuubi] val externalTokensEnabled = conf.get(ENGINE_EXTERNAL_TOKEN_ENABLED)
 
   override protected val executable: String = {
     Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toFile.getCanonicalPath
   }
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+
+  override def env: Map[String, String] = {
+    val extraEnvs: Map[String, String] =
+      if ((conf.getOption(PRINCIPAL).isEmpty || conf.getOption(KEYTAB).isEmpty)
+        && doAsEnabled && externalTokensEnabled) {
+        Map(ENV_KERBEROS_TGT -> "", ENV_SPARK_PROXY_USER -> proxyUser) ++
+          generateEngineTokenFile.map(tokenFile => HADOOP_TOKEN_FILE_LOCATION -> tokenFile)
+      } else Map.empty
+    conf.getEnvs ++ extraEnvs
+  }
 
   /**
    * Add `spark.master` if KUBERNETES_SERVICE_HOST and KUBERNETES_SERVICE_PORT
@@ -169,8 +180,10 @@ class SparkProcessBuilder(
     tryKeytab() match {
       case None if doAsEnabled =>
         setSparkUserName(proxyUser, buffer)
-        buffer += PROXY_USER
-        buffer += proxyUser
+        if (!externalTokensEnabled) {
+          buffer += PROXY_USER
+          buffer += proxyUser
+        }
       case None => // doAs disabled
         setSparkUserName(Utils.currentUser, buffer)
       case Some(name) =>
@@ -409,6 +422,9 @@ object SparkProcessBuilder {
   final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
   final val YARN_SUBMIT_WAIT_APP_COMPLETION = "spark.yarn.submit.waitAppCompletion"
   final val INTERNAL_RESOURCE = "spark-internal"
+  final val HADOOP_TOKEN_FILE_LOCATION = "HADOOP_TOKEN_FILE_LOCATION"
+  final val ENV_KERBEROS_TGT = "KRB5CCNAME"
+  final val ENV_SPARK_PROXY_USER = "HADOOP_PROXY_USER"
 
   final val KUBERNETES_FILE_UPLOAD_PATH = "spark.kubernetes.file.upload.path"
   final val KUBERNETES_UPLOAD_PATH_PERMISSION =
