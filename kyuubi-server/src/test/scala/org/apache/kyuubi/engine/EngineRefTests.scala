@@ -237,12 +237,13 @@ trait EngineRefTests extends KyuubiFunSuite {
 
     // unset subdomain and set engine pool name and 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    val enginePoolName = "test-pool"
+    val enginePoolName = "Test-pool"
+    val lowerEnginePoolName = "test-pool"
     conf.set(ENGINE_POOL_NAME, enginePoolName)
     conf.set(ENGINE_POOL_SIZE, 3)
     val engine6 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
-    assert(engine6.subdomain.startsWith(s"$enginePoolName-"))
-
+    assert(!engine6.subdomain.startsWith(s"$enginePoolName-"))
+    assert(engine6.subdomain.startsWith(s"$lowerEnginePoolName-"))
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 5)
     val pool_name = "pool_default_name"

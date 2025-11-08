@@ -2466,6 +2466,7 @@ object KyuubiConf {
     .doc("The name of the engine pool.")
     .version("1.5.0")
     .stringConf
+    .transformToLowerCase
     .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
     .createWithDefault("engine-pool")
 
