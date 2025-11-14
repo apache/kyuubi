@@ -77,17 +77,8 @@ class GetTables(
           catalog,
           schemaPattern,
           tablePattern,
-          tableTypes,
           ignoreTableProperties)
-
-      val allTableAndViews =
-        if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
-          catalogTablesAndViews ++
-            SparkCatalogUtils.getTempViews(spark, catalog, schemaPattern, tablePattern)
-        } else {
-          catalogTablesAndViews
-        }
-      iter = new IterableFetchIterator(allTableAndViews)
+      iter = new IterableFetchIterator(catalogTablesAndViews)
     } catch {
       onError()
     }
