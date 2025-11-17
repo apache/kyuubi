@@ -75,4 +75,23 @@ class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelp
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
+
+  test("Mysql - JDBC ExecuteStatement operation cancel should kill SQL statement") {
+    withSessionHandle { (client, handle) =>
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(handle)
+      tExecuteStatementReq.setStatement("SELECT sleep(1200)")
+      tExecuteStatementReq.setRunAsync(true)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      Thread.sleep(1000) // wait for statement to start executing
+
+      val tCancelOperationReq = new TCancelOperationReq()
+      tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      val TCancelOperationReq = client.CancelOperation(tCancelOperationReq)
+      assert(TCancelOperationReq.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      // If the statement is not cancelled successfully, will block here until 1200s
+    }
+  }
 }

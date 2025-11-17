@@ -81,6 +81,18 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
   def getTRowSetGenerator(): JdbcTRowSetGenerator
 
   def getSchemaHelper(): SchemaHelper
+
+  def cancelStatement(jdbcStatement: Statement): Unit = {
+    if (jdbcStatement != null) {
+      jdbcStatement.cancel()
+    }
+  }
+
+  def closeStatement(jdbcStatement: Statement): Unit = {
+    if (jdbcStatement != null && !jdbcStatement.isClosed) {
+      jdbcStatement.close()
+    }
+  }
 }
 
 object JdbcDialects extends Logging {

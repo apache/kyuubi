@@ -120,12 +120,26 @@ class ExecuteStatement(
     super.validateFetchOrientation(order)
   }
 
+  override def cancel(): Unit = withLockRequired {
+    if (!isTerminalState(state)) {
+      setState(OperationState.CANCELED)
+      if (jdbcStatement != null) {
+        dialect.cancelStatement(jdbcStatement)
+        jdbcStatement = null
+      }
+    }
+  }
+
   override def cleanup(targetState: OperationState): Unit = withLockRequired {
     try {
       super.cleanup(targetState)
     } finally {
-      if (jdbcStatement != null && !jdbcStatement.isClosed) {
-        jdbcStatement.close()
+      if (jdbcStatement != null) {
+        if (targetState == OperationState.CANCELED) {
+          dialect.cancelStatement(jdbcStatement)
+        } else {
+          dialect.closeStatement(jdbcStatement)
+        }
         jdbcStatement = null
       }
     }
