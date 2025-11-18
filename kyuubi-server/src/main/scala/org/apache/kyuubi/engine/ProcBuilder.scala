@@ -27,14 +27,16 @@ import scala.collection.JavaConverters._
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
+import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{JavaUtils, KyuubiHadoopUtils, NamedThreadFactory}
 
-trait ProcBuilder {
+trait ProcBuilder extends Logging {
 
   import ProcBuilder._
 
@@ -168,6 +170,7 @@ trait ProcBuilder {
   private var logCaptureThread: Thread = _
   @volatile private[kyuubi] var process: Process = _
   @volatile private[kyuubi] var processLaunched: Boolean = false
+  @volatile private[kyuubi] var tokenTempDir: java.nio.file.Path = _
 
   // Set engine application manger info conf
   conf.set(
@@ -270,6 +273,14 @@ trait ProcBuilder {
       Utils.terminateProcess(process, engineStartupDestroyTimeout)
       process = null
     }
+    if (tokenTempDir != null) {
+      try {
+        Utils.deleteDirectoryRecursively(tokenTempDir.toFile)
+      } catch {
+        case e: Throwable =>
+          error(s"Error deleting token temp dir: $tokenTempDir", e)
+      }
+    }
   }
 
   def getError: Throwable = synchronized {
@@ -358,6 +369,19 @@ trait ProcBuilder {
 
   def waitEngineCompletion: Boolean = {
     !isClusterMode() || conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+  }
+
+  def generateEngineTokenFile: Option[String] = {
+    conf.getOption(KYUUBI_ENGINE_CREDENTIALS_KEY).map { encodedCredentials =>
+      val credentials = KyuubiHadoopUtils.decodeCredentials(encodedCredentials)
+      tokenTempDir = Utils.createTempDir()
+      val file = s"${tokenTempDir.toString}/kyuubi_credentials_${System.currentTimeMillis()}"
+      credentials.writeTokenStorageFile(
+        new org.apache.hadoop.fs.Path(s"file://$file"),
+        new Configuration())
+      info(s"Generated hadoop token file: $file")
+      file
+    }
   }
 }
 
