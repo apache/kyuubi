@@ -85,11 +85,12 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
   def cancelStatement(jdbcStatement: Statement): Unit = {
     if (jdbcStatement != null) {
       jdbcStatement.cancel()
+      jdbcStatement.close()
     }
   }
 
   def closeStatement(jdbcStatement: Statement): Unit = {
-    if (jdbcStatement != null && !jdbcStatement.isClosed) {
+    if (jdbcStatement != null) {
       jdbcStatement.close()
     }
   }
