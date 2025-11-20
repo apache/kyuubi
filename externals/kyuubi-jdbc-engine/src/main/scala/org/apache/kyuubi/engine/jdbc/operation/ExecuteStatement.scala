@@ -123,6 +123,9 @@ class ExecuteStatement(
   override def cancel(): Unit = withLockRequired {
     if (!isTerminalState(state)) {
       setState(OperationState.CANCELED)
+      // TODO: If `shouldRunAsync` is true, the statement is initialized lazily.
+      // When a SQL is submitted and immediately canceled, `jdbcStatement` may still be null,
+      // which can lead to the cancellation not taking effect.
       if (jdbcStatement != null) {
         dialect.cancelStatement(jdbcStatement)
         jdbcStatement = null
