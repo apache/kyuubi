@@ -16,6 +16,9 @@
  */
 package org.apache.kyuubi.engine.jdbc.mysql
 
+import org.scalatest.concurrent.TimeLimits.failAfter
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -77,22 +80,24 @@ class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelp
   }
 
   test("MySQL - JDBC ExecuteStatement cancel operation should kill SQL statement") {
-    withSessionHandle { (client, handle) =>
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(handle)
-      // The SQL will sleep 120s
-      tExecuteStatementReq.setStatement("SELECT sleep(120)")
-      tExecuteStatementReq.setRunAsync(true)
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-      assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    failAfter(20.seconds) {
+      withSessionHandle { (client, handle) =>
+        val tExecuteStatementReq = new TExecuteStatementReq()
+        tExecuteStatementReq.setSessionHandle(handle)
+        // The SQL will sleep 120s
+        tExecuteStatementReq.setStatement("SELECT sleep(120)")
+        tExecuteStatementReq.setRunAsync(true)
+        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+        assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
-      Thread.sleep(1000) // wait for statement to start executing
+        Thread.sleep(1000) // wait for statement to start executing
 
-      val tCancelOperationReq = new TCancelOperationReq()
-      tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-      val TCancelOperationReq = client.CancelOperation(tCancelOperationReq)
-      assert(TCancelOperationReq.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      // If the statement is not cancelled successfully, will block here until 120s
+        val tCancelOperationReq = new TCancelOperationReq()
+        tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+        val TCancelOperationReq = client.CancelOperation(tCancelOperationReq)
+        assert(TCancelOperationReq.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        // If the statement is not cancelled successfully, will block here until 120s
+      }
     }
   }
 }

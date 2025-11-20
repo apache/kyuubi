@@ -16,6 +16,10 @@
  */
 package org.apache.kyuubi.engine.jdbc.starrocks
 
+import scala.concurrent.duration.DurationInt
+
+import org.scalatest.concurrent.TimeLimits.failAfter
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -77,23 +81,24 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
   }
 
   test("starrocks - JDBC ExecuteStatement cancel operation should kill SQL statement") {
-    withSessionHandle { (client, handle) =>
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(handle)
-      // The SQL will sleep 120s
-      tExecuteStatementReq.setStatement("SELECT sleep(120)")
-      tExecuteStatementReq.setRunAsync(true)
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+    failAfter(20.seconds) {
+      withSessionHandle { (client, handle) =>
+        val tExecuteStatementReq = new TExecuteStatementReq()
+        tExecuteStatementReq.setSessionHandle(handle)
+        // The SQL will sleep 120s
+        tExecuteStatementReq.setStatement("SELECT sleep(120)")
+        tExecuteStatementReq.setRunAsync(true)
+        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
-      Thread.sleep(1000) // wait for statement to start executing
+        Thread.sleep(1000) // wait for statement to start executing
 
-      val tCancelOperationReq = new TCancelOperationReq()
-      tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+        val tCancelOperationReq = new TCancelOperationReq()
+        tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
 
-      val tFetchResultsResp = client.CancelOperation(tCancelOperationReq)
-      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      // If the statement is not cancelled successfully, will block here until 120s
+        val tFetchResultsResp = client.CancelOperation(tCancelOperationReq)
+        assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        // If the statement is not cancelled successfully, will block here until 120s
+      }
     }
-
   }
 }
