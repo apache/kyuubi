@@ -76,16 +76,15 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
     }
   }
 
-  test("starrocks - JDBC ExecuteStatement operation cancel should kill SQL statement") {
+  test("starrocks - JDBC ExecuteStatement cancel operation should kill SQL statement") {
     withSessionHandle { (client, handle) =>
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle(handle)
-      tExecuteStatementReq.setStatement("SELECT sleep(1200)")
+      // The SQL will sleep 120s
+      tExecuteStatementReq.setStatement("SELECT sleep(120)")
       tExecuteStatementReq.setRunAsync(true)
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
-      // todo:we need to improvement the cancel mechanism in starrocks server side,
-      //  once a query submitted, we should be able to cancel it immediately.
       Thread.sleep(1000) // wait for statement to start executing
 
       val tCancelOperationReq = new TCancelOperationReq()
@@ -93,7 +92,7 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
 
       val tFetchResultsResp = client.CancelOperation(tCancelOperationReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      // If the statement is not cancelled successfully, will block here until 1200s
+      // If the statement is not cancelled successfully, will block here until 120s
     }
 
   }
