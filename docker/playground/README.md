@@ -31,7 +31,7 @@ Kyuubi supply some built-in dataset, after Kyuubi started, you can run the follo
 
 ### Access Service
 
-- RustFS: http://localhost:9001
+- RustFS: http://localhost:9001 (account: rustfsadmin, key: rustfsadmin)
 - PostgreSQL localhost:5432 (username: postgres, password: postgres)
 - Spark UI: http://localhost:4040 (available after Spark application launching by Kyuubi, port may be 4041, 4042... if you launch more than one Spark applications)
 - Prometheus: http://localhost:9090
