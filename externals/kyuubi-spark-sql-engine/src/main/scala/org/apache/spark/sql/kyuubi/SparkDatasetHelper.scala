@@ -165,7 +165,7 @@ object SparkDatasetHelper extends Logging {
       .getConf
       .getOption("spark.connect.grpc.arrow.maxBatchSize")
       .orElse(Option("4m"))
-      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
+      .map(JavaUtils.byteStringAs(_, ByteUnit.BYTE))
       .get
   }
 

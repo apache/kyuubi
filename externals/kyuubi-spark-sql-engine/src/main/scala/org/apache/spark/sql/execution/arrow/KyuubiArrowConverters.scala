@@ -275,18 +275,15 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       Utils.tryWithSafeFinally {
 
         // Always write the first row.
-        while (rowIter.hasNext && (
+        while (rowIter.hasNext && (rowCount < limit || limit < 0) && (
             // For maxBatchSize and maxRecordsPerBatch, respect whatever smaller.
             // If the size in bytes is positive (set properly), always write the first row.
-            rowCountInLastBatch == 0 && maxEstimatedBatchSize > 0 ||
+            rowCountInLastBatch == 0 ||
               // If the size in bytes of rows are 0 or negative, unlimit it.
-              estimatedBatchSize <= 0 ||
-              estimatedBatchSize < maxEstimatedBatchSize ||
-              // If the size of rows are 0 or negative, unlimit it.
-              maxRecordsPerBatch <= 0 ||
-              rowCountInLastBatch < maxRecordsPerBatch ||
-              rowCount < limit ||
-              limit < 0)) {
+              ((estimatedBatchSize <= 0 || estimatedBatchSize < maxEstimatedBatchSize) &&
+                // If the size of rows are 0 or negative, unlimit it.
+                (maxRecordsPerBatch <= 0 || rowCountInLastBatch < maxRecordsPerBatch))
+          )) {
           val row = rowIter.next()
           arrowWriter.write(row)
           estimatedBatchSize += (row match {
