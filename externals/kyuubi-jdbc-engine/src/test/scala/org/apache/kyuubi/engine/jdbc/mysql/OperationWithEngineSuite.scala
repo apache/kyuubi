@@ -16,10 +16,14 @@
  */
 package org.apache.kyuubi.engine.jdbc.mysql
 
+import org.scalatest.concurrent.TimeLimits.failAfter
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState.{CANCELED_STATE, RUNNING_STATE}
 
 class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelper {
 
@@ -73,6 +77,27 @@ class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelp
 
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
+
+  test("MySQL - JDBC ExecuteStatement cancel operation should kill SQL statement") {
+    failAfter(20.seconds) {
+      withSessionHandle { (client, handle) =>
+        val executeReq = new TExecuteStatementReq()
+        executeReq.setSessionHandle(handle)
+        // The SQL will sleep 120s
+        executeReq.setStatement("SELECT sleep(120)")
+        executeReq.setRunAsync(true)
+        val executeResp = client.ExecuteStatement(executeReq)
+        assert(executeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+        val operationHandle = executeResp.getOperationHandle
+        waitForOperationStatusIn(client, operationHandle, Set(RUNNING_STATE))
+
+        val cancelResp = client.CancelOperation(new TCancelOperationReq(operationHandle))
+        assert(cancelResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        waitForOperationStatusIn(client, operationHandle, Set(CANCELED_STATE))
+      }
     }
   }
 }
