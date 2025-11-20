@@ -1785,6 +1785,17 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
 
+  val ENGINE_SHUTDOWN_WATCHDOG_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.shutdown.watchdog.timeout")
+      .doc("The maximum time to wait for the engine to shutdown gracefully before " +
+        "forcing termination. When an engine shutdown is initiated, this watchdog " +
+        "timer starts counting down. If the engine doesn't complete shutdown within " +
+        "this timeout period, it will be forcefully terminated to prevent hanging. " +
+        "Set to 0 or a negative value to disable the forced shutdown mechanism.")
+      .version("1.11.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(1L).toMillis)
+
   val SESSION_CONF_IGNORE_LIST: ConfigEntry[Set[String]] =
     buildConf("kyuubi.session.conf.ignore.list")
       .doc("A comma-separated list of ignored keys. If the client connection contains any of" +
