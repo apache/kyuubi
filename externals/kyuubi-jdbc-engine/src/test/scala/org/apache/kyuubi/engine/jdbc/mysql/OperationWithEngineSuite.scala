@@ -23,6 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState.{CANCELED_STATE, RUNNING_STATE}
 
 class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelper {
 
@@ -87,16 +88,24 @@ class OperationWithEngineSuite extends MySQLOperationSuite with HiveJDBCTestHelp
         // The SQL will sleep 120s
         tExecuteStatementReq.setStatement("SELECT sleep(120)")
         tExecuteStatementReq.setRunAsync(true)
-        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-        assert(tExecuteStatementResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val executeResp = client.ExecuteStatement(tExecuteStatementReq)
+        assert(executeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
-        Thread.sleep(1000) // wait for statement to start executing
+        assertOperationStatusIn(
+          client,
+          executeResp.getOperationHandle,
+          Set(RUNNING_STATE),
+          5)
 
-        val tCancelOperationReq = new TCancelOperationReq()
-        tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-        val TCancelOperationReq = client.CancelOperation(tCancelOperationReq)
-        assert(TCancelOperationReq.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-        // If the statement is not cancelled successfully, will block here until 120s
+        val cancelResp =
+          client.CancelOperation(new TCancelOperationReq(executeResp.getOperationHandle))
+        assert(cancelResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+        assertOperationStatusIn(
+          client,
+          executeResp.getOperationHandle,
+          Set(CANCELED_STATE),
+          5)
       }
     }
   }

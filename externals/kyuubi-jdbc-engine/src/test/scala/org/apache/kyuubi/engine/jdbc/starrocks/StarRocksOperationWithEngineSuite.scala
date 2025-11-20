@@ -24,6 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState.{CANCELED_STATE, RUNNING_STATE}
 
 class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with HiveJDBCTestHelper {
 
@@ -83,21 +84,28 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
   test("starrocks - JDBC ExecuteStatement cancel operation should kill SQL statement") {
     failAfter(20.seconds) {
       withSessionHandle { (client, handle) =>
-        val tExecuteStatementReq = new TExecuteStatementReq()
-        tExecuteStatementReq.setSessionHandle(handle)
+        val executeReq = new TExecuteStatementReq()
+        executeReq.setSessionHandle(handle)
         // The SQL will sleep 120s
-        tExecuteStatementReq.setStatement("SELECT sleep(120)")
-        tExecuteStatementReq.setRunAsync(true)
-        val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+        executeReq.setStatement("SELECT sleep(120)")
+        executeReq.setRunAsync(true)
+        val executeResp = client.ExecuteStatement(executeReq)
 
-        Thread.sleep(1000) // wait for statement to start executing
+        assertOperationStatusIn(
+          client,
+          executeResp.getOperationHandle,
+          Set(RUNNING_STATE),
+          5)
 
-        val tCancelOperationReq = new TCancelOperationReq()
-        tCancelOperationReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+        val cancelResp =
+          client.CancelOperation(new TCancelOperationReq(executeResp.getOperationHandle))
+        assert(cancelResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
-        val tFetchResultsResp = client.CancelOperation(tCancelOperationReq)
-        assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-        // If the statement is not cancelled successfully, will block here until 120s
+        assertOperationStatusIn(
+          client,
+          executeResp.getOperationHandle,
+          Set(CANCELED_STATE),
+          5)
       }
     }
   }
