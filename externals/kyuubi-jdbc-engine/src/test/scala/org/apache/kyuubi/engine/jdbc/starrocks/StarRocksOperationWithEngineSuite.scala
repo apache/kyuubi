@@ -81,7 +81,7 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
     }
   }
 
-  test("starrocks - JDBC ExecuteStatement cancel operation should kill SQL statement") {
+  test("StarRocks - JDBC ExecuteStatement cancel operation should kill SQL statement") {
     failAfter(20.seconds) {
       withSessionHandle { (client, handle) =>
         val executeReq = new TExecuteStatementReq()
