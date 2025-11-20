@@ -124,7 +124,7 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
   }
 
   def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
-    assertOperationStatusIn(
+    waitForOperationStatusIn(
       client,
       op,
       Set(
@@ -134,15 +134,15 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
         ERROR_STATE,
         UKNOWN_STATE,
         TIMEDOUT_STATE),
-      90)
+      timeoutMs = 90000)
   }
 
-  def assertOperationStatusIn(
+  def waitForOperationStatusIn(
       client: Iface,
       op: TOperationHandle,
       status: Set[TOperationState],
-      timeoutInSeconds: Int): Unit = {
-    eventually(timeout(timeoutInSeconds.seconds), interval(100.milliseconds)) {
+      timeoutMs: Int = 5000): Unit = {
+    eventually(timeout(timeoutMs.milliseconds), interval(100.milliseconds)) {
       val state = client.GetOperationStatus(new TGetOperationStatusReq(op)).getOperationState
       assert(status.contains(state))
     }

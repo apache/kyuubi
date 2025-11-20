@@ -90,22 +90,14 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
         executeReq.setStatement("SELECT sleep(120)")
         executeReq.setRunAsync(true)
         val executeResp = client.ExecuteStatement(executeReq)
+        assert(executeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
 
-        assertOperationStatusIn(
-          client,
-          executeResp.getOperationHandle,
-          Set(RUNNING_STATE),
-          5)
+        val operationHandle = executeResp.getOperationHandle
+        waitForOperationStatusIn(client, operationHandle, Set(RUNNING_STATE))
 
-        val cancelResp =
-          client.CancelOperation(new TCancelOperationReq(executeResp.getOperationHandle))
+        val cancelResp = client.CancelOperation(new TCancelOperationReq(operationHandle))
         assert(cancelResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-
-        assertOperationStatusIn(
-          client,
-          executeResp.getOperationHandle,
-          Set(CANCELED_STATE),
-          5)
+        waitForOperationStatusIn(client, operationHandle, Set(CANCELED_STATE))
       }
     }
   }

@@ -130,7 +130,7 @@ class ExecuteStatement(
         dialect.cancelStatement(jdbcStatement)
         jdbcStatement = null
       } else {
-        warn(s"The cancel operation $statementId might be ignore due to jdbcStatement is null.")
+        warn(s"Ignore cancel operation $statementId due to jdbcStatement is null.")
       }
     }
   }
