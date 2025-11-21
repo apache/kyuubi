@@ -313,13 +313,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     startEngineAliveChecker()
   }
 
-  def getBatchSessionsToRecover(kyuubiInstance: String): Seq[KyuubiBatchSession] = {
+  def getBatchSessionsToRecover(kyuubiInstance: String, offset: Int, batchSize: Int): Seq[KyuubiBatchSession] = {
     Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
       metadataManager.map(_.getBatchesRecoveryMetadata(
         stateToRecover.toString,
         kyuubiInstance,
-        0,
-        Int.MaxValue).map { metadata =>
+        offset,
+        batchSize).map { metadata =>
         createBatchSessionFromRecovery(metadata)
       }).getOrElse(Seq.empty)
     }
