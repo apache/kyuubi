@@ -186,7 +186,7 @@
         <netty.version>4.1.108.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
         <retrofit.version>2.9.0</retrofit.version>
-        <paimon.version>0.8.2</paimon.version>
+        <paimon.version>1.3.1</paimon.version>
         <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
         <phoenix.version>6.0.0</phoenix.version>
         <postgresql.version>42.7.2</postgresql.version>
@@ -2094,10 +2094,7 @@
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <!-- TODO: update once Hudi support Spark 4.0 -->
                 <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
-                <!-- TODO: update once Paimon support Spark 4.0.
-                           paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
-                <paimon.artifact>paimon-common</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
