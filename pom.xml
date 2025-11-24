@@ -1889,6 +1889,8 @@
                                     <ignoredScopes>provided</ignoredScopes>
                                     <ignoredScopes>test</ignoredScopes>
                                     <ignoreClasses>
+                                        <!-- Only used for JDK9+  -->
+                                        <ignoreClass>com.thoughtworks.paranamer.DefaultParanamer</ignoreClass>
                                         <!--
                                           The package `org.jline.terminal.impl.ffm.*` contains some class files
                                           that are not compatible with JDK17 (only JDK21 is supported).
