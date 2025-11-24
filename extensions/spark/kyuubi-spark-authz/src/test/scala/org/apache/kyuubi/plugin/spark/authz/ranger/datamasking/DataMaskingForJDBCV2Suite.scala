@@ -37,6 +37,8 @@ class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
 
   override protected val catalogImpl: String = "in-memory"
 
+  override protected val supportPurge: Boolean = false
+
   override protected def format: String = ""
 
   override def beforeAll(): Unit = {
