@@ -31,6 +31,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @PaimonTest
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val supportPurge: Boolean = false
   private def isSupportedVersion = isScalaV212
 
   val catalogV2 = "paimon_catalog"
