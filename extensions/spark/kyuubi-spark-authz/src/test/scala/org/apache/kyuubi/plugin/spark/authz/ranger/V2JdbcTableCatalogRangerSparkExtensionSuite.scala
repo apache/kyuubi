@@ -33,6 +33,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
  */
 class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
+  override protected val supportPurge: Boolean = false
 
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"
