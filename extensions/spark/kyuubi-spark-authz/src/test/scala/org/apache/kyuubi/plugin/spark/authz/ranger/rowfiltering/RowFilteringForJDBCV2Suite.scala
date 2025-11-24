@@ -38,6 +38,8 @@ class RowFilteringForJDBCV2Suite extends RowFilteringTestBase {
 
   override protected val catalogImpl: String = "in-memory"
 
+  override protected val supportPurge: Boolean = false
+
   override protected def format: String = ""
 
   override def beforeAll(): Unit = {
