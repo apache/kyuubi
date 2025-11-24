@@ -2065,6 +2065,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
+                <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
                 <spark.version>4.1.0-preview4</spark.version>
                 <spark.binary.version>4.1</spark.binary.version>
