@@ -233,7 +233,7 @@
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.8.1</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
-        <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.enforcer.mojo.rules.version>1.11.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.frontend.inheritsProxyConfigFromMaven>false</maven.plugin.frontend.inheritsProxyConfigFromMaven>
