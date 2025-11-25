@@ -1761,11 +1761,9 @@
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
                         <numUnapprovedLicenses>0</numUnapprovedLicenses>
-                        <licenseFamilies>
-                            <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
-                                <familyName>Apache License 2.0</familyName>
-                            </licenseFamily>
-                        </licenseFamilies>
+                        <approvedLicenses>
+                            <id>AL2.0</id>
+                        </approvedLicenses>
                         <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
                     <executions>
