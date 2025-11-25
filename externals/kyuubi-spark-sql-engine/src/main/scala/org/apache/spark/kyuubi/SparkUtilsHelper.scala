@@ -40,6 +40,7 @@ object SparkUtilsHelper extends Logging {
 
   private val readOnlySparkConfCls = DynClasses.builder()
     .impl("org.apache.spark.ReadOnlySparkConf")
+    .orNull()
     .build()
 
   private val getLocalDirMethod = DynMethods.builder("getLocalDir")
