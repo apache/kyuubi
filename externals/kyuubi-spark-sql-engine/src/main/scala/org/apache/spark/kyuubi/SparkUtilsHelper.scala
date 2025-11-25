@@ -23,6 +23,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 /**
  * A place to invoke non-public APIs of [[Utils]], anything to be added here need to
@@ -37,11 +38,20 @@ object SparkUtilsHelper extends Logging {
     Utils.redact(regex, text)
   }
 
+  private val readOnlySparkConfCls = DynClasses.builder()
+    .impl("org.apache.spark.ReadOnlySparkConf")
+    .build()
+
+  private val getLocalDirMethod = DynMethods.builder("getLocalDir")
+    .impl(Utils.getClass, readOnlySparkConfCls) // SPARK-53459 (4.1.0)
+    .impl(Utils.getClass, classOf[SparkConf])
+    .build(Utils)
+
   /**
    * Get the path of a temporary directory.
    */
   def getLocalDir(conf: SparkConf): String = {
-    Utils.getLocalDir(conf)
+    getLocalDirMethod.invoke(conf)
   }
 
   def classesArePresent(className: String): Boolean = {
