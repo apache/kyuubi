@@ -181,36 +181,51 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = withBatchRecoveryLockRequired {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
+    val recoveryBatchSize: Int = conf.get(BATCH_SESSIONS_RECOVERY_SIZE)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
-      val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(connectionUrl)
-      val pendingRecoveryTasksCount = new AtomicInteger(0)
-      val tasks = batchSessionsToRecover.flatMap { batchSession =>
-        val batchId = batchSession.batchJobSubmissionOp.batchId
-        try {
-          val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
-            Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
-          Some(task -> batchId)
-        } catch {
-          case e: Throwable =>
-            error(s"Error while submitting batch[$batchId] for recovery", e)
-            None
-        }
-      }
+      val offset: Int = 0
+      val shouldFetchRemainingBatchSessions: Boolean = true
+      val totalBatchRecovered: Int = 0
+      while(shouldFetchRemainingBatchSessions) {
+        val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(connectionUrl, offset, recoveryBatchSize)
+        if(batchSessionsToRecover.length > 0){
+          val pendingRecoveryTasksCount = new AtomicInteger(0)
+          val tasks = batchSessionsToRecover.flatMap { batchSession =>
+            val batchId = batchSession.batchJobSubmissionOp.batchId
+            try {
+              val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
+                Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
+              Some(task -> batchId)
+            } catch {
+              case e: Throwable =>
+                error(s"Error while submitting batch[$batchId] for recovery", e)
+                None
+            }
+          }
 
-      pendingRecoveryTasksCount.addAndGet(tasks.size)
+          pendingRecoveryTasksCount.addAndGet(tasks.size)
 
-      tasks.foreach { case (task, batchId) =>
-        try {
-          task.get()
-        } catch {
-          case e: Throwable =>
-            error(s"Error while recovering batch[$batchId]", e)
-        } finally {
-          val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
-          info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+          tasks.foreach { case (task, batchId) =>
+            try {
+              task.get()
+            } catch {
+              case e: Throwable =>
+                error(s"Error while recovering batch[$batchId]", e)
+            } finally {
+              val pendingTasks = pendingRecoveryTasksCount.decrementAndGet()
+              info(s"Batch[$batchId] recovery task terminated, current pending tasks $pendingTasks")
+            }
+          }
+          totalBatchRecovered += batchSessionsToRecover.length
+          offset += batchSessionsToRecover.length
         }
+         else {
+          shouldFetchRemainingBatchSessions = false
+          info(s"No more batches left to recover from metadata store.")
+        }
+        info(s"Recovered $totalBatchRecovered batches total so far successfully from metadata store.")
       }
     } finally {
       ThreadUtils.shutdown(batchRecoveryExecutor)
