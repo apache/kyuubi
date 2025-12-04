@@ -19,11 +19,11 @@
 <configuration>
     <property>
         <name>fs.s3a.access.key</name>
-        <value>minio</value>
+        <value>rustfsadmin</value>
     </property>
     <property>
         <name>fs.s3a.secret.key</name>
-        <value>minio_minio</value>
+        <value>rustfsadmin</value>
     </property>
     <property>
         <name>fs.s3a.connection.ssl.enabled</name>
@@ -35,7 +35,7 @@
     </property>
     <property>
         <name>fs.s3a.endpoint</name>
-        <value>http://minio:9000</value>
+        <value>http://rustfs:9000</value>
     </property>
     <property>
         <name>fs.s3a.committer.name</name>

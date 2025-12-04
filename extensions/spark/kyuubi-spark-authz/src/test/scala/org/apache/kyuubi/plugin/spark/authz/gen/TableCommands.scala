@@ -132,13 +132,12 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(oldTableD), ALTERTABLE_RENAME)
   }
 
-  // this is for spark 3.1 or below
-  val AlterTableRecoverPartitions = {
-    val cmd = "org.apache.spark.sql.execution.command.AlterTableRecoverPartitionsCommand"
+  val RepairTable = {
+    val cmd = "org.apache.spark.sql.execution.command.RepairTableCommand"
     TableCommandSpec(cmd, Seq(tableNameDesc), MSCK)
   }
 
-  val RepairTable = {
+  val RepairTableV2 = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.RepairTable"
     TableCommandSpec(cmd, Seq(resolvedTableDesc), MSCK)
   }
@@ -667,9 +666,8 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
   }
 
-  // For spark-3.1
-  val AddFileCommand = {
-    val cmd = "org.apache.spark.sql.execution.command.AddFileCommand"
+  val AddJarCommand = {
+    val cmd = "org.apache.spark.sql.execution.command.AddJarCommand"
     val uriDesc = UriDesc("path", classOf[StringURIExtractor], isInput = true)
     TableCommandSpec(cmd, Nil, ADD, uriDescs = Seq(uriDesc))
   }
@@ -678,8 +676,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AddArchivesCommand,
     AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddFilesCommand"),
     AddArchivesCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarsCommand"),
-    AddFileCommand,
-    AddFileCommand.copy(classname = "org.apache.spark.sql.execution.command.AddJarCommand"),
+    AddJarCommand,
     AddPartitions,
     DropPartitions,
     RenamePartitions,
@@ -696,9 +693,6 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AlterTableChangeColumn,
     AlterTableDropPartition,
     AlterTableRename,
-    AlterTableRecoverPartitions,
-    AlterTableRecoverPartitions.copy(classname =
-      "org.apache.spark.sql.execution.command.RepairTableCommand"),
     AlterTableRenamePartition,
     AlterTableSerDeProperties,
     AlterTableSetLocation,
@@ -749,6 +743,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     OverwriteByExpression,
     OverwritePartitionsDynamic,
     RepairTable,
+    RepairTableV2,
     RefreshTable,
     RefreshTableV2,
     RefreshTable3d0,

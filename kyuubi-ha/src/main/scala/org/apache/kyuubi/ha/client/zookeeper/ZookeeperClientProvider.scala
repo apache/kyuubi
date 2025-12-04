@@ -19,6 +19,7 @@ package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.ConcurrentHashMap
 import javax.security.auth.login.Configuration
 
 import scala.util.Random
@@ -37,6 +38,13 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 import org.apache.kyuubi.util.reflect.DynConstructors
 
 object ZookeeperClientProvider extends Logging {
+
+  /**
+   * Share JAAS configuration for Zookeeper client with same keytab and principal to
+   * avoid server OOM due to each new JAAS configuration references the previous instance.
+   * See KYUUBI #7154 for more details.
+   */
+  val jaasConfigurationCache = new ConcurrentHashMap[(String, String), Configuration]()
 
   /**
    * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client
@@ -113,22 +121,26 @@ object ZookeeperClientProvider extends Logging {
           System.setProperty("zookeeper.server.principal", zkServerPrincipal)
         }
         val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
-        // HDFS-16591 makes breaking change on JaasConfiguration
-        val jaasConf = DynConstructors.builder()
-          .impl( // Hadoop 3.3.5 and above
-            "org.apache.hadoop.security.authentication.util.JaasConfiguration",
-            classOf[String],
-            classOf[String],
-            classOf[String])
-          .impl( // Hadoop 3.3.4 and previous
-            // scalastyle:off
-            "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
-            // scalastyle:on
-            classOf[String],
-            classOf[String],
-            classOf[String])
-          .build[Configuration]()
-          .newInstance("KyuubiZooKeeperClient", zkClientPrincipal, keytab)
+        val jaasConf = jaasConfigurationCache.computeIfAbsent(
+          (principal, keytab),
+          _ => {
+            // HDFS-16591 makes breaking change on JaasConfiguration
+            DynConstructors.builder()
+              .impl( // Hadoop 3.3.5 and above
+                "org.apache.hadoop.security.authentication.util.JaasConfiguration",
+                classOf[String],
+                classOf[String],
+                classOf[String])
+              .impl( // Hadoop 3.3.4 and previous
+                // scalastyle:off
+                "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
+                // scalastyle:on
+                classOf[String],
+                classOf[String],
+                classOf[String])
+              .build[Configuration]()
+              .newInstance("KyuubiZooKeeperClient", zkClientPrincipal, keytab)
+          })
         Configuration.setConfiguration(jaasConf)
       case _ =>
     }

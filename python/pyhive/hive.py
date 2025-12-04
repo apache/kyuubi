@@ -568,9 +568,10 @@ class Cursor(common.DBAPICursor):
                 response = self._connection.client.FetchResults(req)
                 _check_status(response)
                 assert not response.results.rows, 'expected data in columnar format'
-                assert len(response.results.columns) == 1, response.results.columns
-                new_logs = _unwrap_column(response.results.columns[0])
-                logs += new_logs
+                new_logs = ''
+                if response.results.columns:
+                    new_logs = _unwrap_column(response.results.columns[0])
+                    logs += new_logs
 
                 if not new_logs:
                     break

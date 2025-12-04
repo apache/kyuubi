@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine
 
+import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
+
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
@@ -64,6 +67,7 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     val sparkAppUrlPattern3 =
       "http://{{SPARK_DRIVER_SVC}}.{{KUBERNETES_NAMESPACE}}.svc" +
         ".{{KUBERNETES_CONTEXT}}.k8s.io:{{SPARK_UI_PORT}}"
+    val sparkAppUrlPattern4 = "http://{{SPARK_DRIVER_POD_IP}}:{{SPARK_UI_PORT}}"
 
     val sparkAppId = "spark-123"
     val sparkDriverSvc = "spark-456-driver-svc"
@@ -74,7 +78,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern1,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkAppId.ingress.balabala")
@@ -82,7 +87,8 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern2,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) === s"http://$sparkDriverSvc.$kubernetesNamespace.svc:$sparkUiPort")
@@ -90,11 +96,22 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     assert(KubernetesApplicationOperation.buildSparkAppUrl(
       sparkAppUrlPattern3,
       sparkAppId,
-      sparkDriverSvc,
+      Some(sparkDriverSvc),
+      None,
       kubernetesContext,
       kubernetesNamespace,
       sparkUiPort) ===
       s"http://$sparkDriverSvc.$kubernetesNamespace.svc.$kubernetesContext.k8s.io:$sparkUiPort")
+
+    assert(KubernetesApplicationOperation.buildSparkAppUrl(
+      sparkAppUrlPattern4,
+      sparkAppId,
+      None,
+      Some("10.69.234.1"),
+      kubernetesContext,
+      kubernetesNamespace,
+      sparkUiPort) ===
+      s"http://10.69.234.1:$sparkUiPort")
   }
 
   test("get kubernetes client initialization info") {
@@ -112,5 +129,47 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
         KubernetesInfo(Some("c2"), Some("ns2")),
         KubernetesInfo(Some("c1"), None),
         KubernetesInfo(None, Some("ns1"))))
+  }
+
+  test("containerStateToApplicationState waiting reasons") {
+    // Only valid pending reasons: ContainerCreating and PodInitializing
+    val pendingWaitingReasons = Set("ContainerCreating", "PodInitializing")
+
+    pendingWaitingReasons.foreach { reason =>
+      val containerState = new ContainerState()
+      val waiting = new ContainerStateWaiting()
+      waiting.setReason(reason)
+      containerState.setWaiting(waiting)
+
+      val result = KubernetesApplicationOperation.containerStateToApplicationState(containerState)
+      assert(result === PENDING)
+    }
+  }
+
+  test("containerStateToApplicationState failure reasons and empty reason") {
+    val failureReasons = Set(
+      "ErrImagePull",
+      "ImagePullBackOff",
+      "CrashLoopBackOff",
+      "CreateContainerConfigError")
+
+    failureReasons.foreach { reason =>
+      val containerState = new ContainerState()
+      val waiting = new ContainerStateWaiting()
+      waiting.setReason(reason)
+      containerState.setWaiting(waiting)
+
+      val result = KubernetesApplicationOperation.containerStateToApplicationState(containerState)
+      assert(result === FAILED)
+    }
+
+    // Empty/null reason should be treated as PENDING (still initializing)
+    val containerStateEmpty = new ContainerState()
+    val waitingEmpty = new ContainerStateWaiting()
+    waitingEmpty.setReason(null)
+    containerStateEmpty.setWaiting(waitingEmpty)
+    val resultEmpty =
+      KubernetesApplicationOperation.containerStateToApplicationState(containerStateEmpty)
+    assert(resultEmpty === PENDING)
   }
 }

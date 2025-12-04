@@ -84,8 +84,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
-  private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
-
   if (conf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
@@ -282,7 +280,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
     val query = queryBuilder.toString
     JdbcUtils.executeQueryWithRowMapper(query) { stmt =>
-      setStatementParams(stmt, params)
+      setStatementParams(stmt, params.toSeq: _*)
     } { resultSet =>
       resultSet.getInt(1)
     }.head
@@ -411,12 +409,15 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  override def cleanupMetadataByAge(maxAge: Long): Unit = {
+  override def cleanupMetadataByAge(maxAge: Long, limit: Int): Int = {
     val minEndTime = System.currentTimeMillis() - maxAge
-    val query = s"DELETE FROM $METADATA_TABLE WHERE state IN ($terminalStates) AND end_time < ?"
+    val query =
+      s"DELETE FROM $METADATA_TABLE WHERE end_time > 0 AND end_time < ? AND create_time < ?" +
+        s" ${dialect.deleteFromLimitClause(limit)}"
     JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, minEndTime) { count =>
-        info(s"Cleaned up $count records older than $maxAge ms from $METADATA_TABLE.")
+      withUpdateCount(connection, query, minEndTime, minEndTime) { count =>
+        info(s"Cleaned up $count records older than $maxAge ms from $METADATA_TABLE limit:$limit.")
+        count
       }
     }
   }
@@ -463,12 +464,15 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  override def cleanupKubernetesEngineInfoByAge(maxAge: Long): Unit = {
+  override def cleanupKubernetesEngineInfoByAge(maxAge: Long, limit: Int): Int = {
     val minUpdateTime = System.currentTimeMillis() - maxAge
-    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE update_time < ?"
+    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE update_time < ?" +
+      s" ${dialect.deleteFromLimitClause(limit)}"
     JdbcUtils.withConnection { connection =>
       withUpdateCount(connection, query, minUpdateTime) { count =>
-        info(s"Cleaned up $count records older than $maxAge ms from $KUBERNETES_ENGINE_INFO_TABLE.")
+        info(s"Cleaned up $count records older than $maxAge ms from $KUBERNETES_ENGINE_INFO_TABLE" +
+          s" limit $limit.")
+        count
       }
     }
   }

@@ -22,9 +22,6 @@ Advanced Features
     engine_type
     engine_share_level
     engine_ttl
-    engine_pool
     engine_resources
     scala
     plan_only
-
-

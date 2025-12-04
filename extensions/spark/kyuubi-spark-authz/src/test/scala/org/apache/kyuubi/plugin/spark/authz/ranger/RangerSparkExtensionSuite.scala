@@ -37,6 +37,8 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.plugin.lineage.Lineage
+import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.MysqlContainerEnv
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
@@ -678,37 +680,34 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #3411] skip checking cache table") {
-    if (isSparkV32OrGreater) { // cache table sql supported since 3.2.0
+    val db1 = defaultDb
+    val srcTable1 = "hive_src1"
+    val cacheTable1 = "cacheTable1"
+    val cacheTable2 = "cacheTable2"
+    val cacheTable3 = "cacheTable3"
+    val cacheTable4 = "cacheTable4"
 
-      val db1 = defaultDb
-      val srcTable1 = "hive_src1"
-      val cacheTable1 = "cacheTable1"
-      val cacheTable2 = "cacheTable2"
-      val cacheTable3 = "cacheTable3"
-      val cacheTable4 = "cacheTable4"
+    withCleanTmpResources(Seq(
+      (s"$db1.$srcTable1", "table"),
+      (s"$db1.$cacheTable1", "cache"),
+      (s"$db1.$cacheTable2", "cache"),
+      (s"$db1.$cacheTable3", "cache"),
+      (s"$db1.$cacheTable4", "cache"))) {
 
-      withCleanTmpResources(Seq(
-        (s"$db1.$srcTable1", "table"),
-        (s"$db1.$cacheTable1", "cache"),
-        (s"$db1.$cacheTable2", "cache"),
-        (s"$db1.$cacheTable3", "cache"),
-        (s"$db1.$cacheTable4", "cache"))) {
+      doAs(
+        admin,
+        sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
+          s" (id int, name string, city string)"))
 
-        doAs(
-          admin,
-          sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable1" +
-            s" (id int, name string, city string)"))
-
-        withSingleCallEnabled {
-          val e1 = intercept[AccessControlException](
-            doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
-          assert(
-            e1.getMessage.contains(s"does not have [select] privilege on " +
-              s"[$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name]"))
-        }
-        doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
-        doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
+      withSingleCallEnabled {
+        val e1 = intercept[AccessControlException](
+          doAs(someone, sql(s"CACHE TABLE $cacheTable2 select * from $db1.$srcTable1")))
+        assert(
+          e1.getMessage.contains(s"does not have [select] privilege on " +
+            s"[$db1/$srcTable1/city,$db1/$srcTable1/id,$db1/$srcTable1/name]"))
       }
+      doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
+      doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
     }
   }
 
@@ -993,7 +992,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("[KYUUBI #5503][AUTHZ] Check plan auth checked should not set tag to all child nodes") {
-    assume(isSparkV32OrGreater, "Spark 3.1 not support lateral subquery.")
     val db1 = defaultDb
     val table1 = "table1"
     val table2 = "table2"
@@ -1185,11 +1183,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("Add resource command") {
     withTempDir { path =>
       withSingleCallEnabled {
-        val supportedCommand = if (isSparkV32OrGreater) {
-          Seq("JAR", "FILE", "ARCHIVE")
-        } else {
-          Seq("JAR", "FILE")
-        }
+        val supportedCommand = Seq("JAR", "FILE", "ARCHIVE")
         supportedCommand.foreach { cmd =>
           interceptEndsWith[AccessControlException](
             doAs(someone, sql(s"ADD $cmd $path")))(
@@ -1510,6 +1504,33 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
             someone,
             sql(s"SELECT count(id) FROM $db1.$view1 WHERE id > 1").collect()))(
           s"does not have [select] privilege on [$db1/$view1/id]")
+      }
+    }
+  }
+
+  test("Test view lineage") {
+    def extractLineage(sql: String): Lineage = {
+      val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+      val qe = spark.sessionState.executePlan(parsed)
+      val analyzed = qe.analyzed
+      SparkSQLLineageParseHelper(spark).transformToLineage(0, analyzed).get
+    }
+
+    val db1 = defaultDb
+    val table1 = "table1"
+    val view1 = "view1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
+        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
+
+        val lineage = doAs(
+          admin,
+          extractLineage(s"SELECT id FROM $db1.$view1 WHERE id > 1"))
+        assert(lineage.inputTables.size == 1)
+        assert(lineage.inputTables.head === s"spark_catalog.$db1.$table1")
+        assert(lineage.columnLineage.size == 1)
+        assert(lineage.columnLineage.head.originalColumns.head === s"spark_catalog.$db1.$table1.id")
       }
     }
   }

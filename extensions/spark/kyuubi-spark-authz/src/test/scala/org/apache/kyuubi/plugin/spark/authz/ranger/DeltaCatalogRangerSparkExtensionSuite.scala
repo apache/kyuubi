@@ -25,7 +25,7 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.{isSparkV32OrGreater, isSparkV35OrGreater}
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkV35OrGreater
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -35,6 +35,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @DeltaTest
 class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val supportPurge: Boolean = false
   override protected val sqlExtensions: String = "io.delta.sql.DeltaSparkSessionExtension"
 
   val namespace1 = deltaNamespace
@@ -295,8 +296,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize table") {
-    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
-
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (s"$namespace1", "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(admin, sql(createTableSql(namespace1, table1)))
@@ -446,8 +445,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("optimize path-based table") {
-    assume(isSparkV32OrGreater, "optimize table is available in Delta Lake 1.2.0 and above")
-
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path)))
       val optimizeTableSql1 = s"OPTIMIZE delta.`$path`"
@@ -517,10 +514,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("alter path-based table drop column") {
-    assume(
-      isSparkV32OrGreater,
-      "alter table drop column is available in Delta Lake 1.2.0 and above")
-
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
       val dropColumnSql = s"ALTER TABLE delta.`$path` DROP COLUMN birthDate"
@@ -532,10 +525,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("alter path-based table rename column") {
-    assume(
-      isSparkV32OrGreater,
-      "alter table rename column is available in Delta Lake 1.2.0 and above")
-
     withTempDir(path => {
       doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
       val renameColumnSql = s"ALTER TABLE delta.`$path`" +
@@ -548,11 +537,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("alter path-based table replace columns") {
-    withTempDir(path => {
-      assume(
-        isSparkV32OrGreater,
-        "alter table replace columns is not available in Delta Lake 1.0.1")
-
+    withTempDir { path =>
       doAs(admin, sql(createPathBasedTableSql(path, Map("delta.columnMapping.mode" -> "name"))))
       val replaceColumnsSql = s"ALTER TABLE delta.`$path`" +
         s" REPLACE COLUMNS (id INT, name STRING, gender STRING)"
@@ -567,7 +552,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       if (isSparkV35OrGreater) {
         doAs(admin, sql(replaceColumnsSql))
       }
-    })
+    }
   }
 }
 

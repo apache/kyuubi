@@ -1398,8 +1398,9 @@ object KyuubiConf {
     buildConf("kyuubi.kubernetes.spark.appUrlPattern")
       .doc("The pattern to generate the spark on kubernetes application UI URL. " +
         "The pattern should contain placeholders for the application variables. " +
-        "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`, " +
-        "`{{KUBERNETES_NAMESPACE}}`, `{{KUBERNETES_CONTEXT}}` and `{{SPARK_UI_PORT}}`.")
+        "Available placeholders are `{{SPARK_APP_ID}}`, `{{SPARK_DRIVER_SVC}}`," +
+        " `{{SPARK_DRIVER_POD_IP}}`, `{{KUBERNETES_NAMESPACE}}`, `{{KUBERNETES_CONTEXT}}`" +
+        " and `{{SPARK_UI_PORT}}`.")
       .version("1.10.0")
       .stringConf
       .createWithDefault(
@@ -2076,6 +2077,24 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
+  val METADATA_CLEANER_BATCH_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.metadata.cleaner.batch.size")
+      .serverOnly
+      .doc("The batch size for cleaning expired metadata. " +
+        "This is used to avoid holding the delete lock for a long time " +
+        "when there are too many expired metadata to be cleaned.")
+      .version("1.11.0")
+      .intConf
+      .createWithDefault(1000)
+
+  val METADATA_CLEANER_BATCH_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.metadata.cleaner.batch.interval")
+      .serverOnly
+      .internal
+      .doc("The interval to wait before next batch of cleaning expired metadata.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(3).toMillis)
+
   val METADATA_RECOVERY_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.metadata.recovery.threads")
       .serverOnly
@@ -2447,6 +2466,7 @@ object KyuubiConf {
     .doc("The name of the engine pool.")
     .version("1.5.0")
     .stringConf
+    .transformToLowerCase
     .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
     .createWithDefault("engine-pool")
 

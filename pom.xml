@@ -62,6 +62,7 @@
         <module>extensions/spark/kyuubi-spark-connector-tpcds</module>
         <module>extensions/spark/kyuubi-spark-connector-tpch</module>
         <module>extensions/spark/kyuubi-spark-lineage</module>
+        <module>extensions/spark/kyuubi-spark-lineage-shaded</module>
         <module>extensions/spark/kyuubi-spark-jvm-quake</module>
         <module>extensions/spark/kyuubi-spark-shutdown-watchdog</module>
         <module>externals/kyuubi-chat-engine</module>
@@ -114,10 +115,10 @@
     </distributionManagement>
 
     <properties>
-        <java.version>8</java.version>
-        <maven.version>3.9.10</maven.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.version>3.9.11</maven.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <enforcer.maxJdkVersion>8</enforcer.maxJdkVersion>
         <scala.version>2.12.19</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
         <scala-collection-compat.version>2.12.0</scala-collection-compat.version>
@@ -126,16 +127,16 @@
         <!-- Please don't upgrade the version to 4.10+, it depends on JDK 11 -->
         <antlr4.version>4.9.3</antlr4.version>
         <antlr.st4.version>4.3.4</antlr.st4.version>
-        <apache.archive.dist>https://archive.apache.org/dist</apache.archive.dist>
+        <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
-        <byte-buddy.version>1.14.15</byte-buddy.version>
+        <byte-buddy.version>1.17.6</byte-buddy.version>
         <bouncycastle.version>1.78</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang3.version>3.17.0</commons-lang3.version>
+        <commons-lang3.version>3.18.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.3.1</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
@@ -144,6 +145,7 @@
         <flink.version>1.20.0</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.query>?action=download</flink.archive.query>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.65.1</grpc.version>
@@ -155,14 +157,15 @@
         <hive.version>3.1.3</hive.version>
         <hive.archive.name>apache-hive-${hive.version}-bin.tar.gz</hive.archive.name>
         <hive.archive.mirror>${apache.archive.dist}/hive/hive-${hive.version}</hive.archive.mirror>
+        <hive.archive.query>?action=download</hive.archive.query>
         <hive.archive.download.skip>false</hive.archive.download.skip>
         <httpclient.version>4.5.14</httpclient.version>
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>1.0.1</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.8.0</iceberg.version>
+        <iceberg.version>1.10.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
-        <jackson.version>2.15.4</jackson.version>
+        <jackson.version>2.20.1</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
         <!-- 6.0.0 requires JDK 11 -->
         <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
@@ -173,9 +176,11 @@
         <jetty.version>9.4.57.v20241219</jetty.version>
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
-        <kafka.version>3.5.2</kafka.version>
-        <kubernetes-client.version>6.13.5</kubernetes-client.version>
-        <kyuubi-relocated.version>0.5.0</kyuubi-relocated.version>
+        <kafka.version>3.9.1</kafka.version>
+        <!-- 6.14.0 requires Jackson 2.19.0+
+             https://github.com/fabric8io/kubernetes-client/releases/tag/v6.14.0 -->
+        <kubernetes-client.version>6.14.0</kubernetes-client.version>
+        <kyuubi-relocated.version>0.6.0</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
         <log4j.version>2.24.3</log4j.version>
@@ -197,6 +202,8 @@
         <slf4j.version>1.7.36</slf4j.version>
         <clickhouse-java.version>0.6.5</clickhouse-java.version>
         <snakeyaml.version>2.2</snakeyaml.version>
+        <hbase.version>2.5.12-hadoop3</hbase.version>
+        <hbase.deps.scope>provided</hbase.deps.scope>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
@@ -206,11 +213,12 @@
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
         <spark.archive.mirror>${apache.archive.dist}/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.query>?action=download</spark.archive.query>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
         <swagger.version>2.2.1</swagger.version>
-        <testcontainers-scala.version>0.41.4</testcontainers-scala.version>
+        <testcontainers-scala.version>0.43.0</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
@@ -232,7 +240,7 @@
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.11.3</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
-        <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.enforcer.mojo.rules.version>1.11.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.frontend.inheritsProxyConfigFromMaven>false</maven.plugin.frontend.inheritsProxyConfigFromMaven>
@@ -309,6 +317,11 @@
             <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-relocated-hive-service-rpc</artifactId>
+                <version>${kyuubi-relocated.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-relocated-util</artifactId>
                 <version>${kyuubi-relocated.version}</version>
             </dependency>
             <dependency>
@@ -701,63 +714,11 @@
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-base</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
-                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -808,6 +769,10 @@
                     <exclusion>
                         <groupId>com.sun.activation</groupId>
                         <artifactId>jakarta.activation</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.activation</groupId>
+                        <artifactId>jakarta.activation-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1259,6 +1224,19 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.hbase</groupId>
+                <artifactId>hbase-shaded-client-byo-hadoop</artifactId>
+                <version>${hbase.version}</version>
+                <scope>${hbase.deps.scope}</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.yetus</groupId>
+                        <artifactId>audience-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1568,6 +1546,22 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>${maven.plugin.shade.version}</version>
+                    <dependencies>
+                        <!--
+                          TODO: Remove ASM version management once upstream change released
+                          https://github.com/apache/maven-shade-plugin/pull/744
+                          -->
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm</artifactId>
+                            <version>9.8</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.ow2.asm</groupId>
+                            <artifactId>asm-commons</artifactId>
+                            <version>9.8</version>
+                        </dependency>
+                    </dependencies>
                 </plugin>
 
                 <plugin>
@@ -1768,11 +1762,9 @@
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
                         <numUnapprovedLicenses>0</numUnapprovedLicenses>
-                        <licenseFamilies>
-                            <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
-                                <familyName>Apache License 2.0</familyName>
-                            </licenseFamily>
-                        </licenseFamilies>
+                        <approvedLicenses>
+                            <id>AL2.0</id>
+                        </approvedLicenses>
                         <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
                     <executions>
@@ -1892,9 +1884,12 @@
                         <configuration>
                             <rules>
                                 <enforceBytecodeVersion>
-                                    <maxJdkVersion>${java.version}</maxJdkVersion>
+                                    <maxJdkVersion>${enforcer.maxJdkVersion}</maxJdkVersion>
+                                    <ignoredScopes>provided</ignoredScopes>
                                     <ignoredScopes>test</ignoredScopes>
                                     <ignoreClasses>
+                                        <!-- Only used for JDK9+  -->
+                                        <ignoreClass>com.thoughtworks.paranamer.DefaultParanamer</ignoreClass>
                                         <!--
                                           The package `org.jline.terminal.impl.ffm.*` contains some class files
                                           that are not compatible with JDK17 (only JDK21 is supported).
@@ -1918,6 +1913,9 @@
             <properties>
                 <!-- the apache cdn mirror works only for latest apache releases -->
                 <apache.archive.dist>https://dlcdn.apache.org</apache.archive.dist>
+                <spark.archive.query></spark.archive.query>
+                <flink.archive.query></flink.archive.query>
+                <hive.archive.query></hive.archive.query>
                 <nodeDownloadRoot>https://npmmirror.com/mirrors/node/</nodeDownloadRoot>
                 <pnpmDownloadRoot>https://registry.npmmirror.com/pnpm/-/</pnpmDownloadRoot>
             </properties>
@@ -1936,7 +1934,6 @@
                 <jdk>8</jdk>
             </activation>
             <properties>
-                <java.version>8</java.version>
                 <!--
                   Iceberg drops support for Java 8 since 1.7.0.
                   And it may have compatible issue with Spark 3.5.4+, see Iceberg #11731
@@ -1946,30 +1943,12 @@
         </profile>
 
         <profile>
-            <id>java-11</id>
+            <id>jdk9+</id>
             <activation>
-                <jdk>11</jdk>
+                <jdk>[9,)</jdk>
             </activation>
             <properties>
-                <java.version>11</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>java-17</id>
-            <activation>
-                <jdk>17</jdk>
-            </activation>
-            <properties>
-                <java.version>17</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
-                <minimalJavaBuildVersion>${java.version}</minimalJavaBuildVersion>
+                <maven.compiler.release>8</maven.compiler.release>
             </properties>
         </profile>
 
@@ -1979,10 +1958,6 @@
                 <jdk>21</jdk>
             </activation>
             <properties>
-                <java.version>21</java.version>
-                <maven.compiler.source></maven.compiler.source>
-                <maven.compiler.target></maven.compiler.target>
-                <maven.compiler.release>${java.version}</maven.compiler.release>
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
@@ -2062,22 +2037,22 @@
         <profile>
             <id>spark-4.0</id>
             <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-0</module>
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>4.0.0</spark.version>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
+                <spark.version>4.0.1</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
                 <!-- TODO: update once Hudi support Spark 4.0 -->
                 <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
-                <!-- TODO: update once Iceberg support Spark 4.0 -->
-                <iceberg.artifact>iceberg-spark-runtime-3.5_${scala.binary.version}</iceberg.artifact>
                 <!-- TODO: update once Paimon support Spark 4.0.
                            paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
                 <paimon.artifact>paimon-common</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
@@ -2085,6 +2060,7 @@
         <profile>
             <id>spark-master</id>
             <properties>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
                 <spark.version>4.0.0-SNAPSHOT</spark.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
@@ -2103,6 +2079,9 @@
             </repositories>
         </profile>
 
+        <!-- The building support for Flink 1.17 and 1.18 is removed in [KYUUBI #7199],
+             but we need to keep these profiles in order to run integration tests for
+             cross-version verification. -->
         <profile>
             <id>flink-1.17</id>
             <properties>
