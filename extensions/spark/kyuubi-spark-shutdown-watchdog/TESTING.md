@@ -37,7 +37,7 @@ mvn clean package
 
 The JAR file will be generated at:
 ```
-target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar
+target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar
 ```
 
 ## Unit Tests
@@ -110,7 +110,7 @@ public class TestNormalShutdown {
 
 ```bash
 # Compile
-javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar" TestNormalShutdown.java
+javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar" TestNormalShutdown.java
 
 # Run
 $SPARK_HOME/bin/spark-submit \
@@ -118,7 +118,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf "spark.kyuubi.shutdown.watchdog.enabled=true" \
   --conf "spark.kyuubi.shutdown.watchdog.timeout=5s" \
   --conf "spark.plugins=org.apache.spark.kyuubi.shutdown.watchdog.SparkShutdownWatchdogPlugin" \
-  --jars target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar \
+  --jars target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar \
   . \
   TestNormalShutdown
 ```
@@ -197,7 +197,7 @@ public class TestHangingShutdown {
 
 ```bash
 # Compile
-javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar" TestHangingShutdown.java
+javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar" TestHangingShutdown.java
 
 # Run (capture output to log file)
 $SPARK_HOME/bin/spark-submit \
@@ -205,7 +205,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf "spark.kyuubi.shutdown.watchdog.enabled=true" \
   --conf "spark.kyuubi.shutdown.watchdog.timeout=5s" \
   --conf "spark.plugins=org.apache.spark.kyuubi.shutdown.watchdog.SparkShutdownWatchdogPlugin" \
-  --jars target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar \
+  --jars target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar \
   . \
   TestHangingShutdown 2>&1 | tee test-hanging.log
 ```
@@ -265,7 +265,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf "spark.kyuubi.shutdown.watchdog.enabled=false" \
   --conf "spark.kyuubi.shutdown.watchdog.timeout=5s" \
   --conf "spark.plugins=org.apache.spark.kyuubi.shutdown.watchdog.SparkShutdownWatchdogPlugin" \
-  --jars target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar \
+  --jars target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar \
   . \
   TestHangingShutdown 2>&1 | tee test-disabled.log &
 
@@ -324,10 +324,10 @@ public class TestThreadDump {
 
 ```bash
 # Compile (need slf4j-api and slf4j-simple for logger)
-javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar" TestThreadDump.java
+javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar" TestThreadDump.java
 
 # Run
-java -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar:." TestThreadDump
+java -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar:." TestThreadDump
 ```
 
 3. **Expected Results**:
@@ -486,7 +486,7 @@ mvn test
 # Save as TestHangingShutdown.java
 
 # 5. Compile test application
-javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar" TestHangingShutdown.java
+javac -cp "$SPARK_HOME/jars/*:target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar" TestHangingShutdown.java
 
 # 6. Run hanging shutdown test
 $SPARK_HOME/bin/spark-submit \
@@ -494,7 +494,7 @@ $SPARK_HOME/bin/spark-submit \
   --conf "spark.kyuubi.shutdown.watchdog.enabled=true" \
   --conf "spark.kyuubi.shutdown.watchdog.timeout=5s" \
   --conf "spark.plugins=org.apache.spark.kyuubi.shutdown.watchdog.SparkShutdownWatchdogPlugin" \
-  --jars target/kyuubi-spark-shutdown-watchdog_2.12-1.11.0-SNAPSHOT.jar \
+  --jars target/kyuubi-spark-shutdown-watchdog-1.11.0-SNAPSHOT.jar \
   . \
   TestHangingShutdown 2>&1 | tee test-results.log
 
@@ -511,9 +511,3 @@ grep "hanging-thread" test-results.log
 | 3.0+         | 2.12          | 8+           | ✅ Compatible |
 | 3.5+         | 2.12          | 11+          | ✅ Tested |
 | 4.0+         | 2.13          | 11+          | ✅ Tested |
-
-## References
-
-- [Spark Plugin API Documentation](https://spark.apache.org/docs/latest/plugins.html)
-- [Spark Configuration Guide](https://spark.apache.org/docs/latest/configuration.html)
-- [Kyuubi Project](https://kyuubi.apache.org/)

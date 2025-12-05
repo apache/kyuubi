@@ -19,10 +19,8 @@ package org.apache.spark.kyuubi.shutdown.watchdog
 
 import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
-import java.util.function.IntConsumer
 
-import org.apache.spark.SparkConf
-import org.apache.spark.SparkFunSuite
+import org.apache.spark.{SparkConf, SparkFunSuite}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.Eventually
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -47,7 +45,7 @@ class ShutdownWatchdogSuite
       .set(SparkShutdownWatchdogConf.SHUTDOWN_WATCHDOG_TIMEOUT_KEY, "1000ms")
 
     ShutdownWatchdog.startIfNeeded(conf, logger)
-    assert(!ShutdownWatchdog.isRunningForTests())
+    assert(!ShutdownWatchdog.isRunningForTests)
   }
 
   test("watchdog does not start when timeout is non-positive") {
@@ -56,7 +54,7 @@ class ShutdownWatchdogSuite
       .set(SparkShutdownWatchdogConf.SHUTDOWN_WATCHDOG_TIMEOUT_KEY, "0ms")
 
     ShutdownWatchdog.startIfNeeded(conf, logger)
-    assert(!ShutdownWatchdog.isRunningForTests())
+    assert(!ShutdownWatchdog.isRunningForTests)
   }
 
   test("watchdog triggers emergency exit after timeout") {
@@ -67,11 +65,9 @@ class ShutdownWatchdogSuite
     val exitCode = new AtomicInteger(-1)
     val exitLatch = new CountDownLatch(1)
 
-    ShutdownWatchdog.setExitFn(new IntConsumer {
-      override def accept(value: Int): Unit = {
-        exitCode.set(value)
-        exitLatch.countDown()
-      }
+    ShutdownWatchdog.setExitFn((value: Int) => {
+      exitCode.set(value)
+      exitLatch.countDown()
     })
 
     ShutdownWatchdog.startIfNeeded(conf, logger)
@@ -81,7 +77,7 @@ class ShutdownWatchdogSuite
 
     // Ensure the watchdog thread cleaned itself up.
     eventually(Timeout(Span(2, Seconds))) {
-      assert(!ShutdownWatchdog.isRunningForTests())
+      assert(!ShutdownWatchdog.isRunningForTests)
     }
   }
 }

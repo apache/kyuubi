@@ -70,7 +70,7 @@ public final class ShutdownWatchdog {
     }
 
     final Thread watchdogThread =
-        new Thread(() -> runWatchdogLoop(timeoutMillis, logger), "spark-shutdown-watchdog");
+        new Thread(() -> runWatchdogLoop(timeoutMillis, logger), "shutdown-watchdog");
     watchdogThread.setDaemon(true);
 
     if (!WATCHDOG_THREAD_REF.compareAndSet(existing, watchdogThread)) {
@@ -127,6 +127,7 @@ public final class ShutdownWatchdog {
   }
 
   /** Test-only helper to check whether the watchdog thread is currently running. */
+  @VisibleForTesting
   static boolean isRunningForTests() {
     Thread t = WATCHDOG_THREAD_REF.get();
     return t != null && t.isAlive();

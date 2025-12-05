@@ -58,16 +58,6 @@ public class SparkShutdownWatchdogPlugin implements SparkPlugin {
 
   @Override
   public ExecutorPlugin executorPlugin() {
-    return new ExecutorPlugin() {
-      @Override
-      public void init(PluginContext context, Map<String, String> extraConf) {
-        // no-op
-      }
-
-      @Override
-      public void shutdown() {
-        // no-op
-      }
-    };
+    return null;
   }
 }

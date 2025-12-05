@@ -30,15 +30,12 @@ build/mvn clean package -DskipTests \
   -pl extensions/spark/kyuubi-spark-shutdown-watchdog -am
 ```
 
-The module still publishes artifacts with the standard Scala suffix
-(`kyuubi-spark-shutdown-watchdog_2.12`, `..._2.13`, etc.) so that it aligns with
-the rest of the project. Maven expands `${scala.binary.version}` automatically,
-so you can run the command above without worrying about Scala version specifics.
 Because the implementation is pure Java, there are no Scala runtime
-dependencies—building by module path is enough.
+dependencies. You can build it with Spark Scala 2.12 libraries and use the
+resulting jar with Spark applications running on Scala 2.13 (or vice versa).
 
 After the build succeeds the jar is located at:
-`./extensions/spark/kyuubi-spark-shutdown-watchdog/target/kyuubi-spark-shutdown-watchdog_${scala.binary.version}-${project.version}.jar`
+`./extensions/spark/kyuubi-spark-shutdown-watchdog/target/kyuubi-spark-shutdown-watchdog-${project.version}.jar`
 
 ## Installing
 
@@ -55,11 +52,10 @@ Add the plugin class to `spark.plugins` when launching the Spark SQL engine:
 spark.plugins=org.apache.spark.kyuubi.shutdown.watchdog.SparkShutdownWatchdogPlugin
 ```
 
-Configure the timeout directly through Spark (see also the general configuration
-table in `docs/configuration/settings.md`):
+Configure the timeout directly through Spark:
 
 ```properties
-spark.kyuubi.shutdown.watchdog.timeout=60000
+spark.kyuubi.shutdown.watchdog.timeout=1m
 ```
 
 Tune this value according to how long you expect the engine to take during a
