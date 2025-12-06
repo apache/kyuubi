@@ -22,9 +22,11 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{KyuubiServerEvent, OperationData, OperationProgress, ServerData, SessionData}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiServerInfoEvent
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSession
 
 object ApiUtils extends Logging {
@@ -145,12 +147,24 @@ object ApiUtils extends Logging {
       serverEvent.eventTime,
       serverEvent.state,
       serverEvent.serverIP,
-      serverEvent.serverConf.asJava,
+      processServerConf(serverEvent.serverConf).asJava,
       serverEvent.serverEnv.asJava,
       (Map(
         "BUILD_USER" -> serverEvent.BUILD_USER,
         "BUILD_DATE" -> serverEvent.BUILD_DATE,
         "REPO_URL" -> serverEvent.REPO_URL) ++ serverEvent.VERSION_INFO).asJava)
+  }
+
+  private def processServerConf(serverConf: Map[String, String]): Map[String, String] = {
+    val kyuubiConf = Option(KyuubiServer.kyuubiServer).map(_.getConf).getOrElse(new KyuubiConf())
+    val confMode = kyuubiConf.get(KyuubiConf.SERVER_EVENT_CONF_MODE)
+    KyuubiConf.ServerEventConfMode.withName(confMode) match {
+      case KyuubiConf.ServerEventConfMode.ORIGINAL => serverConf
+      case KyuubiConf.ServerEventConfMode.REDACTED =>
+        val redactionPattern = kyuubiConf.get(KyuubiConf.SERVER_SECRET_REDACTION_PATTERN)
+        Utils.redact(redactionPattern, serverConf.toSeq).toMap
+      case KyuubiConf.ServerEventConfMode.NONE => Map.empty[String, String]
+    }
   }
 
   def logAndRefineErrorMsg(errorMsg: String, throwable: Throwable): String = {

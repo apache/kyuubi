@@ -3940,4 +3940,24 @@ object KyuubiConf {
       .version("1.9.1")
       .serverOnly
       .fallbackConf(HIVE_SERVER2_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
+
+  object ServerEventConfMode extends Enumeration {
+    type ServerEventConfMode = Value
+    val ORIGINAL, REDACTED, NONE = Value
+  }
+
+  val SERVER_EVENT_CONF_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.server.event.conf.mode")
+      .doc("Specifies how server configuration is exposed in server events. " +
+        "Available options are: <ul>" +
+        " <li>ORIGINAL: Return the original server configuration.</li>" +
+        " <li>REDACTED: Redact sensitive information based on" +
+        s" ${SERVER_SECRET_REDACTION_PATTERN.key}.</li>" +
+        " <li>NONE: Do not return any server configuration.</li></ul>")
+      .version("1.11.0")
+      .serverOnly
+      .stringConf
+      .transformToUpperCase
+      .checkValues(ServerEventConfMode)
+      .createWithDefault(ServerEventConfMode.REDACTED.toString)
 }
