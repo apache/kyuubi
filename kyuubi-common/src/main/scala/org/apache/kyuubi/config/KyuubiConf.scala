@@ -2107,13 +2107,11 @@ object KyuubiConf {
   val METADATA_RECOVERY_WAIT_APPLICATION_SUBMISSION: ConfigEntry[Boolean] =
     buildConf("kyuubi.metadata.recovery.wait.application.submission")
       .serverOnly
-      .doc(
-        "Whether a metadata recovery task should wait for its corresponding application " +
-          "submission to complete before finishing. All recovery tasks are submitted to a fixed " +
-          "thread pool controlled by kyuubi.metadata.recovery.threads. If true, a task blocks " +
-          "until the application submission is done, helping throttle the load on the system. " +
-          "If false, the task returns immediately after opening the session without waiting."
-      )
+      .doc("Whether a metadata recovery task should wait for its corresponding application " +
+        "submission to complete before finishing. All recovery tasks are submitted to a fixed " +
+        "thread pool controlled by kyuubi.metadata.recovery.threads. If true, a task blocks " +
+        "until the application submission is done, helping throttle the load on the system. " +
+        "If false, the task returns immediately after opening the session without waiting.")
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
