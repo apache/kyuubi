@@ -197,7 +197,9 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
               if (recoveryWaitEngineSubmission) {
                 info(s"Waiting for batch[$batchId] engine submission during recovery")
                 val batchOp = batchSession.batchJobSubmissionOp
-                while (!batchOp.appStarted && !OperationState.isTerminal(batchOp.getStatus.state)) {
+                while (batchSession.getSessionEvent.forall(_.exception.isEmpty) &&
+                  !batchOp.appStarted &&
+                  !OperationState.isTerminal(batchOp.getStatus.state)) {
                   Thread.sleep(300)
                 }
               }
