@@ -2104,17 +2104,18 @@ object KyuubiConf {
       .intConf
       .createWithDefault(10)
 
-  val METADATA_RECOVERY_WAIT_APPLICATION_SUBMISSION: ConfigEntry[Boolean] =
-    buildConf("kyuubi.metadata.recovery.wait.application.submission")
+  val METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metadata.recovery.wait.engine.submission")
       .serverOnly
-      .doc("Whether a metadata recovery task should wait for its corresponding application " +
+      .doc("Whether a metadata recovery task should wait for its corresponding engine " +
         "submission to complete before finishing. All recovery tasks are submitted to a fixed " +
-        "thread pool controlled by kyuubi.metadata.recovery.threads. If true, a task blocks " +
-        "until the application submission is done, helping throttle the load on the system. " +
+        s"thread pool controlled by ${METADATA_RECOVERY_THREADS.key}. If true, a task blocks " +
+        "until the engine submission is done, helping throttle the load on the system " +
+        s"if ${SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key} is false. " +
         "If false, the task returns immediately after opening the session without waiting.")
       .version("1.10.3")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val METADATA_REQUEST_RETRY_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.metadata.request.retry.interval")

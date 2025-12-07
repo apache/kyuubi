@@ -182,7 +182,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = withBatchRecoveryLockRequired {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
-    val recoveryWaitAppSubmission = conf.get(METADATA_RECOVERY_WAIT_APPLICATION_SUBMISSION)
+    val recoveryWaitEngineSubmission = conf.get(METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
@@ -194,8 +194,8 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
           val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
             Utils.tryLogNonFatalError {
               sessionManager.openBatchSession(batchSession)
-              if (recoveryWaitAppSubmission) {
-                info(s"Waiting for batch[$batchId] application submission during recovery")
+              if (recoveryWaitEngineSubmission) {
+                info(s"Waiting for batch[$batchId] engine submission during recovery")
                 val batchOp = batchSession.batchJobSubmissionOp
                 while (!batchOp.appStarted && !OperationState.isTerminal(batchOp.getStatus.state)) {
                   Thread.sleep(300)
