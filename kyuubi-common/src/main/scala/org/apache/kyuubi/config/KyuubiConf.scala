@@ -2112,7 +2112,7 @@ object KyuubiConf {
         "thread pool controlled by kyuubi.metadata.recovery.threads. If true, a task blocks " +
         "until the application submission is done, helping throttle the load on the system. " +
         "If false, the task returns immediately after opening the session without waiting.")
-      .version("1.11.0")
+      .version("1.10.3")
       .booleanConf
       .createWithDefault(true)
 
