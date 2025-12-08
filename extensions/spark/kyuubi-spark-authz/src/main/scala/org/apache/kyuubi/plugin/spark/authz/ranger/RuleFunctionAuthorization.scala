@@ -32,7 +32,6 @@ case class RuleFunctionAuthorization(spark: SparkSession) extends (LogicalPlan =
   final val AUTHZ_UDF_KEY: String = "spark.kyuubi.conf.authz.udf.enabled"
   private val authzUDFEnabled: Boolean =
     spark.conf.getOption(AUTHZ_UDF_KEY).exists(_.equalsIgnoreCase("true"))
-  
   override def apply(plan: LogicalPlan): Unit = {
     if (!authzUDFEnabled) {
       return
