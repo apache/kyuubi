@@ -101,6 +101,9 @@ hadoop.proxyuser.<user name in principal>.groups *
 hadoop.proxyuser.<user name in principal>.hosts *
 ```
 
+Also, you must configure `kyuubi.session.local.dir.allow.list` to exclude your Kyuubi server's keytab and any other credential from the local directories.
+Otherwise, any user who can login to the Kyuubi server via Kyuubi frontend protocols is possible to obtain the keytab and to impersonate the users configured by Hadoop proxy user settings.
+
 ## Further Readings
 
 - [Hadoop in Secure Mode](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SecureMode.html)
