@@ -280,7 +280,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
     val query = queryBuilder.toString
     JdbcUtils.executeQueryWithRowMapper(query) { stmt =>
-      setStatementParams(stmt, params)
+      setStatementParams(stmt, params.toSeq: _*)
     } { resultSet =>
       resultSet.getInt(1)
     }.head

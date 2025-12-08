@@ -35,6 +35,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @DeltaTest
 class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val supportPurge: Boolean = false
   override protected val sqlExtensions: String = "io.delta.sql.DeltaSparkSessionExtension"
 
   val namespace1 = deltaNamespace

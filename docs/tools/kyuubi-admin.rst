@@ -14,16 +14,14 @@
    limitations under the License.
 
 Kyuubi Administer Tool
-=======================
+======================
 
 .. versionadded:: 1.6.0
 
 Kyuubi administer tool(kyuubi-admin) provides administrators with some maintenance operations against a kyuubi server or cluster.
 
-.. _installation:
-
 Installation
--------------------------------------
+------------
 To install kyuubi-admin, you need to unpack the tarball. For example,
 
 .. parsed-literal::
@@ -41,21 +39,14 @@ This will result in the creation of a subdirectory named apache-kyuubi-|release|
    │   ├── ...
    ├── ...
 
-
-.. _usage:
-
 Usage
--------------------------------------
+-----
 .. code-block:: bash
 
    bin/kyuubi-admin --help
 
-
-
-.. _refresh_config:
-
 Refresh config
--------------------------------------
+--------------
 
 Refresh the config with specified type.
 
@@ -76,10 +67,8 @@ Usage: ``bin/kyuubi-admin refresh config [options] [<configType>]``
    * - denyUsers
      - The user in the deny list will be denied to connect to kyuubi server.
 
-.. _list_engine:
-
 List Engines
--------------------------------------
+------------
 
 Prints a table of the key information about the specified engines.
 
@@ -100,19 +89,15 @@ Usage: ``bin/kyuubi-admin list engine [options]``
    * - --hs2ProxyUser
      - The proxy user to impersonate. When specified, it will list engines for the hs2ProxyUser.
 
-.. _list_server:
-
 List Servers
--------------------------------------
+------------
 
 Prints a table of the key information about the servers.
 
 Usage: ``bin/kyuubi-admin list server``
 
-.. _delete_engine:
-
 Delete an Engine
--------------------------------------
+----------------
 
 Delete the specified engine.
 

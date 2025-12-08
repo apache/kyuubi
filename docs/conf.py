@@ -38,18 +38,11 @@ import datetime
 sys.path.insert(0, os.path.abspath('.'))
 
 import sphinx_markdown_tables
-import recommonmark
-from recommonmark.transform import AutoStructify
-from recommonmark.parser import CommonMarkParser
 
 source_suffix = {
     '.rst': 'restructuredtext',
     '.txt': 'restructuredtext',
     '.md': 'markdown',
-}
-
-source_parsers = {
-    '.md': CommonMarkParser,
 }
 
 # -- Project information -----------------------------------------------------
@@ -76,7 +69,7 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
-    'recommonmark',
+    'myst_parser',
     'sphinx_copybutton',
     'sphinx_markdown_tables',
     'sphinx_togglebutton',
@@ -126,13 +119,5 @@ pygments_style = 'sphinx'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 html_css_files = ["css/custom.css"]
-htmlhelp_basename = 'Recommonmarkdoc'
 
 github_doc_root = 'https://github.com/apache/kyuubi/tree/master/docs/'
-def setup(app):
-    app.add_config_value('recommonmark_config', {
-        'url_resolver': lambda url: github_doc_root + url,
-        'auto_toc_tree_section': 'Contents',
-        'enable_eval_rst': True,
-    }, True)
-    app.add_transform(AutoStructify)

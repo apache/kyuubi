@@ -164,7 +164,7 @@
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
         <iceberg.version>1.10.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
-        <jackson.version>2.15.4</jackson.version>
+        <jackson.version>2.20.1</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
         <!-- 6.0.0 requires JDK 11 -->
         <jakarta.servlet-api.version>5.0.0</jakarta.servlet-api.version>
@@ -176,7 +176,9 @@
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
         <kafka.version>3.9.1</kafka.version>
-        <kubernetes-client.version>6.13.5</kubernetes-client.version>
+        <!-- 6.14.0 requires Jackson 2.19.0+
+             https://github.com/fabric8io/kubernetes-client/releases/tag/v6.14.0 -->
+        <kubernetes-client.version>6.14.0</kubernetes-client.version>
         <kyuubi-relocated.version>0.6.0</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
@@ -237,7 +239,7 @@
         <maven.plugin.build.helper.version>3.3.0</maven.plugin.build.helper.version>
         <maven.plugin.download.version>1.11.3</maven.plugin.download.version>
         <maven.plugin.download.cache.path></maven.plugin.download.cache.path>
-        <maven.plugin.enforcer.mojo.rules.version>1.8.0</maven.plugin.enforcer.mojo.rules.version>
+        <maven.plugin.enforcer.mojo.rules.version>1.11.0</maven.plugin.enforcer.mojo.rules.version>
         <maven.plugin.flatten.version>1.6.0</maven.plugin.flatten.version>
         <maven.plugin.frontend.version>1.12.1</maven.plugin.frontend.version>
         <maven.plugin.frontend.inheritsProxyConfigFromMaven>false</maven.plugin.frontend.inheritsProxyConfigFromMaven>
@@ -711,63 +713,11 @@
             </dependency>
 
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
                 <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jdk8</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-base</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.jaxrs</groupId>
-                <artifactId>jackson-jaxrs-json-provider</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-jaxb-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
-                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <dependency>
@@ -818,6 +768,10 @@
                     <exclusion>
                         <groupId>com.sun.activation</groupId>
                         <artifactId>jakarta.activation</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jakarta.activation</groupId>
+                        <artifactId>jakarta.activation-api</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1807,11 +1761,9 @@
                     <configuration>
                         <excludeSubProjects>false</excludeSubProjects>
                         <numUnapprovedLicenses>0</numUnapprovedLicenses>
-                        <licenseFamilies>
-                            <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
-                                <familyName>Apache License 2.0</familyName>
-                            </licenseFamily>
-                        </licenseFamilies>
+                        <approvedLicenses>
+                            <id>AL2.0</id>
+                        </approvedLicenses>
                         <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
                     <executions>
@@ -1935,6 +1887,8 @@
                                     <ignoredScopes>provided</ignoredScopes>
                                     <ignoredScopes>test</ignoredScopes>
                                     <ignoreClasses>
+                                        <!-- Only used for JDK9+  -->
+                                        <ignoreClass>com.thoughtworks.paranamer.DefaultParanamer</ignoreClass>
                                         <!--
                                           The package `org.jline.terminal.impl.ffm.*` contains some class files
                                           that are not compatible with JDK17 (only JDK21 is supported).

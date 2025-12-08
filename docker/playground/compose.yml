@@ -16,17 +16,35 @@
 #
 
 services:
-  minio:
-    image: bitnami/minio:2023-debian-11
+  rustfs:
+    image: rustfs/rustfs:latest
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio_minio
-      MINIO_DEFAULT_BUCKETS: spark-bucket
-    container_name: minio
-    hostname: minio
+      RUSTFS_ACCESS_KEY: rustfsadmin
+      RUSTFS_SECRET_KEY: rustfsadmin
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ACCESS: 0.0.0.0:9001
+    hostname: rustfs
     ports:
       - 9000
       - 9001:9001
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+
+  rustfs-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      rustfs:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: rustfsadmin
+      AWS_SECRET_ACCESS_KEY: rustfsadmin
+      AWS_REGION: us-east-1
+    entrypoint: /bin/sh
+    command: -c "aws --endpoint-url http://rustfs:9000 s3api create-bucket --bucket spark-bucket"
 
   postgres:
     image: postgres:${POSTGRES_VERSION}
@@ -79,7 +97,7 @@ services:
       - ./script/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql
     depends_on:
       - metastore
-      - minio
+      - rustfs
       - zookeeper
 
   prometheus:

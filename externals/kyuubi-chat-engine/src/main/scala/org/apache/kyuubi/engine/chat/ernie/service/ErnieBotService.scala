@@ -22,7 +22,7 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, PropertyNamingStrategy}
+import com.fasterxml.jackson.databind.{DeserializationFeature, ObjectMapper, PropertyNamingStrategies}
 import io.reactivex.Single
 import okhttp3.{ConnectionPool, OkHttpClient}
 import retrofit2.{HttpException, Retrofit}
@@ -69,7 +69,7 @@ object ErnieBotService {
     val mapper: ObjectMapper = new ObjectMapper
     mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
-    mapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE)
+    mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
     mapper
   }
 
