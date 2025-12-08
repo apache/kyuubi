@@ -23,6 +23,7 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -558,6 +559,9 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val extraSparkConf: SparkConf = new SparkConf()
+    .set("spark.kyuubi.conf.authz.udf.enabled", "true")
+
   test("table stats must be specified") {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
