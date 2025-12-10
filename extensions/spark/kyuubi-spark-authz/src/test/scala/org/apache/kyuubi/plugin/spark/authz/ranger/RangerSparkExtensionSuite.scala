@@ -560,7 +560,7 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val extraSparkConf: SparkConf = new SparkConf()
-    .set("spark.kyuubi.conf.authz.udf.enabled", "true")
+    .set("spark.kyuubi.authz.udf.enabled", "true")
 
   test("table stats must be specified") {
     val table = "hive_src"
