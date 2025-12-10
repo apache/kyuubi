@@ -37,8 +37,8 @@ build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.ver
 - [x] 3.5.x (default)
 - [x] 3.4.x
 - [x] 3.3.x
-- [x] 3.2.x
-- [x] 3.1.x
+- [ ] 3.2.x
+- [ ] 3.1.x
 - [ ] 3.0.x
 - [ ] 2.4.x and earlier
 

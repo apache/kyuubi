@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.client.api.v1.dto;
 
+import java.util.Base64;
 import java.util.Objects;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -41,6 +42,12 @@ public class Field {
   }
 
   public Object getValue() {
+    // For binary type column values, although the data type is "BINARY_VAL",
+    // the value is transmitted as a Base64-encoded string.
+    // Here, we decode it into a byte array.
+    if (value instanceof String && "BINARY_VAL".equalsIgnoreCase(dataType)) {
+      return Base64.getDecoder().decode((String) value);
+    }
     return value;
   }
 

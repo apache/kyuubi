@@ -33,6 +33,7 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
  */
 class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
+  override protected val supportPurge: Boolean = false
 
   val catalogV2 = "testcat"
   val jdbcCatalogV2 = "jdbc2"
@@ -238,8 +239,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] TRUNCATE TABLE") {
-    assume(isSparkV32OrGreater)
-
     val e1 = intercept[AccessControlException](
       doAs(
         someone,
@@ -249,8 +248,6 @@ class V2JdbcTableCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSu
   }
 
   test("[KYUUBI #3424] MSCK REPAIR TABLE") {
-    assume(isSparkV32OrGreater)
-
     val e1 = intercept[AccessControlException](
       doAs(
         someone,

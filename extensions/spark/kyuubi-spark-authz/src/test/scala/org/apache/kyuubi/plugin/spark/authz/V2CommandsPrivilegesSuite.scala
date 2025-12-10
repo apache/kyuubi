@@ -228,7 +228,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("UpdateTable") {
-    assume(isSparkV32OrGreater)
     assume(supportsUpdateTable)
 
     val plan = executePlan(s"UPDATE $catalogTable SET value = 'a' WHERE key = 0").analyzed
@@ -315,7 +314,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("AddPartitions") {
     assume(supportsPartitionManagement)
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"ADD PARTITION (dt='2022-01-01')").analyzed
@@ -337,7 +335,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("DropPartitions") {
     assume(supportsPartitionManagement)
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"DROP PARTITION (dt='2022-01-01')").analyzed
@@ -359,7 +356,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("RenamePartitions") {
     assume(supportsPartitionManagement)
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"PARTITION (dt='2022-01-01') RENAME TO PARTITION (dt='2022-01-02')").analyzed
@@ -381,7 +377,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("TruncatePartition") {
     assume(supportsPartitionManagement)
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"ALTER TABLE $catalogPartTable " +
       s"PARTITION (dt='2022-01-01') RENAME TO PARTITION (dt='2022-01-02')").analyzed
@@ -485,7 +480,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("RepairTable") {
     assume(supportsPartitionGrammar)
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"MSCK REPAIR TABLE $catalogPartTable").analyzed
 
@@ -506,7 +500,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("TruncateTable") {
-    assume(isSparkV32OrGreater)
 
     val plan = executePlan(s"TRUNCATE TABLE $catalogTable").analyzed
 
@@ -547,7 +540,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   // with V2AlterTableCommand
 
   test("AddColumns") {
-    assume(isSparkV32OrGreater)
 
     val table = "AddColumns"
     withV2Table(table) { tableId =>
@@ -572,8 +564,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("AlterColumn") {
-    assume(isSparkV32OrGreater)
-
     val table = "AlterColumn"
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int)")
@@ -597,8 +587,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("DropColumns") {
-    assume(isSparkV32OrGreater)
-
     val table = "DropColumns"
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
@@ -622,8 +610,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("ReplaceColumns") {
-    assume(isSparkV32OrGreater)
-
     val table = "ReplaceColumns"
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
@@ -647,8 +633,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("RenameColumn") {
-    assume(isSparkV32OrGreater)
-
     val table = "RenameColumn"
     withV2Table(table) { tableId =>
       sql(s"CREATE TABLE $tableId (i int, j int)")
@@ -687,7 +671,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("SetNamespaceProperties") {
-    assume(isSparkV33OrGreater)
     val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assertResult(plan.getClass.getName)(
@@ -705,7 +688,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("CreateNamespace") {
-    assume(isSparkV33OrGreater)
     withDatabase("CreateNamespace") { db =>
       val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
       val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
@@ -727,7 +709,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("SetNamespaceLocation") {
-    assume(isSparkV33OrGreater)
     // hive does not support altering database location
     assume(catalogImpl !== "hive")
     val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
@@ -760,7 +741,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("DescribeNamespace") {
-    assume(isSparkV33OrGreater)
     val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
     val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
     assertResult(plan.getClass.getName)(
@@ -781,7 +761,6 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("DropNamespace") {
-    assume(isSparkV33OrGreater)
     withDatabase("DropNameSpace") { db =>
       sql(s"CREATE DATABASE $db")
       val plan = sql(s"DROP DATABASE DropNameSpace").queryExecution.analyzed

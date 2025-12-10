@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.jdbc.WithJdbcServerContainer
 
 trait WithStarRocksContainer extends WithJdbcServerContainer {
 
-  private val starrocksDockerImage = "starrocks/allin1-ubuntu:3.1.6"
+  private val starrocksDockerImage = "starrocks/allin1-ubuntu:3.3.13"
 
   private val STARROCKS_FE_MYSQL_PORT = 9030
   private val STARROCKS_FE_HTTP_PORT = 8030
@@ -47,7 +47,7 @@ trait WithStarRocksContainer extends WithJdbcServerContainer {
       .withStrategy(Wait.forListeningPorts(ports: _*))
       .withStrategy(forLogMessage(".*broker service already added into FE service.*", 1))
       .withStrategy(
-        forLogMessage(".*Enjoy the journal to StarRocks blazing-fast lake-house engine.*", 1)))
+        forLogMessage(".*Enjoy the journey to StarRocks blazing-fast lake-house engine.*", 1)))
 
   protected def feJdbcUrl: String = withContainers { container =>
     val queryServerHost: String = container.host

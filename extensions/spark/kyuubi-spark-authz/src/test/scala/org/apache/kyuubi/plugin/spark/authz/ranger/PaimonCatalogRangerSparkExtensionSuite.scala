@@ -31,6 +31,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 @PaimonTest
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val supportPurge: Boolean = false
   private def isSupportedVersion = isScalaV212
   override protected val sqlExtensions: String =
     if (isSupportedVersion) "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
@@ -420,46 +421,43 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("Batch Time Travel") {
-    // Batch Time Travel requires Spark 3.3+
-    if (isSparkV33OrGreater) {
-      withCleanTmpResources(Seq(
-        (s"$catalogV2.$namespace1.$table1", "table"))) {
-        val createTable = createTableSql(namespace1, table1)
-        doAs(admin, sql(createTable))
-        val insertSql =
-          s"""
-             |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
-             |(1, "a"), (2, "b");
-             |""".stripMargin
-        doAs(admin, sql(insertSql))
+    withCleanTmpResources(Seq(
+      (s"$catalogV2.$namespace1.$table1", "table"))) {
+      val createTable = createTableSql(namespace1, table1)
+      doAs(admin, sql(createTable))
+      val insertSql =
+        s"""
+           |INSERT INTO $catalogV2.$namespace1.$table1 VALUES
+           |(1, "a"), (2, "b");
+           |""".stripMargin
+      doAs(admin, sql(insertSql))
 
-        val querySnapshotVersionSql =
-          s"""
-             |SELECT id from $catalogV2.$namespace1.$table1 VERSION AS OF 1
-             |""".stripMargin
-        doAs(table1OnlyUserForNs, sql(querySnapshotVersionSql).collect())
-        interceptEndsWith[AccessControlException] {
-          doAs(someone, sql(querySnapshotVersionSql).collect())
-        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
-        doAs(admin, sql(querySnapshotVersionSql).collect())
+      val querySnapshotVersionSql =
+        s"""
+           |SELECT id from $catalogV2.$namespace1.$table1 VERSION AS OF 1
+           |""".stripMargin
+      doAs(table1OnlyUserForNs, sql(querySnapshotVersionSql).collect())
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(querySnapshotVersionSql).collect())
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+      doAs(admin, sql(querySnapshotVersionSql).collect())
 
-        val batchTimeTravelTimestamp =
-          doAs(
-            admin,
-            sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
-              s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
+      val batchTimeTravelTimestamp =
+        doAs(
+          admin,
+          sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
+            s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
 
-        val queryWithTimestamp =
-          s"""
-             |SELECT id FROM $catalogV2.$namespace1.$table1
-             |TIMESTAMP AS OF '$batchTimeTravelTimestamp'
-             |""".stripMargin
-        doAs(table1OnlyUserForNs, sql(queryWithTimestamp).collect())
-        interceptEndsWith[AccessControlException] {
-          doAs(someone, sql(queryWithTimestamp).collect())
-        }(s"does not have [select] privilege on [$namespace1/$table1/id]")
-        doAs(admin, sql(queryWithTimestamp).collect())
-      }
+      val queryWithTimestamp =
+        s"""
+           |SELECT id FROM $catalogV2.$namespace1.$table1
+           |TIMESTAMP AS OF '$batchTimeTravelTimestamp'
+           |""".stripMargin
+      doAs(table1OnlyUserForNs, sql(queryWithTimestamp).collect())
+      interceptEndsWith[AccessControlException] {
+        doAs(someone, sql(queryWithTimestamp).collect())
+      }(s"does not have [select] privilege on [$namespace1/$table1/id]")
+      doAs(admin, sql(queryWithTimestamp).collect())
     }
   }
 

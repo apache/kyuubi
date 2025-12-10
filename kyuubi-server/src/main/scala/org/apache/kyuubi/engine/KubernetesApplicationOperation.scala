@@ -199,13 +199,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       expireCleanUpTriggerCacheExecutor,
       () => {
         try {
-          Option(cleanupTerminatedAppInfoTrigger).foreach { trigger =>
-            trigger.asMap().asScala.foreach {
-              case (key, _) =>
-                // do get to trigger cache eviction
-                trigger.getIfPresent(key)
-            }
-          }
+          // Proactively remove expired entries from the cache
+          Option(cleanupTerminatedAppInfoTrigger).foreach(_.cleanUp())
         } catch {
           case NonFatal(e) => error("Failed to evict clean up terminated app cache", e)
         }
@@ -607,6 +602,7 @@ object KubernetesApplicationOperation extends Logging {
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
   val SPARK_UI_PORT_NAME = "spark-ui"
+  private val PENDING_WAITING_REASONS: Set[String] = Set("ContainerCreating", "PodInitializing")
 
   def toLabel(tag: String): String = s"label: $LABEL_KYUUBI_UNIQUE_KEY=$tag"
 
@@ -685,7 +681,8 @@ object KubernetesApplicationOperation extends Logging {
   def containerStateToApplicationState(containerState: ContainerState): ApplicationState = {
     // https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-states
     if (containerState.getWaiting != null) {
-      PENDING
+      val reasonOpt = Option(containerState.getWaiting.getReason).map(_.trim).filter(_.nonEmpty)
+      if (reasonOpt.isEmpty || PENDING_WAITING_REASONS.contains(reasonOpt.get)) PENDING else FAILED
     } else if (containerState.getRunning != null) {
       RUNNING
     } else if (containerState.getTerminated == null) {

@@ -26,3 +26,4 @@ Extensions for Spark
     ../../../connector/spark/index
     lineage
     jdbc-dialect
+    jvm-quake

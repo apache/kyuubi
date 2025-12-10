@@ -302,7 +302,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         MessageSerializer.serialize(writeChannel, batch)
 
         // Always write the Ipc options at the end.
-        ArrowStreamWriter.writeEndOfStream(writeChannel, ARROW_IPC_OPTION_DEFAULT)
+        ArrowStreamWriter.writeEndOfStream(writeChannel, IpcOption.DEFAULT)
 
         batch.close()
       } {
@@ -343,7 +343,4 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       errorOnDuplicatedFieldNames,
       largeVarTypes)
   }
-
-  // IpcOption.DEFAULT was introduced in ARROW-11081(ARROW-4.0.0), add this for adapt Spark 3.2
-  final private val ARROW_IPC_OPTION_DEFAULT = new IpcOption()
 }

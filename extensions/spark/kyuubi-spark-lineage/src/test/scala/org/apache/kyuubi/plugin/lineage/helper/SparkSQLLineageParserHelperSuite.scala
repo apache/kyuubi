@@ -29,15 +29,11 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
 
-  def catalogName: String = {
-    if (SPARK_RUNTIME_VERSION <= "3.3") "org.apache.spark.sql.connector.InMemoryTableCatalog"
-    else "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
-  }
+  def catalogName: String = "org.apache.spark.sql.connector.catalog.InMemoryTableCatalog"
 
   val DEFAULT_CATALOG = LineageConf.DEFAULT_CATALOG
   override protected val catalogImpl: String = "hive"
@@ -1419,6 +1415,53 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             (s"spark_catalog.test_db.test_table_from_dir.a0", Set()),
             (s"spark_catalog.test_db.test_table_from_dir.b0", Set()))))
       }
+    }
+  }
+
+  test("columns lineage extract - collect input tables by plan") {
+    val ddls =
+      """
+        |create table v2_catalog.db.tb1(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb2(col1 string, col2 string, col3 string)
+        |create table v2_catalog.db.tb3(col1 string, col2 string, col3 string)
+        |""".stripMargin
+    ddls.split("\n").filter(_.nonEmpty).foreach(spark.sql(_).collect())
+    withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb3") { _ =>
+      val sql0 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select t1.col1, t1.col2 , t1.col3
+          |from v2_catalog.db.tb1 t1 join v2_catalog.db.tb2 t2
+          |on t1.col1 = t2.col1
+          |""".stripMargin
+
+      val ret0 = extractLineage(sql0)
+      assert(
+        ret0 == Lineage(
+          List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+          List("v2_catalog.db.tb3"),
+          List(
+            ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+            ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+            ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+
+      val sql1 =
+        """
+          |insert overwrite v2_catalog.db.tb3
+          |select t1.col1, t1.col2 , t1.col3
+          |from v2_catalog.db.tb1 t1 left semi join v2_catalog.db.tb2 t2
+          |on t1.col1 = t2.col1
+          |""".stripMargin
+
+      val ret1 = extractLineage(sql1)
+      assert(
+        ret1 == Lineage(
+          List("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+          List("v2_catalog.db.tb3"),
+          List(
+            ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
+            ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
+            ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
     }
   }
 
