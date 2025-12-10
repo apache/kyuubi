@@ -44,6 +44,12 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
       kinitMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 
       require(keytab.nonEmpty && principal.nonEmpty, "principal or keytab is missing")
+      if (conf.get(KyuubiConf.ENGINE_DO_AS_ENABLED) &&
+        conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).isEmpty) {
+        warn(s"User impersonation is enabled, but ${KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST}" +
+          " is unset. We strongly recommend to configure the allowed local dir list" +
+          " to exclude any credential including keytab.")
+      }
       UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
       val krb5Conf = Option(System.getProperty("java.security.krb5.conf"))
         .orElse(Option(System.getenv("KRB5_CONFIG")))
