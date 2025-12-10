@@ -277,16 +277,14 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     withCleanTmpResources(Seq(
       (func, "function"))) {
       val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-      doAs(
-        bob, {
-          val e = intercept[AccessControlException](sql(create0))
-          assert(e.getMessage === errorMessage("create", s"$db/$func"))
-        })
-      doAs(
-        kent, {
-          val e = intercept[AccessControlException](sql(create0))
-          assert(e.getMessage === errorMessage("create", s"$db/$func"))
-        })
+      doAs(bob) {
+        val e = intercept[AccessControlException](sql(create0))
+        assert(e.getMessage === errorMessage("create", s"$db/$func"))
+      }
+      doAs(kent) {
+        val e = intercept[AccessControlException](sql(create0))
+        assert(e.getMessage === errorMessage("create", s"$db/$func"))
+      }
       doAs(admin, assert(Try(sql(create0)).isSuccess))
     }
   }
@@ -1559,22 +1557,20 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |  $db.$kyuubiFunc
            |  AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'
            |""".stripMargin
-      doAs(
-        kent, {
-          val e = intercept[AccessControlException](sql(createKyuubiFunc))
-          assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
-        })
+      doAs(kent) {
+        val e = intercept[AccessControlException](sql(createKyuubiFunc))
+        assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
+      }
       doAs(bob, assert(Try(sql(createKyuubiFunc)).isSuccess))
       doAs(admin, assert(Try(sql(createKyuubiFunc)).isSuccess))
 
       val selectKyuubiFunc =
         s"""
            |SELECT $db.$kyuubiFunc("KYUUBUI_TEST_STRING")""".stripMargin
-      doAs(
-        alice, {
-          val e = intercept[AccessControlException](sql(selectKyuubiFunc))
-          assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
-        })
+      doAs(alice) {
+        val e = intercept[AccessControlException](sql(selectKyuubiFunc))
+        assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
+      }
       doAs(kent, assert(Try(sql(selectKyuubiFunc)).isSuccess))
       doAs(bob, assert(Try(sql(selectKyuubiFunc)).isSuccess))
       doAs(admin, assert(Try(sql(selectKyuubiFunc)).isSuccess))
