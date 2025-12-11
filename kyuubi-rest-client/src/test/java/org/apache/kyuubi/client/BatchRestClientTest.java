@@ -26,6 +26,8 @@ import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.api.v1.dto.ReassignBatchRequest;
+import org.apache.kyuubi.client.api.v1.dto.ReassignBatchResponse;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
 import org.junit.After;
 import org.junit.Before;
@@ -275,5 +277,20 @@ public class BatchRestClientTest {
     BatchTestServlet.allowAnonymous(false);
     response = basicBatchRestApi.deleteBatch("71535");
     assertTrue(response.isSuccess());
+  }
+
+  @Test
+  public void reassignBatchTest() {
+    // test spnego auth
+    BatchTestServlet.setAuthSchema(NEGOTIATE_AUTH);
+    ReassignBatchRequest request = new ReassignBatchRequest("http://127.0.0.1:10012");
+    ReassignBatchResponse response = spnegoBatchRestApi.reassignBatch(request);
+    assertTrue(response.getBatchIds().isEmpty());
+
+    // test basic auth
+    BatchTestServlet.setAuthSchema(BASIC_AUTH);
+    BatchTestServlet.allowAnonymous(false);
+    response = basicBatchRestApi.reassignBatch(request);
+    assertTrue(response.getBatchIds().isEmpty());
   }
 }
