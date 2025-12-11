@@ -23,6 +23,7 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
@@ -47,6 +48,7 @@ import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
+
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv {
   // scalastyle:on
@@ -272,13 +274,19 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
   test("auth: functions") {
     val db = defaultDb
     val func = "func"
-    val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
-    doAs(
-      kent, {
+    withCleanTmpResources(Seq(
+      (func, "function"))) {
+      val create0 = s"CREATE FUNCTION IF NOT EXISTS $db.$func AS 'abc.mnl.xyz'"
+      doAs(bob) {
         val e = intercept[AccessControlException](sql(create0))
-        assert(e.getMessage === errorMessage("create", "default/func"))
-      })
-    doAs(admin, assert(Try(sql(create0)).isSuccess))
+        assert(e.getMessage === errorMessage("create", s"$db/$func"))
+      }
+      doAs(kent) {
+        val e = intercept[AccessControlException](sql(create0))
+        assert(e.getMessage === errorMessage("create", s"$db/$func"))
+      }
+      doAs(admin, assert(Try(sql(create0)).isSuccess))
+    }
   }
 
   test("show tables") {
@@ -521,6 +529,9 @@ class InMemoryCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite
 
 class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
+  override protected val extraSparkConf: SparkConf = new SparkConf()
+    .set("spark.kyuubi.authz.udf.enabled", "true")
+
   test("table stats must be specified") {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
@@ -1532,6 +1543,37 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         assert(lineage.columnLineage.size == 1)
         assert(lineage.columnLineage.head.originalColumns.head === s"spark_catalog.$db1.$table1.id")
       }
+    }
+  }
+
+  test("[KYUUBI #7186] Introduce RuleFunctionAuthorization") {
+    val db = defaultDb
+    val kyuubiFunc = "kyuubi_func1"
+    withCleanTmpResources(Seq(
+      (kyuubiFunc, "function"))) {
+      val createKyuubiFunc =
+        s"""
+           |CREATE FUNCTION IF NOT EXISTS
+           |  $db.$kyuubiFunc
+           |  AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFMaskHash'
+           |""".stripMargin
+      doAs(kent) {
+        val e = intercept[AccessControlException](sql(createKyuubiFunc))
+        assert(e.getMessage === errorMessage("create", s"$db/$kyuubiFunc"))
+      }
+      doAs(bob, assert(Try(sql(createKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(createKyuubiFunc)).isSuccess))
+
+      val selectKyuubiFunc =
+        s"""
+           |SELECT $db.$kyuubiFunc("KYUUBUI_TEST_STRING")""".stripMargin
+      doAs(alice) {
+        val e = intercept[AccessControlException](sql(selectKyuubiFunc))
+        assert(e.getMessage === errorMessage("select", s"$db/$kyuubiFunc"))
+      }
+      doAs(kent, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(bob, assert(Try(sql(selectKyuubiFunc)).isSuccess))
+      doAs(admin, assert(Try(sql(selectKyuubiFunc)).isSuccess))
     }
   }
 }
