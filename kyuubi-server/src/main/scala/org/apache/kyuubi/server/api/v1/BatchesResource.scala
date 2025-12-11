@@ -598,7 +598,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
     val internalRestClient = getInternalRestClient(kyuubiInstance)
-    if (!Utils.isTesting && internalRestClient.pingAble()) {
+    if (!Utils.isTesting && internalRestClient.pingAble(userName, ipAddress)) {
       throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
     }
     try {

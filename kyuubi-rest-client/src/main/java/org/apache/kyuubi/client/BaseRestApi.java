@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.client;
 
+import java.util.Collections;
+import java.util.Map;
 import org.apache.kyuubi.client.api.v1.dto.VersionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +34,11 @@ public class BaseRestApi {
   }
 
   public String ping() {
-    return this.getClient().get("ping", null, client.getAuthHeader());
+    return ping(Collections.emptyMap());
+  }
+
+  public String ping(Map<String, String> headers) {
+    return this.getClient().get("ping", null, client.getAuthHeader(), headers);
   }
 
   public VersionInfo getVersionInfo() {
