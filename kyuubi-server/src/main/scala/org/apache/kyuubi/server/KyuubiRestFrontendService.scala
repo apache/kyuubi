@@ -34,6 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
+import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
@@ -181,6 +182,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = withBatchRecoveryLockRequired {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
+    val recoveryWaitEngineSubmission = conf.get(METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION)
     val batchRecoveryExecutor =
       ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
     try {
@@ -190,7 +192,18 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
         val batchId = batchSession.batchJobSubmissionOp.batchId
         try {
           val task: Future[Unit] = batchRecoveryExecutor.submit(() =>
-            Utils.tryLogNonFatalError(sessionManager.openBatchSession(batchSession)))
+            Utils.tryLogNonFatalError {
+              sessionManager.openBatchSession(batchSession)
+              if (recoveryWaitEngineSubmission) {
+                info(s"Waiting for batch[$batchId] engine submission during recovery")
+                val batchOp = batchSession.batchJobSubmissionOp
+                while (batchSession.getSessionEvent.forall(_.exception.isEmpty) &&
+                  !batchOp.appStarted &&
+                  !OperationState.isTerminal(batchOp.getStatus.state)) {
+                  Thread.sleep(300)
+                }
+              }
+            })
           Some(task -> batchId)
         } catch {
           case e: Throwable =>
