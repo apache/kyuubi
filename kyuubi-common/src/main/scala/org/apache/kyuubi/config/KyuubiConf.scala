@@ -1910,6 +1910,14 @@ object KyuubiConf {
         " Kyuubi instances.")
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
+      
+  val BATCH_SESSIONS_RECOVERY_SIZE: ConfigEntry[Int] = 
+    buildConf("kyuubi.batch.sessions.recovery.size")
+    .serverOnly
+    .internal
+    .doc("The size per batch of kyuubi batch metadata records to fetch and create associated kyuubi sessions at a time for recovery upon restart of kyuubi server")
+    .intConf
+    .createWithDefault(10)
 
   val BATCH_INTERNAL_REST_CLIENT_CONNECT_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.batch.internal.rest.client.connect.timeout")
