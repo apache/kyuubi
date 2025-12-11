@@ -2105,7 +2105,7 @@ object KyuubiConf {
       .createWithDefault(10)
 
   val METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION: ConfigEntry[Boolean] =
-    buildConf("kyuubi.metadata.recovery.wait.engine.submission")
+    buildConf("kyuubi.metadata.recovery.waitEngineSubmission")
       .serverOnly
       .doc("Whether a metadata recovery task should wait for its corresponding engine " +
         "submission to complete before finishing. All recovery tasks are submitted to a fixed " +
