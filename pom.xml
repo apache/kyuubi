@@ -147,9 +147,9 @@
         <flink.archive.query>?action=download</flink.archive.query>
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
-        <grpc.version>1.65.1</grpc.version>
-        <guava.version>33.3.1-jre</guava.version>
-        <guava.failureaccess.version>1.0.2</guava.failureaccess.version>
+        <grpc.version>1.76.2</grpc.version>
+        <guava.version>33.4.8-jre</guava.version>
+        <guava.failureaccess.version>1.0.3</guava.failureaccess.version>
         <hadoop.version>3.3.6</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <fliptables.verion>1.1.1</fliptables.verion>
@@ -194,7 +194,7 @@
         <postgresql.version>42.7.2</postgresql.version>
         <ojdbc.version>23.2.0.0</ojdbc.version>
         <prometheus.version>0.16.0</prometheus.version>
-        <protobuf.version>3.25.5</protobuf.version>
+        <protobuf.version>3.25.8</protobuf.version>
         <scalatest.version>3.2.16</scalatest.version>
         <scalatestplus.version>3.2.16.0</scalatestplus.version>
         <scopt.version>4.1.0</scopt.version>
