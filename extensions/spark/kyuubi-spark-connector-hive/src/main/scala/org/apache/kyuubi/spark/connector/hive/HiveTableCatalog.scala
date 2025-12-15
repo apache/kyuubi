@@ -35,7 +35,7 @@ import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
-import org.apache.spark.sql.connector.catalog.{Identifier, NamespaceChange, SupportsNamespaces, Table, TableCatalog, TableChange}
+import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.connector.catalog.NamespaceChange.RemoveProperty
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.command.DDLUtils
@@ -49,6 +49,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
+import org.apache.kyuubi.spark.connector.hive.read.HiveFileStatusCache
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 /**
@@ -377,29 +378,45 @@ class HiveTableCatalog(sparkSession: SparkSession)
         }
 
       try {
-        catalog.alterTable(
-          catalogTable.copy(
-            properties = properties,
-            schema = schema,
-            owner = owner,
-            comment = comment,
-            storage = storage))
+        catalog.alterTable(newCatalogTable(
+          identifier = catalogTable.identifier,
+          tableType = catalogTable.tableType,
+          storage = storage,
+          schema = schema,
+          provider = catalogTable.provider,
+          partitionColumnNames = catalogTable.partitionColumnNames,
+          bucketSpec = catalogTable.bucketSpec,
+          owner = owner,
+          createTime = catalogTable.createTime,
+          lastAccessTime = catalogTable.lastAccessTime,
+          createVersion = catalogTable.createVersion,
+          properties = properties,
+          stats = catalogTable.stats,
+          viewText = catalogTable.viewText,
+          comment = comment,
+          unsupportedFeatures = catalogTable.unsupportedFeatures,
+          tracksPartitionsInCatalog = catalogTable.tracksPartitionsInCatalog,
+          schemaPreservesCase = catalogTable.schemaPreservesCase,
+          ignoredProperties = catalogTable.ignoredProperties,
+          viewOriginalText = catalogTable.viewOriginalText))
       } catch {
         case _: NoSuchTableException =>
           throw new NoSuchTableException(ident)
       }
-
+      invalidateTable(ident)
       loadTable(ident)
     }
 
   override def dropTable(ident: Identifier): Boolean =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
-        if (loadTable(ident) != null) {
+        val table = loadTable(ident)
+        if (table != null) {
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
             purge = true /* skip HDFS trash */ )
+          invalidateTable(ident)
           true
         } else {
           false
@@ -417,9 +434,16 @@ class HiveTableCatalog(sparkSession: SparkSession)
       }
 
       // Load table to make sure the table exists
-      loadTable(oldIdent)
+      val table = loadTable(oldIdent)
       catalog.renameTable(oldIdent.asTableIdentifier, newIdent.asTableIdentifier)
+      invalidateTable(oldIdent)
     }
+
+  override def invalidateTable(ident: Identifier): Unit = {
+    super.invalidateTable(ident)
+    val qualifiedName = s"$catalogName.$ident"
+    HiveFileStatusCache.getOrCreate(sparkSession, qualifiedName).invalidateAll()
+  }
 
   private def toOptions(properties: Map[String, String]): Map[String, String] = {
     properties.filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX)).map {
