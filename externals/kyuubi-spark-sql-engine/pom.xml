@@ -255,6 +255,15 @@
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
+                        <excludes>
+                            <exclude>io.netty:netty-codec-*-quic</exclude>
+                            <exclude>io.netty:netty-resolver-dns-*-macos</exclude>
+                            <exclude>io.netty:netty-tcnative-boringssl-static:*:osx-*</exclude>
+                            <exclude>io.netty:netty-tcnative-boringssl-static:*:windows-*</exclude>
+                            <exclude>io.netty:netty-transport-*-kqueue</exclude>
+                            <exclude>io.netty:netty-transport-*-io_uring</exclude>
+                            <exclude>io.netty:netty-transport-native-epoll:*:linux-riscv64</exclude>
+                        </excludes>
                     </artifactSet>
                     <filters>
                         <filter>
@@ -267,6 +276,8 @@
                                 <exclude>META-INF/DEPENDENCIES</exclude>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
+                                <exclude>META-INF/license/**</exclude>
+                                <exclude>META-INF/licenses/**</exclude>
                                 <exclude>META-INF/maven/**</exclude>
                                 <exclude>LICENSE.txt</exclude>
                                 <exclude>NOTICE.txt</exclude>
@@ -426,7 +437,7 @@
                                 <echo level="info">renaming netty native libraries</echo>
                                 <move includeemptydirs="false" todir="${project.build.directory}/unpacked/META-INF/native">
                                     <fileset dir="${project.build.directory}/unpacked/META-INF/native"></fileset>
-                                    <mapper from="libnetty_transport_native_epoll_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_transport_native_epoll_\1" type="regexp"></mapper>
+                                    <mapper from="libnetty_(tcnative_linux|transport_native_epoll)_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_\1_\2" type="regexp"></mapper>
                                 </move>
                                 <echo level="info">deleting META-INF/native-image folder</echo>
                                 <delete dir="${project.build.directory}/unpacked/META-INF/native-image"></delete>
