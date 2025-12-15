@@ -252,6 +252,19 @@
             </dependencies>
         </profile>
         <profile>
+            <id>spark-4.1</id>
+            <dependencies>
+                <!-- TODO: support Spark extension -->
+                <!-- TODO: support KSHC -->
+                <!-- TODO: support authz -->
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>codecov</id>
             <build>
                 <plugins>
