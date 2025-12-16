@@ -36,23 +36,23 @@ For quick start deployment, we need to prepare the following stuffs:
 These essential components are JVM-based applications. So, the JRE needs to be
 pre-installed and the ``JAVA_HOME`` is correctly set to each component.
 
- ================ ============ ==================== =======================================================
-  Component        Role         Version              Remarks
- ================ ============ ==================== =======================================================
-  **Java**         JRE          8/11/17              Officially released against JDK8
-  **Kyuubi**       Gateway      \ |release| \        - Kyuubi Server
-                   Engine lib                        - Kyuubi Engine
-                   Beeline                           - Kyuubi Beeline
-  **Spark**        Engine       3.3 to 3.5, 4.0      A Spark distribution
-  **Flink**        Engine       1.17 to 1.20         A Flink distribution
-  **Trino**        Engine       N/A                  A Trino cluster allows to access via trino-client v411
-  **Doris**        Engine       N/A                  A Doris cluster
-  **Hive**         Engine       - 2.1-cdh6/2.3/3.1   - A Hive distribution
-                   Metastore    - N/A                - An optional and external metadata store,
-                                                       whose version is decided by engines
+ ================ ============ ======================== =======================================================
+  Component        Role         Version                  Remarks
+ ================ ============ ======================== =======================================================
+  **Java**         JRE          8, 11, 17                Officially released against JDK8
+  **Kyuubi**       Gateway      \ |release| \            - Kyuubi Server
+                   Engine lib                            - Kyuubi Engine
+                   Beeline                               - Kyuubi Beeline
+  **Spark**        Engine       3.3 to 3.5, 4.0 to 4.1   A Spark distribution
+  **Flink**        Engine       1.17 to 1.20             A Flink distribution
+  **Trino**        Engine       N/A                      A Trino cluster allows to access via trino-client v411
+  **Doris**        Engine       N/A                      A Doris cluster
+  **Hive**         Engine       - 2.1-cdh6, 2.3, 3.1     - A Hive distribution
+                   Metastore    - N/A                    - An optional and external metadata store,
+                                                           whose version is decided by engines
   **Zookeeper**    HA           >=3.4.x
-  **Disk**         Storage      N/A                  N/A
- ================ ============ ==================== =======================================================
+  **Disk**         Storage      N/A                      N/A
+ ================ ============ ======================== =======================================================
 
 The other internal or external parts listed in the above sheet can be used individually
 or all together. For example, you can use Kyuubi, Spark and Flink to build a streaming

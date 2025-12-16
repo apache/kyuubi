@@ -20,7 +20,7 @@ set -x
 
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 
-PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-4.0,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it"
+PROFILES="-Pflink-provided,hive-provided,spark-provided,spark-4.1,spark-4.0,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it"
 
 # python style checks rely on `black` in path
 if ! command -v black &> /dev/null
