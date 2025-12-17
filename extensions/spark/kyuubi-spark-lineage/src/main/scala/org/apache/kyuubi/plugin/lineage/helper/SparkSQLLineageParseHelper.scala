@@ -367,10 +367,10 @@ trait LineageParser {
         val matchedActions = getField[Seq[MergeAction]](plan, "matchedActions")
         val notMatchedActions = getField[Seq[MergeAction]](plan, "notMatchedActions")
         val allAssignments = (matchedActions ++ notMatchedActions).collect {
-          case UpdateAction(_, assignments) => assignments
-          case InsertAction(_, assignments) => assignments
+          case ua: UpdateAction => ua.assignments
+          case ia: InsertAction => ia.assignments
         }.flatten
-        val nextColumnsLlineage = ListMap(allAssignments.map { assignment =>
+        val nextColumnsLineage = ListMap(allAssignments.map { assignment =>
           (
             assignment.key.asInstanceOf[Attribute],
             assignment.value.references)
@@ -379,11 +379,11 @@ trait LineageParser {
         val sourceTable = getField[LogicalPlan](plan, "sourceTable")
         val targetColumnsLineage = extractColumnsLineage(
           targetTable,
-          nextColumnsLlineage.map { case (k, _) => (k, AttributeSet(k)) },
+          nextColumnsLineage.map { case (k, _) => (k, AttributeSet(k)) },
           inputTablesByPlan)
         val sourceColumnsLineage = extractColumnsLineage(
           sourceTable,
-          nextColumnsLlineage,
+          nextColumnsLineage,
           inputTablesByPlan)
         val targetColumnsWithTargetTable = targetColumnsLineage.values.flatten.map { column =>
           val unquotedQualifiedName = (column.qualifier :+ column.name).mkString(".")

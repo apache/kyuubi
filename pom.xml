@@ -2060,6 +2060,29 @@
         </profile>
 
         <profile>
+            <id>spark-4.1</id>
+            <modules>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <maven.compiler.release>17</maven.compiler.release>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
+                <spark.version>4.1.0</spark.version>
+                <spark.binary.version>4.0</spark.binary.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <delta.version>4.0.0</delta.version>
+                <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
+                <!-- TODO: update once Hudi support Spark 4.1 -->
+                <hudi.artifact>hudi-spark3.5-bundle_${scala.binary.version}</hudi.artifact>
+                <!-- TODO: update once Paimon support Spark 4.1.
+                           paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
+                <paimon.artifact>paimon-common</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+            </properties>
+        </profile>
+
+        <profile>
             <id>spark-master</id>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>

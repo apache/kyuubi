@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.lang.{Boolean => JBoolean}
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.spark.kyuubi.SparkUtilsHelper
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.execution.CommandExecutionMode
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.StructType
@@ -29,11 +32,13 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
+import org.apache.kyuubi.engine.spark.operation.PlanOnlyStatement._
 import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
  * Perform the statement parsing, analyzing or optimizing only without executing it
@@ -110,11 +115,8 @@ class PlanOnlyStatement(
         spark.sessionState.analyzer.checkAnalysis(analyzed)
         val optimized = spark.sessionState.optimizer.execute(analyzed)
         optimized.stats
-        iter = new IterableFetchIterator(Seq(Row(optimized.treeString(
-          verbose = true,
-          addSuffix = true,
-          SQLConf.get.maxToStringFields,
-          printOperatorId = false))))
+        iter = new IterableFetchIterator(
+          Seq(Row(treeString(optimized, verbose = true, addSuffix = true))))
       case PhysicalMode =>
         val physical = spark.sessionState.executePlan(plan, CommandExecutionMode.SKIP).sparkPlan
         iter = new IterableFetchIterator(Seq(Row(physical.toString())))
@@ -183,4 +185,34 @@ class PlanOnlyStatement(
     }
   }
 
+}
+
+object PlanOnlyStatement {
+
+  private val uboundTreeStringMehod = DynMethods.builder("treeString")
+    .impl( // SPARK-52065 (4.1.0)
+      classOf[TreeNode[_]],
+      classOf[Boolean],
+      classOf[Boolean],
+      classOf[Int],
+      classOf[Boolean],
+      classOf[Boolean])
+    .impl(
+      classOf[TreeNode[_]],
+      classOf[Boolean],
+      classOf[Boolean],
+      classOf[Int],
+      classOf[Boolean])
+    .build()
+
+  def treeString(
+      tree: TreeNode[_],
+      verbose: JBoolean,
+      addSuffix: JBoolean = false,
+      maxFields: Integer = SQLConf.get.maxToStringFields,
+      printOperatorId: JBoolean = false,
+      printOutputColumns: JBoolean = false): String = {
+    uboundTreeStringMehod.bind(tree)
+      .invoke(verbose, addSuffix, maxFields, printOperatorId, printOutputColumns)
+  }
 }
