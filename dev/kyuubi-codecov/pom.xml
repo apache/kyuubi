@@ -254,7 +254,11 @@
         <profile>
             <id>spark-4.1</id>
             <dependencies>
-                <!-- TODO: support Spark extension -->
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-extension-spark-4-1_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
                 <!-- TODO: support KSHC -->
                 <!-- TODO: support authz -->
                 <dependency>
