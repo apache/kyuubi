@@ -29,9 +29,9 @@ public class UuidUtils {
 
   private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-  public static UUID generateUuidV7() {
+  public static UUID generateUUIDv7() {
     long epochMs = System.currentTimeMillis();
-    return generateUuidV7(epochMs);
+    return generateUUIDv7(epochMs);
   }
 
   /**
@@ -44,7 +44,7 @@ public class UuidUtils {
    * @return a {@code UUID} constructed using the given {@code epochMs}
    * @throws IllegalArgumentException if epochMs is negative or greater than {@code (1L << 48) - 1}
    */
-  public static UUID generateUuidV7(long epochMs) {
+  public static UUID generateUUIDv7(long epochMs) {
     if ((epochMs >> 48) != 0) {
       throw new IllegalArgumentException(
           "Invalid timestamp: does not fit within 48 bits: " + epochMs);

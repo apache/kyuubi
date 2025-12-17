@@ -27,27 +27,27 @@ import org.junit.Test;
 public class UuidUtilsTest {
 
   @Test
-  public void generateUuidV7() {
-    UUID uuid = UuidUtils.generateUuidV7();
+  public void generateUUIDv7() {
+    UUID uuid = UuidUtils.generateUUIDv7();
     assertEquals(7, uuid.version());
     assertEquals(2, uuid.variant());
 
     // 48-bit long
     long value = 0xFEDCBA987654L;
-    uuid = UuidUtils.generateUuidV7(value);
+    uuid = UuidUtils.generateUUIDv7(value);
     assertEquals(7, uuid.version());
     assertEquals(2, uuid.variant());
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void generateUuidV7NegativeTimestamp() {
+  public void generateUUIDv7NegativeTimestamp() {
     long value = -0xFEDCBA987654L;
-    UuidUtils.generateUuidV7(value);
+    UuidUtils.generateUUIDv7(value);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void generateUuidV7GreaterThan48bitsTimestamp() {
+  public void generateUUIDv7GreaterThan48BitsTimestamp() {
     long value = 1L << 48;
-    UuidUtils.generateUuidV7(value);
+    UuidUtils.generateUUIDv7(value);
   }
 }
