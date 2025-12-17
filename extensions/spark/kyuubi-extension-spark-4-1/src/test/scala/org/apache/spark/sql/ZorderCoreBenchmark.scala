@@ -29,8 +29,8 @@ import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
  *
  * {{{
  *   RUN_BENCHMARK=1 ./build/mvn clean test \
- *   -pl extensions/spark/kyuubi-extension-spark-4-0 -am \
- *   -Pspark-4.0,kyuubi-extension-spark-4-0,scala-2.13 \
+ *   -pl extensions/spark/kyuubi-extension-spark-4-1 -am \
+ *   -Pspark-4.1,kyuubi-extension-spark-4-1,scala-2.13 \
  *   -Dtest=none -DwildcardSuites=org.apache.spark.sql.ZorderCoreBenchmark
  * }}}
  */
