@@ -19,7 +19,7 @@ package org.apache.kyuubi.metrics
 
 import java.time.Duration
 
-import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.{ConfigEntry, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
 import org.apache.kyuubi.metrics.ReporterType._
 
@@ -94,6 +94,27 @@ object MetricsConf {
       .version("1.10.2")
       .booleanConf
       .createWithDefault(false)
+
+  val METRICS_PROMETHEUS_AUTH_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.metrics.prometheus.auth.enabled")
+      .doc("Enable basic authentication for Prometheus metrics endpoint")
+      .version("1.8.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val METRICS_PROMETHEUS_AUTH_USERNAME: OptionalConfigEntry[String] =
+    buildConf("kyuubi.metrics.prometheus.auth.username")
+      .doc("Username for Prometheus metrics endpoint basic authentication")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
+
+  val METRICS_PROMETHEUS_AUTH_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.metrics.prometheus.auth.password")
+      .doc("Password for Prometheus metrics endpoint basic authentication")
+      .version("1.8.0")
+      .stringConf
+      .createOptional
 
   val METRICS_SLF4J_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.slf4j.interval")
     .serverOnly

@@ -71,6 +71,76 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.stop()
   }
 
+  test("metrics - PrometheusReporter With Authentication") {
+    val testContextPath = "/prometheus-metrics"
+
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(MetricsConf.METRICS_REPORTERS, Set(ReporterType.PROMETHEUS.toString))
+      .set(MetricsConf.METRICS_PROMETHEUS_PORT, 0) // random port
+      .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
+      .set(MetricsConf.METRICS_PROMETHEUS_AUTH_ENABLED, true)
+      .set(MetricsConf.METRICS_PROMETHEUS_AUTH_USERNAME, "admin")
+      .set(MetricsConf.METRICS_PROMETHEUS_AUTH_PASSWORD, "password")
+
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+
+    try {
+      metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
+
+      val prometheusHttpServer = metricsSystem.getServices.head
+        .asInstanceOf[PrometheusReporterService].httpServer
+
+      val client: HttpClient = new HttpClient
+      client.start()
+
+      try {
+        // Test successful authentication with correct credentials
+        val request = client.newRequest(prometheusHttpServer.getURI.resolve(testContextPath))
+        val credentials = "admin:password"
+        val encodedCredentials = java.util.Base64.getEncoder.encodeToString(
+          credentials.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+        request.header("Authorization", "Basic " + encodedCredentials)
+        val res: ContentResponse = request.send()
+
+        // Verify response contains expected metrics
+        assert(res.getStatus == 200, "Should return 200 OK with correct credentials")
+        assert(res.getContentAsString.contains("heap_usage"), "Should contain heap_usage metric")
+        assert(
+          res.getContentAsString.contains("kyuubi_connection_opened 2021.0"),
+          "Should contain registered gauge metric")
+
+        // Test authentication failure with wrong credentials
+        val wrongAuthRequest =
+          client.newRequest(prometheusHttpServer.getURI.resolve(testContextPath))
+        val wrongCredentials = "wrong:wrong"
+        val wrongEncodedCredentials = java.util.Base64.getEncoder.encodeToString(
+          wrongCredentials.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+        wrongAuthRequest.header("Authorization", "Basic " + wrongEncodedCredentials)
+        val wrongAuthRes: ContentResponse = wrongAuthRequest.send()
+
+        // Should return 401 Unauthorized for wrong credentials
+        assert(
+          wrongAuthRes.getStatus == 401,
+          "Should return 401 Unauthorized with wrong credentials")
+
+        // Test authentication failure with no credentials
+        val noAuthRequest = client.newRequest(prometheusHttpServer.getURI.resolve(testContextPath))
+        val noAuthRes: ContentResponse = noAuthRequest.send()
+
+        // Should return 401 Unauthorized for missing credentials
+        assert(noAuthRes.getStatus == 401, "Should return 401 Unauthorized with no credentials")
+
+      } finally {
+        client.stop()
+      }
+    } finally {
+      metricsSystem.stop()
+    }
+  }
+
   test("metrics - other reporters") {
     val reportPath = Utils.createTempDir()
     val conf = KyuubiConf()

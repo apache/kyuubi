@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.metrics
 
+import java.util
+import javax.servlet.DispatcherType
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import com.codahale.metrics.MetricRegistry
@@ -25,7 +27,7 @@ import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.MetricsServlet
 import io.prometheus.client.exporter.common.TextFormat
 import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
-import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.servlet.{FilterHolder, ServletContextHandler, ServletHolder}
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
@@ -58,6 +60,9 @@ class PrometheusReporterService(registry: MetricRegistry)
     val context = new ServletContextHandler
     context.setContextPath("/")
     httpServer.setHandler(context)
+
+    // Add BasicAuth filter if enabled
+    addBasicAuthFilterIfEnabled(conf, context)
 
     new DropwizardExports(registry).register(bridgeRegistry)
     if (conf.get(MetricsConf.METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED)) {
@@ -110,6 +115,44 @@ class PrometheusReporterService(registry: MetricRegistry)
         httpServer = null
         httpServerConnector = null
       }
+    }
+  }
+
+  /**
+   * Add BasicAuth filter to the servlet context if authentication is enabled
+   */
+  private def addBasicAuthFilterIfEnabled(
+      conf: KyuubiConf,
+      context: ServletContextHandler): Unit = {
+    val authEnabled = conf.get(MetricsConf.METRICS_PROMETHEUS_AUTH_ENABLED)
+
+    if (authEnabled) {
+      val username = conf.get(MetricsConf.METRICS_PROMETHEUS_AUTH_USERNAME)
+      val password = conf.get(MetricsConf.METRICS_PROMETHEUS_AUTH_PASSWORD)
+
+      (username, password) match {
+        case (Some(user), Some(pass)) =>
+          if (user.trim.isEmpty || pass.trim.isEmpty) {
+            throw new KyuubiException(
+              "Username and password cannot be empty when authentication is enabled")
+          }
+
+          val authFilter = new BasicAuthFilter(user, pass)
+          val filterHolder = new FilterHolder(authFilter)
+          context.addFilter(
+            filterHolder,
+            "/*",
+            util.EnumSet.of(DispatcherType.REQUEST))
+
+          info(s"BasicAuth enabled for Prometheus metrics endpoint with username: $user")
+
+        case _ =>
+          throw new KyuubiException(
+            "Both username and password must be configured when " +
+              "kyuubi.metrics.prometheus.auth.enabled is true")
+      }
+    } else {
+      info("BasicAuth disabled for Prometheus metrics endpoint")
     }
   }
 
