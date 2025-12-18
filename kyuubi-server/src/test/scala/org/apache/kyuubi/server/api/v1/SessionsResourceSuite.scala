@@ -29,13 +29,13 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto
-import org.apache.kyuubi.client.api.v1.dto.{SessionData, _}
+import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {

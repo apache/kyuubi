@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.authentication
+package org.apache.kyuubi.service.authentication
 
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.http.authentication.AuthenticationFilter._
+import org.apache.kyuubi.service.authentication.AuthenticationFilter.{getForwardedAddresses, HTTP_AUTH_TYPE, HTTP_CLIENT_IP_ADDRESS, HTTP_CLIENT_PROXY_USER_NAME, HTTP_CLIENT_USER_NAME, HTTP_FORWARDED_ADDRESSES, HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS}
 
 object AuthenticationAuditLogger extends Logging {
   final private val AUDIT_BUFFER = new ThreadLocal[StringBuilder]() {
