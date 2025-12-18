@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.io.File
 import java.net.{URI, URISyntaxException}
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.Locale
 
 import scala.util.control.NonFatal
@@ -163,7 +163,7 @@ object KyuubiApplicationManager {
             s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
         }
 
-        if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
+        if (!localDirAllowList.exists(Paths.get(uri.getPath).normalize.startsWith(_))) {
           throw new KyuubiException(
             s"The file ${uri.getPath} to access is not in the local dir allow list" +
               s" [${localDirAllowList.mkString(",")}].")

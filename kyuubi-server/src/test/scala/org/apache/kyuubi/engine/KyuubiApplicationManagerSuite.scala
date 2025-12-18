@@ -38,6 +38,13 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     assert(e.getMessage.contains("is not in the local dir allow list"))
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
 
+    path = "/apache/kyuubi/../a.jar"
+    e = intercept[KyuubiException] {
+      KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
+    }
+    assert(e.getMessage.contains("is not in the local dir allow list"))
+    KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
+
     path = "hdfs:/apache/kyuubijar"
     KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
     KyuubiApplicationManager.checkApplicationAccessPath(path, noLocalDirLimitConf)
