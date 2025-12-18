@@ -15,39 +15,32 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.authentication
+package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.Charset
+import java.util.Base64
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
-
-import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
-import org.apache.kyuubi.server.http.util.HttpAuthUtils
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
-import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthenticationProviderFactory, DefaultTokenCredential, TokenAuthenticationProvider}
+import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.service.authentication.AuthTypes._
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
 
-class BearerAuthenticationHandler(providerClass: String)
+class BasicAuthenticationHandler(basicAuthType: AuthType)
   extends AuthenticationHandler with Logging {
-  private var conf: KyuubiConf = _
-  private val allowAnonymous = classOf[AnonymousAuthenticationProviderImpl].getName == providerClass
 
-  override val authScheme: AuthScheme = AuthSchemes.BEARER
+  private var conf: KyuubiConf = _
+  private val allowAnonymous = basicAuthType == NOSASL || basicAuthType == NONE
+
+  override val authScheme: AuthScheme = AuthSchemes.BASIC
 
   override def init(conf: KyuubiConf): Unit = {
     this.conf = conf
   }
 
   override def authenticationSupported: Boolean = {
-    Option(providerClass).exists { _ =>
-      try {
-        Class.forName(providerClass).isAssignableFrom(classOf[TokenAuthenticationProvider])
-        true
-      } catch {
-        case _: Throwable => false
-      }
-    }
+    basicAuthType != null
   }
 
   override def matchAuthScheme(authorization: String): Boolean = {
@@ -70,20 +63,29 @@ class BearerAuthenticationHandler(providerClass: String)
   override def authenticate(
       request: HttpServletRequest,
       response: HttpServletResponse): String = {
-    var principal: String = null
-    val inputToken = getAuthorization(request)
+    var authUser: String = null
 
-    if (!allowAnonymous && StringUtils.isBlank(inputToken)) {
-      response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+    val authorization = getAuthorization(request)
+    val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
+      .getOrElse(Array.empty[Byte])
+    val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
+
+    if (allowAnonymous) {
+      authUser = creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")
     } else {
-      val credential = DefaultTokenCredential(inputToken, HttpAuthUtils.getCredentialExtraInfo)
-      principal = AuthenticationProviderFactory
-        .getHttpBearerAuthenticationProvider(providerClass, conf)
-        .authenticate(credential).getName
-      response.setStatus(HttpServletResponse.SC_OK)
+      if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
+        response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
+      } else {
+        val Seq(user, password) = creds.toSeq.take(2)
+        val passwdAuthenticationProvider = AuthenticationProviderFactory
+          .getHttpBasicAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+        passwdAuthenticationProvider.authenticate(user, password)
+        response.setStatus(HttpServletResponse.SC_OK)
+        authUser = user
+      }
     }
-    principal
+    authUser
   }
 
   override def destroy(): Unit = {}

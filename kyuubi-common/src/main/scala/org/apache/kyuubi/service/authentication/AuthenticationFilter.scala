@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.authentication
+package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
 import javax.security.sasl.AuthenticationException
@@ -27,18 +27,17 @@ import scala.collection.mutable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
-import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{CUSTOM, KERBEROS, NOSASL}
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.AUTHORIZATION_HEADER
 
 class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
   import AuthSchemes._
 
-  private[authentication] val authSchemeHandlers =
+  private[kyuubi] val authSchemeHandlers =
     new mutable.HashMap[AuthScheme, AuthenticationHandler]()
 
-  private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
+  private[kyuubi] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
     authHandler.init(conf)
     if (authHandler.authenticationSupported) {
       if (authSchemeHandlers.contains(authHandler.authScheme)) {
