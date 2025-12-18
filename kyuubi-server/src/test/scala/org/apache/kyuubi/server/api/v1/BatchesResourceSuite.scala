@@ -22,15 +22,12 @@ import java.nio.file.Paths
 import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.DurationInt
-
 import org.glassfish.jersey.media.multipart.FormDataMultiPart
 import org.glassfish.jersey.media.multipart.file.FileDataBodyPart
-
 import org.apache.kyuubi.{BatchTestHelper, KyuubiFunSuite, RestFrontendTestHelper, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.client.util.BatchUtils
@@ -43,8 +40,8 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{AUTHORIZATION_HEADER, basicAuthorizationHeader}
 import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion

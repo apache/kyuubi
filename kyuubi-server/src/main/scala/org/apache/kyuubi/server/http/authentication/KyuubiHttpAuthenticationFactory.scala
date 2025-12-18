@@ -19,17 +19,15 @@ package org.apache.kyuubi.server.http.authentication
 
 import java.security.PrivilegedAction
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
-
 import com.codahale.metrics.jetty9.InstrumentedHandler
 import org.apache.hadoop.security.UserGroupInformation
 import org.eclipse.jetty.server.{Handler, Request}
 import org.eclipse.jetty.server.handler.HandlerWrapper
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, ENGINE_SECURITY_ENABLED}
 import org.apache.kyuubi.metrics.MetricsConstants.{REST_CONN_FAIL, REST_CONN_OPEN, REST_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
+import org.apache.kyuubi.service.authentication.{AuthTypes, AuthenticationFilter, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
 class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {

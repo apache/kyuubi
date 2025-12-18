@@ -21,13 +21,10 @@ import java.time.Duration
 import java.util.UUID
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{GenericType, MediaType, Response}
-
 import scala.collection.JavaConverters._
-
 import org.mockito.Mockito.lenient
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.mockito.MockitoSugar.mock
-
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, RestFrontendTestHelper, Utils}
 import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
@@ -41,9 +38,9 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceDiscovery}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.plugin.PluginLoader
 import org.apache.kyuubi.server.KyuubiRestFrontendService
-import org.apache.kyuubi.server.http.util.HttpAuthUtils
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.AnonymousAuthenticationProviderImpl
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 

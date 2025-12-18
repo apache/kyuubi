@@ -21,16 +21,13 @@ import java.util.Base64
 import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
-
 import scala.collection.JavaConverters._
-
 import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.AuthSchemes
-import org.apache.kyuubi.server.http.util.HttpAuthUtils._
+import org.apache.kyuubi.service.authentication.AuthSchemes
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{AUTHORIZATION_HEADER, basicAuthorizationHeader, bearerAuthorizationHeader}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor, UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
 import org.apache.kyuubi.session.KyuubiSession
 
