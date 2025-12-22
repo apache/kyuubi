@@ -2685,6 +2685,14 @@ object KyuubiConf {
         "Unsupported event loggers")
       .createWithDefault(Nil)
 
+  val SERVER_EVENT_ASYNC_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.backend.server.event.async.enabled")
+      .doc("Whether backend server event logging is asynchronous.")
+      .version("1.11.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(false)
+
   @deprecated("using kyuubi.engine.spark.event.loggers instead", "1.6.0")
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.event.loggers")
