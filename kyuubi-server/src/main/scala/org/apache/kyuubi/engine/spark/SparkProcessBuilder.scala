@@ -41,7 +41,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, KyuubiHadoopUtils, Validator}
+import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.util.{JavaUtils, KubernetesUtils, Validator}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilder(
@@ -149,7 +150,8 @@ class SparkProcessBuilder(
       engineLogPathConf ++
       extraYarnConf(allConf) ++
       appendPodNameConf(allConf) ++
-      prepareK8sFileUploadPath()).foreach {
+      prepareK8sFileUploadPath() ++
+      engineWaitCompletionConf).foreach {
       case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
     }
 
@@ -287,14 +289,15 @@ class SparkProcessBuilder(
           // Create the `uploadPath` using permission 777, otherwise, spark just creates the
           // `$uploadPath/spark-upload-$uuid` using default permission 511, which might prevent
           // other users from creating the staging dir under `uploadPath` later.
-          val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf, loadDefaults = false)
+          val hadoopConf = KyuubiServer.getHadoopConf()
           val path = new Path(uploadPath)
           var fs: FileSystem = null
           try {
             fs = path.getFileSystem(hadoopConf)
             if (!fs.exists(path)) {
               info(s"Try creating $KUBERNETES_FILE_UPLOAD_PATH: $uploadPath")
-              fs.mkdirs(path, KUBERNETES_UPLOAD_PATH_PERMISSION)
+              // SPARK-30860: use the class method to avoid the umask causing permission issues
+              FileSystem.mkdirs(fs, path, KUBERNETES_UPLOAD_PATH_PERMISSION)
             }
           } catch {
             case ioe: IOException =>
@@ -324,11 +327,11 @@ class SparkProcessBuilder(
   }
 
   override def clusterManager(): Option[String] = {
-    conf.getOption(MASTER_KEY).orElse(defaultsConf.get(MASTER_KEY))
+    getSparkOption(MASTER_KEY)
   }
 
   def deployMode(): Option[String] = {
-    conf.getOption(DEPLOY_MODE_KEY).orElse(defaultsConf.get(DEPLOY_MODE_KEY))
+    getSparkOption(DEPLOY_MODE_KEY)
   }
 
   override def isClusterMode(): Boolean = {
@@ -345,16 +348,15 @@ class SparkProcessBuilder(
   }
 
   def kubernetesContext(): Option[String] = {
-    conf.getOption(KUBERNETES_CONTEXT_KEY).orElse(defaultsConf.get(KUBERNETES_CONTEXT_KEY))
+    getSparkOption(KUBERNETES_CONTEXT_KEY)
   }
 
   def kubernetesNamespace(): Option[String] = {
-    conf.getOption(KUBERNETES_NAMESPACE_KEY).orElse(defaultsConf.get(KUBERNETES_NAMESPACE_KEY))
+    getSparkOption(KUBERNETES_NAMESPACE_KEY)
   }
 
   def kubernetesFileUploadPath(): Option[String] = {
-    conf.getOption(KUBERNETES_FILE_UPLOAD_PATH)
-      .orElse(defaultsConf.get(KUBERNETES_FILE_UPLOAD_PATH))
+    getSparkOption(KUBERNETES_FILE_UPLOAD_PATH)
   }
 
   override def validateConf(): Unit = Validator.validateConf(conf)
@@ -372,6 +374,25 @@ class SparkProcessBuilder(
   private[spark] def engineLogPathConf(): Map[String, String] = {
     Map(KYUUBI_ENGINE_LOG_PATH_KEY -> engineLog.getAbsolutePath)
   }
+
+  private[spark] def getSparkOption(key: String): Option[String] = {
+    conf.getOption(key).orElse(defaultsConf.get(key))
+  }
+
+  override def waitEngineCompletion: Boolean = {
+    !isClusterMode() || getSparkOption(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
+      .getOrElse(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.defaultValStr)
+      .toBoolean
+  }
+
+  def engineWaitCompletionConf(): Map[String, String] =
+    clusterManager().map(_.toLowerCase(Locale.ROOT)) match {
+      case Some(m) if m.startsWith("yarn") =>
+        Map(YARN_SUBMIT_WAIT_APP_COMPLETION -> waitEngineCompletion.toString)
+      case Some(m) if m.startsWith("k8s") =>
+        Map(KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION -> waitEngineCompletion.toString)
+      case _ => Map.empty
+    }
 }
 
 object SparkProcessBuilder {
@@ -383,11 +404,15 @@ object SparkProcessBuilder {
   final val KUBERNETES_NAMESPACE_KEY = "spark.kubernetes.namespace"
   final val KUBERNETES_DRIVER_POD_NAME = "spark.kubernetes.driver.pod.name"
   final val KUBERNETES_EXECUTOR_POD_NAME_PREFIX = "spark.kubernetes.executor.podNamePrefix"
+  final val KUBERNETES_SUBMISSION_WAIT_APP_COMPLETION =
+    "spark.kubernetes.submission.waitAppCompletion"
   final val YARN_MAX_APP_ATTEMPTS_KEY = "spark.yarn.maxAppAttempts"
+  final val YARN_SUBMIT_WAIT_APP_COMPLETION = "spark.yarn.submit.waitAppCompletion"
   final val INTERNAL_RESOURCE = "spark-internal"
 
   final val KUBERNETES_FILE_UPLOAD_PATH = "spark.kubernetes.file.upload.path"
-  final val KUBERNETES_UPLOAD_PATH_PERMISSION = new FsPermission(Integer.parseInt("777", 8).toShort)
+  final val KUBERNETES_UPLOAD_PATH_PERMISSION =
+    FsPermission.createImmutable(Integer.parseInt("777", 8).toShort)
 
   final val YEAR_FMT = DateTimeFormatter.ofPattern("yyyy")
   final val MONTH_FMT = DateTimeFormatter.ofPattern("MM")

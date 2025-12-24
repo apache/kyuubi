@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine
 
 import java.io.File
 import java.net.{URI, URISyntaxException}
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.Locale
 
 import scala.util.control.NonFatal
@@ -31,10 +31,12 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
-class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager") {
+class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
+  extends AbstractService("KyuubiApplicationManager") {
 
   // TODO: maybe add a configuration is better
   private val operations =
@@ -43,7 +45,7 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
   override def initialize(conf: KyuubiConf): Unit = {
     operations.foreach { op =>
       try {
-        op.initialize(conf)
+        op.initialize(conf, metadataManager)
       } catch {
         case NonFatal(e) => warn(s"Error starting ${op.getClass.getSimpleName}: ${e.getMessage}")
       }
@@ -95,6 +97,16 @@ class KyuubiApplicationManager extends AbstractService("KyuubiApplicationManager
       case Some(op) => Some(op.getApplicationInfoByTag(appMgrInfo, tag, proxyUser, submitTime))
       case None => None
     }
+  }
+
+  private[kyuubi] def getKubernetesApplicationOperation: Option[KubernetesApplicationOperation] = {
+    operations.find(_.isInstanceOf[KubernetesApplicationOperation])
+      .map(_.asInstanceOf[KubernetesApplicationOperation])
+  }
+
+  private[kyuubi] def getApplicationOperation(appMgrInfo: ApplicationManagerInfo)
+      : Option[ApplicationOperation] = {
+    operations.find(_.isSupported(appMgrInfo))
   }
 }
 
@@ -151,7 +163,7 @@ object KyuubiApplicationManager {
             s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
         }
 
-        if (!localDirAllowList.exists(uri.getPath.startsWith(_))) {
+        if (!localDirAllowList.exists(Paths.get(uri.getPath).normalize.startsWith(_))) {
           throw new KyuubiException(
             s"The file ${uri.getPath} to access is not in the local dir allow list" +
               s" [${localDirAllowList.mkString(",")}].")

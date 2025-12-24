@@ -22,10 +22,14 @@ on:
     branches:
       - master
       - branch-*
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches:
       - master
       - branch-*
+    paths-ignore:
+      - 'docs/**'
 
 concurrency:
   group: test-${{ github.head_ref || github.run_id }}
@@ -47,6 +51,8 @@ jobs:
         java:
           - 8
           - 17
+        python:
+          - '3.9'
         spark:
           - '3.3'
           - '3.4'
@@ -56,30 +62,41 @@ jobs:
         comment: ["normal"]
         include:
           - java: 21
+            python: '3.11'
             spark: '4.0'
             spark-archive: '-Pscala-2.13'
             exclude-tags: ''
             comment: 'normal'
+          - java: 21
+            python: '3.11'
+            spark: '4.1'
+            spark-archive: '-Pscala-2.13'
+            exclude-tags: ''
+            comment: 'normal'
           - java: 8
+            python: '3.9'
             spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.4 -Dspark.archive.name=spark-3.2.4-bin-hadoop3.2.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.2-binary'
-          - java: 8
-            spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
+            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.3-binary'
           - java: 8
+            python: '3.9'
             spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.4.3 -Dspark.archive.name=spark-3.4.3-bin-hadoop3.tgz -Pzookeeper-3.6'
+            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.4.3 -Dspark.archive.name=spark-3.4.3-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.4-binary'
           - java: 17
+            python: '3.11'
             spark: '3.5'
-            spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-4.0.0-preview2 -Dspark.archive.name=spark-4.0.0-preview2-bin-hadoop3.tgz'
+            spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-4.0.1 -Dspark.archive.name=spark-4.0.1-bin-hadoop3.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-4.0-binary'
+          - java: 17
+            python: '3.11'
+            spark: '3.5'
+            spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-4.1.0 -Dspark.archive.name=spark-4.1.0-bin-hadoop3.tgz'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            comment: 'verify-on-spark-4.1-binary'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -101,7 +118,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: ${{ matrix.python }}
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.5" && "${{ matrix.spark-archive }}" == "" ]]; then
@@ -245,8 +262,6 @@ jobs:
         java:
           - 8
         flink:
-          - '1.17'
-          - '1.18'
           - '1.19'
           - '1.20'
         flink-archive: [ "" ]
@@ -254,15 +269,15 @@ jobs:
         include:
           - java: 8
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.17.2 -Dflink.archive.name=flink-1.17.2-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.17.2 -Dflink.archive.name=flink-1.17.2-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.17-binary'
           - java: 8
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.18.1 -Dflink.archive.name=flink-1.18.1-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.18.1 -Dflink.archive.name=flink-1.18.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.18-binary'
           - java: 8
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://archive.apache.org/dist/flink/flink-1.19.1 -Dflink.archive.name=flink-1.19.1-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.1 -Dflink.archive.name=flink-1.19.1-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.19-binary'
     steps:
       - uses: actions/checkout@v4
@@ -317,10 +332,10 @@ jobs:
         comment: [ "normal" ]
         include:
           - java: 8
-            hive-archive: '-Dhive.archive.mirror=https://archive.apache.org/dist/hive/hive-2.3.10 -Dhive.archive.name=apache-hive-2.3.10-bin.tar.gz'
+            hive-archive: '-Dhive.archive.mirror=https://www.apache.org/dyn/closer.lua/hive/hive-2.3.10 -Dhive.archive.name=apache-hive-2.3.10-bin.tar.gz'
             comment: 'verify-on-hive-2.3-binary'
           - java: 8
-            hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz'
+            hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz -Dhive.archive.query='
             comment: 'verify-on-hive-2.1-cdh6-binary'
     steps:
       - uses: actions/checkout@v4
@@ -422,17 +437,21 @@ jobs:
         uses: docker/setup-buildx-action@v3
         with:
           cache-binary: false
+      - name: Pull Spark image
+        run: |
+          docker pull apache/spark:3.5.5
       - name: Build Kyuubi Docker Image
         uses: docker/build-push-action@v6
         with:
           # passthrough CI into build container
           build-args: |
             CI=${CI}
-            MVN_ARG=--flink-provided --hive-provided
+            BASE_IMAGE=apache/spark:3.5.5
+            MVN_ARG=--spark-provided --flink-provided --hive-provided
           context: .
           file: build/Dockerfile.CI
           load: true
-          tags: apache/kyuubi:latest
+          tags: apache/kyuubi:ci
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
@@ -442,9 +461,8 @@ jobs:
           sudo install minikube-linux-amd64 /usr/local/bin/minikube
           minikube start --cpus 2 --memory 4096 --kubernetes-version=${KUBERNETES_VERSION} --force
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
-          minikube image load apache/kyuubi:latest
+          minikube image load apache/kyuubi:ci
           # pre-install spark into minikube
-          docker pull apache/spark:3.5.5
           minikube image load apache/spark:3.5.5
       - name: kubectl pre-check
         run: |

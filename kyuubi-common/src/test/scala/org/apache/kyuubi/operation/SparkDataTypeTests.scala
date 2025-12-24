@@ -27,9 +27,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
   def resultFormat: String = "thrift"
 
   test("execute statement - select null") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
       assert(resultSet.next())
@@ -252,9 +249,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
   }
 
   test("execute statement - select daytime interval") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.3"))
     withJdbcStatement() { statement =>
       Map(
         "interval 1 day 1 hour -60 minutes 30 seconds" ->
@@ -283,25 +277,15 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
           assert(resultSet.next())
           val result = resultSet.getString("col")
           val metaData = resultSet.getMetaData
-          if (SPARK_ENGINE_RUNTIME_VERSION <= "3.1") {
-            // for spark 3.1 and backwards
-            assert(result === kv._2._2)
-            assert(metaData.getPrecision(1) === Int.MaxValue)
-            assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
-          } else {
-            assert(result === kv._2._1)
-            assert(metaData.getPrecision(1) === 29)
-            assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
-          }
+          assert(result === kv._2._1)
+          assert(metaData.getPrecision(1) === 29)
+          assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
           assert(metaData.getScale(1) === 0)
       }
     }
   }
 
   test("execute statement - select year/month interval") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.3"))
     withJdbcStatement() { statement =>
       Map(
         "INTERVAL 2022 YEAR" -> Tuple2("2022-0", "2022 years"),
@@ -314,25 +298,15 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
         assert(resultSet.next())
         val result = resultSet.getString("col")
         val metaData = resultSet.getMetaData
-        if (SPARK_ENGINE_RUNTIME_VERSION <= "3.1") {
-          // for spark 3.1 and backwards
-          assert(result === kv._2._2)
-          assert(metaData.getPrecision(1) === Int.MaxValue)
-          assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.VARCHAR)
-        } else {
-          assert(result === kv._2._1)
-          assert(metaData.getPrecision(1) === 11)
-          assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
-        }
+        assert(result === kv._2._1)
+        assert(metaData.getPrecision(1) === 11)
+        assert(resultSet.getMetaData.getColumnType(1) === java.sql.Types.OTHER)
         assert(metaData.getScale(1) === 0)
       }
     }
   }
 
   test("execute statement - select array") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
@@ -350,9 +324,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
   }
 
   test("execute statement - select map") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT map() AS col1, map(1, 2, 3, 4) AS col2, map(1, null) AS col3")
@@ -370,9 +341,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
   }
 
   test("execute statement - select struct") {
-    assume(
-      resultFormat == "thrift" ||
-        (resultFormat == "arrow" && SPARK_ENGINE_RUNTIME_VERSION >= "3.2"))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT struct('1', '2') AS col1," +

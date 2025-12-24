@@ -64,8 +64,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     processBuilder.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error = processBuilder.getError
-      assert(error.getMessage.contains(
-        "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc"))
+      assert(error.getMessage.contains("spark.ui.port should be int") ||
+        error.getMessage.contains("INVALID_CONF_VALUE.TYPE_MISMATCH"))
       assert(error.isInstanceOf[KyuubiSQLException])
     }
 
@@ -79,7 +79,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = processBuilder1.getError
       assert(
-        error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:"))
+        error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:") ||
+          error1.getMessage.contains("Unable to instantiate " +
+            "org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient"))
     }
   }
 

@@ -68,6 +68,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
   private lazy val resourceFileMaxSize = fe.getConf.get(BATCH_RESOURCE_FILE_MAX_SIZE)
   private lazy val extraResourceFileMaxSize = fe.getConf.get(BATCH_EXTRA_RESOURCE_FILE_MAX_SIZE)
   private lazy val metadataSearchWindow = fe.getConf.get(METADATA_SEARCH_WINDOW)
+  private lazy val batchInfoInternalRedirect = fe.getConf.get(BATCH_INFO_INTERNAL_REDIRECT)
 
   private def batchV2Enabled(reqConf: Map[String, String]): Boolean = {
     fe.getConf.get(BATCH_SUBMITTER_ENABLED) &&
@@ -90,7 +91,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
 
   private def sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
 
-  private def buildBatch(session: KyuubiBatchSession): Batch = {
+  private def buildBatchFromSession(session: KyuubiBatchSession): Batch = {
     val batchOp = session.batchJobSubmissionOp
     val batchOpStatus = batchOp.getStatus
 
@@ -124,12 +125,13 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       Map.empty[String, String].asJava)
   }
 
-  private def buildBatch(
+  private def buildBatchFromMetadataAndAppInfo(
       metadata: Metadata,
       batchAppStatus: Option[ApplicationInfo]): Batch = {
     batchAppStatus.map { appStatus =>
+      val appOp = sessionManager.applicationManager.getApplicationOperation(metadata.appMgrInfo)
       val currentBatchState =
-        if (BatchJobSubmission.applicationFailed(batchAppStatus)) {
+        if (BatchJobSubmission.applicationFailed(batchAppStatus, appOp)) {
           OperationState.ERROR.toString
         } else if (BatchJobSubmission.applicationTerminated(batchAppStatus)) {
           OperationState.FINISHED.toString
@@ -314,7 +316,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         } match {
           case Success(sessionHandle) =>
             sessionManager.getBatchSession(sessionHandle) match {
-              case Some(batchSession) => buildBatch(batchSession)
+              case Some(batchSession) => buildBatchFromSession(batchSession)
               case None => throw new IllegalStateException(
                   s"can not find batch $batchId from metadata store")
             }
@@ -347,7 +349,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     val userName = fe.getSessionUser(Map.empty[String, String])
     val sessionHandle = formatSessionHandle(batchId)
     sessionManager.getBatchSession(sessionHandle).map { batchSession =>
-      buildBatch(batchSession)
+      buildBatchFromSession(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
         val isOperationTerminated = (StringUtils.isNotBlank(metadata.state)
@@ -355,11 +357,23 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         val isApplicationTerminated = (StringUtils.isNotBlank(metadata.engineState)
           && ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)))
 
-        if (batchV2Enabled(metadata.requestConf) ||
+        if (!batchInfoInternalRedirect ||
+          batchV2Enabled(metadata.requestConf) ||
           isOperationTerminated ||
           isApplicationTerminated ||
           metadata.kyuubiInstance == fe.connectionUrl) {
-          MetadataManager.buildBatch(metadata)
+          if (isApplicationTerminated && !isOperationTerminated) {
+            buildBatchFromMetadataAndAppInfo(
+              metadata,
+              Some(ApplicationInfo(
+                metadata.engineId,
+                metadata.engineName,
+                metadata.appState.orNull,
+                Option(metadata.engineUrl),
+                metadata.engineError)))
+          } else {
+            MetadataManager.buildBatch(metadata)
+          }
         } else {
           val internalRestClient = getInternalRestClient(metadata.kyuubiInstance)
           try {
@@ -384,7 +398,7 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
                   engineState = appInfo.state.toString,
                   engineError = appInfo.error))
               }
-              buildBatch(metadata, batchAppStatus)
+              buildBatchFromMetadataAndAppInfo(metadata, batchAppStatus)
           }
         }
       }.getOrElse {
@@ -558,6 +572,42 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
         error(s"Invalid batchId: $batchId")
         throw new NotFoundException(s"Invalid batchId: $batchId")
       }
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[ReassignBatchResponse]))),
+    description =
+      "Reassign batch sessions on an unreachable kyuubi instance to the current kyuubi instance")
+  @POST
+  @Path("/reassign")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def reassignBatchSessions(request: ReassignBatchRequest): ReassignBatchResponse = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    val kyuubiInstance = request.getKyuubiInstance
+    val newKyuubiInstance = fe.connectionUrl
+    info(s"Received reassign $kyuubiInstance batch sessions request from $userName/$ipAddress")
+    if (!fe.isAdministrator(userName)) {
+      throw new ForbiddenException(s"$userName is not allowed to reassign the batches")
+    }
+    if (kyuubiInstance == newKyuubiInstance) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+    }
+    val internalRestClient = getInternalRestClient(kyuubiInstance)
+    if (!Utils.isTesting && internalRestClient.pingAble(userName, ipAddress)) {
+      throw new IllegalStateException(s"KyuubiInstance is alive: $kyuubiInstance")
+    }
+    try {
+      val batchIds = sessionManager.reassignBatchSessions(kyuubiInstance, newKyuubiInstance)
+      val recoveredBatchIds = fe.recoverBatchSessionsFromReassign(batchIds)
+      new ReassignBatchResponse(recoveredBatchIds.asJava, kyuubiInstance, newKyuubiInstance)
+    } catch {
+      case e: Exception =>
+        throw new Exception(s"Error reassign batches from $kyuubiInstance to $newKyuubiInstance", e)
     }
   }
 

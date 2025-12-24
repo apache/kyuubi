@@ -224,24 +224,7 @@ object PrivilegesBuilder {
           }
         }
         spec.queries(plan).foreach { p =>
-          if (p.resolved) {
-            buildQuery(Project(p.output, p), inputObjs, spark = spark)
-          } else {
-            try {
-              // For spark 3.1, Some command such as CreateTableASSelect, its query was unresolved,
-              // Before this pr, we just ignore it, now we support this.
-              val analyzed = spark.sessionState.analyzer.execute(p)
-              buildQuery(Project(analyzed.output, analyzed), inputObjs, spark = spark)
-            } catch {
-              case e: Exception =>
-                LOG.debug(
-                  s"""
-                     |Failed to analyze unresolved
-                     |$p
-                     |due to ${e.getMessage}""".stripMargin,
-                  e)
-            }
-          }
+          buildQuery(Project(p.output, p), inputObjs, spark = spark)
         }
         spec.operationType
 
@@ -284,9 +267,7 @@ object PrivilegesBuilder {
         val spec = getTableCommandSpec(command)
         val functionPrivAndOpType = spec.queries(plan)
           .map(plan => buildFunctions(plan, spark))
-        functionPrivAndOpType.map(_._1)
-          .reduce(_ ++ _)
-          .foreach(functionPriv => inputObjs += functionPriv)
+        inputObjs ++= functionPrivAndOpType.flatMap(_._1)
 
       case plan => plan transformAllExpressions {
           case hiveFunction: Expression if isKnownFunction(hiveFunction) =>

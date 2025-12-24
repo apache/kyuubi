@@ -185,6 +185,22 @@ class ExpressionSeqTableExtractor extends TableExtractor {
 }
 
 /**
+ * org.apache.spark.sql.catalyst.plans.logical.AddPartitionField
+ */
+class ArrayBufferTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    // Iceberg will transform table to ArrayBuffer[String]
+    val maybeTable = v1.asInstanceOf[Seq[String]] match {
+      case Seq(tblName) => Table(None, None, tblName, None)
+      case Seq(dbName, tblName) => Table(None, Some(dbName), tblName, None)
+      case Seq(catalogName, dbName, tblName) =>
+        Table(Some(catalogName), Some(dbName), tblName, None)
+    }
+    Option(maybeTable)
+  }
+}
+
+/**
  * org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
  */
 class DataSourceV2RelationTableExtractor extends TableExtractor {

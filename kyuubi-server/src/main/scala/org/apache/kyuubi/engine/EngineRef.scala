@@ -24,13 +24,14 @@ import scala.util.Random
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.EngineType._
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, SERVER_LOCAL, ShareLevel}
 import org.apache.kyuubi.engine.chat.ChatProcessBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
@@ -43,6 +44,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, 
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
+import org.apache.kyuubi.util.JavaUtils
 
 /**
  * The description and functionality of an engine at server side
@@ -82,6 +84,15 @@ private[kyuubi] class EngineRef(
 
   private val enginePoolSelectPolicy: String = conf.get(ENGINE_POOL_SELECT_POLICY)
 
+  private lazy val localHostAddr = {
+    val host = JavaUtils.findLocalInetAddress.getHostAddress
+    if (StringUtils.isBlank(host)) {
+      throw KyuubiSQLException(
+        s"Local host address can not be empty if ShareLevel set to SERVER_LOCAL")
+    }
+    host
+  }
+
   // In case the multi kyuubi instances have the small gap of timeout, here we add
   // a small amount of time for timeout
   private val LOCK_TIMEOUT_SPAN_FACTOR = if (Utils.isTesting) 0.5 else 0.1
@@ -92,7 +103,7 @@ private[kyuubi] class EngineRef(
 
   // user for routing session to the engine
   private[kyuubi] val routingUser: String = shareLevel match {
-    case SERVER => Utils.currentUser
+    case SERVER | SERVER_LOCAL => Utils.currentUser
     case GROUP => groupProvider.primaryGroup(sessionUser, conf.getAll.asJava)
     case _ => sessionUser
   }
@@ -134,6 +145,7 @@ private[kyuubi] class EngineRef(
     val commonNamePrefix = s"kyuubi_${shareLevel}_${engineType}_${routingUser}"
     shareLevel match {
       case CONNECTION => s"${commonNamePrefix}_$engineRefId"
+      case SERVER_LOCAL => s"${commonNamePrefix}_${localHostAddr}_${subdomain}_$engineRefId"
       case _ => s"${commonNamePrefix}_${subdomain}_$engineRefId"
     }
   }
@@ -147,6 +159,8 @@ private[kyuubi] class EngineRef(
    *   /`serverSpace_version_USER_engineType`/`user`[/`subdomain`]
    * For `GROUP` share level:
    *   /`serverSpace_version_GROUP_engineType`/`primary group name`[/`subdomain`]
+   * For `SERVER_LOCAL` share level:
+   *   /`serverSpace_version_SERVER_LOCAL_engineType`/`kyuubi server user`/`hostAddress_subdomain`
    * For `SERVER` share level:
    *   /`serverSpace_version_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
@@ -155,6 +169,8 @@ private[kyuubi] class EngineRef(
     val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
     shareLevel match {
       case CONNECTION => DiscoveryPaths.makePath(commonParent, routingUser, engineRefId)
+      case SERVER_LOCAL =>
+        DiscoveryPaths.makePath(commonParent, routingUser, s"${localHostAddr}_$subdomain")
       case _ => DiscoveryPaths.makePath(commonParent, routingUser, subdomain)
     }
   }
@@ -166,6 +182,15 @@ private[kyuubi] class EngineRef(
   private def tryWithLock[T](discoveryClient: DiscoveryClient)(f: => T): T =
     shareLevel match {
       case CONNECTION => f
+      case SERVER_LOCAL =>
+        val lockPath =
+          DiscoveryPaths.makePath(
+            s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_lock",
+            routingUser,
+            s"${localHostAddr}_$subdomain")
+        discoveryClient.tryWithLock(
+          lockPath,
+          timeout + (LOCK_TIMEOUT_SPAN_FACTOR * timeout).toLong)(f)
       case _ =>
         val lockPath =
           DiscoveryPaths.makePath(
@@ -299,8 +324,7 @@ private[kyuubi] class EngineRef(
       engineRef.get
     } finally {
       if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
-      val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
-      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      val destroyProcess = !builder.waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")

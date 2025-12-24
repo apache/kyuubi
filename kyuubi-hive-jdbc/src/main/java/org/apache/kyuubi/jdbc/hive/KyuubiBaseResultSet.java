@@ -67,6 +67,9 @@ public abstract class KyuubiBaseResultSet implements SQLResultSet {
   @Override
   public BigDecimal getBigDecimal(int columnIndex) throws SQLException {
     final Object val = getObject(columnIndex);
+    if (val == null) {
+      return null;
+    }
     if (val instanceof BigDecimal) {
       return (BigDecimal) val;
     }

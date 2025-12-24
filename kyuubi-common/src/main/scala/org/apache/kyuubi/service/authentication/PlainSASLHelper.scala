@@ -18,9 +18,10 @@
 package org.apache.kyuubi.service.authentication
 
 import java.security.Security
+import java.util
 import java.util.Collections
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
-import javax.security.sasl.AuthorizeCallback
+import javax.security.sasl.{AuthorizeCallback, Sasl}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
@@ -79,17 +80,32 @@ object PlainSASLHelper {
       conf: KyuubiConf,
       transportFactory: Option[TSaslServerTransport.Factory] = None,
       isServer: Boolean = true): TTransportFactory = {
-    val saslFactory = transportFactory.getOrElse(new TSaslServerTransport.Factory())
-    try {
-      val handler = new PlainServerCallbackHandler(authTypeStr, conf, isServer)
-      val props = new java.util.HashMap[String, String]
-      saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
-    } catch {
-      case e: NoSuchElementException =>
-        throw new IllegalArgumentException(
-          s"Illegal authentication type $authTypeStr for plain transport",
-          e)
+    val handler =
+      try {
+        new PlainServerCallbackHandler(authTypeStr, conf, isServer)
+      } catch {
+        case _: NoSuchElementException =>
+          throw new IllegalArgumentException(
+            s"Illegal authentication type $authTypeStr for plain transport")
+      }
+    val saslFactory = transportFactory.getOrElse {
+      val _factory = new TSaslServerTransport.Factory()
+      _factory.setSaslServerFactory { d =>
+        if (d.mechanism == "PLAIN") {
+          // [KYUUBI #7142]: There may be multiple SaslServer classes registered for PLAIN
+          // mechanism, we should not use JDK Sasl.createSaslServer to avoid picking up the
+          // unexpected SaslServer implementation.
+          val kyuubiFactory = new PlainSASLServer.SaslPlainServerFactory()
+          kyuubiFactory.createSaslServer(d.mechanism, d.protocol, d.serverName, d.props, d.cbh)
+        } else {
+          Sasl.createSaslServer(d.mechanism, d.protocol, d.serverName, d.props, d.cbh)
+        }
+      }
+      _factory
     }
+    val props = new util.HashMap[String, String]
+    props.put("org.apache.kyuubi.service.name", if (isServer) "SERVER" else "ENGINE")
+    saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
     saslFactory
   }
 

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.util
 import java.util.Collections
 import javax.security.auth.callback.{Callback, CallbackHandler}
 import javax.security.sasl.{AuthorizeCallback, SaslException}
@@ -28,8 +29,10 @@ class PlainSASLServerSuite extends KyuubiFunSuite {
 
   test("SaslPlainServerFactory") {
     val plainServerFactory = new SaslPlainServerFactory()
-    val map = Collections.emptyMap[String, String]()
-    assert(plainServerFactory.getMechanismNames(map) ===
+    val invalidProps = Collections.emptyMap[String, String]()
+    val props = new util.HashMap[String, String]()
+    props.put("org.apache.kyuubi.service.name", "TEST")
+    assert(plainServerFactory.getMechanismNames(props) ===
       Array(PlainSASLServer.PLAIN_METHOD))
     val ch = new CallbackHandler {
       override def handle(callbacks: Array[Callback]): Unit = callbacks.foreach {
@@ -38,16 +41,23 @@ class PlainSASLServerSuite extends KyuubiFunSuite {
       }
     }
 
-    val s1 = plainServerFactory.createSaslServer("INVALID", "", "", map, ch)
+    val s1 = plainServerFactory.createSaslServer("INVALID", "", "", props, ch)
     assert(s1 === null)
-    val s2 = plainServerFactory.createSaslServer(PlainSASLServer.PLAIN_METHOD, "", "", map, ch)
+    val s2 = plainServerFactory.createSaslServer(PlainSASLServer.PLAIN_METHOD, "", "", props, ch)
     assert(s2 === null)
+    val s3 = plainServerFactory.createSaslServer(
+      PlainSASLServer.PLAIN_METHOD,
+      AuthMethods.NONE.toString,
+      "",
+      invalidProps,
+      ch)
+    assert(s3 === null)
 
     val server = plainServerFactory.createSaslServer(
       PlainSASLServer.PLAIN_METHOD,
       AuthMethods.NONE.toString,
       "KYUUBI",
-      map,
+      props,
       ch)
     assert(server.getMechanismName === PlainSASLServer.PLAIN_METHOD)
     assert(!server.isComplete)
@@ -78,7 +88,7 @@ class PlainSASLServerSuite extends KyuubiFunSuite {
       "PLAIN",
       "NONE",
       "KYUUBI",
-      map,
+      props,
       _ => {})
     val e6 = intercept[SaslException](server2.evaluateResponse(res4.map(_.toByte)))
     assert(e6.getMessage === "Error validating the login")

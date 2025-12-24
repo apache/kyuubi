@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture, TimeUnit}
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -28,6 +30,7 @@ import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.
@@ -40,6 +43,9 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   protected def skipOperationLog: Boolean = false
 
+  /* Scheduler used for query timeout tasks */
+  @volatile private var timeoutScheduler: ScheduledExecutorService = _
+
   def getOperationCount: Int = handleToOperation.size()
 
   def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
@@ -47,6 +53,32 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
     super.initialize(conf)
+
+    val timeoutPoolSize = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
+    val timeoutPoolKeepAliveTime = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
+    timeoutScheduler = ThreadUtils.newDaemonScheduledThreadPool(
+      timeoutPoolSize,
+      timeoutPoolKeepAliveTime,
+      "operation-timeout")
+  }
+
+  override def stop(): Unit = synchronized {
+    if (timeoutScheduler != null) {
+      ThreadUtils.shutdown(timeoutScheduler)
+      timeoutScheduler = null
+    }
+    super.stop()
+  }
+
+  /** Schedule a timeout task using the internal scheduler */
+  def scheduleTimeout(action: Runnable, timeoutSeconds: Long): ScheduledFuture[_] = {
+    timeoutScheduler.schedule(action, timeoutSeconds, TimeUnit.SECONDS)
+  }
+
+  def cancelTimeout(future: ScheduledFuture[_]): Unit = {
+    if (future != null && !future.isCancelled) {
+      future.cancel(false)
+    }
   }
 
   def newExecuteStatementOperation(

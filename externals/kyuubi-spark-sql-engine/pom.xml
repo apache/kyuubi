@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.11.0-SNAPSHOT</version>
+        <version>1.12.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -241,7 +241,6 @@
                             <include>com.google.android:annotations</include>
                             <include>com.google.api.grpc:proto-google-common-protos</include>
                             <include>com.google.code.gson:gson</include>
-                            <include>com.google.errorprone:error_prone_annotations</include>
                             <include>com.google.guava:*</include>
                             <include>com.google.j2objc:j2objc-annotations</include>
                             <include>com.google.protobuf:*</include>
@@ -256,6 +255,15 @@
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
                         </includes>
+                        <excludes>
+                            <exclude>io.netty:netty-codec-*-quic</exclude>
+                            <exclude>io.netty:netty-resolver-dns-*-macos</exclude>
+                            <exclude>io.netty:netty-tcnative-boringssl-static:*:osx-*</exclude>
+                            <exclude>io.netty:netty-tcnative-boringssl-static:*:windows-*</exclude>
+                            <exclude>io.netty:netty-transport-*-kqueue</exclude>
+                            <exclude>io.netty:netty-transport-*-io_uring</exclude>
+                            <exclude>io.netty:netty-transport-native-epoll:*:linux-riscv64</exclude>
+                        </excludes>
                     </artifactSet>
                     <filters>
                         <filter>
@@ -268,6 +276,8 @@
                                 <exclude>META-INF/DEPENDENCIES</exclude>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
+                                <exclude>META-INF/license/**</exclude>
+                                <exclude>META-INF/licenses/**</exclude>
                                 <exclude>META-INF/maven/**</exclude>
                                 <exclude>LICENSE.txt</exclude>
                                 <exclude>NOTICE.txt</exclude>
@@ -347,14 +357,6 @@
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.j2objc.annotations</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.google.errorprone.annotations</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.com.google.errorprone.annotations</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>org.checkerframework</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.checkerframework</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>com.google.gson</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.gson</shadedPattern>
                         </relocation>
@@ -366,6 +368,10 @@
                         <relocation>
                             <pattern>com.google.api</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.api</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.apps</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.apps</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.google.cloud</pattern>
@@ -386,6 +392,10 @@
                         <relocation>
                             <pattern>com.google.rpc</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.google.rpc</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.shopping</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.com.google.shopping</shadedPattern>
                         </relocation>
                         <relocation>
                             <pattern>com.google.type</pattern>
@@ -427,7 +437,7 @@
                                 <echo level="info">renaming netty native libraries</echo>
                                 <move includeemptydirs="false" todir="${project.build.directory}/unpacked/META-INF/native">
                                     <fileset dir="${project.build.directory}/unpacked/META-INF/native"></fileset>
-                                    <mapper from="libnetty_transport_native_epoll_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_transport_native_epoll_\1" type="regexp"></mapper>
+                                    <mapper from="libnetty_(tcnative_linux|transport_native_epoll)_(aarch_64.so|x86_64.so)" to="liborg_apache_kyuubi_shade_netty_\1_\2" type="regexp"></mapper>
                                 </move>
                                 <echo level="info">deleting META-INF/native-image folder</echo>
                                 <delete dir="${project.build.directory}/unpacked/META-INF/native-image"></delete>

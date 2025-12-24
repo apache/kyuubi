@@ -58,11 +58,76 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     TableCommandSpec(cmd, Seq(td), opType = OperationType.ALTERTABLE_PROPERTIES)
   }
 
+  val AddPartitionFiled = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.AddPartitionField"
+    val tableDesc =
+      TableDesc(
+        "table",
+        classOf[ArrayBufferTableExtractor],
+        comment = "Iceberg")
+    TableCommandSpec(cmd, Seq(tableDesc), opType = OperationType.ALTERTABLE_PROPERTIES)
+  }
+
+  val DropPartitionField = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropPartitionField"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val ReplacePartitionField = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val WriteDistributionAndOrdering = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val SetIdentifierFields = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val DropIdentifierFields = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val CreateOrReplaceBranch = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceBranch"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val CreateOrReplaceTag = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceTag"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val DropBranch = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropBranch"
+    AddPartitionFiled.copy(cmd)
+  }
+
+  val DropTag = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropTag"
+    AddPartitionFiled.copy(cmd)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     CallProcedure,
     DeleteFromIcebergTable,
     UpdateIcebergTable,
     MergeIntoIcebergTable,
+    AddPartitionFiled,
+    DropPartitionField,
+    ReplacePartitionField,
+    WriteDistributionAndOrdering,
+    SetIdentifierFields,
+    DropIdentifierFields,
+    CreateOrReplaceBranch,
+    CreateOrReplaceTag,
+    DropBranch,
+    DropTag,
     MergeIntoIcebergTable.copy(classname =
       "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }

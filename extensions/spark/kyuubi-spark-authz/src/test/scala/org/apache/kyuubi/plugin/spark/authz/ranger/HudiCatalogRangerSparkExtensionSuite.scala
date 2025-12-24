@@ -22,7 +22,6 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.HudiTest
 import org.apache.kyuubi.util.AssertionUtils.interceptEndsWith
 
@@ -48,15 +47,13 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val index1 = "table_hoodie_index1"
 
   override def beforeAll(): Unit = {
-    if (isSparkV32OrGreater) {
-      spark.conf.set(
-        s"spark.sql.catalog.$sparkCatalog",
-        "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
-      spark.conf.set(s"spark.sql.catalog.$sparkCatalog.type", "hadoop")
-      spark.conf.set(
-        s"spark.sql.catalog.$sparkCatalog.warehouse",
-        Utils.createTempDir("hudi-hadoop").toString)
-    }
+    spark.conf.set(
+      s"spark.sql.catalog.$sparkCatalog",
+      "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
+    spark.conf.set(s"spark.sql.catalog.$sparkCatalog.type", "hadoop")
+    spark.conf.set(
+      s"spark.sql.catalog.$sparkCatalog.warehouse",
+      Utils.createTempDir("hudi-hadoop").toString)
     super.beforeAll()
   }
 
@@ -549,9 +546,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("IndexBasedCommand") {
-    assume(
-      !isSparkV33OrGreater,
-      "Hudi index creation not supported on Spark 3.3 or greater currently")
+    assume(false, "Hudi index creation not supported on Spark 3.3 or greater currently")
     withCleanTmpResources(Seq((s"$namespace1.$table1", "table"), (namespace1, "database"))) {
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
       doAs(

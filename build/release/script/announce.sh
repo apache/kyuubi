@@ -57,6 +57,7 @@ distributed over fleets of machines from heterogeneous data sources.
 
 The full release notes and download links are available at:
 Release Notes: https://kyuubi.apache.org/release/${RELEASE_VERSION}.html
+Download Links: https://kyuubi.apache.org/releases.html
 
 To learn more about Apache Kyuubi, please see
 https://kyuubi.apache.org/

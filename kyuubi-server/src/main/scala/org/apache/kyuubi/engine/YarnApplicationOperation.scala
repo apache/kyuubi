@@ -32,6 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf.YarnUserStrategy._
 import org.apache.kyuubi.engine.ApplicationOperation._
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
 import org.apache.kyuubi.engine.YarnApplicationOperation.toApplicationState
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class YarnApplicationOperation extends ApplicationOperation with Logging {
@@ -40,7 +41,7 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   @volatile private var adminYarnClient: Option[YarnClient] = None
   private var submitTimeout: Long = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
     submitTimeout = conf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
     yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
 
@@ -130,12 +131,13 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo = withYarnClient(proxyUser) { yarnClient =>
     debug(s"Getting application info from YARN cluster by tag: $tag")
+    val startTime = System.currentTimeMillis()
     val reports = yarnClient.getApplications(null, null, Set(tag).asJava)
     if (reports.isEmpty) {
       debug(s"Can't find target application from YARN cluster by tag: $tag")
       submitTime match {
         case Some(_submitTime) =>
-          val elapsedTime = System.currentTimeMillis - _submitTime
+          val elapsedTime = startTime - _submitTime
           if (elapsedTime < submitTimeout) {
             info(s"Wait for YARN application[tag: $tag] to be submitted, " +
               s"elapsed time: ${elapsedTime}ms, return ${ApplicationInfo.UNKNOWN} status")
@@ -163,6 +165,8 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       info
     }
   }
+
+  override def supportPersistedAppState: Boolean = true
 
   override def stop(): Unit = adminYarnClient.foreach { yarnClient =>
     Utils.tryLogNonFatalError(yarnClient.stop())

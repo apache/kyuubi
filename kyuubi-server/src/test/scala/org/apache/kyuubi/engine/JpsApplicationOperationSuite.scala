@@ -35,7 +35,7 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 class JpsApplicationOperationSuite extends KyuubiFunSuite {
   private val jps = loadFromServiceLoader[ApplicationOperation]()
     .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation])).get
-  jps.initialize(null)
+  jps.initialize(null, None)
 
   test("JpsApplicationOperation with jstat") {
     assert(jps.isSupported(ApplicationManagerInfo(None)))

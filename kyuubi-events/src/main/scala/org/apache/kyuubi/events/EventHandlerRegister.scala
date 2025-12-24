@@ -25,6 +25,8 @@ trait EventHandlerRegister extends Logging {
 
   protected def getLoggers(conf: KyuubiConf): Seq[String]
 
+  protected def asyncEventLogging(conf: KyuubiConf): Boolean = false
+
   def registerEventLoggers(conf: KyuubiConf): Unit = {
     val loggers = getLoggers(conf)
     register(loggers, conf)
@@ -35,7 +37,11 @@ trait EventHandlerRegister extends Logging {
       .map(EventLoggerType.withName)
       .foreach { logger =>
         val handlers = loadEventHandler(logger, conf)
-        handlers.foreach(EventBus.register)
+        if (asyncEventLogging(conf)) {
+          handlers.foreach(EventBus.registerAsync)
+        } else {
+          handlers.foreach(EventBus.register)
+        }
       }
   }
 

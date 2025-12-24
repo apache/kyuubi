@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+org.apache.kyuubi.plugin.spark.authz.serde.ArrayBufferTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogTableOptionTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.CatalogTableTableExtractor
 org.apache.kyuubi.plugin.spark.authz.serde.DataSourceV2RelationTableExtractor

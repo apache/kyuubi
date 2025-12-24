@@ -35,7 +35,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataStore
-import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
+import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
@@ -83,8 +83,6 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   implicit private[kyuubi] val hikariDataSource: HikariDataSource =
     new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
-  private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
 
   if (conf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
@@ -282,7 +280,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
     val query = queryBuilder.toString
     JdbcUtils.executeQueryWithRowMapper(query) { stmt =>
-      setStatementParams(stmt, params)
+      setStatementParams(stmt, params.toSeq: _*)
     } { resultSet =>
       resultSet.getInt(1)
     }.head
@@ -411,11 +409,71 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  override def cleanupMetadataByAge(maxAge: Long): Unit = {
+  override def cleanupMetadataByAge(maxAge: Long, limit: Int): Int = {
     val minEndTime = System.currentTimeMillis() - maxAge
-    val query = s"DELETE FROM $METADATA_TABLE WHERE state IN ($terminalStates) AND end_time < ?"
+    val query =
+      s"DELETE FROM $METADATA_TABLE WHERE end_time > 0 AND end_time < ? AND create_time < ?" +
+        s" ${dialect.deleteFromLimitClause(limit)}"
     JdbcUtils.withConnection { connection =>
-      execute(connection, query, minEndTime)
+      withUpdateCount(connection, query, minEndTime, minEndTime) { count =>
+        info(s"Cleaned up $count records older than $maxAge ms from $METADATA_TABLE limit:$limit.")
+        count
+      }
+    }
+  }
+
+  override def upsertKubernetesEngineInfo(engineInfo: KubernetesEngineInfo): Unit = {
+    val query = dialect.insertOrReplace(
+      KUBERNETES_ENGINE_INFO_TABLE,
+      KUBERNETES_ENGINE_INFO_COLUMNS,
+      KUBERNETES_ENGINE_INFO_KEY_COLUMN,
+      engineInfo.identifier)
+    JdbcUtils.withConnection { connection =>
+      execute(
+        connection,
+        query,
+        engineInfo.identifier,
+        engineInfo.context.orNull,
+        engineInfo.namespace.orNull,
+        engineInfo.podName,
+        engineInfo.podState,
+        engineInfo.containerState,
+        engineInfo.engineId,
+        engineInfo.engineName,
+        engineInfo.engineState,
+        engineInfo.engineError.orNull,
+        System.currentTimeMillis())
+    }
+  }
+
+  override def getKubernetesMetaEngineInfo(identifier: String): KubernetesEngineInfo = {
+    val query =
+      s"SELECT $KUBERNETES_ENGINE_INFO_COLUMNS_STR FROM" +
+        s" $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      withResultSet(connection, query, identifier) { rs =>
+        buildKubernetesMetadata(rs).headOption.orNull
+      }
+    }
+  }
+
+  override def cleanupKubernetesEngineInfoByIdentifier(identifier: String): Unit = {
+    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE identifier = ?"
+    JdbcUtils.withConnection { connection =>
+      execute(connection, query, identifier)
+    }
+  }
+
+  override def cleanupKubernetesEngineInfoByAge(maxAge: Long, limit: Int): Int = {
+    val minUpdateTime = System.currentTimeMillis() - maxAge
+    val query = s"DELETE FROM $KUBERNETES_ENGINE_INFO_TABLE WHERE update_time < ?" +
+      s" ${dialect.deleteFromLimitClause(limit)}"
+    JdbcUtils.withConnection { connection =>
+      withUpdateCount(connection, query, minUpdateTime) { count =>
+        info(s"Cleaned up $count records older than $maxAge ms from $KUBERNETES_ENGINE_INFO_TABLE" +
+          s" limit $limit.")
+        count
+      }
     }
   }
 
@@ -471,6 +529,42 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           engineError = engineError,
           endTime = endTime,
           peerInstanceClosed = peerInstanceClosed)
+        metadataList += metadata
+      }
+      metadataList.toSeq
+    } finally {
+      Utils.tryLogNonFatalError(resultSet.close())
+    }
+  }
+
+  private def buildKubernetesMetadata(resultSet: ResultSet): Seq[KubernetesEngineInfo] = {
+    try {
+      val metadataList = ListBuffer[KubernetesEngineInfo]()
+      while (resultSet.next()) {
+        val identifier = resultSet.getString("identifier")
+        val context = Option(resultSet.getString("context"))
+        val namespace = Option(resultSet.getString("namespace"))
+        val pod = resultSet.getString("pod_name")
+        val podState = resultSet.getString("pod_state")
+        val containerState = resultSet.getString("container_state")
+        val appId = resultSet.getString("engine_id")
+        val appName = resultSet.getString("engine_name")
+        val appState = resultSet.getString("engine_state")
+        val appError = Option(resultSet.getString("engine_error"))
+        val updateTime = resultSet.getLong("update_time")
+
+        val metadata = KubernetesEngineInfo(
+          identifier = identifier,
+          context = context,
+          namespace = namespace,
+          podName = pod,
+          podState = podState,
+          containerState = containerState,
+          engineId = appId,
+          engineName = appName,
+          engineState = appState,
+          engineError = appError,
+          updateTime = updateTime)
         metadataList += metadata
       }
       metadataList.toSeq
@@ -610,4 +704,19 @@ object JDBCMetadataStore {
     "engine_error",
     "end_time",
     "peer_instance_closed").mkString(",")
+  private val KUBERNETES_ENGINE_INFO_TABLE = "k8s_engine_info"
+  private val KUBERNETES_ENGINE_INFO_KEY_COLUMN = "identifier"
+  private val KUBERNETES_ENGINE_INFO_COLUMNS = Seq(
+    KUBERNETES_ENGINE_INFO_KEY_COLUMN,
+    "context",
+    "namespace",
+    "pod_name",
+    "pod_state",
+    "container_state",
+    "engine_id",
+    "engine_name",
+    "engine_state",
+    "engine_error",
+    "update_time")
+  private val KUBERNETES_ENGINE_INFO_COLUMNS_STR = KUBERNETES_ENGINE_INFO_COLUMNS.mkString(",")
 }

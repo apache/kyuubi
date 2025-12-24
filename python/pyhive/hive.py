@@ -434,7 +434,10 @@ class Cursor(common.DBAPICursor):
                     type_code = ttypes.TTypeId._VALUES_TO_NAMES[ttypes.TTypeId.STRING_TYPE]
                 else:
                     type_id = primary_type_entry.primitiveEntry.type
-                    type_code = ttypes.TTypeId._VALUES_TO_NAMES[type_id]
+                    try:
+                        type_code = ttypes.TTypeId._VALUES_TO_NAMES[type_id]
+                    except KeyError:
+                        type_code = None
                 self._description.append((
                     col.columnName.decode('utf-8') if sys.version_info[0] == 2 else col.columnName,
                     type_code.decode('utf-8') if sys.version_info[0] == 2 else type_code,
@@ -505,14 +508,17 @@ class Cursor(common.DBAPICursor):
         _check_status(response)
         schema = self.description
         assert not response.results.rows, 'expected data in columnar format'
-        columns = [_unwrap_column(col, col_schema[1]) for col, col_schema in
-                   zip(response.results.columns, schema)]
-        new_data = list(zip(*columns))
-        self._data += new_data
+        has_new_data = False
+        if response.results.columns:
+            columns = [_unwrap_column(col, col_schema[1]) for col, col_schema in
+                       zip(response.results.columns, schema)]
+            new_data = list(zip(*columns))
+            self._data += new_data
+            has_new_data = (True if new_data else False)
         # response.hasMoreRows seems to always be False, so we instead check the number of rows
         # https://github.com/apache/hive/blob/release-1.2.1/service/src/java/org/apache/hive/service/cli/thrift/ThriftCLIService.java#L678
         # if not response.hasMoreRows:
-        if not new_data:
+        if not has_new_data:
             self._state = self._STATE_FINISHED
 
     def poll(self, get_progress_update=True):
@@ -562,9 +568,10 @@ class Cursor(common.DBAPICursor):
                 response = self._connection.client.FetchResults(req)
                 _check_status(response)
                 assert not response.results.rows, 'expected data in columnar format'
-                assert len(response.results.columns) == 1, response.results.columns
-                new_logs = _unwrap_column(response.results.columns[0])
-                logs += new_logs
+                new_logs = ''
+                if response.results.columns:
+                    new_logs = _unwrap_column(response.results.columns[0])
+                    logs += new_logs
 
                 if not new_logs:
                     break

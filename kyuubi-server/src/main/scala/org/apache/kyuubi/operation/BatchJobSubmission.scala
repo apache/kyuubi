@@ -22,10 +22,11 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationState, KillResponse, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationOperation, ApplicationState, KillResponse, ProcBuilder}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -78,7 +79,26 @@ class BatchJobSubmission(
   def appStartTime: Long = _appStartTime
   def appStarted: Boolean = _appStartTime > 0
 
-  private lazy val _submitTime = if (appStarted) _appStartTime else System.currentTimeMillis
+  private lazy val _submitTime = System.currentTimeMillis
+
+  /**
+   * Batch submission refers to the time interval from the start of the batch operation run
+   * to the application being started. This method returns the time within this interval based
+   * on the following conditions:
+   * 1. If the application has been submitted to resource manager, return the time that application
+   * submitted to resource manager.
+   * 2. If the builder process does not wait for the engine completion and the process has not been
+   * terminated, return the current time to prevent application failed within NOT_FOUND state if the
+   * process duration exceeds the application submit timeout.
+   * 3. Otherwise, return the time that start to run the batch job submission operation.
+   */
+  private def submitTime: Long = if (appStarted) {
+    _appStartTime
+  } else if (!waitEngineCompletion && !startupProcessTerminated) {
+    System.currentTimeMillis()
+  } else {
+    _submitTime
+  }
 
   @VisibleForTesting
   private[kyuubi] val builder: ProcBuilder = {
@@ -99,8 +119,15 @@ class BatchJobSubmission(
       getOperationLog)
   }
 
+  private lazy val waitEngineCompletion = builder.waitEngineCompletion
+
+  private lazy val appOperation = applicationManager.getApplicationOperation(builder.appMgrInfo())
+
   def startupProcessAlive: Boolean =
     builder.processLaunched && Option(builder.process).exists(_.isAlive)
+
+  private def startupProcessTerminated: Boolean =
+    builder.processLaunched && Option(builder.process).forall(!_.isAlive)
 
   override def currentApplicationInfo(): Option[ApplicationInfo] = {
     if (isTerminal(state) && _applicationInfo.map(_.state).exists(ApplicationState.isTerminated)) {
@@ -111,7 +138,7 @@ class BatchJobSubmission(
         builder.appMgrInfo(),
         batchId,
         Some(session.user),
-        Some(_submitTime))
+        Some(submitTime))
     applicationId(applicationInfo).foreach { _ =>
       if (_appStartTime <= 0) {
         _appStartTime = System.currentTimeMillis()
@@ -212,6 +239,20 @@ class BatchJobSubmission(
         metadata match {
           case Some(metadata) if metadata.peerInstanceClosed =>
             setState(OperationState.CANCELED)
+          case Some(metadata)
+              // in case it has been updated by peer kyuubi instance, see KYUUBI #6278
+              if StringUtils.isNotBlank(metadata.engineState) &&
+                ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)) =>
+            _applicationInfo = Some(new ApplicationInfo(
+              id = metadata.engineId,
+              name = metadata.engineName,
+              state = ApplicationState.withName(metadata.engineState),
+              url = Option(metadata.engineUrl),
+              error = metadata.engineError))
+            if (applicationFailed(_applicationInfo, appOperation)) {
+              throw new KyuubiException(
+                s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
+            }
           case Some(metadata) if metadata.state == OperationState.PENDING.toString =>
             // case 1: new batch job created using batch impl v2
             // case 2: batch job from recovery, do submission only when previous state is
@@ -275,16 +316,21 @@ class BatchJobSubmission(
     try {
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
-      while (process.isAlive && !applicationFailed(_applicationInfo)) {
+      while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
         doUpdateApplicationInfoMetadataIfNeeded()
         process.waitFor(applicationCheckInterval, TimeUnit.MILLISECONDS)
       }
 
       if (!process.isAlive) {
         doUpdateApplicationInfoMetadataIfNeeded()
+        val exitValue = process.exitValue()
+        if (exitValue != 0) {
+          throw new KyuubiException(
+            s"Process exit with value $exitValue, application info: ${_applicationInfo}")
+        }
       }
 
-      if (applicationFailed(_applicationInfo)) {
+      if (applicationFailed(_applicationInfo, appOperation)) {
         Utils.terminateProcess(process, applicationStartupDestroyTimeout)
         throw new KyuubiException(s"Batch job failed: ${_applicationInfo}")
       }
@@ -306,10 +352,7 @@ class BatchJobSubmission(
         case None =>
       }
     } finally {
-      val waitCompletion = batchConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key)
-        .map(_.toBoolean).getOrElse(
-          session.sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION))
-      val destroyProcess = !waitCompletion && builder.isClusterMode()
+      val destroyProcess = !waitEngineCompletion
       if (destroyProcess) {
         info("Destroy the builder process because waitCompletion is false" +
           " and the engine is running in cluster mode.")
@@ -329,10 +372,9 @@ class BatchJobSubmission(
       setStateIfNotCanceled(OperationState.RUNNING)
     }
     if (_applicationInfo.isEmpty) {
-      info(s"The $batchType batch[$batchId] job: $appId not found, assume that it has finished.")
-      return
+      _applicationInfo = Some(ApplicationInfo.NOT_FOUND)
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
     updateBatchMetadata()
@@ -341,7 +383,7 @@ class BatchJobSubmission(
       Thread.sleep(applicationCheckInterval)
       updateApplicationInfoMetadataIfNeeded()
     }
-    if (applicationFailed(_applicationInfo)) {
+    if (applicationFailed(_applicationInfo, appOperation)) {
       throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
     }
   }
@@ -445,8 +487,12 @@ class BatchJobSubmission(
 }
 
 object BatchJobSubmission {
-  def applicationFailed(applicationStatus: Option[ApplicationInfo]): Boolean = {
-    applicationStatus.map(_.state).exists(ApplicationState.isFailed)
+  def applicationFailed(
+      applicationStatus: Option[ApplicationInfo],
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    applicationStatus.map(_.state).exists { state =>
+      ApplicationState.isFailed(state, appOperation)
+    }
   }
 
   def applicationTerminated(applicationStatus: Option[ApplicationInfo]): Boolean = {

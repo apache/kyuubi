@@ -28,6 +28,7 @@ import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.CloseBatchResponse;
 import org.apache.kyuubi.client.api.v1.dto.GetBatchesResponse;
 import org.apache.kyuubi.client.api.v1.dto.OperationLog;
+import org.apache.kyuubi.client.api.v1.dto.ReassignBatchResponse;
 import org.apache.kyuubi.client.util.JsonUtils;
 
 public class BatchTestServlet extends HttpServlet {
@@ -80,6 +81,11 @@ public class BatchTestServlet extends HttpServlet {
 
       Batch batch = generateTestBatch();
       resp.getWriter().write(JsonUtils.toJson(batch));
+      resp.getWriter().flush();
+    } else if (req.getPathInfo().equalsIgnoreCase("/api/v1/batches/reassign")) {
+      resp.setStatus(HttpServletResponse.SC_OK);
+
+      resp.getWriter().write(JsonUtils.toJson(new ReassignBatchResponse()));
       resp.getWriter().flush();
     } else {
       resp.setStatus(HttpServletResponse.SC_NOT_FOUND);

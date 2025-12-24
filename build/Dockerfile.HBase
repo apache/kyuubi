@@ -1,0 +1,319 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This Dockerfile is for building a HBase Cluster used in testing
+
+# Usage:
+#   Run the docker command below
+#      docker build \
+#        --build-arg APACHE_MIRROR="https://archive.apache.org/dist" \
+#        --build-arg HBASE_VERSION="2.5.12" \
+#        --build-arg ZK_VERSION="3.8.4" \
+#        --file build/Dockerfile.HBase \
+#        --tag nekyuubi/kyuubi-hbase-cluster:<tag> \
+#        .
+#   Options:
+#     -f, --file  this docker file
+#     -t, --tag   the target repo and tag name
+#     more options can be found with -h, --help
+
+FROM eclipse-temurin:8-jdk-focal
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+ARG HBASE_VERSION=2.5.12
+ARG APACHE_MIRROR=https://archive.apache.org/dist
+ARG ZK_VERSION=3.8.1
+
+ENV HBASE_HOME=/opt/hbase
+ENV ZK_HOME=/opt/zookeeper
+ENV JAVA_HOME=/opt/java/openjdk
+ENV PATH=$PATH:$HBASE_HOME/bin
+
+RUN apt-get update && apt-get install -y \
+    krb5-kdc \
+    krb5-admin-server \
+    wget \
+    busybox \
+    && mkdir /opt/busybox && \
+    busybox --install /opt/busybox
+
+# download hbase
+RUN wget -q ${APACHE_MIRROR}/hbase/${HBASE_VERSION}/hbase-${HBASE_VERSION}-bin.tar.gz && \
+    tar -xzf hbase-${HBASE_VERSION}-bin.tar.gz -C /opt && \
+    mv /opt/hbase-${HBASE_VERSION} ${HBASE_HOME} && \
+    rm hbase-${HBASE_VERSION}-bin.tar.gz
+
+# download zookeeper
+RUN wget -q ${APACHE_MIRROR}/zookeeper/zookeeper-${ZK_VERSION}/apache-zookeeper-${ZK_VERSION}-bin.tar.gz && \
+    tar -xzf apache-zookeeper-${ZK_VERSION}-bin.tar.gz -C /opt && \
+    mv /opt/apache-zookeeper-${ZK_VERSION}-bin ${ZK_HOME} && \
+    rm apache-zookeeper-${ZK_VERSION}-bin.tar.gz
+
+# add config files
+COPY <<"EOF" /etc/krb5.conf
+
+[libdefaults]
+    default_realm = TEST.ORG
+    dns_lookup_realm = false
+    dns_lookup_kdc = false
+
+[realms]
+    TEST.ORG = {
+        kdc = localhost:88
+    }
+
+EOF
+
+COPY <<"EOF" ${HBASE_HOME}/conf/hbase-site.xml
+
+<configuration>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>file:///tmp/hbase-data</value>
+    </property>
+    <property>
+        <name>hbase.security.authentication</name>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>hbase.master.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.master.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.security.authorization</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.master.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.unsafe.regionserver.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.regionserver.ipc.address</name>
+        <value>0.0.0.0</value>
+    </property>
+    <property>
+        <name>hbase.master.ipc.address</name>
+        <value>0.0.0.0</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.property.clientPort</name>
+        <value>2181</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.client.keytab.file</name>
+        <value>/opt/hbase/conf/hbase.keytab</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.client.kerberos.principal</name>
+        <value>hbase/localhost@TEST.ORG</value>
+    </property>
+    <property>
+        <name>hbase.unsafe.stream.capability.enforce</name>
+        <value>false</value>
+    </property>
+    <property>
+        <name>hbase.coprocessor.region.classes</name>
+        <value>org.apache.hadoop.hbase.security.token.TokenProvider,org.apache.hadoop.hbase.security.access.AccessController</value>
+    </property>
+    <property>
+        <name>hbase.coprocessor.master.classes</name>
+        <value>org.apache.hadoop.hbase.security.access.AccessController</value>
+    </property>
+</configuration>
+
+EOF
+
+COPY <<"EOF" ${HBASE_HOME}/conf/core-site.xml
+
+<configuration>
+    <property>
+        <name>hadoop.security.authentication</name>
+        <value>kerberos</value>
+    </property>
+    <property>
+        <name>hadoop.security.authorization</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hadoop.proxyuser.hbase.hosts</name>
+        <value>*</value>
+    </property>
+    <property>
+        <name>hadoop.proxyuser.hbase.groups</name>
+        <value>*</value>
+    </property>
+</configuration>
+
+EOF
+
+COPY <<"EOF" ${ZK_HOME}/conf/zk-jaas.conf
+Server {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  storeKey=true
+  useTicketCache=false
+  keyTab="/opt/zookeeper/conf/zookeeper.keytab"
+  principal="zookeeper/localhost@TEST.ORG";
+};
+
+Client {
+   com.sun.security.auth.module.Krb5LoginModule required
+   useTicketCache=true;
+};
+EOF
+
+COPY <<"EOF" ${ZK_HOME}/conf/zoo.cfg
+tickTime=2000
+dataDir=/opt/zookeeper/data
+clientPort=2181
+# Kerberos settings
+authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+kerberos.keytab.file=/opt/zookeeper/conf/zk.keytab
+kerberos.principal=zookeeper/localhost@TEST.ORG
+requireClientAuthScheme=sasl
+EOF
+
+COPY <<"EOF" /entrypoint.sh
+#!/bin/bash
+set -e
+
+# Function: Wait for a service to be available on specified ports
+# Parameters:
+#   $1 - Service name
+#   $2 - Timeout in seconds, default 60 seconds
+#   $3 - Check interval in seconds, default 1 second
+#   Remaining parameters - List of ports to check
+wait_for_service() {
+    local service_name="$1"
+    local timeout="${2:-60}"
+    local interval="${3:-1}"
+    shift 3  # Remove the first three parameters, remaining are ports
+
+    local end_time=$((SECONDS + timeout))
+    local ports_available=false
+    echo "Starting to wait for $service_name service to be available on ports $@..."
+
+    while [ $SECONDS -lt $end_time ]; do
+        ports_available=true
+
+        # Check all provided ports
+        for port in "$@"; do
+            if ! /opt/busybox/nc localhost "$port" -e true; then
+                ports_available=false
+                break
+            fi
+        done
+
+        if $ports_available; then
+            echo "$service_name service is now available"
+            return 0
+        else
+            echo "$service_name service is not available, retrying in $interval seconds..."
+            sleep $interval
+        fi
+    done
+
+    echo "Timeout reached. $service_name service is still not available."
+    exit 1
+}
+
+export REALM="TEST.ORG"
+export KADMIN_PASS="admin"
+export HBASE_CONF_DIR="${HBASE_HOME}/conf"
+export ZK_CONF_DIR="${ZK_HOME}/conf"
+
+echo "Creating KDC database..."
+kdb5_util create -r ${REALM} -s -P ${KADMIN_PASS}
+
+echo "Creating principals and keytabs..."
+kadmin.local -q "addprinc -randkey hbase/localhost@${REALM}"
+kadmin.local -q "ktadd -k ${HBASE_CONF_DIR}/hbase.keytab hbase/localhost@${REALM}"
+
+kadmin.local -q "addprinc -randkey zookeeper/localhost@${REALM}"
+kadmin.local -q "ktadd -k ${ZK_CONF_DIR}/zookeeper.keytab zookeeper/localhost@${REALM}"
+
+mkdir -p ${HBASE_HOME}/logs/
+mkdir -p ${ZK_HOME}/logs/
+
+echo "Principals created. Starting supervisor..."
+# start kdc service
+echo "Start kdc ..."
+/etc/init.d/krb5-kdc start
+wait_for_service "kdc" 15 1 88
+
+# start zookeeper server
+export JVMFLAGS="-Djava.security.auth.login.config=/opt/zookeeper/conf/zk-jaas.conf"
+/opt/zookeeper/bin/zkServer.sh start
+unset JVMFLAGS
+wait_for_service "zookeeper" 15 1 2181
+
+kinit -kt ${HBASE_CONF_DIR}/hbase.keytab hbase/localhost@${REALM}
+
+# start hbase master server
+nohup /opt/hbase/bin/hbase master start  > "/opt/hbase/logs/master.log" 2>&1 < /dev/null &
+wait_for_service "master" 15 1 16000
+
+# start hbase region server
+nohup /opt/hbase/bin/hbase regionserver start  > "/opt/hbase/logs/regionserver.log" 2>&1 < /dev/null &
+wait_for_service "master" 15 1 16020
+
+tail -F --follow=name --retry -v  /opt/zookeeper/logs/* /opt/hbase/logs/*
+EOF
+
+RUN chmod +x /entrypoint.sh
+
+# HBase Master UI
+EXPOSE 16010
+# Kerberos
+EXPOSE 88/udp
+# zookeeper
+EXPOSE 2181
+# HBase Master
+EXPOSE 16000
+# HBase RegionServer
+EXPOSE 16020
+
+ENTRYPOINT ["/entrypoint.sh"]

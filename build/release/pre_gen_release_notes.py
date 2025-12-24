@@ -214,8 +214,8 @@ print("Commits list is successfully written to %s!" % commits_file_name)
 # e.g. * Fu Chen
 contributors_file = open(os.path.join(release_dir, contributors_file_name), "w")
 sorted_authors = list(authors)
-sorted_authors.sort(key=lambda author: author.split(" ")[-1])
-for author in authors:
+sorted_authors.sort(key=lambda author: author.split(" ")[0].lower())
+for author in sorted_authors:
     contributors_file.write("* %s\n" % author)
 contributors_file.close()
 print("Contributors list is successfully written to %s!" % contributors_file_name)

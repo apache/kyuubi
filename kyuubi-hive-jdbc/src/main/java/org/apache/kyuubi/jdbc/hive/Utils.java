@@ -124,6 +124,7 @@ public class Utils {
     boolean inSingleQuote = false;
     boolean inDoubleQuote = false;
     boolean inComment = false;
+    boolean inBackticks = false;
     int off = 0;
     boolean skip = false;
 
@@ -148,8 +149,13 @@ public class Utils {
             inDoubleQuote = !inDoubleQuote;
           }
           break;
-        case '-':
+        case '`':
           if (!inSingleQuote && !inDoubleQuote) {
+            inBackticks = !inBackticks;
+          }
+          break;
+        case '-':
+          if (!inSingleQuote && !inDoubleQuote && !inBackticks) {
             if (i < sql.length() - 1 && sql.charAt(i + 1) == '-') {
               inComment = true;
             }
@@ -161,7 +167,7 @@ public class Utils {
           }
           break;
         case '?':
-          if (!inSingleQuote && !inDoubleQuote) {
+          if (!inSingleQuote && !inDoubleQuote && !inBackticks) {
             parts.add(sql.substring(off, i));
             off = i + 1;
           }
@@ -191,7 +197,7 @@ public class Utils {
   }
 
   public static JdbcConnectionParams parseURL(String uri)
-      throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
+      throws JdbcUriParseException, ZooKeeperHiveClientException {
     return parseURL(uri, new Properties());
   }
 
@@ -215,7 +221,7 @@ public class Utils {
    * jdbc:hive2://server:10001/db;user=foo;password=bar?hive.server2.transport.mode=http;hive.server2.thrift.http.path=hs2
    */
   public static JdbcConnectionParams parseURL(String uri, Properties info)
-      throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
+      throws JdbcUriParseException, ZooKeeperHiveClientException {
     JdbcConnectionParams connParams = extractURLComponents(uri, info);
     if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(connParams.getSessionVars())) {
       configureConnParamsFromZooKeeper(connParams);
@@ -669,7 +675,6 @@ public class Utils {
         hadoopCredentialProviderAvailable = true;
       } catch (Exception exception) {
         LOG.warn("Hadoop credential provider is unavailable", exception);
-        throw new RuntimeException(exception);
       }
     }
     if (password == null && hadoopCredentialProviderAvailable) {

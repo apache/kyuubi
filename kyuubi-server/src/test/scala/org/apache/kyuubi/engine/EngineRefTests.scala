@@ -37,6 +37,7 @@ import org.apache.kyuubi.ha.client.DiscoveryPaths
 import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_TOTAL
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.plugin.PluginLoader
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait EngineRefTests extends KyuubiFunSuite {
@@ -171,6 +172,32 @@ trait EngineRefTests extends KyuubiFunSuite {
     assert(appName2.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_abc_$id")
   }
 
+  test("SERVER_LOCAL shared level engine name") {
+    val id = UUID.randomUUID().toString
+    val localHostAddress = JavaUtils.findLocalInetAddress.getHostAddress
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER_LOCAL.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+
+    val appName = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
+    assert(appName.engineSpace ===
+      DiscoveryPaths.makePath(
+        s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
+        user,
+        localHostAddress + "_default"))
+    assert(appName.defaultEngineName ===
+      s"kyuubi_${SERVER_LOCAL}_${SPARK_SQL}_${user}_${localHostAddress}_default_$id")
+
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    val appName2 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
+    assert(appName2.engineSpace ===
+      DiscoveryPaths.makePath(
+        s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
+        user,
+        localHostAddress + "_abc"))
+    assert(appName2.defaultEngineName ===
+      s"kyuubi_${SERVER_LOCAL}_${SPARK_SQL}_${user}_${localHostAddress}_abc_$id")
+  }
+
   test("check the engine space of engine pool") {
     val id = UUID.randomUUID().toString
 
@@ -210,12 +237,13 @@ trait EngineRefTests extends KyuubiFunSuite {
 
     // unset subdomain and set engine pool name and 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    val enginePoolName = "test-pool"
+    val enginePoolName = "Test-pool"
+    val lowerEnginePoolName = "test-pool"
     conf.set(ENGINE_POOL_NAME, enginePoolName)
     conf.set(ENGINE_POOL_SIZE, 3)
     val engine6 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
-    assert(engine6.subdomain.startsWith(s"$enginePoolName-"))
-
+    assert(!engine6.subdomain.startsWith(s"$enginePoolName-"))
+    assert(engine6.subdomain.startsWith(s"$lowerEnginePoolName-"))
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 5)
     val pool_name = "pool_default_name"

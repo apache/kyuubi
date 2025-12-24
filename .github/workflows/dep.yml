@@ -47,15 +47,6 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Install modules
-        env:
-          MAVEN_ARGS: -Dorg.slf4j.simpleLogger.defaultLogLevel=error
-        run: |
-          build/mvn clean install \
-            -Pflink-provided,spark-provided,hive-provided \
-            -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip \
-            -DskipTests \
-            -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Check dependency list
         run: build/dependency.sh
       - name: Dependency Review

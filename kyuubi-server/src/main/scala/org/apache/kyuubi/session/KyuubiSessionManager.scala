@@ -52,12 +52,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
-  val applicationManager = new KyuubiApplicationManager()
 
   // Currently, the metadata manager is used by the REST frontend which provides batch job APIs,
   // so we initialize it only when Kyuubi starts with the REST frontend.
-  lazy val metadataManager: Option[MetadataManager] =
-    if (conf.isRESTEnabled) Some(new MetadataManager()) else None
+  var metadataManager: Option[MetadataManager] = None
+  var applicationManager: KyuubiApplicationManager = _
 
   // lazy is required for plugins since the conf is null when this class initialization
   lazy val sessionConfAdvisor: Seq[SessionConfAdvisor] = PluginLoader.loadSessionConfAdvisor(conf)
@@ -76,6 +75,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
+    if (conf.isRESTEnabled) metadataManager = Some(new MetadataManager())
+    applicationManager = new KyuubiApplicationManager(metadataManager)
     addService(applicationManager)
     addService(credentialsManager)
     addService(tempFileService)
@@ -299,6 +300,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
       ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
       ms.registerGauge(EXEC_POOL_WORK_QUEUE_SIZE, getWorkQueueSize, 0)
+      this.engineStartupProcessSemaphore.foreach { semaphore =>
+        ms.markMeter(ENGINE_STARTUP_PERMIT_LIMIT, semaphore.availablePermits)
+        ms.registerGauge(
+          ENGINE_STARTUP_PERMIT_AVAILABLE,
+          semaphore.availablePermits,
+          semaphore.availablePermits)
+        ms.registerGauge(ENGINE_STARTUP_PERMIT_WAITING, semaphore.getQueueLength, 0)
+      }
     }
     super.start()
     startEngineAliveChecker()
@@ -311,18 +320,58 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         kyuubiInstance,
         0,
         Int.MaxValue).map { metadata =>
-        createBatchSession(
-          metadata.username,
-          "anonymous",
-          metadata.ipAddress,
-          metadata.requestConf,
-          metadata.engineType,
-          Option(metadata.requestName),
-          metadata.resource,
-          metadata.className,
-          metadata.requestArgs,
-          Some(metadata),
-          fromRecovery = true)
+        createBatchSessionFromRecovery(metadata)
+      }).getOrElse(Seq.empty)
+    }
+  }
+
+  def getSpecificBatchSessionsToRecover(
+      batchIds: Seq[String],
+      kyuubiInstance: String): Seq[KyuubiBatchSession] = {
+    val batchStatesToRecovery = Set(OperationState.PENDING, OperationState.RUNNING)
+    batchIds.flatMap { batchId =>
+      getBatchSession(SessionHandle.fromUUID(batchId)) match {
+        case Some(_) =>
+          warn(s"Batch session $batchId is already active, skipping recovery.")
+          None
+        case None =>
+          getBatchMetadata(batchId)
+            .filter(m =>
+              m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
+            .flatMap { metadata => Some(createBatchSessionFromRecovery(metadata)) }
+      }
+    }
+  }
+
+  private def createBatchSessionFromRecovery(metadata: Metadata): KyuubiBatchSession = {
+    createBatchSession(
+      metadata.username,
+      "anonymous",
+      metadata.ipAddress,
+      metadata.requestConf,
+      metadata.engineType,
+      Option(metadata.requestName),
+      metadata.resource,
+      metadata.className,
+      metadata.requestArgs,
+      Some(metadata),
+      fromRecovery = true)
+  }
+
+  def reassignBatchSessions(
+      kyuubiInstance: String,
+      newKyuubiInstance: String): Seq[String] = {
+    Seq(OperationState.PENDING, OperationState.RUNNING).flatMap { stateToRecover =>
+      metadataManager.map(_.getBatchesRecoveryMetadata(
+        stateToRecover.toString,
+        kyuubiInstance,
+        0,
+        Int.MaxValue).map { metadata =>
+        updateMetadata(Metadata(
+          identifier = metadata.identifier,
+          kyuubiInstance = newKyuubiInstance))
+        info(s"Reassign batch ${metadata.identifier} from $kyuubiInstance to $newKyuubiInstance")
+        metadata.identifier
       }).getOrElse(Seq.empty)
     }
   }

@@ -139,7 +139,7 @@ class KyuubiOperationKubernetesClusterClientModeSuite
   extends SparkClientModeOnKubernetesSuiteBase {
   private lazy val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
-    operation.initialize(conf)
+    operation.initialize(conf, None)
     operation
   }
 
@@ -188,7 +188,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
   extends SparkClusterModeOnKubernetesSuiteBase {
   private lazy val k8sOperation: KubernetesApplicationOperation = {
     val operation = new KubernetesApplicationOperation
-    operation.initialize(conf)
+    operation.initialize(conf, None)
     operation
   }
 
@@ -230,7 +230,7 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
         appMgrInfo,
         sessionHandle.identifier.toString)
       assert(appInfo.state == RUNNING)
-      assert(appInfo.name.startsWith(driverPodNamePrefix))
+      assert(appInfo.podName.exists(_.startsWith(driverPodNamePrefix)))
     }
 
     val killResponse = k8sOperation.killApplicationByTag(

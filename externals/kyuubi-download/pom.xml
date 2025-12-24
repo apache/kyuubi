@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.11.0-SNAPSHOT</version>
+        <version>1.12.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -51,7 +51,8 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${spark.archive.download.skip}</skip>
-                            <url>${spark.archive.mirror}/${spark.archive.name}</url>
+                            <url>${spark.archive.mirror}/${spark.archive.name}${spark.archive.query}</url>
+                            <outputFileName>${spark.archive.name}</outputFileName>
                         </configuration>
                     </execution>
                     <execution>
@@ -62,7 +63,8 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${flink.archive.download.skip}</skip>
-                            <url>${flink.archive.mirror}/${flink.archive.name}</url>
+                            <url>${flink.archive.mirror}/${flink.archive.name}${flink.archive.query}</url>
+                            <outputFileName>${flink.archive.name}</outputFileName>
                         </configuration>
                     </execution>
                     <execution>
@@ -73,7 +75,8 @@
                         <phase>compile</phase>
                         <configuration>
                             <skip>${hive.archive.download.skip}</skip>
-                            <url>${hive.archive.mirror}/${hive.archive.name}</url>
+                            <url>${hive.archive.mirror}/${hive.archive.name}${hive.archive.query}</url>
+                            <outputFileName>${hive.archive.name}</outputFileName>
                         </configuration>
                     </execution>
                 </executions>

@@ -50,12 +50,12 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
 
   def canInsertZorder(query: LogicalPlan): Boolean = query match {
     case Project(_, child) => canInsertZorder(child)
-    case _: RepartitionByExpression | _: Repartition
+    case _: RepartitionOperation | _: RebalancePartitions
         if !conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED) => true
     // TODO: actually, we can force zorder even if existed some shuffle
     case _: Sort => false
-    case _: RepartitionByExpression => false
-    case _: Repartition => false
+    case _: RepartitionOperation => false
+    case _: RebalancePartitions => false
     case _ => true
   }
 

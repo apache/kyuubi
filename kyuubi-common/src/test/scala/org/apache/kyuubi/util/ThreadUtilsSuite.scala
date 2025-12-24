@@ -61,4 +61,19 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
     service.awaitTermination(10, TimeUnit.SECONDS)
     assert(threadName startsWith "")
   }
+
+  test("New daemon scheduled thread pool") {
+    val pool = ThreadUtils.newDaemonScheduledThreadPool(2, 10, "ThreadUtilsSchedTest")
+    // submit a task to ensure pool operational
+    @volatile var ran = false
+    val fut = pool.schedule(
+      new Runnable { override def run(): Unit = ran = true },
+      100,
+      TimeUnit.MILLISECONDS)
+    fut.get(5, TimeUnit.SECONDS)
+    assert(ran)
+    assert(pool.getCorePoolSize == 2)
+    ThreadUtils.shutdown(pool)
+    assert(pool.isShutdown)
+  }
 }

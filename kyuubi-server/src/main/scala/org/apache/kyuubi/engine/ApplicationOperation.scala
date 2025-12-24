@@ -26,13 +26,14 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.ApplicationState
+import org.apache.kyuubi.server.metadata.MetadataManager
 
 trait ApplicationOperation {
 
   /**
    * Step for initializing the instance.
    */
-  def initialize(conf: KyuubiConf): Unit
+  def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit
 
   /**
    * Step to clean up the instance
@@ -84,15 +85,28 @@ trait ApplicationOperation {
       tag: String,
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo
+
+  /**
+   * Whether the application state can be persisted and retrieved after finished.
+   * @return true if the application state can be persisted
+   */
+  def supportPersistedAppState: Boolean
 }
 
 object ApplicationState extends Enumeration {
   type ApplicationState = Value
   val PENDING, RUNNING, FINISHED, KILLED, FAILED, ZOMBIE, NOT_FOUND, UNKNOWN = Value
 
-  def isFailed(state: ApplicationState): Boolean = state match {
+  def isFailed(
+      state: ApplicationState,
+      appOperation: Option[ApplicationOperation]): Boolean = {
+    isFailed(state, appOperation.exists(_.supportPersistedAppState))
+  }
+
+  def isFailed(state: ApplicationState, supportPersistedAppState: Boolean): Boolean = state match {
     case FAILED => true
     case KILLED => true
+    case NOT_FOUND if supportPersistedAppState => true
     case _ => false
   }
 
@@ -112,7 +126,9 @@ case class ApplicationInfo(
     name: String,
     state: ApplicationState,
     url: Option[String] = None,
-    error: Option[String] = None) {
+    error: Option[String] = None,
+    // only used for K8s and still possible to be None for cases like NOT_FOUND state for K8s cases
+    podName: Option[String] = None) {
 
   def toMap: Map[String, String] = {
     Map(
@@ -120,7 +136,8 @@ case class ApplicationInfo(
       "name" -> name,
       "state" -> state.toString,
       "url" -> url.orNull,
-      "error" -> error.orNull)
+      "error" -> error.orNull) ++
+      podName.map("podName" -> _).toMap
   }
 }
 

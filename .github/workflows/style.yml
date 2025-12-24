@@ -68,6 +68,8 @@ jobs:
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -Pspark-3.3
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.5
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-0 -Pspark-4.0 -Pscala-2.13
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-1 -Pspark-4.1 -Pscala-2.13
 
       - name: Scalastyle with maven
         id: scalastyle-check
@@ -132,9 +134,3 @@ jobs:
         with:
           name: super-linter-log
           path: super-linter.log
-      - name: check bin directory
-        uses: ludeeus/action-shellcheck@1.1.0
-        with:
-          # TODO: enable for all folders step by step
-          scandir: './bin'
-          severity: error

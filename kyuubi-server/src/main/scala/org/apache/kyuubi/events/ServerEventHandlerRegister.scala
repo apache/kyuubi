@@ -56,4 +56,8 @@ object ServerEventHandlerRegister extends EventHandlerRegister {
   override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
     conf.get(SERVER_EVENT_LOGGERS)
   }
+
+  override protected def asyncEventLogging(conf: KyuubiConf): Boolean = {
+    conf.get(SERVER_EVENT_ASYNC_ENABLED)
+  }
 }

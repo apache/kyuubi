@@ -174,6 +174,13 @@ public class BatchRestApi {
         .delete(path, null, CloseBatchResponse.class, client.getAuthHeader(), headers);
   }
 
+  public ReassignBatchResponse reassignBatch(ReassignBatchRequest request) {
+    String path = String.format("%s/reassign", API_BASE_PATH);
+    String requestBody = JsonUtils.toJson(request);
+    return this.getClient()
+        .post(path, requestBody, ReassignBatchResponse.class, client.getAuthHeader());
+  }
+
   private IRestClient getClient() {
     return this.client.getHttpClient();
   }
