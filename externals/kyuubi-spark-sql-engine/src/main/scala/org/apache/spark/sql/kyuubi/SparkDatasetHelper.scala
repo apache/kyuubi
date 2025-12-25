@@ -164,8 +164,9 @@ object SparkDatasetHelper extends Logging {
     KyuubiSparkUtil.globalSparkContext
       .getConf
       .getOption("spark.connect.grpc.arrow.maxBatchSize")
-      .orElse(Option("4m"))
-      .map(JavaUtils.byteStringAs(_, ByteUnit.MiB))
+      // 4m
+      .orElse(Option("4194304b"))
+      .map(JavaUtils.byteStringAs(_, ByteUnit.BYTE))
       .get
   }
 
