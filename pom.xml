@@ -114,7 +114,7 @@
     </distributionManagement>
 
     <properties>
-        <maven.version>3.9.11</maven.version>
+        <maven.version>3.9.12</maven.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <enforcer.maxJdkVersion>8</enforcer.maxJdkVersion>
