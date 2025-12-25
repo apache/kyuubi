@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.11.0-SNAPSHOT</version>
+        <version>1.11.0</version>
     </parent>
 
     <artifactId>kyuubi-hive-jdbc</artifactId>
