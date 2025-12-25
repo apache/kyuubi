@@ -141,7 +141,7 @@
         <failsafe.verion>3.3.2</failsafe.verion>
         <fb303.version>0.9.3</fb303.version>
         <flexmark.version>0.62.2</flexmark.version>
-        <flink.version>1.20.0</flink.version>
+        <flink.version>1.20.3</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_2.12.tgz</flink.archive.name>
         <flink.archive.mirror>${apache.archive.dist}/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.query>?action=download</flink.archive.query>
@@ -207,7 +207,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.5</spark.version>
+        <spark.version>3.5.7</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -2012,7 +2012,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.4.3</spark.version>
+                <spark.version>3.4.4</spark.version>
                 <spark.binary.version>3.4</spark.binary.version>
                 <delta.version>2.4.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
@@ -2027,7 +2027,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.5</spark.version>
+                <spark.version>3.5.7</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <delta.version>3.3.1</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
@@ -2125,14 +2125,14 @@
         <profile>
             <id>flink-1.19</id>
             <properties>
-                <flink.version>1.19.1</flink.version>
+                <flink.version>1.19.3</flink.version>
             </properties>
         </profile>
 
         <profile>
             <id>flink-1.20</id>
             <properties>
-                <flink.version>1.20.0</flink.version>
+                <flink.version>1.20.3</flink.version>
             </properties>
         </profile>
 

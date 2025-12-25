@@ -82,7 +82,7 @@ jobs:
           - java: 8
             python: '3.9'
             spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.4.3 -Dspark.archive.name=spark-3.4.3-bin-hadoop3.tgz -Pzookeeper-3.6'
+            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.4.4 -Dspark.archive.name=spark-3.4.4-bin-hadoop3.tgz -Pzookeeper-3.6'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-3.4-binary'
           - java: 17
@@ -277,7 +277,7 @@ jobs:
             comment: 'verify-on-flink-1.18-binary'
           - java: 8
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.1 -Dflink.archive.name=flink-1.19.1-bin-scala_2.12.tgz'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.3 -Dflink.archive.name=flink-1.19.3-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.19-binary'
     steps:
       - uses: actions/checkout@v4
@@ -439,14 +439,14 @@ jobs:
           cache-binary: false
       - name: Pull Spark image
         run: |
-          docker pull apache/spark:3.5.5
+          docker pull apache/spark:3.5.7
       - name: Build Kyuubi Docker Image
         uses: docker/build-push-action@v6
         with:
           # passthrough CI into build container
           build-args: |
             CI=${CI}
-            BASE_IMAGE=apache/spark:3.5.5
+            BASE_IMAGE=apache/spark:3.5.7
             MVN_ARG=--spark-provided --flink-provided --hive-provided
           context: .
           file: build/Dockerfile.CI
@@ -463,7 +463,7 @@ jobs:
           # https://minikube.sigs.k8s.io/docs/handbook/pushing/#7-loading-directly-to-in-cluster-container-runtime
           minikube image load apache/kyuubi:ci
           # pre-install spark into minikube
-          minikube image load apache/spark:3.5.5
+          minikube image load apache/spark:3.5.7
       - name: kubectl pre-check
         run: |
           kubectl get nodes
