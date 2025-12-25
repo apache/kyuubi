@@ -40,11 +40,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Setup JDK 8
+      - name: Setup JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 8
+          java-version: 17
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
@@ -63,13 +63,13 @@ jobs:
         # for more details, please visit: https://github.com/actions/toolkit/issues/399#issuecomment-666147717
         if: steps.modules-check.conclusion == 'success' && steps.modules-check.outcome == 'failure'
         run: |
-          export MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true"
-          build/mvn clean install -Pflink-provided,hive-provided,spark-provided,tpcds
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -Pspark-3.3
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -Pspark-3.4
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -Pspark-3.5
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-0 -Pspark-4.0 -Pscala-2.13
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-1 -Pspark-4.1 -Pscala-2.13
+          export MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true -Pflink-provided,hive-provided,spark-provided"
+          build/mvn clean install -Ptpcds
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -am -Pspark-3.3
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -am -Pspark-3.4
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -am -Pspark-3.5
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-0 -am -Pspark-4.0 -Pscala-2.13
+          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-1 -am -Pspark-4.1 -Pscala-2.13
 
       - name: Scalastyle with maven
         id: scalastyle-check
