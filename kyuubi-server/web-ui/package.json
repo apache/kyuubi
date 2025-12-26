@@ -18,7 +18,7 @@
     "@element-plus/icons-vue": "^2.0.9",
     "axios": "^1.8.2",
     "date-fns": "^2.29.3",
-    "element-plus": "^2.2.12",
+    "element-plus": "^2.11.1",
     "monaco-editor": "^0.44.0",
     "pinia": "^2.0.18",
     "pinia-plugin-persistedstate": "^2.1.1",
