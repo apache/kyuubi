@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.10.3-SNAPSHOT</version>
+        <version>1.10.3</version>
     </parent>
 
     <artifactId>kyuubi-rest-client</artifactId>
