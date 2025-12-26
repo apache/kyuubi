@@ -62,8 +62,8 @@ else
 fi
 
 JAVA_VERSION=$($JAVA -version 2>&1 | awk -F '"' '/version/ {print $2}')
-if [[ $JAVA_VERSION != 1.8.* ]]; then
-  echo "Unexpected Java version: $JAVA_VERSION. Java 8 is required for release."
+if [[ $JAVA_VERSION != 17.* && $JAVA_VERSION != 21.* ]]; then
+  echo "Unexpected Java version: $JAVA_VERSION. Java 17 or 21 is required for release."
   exit 1
 fi
 
