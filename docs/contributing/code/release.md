@@ -90,7 +90,7 @@ export ASF_PASSWORD=<your apache password>
 #### Java Home
 
 An available environment variable `JAVA_HOME`, you can do `echo $JAVA_HOME` to check it.
-Note that, the Java version should be 8.
+Note that, the Java 17 or 21 is required since 1.11.0, for earlier versions, it requires Java 8.
 
 #### Subversion
 
