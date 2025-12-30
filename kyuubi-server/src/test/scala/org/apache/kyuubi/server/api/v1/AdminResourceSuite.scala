@@ -841,4 +841,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert("Running".equals(testServer.getStatus))
     }
   }
+
+  test("get server event") {
+    val response = webTarget.path("api/v1/admin/server/event")
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get
+
+    assert(response.getStatus === 200)
+    val serverEvent = response.readEntity(classOf[KyuubiServerEvent])
+    assert(serverEvent.getStartTime > 0)
+  }
 }

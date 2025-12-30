@@ -231,6 +231,10 @@ class KyuubiServer(name: String) extends Serverable(name) {
     super.stop()
   }
 
+  def getServerEvent(): Option[KyuubiServerInfoEvent] = {
+    KyuubiServerInfoEvent(this, state)
+  }
+
   private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
     ServerEventHandlerRegister.registerEventLoggers(conf)
   }
