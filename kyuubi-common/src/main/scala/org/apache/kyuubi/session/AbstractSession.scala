@@ -89,6 +89,9 @@ abstract class AbstractSession(
   }
 
   override def close(): Unit = withAcquireRelease() {
+    if (_closed) {
+      return
+    }
     _closed = true
     info(s"Mark session $handle closed")
     opHandleSet.forEach { opHandle =>
