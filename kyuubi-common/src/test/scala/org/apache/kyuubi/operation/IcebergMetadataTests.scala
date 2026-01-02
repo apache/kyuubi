@@ -51,12 +51,9 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
         checkGetSchemas(metaData.getSchemas("spark_catalog", pattern), dbDflts, "spark_catalog")
       }
 
-      Seq(null, catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         matchAllPatterns foreach { pattern =>
-          checkGetSchemas(
-            metaData.getSchemas(cg, pattern),
-            dbs,
-            catalog)
+          checkGetSchemas(metaData.getSchemas(cg, pattern), dbs, catalog)
         }
       }
 
@@ -86,7 +83,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq(null, catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern),
@@ -115,7 +112,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq(catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
         dbs.foreach { db =>
           try {
             statement.execute(
