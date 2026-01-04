@@ -214,7 +214,7 @@ class KyuubiSessionImpl(
               throw e
           } finally {
             attempt += 1
-            if (shouldRetry && engineClient != null) {
+            if ((isClosed || shouldRetry) && engineClient != null) {
               try {
                 engineClient.closeSession()
               } catch {
