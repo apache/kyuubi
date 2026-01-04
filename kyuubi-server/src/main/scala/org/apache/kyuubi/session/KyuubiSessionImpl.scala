@@ -180,8 +180,6 @@ class KyuubiSessionImpl(
             _engineSessionHandle =
               engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
             _client = engineClient
-            // Since the _client might be null when we close session
-            // so we need to check isClosed here
             if (isClosed) {
               throw KyuubiSQLException(s"KyuubiSession $handle has been closed")
             }
