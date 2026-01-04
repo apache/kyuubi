@@ -23,9 +23,11 @@ RUN set -x && \
     apt-get install -yq \
       retry \
       busybox \
+      ca-certificates-java \
       openjdk-8-jdk-headless \
       openjdk-17-jdk-headless && \
     rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates -f && \
     update-java-alternatives --set $(update-java-alternatives --list | grep java-1.8.0-openjdk | awk '{print $NF}') || \
     mkdir /opt/busybox && \
     busybox --install /opt/busybox
