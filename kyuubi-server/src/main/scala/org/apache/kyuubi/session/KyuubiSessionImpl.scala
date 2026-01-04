@@ -180,6 +180,10 @@ class KyuubiSessionImpl(
             _engineSessionHandle =
               engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
             _client = engineClient
+            if (isClosed) {
+              shouldRetry = false
+              throw KyuubiSQLException(s"KyuubiSession $handle has been closed")
+            }
             logSessionInfo(s"Connected to engine [$host:$port]/[${client.engineId.getOrElse("")}]" +
               s" with ${_engineSessionHandle}]")
             shouldRetry = false
@@ -210,7 +214,7 @@ class KyuubiSessionImpl(
               throw e
           } finally {
             attempt += 1
-            if (shouldRetry && engineClient != null) {
+            if ((isClosed || shouldRetry) && engineClient != null) {
               try {
                 engineClient.closeSession()
               } catch {

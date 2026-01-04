@@ -52,6 +52,8 @@ abstract class AbstractSession(
   @volatile private var _lastIdleTime: Long = _createTime
   override def lastIdleTime: Long = _lastIdleTime
 
+  @volatile private var _closed: Boolean = false
+
   override def getNoOperationTime: Long = {
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
@@ -87,6 +89,11 @@ abstract class AbstractSession(
   }
 
   override def close(): Unit = withAcquireRelease() {
+    if (_closed) {
+      return
+    }
+    _closed = true
+    info(s"Mark session $handle closed")
     opHandleSet.forEach { opHandle =>
       try {
         sessionManager.operationManager.closeOperation(opHandle)
@@ -95,7 +102,10 @@ abstract class AbstractSession(
           warn(s"Error closing operation $opHandle during closing $handle for", e)
       }
     }
+    info(s"Closed all operations for session $handle")
   }
+
+  override def isClosed: Boolean = _closed
 
   protected def runOperation(operation: Operation): OperationHandle = {
     try {

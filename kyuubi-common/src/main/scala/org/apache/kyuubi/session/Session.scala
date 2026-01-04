@@ -44,6 +44,8 @@ trait Session {
   def open(): Unit
   def close(): Unit
 
+  def isClosed: Boolean
+
   def getInfo(infoType: TGetInfoType): TGetInfoValue
 
   def executeStatement(
