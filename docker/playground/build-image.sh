@@ -19,7 +19,7 @@
 
 set -e
 
-APACHE_MIRROR=${APACHE_MIRROR:-https://dlcdn.apache.org}
+APACHE_MIRROR=${APACHE_MIRROR:-https://archive.apache.org/dist}
 MAVEN_MIRROR=${MAVEN_MIRROR:-https://maven-central-asia.storage-download.googleapis.com/maven2}
 BUILD_CMD="docker build"
 
@@ -44,7 +44,6 @@ ${BUILD_CMD} \
   --build-arg APACHE_MIRROR=${APACHE_MIRROR} \
   --build-arg MAVEN_MIRROR=${MAVEN_MIRROR} \
   --build-arg KYUUBI_VERSION=${KYUUBI_VERSION} \
-  --build-arg AWS_JAVA_SDK_VERSION=${AWS_JAVA_SDK_VERSION} \
   --build-arg HADOOP_VERSION=${HADOOP_VERSION} \
   --file "${SELF_DIR}/image/kyuubi-playground-hadoop.Dockerfile" \
   --tag nekyuubi/kyuubi-playground-hadoop:${KYUUBI_VERSION} \

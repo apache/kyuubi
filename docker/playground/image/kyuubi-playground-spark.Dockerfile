@@ -40,8 +40,6 @@ RUN set -x && \
     wget -q ${MAVEN_MIRROR}/org/apache/iceberg/${ICEBERG_SPARK_JAR_NAME}/${ICEBERG_VERSION}/${ICEBERG_SPARK_JAR_NAME}-${ICEBERG_VERSION}.jar -P ${SPARK_HOME}/jars && \
     SPARK_HADOOP_CLOUD_JAR_NAME=spark-hadoop-cloud_${SCALA_BINARY_VERSION} && \
     wget -q ${MAVEN_MIRROR}/org/apache/spark/${SPARK_HADOOP_CLOUD_JAR_NAME}/${SPARK_VERSION}/${SPARK_HADOOP_CLOUD_JAR_NAME}-${SPARK_VERSION}.jar -P ${SPARK_HOME}/jars && \
-    HADOOP_CLOUD_STORAGE_JAR_NAME=hadoop-cloud-storage && \
-    wget -q ${MAVEN_MIRROR}/org/apache/hadoop/${HADOOP_CLOUD_STORAGE_JAR_NAME}/${SPARK_HADOOP_VERSION}/${HADOOP_CLOUD_STORAGE_JAR_NAME}-${SPARK_HADOOP_VERSION}.jar -P ${SPARK_HOME}/jars && \
     HADOOP_AWS_JAR_NAME=hadoop-aws && \
     wget -q ${MAVEN_MIRROR}/org/apache/hadoop/${HADOOP_AWS_JAR_NAME}/${SPARK_HADOOP_VERSION}/${HADOOP_AWS_JAR_NAME}-${SPARK_HADOOP_VERSION}.jar -P ${SPARK_HOME}/jars && \
     AWS_JAVA_SDK_BUNDLE_JAR_NAME=aws-java-sdk-bundle && \
