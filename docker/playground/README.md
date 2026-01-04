@@ -13,7 +13,7 @@ Playground
 1. Connect using `kyuubi-beeline`
 
 ```
-docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:hive2://0.0.0.0:10009/tpcds/tiny'
+docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:kyuubi://0.0.0.0:10009/tpcds/tiny'
 ```
 
 2. Connect using DBeaver
@@ -31,13 +31,13 @@ Kyuubi supply some built-in dataset, after Kyuubi started, you can run the follo
 - For loading TPC-DS tiny dataset to `spark_catalog.tpcds_tiny`, run
 
 ```
-docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpcds-tiny.sql
+docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:kyuubi://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpcds-tiny.sql
 ```
 
 - For loading TPC-H  tiny dataset to `spark_catalog.tpch_tiny`, run
 
 ```
-docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:hive2://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpch-tiny.sql
+docker exec -it kyuubi /opt/kyuubi/bin/kyuubi-beeline -u 'jdbc:kyuubi://0.0.0.0:10009/' -f /opt/load_data/load-dataset-tpch-tiny.sql
 ```
 
 ### Access Service
