@@ -31,4 +31,4 @@ RUN set -x && \
     HADOOP_AWS_JAR_NAME=hadoop-aws && \
     ln -s ${HADOOP_HOME}/share/hadoop/tools/lib/${HADOOP_AWS_JAR_NAME}-${HADOOP_VERSION}.jar ${HADOOP_HOME}/share/hadoop/hdfs/lib/ && \
     AWS_JAVA_SDK_BUNDLE_JAR_NAME=aws-java-sdk-bundle && \
-    ln -s $(find ${HADOOP_HOME}/share/hadoop/tools/lib/ -name "${AWS_JAVA_SDK_BUNDLE_JAR_NAME}-*.jar") ${HADOOP_HOME}/share/hadoop/hdfs/lib/
+    ln -s $(find ${HADOOP_HOME}/share/hadoop/tools/lib/ -name "${AWS_JAVA_SDK_BUNDLE_JAR_NAME}-*.jar") ${HADOOP_HOME}/share/hadoop/hdfs/lib/ \
