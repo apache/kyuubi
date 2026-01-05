@@ -279,7 +279,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/kyuubi-website)
 3. Update `releases` defined in `hugo.toml`'s `[params]` part.
 
 You can use `build/release/pre_gen_release_notes.py` to generate the commit log and the contributor list
-for the release note.
+for the release note. Note that the generated lists are only for draft and you still need to edit them.
 
 ### Create an Announcement
 
@@ -313,11 +313,11 @@ downloads.apache.org should contain the latest release in each branch that is cu
 
 ```shell
 cd work/svn-dev
-export OLD_RELEASE=
-svn delete https://dist.apache.org/repos/dist/dev/kyuubi/${OLD_RELEASE} \
+export OLD_RELEASE_TAG=<release tag, e.g. kyuubi-1.10.2>
+svn delete https://dist.apache.org/repos/dist/release/kyuubi/${OLD_RELEASE_TAG} \
   --username "${ASF_USERNAME}" \
   --password "${ASF_PASSWORD}" \
-  --message "Archive old Apache Kyuubi ${OLD_RELEASE}"
+  --message "Archive old ${OLD_RELEASE_TAG}"
 ```
 
 ## Keep other artifacts up-to-date
