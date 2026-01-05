@@ -313,7 +313,7 @@ downloads.apache.org should contain the latest release in each branch that is cu
 
 ```shell
 cd work/svn-dev
-export OLD_RELEASE=<release tag, e.g. kyuubi-1.10.2>
+export OLD_RELEASE=<release path, e.g. kyuubi-1.10.2>
 svn delete https://dist.apache.org/repos/dist/release/kyuubi/${OLD_RELEASE} \
   --username "${ASF_USERNAME}" \
   --password "${ASF_PASSWORD}" \
