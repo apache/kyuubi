@@ -278,6 +278,9 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/kyuubi-website)
 2. Add a new markdown file in `src/zh/release/`, `src/en/release/`
 3. Update `releases` defined in `hugo.toml`'s `[params]` part.
 
+You can use `build/release/pre_gen_release_notes.py` to generate the commit log and the contributor list
+for the release note. Note that the generated lists are only for draft and you still need to edit them.
+
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
@@ -294,10 +297,27 @@ Remove the deprecated dist repo directories at last.
 
 ```shell
 cd work/svn-dev
-svn delete https://dist.apache.org/repos/dist/dev/kyuubi/{RELEASE_TAG} \
+svn delete https://dist.apache.org/repos/dist/dev/kyuubi/${RELEASE_TAG} \
   --username "${ASF_USERNAME}" \
   --password "${ASF_PASSWORD}" \
   --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 
+```
+
+## Archive older releases
+
+Remove older releases from [downloads.apache.org](https://downloads.apache.org/). All releases are automatically archived
+and they are still accessible from [archive.apache.org](https://archive.apache.org/dist/).
+
+According to [the ASF release policy](https://www.apache.org/legal/release-policy.html#when-to-archive),
+downloads.apache.org should contain the latest release in each branch that is currently under development.
+
+```shell
+cd work/svn-dev
+export OLD_RELEASE=<release path, e.g. kyuubi-1.10.2>
+svn delete https://dist.apache.org/repos/dist/release/kyuubi/${OLD_RELEASE} \
+  --username "${ASF_USERNAME}" \
+  --password "${ASF_PASSWORD}" \
+  --message "Archive old ${OLD_RELEASE}"
 ```
 
 ## Keep other artifacts up-to-date
