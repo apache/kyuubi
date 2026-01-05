@@ -75,6 +75,8 @@ services:
       - 9083
     volumes:
       - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hadoop-env.sh:/etc/hadoop/conf/hadoop-env.sh
+      - ./conf/hive-env.sh:/etc/hive/conf/hive-env.sh
       - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
     depends_on:
       - postgres
@@ -89,9 +91,13 @@ services:
       - 10099:10099
     volumes:
       - ./conf/core-site.xml:/etc/hadoop/conf/core-site.xml
+      - ./conf/hadoop-env.sh:/etc/hadoop/conf/hadoop-env.sh
+      - ./conf/hive-env.sh:/etc/hive/conf/hive-env.sh
       - ./conf/hive-site.xml:/etc/hive/conf/hive-site.xml
       - ./conf/spark-defaults.conf:/etc/spark/conf/spark-defaults.conf
+      - ./conf/spark-env.sh:/etc/spark/conf/spark-env.sh
       - ./conf/kyuubi-defaults.conf:/etc/kyuubi/conf/kyuubi-defaults.conf
+      - ./conf/kyuubi-env.sh:/etc/kyuubi/conf/kyuubi-env.sh
       - ./conf/kyuubi-log4j2.xml:/etc/kyuubi/conf/log4j2.xml
       - ./script/load-dataset-tpcds-tiny.sql:/opt/load_data/load-dataset-tpcds-tiny.sql
       - ./script/load-dataset-tpch-tiny.sql:/opt/load_data/load-dataset-tpch-tiny.sql

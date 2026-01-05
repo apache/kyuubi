@@ -10,13 +10,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM eclipse-temurin:8-focal
+FROM ubuntu:focal
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBCONF_TERSE=true
 
 RUN set -x && \
+    echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/10disableextras && \
+    echo 'APT::Install-Suggests "0";' >>  /etc/apt/apt.conf.d/10disableextras && \
     ln -snf /usr/bin/bash /usr/bin/sh && \
     apt-get update -q && \
-    apt-get install -yq retry busybox && \
+    apt-get install -yq \
+      retry \
+      busybox \
+      ca-certificates-java \
+      openjdk-8-jdk-headless \
+      openjdk-17-jdk-headless && \
     rm -rf /var/lib/apt/lists/* && \
+    update-ca-certificates -f && \
+    update-java-alternatives --set $(update-java-alternatives --list | grep java-1.8.0-openjdk | awk '{print $NF}') || \
     mkdir /opt/busybox && \
     busybox --install /opt/busybox
 

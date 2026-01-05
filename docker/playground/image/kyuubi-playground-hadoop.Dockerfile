@@ -14,7 +14,6 @@ ARG KYUUBI_VERSION
 
 FROM nekyuubi/kyuubi-playground-base:${KYUUBI_VERSION}
 
-ARG AWS_JAVA_SDK_VERSION
 ARG HADOOP_VERSION
 
 ARG APACHE_MIRROR
@@ -29,9 +28,7 @@ RUN set -x && \
     tar -xzf ${HADOOP_TAR_NAME}.tar.gz -C /opt && \
     ln -s /opt/hadoop-${HADOOP_VERSION} ${HADOOP_HOME} && \
     rm ${HADOOP_TAR_NAME}.tar.gz && \
-    HADOOP_CLOUD_STORAGE_JAR_NAME=hadoop-cloud-storage && \
-    wget -q ${MAVEN_MIRROR}/org/apache/hadoop/${HADOOP_CLOUD_STORAGE_JAR_NAME}/${HADOOP_VERSION}/${HADOOP_CLOUD_STORAGE_JAR_NAME}-${HADOOP_VERSION}.jar -P ${HADOOP_HOME}/share/hadoop/hdfs/lib && \
     HADOOP_AWS_JAR_NAME=hadoop-aws && \
-    wget -q ${MAVEN_MIRROR}/org/apache/hadoop/${HADOOP_AWS_JAR_NAME}/${HADOOP_VERSION}/${HADOOP_AWS_JAR_NAME}-${HADOOP_VERSION}.jar -P ${HADOOP_HOME}/share/hadoop/hdfs/lib && \
+    ln -s ${HADOOP_HOME}/share/hadoop/tools/lib/${HADOOP_AWS_JAR_NAME}-${HADOOP_VERSION}.jar ${HADOOP_HOME}/share/hadoop/hdfs/lib/ && \
     AWS_JAVA_SDK_BUNDLE_JAR_NAME=aws-java-sdk-bundle && \
-    wget -q ${MAVEN_MIRROR}/com/amazonaws/${AWS_JAVA_SDK_BUNDLE_JAR_NAME}/${AWS_JAVA_SDK_VERSION}/${AWS_JAVA_SDK_BUNDLE_JAR_NAME}-${AWS_JAVA_SDK_VERSION}.jar -P ${HADOOP_HOME}/share/hadoop/hdfs/lib
+    ln -s $(find ${HADOOP_HOME}/share/hadoop/tools/lib/ -name "${AWS_JAVA_SDK_BUNDLE_JAR_NAME}-*.jar") ${HADOOP_HOME}/share/hadoop/hdfs/lib/ \
