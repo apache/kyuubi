@@ -130,7 +130,7 @@ trait LineageParser {
       case exp: Alias =>
         val subqueryPlans = getExpressionSubqueryPlans(exp.child)
         val references =
-          if (exp.references.isEmpty || subqueryPlans.nonEmpty) {
+          if (subqueryPlans.nonEmpty) {
             val attrRefs = subqueryPlans
               .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet](), inputTablesByPlan))
               .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
