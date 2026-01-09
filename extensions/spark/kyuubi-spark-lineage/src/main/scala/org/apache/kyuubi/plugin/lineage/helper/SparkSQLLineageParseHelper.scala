@@ -128,15 +128,17 @@ trait LineageParser {
       inputTablesByPlan: mutable.HashSet[String]): AttributeMap[AttributeSet] = {
     val exps = named.map {
       case exp: Alias =>
+        val subqueryPlans = getExpressionSubqueryPlans(exp.child)
         val references =
-          if (exp.references.nonEmpty) exp.references
-          else {
-            val attrRefs = getExpressionSubqueryPlans(exp.child)
+          if (subqueryPlans.nonEmpty) {
+            val attrRefs = subqueryPlans
               .map(extractColumnsLineage(_, ListMap[Attribute, AttributeSet](), inputTablesByPlan))
               .foldLeft(ListMap[Attribute, AttributeSet]())(mergeColumnsLineage).values
               .foldLeft(AttributeSet.empty)(_ ++ _)
               .map(attr => attr.withQualifier(attr.qualifier :+ SUBQUERY_COLUMN_IDENTIFIER))
-            AttributeSet(attrRefs)
+            AttributeSet(attrRefs) ++ exp.references
+          } else {
+            exp.references
           }
         (
           exp.toAttribute,
