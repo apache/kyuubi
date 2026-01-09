@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.http.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.AuthTypes
+import org.apache.kyuubi.service.authentication.{AuthenticationFilter, AuthTypes, BasicAuthenticationHandler, KerberosAuthenticationHandler}
 
 class AuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
