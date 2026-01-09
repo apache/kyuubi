@@ -69,7 +69,7 @@ object PrivilegesBuilder {
       if (projectionList.isEmpty) {
         privilegeObjects += PrivilegeObject(table, plan.output.map(_.name))
       } else {
-        val cols = columnPrune(projectionList ++ conditionList, plan.outputSet)
+        val cols = columnPrune(projectionList, plan.outputSet)
         privilegeObjects += PrivilegeObject(table, cols.map(_.name).distinct)
       }
     }
