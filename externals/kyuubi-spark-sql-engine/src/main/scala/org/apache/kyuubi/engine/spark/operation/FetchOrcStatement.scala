@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.concurrent.{Executors, ExecutorService}
+
 import scala.Array._
 import scala.collection.mutable.ListBuffer
 
@@ -35,12 +37,23 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_PREFETCH_QUEUE_SIZE, OPERATION_RESULT_PREFETCH_TIMEOUT}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.util.NamedThreadFactory
 
-class FetchOrcStatement(spark: SparkSession) {
+class FetchOrcStatement(spark: SparkSession) extends Logging {
 
   var orcIter: OrcFileIterator = _
-  def getIterator(path: String, orcSchema: StructType): FetchIterator[Row] = {
+  var fetchThreadPool: ExecutorService = _
+
+  def getIterator(
+      path: String,
+      orcSchema: StructType,
+      protocolVersion: TProtocolVersion,
+      asyncFetchEnabled: Boolean): FetchIterator[Row] = {
     val conf = spark.sparkContext.hadoopConfiguration
     val savePath = new Path(path)
     val fsIterator = savePath.getFileSystem(conf).listFiles(savePath, false)
@@ -64,6 +77,27 @@ class FetchOrcStatement(spark: SparkSession) {
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
+    if (asyncFetchEnabled) {
+      info(f"Creating thread pool for result prefetching")
+      fetchThreadPool =
+        Executors.newFixedThreadPool(1, new NamedThreadFactory("Result-Prefetch-Pool", false))
+      val asyncFetchTimeout: Long = getSessionConf(OPERATION_RESULT_PREFETCH_TIMEOUT, spark)
+      val rowsetsQueueSize: Int = getSessionConf(OPERATION_RESULT_PREFETCH_QUEUE_SIZE, spark)
+      new IterableAsyncFetchIterator[Row](
+        new Iterable[Row] {
+          override def iterator: Iterator[Row] = iterRow
+        },
+        fetchThreadPool,
+        orcSchema,
+        protocolVersion,
+        asyncFetchTimeout,
+        rowsetsQueueSize)
+    } else {
+      new IterableFetchIterator[Row](new Iterable[Row] {
+        override def iterator: Iterator[Row] = iterRow
+      })
+    }
+
     new IterableFetchIterator[Row](new Iterable[Row] {
       override def iterator: Iterator[Row] = iterRow
     })
@@ -71,6 +105,10 @@ class FetchOrcStatement(spark: SparkSession) {
 
   def close(): Unit = {
     orcIter.close()
+    if (fetchThreadPool != null) {
+      fetchThreadPool.shutdown()
+      info(f"Closing thread pool of result prefetching")
+    }
   }
 }
 
