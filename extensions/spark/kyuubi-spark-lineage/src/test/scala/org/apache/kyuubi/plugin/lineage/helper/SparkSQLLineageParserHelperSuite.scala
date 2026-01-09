@@ -1149,7 +1149,24 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
-          ("aa", Set(s"$DEFAULT_CATALOG.default.table0.a")),
+          ("aa", Set(s"$DEFAULT_CATALOG.default.table0.a", s"$DEFAULT_CATALOG.default.table1.b")),
+          ("b", Set(s"$DEFAULT_CATALOG.default.table1.b")))))
+
+      val sql13 =
+        """
+          |select if((select sum(a) from table0 where table1.b = table0.b) > 100, b, c) as aa, b from table1
+          |""".stripMargin
+      val ret13 = extractLineage(sql13)
+      assert(ret13 == Lineage(
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
+        List(),
+        List(
+          (
+            "aa",
+            Set(
+              s"$DEFAULT_CATALOG.default.table0.a",
+              s"$DEFAULT_CATALOG.default.table1.b",
+              s"$DEFAULT_CATALOG.default.table1.c")),
           ("b", Set(s"$DEFAULT_CATALOG.default.table1.b")))))
     }
   }
