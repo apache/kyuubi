@@ -160,7 +160,8 @@ class Connection(object):
         check_hostname=None,
         ssl_cert=None,
         thrift_transport=None,
-        ssl_context=None
+        ssl_context=None,
+        socket_timeout=None
     ):
         """Connect to HiveServer2
 
@@ -175,6 +176,7 @@ class Connection(object):
             Incompatible with host, port, auth, kerberos_service_name, and password.
         :param ssl_context: A custom SSL context to use for HTTPS connections. If provided,
             this overrides check_hostname and ssl_cert parameters.
+        :param socket_timeout: Millisecond timeout for the Thrift socket connections.
         The way to support LDAP and GSSAPI is originated from cloudera/Impyla:
         https://github.com/cloudera/impyla/blob/255b07ed973d47a3395214ed92d35ec0615ebf62
         /impala/_thrift_api.py#L152-L160
@@ -236,6 +238,8 @@ class Connection(object):
             if auth is None:
                 auth = 'NONE'
             socket = thrift.transport.TSocket.TSocket(host, port)
+            if socket_timeout:
+                socket.setTimeout(socket_timeout)
             if auth == 'NOSASL':
                 # NOSASL corresponds to hive.server2.authentication=NOSASL in hive-site.xml
                 self._transport = thrift.transport.TTransport.TBufferedTransport(socket)
