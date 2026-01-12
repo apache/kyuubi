@@ -367,6 +367,18 @@ private[kyuubi] class EngineRef(
             val msg = s"Deleting engine node:$sn"
             info(msg)
             discoveryClient.delete(s"$engineSpace/${sn.nodeName}")
+
+            if (shareLevel != CONNECTION && builder != null) {
+              try {
+                val appMgrInfo = builder.appMgrInfo()
+                engineManager.killApplication(appMgrInfo, engineRefId, Some(appUser))
+                info(s"Killed engine process for $engineRefId with share level $shareLevel")
+              } catch {
+                case e: Exception =>
+                  warn(s"Error killing engine process for $engineRefId", e)
+              }
+            }
+
             (true, msg)
           } else {
             val msg = s"Engine node:$sn is not matched with host&port[$hostPort]"
