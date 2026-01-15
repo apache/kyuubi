@@ -20,6 +20,8 @@ package org.apache.kyuubi.jdbc.hive;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.jdbc.hive.adapter.SQLStatement;
 import org.apache.kyuubi.jdbc.hive.cli.FetchType;
@@ -40,7 +42,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   public static final String DEFAULT_ARROW_TIMESTAMP_AS_STRING = "false";
   private final KyuubiConnection connection;
   private TCLIService.Iface client;
-  private TOperationHandle stmtHandle = null;
+  private volatile TOperationHandle stmtHandle = null;
+  // This lock must be acquired before modifying or judge stmt
+  // to ensure there are no concurrent accesses or race conditions.
+  private final Lock stmtHandleAccessLock = new ReentrantLock();
   private final TSessionHandle sessHandle;
   Map<String, String> sessConf = new HashMap<>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
@@ -67,10 +72,10 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private SQLWarning warningChain = null;
 
   /** Keep state so we can fail certain calls made after close(). */
-  private boolean isClosed = false;
+  private volatile boolean isClosed = false;
 
   /** Keep state so we can fail certain calls made after cancel(). */
-  private boolean isCancelled = false;
+  private volatile boolean isCancelled = false;
 
   /** Keep this state so we can know whether the query in this statement is closed. */
   private boolean isQueryClosed = false;
@@ -124,23 +129,25 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   @Override
   public void cancel() throws SQLException {
-    checkConnection("cancel");
-    if (isCancelled) {
-      return;
-    }
-
     try {
+      stmtHandleAccessLock.lock();
+      checkConnection("cancel");
+      if (isCancelled) {
+        return;
+      }
       if (stmtHandle != null) {
         TCancelOperationReq cancelReq = new TCancelOperationReq(stmtHandle);
         TCancelOperationResp cancelResp = client.CancelOperation(cancelReq);
         Utils.verifySuccessWithInfo(cancelResp.getStatus());
       }
+      isCancelled = true;
     } catch (SQLException e) {
       throw e;
     } catch (Exception e) {
       throw new KyuubiSQLException(e.toString(), "08S01", e);
+    } finally {
+      stmtHandleAccessLock.unlock();
     }
-    isCancelled = true;
   }
 
   @Override
@@ -177,13 +184,18 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
 
   @Override
   public void close() throws SQLException {
-    if (isClosed) {
-      return;
+    try {
+      stmtHandleAccessLock.lock();
+      if (isClosed) {
+        return;
+      }
+      closeClientOperation();
+      client = null;
+      closeResultSet();
+      isClosed = true;
+    } finally {
+      stmtHandleAccessLock.unlock();
     }
-    closeClientOperation();
-    client = null;
-    closeResultSet();
-    isClosed = true;
   }
 
   @Override
@@ -312,38 +324,43 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   }
 
   private void runAsyncOnServer(String sql, Map<String, String> confOneTime) throws SQLException {
-    checkConnection("execute");
-
-    reInitState();
-
-    TExecuteStatementReq execReq = new TExecuteStatementReq(sessHandle, sql);
-    /**
-     * Run asynchronously whenever possible Currently only a SQLOperation can be run asynchronously,
-     * in a background operation thread Compilation can run asynchronously or synchronously and
-     * execution run asynchronously
-     */
-    execReq.setRunAsync(true);
-    if (confOneTime != null) {
-      Map<String, String> confOverlay = new HashMap<String, String>(sessConf);
-      confOverlay.putAll(confOneTime);
-      execReq.setConfOverlay(confOverlay);
-    } else {
-      execReq.setConfOverlay(sessConf);
-    }
-    execReq.setQueryTimeout(queryTimeout);
+    stmtHandleAccessLock.lock();
     try {
-      TExecuteStatementResp execResp = client.ExecuteStatement(execReq);
-      Utils.verifySuccessWithInfo(execResp.getStatus());
-      stmtHandle = execResp.getOperationHandle();
-      isExecuteStatementFailed = false;
-    } catch (SQLException eS) {
-      isExecuteStatementFailed = true;
-      isLogBeingGenerated = false;
-      throw eS;
-    } catch (Exception ex) {
-      isExecuteStatementFailed = true;
-      isLogBeingGenerated = false;
-      throw new KyuubiSQLException(ex.toString(), "08S01", ex);
+      checkConnection("execute");
+
+      reInitState();
+
+      TExecuteStatementReq execReq = new TExecuteStatementReq(sessHandle, sql);
+      /**
+       * Run asynchronously whenever possible Currently only a SQLOperation can be run
+       * asynchronously, in a background operation thread Compilation can run asynchronously or
+       * synchronously and execution run asynchronously
+       */
+      execReq.setRunAsync(true);
+      if (confOneTime != null) {
+        Map<String, String> confOverlay = new HashMap<>(sessConf);
+        confOverlay.putAll(confOneTime);
+        execReq.setConfOverlay(confOverlay);
+      } else {
+        execReq.setConfOverlay(sessConf);
+      }
+      execReq.setQueryTimeout(queryTimeout);
+      try {
+        TExecuteStatementResp execResp = client.ExecuteStatement(execReq);
+        Utils.verifySuccessWithInfo(execResp.getStatus());
+        stmtHandle = execResp.getOperationHandle();
+        isExecuteStatementFailed = false;
+      } catch (SQLException eS) {
+        isExecuteStatementFailed = true;
+        isLogBeingGenerated = false;
+        throw eS;
+      } catch (Exception ex) {
+        isExecuteStatementFailed = true;
+        isLogBeingGenerated = false;
+        throw new KyuubiSQLException(ex.toString(), "08S01", ex);
+      }
+    } finally {
+      stmtHandleAccessLock.unlock();
     }
   }
 
