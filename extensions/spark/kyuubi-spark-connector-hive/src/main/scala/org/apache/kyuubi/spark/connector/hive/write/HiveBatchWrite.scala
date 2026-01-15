@@ -27,6 +27,7 @@ import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.util.CaseInsensitiveMap
+import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfo, WriterCommitMessage}
 import org.apache.spark.sql.execution.datasources.{WriteJobDescription, WriteTaskResult}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
@@ -69,6 +70,8 @@ class HiveBatchWrite(
 
     // un-cache this table.
     hiveTableCatalog.catalog.invalidateCachedTable(table.identifier)
+    hiveTableCatalog.invalidateTable(
+      Identifier.of(Array(table.identifier.database.getOrElse("")), table.identifier.table))
 
     val catalog = hiveTableCatalog.catalog
     if (sparkSession.sessionState.conf.autoSizeUpdateEnabled) {
