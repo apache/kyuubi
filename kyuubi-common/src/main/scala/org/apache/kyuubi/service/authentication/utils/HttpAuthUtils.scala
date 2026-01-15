@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.util
+package org.apache.kyuubi.service.authentication.utils
 
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
@@ -25,8 +25,7 @@ import java.util.{Base64, StringTokenizer}
 import scala.collection.mutable
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, AuthSchemes}
-import org.apache.kyuubi.service.authentication.Credential
+import org.apache.kyuubi.service.authentication.{AuthenticationFilter, AuthSchemes, Credential}
 
 object HttpAuthUtils extends Logging {
   // HTTP header used by the server endpoint during an authentication sequence.
