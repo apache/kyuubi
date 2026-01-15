@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicLong
+
+import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
@@ -60,9 +63,9 @@ class SparkSessionImpl(
 
   override val sessionIdleTimeoutThreshold: Long = {
     conf.get(SESSION_IDLE_TIMEOUT.key)
-      .map(_.toLong)
-      .getOrElse(
-        sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))
+      .map(_.trim)
+      .map(v => Try(Duration.parse(v).toMillis).getOrElse(v.toLong))
+      .getOrElse(sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))
   }
 
   private val sessionEvent = SessionEvent(this)
