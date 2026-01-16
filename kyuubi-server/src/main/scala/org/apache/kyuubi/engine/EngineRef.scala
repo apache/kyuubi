@@ -368,7 +368,7 @@ private[kyuubi] class EngineRef(
             info(msg)
             discoveryClient.delete(s"$engineSpace/${sn.nodeName}")
 
-            if (shareLevel != CONNECTION && builder != null) {
+            if (shareLevel != CONNECTION && builder != null && engineManager != null) {
               try {
                 val appMgrInfo = builder.appMgrInfo()
                 engineManager.killApplication(appMgrInfo, engineRefId, Some(appUser))
