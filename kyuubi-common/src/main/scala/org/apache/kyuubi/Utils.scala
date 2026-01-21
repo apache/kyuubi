@@ -141,7 +141,7 @@ object Utils extends Logging {
       JavaUtils.getCodeSourceLocation(this.getClass).split("kyuubi-common").head)
     lazy val __KYUUBI_WORK_DIR_ROOT = env.getOrElse(
       "KYUUBI_WORK_DIR_ROOT",
-      Paths.get(KYUUBI_HOME, "work").toAbsolutePath.toString)
+      Paths.get(__KYUUBI_HOME, "work").toAbsolutePath.toString)
     // save cost of evaluating replacement when pattern not found
     def substitute(input: String, pattern: String, replacement: => String): String = {
       if (input.contains(pattern)) input.replace(pattern, replacement) else input
