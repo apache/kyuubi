@@ -38,7 +38,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
-import org.apache.kyuubi.util.TempFileCleanupUtils
+import org.apache.kyuubi.util.{JavaUtils, TempFileCleanupUtils}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 object Utils extends Logging {
@@ -133,6 +133,24 @@ object Utils extends Logging {
       }
       Paths.get(workDir, pathStr)
     }
+  }
+
+  def substituteKyuubiEnvVars(original: String, env: Map[String, String] = sys.env): String = {
+    lazy val __KYUUBI_HOME = env.getOrElse(
+      "KYUUBI_HOME",
+      JavaUtils.getCodeSourceLocation(this.getClass).split("kyuubi-common").head)
+    lazy val __KYUUBI_WORK_DIR_ROOT = env.getOrElse(
+      "KYUUBI_WORK_DIR_ROOT",
+      Paths.get(KYUUBI_HOME, "work").toAbsolutePath.toString)
+    // save cost of evaluating replacement when pattern not found
+    def substitute(input: String, pattern: String, replacement: => String): String = {
+      if (input.contains(pattern)) input.replace(pattern, replacement) else input
+    }
+    var substituted = original
+    substituted = substitute(original, "<KYUUBI_HOME>", __KYUUBI_HOME) // deprecated since 1.12.0
+    substituted = substitute(substituted, "{{KYUUBI_HOME}}", __KYUUBI_HOME)
+    substituted = substitute(substituted, "{{KYUUBI_WORK_DIR_ROOT}}", __KYUUBI_WORK_DIR_ROOT)
+    substituted
   }
 
   /**

@@ -19,24 +19,15 @@ package org.apache.kyuubi.server.metadata.jdbc
 
 import java.util.Properties
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.config.KyuubiConf.buildConf
-import org.apache.kyuubi.util.JavaUtils
 
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
 
   def getMetadataStoreJdbcUrl(conf: KyuubiConf): String = {
-    val rawJdbcUrl = conf.get(METADATA_STORE_JDBC_URL)
-    if (rawJdbcUrl.contains("<KYUUBI_HOME>")) {
-      rawJdbcUrl.replace(
-        "<KYUUBI_HOME>",
-        sys.env.getOrElse(
-          "KYUUBI_HOME",
-          JavaUtils.getCodeSourceLocation(getClass).split("kyuubi-server").head))
-    } else {
-      rawJdbcUrl
-    }
+    Utils.substituteKyuubiEnvVars(conf.get(METADATA_STORE_JDBC_URL))
   }
 
   /** Get metadata store jdbc datasource properties. */
@@ -86,11 +77,12 @@ object JDBCMetadataStoreConf {
       .doc("The JDBC url for server JDBC metadata store. By default, it is a SQLite database " +
         "url, and the state information is not shared across Kyuubi instances. To enable high " +
         "availability for multiple kyuubi instances, please specify a production JDBC url. " +
-        "Note: this value support the variables substitution: `<KYUUBI_HOME>`.")
+        "Note: this value support the variables substitution: `{{KYUUBI_HOME}}`, " +
+        "`{{KYUUBI_WORK_DIR_ROOT}}`.")
       .version("1.6.0")
       .serverOnly
       .stringConf
-      .createWithDefault("jdbc:sqlite:<KYUUBI_HOME>/kyuubi_state_store.db")
+      .createWithDefault("jdbc:sqlite:{{KYUUBI_HOME}}/kyuubi_state_store.db")
 
   val METADATA_STORE_JDBC_USER: ConfigEntry[String] =
     buildConf("kyuubi.metadata.store.jdbc.user")
