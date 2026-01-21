@@ -99,9 +99,8 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
 
   def resolvePathIfRelative(conf: KyuubiConf, configEntry: ConfigEntry[String]): File = {
     val dirFromConfig = conf.get(configEntry)
-    Paths.get(sys.env.getOrElse(
-      KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME,
-      ".")).resolve(dirFromConfig).toFile
+    val KYUUBI_HOME = sys.env.getOrElse(KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME, ".")
+    Paths.get(KYUUBI_HOME).resolve(dirFromConfig).toFile
   }
 
 }
