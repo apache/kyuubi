@@ -137,7 +137,7 @@ object Utils extends Logging {
 
   def substituteKyuubiEnvVars(original: String, env: Map[String, String] = sys.env): String = {
     lazy val KYUUBI_HOME = env.getOrElse(
-      "KYUUBI_HOME",
+      KYUUBI_HOME_ENV_VAR_NAME,
       JavaUtils.getCodeSourceLocation(this.getClass).split("kyuubi-common").head)
     lazy val KYUUBI_WORK_DIR_ROOT = env.getOrElse(
       "KYUUBI_WORK_DIR_ROOT",
