@@ -36,7 +36,7 @@ trait WithKyuubiServerAndTrinoContainer extends WithKyuubiServer with TestContai
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "TRINO")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "memory")
   }

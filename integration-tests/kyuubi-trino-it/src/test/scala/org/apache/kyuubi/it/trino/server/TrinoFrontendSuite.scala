@@ -21,7 +21,7 @@ import scala.util.control.NonFatal
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME_ENV_VAR_NAME}
 import org.apache.kyuubi.operation.SparkMetadataTests
 import org.apache.kyuubi.util.JavaUtils
 
@@ -60,7 +60,7 @@ class TrinoFrontendSuite extends WithKyuubiServer with SparkMetadataTests {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.FRONTEND_PROTOCOLS, Seq("TRINO"))
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
   }
 
   override protected def jdbcUrl: String = {

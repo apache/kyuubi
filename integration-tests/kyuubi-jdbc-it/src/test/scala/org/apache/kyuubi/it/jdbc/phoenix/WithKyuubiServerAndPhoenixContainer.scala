@@ -21,7 +21,7 @@ import java.time.Duration
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME_ENV_VAR_NAME}
 import org.apache.kyuubi.engine.jdbc.phoenix.WithPhoenixEngine
 import org.apache.kyuubi.util.JavaUtils
 
@@ -48,7 +48,7 @@ trait WithKyuubiServerAndPhoenixContainer extends WithKyuubiServer with WithPhoe
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_JDBC_EXTRA_CLASSPATH, phoenixJdbcConnectorPath)
       .set(ENGINE_IDLE_TIMEOUT, Duration.ofMinutes(1).toMillis)
   }

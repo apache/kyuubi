@@ -59,10 +59,12 @@ object MetricsConf {
 
   val METRICS_JSON_LOCATION: ConfigEntry[String] = buildConf("kyuubi.metrics.json.location")
     .serverOnly
-    .doc("Where the JSON metrics file located")
+    .doc("Where the JSON metrics file located. " +
+      "Note: this value support the variables substitution: `{{KYUUBI_HOME}}`, " +
+      "`{{KYUUBI_WORK_DIR_ROOT}}`.")
     .version("1.2.0")
     .stringConf
-    .createWithDefault("metrics")
+    .createWithDefault("{{KYUUBI_HOME}}/metrics")
 
   val METRICS_JSON_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.json.interval")
     .serverOnly

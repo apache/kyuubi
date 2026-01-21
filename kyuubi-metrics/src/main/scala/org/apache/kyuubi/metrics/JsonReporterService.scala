@@ -39,12 +39,12 @@ class JsonReporterService(registry: MetricRegistry)
   extends AbstractService("JsonReporterService") {
   private val jsonMapper = new ObjectMapper().registerModule(
     new MetricsModule(TimeUnit.SECONDS, TimeUnit.MILLISECONDS, false))
-  private val timer = new Timer(true)
+  private val timer = new Timer("JSON-metrics-timer", true)
   private var reportDir: Path = _
   private var reportPath: Path = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    reportDir = Utils.getAbsolutePathFromWork(conf.get(METRICS_JSON_LOCATION))
+    reportDir = Paths.get(Utils.substituteKyuubiEnvVars(conf.get(METRICS_JSON_LOCATION)))
     Files.createDirectories(reportDir)
     reportPath = Paths.get(reportDir.toString, "report.json").toAbsolutePath
     super.initialize(conf)

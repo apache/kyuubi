@@ -20,7 +20,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.WithKyuubiServerAndHadoopMiniCluster
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME_ENV_VAR_NAME}
 import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.jdbc.mysql.MySQLOperationSuite
 
@@ -45,7 +45,7 @@ class WithKyuubiServerAndMySQLContainerYarnMode extends MySQLOperationSuite
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_JDBC_EXTRA_CLASSPATH, mysqlJdbcConnectorPath)
       .set(ENGINE_TYPE, "JDBC")
       .set(KyuubiConf.ENGINE_JDBC_DEPLOY_MODE, DeployMode.YARN.toString)

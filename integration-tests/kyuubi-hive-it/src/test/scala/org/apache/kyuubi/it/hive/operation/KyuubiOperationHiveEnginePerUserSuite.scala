@@ -31,7 +31,7 @@ class KyuubiOperationHiveEnginePerUserSuite extends WithKyuubiServer with HiveEn
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)
     metastore.toFile.delete()
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "HIVE_SQL")
       // increase this to 30s as hive session state and metastore client is slow initializing
       .setIfMissing(ENGINE_IDLE_TIMEOUT, 30000L)

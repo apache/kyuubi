@@ -17,6 +17,11 @@
 
 # Kyuubi Migration Guide
 
+## Upgrading from Kyuubi 1.11 to 1.12
+
+* Since Kyuubi 1.12, the support of variable `<KYUUBI_HOME>` substitution in config `kyuubi.metadata.store.jdbc.url` is deprecated, use `{{KYUUBI_HOME}}` instead.
+* Since Kyuubi 1.12, default value of `kyuubi.metrics.json.location` is changed to `{{KYUUBI_HOME}}/metrics`, to restore previous behavior, change it to `{{KYUUBI_WORK_DIR_ROOT}}/metrics`.
+
 ## Upgrading from Kyuubi 1.10 to 1.11
 
 * Since Kyuubi 1.11, the support of Spark engine for Spark 3.2 is removed.
