@@ -28,7 +28,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster
   with HiveJDBCTestHelper {
 
   override val conf: KyuubiConf = KyuubiConf()
-    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+    .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set("flink.parallelism.default", "2")
 

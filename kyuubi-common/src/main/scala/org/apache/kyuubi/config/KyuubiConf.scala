@@ -246,7 +246,7 @@ object KyuubiConf {
 
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
-  final val KYUUBI_HOME = "KYUUBI_HOME"
+  final val KYUUBI_HOME_ENV_VAR_NAME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
   final val KYUUBI_ENGINE_YARN_MODE_ENV_PREFIX = "kyuubi.engine.yarn.AMEnv"
   final val KYUUBI_BATCH_CONF_PREFIX = "kyuubi.batchConf"

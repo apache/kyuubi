@@ -18,7 +18,7 @@ package org.apache.kyuubi.it.hive.operation
 
 import org.apache.kyuubi.{HiveEngineTests, Utils, WithKyuubiServerAndHadoopMiniCluster}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_IDLE_TIMEOUT, ENGINE_TYPE, KYUUBI_ENGINE_ENV_PREFIX, KYUUBI_HOME_ENV_VAR_NAME}
 import org.apache.kyuubi.engine.deploy.DeployMode
 
 class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests
@@ -28,7 +28,7 @@ class KyuubiOperationHiveEngineYarnModeSuite extends HiveEngineTests
     val metastore = Utils.createTempDir(prefix = getClass.getSimpleName)
     metastore.toFile.delete()
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "HIVE_SQL")
       .set(KyuubiConf.ENGINE_HIVE_DEPLOY_MODE, DeployMode.YARN.toString)
       // increase this to 30s as hive session state and metastore client is slow initializing

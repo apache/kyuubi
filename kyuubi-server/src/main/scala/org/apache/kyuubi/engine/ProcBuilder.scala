@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
-import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME
+import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
 
@@ -74,7 +74,7 @@ trait ProcBuilder {
       }
     }.orElse {
       // 2. get the main resource jar from system build default
-      env.get(KYUUBI_HOME).toSeq
+      env.get(KYUUBI_HOME_ENV_VAR_NAME).toSeq
         .flatMap { p =>
           Seq(
             Paths.get(p, "externals", "engines", shortName, jarName),
@@ -328,7 +328,7 @@ trait ProcBuilder {
     env.get(homeKey).filter(StringUtils.isNotBlank)
       .orElse {
         // 2. get from $KYUUBI_HOME/externals/kyuubi-download/target
-        env.get(KYUUBI_HOME).flatMap { p =>
+        env.get(KYUUBI_HOME_ENV_VAR_NAME).flatMap { p =>
           val candidates = Paths.get(p, "externals", "kyuubi-download", "target")
             .toFile.listFiles(engineHomeDirFilter)
           if (candidates == null) None else candidates.map(_.toPath).headOption

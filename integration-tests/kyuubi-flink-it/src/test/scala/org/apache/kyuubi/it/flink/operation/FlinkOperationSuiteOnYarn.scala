@@ -36,7 +36,7 @@ class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
 
   override def beforeAll(): Unit = {
     conf
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "FLINK_SQL")
       .set("flink.execution.target", "yarn-application")
       .set("flink.parallelism.default", "2")

@@ -34,7 +34,7 @@ class KyuubiOperationHiveEnginePerConnectionSuite extends WithKyuubiServer with 
     metastore.toFile.delete()
     val currentUser = Utils.currentUser
     KyuubiConf()
-      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME", kyuubiHome)
+      .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "HIVE_SQL")
       .set(ENGINE_SHARE_LEVEL, "connection")
       // increase this to 30s as hive session state and metastore client is slow initializing

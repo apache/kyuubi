@@ -209,7 +209,7 @@ trait WithFlinkSQLEngineLocal extends KyuubiFunSuite with WithFlinkTestResources
         }
     }.orElse {
       // 2. get the main resource jar from system build default
-      env.get(KYUUBI_HOME).toSeq
+      env.get(KYUUBI_HOME_ENV_VAR_NAME).toSeq
         .flatMap { p =>
           Seq(
             Paths.get(p, "externals", "engines", shortName, jarName),
