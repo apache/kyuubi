@@ -64,6 +64,7 @@
         <module>extensions/spark/kyuubi-spark-lineage</module>
         <module>extensions/spark/kyuubi-spark-lineage-shaded</module>
         <module>extensions/spark/kyuubi-spark-jvm-quake</module>
+        <module>extensions/spark/kyuubi-spark-shutdown-watchdog</module>
         <module>externals/kyuubi-chat-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
