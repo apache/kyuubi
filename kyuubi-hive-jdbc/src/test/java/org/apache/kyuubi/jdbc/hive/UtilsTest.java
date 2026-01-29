@@ -215,8 +215,9 @@ public class UtilsTest {
   public void testParsePropertyFromUrlConsistentWithExtractURLComponents()
       throws JdbcUriParseException {
     // Test case for JWT auth with query string
-    String url = "jdbc:hive2://host:10012/access_views;transportMode=http;httpPath=cliservice;" +
-        "ssl=true;auth=JWT?kyuubi.session.cluster=clusterA";
+    String url =
+        "jdbc:hive2://host:10012/access_views;transportMode=http;httpPath=cliservice;"
+            + "ssl=true;auth=JWT?kyuubi.session.cluster=clusterA";
 
     // Parse using parsePropertyFromUrl
     String authFromParseProperty = Utils.parsePropertyFromUrl(url, "auth");
