@@ -568,7 +568,13 @@ public class Utils {
     String[] tokens = url.split(";");
     for (String token : tokens) {
       if (token.trim().startsWith(key.trim() + "=")) {
-        return token.trim().substring((key.trim() + "=").length());
+        String value = token.trim().substring((key.trim() + "=").length());
+        // Remove query string part (anything after ?) to match extractURLComponents behavior
+        int queryIndex = value.indexOf('?');
+        if (queryIndex > 0) {
+          value = value.substring(0, queryIndex);
+        }
+        return value;
       }
     }
     return null;
