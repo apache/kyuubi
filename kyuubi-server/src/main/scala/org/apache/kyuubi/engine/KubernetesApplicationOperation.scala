@@ -662,7 +662,7 @@ object KubernetesApplicationOperation extends Logging {
     val applicationError = {
       if (ApplicationState.isFailed(
           applicationState,
-          supportPersistedAppState = true) || ApplicationState.PENDING == applicationState) {
+          supportPersistedAppState = true) || applicationState == ApplicationState.PENDING) {
         val errorMap = containerStatusToBuildAppState.map { cs =>
           Map(
             "Pod" -> podName,
@@ -672,7 +672,7 @@ object KubernetesApplicationOperation extends Logging {
         }.getOrElse {
           Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
         }
-        Some(JsonUtils.toPrettyJson(errorMap.asJava))
+        Some(JsonUtils.toJson(errorMap.asJava))
       } else {
         None
       }
