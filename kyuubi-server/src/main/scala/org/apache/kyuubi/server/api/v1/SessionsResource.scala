@@ -55,8 +55,12 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of all live sessions")
   @GET
   def sessions(): Seq[SessionData] = {
-    sessionManager.allSessions()
-      .map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])).toSeq
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    sessionManager
+      .allSessions()
+      .filter(session => session.user == userName)
+      .map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession]))
+      .toSeq
   }
 
   @ApiResponse(
@@ -157,8 +161,15 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
     info(s"Received request of closing $sessionHandleStr")
-    fe.be.closeSession(sessionHandleStr)
-    Response.ok().build()
+    try {
+      fe.be.closeSession(sessionHandleStr)
+      Response.ok().build()
+    } catch {
+      case e: org.apache.kyuubi.KyuubiSQLException
+          if e.getMessage != null && e.getMessage.startsWith("Invalid ") =>
+        throw new NotFoundException(
+          ApiUtils.logAndRefineErrorMsg(e.getMessage, e))
+    }
   }
 
   @ApiResponse(

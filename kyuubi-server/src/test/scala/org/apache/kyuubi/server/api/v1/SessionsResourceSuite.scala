@@ -389,4 +389,27 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(operations.size == 1)
     assert(sessionHandle.toString.equals(operations.head.getSessionId))
   }
+
+  test("get /sessions returns redacted spark confs") {
+    val sensitiveKey = "spark.password"
+    val sensitiveValue = "superSecret123"
+    val requestObj = new SessionOpenRequest(Map(sensitiveKey -> sensitiveValue).asJava)
+
+    val response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+
+    val response2 = webTarget.path("api/v1/sessions").request().get()
+    assert(200 == response2.getStatus)
+    val sessions = response2.readEntity(new GenericType[Seq[SessionData]]() {})
+    val sessionConf = sessions.find(_.getIdentifier == sessionHandle).get.getConf
+
+    assert(sessionConf.get(sensitiveKey) != sensitiveValue)
+    assert(sessionConf.get(sensitiveKey).forall(_ == '*'))
+
+    val delResp = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
+    assert(200 == delResp.getStatus)
+  }
 }

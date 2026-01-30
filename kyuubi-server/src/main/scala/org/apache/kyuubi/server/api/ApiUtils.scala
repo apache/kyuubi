@@ -22,13 +22,16 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
+import org.apache.kyuubi.config.KyuubiConf.SERVER_SECRET_REDACTION_PATTERN
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
 
 object ApiUtils extends Logging {
   def sessionEvent(session: KyuubiSession): dto.KyuubiSessionEvent = {
-    session.getSessionEvent.map(event =>
+    session.getSessionEvent.map { event =>
+      val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
+      val redactedConf = Utils.redact(Option(redactionPattern), event.conf.toSeq).toMap.asJava
       dto.KyuubiSessionEvent.builder()
         .sessionId(event.sessionId)
         .clientVersion(event.clientVersion)
@@ -37,7 +40,7 @@ object ApiUtils extends Logging {
         .user(event.user)
         .clientIp(event.clientIP)
         .serverIp(event.serverIP)
-        .conf(event.conf.asJava)
+        .conf(redactedConf)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
         .engineName(event.engineName)
@@ -48,17 +51,20 @@ object ApiUtils extends Logging {
         .endTime(event.endTime)
         .totalOperations(event.totalOperations)
         .exception(event.exception.orNull)
-        .build()).orNull
+        .build()
+    }.orNull
   }
 
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
+    val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
+    val redactedConf = Utils.redact(Option(redactionPattern), session.conf.toSeq).toMap.asJava
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),
       session.user,
       session.ipAddress,
-      session.conf.asJava,
+      redactedConf,
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
