@@ -36,9 +36,9 @@ class TPCDS(@transient sparkSession: SparkSession)
     var queryContent: String = ""
     try {
       queryContent = Source.fromInputStream(in)(Codec.UTF8).mkString
-  } finally {
-    in.close()
-  }
+    } finally {
+      in.close()
+    }
 
     val modeName: String = sparkSession.conf.get("spark.sql.benchmark.executionMode")
     val resultsLocation: String = sparkSession.conf.get("spark.sql.perf.results")
