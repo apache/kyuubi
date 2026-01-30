@@ -74,7 +74,7 @@ object RunBenchmark {
           c.copy(exclude = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
         .text("name of the queries to exclude, use comma to split multiple names, e.g. q2,q4")
-      opt[String]('m', "execution-mode")
+      opt[String]("execution-mode")
         .action((x, c) => c.copy(executionMode = x))
         .text("how a given Spark benchmark should be run, only the following four modes are supported: collect,foreach,saveToParquet,hash")
       help("help")

@@ -33,8 +33,12 @@ class TPCDS(@transient sparkSession: SparkSession)
 
   override val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
     val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
-    val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
+    var queryContent: String = ""
+    try {
+      queryContent = Source.fromInputStream(in)(Codec.UTF8).mkString
+  } finally {
     in.close()
+  }
 
     val modeName: String = sparkSession.conf.get("spark.sql.benchmark.executionMode")
     val resultsLocation: String = sparkSession.conf.get("spark.sql.perf.results")

@@ -130,6 +130,4 @@ trait TPCDS_2_4_Queries extends Benchmark {
 
   val tpcds2_4Queries: Seq[Query]
 
-  lazy val tpcds2_4QueriesMap: Map[String, Query] =
-    tpcds2_4Queries.map(q => q.name.split("-").get(0) -> q).toMap
 }
