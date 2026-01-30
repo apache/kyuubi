@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
+import scala.io.{Codec, Source}
+
 import org.apache.spark.sql.SparkSession
+
+import org.apache.kyuubi.tpcds.benchmark.ExecutionMode._
 
 /**
  * TPC-DS benchmark's dataset.
@@ -25,4 +29,28 @@ import org.apache.spark.sql.SparkSession
 class TPCDS(@transient sparkSession: SparkSession)
   extends Benchmark(sparkSession)
   with TPCDS_2_4_Queries
-  with Serializable {}
+  with Serializable {
+
+  override val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
+    val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
+    val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
+    in.close()
+
+    val modeName: String = sparkSession.conf.get("spark.sql.benchmark.executionMode")
+    val resultsLocation: String = sparkSession.conf.get("spark.sql.perf.results")
+
+    val executionMode: ExecutionMode = modeName match {
+      case "collect" => CollectResults
+      case "foreach" => ForeachResults
+      case "hash" => HashResults
+      case "saveToParquet" => WriteParquet(s"${resultsLocation}_query_results")
+      case _ =>
+        throw new IllegalArgumentException(s"Unsupported mode: $modeName")
+    }
+    Query(
+      queryName + "-v2.4",
+      queryContent,
+      description = "TPC-DS 2.4 Query",
+      executionMode = executionMode)
+  }
+}

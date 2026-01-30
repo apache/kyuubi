@@ -48,15 +48,16 @@ $SPARK_HOME/bin/spark-submit \
 
 Support options:
 
-| key         | default                | description                                                                   |
-|-------------|------------------------|-------------------------------------------------------------------------------|
-| db          | none(required)         | the TPC-DS database                                                           |
-| benchmark   | tpcds-v2.4-benchmark   | the name of application                                                       |
-| iterations  | 3                      | the number of iterations to run                                               |
-| breakdown   | false                  | whether to record breakdown results of an execution                           |
-| results-dir | /spark/sql/performance | dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref                 |
-| include     | none(optional)         | name of the queries to run, use comma to split multiple names, e.g. q1,q2     |
-| exclude     | none(optional)         | name of the queries to exclude, use comma to split multiple names, e.g. q2,q4 |
+| key         | default                | description                                                                                                         |
+|-------------|------------------------|---------------------------------------------------------------------------------------------------------------------|
+| db          | none(required)         | the TPC-DS database                                                                                                 |
+| benchmark   | tpcds-v2.4-benchmark   | the name of application                                                                                             |
+| iterations  | 3                      | the number of iterations to run                                                                                     |
+| breakdown   | false                  | whether to record breakdown results of an execution                                                                 |
+| results-dir | /spark/sql/performance | dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref                                                       |
+| include     | none(optional)         | name of the queries to run, use comma to split multiple names, e.g. q1,q2                                           |
+| exclude     | none(optional)         | name of the queries to exclude, use comma to split multiple names, e.g. q2,q4                                       |
+| execution-mode     | collect         | how a given Spark benchmark should be run, only the following four modes are supported: collect,foreach,saveToParquet,hash |
 
 Example: the following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
 

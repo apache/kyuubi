@@ -30,7 +30,8 @@ case class RunConfig(
     breakdown: Boolean = false,
     resultsDir: String = "/spark/sql/performance",
     include: Set[String] = Set.empty,
-    exclude: Set[String] = Set.empty)
+    exclude: Set[String] = Set.empty,
+    executionMode: String = "collect")
 
 // scalastyle:off
 /**
@@ -73,6 +74,9 @@ object RunBenchmark {
           c.copy(exclude = x.split(",").map(_.trim).filter(_.nonEmpty).toSet)
         }
         .text("name of the queries to exclude, use comma to split multiple names, e.g. q2,q4")
+      opt[String]('m', "execution-mode")
+        .action((x, c) => c.copy(executionMode = x))
+        .text("how a given Spark benchmark should be run, only the following four modes are supported: collect,foreach,saveToParquet,hash")
       help("help")
         .text("prints this usage text")
     }
@@ -90,7 +94,9 @@ object RunBenchmark {
     val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
     import sparkSession.implicits._
 
-    sparkSession.conf.set("spark.sql.perf.results", config.resultsDir)
+    val timestamp: Long = System.currentTimeMillis()
+    sparkSession.conf.set("spark.sql.perf.results", s"${config.resultsDir}/timestamp=$timestamp")
+    sparkSession.conf.set("spark.sql.benchmark.executionMode", config.executionMode)
 
     val benchmark = new TPCDS(sparkSession)
 

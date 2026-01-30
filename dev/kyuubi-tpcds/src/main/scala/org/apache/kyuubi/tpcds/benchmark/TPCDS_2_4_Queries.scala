@@ -17,14 +17,10 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
-import scala.io.{Codec, Source}
-
 /**
  * This implements the official TPCDS v2.4 queries with only cosmetic modifications.
  */
 trait TPCDS_2_4_Queries extends Benchmark {
-
-  import ExecutionMode._
 
   val queryNames = Seq(
     "q1",
@@ -132,18 +128,8 @@ trait TPCDS_2_4_Queries extends Benchmark {
     "q99",
     "ss_max")
 
-  val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
-    val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
-    val queryContent: String = Source.fromInputStream(in)(Codec.UTF8).mkString
-    in.close()
+  val tpcds2_4Queries: Seq[Query]
 
-    Query(
-      queryName + "-v2.4",
-      queryContent,
-      description = "TPC-DS 2.4 Query",
-      executionMode = CollectResults)
-  }
-
-  val tpcds2_4QueriesMap: Map[String, Query] =
+  lazy val tpcds2_4QueriesMap: Map[String, Query] =
     tpcds2_4Queries.map(q => q.name.split("-").get(0) -> q).toMap
 }
