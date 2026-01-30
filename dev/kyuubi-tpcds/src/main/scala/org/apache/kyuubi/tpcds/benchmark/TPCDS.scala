@@ -33,9 +33,8 @@ class TPCDS(@transient sparkSession: SparkSession)
 
   override val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
     val in = getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql")
-    var queryContent: String = ""
-    try {
-      queryContent = Source.fromInputStream(in)(Codec.UTF8).mkString
+    val queryContent = try {
+      Source.fromInputStream(in)(Codec.UTF8).mkString
     } finally {
       in.close()
     }
