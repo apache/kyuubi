@@ -2085,6 +2085,9 @@ public class BeeLine implements Closeable {
     if (signalHandler != null) {
       signalHandler.setStatement(stmnt);
     }
+    if (getOpts().getFetchSize() != -1) {
+      stmnt.setFetchSize(getOpts().getFetchSize());
+    }
     return stmnt;
   }
 

@@ -57,6 +57,7 @@ class BeeLineOpts implements Completer {
   public static final char DEFAULT_DELIMITER_FOR_DSV = '|';
   public static final int DEFAULT_MAX_COLUMN_WIDTH = 50;
   public static final int DEFAULT_INCREMENTAL_BUFFER_ROWS = 1000;
+  public static final int DEFAULT_FETCH_SIZE = 10000;
   public static final String DEFAULT_DELIMITER = ";";
 
   public static final String URL_ENV_PREFIX = "BEELINE_URL_";
@@ -85,6 +86,7 @@ class BeeLineOpts implements Completer {
   private int maxWidth = DEFAULT_MAX_WIDTH;
   private int maxHeight = DEFAULT_MAX_HEIGHT;
   private int maxColumnWidth = DEFAULT_MAX_COLUMN_WIDTH;
+  private int fetchSize = DEFAULT_FETCH_SIZE;
   int timeout = -1;
   private String isolation = DEFAULT_ISOLATION_LEVEL;
   private String outputFormat = "table";
@@ -284,7 +286,13 @@ class BeeLineOpts implements Completer {
 
   public boolean set(String key, String value, boolean quiet) {
     try {
-      beeLine.getReflector().invoke(this, "set" + key, new Object[] {value});
+      if (value.equals("true") || value.equals("false")) {
+        beeLine
+            .getReflector()
+            .invoke(this, "set" + key, new Object[] {new Boolean(value.equals("true"))});
+      } else {
+        beeLine.getReflector().invoke(this, "set" + key, new Object[] {value});
+      }
       return true;
     } catch (Exception e) {
       if (!quiet) {
@@ -380,6 +388,18 @@ class BeeLineOpts implements Completer {
 
   public int getMaxColumnWidth() {
     return maxColumnWidth;
+  }
+
+  public int getFetchSize() {
+    return fetchSize;
+  }
+
+  public void setFetchSize(int fetchSize) {
+    this.fetchSize = fetchSize;
+  }
+
+  public void setFetchSize(String fetchSize) {
+    this.fetchSize = Integer.parseInt(fetchSize);
   }
 
   public void setTimeout(int timeout) {
