@@ -205,8 +205,15 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new ForbiddenException(
         s"$userName is not allowed to close the session $sessionHandleStr")
     }
-    fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
-    Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+    try {
+      fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
+      Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+    } catch {
+      case e: org.apache.kyuubi.KyuubiSQLException
+          if e.getMessage != null && e.getMessage.startsWith("Invalid ") =>
+        throw new NotFoundException(
+          ApiUtils.logAndRefineErrorMsg(e.getMessage, e))
+    }
   }
 
   @ApiResponse(
