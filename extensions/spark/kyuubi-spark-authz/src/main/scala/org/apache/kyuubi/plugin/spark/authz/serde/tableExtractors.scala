@@ -140,8 +140,13 @@ class ResolvedTableTableExtractor extends TableExtractor {
     val catalog = lookupExtractor[CatalogPluginCatalogExtractor].apply(catalogVal)
     val identifier = invokeAs[AnyRef](v1, "identifier")
     val maybeTable = lookupExtractor[IdentifierTableExtractor].apply(spark, identifier)
-    val maybeOwner = TableExtractor.getOwner(v1)
-    maybeTable.map(_.copy(catalog = catalog, owner = maybeOwner))
+    // Iceberg show create table $viewName use ResolvedV2View
+    if (!v1.getClass.getName
+        .equals("org.apache.spark.sql.catalyst.plans.logical.views.ResolvedV2View")) {
+      val maybeOwner = TableExtractor.getOwner(v1)
+      maybeTable.map(_.copy(catalog = catalog, owner = maybeOwner))
+    }
+    maybeTable
   }
 }
 
