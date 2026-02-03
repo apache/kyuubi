@@ -210,4 +210,43 @@ public class UtilsTest {
         splitSql.get(0));
     assertEquals("", splitSql.get(1));
   }
+
+  @Test
+  public void testParsePropertyFromUrlConsistentWithExtractURLComponents()
+      throws JdbcUriParseException {
+    // Test case for JWT auth with query string
+    String url =
+        "jdbc:hive2://host:10012/access_views;transportMode=http;httpPath=cliservice;"
+            + "ssl=true;auth=JWT?kyuubi.session.cluster=clusterA";
+
+    // Parse using parsePropertyFromUrl
+    String authFromParseProperty = Utils.parsePropertyFromUrl(url, "auth");
+
+    // Parse using extractURLComponents
+    JdbcConnectionParams params = Utils.extractURLComponents(url, new Properties());
+    String authFromExtract = params.getSessionVars().get("auth");
+
+    // Both methods should return "JWT", not "JWT?kyuubi.session.cluster=clusterA"
+    assertEquals("JWT", authFromParseProperty);
+    assertEquals("JWT", authFromExtract);
+    assertEquals(
+        "parsePropertyFromUrl and extractURLComponents should return the same auth value",
+        authFromExtract,
+        authFromParseProperty);
+
+    // Verify query string parameters are correctly parsed
+    assertEquals("clusterA", params.getHiveConfs().get("kyuubi.session.cluster"));
+  }
+
+  @Test
+  public void testParsePropertyFromUrlWithoutQueryString() {
+    // Test case without query string
+    String url = "jdbc:hive2://localhost:10009/db;auth=KERBEROS;transportMode=binary";
+
+    String authValue = Utils.parsePropertyFromUrl(url, "auth");
+    assertEquals("KERBEROS", authValue);
+
+    String transportMode = Utils.parsePropertyFromUrl(url, "transportMode");
+    assertEquals("binary", transportMode);
+  }
 }
