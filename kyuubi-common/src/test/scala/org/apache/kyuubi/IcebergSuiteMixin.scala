@@ -21,19 +21,19 @@ import java.nio.file.Path
 
 trait IcebergSuiteMixin extends DataLakeSuiteMixin {
 
-  override protected def format: String = "iceberg"
+  override protected val format: String = "iceberg"
 
-  override protected def catalog: String = "hadoop_prod"
+  override protected val catalog: String = "hadoop_prod"
 
-  override protected def warehouse: Path = Utils.createTempDir()
+  override protected val warehouse: Path = Utils.createTempDir()
 
-  override protected def extraJars: String = {
+  override protected val extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
       .filter(_.contains("iceberg-spark")).head
   }
 
-  override protected def extraConfigs = Map(
+  override protected val extraConfigs: Map[String, String] = Map(
     "spark.sql.catalogImplementation" -> "in-memory",
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
