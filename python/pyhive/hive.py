@@ -195,7 +195,7 @@ class Connection(object):
                 ),
                 ssl_context=ssl_context,
             )
-            if connection_timeout:
+            if connection_timeout is not None:
                 thrift_transport.setTimeout(connection_timeout)
 
             if auth in ("BASIC", "NOSASL", "NONE", None):
@@ -240,7 +240,7 @@ class Connection(object):
             if auth is None:
                 auth = 'NONE'
             socket = thrift.transport.TSocket.TSocket(host, port)
-            if connection_timeout:
+            if connection_timeout is not None:
                 socket.setTimeout(connection_timeout)
             if auth == 'NOSASL':
                 # NOSASL corresponds to hive.server2.authentication=NOSASL in hive-site.xml
