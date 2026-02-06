@@ -259,6 +259,17 @@ class TestHive(unittest.TestCase, DBAPITestCase):
                 cursor.execute('SELECT 1 FROM one_row')
                 self.assertEqual(cursor.fetchall(), [(1,)])
 
+    def test_connection_timeout(self):
+        """Test that a connection timeout is set without error."""
+        with contextlib.closing(hive.connect(
+            host=_HOST,
+            port=10000,
+            connection_timeout=10 * 1000
+        )) as connection:
+            with contextlib.closing(connection.cursor()) as cursor:
+                # Use the same query pattern as other tests
+                cursor.execute('SELECT 1 FROM one_row')
+                self.assertEqual(cursor.fetchall(), [(1,)])
 
 def _restart_hs2():
     subprocess.check_call(['sudo', 'service', 'hive-server2', 'restart'])
