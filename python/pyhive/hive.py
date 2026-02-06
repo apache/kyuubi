@@ -176,7 +176,7 @@ class Connection(object):
             Incompatible with host, port, auth, kerberos_service_name, and password.
         :param ssl_context: A custom SSL context to use for HTTPS connections. If provided,
             this overrides check_hostname and ssl_cert parameters.
-        :param connection_timeout: Millisecond timeout for Thrift connections.
+        :param connection_timeout: Millisecond timeout for Thrift connections. Skipped if using thrift_transport.
         The way to support LDAP and GSSAPI is originated from cloudera/Impyla:
         https://github.com/cloudera/impyla/blob/255b07ed973d47a3395214ed92d35ec0615ebf62
         /impala/_thrift_api.py#L152-L160
