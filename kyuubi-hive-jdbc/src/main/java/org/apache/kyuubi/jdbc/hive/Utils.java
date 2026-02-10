@@ -565,19 +565,16 @@ public class Utils {
   }
 
   public static String parsePropertyFromUrl(final String url, final String key) {
-    String[] tokens = url.split(";");
-    for (String token : tokens) {
-      if (token.trim().startsWith(key.trim() + "=")) {
-        String value = token.trim().substring((key.trim() + "=").length());
-        // Remove query string part (anything after ?) to match extractURLComponents behavior
-        int queryIndex = value.indexOf('?');
-        if (queryIndex > 0) {
-          value = value.substring(0, queryIndex);
-        }
-        return value;
-      }
+    String clientPropertiesSection = url.split("[?#]")[0];
+    int semiColonIndex = clientPropertiesSection.indexOf(';');
+    if (semiColonIndex < 0) {
+      return null;
     }
-    return null;
+
+    String clientProperties = clientPropertiesSection.substring(semiColonIndex + 1);
+    Matcher matcher =
+        Pattern.compile("(?:^|;)" + Pattern.quote(key) + "=([^;]*)").matcher(clientProperties);
+    return matcher.find() ? matcher.group(1) : null;
   }
 
   /**
