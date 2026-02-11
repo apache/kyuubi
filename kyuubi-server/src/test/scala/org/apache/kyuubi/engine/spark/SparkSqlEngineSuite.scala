@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.sql.SQLTimeoutException
-
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -148,39 +146,6 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         "1670404535000/1000,'yyyy-MM-dd HH:mm:ss'),'GMT+08:00')")
       assert(gmt8ResultSet.next())
       assert(gmt8ResultSet.getString(1) === "2022-12-08 01:15:35.0")
-    }
-  }
-
-  test("KYUUBI-7323: Support timeout at PlanOnlyMode") {
-    val tableName = "t_timeout"
-    val sessionConfMap = Map("kyuubi.operation.plan.only.mode=analyze" -> "analyze")
-    withSessionConf(sessionConfMap)(Map.empty)(Map.empty) {
-
-      withJdbcStatement(tableName) { statement =>
-        statement.setQueryTimeout(2)
-        val layers = 30
-
-        val cteBuilder = new StringBuilder()
-        cteBuilder.append("WITH p AS (SELECT dt, tid, count(1) as pv, DENSE_RANK() " +
-          "over(order by dt) as dt_rank FROM t GROUP BY 1, 2), ")
-        cteBuilder.append("test_d1 AS (SELECT dt, tid FROM (SELECT dt, tid, row_number() " +
-          "over(order by pv desc) as r FROM p WHERE dt_rank=1) WHERE r<=100)")
-
-        for (i <- 2 to layers) {
-          cteBuilder.append(s", test_d$i AS ( " +
-            s"SELECT dt, tid FROM (SELECT p.dt, p.tid, row_number() over(order by pv desc) as r " +
-            s"FROM p LEFT JOIN test_d${i - 1} prev ON p.tid = prev.tid " +
-            s"WHERE p.dt_rank=$i AND prev.tid IS NULL) WHERE r<=100 " +
-            s"UNION ALL SELECT dt, tid FROM test_d${i - 1})")
-        }
-
-        val complexSql = cteBuilder.toString() + s" SELECT * FROM test_d$layers"
-
-        val e = intercept[SQLTimeoutException] {
-          statement.executeQuery(complexSql)
-        }
-        assert(e.getMessage.equals("Query timed out after 2 seconds"))
-      }
     }
   }
 

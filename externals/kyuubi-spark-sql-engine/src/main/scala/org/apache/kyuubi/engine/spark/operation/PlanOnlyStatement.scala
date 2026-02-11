@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.lang.{Boolean => JBoolean}
-import java.util.concurrent.{TimeoutException, TimeUnit}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -39,7 +38,6 @@ import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownM
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
@@ -80,20 +78,10 @@ class PlanOnlyStatement(
   override protected def runInternal(): Unit =
     try {
       if (queryTimeout > 0) {
-        val timeoutExecutor =
-          ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread", false)
-        val future = timeoutExecutor.submit(new Runnable {
-          override def run(): Unit = doParsePlan()
-        })
-        try {
-          future.get(queryTimeout, TimeUnit.SECONDS)
-        } catch {
-          case _: TimeoutException =>
-            future.cancel(true)
-            cleanup(OperationState.TIMEOUT)
-        } finally {
-          timeoutExecutor.shutdownNow()
-        }
+        session.sessionManager.operationManager.runWithTimeoutFallback(
+          () => doParsePlan(),
+          () => cleanup(OperationState.TIMEOUT),
+          queryTimeout)
       } else {
         doParsePlan()
       }
