@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.lang.{Boolean => JBoolean}
+import java.util.concurrent.{TimeoutException, TimeUnit}
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
@@ -33,11 +34,12 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
 import org.apache.kyuubi.engine.spark.operation.PlanOnlyStatement._
-import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
+import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OperationState, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.util.reflect.DynMethods
 
 /**
@@ -47,6 +49,7 @@ class PlanOnlyStatement(
     session: Session,
     override val statement: String,
     mode: PlanOnlyMode,
+    queryTimeout: Long,
     override protected val handle: OperationHandle)
   extends SparkOperation(session) {
 
@@ -76,26 +79,47 @@ class PlanOnlyStatement(
 
   override protected def runInternal(): Unit =
     try {
-      withLocalProperties {
-        SQLConf.withExistingConf(spark.sessionState.conf) {
-          val parsed = spark.sessionState.sqlParser.parsePlan(statement)
-          parsed match {
-            case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
-              result = spark.sql(statement)
-              iter = new ArrayFetchIterator(result.collect())
-
-            case plan => style match {
-                case PlainStyle => explainWithPlainStyle(plan)
-                case JsonStyle => explainWithJsonStyle(plan)
-                case UnknownStyle => unknownStyleError(style)
-                case other => throw notSupportedStyleError(other, "Spark SQL")
-              }
-          }
+      if (queryTimeout > 0) {
+        val timeoutExecutor =
+          ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread", false)
+        val future = timeoutExecutor.submit(new Runnable {
+          override def run(): Unit = doParsePlan()
+        })
+        try {
+          future.get(queryTimeout, TimeUnit.SECONDS)
+        } catch {
+          case _: TimeoutException =>
+            future.cancel(true)
+            cleanup(OperationState.TIMEOUT)
+        } finally {
+          timeoutExecutor.shutdownNow()
         }
+      } else {
+        doParsePlan()
       }
     } catch {
       onError()
     }
+
+  private def doParsePlan(): Unit = {
+    withLocalProperties {
+      SQLConf.withExistingConf(spark.sessionState.conf) {
+        val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+        parsed match {
+          case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
+            result = spark.sql(statement)
+            iter = new ArrayFetchIterator(result.collect())
+
+          case plan => style match {
+              case PlainStyle => explainWithPlainStyle(plan)
+              case JsonStyle => explainWithJsonStyle(plan)
+              case UnknownStyle => unknownStyleError(style)
+              case other => throw notSupportedStyleError(other, "Spark SQL")
+            }
+        }
+      }
+    }
+  }
 
   private def explainWithPlainStyle(plan: LogicalPlan): Unit = {
     mode match {
