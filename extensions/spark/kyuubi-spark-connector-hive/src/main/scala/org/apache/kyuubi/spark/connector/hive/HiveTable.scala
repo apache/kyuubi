@@ -181,7 +181,7 @@ case class HiveTable(
       partialSpec).map { part =>
       val values = partitionSchema.map { field =>
         val strValue = part.spec(field.name)
-        Cast(Literal(strValue), field.dataType).eval()
+        new Cast(Literal(strValue), field.dataType).eval()
       }
       new GenericInternalRow(values.toArray)
     }.toArray
@@ -193,7 +193,7 @@ case class HiveTable(
       s"Schema size (${schema.size}) does not match numFields (${ident.numFields})")
     schema.zipWithIndex.map { case (field, index) =>
       val value = ident.get(index, field.dataType)
-      val filedValue = Cast(
+      val filedValue = new Cast(
         Literal(value, field.dataType),
         StringType,
         Some(sparkSession.sessionState.conf.sessionLocalTimeZone)).eval().toString
