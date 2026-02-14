@@ -38,15 +38,9 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 abstract class ServerKafkaLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCTestHelper
   with BatchTestHelper with TestContainerForAll {
 
-  /**
-   * `confluentinc/cp-kafka` is Confluent Community Docker Image for Apache Kafka.
-   * The list of compatibility for Kafka's version refers to:
-   * https://docs.confluent.io/platform/current/installation
-   * /versions-interoperability.html#cp-and-apache-ak-compatibility
-   */
-  protected val imageTag: String
+  protected val kafkaVersion: String
   override lazy val containerDef: KafkaContainer.Def =
-    KafkaContainer.Def(s"confluentinc/cp-kafka:$imageTag")
+    KafkaContainer.Def(s"apache/kafka:$kafkaVersion")
   private val destTopic = "server-event-topic"
   private val mapper = JsonMapper.builder().build()
   override protected def jdbcUrl: String = getJdbcUrl
@@ -102,12 +96,6 @@ abstract class ServerKafkaLoggingEventHandlerSuite extends WithKyuubiServer with
   }
 }
 
-class ServerKafkaLoggingEventHandlerSuiteForKafka2 extends ServerKafkaLoggingEventHandlerSuite {
-  // equivalent to Apache Kafka 2.8.x
-  override val imageTag = "6.2.12"
-}
-
 class ServerKafkaLoggingEventHandlerSuiteForKafka3 extends ServerKafkaLoggingEventHandlerSuite {
-  // equivalent to Apache Kafka 3.5.x
-  override val imageTag = "7.5.1"
+  override val kafkaVersion = "3.9.1"
 }
