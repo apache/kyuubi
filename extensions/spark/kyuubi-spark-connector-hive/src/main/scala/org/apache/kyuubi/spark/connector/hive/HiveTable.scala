@@ -30,7 +30,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
-import org.apache.spark.sql.catalyst.expressions.{Cast, GenericInternalRow, Literal}
+import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Literal}
 import org.apache.spark.sql.connector.catalog.{SupportsPartitionManagement, SupportsRead, SupportsWrite, Table, TableCapability}
 import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH_WRITE, OVERWRITE_BY_FILTER, OVERWRITE_DYNAMIC}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -181,7 +181,7 @@ case class HiveTable(
       partialSpec).map { part =>
       val values = partitionSchema.map { field =>
         val strValue = part.spec(field.name)
-        new Cast(Literal(strValue), field.dataType).eval()
+        HiveConnectorUtils.castExpression(Literal(strValue), field.dataType).eval()
       }
       new GenericInternalRow(values.toArray)
     }.toArray
@@ -193,7 +193,7 @@ case class HiveTable(
       s"Schema size (${schema.size}) does not match numFields (${ident.numFields})")
     schema.zipWithIndex.map { case (field, index) =>
       val value = ident.get(index, field.dataType)
-      val filedValue = new Cast(
+      val filedValue = HiveConnectorUtils.castExpression(
         Literal(value, field.dataType),
         StringType,
         Some(sparkSession.sessionState.conf.sessionLocalTimeZone)).eval().toString

@@ -28,18 +28,38 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange._
 import org.apache.spark.sql.execution.command.CommandUtils
 import org.apache.spark.sql.execution.datasources.{PartitionDirectory, PartitionedFile}
 import org.apache.spark.sql.hive.execution.HiveFileFormat
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
+import org.apache.spark.sql.types.{ArrayType, DataType, MapType, StructField, StructType}
 
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors, DynMethods}
 import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 object HiveConnectorUtils extends Logging {
+
+  private val castCtor: DynConstructors.Ctor[Expression] =
+    DynConstructors.builder(classOf[Expression])
+      .impl(
+        "org.apache.spark.sql.catalyst.expressions.Cast",
+        classOf[Expression],
+        classOf[DataType],
+        classOf[Option[_]])
+      .build[Expression]()
+
+  // SPARK-40054, Cast class added a 4th parameter `evalMode` with a default value.
+  // Using reflection to construct Cast instances avoids compile-time binding to
+  // version-specific default parameter methods, ensuring cross-version compatibility.
+  def castExpression(
+                  child: Expression,
+                  dataType: DataType,
+                  timeZoneId: Option[String] = None): Expression = {
+    castCtor.newInstance(child, dataType, timeZoneId)
+  }
 
   def getHiveFileFormat(fileSinkConf: FileSinkDesc): HiveFileFormat =
     Try { // SPARK-43186: 3.5.0
