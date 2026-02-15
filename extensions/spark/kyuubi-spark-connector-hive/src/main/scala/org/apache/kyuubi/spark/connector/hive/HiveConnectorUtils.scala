@@ -55,9 +55,9 @@ object HiveConnectorUtils extends Logging {
   // Using reflection to construct Cast instances avoids compile-time binding to
   // version-specific default parameter methods, ensuring cross-version compatibility.
   def castExpression(
-                  child: Expression,
-                  dataType: DataType,
-                  timeZoneId: Option[String] = None): Expression = {
+      child: Expression,
+      dataType: DataType,
+      timeZoneId: Option[String] = None): Expression = {
     castCtor.newInstance(child, dataType, timeZoneId)
   }
 
