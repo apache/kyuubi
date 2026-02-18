@@ -28,7 +28,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.{Cast, Expression}
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange._
 import org.apache.spark.sql.execution.command.CommandUtils
@@ -45,15 +45,13 @@ object HiveConnectorUtils extends Logging {
   private val castCtor: DynConstructors.Ctor[Expression] =
     DynConstructors.builder(classOf[Expression])
       .impl(
-        "org.apache.spark.sql.catalyst.expressions.Cast",
+        classOf[Cast],
         classOf[Expression],
         classOf[DataType],
         classOf[Option[_]])
       .build[Expression]()
 
-  // SPARK-40054, Cast class added a 4th parameter `evalMode` with a default value.
-  // Using reflection to construct Cast instances avoids compile-time binding to
-  // version-specific default parameter methods, ensuring cross-version compatibility.
+  // SPARK-40054, ensuring cross-version compatibility.
   def castExpression(
       child: Expression,
       dataType: DataType,
