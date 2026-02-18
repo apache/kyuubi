@@ -114,12 +114,13 @@ class PartitionManagementV1Suite extends PartitionManagementSuite {
       checkAnswer(
         sql(s"SHOW PARTITIONS $t"),
         Row("year=2023/month=01") :: Nil)
-      sql(s"USE $catalogName")
-      val partDesc = sql(s"DESCRIBE FORMATTED ns.tbl PARTITION (year='2023', month='01')")
-      val locationRow = partDesc.collect()
-        .find(row => row.getString(0).trim.equalsIgnoreCase("location"))
-      assert(locationRow.isDefined)
-      assert(locationRow.get.getString(1).contains("hive_catalog_part_loc"))
+      val partition = spark.sessionState.catalog.externalCatalog.getPartition(
+        "ns",
+        "tbl",
+        Map("year" -> "2023", "month" -> "01"))
+      val locationUri = partition.storage.locationUri
+      assert(locationUri.isDefined)
+      assert(locationUri.get.toString.contains("hive_catalog_part_loc"))
     }
   }
 }
