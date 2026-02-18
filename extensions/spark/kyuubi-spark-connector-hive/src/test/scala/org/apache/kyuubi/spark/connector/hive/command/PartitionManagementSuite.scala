@@ -105,4 +105,21 @@ class PartitionManagementV1Suite extends PartitionManagementSuite {
   override protected val catalogName: String = SESSION_CATALOG_NAME
   override protected def catalogVersion: String = "V1"
   override protected def commandVersion: String = V1_COMMAND_VERSION
+
+  test("create partition with location") {
+    withNamespaceAndTable("ns", "tbl") { t =>
+      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
+      val loc = "file:///tmp/kyuubi/hive_catalog_part_loc"
+      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01') LOCATION '$loc'")
+      checkAnswer(
+        sql(s"SHOW PARTITIONS $t"),
+        Row("year=2023/month=01") :: Nil)
+      sql(s"USE $catalogName")
+      val partDesc = sql(s"DESCRIBE FORMATTED ns.tbl PARTITION (year='2023', month='01')")
+      val locationRow = partDesc.collect()
+        .find(row => row.getString(0).trim.equalsIgnoreCase("location"))
+      assert(locationRow.isDefined)
+      assert(locationRow.get.getString(1).contains("hive_catalog_part_loc"))
+    }
+  }
 }
