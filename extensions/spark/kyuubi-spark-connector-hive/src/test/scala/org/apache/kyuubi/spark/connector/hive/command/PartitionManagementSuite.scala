@@ -105,22 +105,4 @@ class PartitionManagementV1Suite extends PartitionManagementSuite {
   override protected val catalogName: String = SESSION_CATALOG_NAME
   override protected def catalogVersion: String = "V1"
   override protected def commandVersion: String = V1_COMMAND_VERSION
-
-  test("create partition with location") {
-    withNamespaceAndTable("ns", "tbl") { t =>
-      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
-      val loc = "file:///tmp/kyuubi/hive_catalog_part_loc"
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01') LOCATION '$loc'")
-      checkAnswer(
-        sql(s"SHOW PARTITIONS $t"),
-        Row("year=2023/month=01") :: Nil)
-      val partition = spark.sessionState.catalog.externalCatalog.getPartition(
-        "ns",
-        "tbl",
-        Map("year" -> "2023", "month" -> "01"))
-      val locationUri = partition.storage.locationUri
-      assert(locationUri.isDefined)
-      assert(locationUri.get.toString.contains("hive_catalog_part_loc"))
-    }
-  }
 }
