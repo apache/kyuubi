@@ -193,11 +193,11 @@ case class HiveTable(
       s"Schema size (${schema.size}) does not match numFields (${ident.numFields})")
     schema.zipWithIndex.map { case (field, index) =>
       val value = ident.get(index, field.dataType)
-      val filedValue = HiveConnectorUtils.castExpression(
+      val fieldValue = HiveConnectorUtils.castExpression(
         Literal(value, field.dataType),
         StringType,
         Some(sparkSession.sessionState.conf.sessionLocalTimeZone)).eval().toString
-      field.name -> filedValue
+      field.name -> fieldValue
     }.toMap
   }
 
