@@ -2087,7 +2087,7 @@
             <id>spark-master</id>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.0-SNAPSHOT</spark.version>
+                <spark.version>4.2.0-SNAPSHOT</spark.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>
