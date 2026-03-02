@@ -36,6 +36,10 @@ class MySQLDialect extends JdbcDialect {
     statement
   }
 
+  override def getSchemasOperation(catalog: String, schema: String): String = {
+    return "select database()"
+  }
+
   override def getTablesQuery(
       catalog: String,
       schema: String,
@@ -60,8 +64,11 @@ class MySQLDialect extends JdbcDialect {
       filters += s"$TABLE_CATALOG = '$catalog'"
     }
 
-    if (StringUtils.isNotBlank(schema)) {
+    // when DBeaver connect use %, kyuubi to return all tables from all other databases.
+    if (StringUtils.isNotBlank(schema) && !"%".equals(schema)) {
       filters += s"$TABLE_SCHEMA LIKE '$schema'"
+    } else {
+      filters += s"$TABLE_SCHEMA = database()"
     }
 
     if (StringUtils.isNotBlank(tableName)) {
