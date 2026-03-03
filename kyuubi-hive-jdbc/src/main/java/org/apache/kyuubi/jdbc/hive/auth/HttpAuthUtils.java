@@ -31,7 +31,9 @@ public final class HttpAuthUtils {
   public static final String NEGOTIATE = "Negotiate";
   public static final String BEARER = "Bearer";
 
-  /** @return Stringified Base64 encoded kerberosAuthHeader on success */
+  /**
+   * @return Stringified Base64 encoded kerberosAuthHeader on success
+   */
   public static String getKerberosServiceTicket(
       String serverPrinciple, String host, Subject loggedInSubject) throws Exception {
     String spn = KerberosUtils.canonicalPrincipal(serverPrinciple, host);

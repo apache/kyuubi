@@ -103,69 +103,72 @@ object HiveConnectorUtils extends Logging {
           isSplitable,
           maxSplitBytes,
           partitionValues)
-    }.recover { case _: Exception => // SPARK-42821: 4.0.0-preview2
-      val fileStatusWithMetadataClz = DynClasses.builder()
-        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .buildChecked()
-      DynMethods
-        .builder("splitFiles")
-        .impl(
-          "org.apache.spark.sql.execution.PartitionedFileUtil",
-          fileStatusWithMetadataClz,
-          classOf[Boolean],
-          classOf[Long],
-          classOf[InternalRow])
-        .buildChecked()
-        .invokeChecked[Seq[PartitionedFile]](
-          null,
-          file,
-          isSplitable,
-          maxSplitBytes,
-          partitionValues)
-    }.recover { case _: Exception => // SPARK-51185: Spark 3.5.7
-      val fileStatusWithMetadataClz = DynClasses.builder()
-        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .buildChecked()
-      DynMethods
-        .builder("splitFiles")
-        .impl(
-          "org.apache.spark.sql.execution.PartitionedFileUtil",
-          classOf[SparkSession],
-          fileStatusWithMetadataClz,
-          classOf[Path],
-          classOf[Boolean],
-          classOf[Long],
-          classOf[InternalRow])
-        .buildChecked()
-        .invokeChecked[Seq[PartitionedFile]](
-          null,
-          sparkSession,
-          file,
-          filePath,
-          isSplitable,
-          maxSplitBytes,
-          partitionValues)
-    }.recover { case _: Exception => // SPARK-43039: 3.5.0
-      val fileStatusWithMetadataClz = DynClasses.builder()
-        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .buildChecked()
-      DynMethods
-        .builder("splitFiles")
-        .impl(
-          "org.apache.spark.sql.execution.PartitionedFileUtil",
-          classOf[SparkSession],
-          fileStatusWithMetadataClz,
-          classOf[Boolean],
-          classOf[Long],
-          classOf[InternalRow])
-        .buildChecked()
-        .invokeChecked[Seq[PartitionedFile]](
-          null,
-          sparkSession,
-          file,
-          isSplitable,
-          maxSplitBytes,
-          partitionValues)
+    }.recover {
+      case _: Exception => // SPARK-42821: 4.0.0-preview2
+        val fileStatusWithMetadataClz = DynClasses.builder()
+          .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+          .buildChecked()
+        DynMethods
+          .builder("splitFiles")
+          .impl(
+            "org.apache.spark.sql.execution.PartitionedFileUtil",
+            fileStatusWithMetadataClz,
+            classOf[Boolean],
+            classOf[Long],
+            classOf[InternalRow])
+          .buildChecked()
+          .invokeChecked[Seq[PartitionedFile]](
+            null,
+            file,
+            isSplitable,
+            maxSplitBytes,
+            partitionValues)
+    }.recover {
+      case _: Exception => // SPARK-51185: Spark 3.5.7
+        val fileStatusWithMetadataClz = DynClasses.builder()
+          .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+          .buildChecked()
+        DynMethods
+          .builder("splitFiles")
+          .impl(
+            "org.apache.spark.sql.execution.PartitionedFileUtil",
+            classOf[SparkSession],
+            fileStatusWithMetadataClz,
+            classOf[Path],
+            classOf[Boolean],
+            classOf[Long],
+            classOf[InternalRow])
+          .buildChecked()
+          .invokeChecked[Seq[PartitionedFile]](
+            null,
+            sparkSession,
+            file,
+            filePath,
+            isSplitable,
+            maxSplitBytes,
+            partitionValues)
+    }.recover {
+      case _: Exception => // SPARK-43039: 3.5.0
+        val fileStatusWithMetadataClz = DynClasses.builder()
+          .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
+          .buildChecked()
+        DynMethods
+          .builder("splitFiles")
+          .impl(
+            "org.apache.spark.sql.execution.PartitionedFileUtil",
+            classOf[SparkSession],
+            fileStatusWithMetadataClz,
+            classOf[Boolean],
+            classOf[Long],
+            classOf[InternalRow])
+          .buildChecked()
+          .invokeChecked[Seq[PartitionedFile]](
+            null,
+            sparkSession,
+            file,
+            isSplitable,
+            maxSplitBytes,
+            partitionValues)
     }.recover { case _: Exception =>
       DynMethods
         .builder("splitFiles")

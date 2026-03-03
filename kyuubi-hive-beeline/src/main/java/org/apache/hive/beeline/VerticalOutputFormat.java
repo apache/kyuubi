@@ -26,7 +26,9 @@ package org.apache.hive.beeline;
 class VerticalOutputFormat implements OutputFormat {
   private final BeeLine beeLine;
 
-  /** @param beeLine */
+  /**
+   * @param beeLine
+   */
   VerticalOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }

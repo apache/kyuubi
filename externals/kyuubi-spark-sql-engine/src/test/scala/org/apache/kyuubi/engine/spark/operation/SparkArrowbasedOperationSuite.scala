@@ -559,21 +559,23 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         errorOnDuplicatedFieldNames,
         largeVarTypes,
         context)
-    }.recover { case _: Exception => // SPARK-43528: Spark 3.5
-      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
-        arrowConvertersObject,
-        arrowBatchIter,
-        schema,
-        timeZoneId,
-        errorOnDuplicatedFieldNames,
-        context)
-    }.recover { case _: Exception => // for Spark 3.4 or previous
-      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
-        arrowConvertersObject,
-        arrowBatchIter,
-        schema,
-        timeZoneId,
-        context)
+    }.recover {
+      case _: Exception => // SPARK-43528: Spark 3.5
+        fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+          arrowConvertersObject,
+          arrowBatchIter,
+          schema,
+          timeZoneId,
+          errorOnDuplicatedFieldNames,
+          context)
+    }.recover {
+      case _: Exception => // for Spark 3.4 or previous
+        fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
+          arrowConvertersObject,
+          arrowBatchIter,
+          schema,
+          timeZoneId,
+          context)
     }.get
 
   class JobCountListener extends SparkListener {

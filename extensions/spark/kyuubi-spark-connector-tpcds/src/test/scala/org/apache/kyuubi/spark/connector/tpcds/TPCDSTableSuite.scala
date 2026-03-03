@@ -142,8 +142,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
           scanExec.scan.asInstanceOf[TPCDSBatchScan]
       }
       assert(scan.isDefined)
-      val expected =
-        (TPCDSStatisticsUtils.sizeInBytes(table, scale) / maxPartitionBytes).ceil.toInt
+      val expected = (TPCDSStatisticsUtils.sizeInBytes(table, scale) / maxPartitionBytes).ceil.toInt
       assert(scan.get.planInputPartitions.length == expected)
     }
   }

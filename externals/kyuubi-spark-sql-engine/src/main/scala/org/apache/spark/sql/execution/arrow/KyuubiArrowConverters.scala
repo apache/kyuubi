@@ -298,11 +298,12 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
               (!isBatchSizeLimitExceeded && !isRecordLimitExceeded))) {
           val row = rowIter.next()
           arrowWriter.write(row)
-          estimatedBatchSize += (row match {
-            case ur: UnsafeRow => ur.getSizeInBytes
-            // Trying to estimate the size of the current row
-            case _: InternalRow => schema.defaultSize
-          })
+          estimatedBatchSize +=
+            (row match {
+              case ur: UnsafeRow => ur.getSizeInBytes
+              // Trying to estimate the size of the current row
+              case _: InternalRow => schema.defaultSize
+            })
           rowCountInLastBatch += 1
           rowCount += 1
         }

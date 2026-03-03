@@ -330,8 +330,9 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")
     confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
     if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
-      confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
-        conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
+      confsToPublish +=
+        ("hive.server2.authentication.kerberos.principal" ->
+          conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
     }
     confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }

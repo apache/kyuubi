@@ -256,53 +256,54 @@ class HiveTableCatalog(sparkSession: SparkSession)
           schemaPreservesCase,
           ignoredProperties,
           viewOriginalText)
-    }.recover { case _: Exception => // Spark 3.5 and previous
-      DynConstructors.builder()
-        .impl(
-          classOf[CatalogTable],
-          classOf[TableIdentifier],
-          classOf[CatalogTableType],
-          classOf[CatalogStorageFormat],
-          classOf[StructType],
-          classOf[Option[String]],
-          classOf[Seq[String]],
-          classOf[Option[BucketSpec]],
-          classOf[String],
-          classOf[Long],
-          classOf[Long],
-          classOf[String],
-          classOf[Map[String, String]],
-          classOf[Option[CatalogStatistics]],
-          classOf[Option[String]],
-          classOf[Option[String]],
-          classOf[Seq[String]],
-          classOf[Boolean],
-          classOf[Boolean],
-          classOf[Map[String, String]],
-          classOf[Option[String]])
-        .buildChecked()
-        .invokeChecked[CatalogTable](
-          null,
-          identifier,
-          tableType,
-          storage,
-          schema,
-          provider,
-          partitionColumnNames,
-          bucketSpec,
-          owner,
-          createTime,
-          lastAccessTime,
-          createVersion,
-          properties,
-          stats,
-          viewText,
-          comment,
-          unsupportedFeatures,
-          tracksPartitionsInCatalog,
-          schemaPreservesCase,
-          ignoredProperties,
-          viewOriginalText)
+    }.recover {
+      case _: Exception => // Spark 3.5 and previous
+        DynConstructors.builder()
+          .impl(
+            classOf[CatalogTable],
+            classOf[TableIdentifier],
+            classOf[CatalogTableType],
+            classOf[CatalogStorageFormat],
+            classOf[StructType],
+            classOf[Option[String]],
+            classOf[Seq[String]],
+            classOf[Option[BucketSpec]],
+            classOf[String],
+            classOf[Long],
+            classOf[Long],
+            classOf[String],
+            classOf[Map[String, String]],
+            classOf[Option[CatalogStatistics]],
+            classOf[Option[String]],
+            classOf[Option[String]],
+            classOf[Seq[String]],
+            classOf[Boolean],
+            classOf[Boolean],
+            classOf[Map[String, String]],
+            classOf[Option[String]])
+          .buildChecked()
+          .invokeChecked[CatalogTable](
+            null,
+            identifier,
+            tableType,
+            storage,
+            schema,
+            provider,
+            partitionColumnNames,
+            bucketSpec,
+            owner,
+            createTime,
+            lastAccessTime,
+            createVersion,
+            properties,
+            stats,
+            viewText,
+            comment,
+            unsupportedFeatures,
+            tracksPartitionsInCatalog,
+            schemaPreservesCase,
+            ignoredProperties,
+            viewOriginalText)
     }.get
   }
 

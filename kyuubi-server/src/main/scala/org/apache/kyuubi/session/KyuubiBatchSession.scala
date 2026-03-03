@@ -165,10 +165,11 @@ class KyuubiBatchSession(
         Map(KyuubiConf.KUBERNETES_CONTEXT.key -> context)
       }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
         Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
-      }.getOrElse(Map.empty) ++ (batchJobSubmissionOp.builder match {
-        case builder: SparkProcessBuilder => builder.appendPodNameConf(optimizedConf)
-        case _ => Map.empty[String, String]
-      })
+      }.getOrElse(Map.empty) ++
+        (batchJobSubmissionOp.builder match {
+          case builder: SparkProcessBuilder => builder.appendPodNameConf(optimizedConf)
+          case _ => Map.empty[String, String]
+        })
     }
 
     (metadata, fromRecovery) match {

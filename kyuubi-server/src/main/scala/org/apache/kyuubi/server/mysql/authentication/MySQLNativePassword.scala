@@ -66,6 +66,7 @@ class MySQLNativePassword {
     xor(passwordSha1, secretSha1)
   }
 
-  private def xor(input: Array[Byte], secret: Array[Byte]): Array[Byte] =
-    (input zip secret).map { case (b1, b2) => (b1 ^ b2).toByte }
+  private def xor(input: Array[Byte], secret: Array[Byte]): Array[Byte] = (input zip secret).map {
+    case (b1, b2) => (b1 ^ b2).toByte
+  }
 }

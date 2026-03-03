@@ -39,7 +39,9 @@ public class JSONOutputFormat extends AbstractOutputFormat {
   protected final BeeLine beeLine;
   protected JsonGenerator generator;
 
-  /** @param beeLine */
+  /**
+   * @param beeLine
+   */
   JSONOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
     try {

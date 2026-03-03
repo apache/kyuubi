@@ -895,12 +895,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     isClosed = false;
   }
 
-  /** @return username from sessConfMap */
+  /**
+   * @return username from sessConfMap
+   */
   private String getUserName() {
     return getSessionValue(AUTH_USER, ANONYMOUS_USER);
   }
 
-  /** @return password from sessConfMap */
+  /**
+   * @return password from sessConfMap
+   */
   private String getPassword() {
     return getSessionValue(AUTH_PASSWD, ANONYMOUS_PASSWD);
   }

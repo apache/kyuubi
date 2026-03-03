@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class BeelineSiteParser implements HS2ConnectionFileParser {
   /** Prefix string used for named jdbc uri configs */
   public static final String BEELINE_CONNECTION_NAMED_JDBC_URL_PREFIX = "beeline.hs2.jdbc.url.";
+
   /** Property key used to provide the default named jdbc uri in the config file */
   public static final String DEFAULT_NAMED_JDBC_URL_PROPERTY_KEY = "default";
 
@@ -126,6 +127,7 @@ public class BeelineSiteParser implements HS2ConnectionFileParser {
   public boolean configExists() {
     return (getFileLocation() != null);
   }
+
   /*
    * This method looks in locations specified above and returns the first location where the file
    * exists. If the file does not exist in any one of the locations it returns null

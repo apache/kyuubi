@@ -352,10 +352,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
       buildBatchFromSession(batchSession)
     }.getOrElse {
       sessionManager.getBatchMetadata(batchId).map { metadata =>
-        val isOperationTerminated = (StringUtils.isNotBlank(metadata.state)
-          && OperationState.isTerminal(OperationState.withName(metadata.state)))
-        val isApplicationTerminated = (StringUtils.isNotBlank(metadata.engineState)
-          && ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)))
+        val isOperationTerminated =
+          (StringUtils.isNotBlank(metadata.state)
+            && OperationState.isTerminal(OperationState.withName(metadata.state)))
+        val isApplicationTerminated =
+          (StringUtils.isNotBlank(metadata.engineState)
+            && ApplicationState.isTerminated(ApplicationState.withName(metadata.engineState)))
 
         if (!batchInfoInternalRedirect ||
           batchV2Enabled(metadata.requestConf) ||

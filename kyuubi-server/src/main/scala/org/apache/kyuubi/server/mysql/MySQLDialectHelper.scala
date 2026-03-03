@@ -101,8 +101,9 @@ object MySQLDialectHelper {
       "performance_schema" -> "0",
       "query_cache_size" -> "1048576",
       "query_cache_type" -> "OFF",
-      "sql_mode" -> ("ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE," +
-        "NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"),
+      "sql_mode" ->
+        ("ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE," +
+          "NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"),
       "system_time_zone" -> "UTC",
       "time_zone" -> "SYSTEM",
       "transaction_isolation" -> "REPEATABLE-READ",

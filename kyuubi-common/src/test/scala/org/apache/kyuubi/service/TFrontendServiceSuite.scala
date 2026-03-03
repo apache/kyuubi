@@ -422,7 +422,8 @@ class TFrontendServiceSuite extends KyuubiFunSuite {
       val resp4 = client.GetOperationStatus(req2)
       assert(resp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       assert(resp4.getOperationState === TOperationState.ERROR_STATE)
-      assert(resp4.getErrorMessage startsWith "org.apache.kyuubi.KyuubiSQLException:" +
+      assert(resp4.getErrorMessage startsWith
+        "org.apache.kyuubi.KyuubiSQLException:" +
         " noop operation err\n\tat org.apache.kyuubi.KyuubiSQLException")
     }
   }

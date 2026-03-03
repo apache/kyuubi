@@ -274,12 +274,12 @@ public class JdbcColumn {
       case TIMESTAMP_WITH_TIMEZONE:
         return columnPrecision(tType, columnAttributes);
 
-        // see
-        // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
+      // see
+      // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
       case FLOAT:
         return 24; // e.g. -(17#).e-###
-        // see
-        // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Double.MAX_EXPONENT
+      // see
+      // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Double.MAX_EXPONENT
       case DOUBLE:
         return 25; // e.g. -(17#).e-####
       case DECIMAL:
