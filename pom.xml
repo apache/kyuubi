@@ -248,7 +248,7 @@
         <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.scalatest.debug.enabled>false</maven.plugin.scalatest.debug.enabled>
-        <maven.plugin.spotless.version>3.3.0</maven.plugin.spotless.version>
+        <maven.plugin.spotless.version>3.2.1</maven.plugin.spotless.version>
         <maven.plugin.surefire.version>3.2.1</maven.plugin.surefire.version>
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
