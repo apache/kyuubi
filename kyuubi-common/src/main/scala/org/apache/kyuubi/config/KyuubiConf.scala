@@ -2358,6 +2358,29 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val OPERATION_RESULT_PREFETCH: ConfigEntry[Boolean] =
+    buildConf("kyuubi.operation.result.prefetch.enabled")
+      .doc("The switch for Spark to prefetch query results.")
+      .version("1.9.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val OPERATION_RESULT_PREFETCH_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.operation.result.prefetch.rowsetsQueue.size")
+      .doc("Size of the rowsets queue for the prefetch thread.")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(50)
+
+  val OPERATION_RESULT_PREFETCH_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.operation.result.prefetch.timeout")
+      .doc(f"The maximum wait time to retrieve results from the queue. " +
+        f"If ${OPERATION_RESULT_PREFETCH.key} is true, We will attempt to " +
+        f"wait for the prefetch thread to write results to the queue.")
+      .version("1.9.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(2).toMillis)
+
   @deprecated("using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] =
     buildConf("kyuubi.session.engine.share.level")
