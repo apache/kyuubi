@@ -31,7 +31,7 @@ object ApiUtils extends Logging {
   def sessionEvent(session: KyuubiSession): dto.KyuubiSessionEvent = {
     session.getSessionEvent.map { event =>
       val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
-      val redactedConf = Utils.redact(Option(redactionPattern), event.conf.toSeq).toMap.asJava
+      val redactedConf = Utils.redact(redactionPattern, event.conf.toSeq).toMap.asJava
       dto.KyuubiSessionEvent.builder()
         .sessionId(event.sessionId)
         .clientVersion(event.clientVersion)
@@ -58,7 +58,7 @@ object ApiUtils extends Logging {
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
     val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
-    val redactedConf = Utils.redact(Option(redactionPattern), session.conf.toSeq).toMap.asJava
+    val redactedConf = Utils.redact(redactionPattern, session.conf.toSeq).toMap.asJava
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),

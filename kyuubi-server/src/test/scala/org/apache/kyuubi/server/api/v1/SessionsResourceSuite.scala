@@ -40,6 +40,12 @@ import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
+  override protected lazy val conf: KyuubiConf = {
+    val c = KyuubiConf()
+    c.set(KyuubiConf.SERVER_SECRET_REDACTION_PATTERN, "(?i)password".r)
+    c
+  }
+
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     eventually(timeout(10.seconds), interval(200.milliseconds)) {
@@ -407,7 +413,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val sessionConf = sessions.find(_.getIdentifier == sessionHandle).get.getConf
 
     assert(sessionConf.get(sensitiveKey) != sensitiveValue)
-    assert(sessionConf.get(sensitiveKey).forall(_ == '*'))
+    assert(sessionConf.get(sensitiveKey) == "*********(redacted)")
 
     val delResp = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
     assert(200 == delResp.getStatus)

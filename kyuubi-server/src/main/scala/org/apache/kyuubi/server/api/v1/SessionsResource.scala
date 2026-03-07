@@ -52,7 +52,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),
-    description = "get the list of all live sessions")
+    description = "get the list of live sessions for the current user")
   @GET
   def sessions(): Seq[SessionData] = {
     val userName = fe.getSessionUser(Map.empty[String, String])
