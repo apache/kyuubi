@@ -72,6 +72,12 @@ jobs:
             spark-archive: '-Pscala-2.13'
             exclude-tags: ''
             comment: 'normal'
+          - java: 25
+            python: '3.11'
+            spark: '4.2'
+            spark-archive: '-Pscala-2.13'
+            exclude-tags: ''
+            comment: 'normal'
           - java: 8
             python: '3.9'
             spark: '3.5'
@@ -96,6 +102,12 @@ jobs:
             spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-4.1.1 -Dspark.archive.name=spark-4.1.1-bin-hadoop3.tgz'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
             comment: 'verify-on-spark-4.1-binary'
+          - java: 17
+            python: '3.11'
+            spark: '3.5'
+            spark-archive: '-Pscala-2.13 -Dspark.archive.mirror=https://dist.apache.org/repos/dist/dev/spark/v4.2.0-preview3-rc1-bin -Dspark.archive.name=spark-4.2.0-preview3-bin-hadoop3.tgz'
+            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
+            comment: 'verify-on-spark-4.2-binary'
     env:
       SPARK_LOCAL_IP: localhost
     steps:

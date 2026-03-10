@@ -47,8 +47,8 @@ grpc-stub/1.76.2//grpc-stub-1.76.2.jar
 grpc-util/1.76.2//grpc-util-1.76.2.jar
 gson/2.11.0//gson-2.11.0.jar
 guava/33.4.8-jre//guava-33.4.8-jre.jar
-hadoop-client-api/3.3.6//hadoop-client-api-3.3.6.jar
-hadoop-client-runtime/3.3.6//hadoop-client-runtime-3.3.6.jar
+hadoop-client-api/3.4.3//hadoop-client-api-3.4.3.jar
+hadoop-client-runtime/3.4.3//hadoop-client-runtime-3.4.3.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
