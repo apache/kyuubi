@@ -1969,6 +1969,21 @@
         </profile>
 
         <profile>
+            <id>java-25</id>
+            <activation>
+                <jdk>25</jdk>
+            </activation>
+            <properties>
+                <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
+                           does not support Java 25, but new version produces different outputs.
+                           Re-evaluate once we dropped support for Java 8. -->
+                <maven.plugin.spotless.version>2.43.0</maven.plugin.spotless.version>
+                <spotless.check.skip>true</spotless.check.skip>
+                <spotless.java.googlejavaformat.version>1.22.0</spotless.java.googlejavaformat.version>
+            </properties>
+        </profile>
+
+        <profile>
             <id>scala-2.12</id>
             <properties>
                 <scala.binary.version>2.12</scala.binary.version>
