@@ -345,11 +345,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   public static List<String> parseInitFile(String initFile) throws IOException {
     File file = new File(initFile);
-    BufferedReader br = null;
     List<String> initSqlList = null;
-    try {
-      FileInputStream input = new FileInputStream(file);
-      br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
+    try (FileInputStream input = new FileInputStream(file);
+         BufferedReader br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
       String line;
       StringBuilder sb = new StringBuilder();
       while ((line = br.readLine()) != null) {
@@ -367,10 +365,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     } catch (IOException e) {
       LOG.error("Failed to read initial SQL file", e);
       throw new IOException(e);
-    } finally {
-      if (br != null) {
-        br.close();
-      }
     }
     return initSqlList;
   }
