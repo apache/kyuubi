@@ -89,3 +89,6 @@ kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/
 # For draw.io
 .$*.bkp
 .$*.dtmp
+
+# Claude Code worktrees
+.worktrees/
