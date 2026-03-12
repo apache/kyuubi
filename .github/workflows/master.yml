@@ -226,6 +226,16 @@ jobs:
             spark-compile: "3.5"
             spark-runtime: "4.0"
             comment: "normal"
+          - java: 21
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.1"
+            comment: "normal"
+          - java: 25
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.2"
+            comment: "normal"
     env:
       SPARK_LOCAL_IP: localhost
       TEST_MODULES: "extensions/spark/kyuubi-spark-connector-hive,\
