@@ -301,7 +301,8 @@
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
-            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
+            --enable-native-access=ALL-UNNAMED
+            --sun-misc-unsafe-memory-access=allow</extraJavaTestArgs>
 
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
