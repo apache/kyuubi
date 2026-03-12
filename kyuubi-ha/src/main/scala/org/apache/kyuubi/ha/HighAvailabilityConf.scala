@@ -108,7 +108,7 @@ object HighAvailabilityConf {
 
   val HA_ZK_ENGINE_AUTH_PRINCIPAL: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.engine.auth.principal")
-      .doc("Kerberos principal name that is used for the engine's ZooKeeper authentication." +
+      .doc("Kerberos principal name that is used for the engine's ZooKeeper authentication. " +
         "It fallback to `kyuubi.ha.zookeeper.auth.principal`")
       .version("1.12.0")
       .fallbackConf(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL)
@@ -122,7 +122,7 @@ object HighAvailabilityConf {
   val HA_ZK_ENGINE_AUTH_KEYTAB: ConfigEntry[Option[String]] =
     buildConf("kyuubi.ha.zookeeper.engine.auth.keytab")
       .doc("Location of the Kyuubi server's keytab that is used for " +
-        "the engine's ZooKeeper authentication." +
+        "the engine's ZooKeeper authentication. " +
         "It fallback to `kyuubi.ha.zookeeper.auth.keytab`")
       .version("1.12.0")
       .fallbackConf(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB)
