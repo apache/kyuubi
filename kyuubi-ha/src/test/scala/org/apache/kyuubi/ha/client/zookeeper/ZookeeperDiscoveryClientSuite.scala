@@ -133,8 +133,36 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
 
       conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
       val e = intercept[IOException](setUpZooKeeperAuth(conf))
-      assert(
-        e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key}: ${getKeyTabFile(conf).get} does not exists")
+      val keytabPath = getKeyTabFile(conf, HA_ZK_AUTH_KEYTAB).get
+      assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key}: ${keytabPath} does not exists")
+    }
+  }
+
+  test("set up zookeeper auth for engine") {
+    tryWithSecurityEnabled {
+      val keytab = File.createTempFile("engine", ".keytab")
+      val principal = "engine/_HOST@apache.org"
+
+      conf.set(HA_ZK_ENGINE_AUTH_KEYTAB.key, keytab.getCanonicalPath)
+      conf.set(HA_ZK_ENGINE_AUTH_PRINCIPAL.key, principal)
+      conf.set(HA_ENGINE_REF_ID, "ref")
+      conf.set(HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
+
+      setUpZooKeeperAuth(conf)
+      val configuration = Configuration.getConfiguration
+      val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
+
+      assert(entries.head.getLoginModuleName === "com.sun.security.auth.module.Krb5LoginModule")
+      val options = entries.head.getOptions.asScala.toMap
+
+      val hostname = StringUtils.toLowerCase(InetAddress.getLocalHost.getCanonicalHostName)
+      assert(options("principal") === s"engine/$hostname@apache.org")
+      assert(options("useKeyTab").toString.toBoolean)
+
+      conf.set(HA_ZK_ENGINE_AUTH_KEYTAB.key, s"${keytab.getName}")
+      val e = intercept[IOException](setUpZooKeeperAuth(conf))
+      val keytabPath = getKeyTabFile(conf, HA_ZK_ENGINE_AUTH_KEYTAB).get
+      assert(e.getMessage === s"${HA_ZK_ENGINE_AUTH_KEYTAB.key}: ${keytabPath} does not exists")
     }
   }
 

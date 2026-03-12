@@ -28,7 +28,7 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{AuthTypes, RetryPolicies}
 import org.apache.kyuubi.ha.client.RetryPolicies._
@@ -110,53 +110,56 @@ object ZookeeperClientProvider extends Logging {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    def setupZkAuth(): Unit = (conf.get(HA_ZK_AUTH_PRINCIPAL), getKeyTabFile(conf)) match {
-      case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
-        if (!new File(keytab).exists()) {
-          throw new IOException(s"${HA_ZK_AUTH_KEYTAB.key}: $keytab does not exists")
-        }
-        System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-        conf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
-          // ZOOKEEPER-1467 allows configuring SPN in client
-          System.setProperty("zookeeper.server.principal", zkServerPrincipal)
-        }
-        val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
-        val jaasConf = jaasConfigurationCache.computeIfAbsent(
-          (principal, keytab),
-          _ => {
-            // HDFS-16591 makes breaking change on JaasConfiguration
-            DynConstructors.builder()
-              .impl( // Hadoop 3.3.5 and above
-                "org.apache.hadoop.security.authentication.util.JaasConfiguration",
-                classOf[String],
-                classOf[String],
-                classOf[String])
-              .impl( // Hadoop 3.3.4 and previous
-                // scalastyle:off
-                "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
-                // scalastyle:on
-                classOf[String],
-                classOf[String],
-                classOf[String])
-              .build[Configuration]()
-              .newInstance("KyuubiZooKeeperClient", zkClientPrincipal, keytab)
-          })
-        Configuration.setConfiguration(jaasConf)
-      case _ =>
-    }
+    def setupZkAuth(
+        principalConfKey: ConfigEntry[Option[String]],
+        keytabConfKey: ConfigEntry[Option[String]]): Unit =
+      (conf.get(principalConfKey), getKeyTabFile(conf, keytabConfKey)) match {
+        case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
+          if (!new File(keytab).exists()) {
+            throw new IOException(s"${keytabConfKey.key}: $keytab does not exists")
+          }
+          System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
+          conf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
+            // ZOOKEEPER-1467 allows configuring SPN in client
+            System.setProperty("zookeeper.server.principal", zkServerPrincipal)
+          }
+          val zkClientPrincipal = KyuubiHadoopUtils.getServerPrincipal(principal)
+          val jaasConf = jaasConfigurationCache.computeIfAbsent(
+            (principal, keytab),
+            _ => {
+              // HDFS-16591 makes breaking change on JaasConfiguration
+              DynConstructors.builder()
+                .impl( // Hadoop 3.3.5 and above
+                  "org.apache.hadoop.security.authentication.util.JaasConfiguration",
+                  classOf[String],
+                  classOf[String],
+                  classOf[String])
+                .impl( // Hadoop 3.3.4 and previous
+                  // scalastyle:off
+                  "org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager$JaasConfiguration",
+                  // scalastyle:on
+                  classOf[String],
+                  classOf[String],
+                  classOf[String])
+                .build[Configuration]()
+                .newInstance("KyuubiZooKeeperClient", zkClientPrincipal, keytab)
+            })
+          Configuration.setConfiguration(jaasConf)
+        case _ =>
+      }
 
     if (conf.get(HA_ENGINE_REF_ID).isEmpty &&
       AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
-      setupZkAuth()
+      setupZkAuth(HA_ZK_AUTH_PRINCIPAL, HA_ZK_AUTH_KEYTAB)
     } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty &&
       AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
-      setupZkAuth()
+      setupZkAuth(HA_ZK_ENGINE_AUTH_PRINCIPAL, HA_ZK_ENGINE_AUTH_KEYTAB)
     }
   }
 
   @VisibleForTesting
-  def getKeyTabFile(conf: KyuubiConf): Option[String] = {
-    conf.get(HA_ZK_AUTH_KEYTAB).map { fullPath =>
+  def getKeyTabFile(conf: KyuubiConf, key: ConfigEntry[Option[String]]): Option[String] = {
+    conf.get(key).map { fullPath =>
       val filename = new File(fullPath).getName
       if (new File(filename).exists()) filename else fullPath
     }
