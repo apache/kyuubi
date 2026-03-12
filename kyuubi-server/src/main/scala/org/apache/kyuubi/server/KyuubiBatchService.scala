@@ -60,57 +60,79 @@ class KyuubiBatchService(
   }
 
   override def start(): Unit = {
+    val UNINITIALIZED_BATCH_ID = "UNINITIALIZED_BATCH_ID"
     assert(running.compareAndSet(false, true))
     val submitTask: Runnable = () => {
       restFrontend.waitForServerStarted()
       while (running.get) {
-        metadataManager.pickBatchForSubmitting(kyuubiInstance) match {
-          case None => Thread.sleep(1000)
-          case Some(metadata) =>
-            val batchId = metadata.identifier
-            info(s"$batchId is picked for submission.")
-            val batchSession = sessionManager.createBatchSession(
-              metadata.username,
-              "anonymous",
-              metadata.ipAddress,
-              metadata.requestConf,
-              metadata.engineType,
-              Option(metadata.requestName),
-              metadata.resource,
-              metadata.className,
-              metadata.requestArgs,
-              Some(metadata),
-              fromRecovery = false)
-            sessionManager.openBatchSession(batchSession)
-            var submitted = false
-            while (!submitted) { // block until batch job submitted
-              submitted = metadataManager.getBatchSessionMetadata(batchId) match {
-                case Some(metadata) if OperationState.isTerminal(metadata.opState) =>
-                  true
-                case Some(metadata) if metadata.opState == OperationState.RUNNING =>
-                  metadata.appState match {
-                    // app that is not submitted to resource manager
-                    case None | Some(ApplicationState.NOT_FOUND) => false
-                    // app that is pending in resource manager while the local startup
-                    // process is alive. For example, in Spark YARN cluster mode, if set
-                    // spark.yarn.submit.waitAppCompletion=false, the local spark-submit
-                    // process exits immediately once Application goes ACCEPTED status,
-                    // even no resource could be allocated for the AM container.
-                    case Some(ApplicationState.PENDING) if batchSession.startupProcessAlive =>
-                      false
-                    // not sure, added for safe
-                    case Some(ApplicationState.UNKNOWN) => false
-                    case _ => true
-                  }
-                case Some(_) =>
-                  false
-                case None =>
-                  error(s"$batchId does not existed in metastore, assume it is finished")
-                  true
+        var batchId = UNINITIALIZED_BATCH_ID
+        try {
+          metadataManager.pickBatchForSubmitting(kyuubiInstance) match {
+            case None => Thread.sleep(1000)
+            case Some(metadata) =>
+              batchId = metadata.identifier
+              info(s"$batchId is picked for submission.")
+              val batchSession = sessionManager.createBatchSession(
+                metadata.username,
+                "anonymous",
+                metadata.ipAddress,
+                metadata.requestConf,
+                metadata.engineType,
+                Option(metadata.requestName),
+                metadata.resource,
+                metadata.className,
+                metadata.requestArgs,
+                Some(metadata),
+                fromRecovery = false)
+              sessionManager.openBatchSession(batchSession)
+              var submitted = false
+              while (!submitted) { // block until batch job submitted
+                submitted = metadataManager.getBatchSessionMetadata(batchId) match {
+                  case Some(metadata) if OperationState.isTerminal(metadata.opState) =>
+                    true
+                  case Some(metadata) if metadata.opState == OperationState.RUNNING =>
+                    metadata.appState match {
+                      // app that is not submitted to resource manager
+                      case None | Some(ApplicationState.NOT_FOUND) => false
+                      // app that is pending in resource manager while the local startup
+                      // process is alive. For example, in Spark YARN cluster mode, if set
+                      // spark.yarn.submit.waitAppCompletion=false, the local spark-submit
+                      // process exits immediately once Application goes ACCEPTED status,
+                      // even no resource could be allocated for the AM container.
+                      case Some(ApplicationState.PENDING) if batchSession.startupProcessAlive =>
+                        false
+                      // not sure, added for safe
+                      case Some(ApplicationState.UNKNOWN) => false
+                      case _ => true
+                    }
+                  case Some(_) =>
+                    false
+                  case None =>
+                    error(s"$batchId does not existed in metastore, assume it is finished")
+                    true
+                }
+                if (!submitted) Thread.sleep(1000)
               }
-              if (!submitted) Thread.sleep(1000)
+              info(s"$batchId is submitted or finished.")
+          }
+        } catch {
+          // GEICO: If the batch session is not opened,
+          // reinitialize the batch state to ERROR
+          // This can be due to a DB error or connection limits
+          case e: Exception =>
+            if (batchId == UNINITIALIZED_BATCH_ID) {
+              error(s"Error picking batch for submission", e)
+            } else {
+              error(s"Error opening batch session for $batchId", e)
+              try {
+                metadataManager.failScheduledBatch(batchId)
+                info(s"$batchId is marked as ERROR")
+              } catch {
+                case ex: Exception =>
+                  error(s"Unable to modify metadata for $batchId to ERROR", ex)
+              }
             }
-            info(s"$batchId is submitted or finished.")
+            Thread.sleep(1000)
         }
       }
     }

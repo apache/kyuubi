@@ -181,6 +181,10 @@ class MetadataManager extends AbstractService("MetadataManager") {
     _metadataStore.transformMetadataState(batchId, "INITIALIZED", "CANCELED")
   }
 
+  def failScheduledBatch(batchId: String): Boolean = {
+    _metadataStore.transformMetadataState(batchId, "PENDING", "ERROR")
+  }
+
   def getBatchesRecoveryMetadata(
       state: String,
       kyuubiInstance: String,

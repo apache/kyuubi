@@ -44,6 +44,7 @@ import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
+import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle, SessionType}
@@ -70,6 +71,72 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
     super.afterEach()
     sessionManager.allSessions().foreach { session =>
       Utils.tryLogNonFatalError { sessionManager.closeSession(session.handle) }
+    }
+  }
+
+  test("KyuubiBatchService catch block when openBatchSession fails during metadata update") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val realMetadataManager = sessionManager.metadataManager.get
+
+    val wrapperMetadataManager = new MetadataManager {
+      override def updateMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
+        throw new RuntimeException("test metadata update failure")
+      }
+      override def insertMetadata(metadata: Metadata, asyncRetryOnError: Boolean = true): Unit = {
+        realMetadataManager.insertMetadata(metadata, asyncRetryOnError)
+      }
+      override def getBatch(batchId: String) = realMetadataManager.getBatch(batchId)
+    }
+    wrapperMetadataManager.initialize(sessionManager.getConf)
+
+    val originalMetadataManager = sessionManager.metadataManager
+    try {
+      sessionManager.metadataManager = Some(wrapperMetadataManager)
+
+      val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
+      val response = webTarget.path("api/v1/batches")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+      assert(response.getStatus == 200)
+      val batch = response.readEntity(classOf[Batch])
+      val batchId = batch.getId
+      assert(batch.getState === "INITIALIZED")
+
+      eventually(timeout(15.seconds), interval(1.second)) {
+        val batchInfoResponse = webTarget.path(s"api/v1/batches/$batchId")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+          .get()
+        assert(batchInfoResponse.getStatus == 200)
+        val batchInfo = batchInfoResponse.readEntity(classOf[Batch])
+        assert(
+          batchInfo.getState === "INITIALIZED",
+          "Batch should remain INITIALIZED after openBatchSession failed and catch block ran " +
+            "(failScheduledBatch only transitions PENDING->ERROR)")
+      }
+
+      sessionManager.metadataManager = originalMetadataManager
+
+      val requestObj2 = newSparkBatchRequest(Map("spark.master" -> "local"))
+      val response2 = webTarget.path("api/v1/batches")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .post(Entity.entity(requestObj2, MediaType.APPLICATION_JSON_TYPE))
+      assert(response2.getStatus == 200)
+      val batch2Id = response2.readEntity(classOf[Batch]).getId
+      eventually(timeout(30.seconds), interval(1.second)) {
+        val batch2InfoResponse = webTarget.path(s"api/v1/batches/$batch2Id")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+          .get()
+        val batch2Info = batch2InfoResponse.readEntity(classOf[Batch])
+        assert(
+          batch2Info.getState === "PENDING" || batch2Info.getState === "RUNNING",
+          "Second batch should be processed (batch service still running after catch)")
+      }
+    } finally {
+      sessionManager.metadataManager = originalMetadataManager
     }
   }
 }
