@@ -30,6 +30,7 @@
 .metals/
 .cache
 .classpath
+.claude/
 .ensime
 .ensime_cache/
 .ensime_lucene
@@ -89,3 +90,10 @@ kyuubi-server/src/main/antlr4/org/apache/kyuubi/sql/gen/
 # For draw.io
 .$*.bkp
 .$*.dtmp
+
+# For GitHub Copilot
+.github/copilot-instructions.md
+.github/agents/
+.github/instructions/
+.github/prompts/
+.github/skills/
