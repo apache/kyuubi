@@ -2105,22 +2105,8 @@
                            paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
                 <paimon.artifact>paimon-common</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
-                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.2.0-preview3-rc1-bin</spark.archive.mirror>
-                <spark.archive.query></spark.archive.query>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
-            <repositories>
-                <repository>
-                    <releases>
-                        <enabled>true</enabled>
-                    </releases>
-                    <snapshots>
-                        <enabled>true</enabled>
-                    </snapshots>
-                    <id>Spark 4.2.0-preview3 staging repo</id>
-                    <url>https://repository.apache.org/content/repositories/orgapachespark-1516/</url>
-                </repository>
-            </repositories>
         </profile>
 
         <profile>
