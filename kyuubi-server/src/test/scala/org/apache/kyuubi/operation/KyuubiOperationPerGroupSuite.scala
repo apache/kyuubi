@@ -68,6 +68,7 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
   }
 
   test("kyuubi defined function - system_user/session_user") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION < "4.2")
     withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery("select system_user() as c1, session_user() as c2")
