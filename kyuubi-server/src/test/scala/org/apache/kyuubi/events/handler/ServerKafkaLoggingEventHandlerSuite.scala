@@ -97,5 +97,5 @@ abstract class ServerKafkaLoggingEventHandlerSuite extends WithKyuubiServer with
 }
 
 class ServerKafkaLoggingEventHandlerSuiteForKafka3 extends ServerKafkaLoggingEventHandlerSuite {
-  override val kafkaVersion = "3.9.1"
+  override val kafkaVersion = "3.9.2"
 }
