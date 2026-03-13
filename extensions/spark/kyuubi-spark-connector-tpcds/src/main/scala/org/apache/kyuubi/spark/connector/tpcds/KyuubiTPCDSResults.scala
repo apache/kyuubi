@@ -144,8 +144,8 @@ class KyuubiResultsIterator(
         case (Some(v: Long), DateType) =>
           RebaseDateTime.rebaseJulianToGregorianDays(v.toInt) - DateTimeUtils.JULIAN_DAY_OF_EPOCH
         case (Some(v), StringType) => UTF8String.fromString(v.toString)
-        case (Some(v), CharType(_)) => UTF8String.fromString(v.toString)
-        case (Some(v), VarcharType(_)) => UTF8String.fromString(v.toString)
+        case (Some(v), _: CharType) => UTF8String.fromString(v.toString)
+        case (Some(v), _: VarcharType) => UTF8String.fromString(v.toString)
         case (Some(v: TPCDSDecimal), t: DecimalType) =>
           Decimal(v.getNumber, t.precision, t.scale)
         case (Some(v: Int), t: DecimalType) =>

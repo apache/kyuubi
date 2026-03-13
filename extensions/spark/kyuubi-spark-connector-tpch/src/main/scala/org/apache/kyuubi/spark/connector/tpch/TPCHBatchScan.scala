@@ -135,11 +135,11 @@ class TPCHPartitionReader(
           case (value, IntegerType) => rowAny += value.toInt
           case (value, LongType) => rowAny += value.toLong
           case (value, DoubleType) => rowAny += value.toDouble
-          case (value, DateType) => rowAny += LocalDate.parse(formatDate(value.toInt), dateFmt)
-              .toEpochDay.toInt
+          case (value, DateType) =>
+            rowAny += LocalDate.parse(formatDate(value.toInt), dateFmt).toEpochDay.toInt
           case (value, StringType) => rowAny += UTF8String.fromString(value)
-          case (value, CharType(_)) => rowAny += UTF8String.fromString(value)
-          case (value, VarcharType(_)) => rowAny += UTF8String.fromString(value)
+          case (value, _: CharType) => rowAny += UTF8String.fromString(value)
+          case (value, _: VarcharType) => rowAny += UTF8String.fromString(value)
           case (value, DecimalType()) => rowAny += Decimal(value)
           case (value, dt) => throw new IllegalArgumentException(s"value: $value, type: $dt")
         }
