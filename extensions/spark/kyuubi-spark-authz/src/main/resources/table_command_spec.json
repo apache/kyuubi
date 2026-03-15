@@ -57,6 +57,27 @@
     "comment" : ""
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumns",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
   "tableDescs" : [ {
     "fieldName" : "ident",

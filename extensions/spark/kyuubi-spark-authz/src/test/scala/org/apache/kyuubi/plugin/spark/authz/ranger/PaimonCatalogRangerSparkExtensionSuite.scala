@@ -446,7 +446,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(
           admin,
           sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
-            s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
+            s" ORDER BY commit_time ASC LIMIT 1").collect()(0).get(0))
 
       val queryWithTimestamp =
         s"""
@@ -556,11 +556,13 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val changingColumnTypeSql =
         s"""
            |ALTER TABLE $catalogV2.$namespace1.$table1
-           |ALTER COLUMN id TYPE DOUBLE
+           |ALTER COLUMN name TYPE STRING
            |""".stripMargin
 
       interceptEndsWith[AccessControlException] {
-        doAs(someone, sql(changingColumnTypeSql))
+        val df = doAs(someone, sql(changingColumnTypeSql))
+        df.queryExecution.executedPlan
+        df.show
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(changingColumnTypeSql))
     }
