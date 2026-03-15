@@ -312,9 +312,7 @@ class TableTableExtractor extends TableExtractor {
  */
 class HudiCatalogTableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    lookupExtractor[CatalogTableTableExtractor].apply(spark,
-      invokeAs[CatalogTable](v1, "table")
-    )
+    lookupExtractor[CatalogTableTableExtractor].apply(spark, invokeAs[CatalogTable](v1, "table"))
   }
 }
 
