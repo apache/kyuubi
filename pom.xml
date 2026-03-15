@@ -2001,7 +2001,7 @@
                   here we choose 1.6.1 to ensure that tests happy when activate both -Pjava-8 and -Pspark-3.3.
                   -->
                 <iceberg.version>1.6.1</iceberg.version>
-                <!-- Exclude Paimon test due to paimon-common has runtime linkage issue on Spark 3.4 classes -->
+                <!-- Exclude Paimon test due to paimon-common has runtime linkage issue which refers to Spark 3.4 classes -->
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
