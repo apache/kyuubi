@@ -560,9 +560,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
            |""".stripMargin
 
       interceptEndsWith[AccessControlException] {
-        val df = doAs(someone, sql(changingColumnTypeSql))
-        df.queryExecution.executedPlan
-        df.show
+        doAs(someone, sql(changingColumnTypeSql))
       }(s"does not have [alter] privilege on [$namespace1/$table1]")
       doAs(admin, sql(changingColumnTypeSql))
     }
