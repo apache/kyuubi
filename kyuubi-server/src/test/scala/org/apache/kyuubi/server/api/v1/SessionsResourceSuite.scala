@@ -410,7 +410,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val response2 = webTarget.path("api/v1/sessions").request().get()
     assert(200 == response2.getStatus)
     val sessions = response2.readEntity(new GenericType[Seq[SessionData]]() {})
-    val sessionConf = sessions.find(_.getIdentifier == sessionHandle).get.getConf
+    val sessionConf = sessions.find(_.getIdentifier == sessionHandle.toString).get.getConf
 
     assert(sessionConf.get(sensitiveKey) != sensitiveValue)
     assert(sessionConf.get(sensitiveKey) == "*********(redacted)")
