@@ -22,7 +22,7 @@
 Kyuubi is fully compatible with Hive JDBC and ODBC drivers that let you connect to popular Business Intelligence (BI)
 tools to query, analyze and visualize data though Spark SQL engines.
 
-It's recommended to use [Kyuubi JDBC driver](./kyuubi_jdbc.html) for new applications.
+It's recommended to use [Kyuubi JDBC driver](./kyuubi_jdbc.rst) for new applications.
 
 ## Install Hive JDBC
 
@@ -53,7 +53,7 @@ libraryDependencies += "org.apache.hive" % "hive-jdbc" % "2.3.8"
 implementation group: 'org.apache.hive', name: 'hive-jdbc', version: '2.3.8'
 ```
 
-For BI tools, please refer to [Quick Start](../../quick_start/index.html) to check the guide for the BI tool used.
+For BI tools, please refer to [Quick Start](../../quick_start/index.rst) to check the guide for the BI tool used.
 If you find there is no specific document for the BI tool that you are using, don't worry, the configuration part for all BI tools are basically the same.
 Also, we will appreciate if you can help us to improve the document.
 
