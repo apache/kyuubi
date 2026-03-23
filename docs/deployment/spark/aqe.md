@@ -178,7 +178,7 @@ partition size > skewedPartitionFactor * the median partition size && \
 skewedPartitionThresholdInBytes
 ```
 
-As Spark splits skewed partitions targeting [spark.sql.adaptive.advisoryPartitionSizeInBytes](aqe.html#how-to-set-spark-sql-adaptive-advisorypartitionsizeinbytes), ideally `skewedPartitionThresholdInBytes` should be larger than `advisoryPartitionSizeInBytes`. In this case, anytime you increase `advisoryPartitionSizeInBytes`, you should also increase `skewedPartitionThresholdInBytes` if you tend to enable the feature.
+As Spark splits skewed partitions targeting [spark.sql.adaptive.advisoryPartitionSizeInBytes](#how-to-set-spark-sql-adaptive-advisorypartitionsizeinbytes), ideally `skewedPartitionThresholdInBytes` should be larger than `advisoryPartitionSizeInBytes`. In this case, anytime you increase `advisoryPartitionSizeInBytes`, you should also increase `skewedPartitionThresholdInBytes` if you tend to enable the feature.
 
 ### Hidden Features
 
@@ -210,7 +210,7 @@ Kyuubi is a long-running service to make it easier for end-users to use Spark SQ
 
 ### Setting Default Configurations
 
-[Configuring by `spark-defaults.conf`](../settings.html#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with AQE. All engines will be instantiated with AQE enabled.
+[Configuring by `spark-defaults.conf`](../../configuration/settings.md#via-spark-defaults-conf) at the engine side is the best way to set up Kyuubi with AQE. All engines will be instantiated with AQE enabled.
 
 Here is a config setting that we use in our platform when deploying Kyuubi.
 
