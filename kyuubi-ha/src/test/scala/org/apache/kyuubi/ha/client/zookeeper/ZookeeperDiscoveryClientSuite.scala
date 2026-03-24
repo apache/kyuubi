@@ -67,6 +67,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
   with KerberizedTestHelper {
 
   var conf: KyuubiConf = KyuubiConf()
+  var loginConf: javax.security.auth.login.Configuration = _
 
   def startZk(): Unit
 
@@ -75,11 +76,13 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
   override def beforeEach(): Unit = {
     startZk()
     conf = new KyuubiConf().set(HA_ADDRESSES, getConnectString)
+    loginConf = javax.security.auth.login.Configuration.getConfiguration
     super.beforeEach()
   }
 
   override def afterEach(): Unit = {
     super.afterEach()
+    javax.security.auth.login.Configuration.setConfiguration(loginConf)
     stopZk()
   }
 
@@ -113,7 +116,6 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
 
   test("set up zookeeper auth") {
     tryWithSecurityEnabled {
-      val loginConf = javax.security.auth.login.Configuration.getConfiguration
       val keytab = File.createTempFile("kentyao", ".keytab")
       val principal = "kentyao/_HOST@apache.org"
 
@@ -136,13 +138,11 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       val e = intercept[IOException](setUpZooKeeperAuth(conf))
       val keytabPath = getKeyTabFile(conf, HA_ZK_AUTH_KEYTAB).get
       assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key}: ${keytabPath} does not exists")
-      javax.security.auth.login.Configuration.setConfiguration(loginConf)
     }
   }
 
   test("set up zookeeper auth for engine") {
     tryWithSecurityEnabled {
-      val loginConf = javax.security.auth.login.Configuration.getConfiguration
       val keytab = File.createTempFile("engine", ".keytab")
       val principal = "engine/_HOST@apache.org"
 
@@ -166,7 +166,6 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       val e = intercept[IOException](setUpZooKeeperAuth(conf))
       val keytabPath = getKeyTabFile(conf, HA_ZK_ENGINE_AUTH_KEYTAB).get
       assert(e.getMessage === s"${HA_ZK_ENGINE_AUTH_KEYTAB.key}: ${keytabPath} does not exists")
-      javax.security.auth.login.Configuration.setConfiguration(loginConf)
     }
   }
 
