@@ -27,6 +27,7 @@ Basics
     :glob:
 
     kyuubi_on_kubernetes
+    settings
     hive_metastore
     high_availability_guide
     migration-guide

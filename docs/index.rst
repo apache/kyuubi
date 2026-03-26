@@ -181,6 +181,7 @@ What's Next
 
    quick_start/index
    configuration/settings
+   watchdog/dangerous-join
    deployment/index
    Security <security/index>
    monitor/index
