@@ -57,4 +57,12 @@ object KyuubiHiveConnectorConf {
       .version("1.11.0")
       .booleanConf
       .createWithDefault(true)
+
+  val DROP_TABLE_WITH_PURGE =
+    buildConf("spark.sql.kyuubi.hive.connector.dropTableWithPurge")
+      .doc("When enabled, the DROP TABLE command will completely remove its data " +
+        "by skipping trash, equivalent to the PURGE TABLE command.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(false)
 }
