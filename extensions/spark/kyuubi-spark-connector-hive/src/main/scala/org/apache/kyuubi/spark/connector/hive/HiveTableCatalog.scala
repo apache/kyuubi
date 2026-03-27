@@ -48,7 +48,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
-import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.DROP_TABLE_WITH_PURGE
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.DROP_TABLE_AS_PURGE_TABLE
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
@@ -398,8 +398,8 @@ class HiveTableCatalog(sparkSession: SparkSession)
   }
 
   override def dropTable(ident: Identifier): Boolean = {
-    val purge = sessionState.conf.getConf(DROP_TABLE_WITH_PURGE)
-    dropTableInternal(ident, purge = purge)
+    val purge = sessionState.conf.getConf(DROP_TABLE_AS_PURGE_TABLE)
+    dropTableInternal(ident, purge)
   }
 
   private def dropTableInternal(ident: Identifier, purge: Boolean): Boolean =
@@ -409,7 +409,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
-            purge = purge)
+            purge /* whether to skip HDFS trash */)
           true
         } else {
           false
