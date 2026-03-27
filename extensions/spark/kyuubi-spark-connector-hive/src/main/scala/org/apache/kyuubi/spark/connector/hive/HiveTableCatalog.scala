@@ -392,6 +392,8 @@ class HiveTableCatalog(sparkSession: SparkSession)
       loadTable(ident)
     }
 
+  override def purgeTable(ident: Identifier): Boolean = dropTable(ident)
+
   override def dropTable(ident: Identifier): Boolean =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
