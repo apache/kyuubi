@@ -409,7 +409,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
-            purge /* whether to skip HDFS trash */)
+            purge /* whether to skip HDFS trash */ )
           true
         } else {
           false
