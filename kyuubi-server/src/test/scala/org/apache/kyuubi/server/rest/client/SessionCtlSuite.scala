@@ -38,13 +38,13 @@ class SessionCtlSuite extends RestClientTestHelper with TestPrematureExit {
   test("list sessions") {
     fe.be.sessionManager.openSession(
       TProtocolVersion.findByValue(1),
-      clientPrincipalUser,
+      "admin",
       "123456",
       "localhost",
       Map("testConfig" -> "testValue"))
 
     val args = Array("list", "session", "--authSchema", "spnego")
-    testPrematureExitForControlCli(args, "Live Session List (total 1)")
+    testPrematureExitForControlCli(args, "Session List (total 1)")
   }
 
 }
