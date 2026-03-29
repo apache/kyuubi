@@ -21,7 +21,6 @@
 
 * Since Kyuubi 1.12, the support of variable `<KYUUBI_HOME>` substitution in config `kyuubi.metadata.store.jdbc.url` is deprecated, use `{{KYUUBI_HOME}}` instead.
 * Since Kyuubi 1.12, default value of `kyuubi.metrics.json.location` is changed to `{{KYUUBI_HOME}}/metrics`, to restore previous behavior, change it to `{{KYUUBI_WORK_DIR_ROOT}}/metrics`.
-* Since Kyuubi 1.12, the configuration `spark.sql.kyuubi.hive.connector.dropTableAsPurgeTable` is introduced by Kyuubi Spark Hive connector(KSHC) to control whether DROP TABLE command completely remove its data by skipping HDFS trash. The default value is false. To restore the legacy behavior, set it to true.
 
 ## Upgrading from Kyuubi 1.10 to 1.11
 
