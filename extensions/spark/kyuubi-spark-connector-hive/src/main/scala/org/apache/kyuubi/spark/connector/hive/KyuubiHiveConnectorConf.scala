@@ -64,5 +64,5 @@ object KyuubiHiveConnectorConf {
         "by skipping HDFS trash, equivalent to the PURGE TABLE command.")
       .version("1.12.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 }
