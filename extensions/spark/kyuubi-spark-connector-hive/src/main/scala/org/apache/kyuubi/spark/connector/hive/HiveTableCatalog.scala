@@ -48,6 +48,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.DROP_TABLE_AS_PURGE_TABLE
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
@@ -392,14 +393,23 @@ class HiveTableCatalog(sparkSession: SparkSession)
       loadTable(ident)
     }
 
-  override def dropTable(ident: Identifier): Boolean =
+  override def purgeTable(ident: Identifier): Boolean = {
+    dropTableInternal(ident, purge = true)
+  }
+
+  override def dropTable(ident: Identifier): Boolean = {
+    val purge = sessionState.conf.getConf(DROP_TABLE_AS_PURGE_TABLE)
+    dropTableInternal(ident, purge)
+  }
+
+  private def dropTableInternal(ident: Identifier, purge: Boolean): Boolean =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
         if (loadTable(ident) != null) {
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
-            purge = true /* skip HDFS trash */ )
+            purge /* whether to skip HDFS trash */ )
           true
         } else {
           false

@@ -221,6 +221,18 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     assert(!catalog.tableExists(testIdent))
   }
 
+  test("purgeTable") {
+    assert(!catalog.tableExists(testIdent))
+
+    catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
+
+    assert(catalog.tableExists(testIdent))
+
+    catalog.purgeTable(testIdent)
+
+    assert(!catalog.tableExists(testIdent))
+  }
+
   test("createTable: location") {
     val properties = new util.HashMap[String, String]()
     properties.put(TableCatalog.PROP_PROVIDER, "parquet")
