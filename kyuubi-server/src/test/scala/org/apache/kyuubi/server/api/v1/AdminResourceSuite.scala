@@ -166,6 +166,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessions2.isEmpty)
   }
 
+  test("delete non-existent admin session returns 404") {
+    val nonExistentSessionId = java.util.UUID.randomUUID().toString
+    val response = webTarget.path(s"api/v1/admin/sessions/$nonExistentSessionId").request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .delete()
+    assert(response.getStatus === 404)
+    assert(response.readEntity(classOf[String]).contains("Invalid"))
+  }
+
   test("list sessions/operations with filter") {
     fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,

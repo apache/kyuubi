@@ -205,8 +205,14 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new ForbiddenException(
         s"$userName is not allowed to close the session $sessionHandleStr")
     }
-    fe.be.closeSession(SessionHandle.fromUUID(sessionHandleStr))
-    Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+    val sessionHandle = SessionHandle.fromUUID(sessionHandleStr)
+    fe.be.sessionManager.getSessionOption(sessionHandle) match {
+      case Some(_) =>
+        fe.be.closeSession(sessionHandle)
+        Response.ok(s"Session $sessionHandleStr is closed successfully.").build()
+      case None =>
+        throw new NotFoundException(s"Invalid session handle: $sessionHandleStr")
+    }
   }
 
   @ApiResponse(
