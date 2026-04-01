@@ -271,6 +271,68 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.getLatestSchemaUrl(Seq(url1, url2, url3, url4, url5)).get === url5)
   }
 
+  test("update engineError conditionally based on engineError or engineId presence") {
+    val batchId = UUID.randomUUID().toString
+    val kyuubiInstance = "localhost:10099"
+    val batchMetadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "127.0.0.1",
+      kyuubiInstance = kyuubiInstance,
+      state = "PENDING",
+      resource = "intern",
+      className = "org.apache.kyuubi.SparkWC",
+      requestName = "kyuubi_batch",
+      requestConf = Map("spark.master" -> "local"),
+      requestArgs = Seq("100"),
+      createTime = System.currentTimeMillis(),
+      engineType = "spark",
+      clusterManager = Some("local"))
+
+    jdbcMetadataStore.insertMetadata(batchMetadata)
+
+    // Case 1: Update engineError when engineError is defined
+    val pendingMetadata = batchMetadata.copy(
+      state = "PENDING",
+      engineError = Some("Pod pending: Insufficient CPU"))
+    jdbcMetadataStore.updateMetadata(pendingMetadata)
+
+    var retrievedMetadata = jdbcMetadataStore.getMetadata(batchId)
+    assert(retrievedMetadata.engineError == Some("Pod pending: Insufficient CPU"))
+
+    // Case 2: When app transitions to running with engineId, engineError should be cleared
+    val runningMetadata = pendingMetadata.copy(
+      state = "RUNNING",
+      engineId = "app-123",
+      engineError = None)
+    jdbcMetadataStore.updateMetadata(runningMetadata)
+
+    retrievedMetadata = jdbcMetadataStore.getMetadata(batchId)
+    assert(retrievedMetadata.engineError == None)
+    assert(retrievedMetadata.engineId == "app-123")
+
+    // Case 3: Update without engineError and without engineId should not update engineError
+    // First set an error again
+    val errorMetadata = runningMetadata.copy(engineError = Some("New error"))
+    jdbcMetadataStore.updateMetadata(errorMetadata)
+    retrievedMetadata = jdbcMetadataStore.getMetadata(batchId)
+    assert(retrievedMetadata.engineError == Some("New error"))
+
+    // Now update state without engineError and without engineId - error should remain
+    val stateOnlyUpdate = Metadata(
+      identifier = batchId,
+      state = "FINISHED")
+    jdbcMetadataStore.updateMetadata(stateOnlyUpdate)
+
+    retrievedMetadata = jdbcMetadataStore.getMetadata(batchId)
+    assert(retrievedMetadata.engineError == Some("New error")) // Should remain unchanged
+
+    // Clean up
+    jdbcMetadataStore.cleanupMetadataByIdentifier(batchId)
+  }
+
   test("kubernetes engine info") {
     val tag = UUID.randomUUID().toString
     val metadata = KubernetesEngineInfo(
