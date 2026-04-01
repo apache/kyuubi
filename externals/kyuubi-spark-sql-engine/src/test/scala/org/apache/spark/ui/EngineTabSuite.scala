@@ -20,16 +20,30 @@ package org.apache.spark.ui
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.util.EntityUtils
+import org.apache.spark.SPARK_VERSION
+import org.scalactic.source.Position
+import org.scalatest.Tag
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.util.SemanticVersion
 
 class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
     "spark.ui.enabled" -> "true",
     "spark.ui.port" -> "0",
     "spark.sql.redaction.string.regex" -> "(?i)url|access|secret|password")
+
+  override protected def test(testName: String, testTags: Tag*)(testBody: => Any)(implicit
+      pos: Position): Unit = {
+    // SPARK-47086 (4.2.0) Upgrade to Jetty 12 and Servlet 6.0
+    if (SemanticVersion(SPARK_VERSION) >= "4.2") {
+      ignore(s"$testName (excluded)")(testBody)
+    } else {
+      super.test(testName, testTags: _*)(testBody)
+    }
+  }
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
