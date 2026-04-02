@@ -209,7 +209,7 @@ class SparkProcessBuilder(
   }
 
   private def zkAuthKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
-    val zkAuthKeytab = conf.get(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB)
+    val zkAuthKeytab = conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_KEYTAB)
     if (zkAuthKeytab.isDefined) {
       sparkConf.get(SPARK_FILES) match {
         case Some(files) =>
