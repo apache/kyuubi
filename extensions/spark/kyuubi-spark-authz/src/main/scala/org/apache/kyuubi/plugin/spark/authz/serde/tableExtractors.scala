@@ -307,6 +307,15 @@ class TableTableExtractor extends TableExtractor {
   }
 }
 
+/**
+ * org.apache.spark.sql.catalyst.catalog.HoodieCatalogTable
+ */
+class HudiCatalogTableTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    lookupExtractor[CatalogTableTableExtractor].apply(spark, invokeAs[CatalogTable](v1, "table"))
+  }
+}
+
 class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "table") match {
