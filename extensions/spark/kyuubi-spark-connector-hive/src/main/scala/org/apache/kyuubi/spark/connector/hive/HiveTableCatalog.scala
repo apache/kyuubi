@@ -477,7 +477,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       namespace match {
         case Array(db) if !catalog.databaseExists(db) =>
           catalog.createDatabase(
-            toCatalogDatabase(db, metadata, defaultLocation = Some(catalog.getDefaultDBPath(db))),
+            toCatalogDatabase(db, metadata, defaultLocation = Some(getCatalogDefaultDBPath(db))),
             ignoreIfExists = false)
 
         case Array(_) =>
@@ -487,6 +487,33 @@ class HiveTableCatalog(sparkSession: SparkSession)
           throw new IllegalArgumentException(s"Invalid namespace name: ${namespace.quoted}")
       }
     }
+
+  /**
+   * Returns the default database path with catalog-level warehouse configuration precedence.
+   *
+   * This method resolves the database path using the following priority order:
+   *   1. Catalog-level `spark.sql.catalog.<catalog>.spark.sql.warehouse.dir`
+   *   2. Catalog-level `spark.sql.catalog.<catalog>.hive.metastore.warehouse.dir`
+   *   3. Global-level `spark.sql.warehouse.dir` (Underlying)
+   *
+   * @param db database name
+   * @return qualified URI path for the database
+   */
+  private def getCatalogDefaultDBPath(db: String): URI = {
+    val defaultLocation = catalog.getDefaultDBPath(db)
+    val catalogSparkWarehouseDir = catalogOptions.get("spark.sql.warehouse.dir")
+    val catalogHiveWarehouseDir = catalogOptions.get("hive.metastore.warehouse.dir")
+
+    val warehouseDir = Option(catalogSparkWarehouseDir).filter(_.nonEmpty)
+      .orElse(Option(catalogHiveWarehouseDir).filter(_.nonEmpty))
+
+    warehouseDir match {
+      case Some(dir) =>
+        CatalogUtils.makeQualifiedDBObjectPath(defaultLocation, dir, hadoopConf)
+      case None =>
+        defaultLocation
+    }
+  }
 
   override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
