@@ -499,14 +499,11 @@ class HiveTableCatalog(sparkSession: SparkSession)
    * @return qualified URI path for the database
    */
   private def getCatalogDefaultDBPath(db: String): URI = {
-    val defaultLocation = catalog.getDefaultDBPath(db)
-    val catalogWarehouseDir = catalogOptions.get("hive.metastore.warehouse.dir")
-
-    Option(catalogWarehouseDir).filter(_.nonEmpty) match {
+    Option(catalogOptions.get("hive.metastore.warehouse.dir")).filter(_.nonEmpty) match {
       case Some(dir) =>
-        CatalogUtils.makeQualifiedDBObjectPath(defaultLocation, dir, hadoopConf)
+        CatalogUtils.makeQualifiedDBObjectPath(catalog.getDefaultDBPath(db), dir, hadoopConf)
       case None =>
-        defaultLocation
+        catalog.getDefaultDBPath(db)
     }
   }
 
