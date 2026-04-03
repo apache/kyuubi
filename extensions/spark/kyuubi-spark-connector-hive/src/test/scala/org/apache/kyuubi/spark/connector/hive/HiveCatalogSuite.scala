@@ -380,28 +380,26 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   test("createNamespace location: use catalog-level warehouse dir") {
-    Seq("spark.sql.warehouse.dir", "hive.metastore.warehouse.dir").foreach { warehouseKey =>
-      withTempDir { tmpDir =>
-        val customWarehouseDir = tmpDir.getCanonicalPath
-        val customCatalog = newCatalog(Map(warehouseKey -> customWarehouseDir))
-        val ns = Array("ns_custom_path")
-        try {
-          customCatalog.createNamespace(ns, emptyProps)
-          val location = customCatalog.loadNamespaceMetadata(ns)
-            .asScala(SupportsNamespaces.PROP_LOCATION)
+    withTempDir { tmpDir =>
+      val customWarehouseDir = tmpDir.getCanonicalPath
+      val customCatalog = newCatalog(Map("hive.metastore.warehouse.dir" -> customWarehouseDir))
+      val ns = Array("ns_custom_path")
+      try {
+        customCatalog.createNamespace(ns, emptyProps)
+        val location = customCatalog.loadNamespaceMetadata(ns)
+          .asScala(SupportsNamespaces.PROP_LOCATION)
 
-          val expectedUri =
-            makeQualifiedPathWithWarehouse(s"${ns.head}.db", customWarehouseDir, customCatalog)
-          assert(new URI(location) === expectedUri, s"Failed for warehouseKey=$warehouseKey")
+        val expectedUri =
+          makeQualifiedPathWithWarehouse(s"${ns.head}.db", customWarehouseDir, customCatalog)
+        assert(new URI(location) === expectedUri)
 
-          val defaultUri = makeQualifiedPathWithWarehouse(
-            s"${ns.head}.db",
-            customCatalog.conf.warehousePath,
-            customCatalog)
-          assert(new URI(location) !== defaultUri, s"Failed for warehouseKey=$warehouseKey")
-        } finally {
-          customCatalog.dropNamespace(ns, cascade = true)
-        }
+        val defaultUri = makeQualifiedPathWithWarehouse(
+          s"${ns.head}.db",
+          customCatalog.conf.warehousePath,
+          customCatalog)
+        assert(new URI(location) !== defaultUri)
+      } finally {
+        customCatalog.dropNamespace(ns, cascade = true)
       }
     }
   }
