@@ -123,6 +123,30 @@ object KyuubiSQLConf {
       .bytesConf(ByteUnit.BYTE)
       .createOptional
 
+  val DANGEROUS_JOIN_ENABLED =
+    buildConf("kyuubi.watchdog.dangerousJoin.enabled")
+      .doc("Enable dangerous join condition detection.")
+      .version("1.10.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val DANGEROUS_JOIN_BROADCAST_RATIO =
+    buildConf("kyuubi.watchdog.dangerousJoin.broadcastRatio")
+      .doc("The threshold ratio to mark oversized broadcast fallback.")
+      .version("1.10.0")
+      .doubleConf
+      .checkValue(v => v > 0 && v <= 1, "must be in (0, 1]")
+      .createWithDefault(0.8)
+
+  val DANGEROUS_JOIN_ACTION =
+    buildConf("kyuubi.watchdog.dangerousJoin.action")
+      .doc("Action when dangerous join is detected, one of WARN and REJECT.")
+      .version("1.10.0")
+      .stringConf
+      .transform(_.toUpperCase(java.util.Locale.ROOT))
+      .checkValues(Set("WARN", "REJECT"))
+      .createWithDefault("WARN")
+
   val DROP_IGNORE_NONEXISTENT =
     buildConf("spark.sql.optimizer.dropIgnoreNonExistent")
       .doc("Do not report an error if DROP DATABASE/TABLE/VIEW/FUNCTION/PARTITION specifies " +

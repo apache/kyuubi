@@ -109,6 +109,10 @@ and others would not be possible without your help.
 
 Ready? [Getting Started](https://kyuubi.readthedocs.io/en/master/quick_start/) with Kyuubi.
 
+## Security & Guard
+
+- [Dangerous Join Watchdog](./docs/watchdog/dangerous-join.md)
+
 ## [Contributing](./CONTRIBUTING.md)
 
 ## Project & Community Status
