@@ -55,3 +55,4 @@ build/scala-*/**
 **/BeeLine.properties
 **/sql-keywords.properties
 **/python/**
+**/.mvn/*.config
