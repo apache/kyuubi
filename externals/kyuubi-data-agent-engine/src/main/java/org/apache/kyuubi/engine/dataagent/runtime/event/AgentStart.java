@@ -15,13 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+/** The agent has started processing a user query. */
+public final class AgentStart extends AgentEvent {
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC, DATA_AGENT = Value
+  public AgentStart() {
+    super(EventType.AGENT_START);
+  }
+
+  @Override
+  public String toString() {
+    return "AgentStart{}";
+  }
 }

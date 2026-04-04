@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.dataagent.tool;
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
-
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC, DATA_AGENT = Value
+/** Risk level of an agent tool, used to determine whether user approval is required. */
+public enum ToolRiskLevel {
+  /** Read-only operations that do not modify data (e.g. SELECT, DESCRIBE, schema inspection). */
+  SAFE,
+  /** Operations that can modify data or schema (e.g. INSERT, UPDATE, DELETE, DROP). */
+  DESTRUCTIVE
 }

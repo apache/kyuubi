@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+/** A ReAct iteration has completed. */
+public final class StepEnd extends AgentEvent {
+  private final int stepNumber;
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC, DATA_AGENT = Value
+  public StepEnd(int stepNumber) {
+    super(EventType.STEP_END);
+    this.stepNumber = stepNumber;
+  }
+
+  public int stepNumber() {
+    return stepNumber;
+  }
+
+  @Override
+  public String toString() {
+    return "StepEnd{stepNumber=" + stepNumber + "}";
+  }
 }
