@@ -15,13 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+/** The complete LLM output for one reasoning step. */
+public final class ContentComplete extends AgentEvent {
+  private final String fullText;
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC, DATA_AGENT = Value
+  public ContentComplete(String fullText) {
+    super(EventType.CONTENT_COMPLETE);
+    this.fullText = fullText;
+  }
+
+  public String fullText() {
+    return fullText;
+  }
+
+  @Override
+  public String toString() {
+    return "ContentComplete{length=" + (fullText != null ? fullText.length() : 0) + "}";
+  }
 }
