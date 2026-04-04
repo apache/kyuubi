@@ -15,13 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+/** A single token or chunk from the LLM streaming response. */
+public final class ContentDelta extends AgentEvent {
+  private final String text;
 
-  val SPARK_SQL, FLINK_SQL, CHAT, TRINO, HIVE_SQL, JDBC, DATA_AGENT = Value
+  public ContentDelta(String text) {
+    super(EventType.CONTENT_DELTA);
+    this.text = text;
+  }
+
+  public String text() {
+    return text;
+  }
+
+  @Override
+  public String toString() {
+    String preview = text != null && text.length() > 200 ? text.substring(0, 200) + "..." : text;
+    return "ContentDelta{text='" + preview + "'}";
+  }
 }
