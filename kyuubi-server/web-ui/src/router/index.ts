@@ -21,6 +21,7 @@ import managementRoutes from './management'
 import detailRoutes from './detail'
 import swaggerRoutes from './swagger'
 import editorRoutes from './editor'
+import dataAgentRoutes from './data-agent'
 
 const routes = [
   {
@@ -40,7 +41,8 @@ const routes = [
       ...managementRoutes,
       ...detailRoutes,
       ...swaggerRoutes,
-      ...editorRoutes
+      ...editorRoutes,
+      ...dataAgentRoutes
     ]
   }
 ]

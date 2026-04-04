@@ -16,9 +16,13 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.0.9",
+    "@microsoft/fetch-event-source": "^2.0.1",
+    "@types/dompurify": "^3.0.5",
     "axios": "^1.8.2",
     "date-fns": "^2.29.3",
+    "dompurify": "^3.3.3",
     "element-plus": "^2.2.12",
+    "marked": "^17.0.5",
     "monaco-editor": "^0.44.0",
     "pinia": "^2.0.18",
     "pinia-plugin-persistedstate": "^2.1.1",
