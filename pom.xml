@@ -114,6 +114,7 @@
     </distributionManagement>
 
     <properties>
+        <maven3.version>3.9.14</maven3.version>
         <maven.version>4.0.0-rc-5</maven.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
