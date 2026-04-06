@@ -2,7 +2,7 @@
 
 ### Start Using
 
-For the best experience, we recommend using `node 16.x.x`.
+Node.js 18 or higher is required.
 You can learn how to install the corresponding version from its official website.
 
 - [node](https://nodejs.org/en/)
