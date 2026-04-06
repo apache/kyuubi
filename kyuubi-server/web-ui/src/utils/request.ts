@@ -15,56 +15,69 @@
  * limitations under the License.
  */
 
-import axios, { AxiosResponse } from 'axios'
 import { useAuthStore } from '@/pinia/auth/auth'
 
-// create an axios instance
-const service = axios.create({
-  baseURL: '/' // url = base url + request url
-  // withCredentials: true, // send cookies when cross-domain requests
-})
+interface RequestConfig {
+  url: string
+  method: string
+  data?: unknown
+  params?: Record<string, any>
+  auth?: { username: string; password: string }
+}
 
-// request interceptor
-service.interceptors.request.use(
-  (config) => {
-    // do something before request is sent
-    const authStore = useAuthStore()
-    if (authStore.isAuthenticated) {
-      config.headers.Authorization = authStore.authToken
-    }
-    return config
-  },
-  (error) => {
-    // do something with request error
-    return Promise.reject(error)
+async function request(config: RequestConfig): Promise<unknown> {
+  const { url, method, data, params, auth } = config
+  const authStore = useAuthStore()
+
+  const headers: Record<string, string> = {}
+
+  if (auth) {
+    headers['Authorization'] = `Basic ${btoa(
+      auth.username + ':' + auth.password
+    )}`
+  } else if (authStore.isAuthenticated && authStore.authToken) {
+    headers['Authorization'] = authStore.authToken
   }
-)
 
-// response interceptor
-service.interceptors.response.use(
-  /**
-   * Determine the request status by custom code
-   * Here is just an example
-   * You can also judge the status by HTTP Status Code
-   */
-  (response: AxiosResponse) => {
-    if (response.data) {
-      switch (response.data.code) {
-        case 503:
-          // do something when code is 503
-          break
+  if (data !== undefined) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  let fullUrl = url
+  if (params) {
+    const searchParams = new URLSearchParams()
+    for (const [key, value] of Object.entries(params)) {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value))
       }
     }
-    return response.data
-  },
-  (error) => {
-    // for debug
-    // do something when error
-    if (error.response && error.response.status === 401) {
-      window.dispatchEvent(new CustomEvent('auth-required'))
+    const queryString = searchParams.toString()
+    if (queryString) {
+      fullUrl = `${url}?${queryString}`
     }
-    return Promise.reject(error)
   }
-)
 
-export default service
+  const response = await fetch(fullUrl, {
+    method: method.toUpperCase(),
+    headers,
+    body: data !== undefined ? JSON.stringify(data) : undefined
+  })
+
+  if (response.status === 401) {
+    window.dispatchEvent(new CustomEvent('auth-required'))
+    throw new Error('Unauthorized')
+  }
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+
+  const contentType = response.headers.get('content-type')
+  if (!contentType || !contentType.includes('application/json')) {
+    return undefined
+  }
+
+  return response.json()
+}
+
+export default request
