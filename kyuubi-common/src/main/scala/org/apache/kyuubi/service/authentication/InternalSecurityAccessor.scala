@@ -33,7 +33,6 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
   val cryptoKeyAlgorithm = conf.get(ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM)
   val cryptoCipher = conf.get(ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
 
-  private val random = new SecureRandom()
   private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURITY_TOKEN_MAX_LIFETIME)
   private val provider: EngineSecuritySecretProvider = EngineSecuritySecretProvider.create(conf)
   private val (secretKeySpec, encryptor, decryptor) =
@@ -65,7 +64,7 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
   private[authentication] def encrypt(value: String): String = synchronized {
     val nonce = new Array[Byte](cryptoIvLength)
-    random.nextBytes(nonce)
+    InternalSecurityAccessor.random.nextBytes(nonce)
     encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(nonce))
     byteArrayToHexString(nonce ++ encryptor.doFinal(value.getBytes))
   }
@@ -114,6 +113,7 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
 object InternalSecurityAccessor extends Logging {
   @volatile private var _engineSecurityAccessor: InternalSecurityAccessor = _
+  private val random: SecureRandom = new SecureRandom()
 
   def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
     if (_engineSecurityAccessor == null) {
