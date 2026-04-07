@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
@@ -39,7 +40,8 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
     initializeForAuth(cryptoCipher, normalizeSecret(provider.getSecret()))
 
   private def initializeForAuth(cipher: String, secret: String): (SecretKeySpec, Cipher, Cipher) = {
-    val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoKeyAlgorithm)
+    val secretKeySpec =
+      new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), cryptoKeyAlgorithm)
     val _encryptor = Cipher.getInstance(cipher)
     val _decryptor = Cipher.getInstance(cipher)
     (secretKeySpec, _encryptor, _decryptor)
@@ -66,14 +68,18 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
     val nonce = new Array[Byte](cryptoIvLength)
     InternalSecurityAccessor.random.nextBytes(nonce)
     encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(nonce))
-    byteArrayToHexString(nonce ++ encryptor.doFinal(value.getBytes))
+    byteArrayToHexString(nonce ++ encryptor.doFinal(value.getBytes(StandardCharsets.UTF_8)))
   }
 
   private[authentication] def decrypt(value: String): String = synchronized {
     val bytes = hexStringToByteArray(value)
+    if (bytes.length <= cryptoIvLength) {
+      throw new IllegalArgumentException(
+        "Malformed engine access token: ciphertext is shorter than the IV length")
+    }
     val nonce = bytes.take(cryptoIvLength)
     decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, new IvParameterSpec(nonce))
-    new String(decryptor.doFinal(bytes.drop(cryptoIvLength)))
+    new String(decryptor.doFinal(bytes.drop(cryptoIvLength)), StandardCharsets.UTF_8)
   }
 
   private def normalizeSecret(secret: String): String = {
