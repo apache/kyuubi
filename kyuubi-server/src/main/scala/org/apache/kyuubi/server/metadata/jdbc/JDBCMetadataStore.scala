@@ -235,7 +235,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       targetState: String): Boolean = {
     val query = s"UPDATE $METADATA_TABLE SET state = ? WHERE identifier = ? AND state = ?"
     JdbcUtils.withConnection { connection =>
-      withUpdateCount(connection, query, fromState, identifier, targetState) { updateCount =>
+      withUpdateCount(connection, query, targetState, identifier, fromState) { updateCount =>
         updateCount == 1
       }
     }
