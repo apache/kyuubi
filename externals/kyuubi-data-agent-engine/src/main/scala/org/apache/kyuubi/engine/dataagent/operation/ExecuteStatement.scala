@@ -117,7 +117,7 @@ class ExecuteStatement(
               n.put("type", sseType)
               n.put("id", toolCall.toolCallId())
               n.put("name", toolCall.toolName())
-              n.put("args", toolCall.toolArgs().toString)
+              n.set("args", JSON.valueToTree(toolCall.toolArgs()))
             }))
           case EventType.TOOL_RESULT =>
             val toolResult = event.asInstanceOf[ToolResult]
@@ -126,6 +126,7 @@ class ExecuteStatement(
               n.put("id", toolResult.toolCallId())
               n.put("name", toolResult.toolName())
               n.put("output", toolResult.output())
+              n.put("isError", toolResult.isError())
             }))
           case EventType.STEP_END =>
             val stepEnd = event.asInstanceOf[StepEnd]
