@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
@@ -34,21 +36,15 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
   private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURITY_TOKEN_MAX_LIFETIME)
   private val provider: EngineSecuritySecretProvider = EngineSecuritySecretProvider.create(conf)
-  private val (encryptor, decryptor) =
+  private val (secretKeySpec, encryptor, decryptor) =
     initializeForAuth(cryptoCipher, normalizeSecret(provider.getSecret()))
 
-  private def initializeForAuth(cipher: String, secret: String): (Cipher, Cipher) = {
-    val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoKeyAlgorithm)
-    val nonce = new Array[Byte](cryptoIvLength)
-    val iv = new IvParameterSpec(nonce)
-
+  private def initializeForAuth(cipher: String, secret: String): (SecretKeySpec, Cipher, Cipher) = {
+    val secretKeySpec =
+      new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), cryptoKeyAlgorithm)
     val _encryptor = Cipher.getInstance(cipher)
-    _encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv)
-
     val _decryptor = Cipher.getInstance(cipher)
-    _decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, iv)
-
-    (_encryptor, _decryptor)
+    (secretKeySpec, _encryptor, _decryptor)
   }
 
   def issueToken(): String = {
@@ -69,11 +65,21 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 
   private[authentication] def encrypt(value: String): String = synchronized {
-    byteArrayToHexString(encryptor.doFinal(value.getBytes))
+    val nonce = new Array[Byte](cryptoIvLength)
+    InternalSecurityAccessor.random.nextBytes(nonce)
+    encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(nonce))
+    byteArrayToHexString(nonce ++ encryptor.doFinal(value.getBytes(StandardCharsets.UTF_8)))
   }
 
   private[authentication] def decrypt(value: String): String = synchronized {
-    new String(decryptor.doFinal(hexStringToByteArray(value)))
+    val bytes = hexStringToByteArray(value)
+    if (bytes.length <= cryptoIvLength) {
+      throw new IllegalArgumentException(
+        "Malformed engine access token: ciphertext is shorter than the IV length")
+    }
+    val nonce = bytes.take(cryptoIvLength)
+    decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, new IvParameterSpec(nonce))
+    new String(decryptor.doFinal(bytes.drop(cryptoIvLength)), StandardCharsets.UTF_8)
   }
 
   private def normalizeSecret(secret: String): String = {
@@ -113,6 +119,7 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
 object InternalSecurityAccessor extends Logging {
   @volatile private var _engineSecurityAccessor: InternalSecurityAccessor = _
+  private val random: SecureRandom = new SecureRandom()
 
   def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
     if (_engineSecurityAccessor == null) {
