@@ -244,6 +244,32 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     }
   }
 
+  test("transformMetadataState should transition state correctly") {
+    val batchId = UUID.randomUUID().toString
+    val batchMetadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "127.0.0.1",
+      state = "INITIALIZED",
+      resource = "intern",
+      className = "org.apache.kyuubi.SparkWC",
+      requestName = "test_transform",
+      createTime = System.currentTimeMillis(),
+      engineType = "SPARK")
+
+    jdbcMetadataStore.insertMetadata(batchMetadata)
+
+    val result = jdbcMetadataStore.transformMetadataState(batchId, "INITIALIZED", "CANCELED")
+    assert(result, "should successfully transition from INITIALIZED to CANCELED")
+
+    val metadata = jdbcMetadataStore.getMetadata(batchId)
+    assert(metadata.state == "CANCELED", s"state should be CANCELED but was ${metadata.state}")
+
+    jdbcMetadataStore.cleanupMetadataByIdentifier(batchId)
+  }
+
   test("throw exception if update count is 0") {
     val metadata = Metadata(identifier = UUID.randomUUID().toString, state = "RUNNING")
     intercept[KyuubiException] {
