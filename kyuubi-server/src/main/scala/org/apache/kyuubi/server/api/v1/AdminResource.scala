@@ -182,6 +182,25 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
+    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    description = "refresh the user allowlist")
+  @POST
+  @Path("refresh/user_allowlist")
+  def refreshUserAllowlist(): Response = {
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    val ipAddress = fe.getIpAddress
+    info(s"Receive refresh user allowlist request from $userName/$ipAddress")
+    if (!fe.isAdministrator(userName)) {
+      throw new ForbiddenException(
+        s"$userName is not allowed to refresh the user allowlist")
+    }
+    info(s"Reloading user allowlist")
+    KyuubiServer.refreshUserAllowlist()
+    Response.ok(s"Refresh the user allowlist successfully.").build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
       array = new ArraySchema(schema = new Schema(implementation = classOf[SessionData])))),

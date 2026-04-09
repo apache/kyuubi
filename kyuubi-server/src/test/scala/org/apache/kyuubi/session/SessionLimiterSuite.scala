@@ -328,4 +328,123 @@ class SessionLimiterSuite extends KyuubiFunSuite {
     SessionLimiter.resetIpAllowlist(limiter, Set.empty)
     limiter.increment(UserIpAddress("user003", "172.16.0.1"))
   }
+
+  test("test session limiter with user allowlist") {
+    val allowedUser = "user001"
+    val blockedUser = "user002"
+    val userAllowlist = Set(allowedUser)
+    val limiter = SessionLimiter(
+      100,
+      100,
+      100,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      userAllowlist)
+
+    // allowed user should be able to connect
+    limiter.increment(UserIpAddress(allowedUser, "10.0.0.1"))
+
+    // blocked user should be denied
+    val caught = intercept[KyuubiSQLException] {
+      limiter.increment(UserIpAddress(blockedUser, "10.0.0.1"))
+    }
+    assert(caught.getMessage.equals(
+      s"Connection denied because the user is not in the user allowlist." +
+        s" (user: $blockedUser)"))
+  }
+
+  test("test session limiter user allowlist with multiple users") {
+    val allowedUser1 = "user001"
+    val allowedUser2 = "user002"
+    val blockedUser = "user003"
+    val userAllowlist = Set(allowedUser1, allowedUser2)
+    val limiter = SessionLimiter(
+      100,
+      100,
+      100,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      userAllowlist)
+
+    // both allowed users should be able to connect
+    limiter.increment(UserIpAddress(allowedUser1, "10.0.0.1"))
+    limiter.increment(UserIpAddress(allowedUser2, "10.0.0.2"))
+
+    // blocked user should be denied
+    val caught = intercept[KyuubiSQLException] {
+      limiter.increment(UserIpAddress(blockedUser, "192.168.1.100"))
+    }
+    assert(caught.getMessage.contains("not in the user allowlist"))
+  }
+
+  test("test session limiter empty user allowlist allows all users") {
+    val limiter = SessionLimiter(
+      100,
+      100,
+      100,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set.empty)
+
+    // when allowlist is empty, all users should be allowed
+    limiter.increment(UserIpAddress("user001", "10.0.0.1"))
+    limiter.increment(UserIpAddress("user002", "192.168.1.100"))
+    limiter.increment(UserIpAddress("user003", "172.16.0.1"))
+  }
+
+  test("test session limiter user deny list has higher priority than user allowlist") {
+    val user = "user001"
+    val denyUsers = Set(user)
+    val userAllowlist = Set(user)
+    val limiter = SessionLimiter(
+      100,
+      100,
+      100,
+      Set.empty,
+      denyUsers,
+      Set.empty,
+      Set.empty,
+      userAllowlist)
+
+    // deny user list check happens before allowlist check
+    val caught = intercept[KyuubiSQLException] {
+      limiter.increment(UserIpAddress(user, "10.0.0.1"))
+    }
+    assert(caught.getMessage.equals(
+      s"Connection denied because the user is in the deny user list. (user: $user)"))
+  }
+
+  test("test refresh user allowlist") {
+    val allowedUser = "user001"
+    val blockedUser = "user002"
+    val limiter = SessionLimiter(
+      100,
+      100,
+      100,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set.empty,
+      Set(allowedUser))
+
+    // initially only allowedUser can connect
+    limiter.increment(UserIpAddress(allowedUser, "10.0.0.1"))
+    intercept[KyuubiSQLException] {
+      limiter.increment(UserIpAddress(blockedUser, "10.0.0.1"))
+    }
+
+    // refresh allowlist to include blockedUser
+    SessionLimiter.resetUserAllowlist(limiter, Set(allowedUser, blockedUser))
+    limiter.increment(UserIpAddress(blockedUser, "10.0.0.1"))
+
+    // refresh allowlist to empty (allow all)
+    SessionLimiter.resetUserAllowlist(limiter, Set.empty)
+    limiter.increment(UserIpAddress("user003", "172.16.0.1"))
+  }
 }

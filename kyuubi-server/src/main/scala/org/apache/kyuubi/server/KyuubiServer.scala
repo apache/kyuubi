@@ -183,6 +183,14 @@ object KyuubiServer extends Logging {
     info(s"Refreshed ip allowlist from $existingIpAllowlist to $refreshedIpAllowlist")
   }
 
+  private[kyuubi] def refreshUserAllowlist(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingUserAllowlist = sessionMgr.getUserAllowlist
+    sessionMgr.refreshUserAllowlist(createKyuubiConf())
+    val refreshedUserAllowlist = sessionMgr.getUserAllowlist
+    info(s"Refreshed user allowlist from $existingUserAllowlist to $refreshedUserAllowlist")
+  }
+
   private def createKyuubiConf(): KyuubiConf = {
     KyuubiConf().loadFileDefaults().loadFromArgs(commandArgs)
   }
