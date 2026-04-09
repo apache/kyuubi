@@ -175,6 +175,14 @@ object KyuubiServer extends Logging {
     info(s"Refreshed deny client ips from $existingDenyIps to $refreshedDenyIps")
   }
 
+  private[kyuubi] def refreshIpAllowlist(): Unit = synchronized {
+    val sessionMgr = kyuubiServer.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+    val existingIpAllowlist = sessionMgr.getIpAllowlist
+    sessionMgr.refreshIpAllowlist(createKyuubiConf())
+    val refreshedIpAllowlist = sessionMgr.getIpAllowlist
+    info(s"Refreshed ip allowlist from $existingIpAllowlist to $refreshedIpAllowlist")
+  }
+
   private def createKyuubiConf(): KyuubiConf = {
     KyuubiConf().loadFileDefaults().loadFromArgs(commandArgs)
   }
