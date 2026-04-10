@@ -116,10 +116,15 @@ private[kyuubi] class EngineRef(
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
-    // DATA_AGENT engines must be isolated by datasource (JDBC URL). This takes precedence over
-    // engine pool and manual subdomain settings because a Spark-focused deployment commonly sets
-    // kyuubi.engine.pool.size globally, which would otherwise override the datasource-based
-    // isolation and route different datasources to the same engine pool.
+    // A DATA_AGENT engine is bound 1:1 to a JDBC datasource because the provider SPI is
+    // constructed once per engine from a single kyuubi.engine.data.agent.jdbc.url, and
+    // ProviderRunRequest carries no datasource field — there is no way to dispatch a request
+    // against a different JDBC URL than the one the provider was loaded with. Sessions
+    // targeting different datasources must therefore route to distinct engines, so this
+    // branch takes precedence over engine pool and manual subdomain settings (a Spark-focused
+    // deployment commonly sets kyuubi.engine.pool.size globally, which would otherwise
+    // override the datasource-based isolation and route different datasources to the same
+    // engine pool).
     case _ if engineType == DATA_AGENT =>
       conf.get(ENGINE_DATA_AGENT_JDBC_URL).map { url =>
         val digest = MessageDigest.getInstance("SHA-256")
