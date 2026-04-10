@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -33,12 +35,13 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
 import org.apache.kyuubi.engine.EngineType._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, SERVER_LOCAL, ShareLevel}
 import org.apache.kyuubi.engine.chat.ChatProcessBuilder
+import org.apache.kyuubi.engine.dataagent.DataAgentProcessBuilder
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -113,6 +116,22 @@ private[kyuubi] class EngineRef(
 
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+    // A DATA_AGENT engine is bound 1:1 to a JDBC datasource because the provider SPI is
+    // constructed once per engine from a single kyuubi.engine.data.agent.jdbc.url, and
+    // ProviderRunRequest carries no datasource field — there is no way to dispatch a request
+    // against a different JDBC URL than the one the provider was loaded with. Sessions
+    // targeting different datasources must therefore route to distinct engines, so this
+    // branch takes precedence over engine pool and manual subdomain settings (a Spark-focused
+    // deployment commonly sets kyuubi.engine.pool.size globally, which would otherwise
+    // override the datasource-based isolation and route different datasources to the same
+    // engine pool).
+    case _ if engineType == DATA_AGENT =>
+      conf.get(ENGINE_DATA_AGENT_JDBC_URL).map { url =>
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hex = digest.digest(url.getBytes(StandardCharsets.UTF_8))
+          .take(8).map("%02x".format(_)).mkString
+        s"ds-$hex"
+      }.getOrElse("default")
     case subdomain if clientPoolSize > 0 && (subdomain.isEmpty || enginePoolIgnoreSubdomain) =>
       val poolSize = math.min(clientPoolSize, poolThreshold)
       if (poolSize < clientPoolSize) {
@@ -242,6 +261,17 @@ private[kyuubi] class EngineRef(
           defaultEngineName)
       case CHAT =>
         new ChatProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+      case DATA_AGENT =>
+        if (conf.get(ENGINE_DATA_AGENT_JDBC_URL).isEmpty) {
+          val haAddresses = conf.get(HA_ADDRESSES)
+          if (haAddresses.nonEmpty) {
+            val jdbcUrl = s"jdbc:hive2://$haAddresses/default;" +
+              s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
+            conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
+            info(s"Data Agent JDBC URL not configured, using Kyuubi server via ZK: $jdbcUrl")
+          }
+        }
+        new DataAgentProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))

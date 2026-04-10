@@ -3754,6 +3754,111 @@ object KyuubiConf {
       .checkValue(_ >= 0, "must be 0 or positive number")
       .createWithDefault(Duration.ofSeconds(120).toMillis)
 
+  val ENGINE_DATA_AGENT_MEMORY: ConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.memory")
+      .doc("The heap memory for the Data Agent engine")
+      .version("1.12.0")
+      .stringConf
+      .createWithDefault("1g")
+
+  val ENGINE_DATA_AGENT_JAVA_OPTIONS: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.java.options")
+      .doc("The extra Java options for the Data Agent engine")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_EXTRA_CLASSPATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.extra.classpath")
+      .doc("The extra classpath for the Data Agent engine, for configuring the location " +
+        "of the LLM SDK and etc.")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_PROVIDER: ConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.provider")
+      .doc("The provider for the Data Agent engine. Candidates: <ul>" +
+        " <li>ECHO: simply echoes the input, for testing purpose.</li>" +
+        " <li>OPENAI_COMPATIBLE: OpenAI-compatible LLM provider.</li>" +
+        "</ul>")
+      .version("1.12.0")
+      .stringConf
+      .transform {
+        case "ECHO" | "echo" =>
+          "org.apache.kyuubi.engine.dataagent.provider.echo.EchoProvider"
+        case "OPENAI_COMPATIBLE" | "openai_compatible" | "openai-compatible" =>
+          "org.apache.kyuubi.engine.dataagent.provider.openai.OpenAiProvider"
+        case other => other
+      }
+      .createWithDefault("ECHO")
+
+  val ENGINE_DATA_AGENT_LLM_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.llm.api.key")
+      .doc("The API key to access the LLM service for the Data Agent engine.")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_LLM_MODEL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.llm.model")
+      .doc("The model ID used by the Data Agent engine LLM provider.")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_LLM_API_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.llm.api.url")
+      .doc("The API base URL for the LLM service used by the Data Agent engine.")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_MAX_ITERATIONS: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.data.agent.max.iterations")
+      .doc("The maximum number of ReAct loop iterations for the Data Agent engine.")
+      .version("1.12.0")
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(100)
+
+  val ENGINE_DATA_AGENT_QUERY_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.data.agent.query.timeout")
+      .doc("The query execution timeout for the Data Agent SQL tool.")
+      .version("1.12.0")
+      .timeConf
+      .createWithDefaultString("PT5M")
+
+  val ENGINE_DATA_AGENT_JDBC_URL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.jdbc.url")
+      .doc("The JDBC URL for the Data Agent engine to connect to the target database. " +
+        "If not set, the Data Agent will connect back to Kyuubi server " +
+        "via ZooKeeper service discovery.")
+      .version("1.12.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_DATA_AGENT_APPROVAL_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.approval.mode")
+      .doc("Default approval mode for tool execution in the Data Agent engine. " +
+        "Candidates: <ul>" +
+        " <li>AUTO_APPROVE: all tools are auto-approved without user interaction.</li>" +
+        " <li>NORMAL: only destructive tools require explicit approval.</li>" +
+        " <li>STRICT: all tools require explicit user approval.</li>" +
+        "</ul>")
+      .version("1.12.0")
+      .stringConf
+      .checkValues(Set("STRICT", "NORMAL", "AUTO_APPROVE"))
+      .createWithDefault("NORMAL")
+
+  val FRONTEND_DATA_AGENT_OPERATION_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.data.agent.operation.timeout")
+      .doc("Timeout for waiting on data agent engine launch and " +
+        "operation start in the REST frontend.")
+      .version("1.12.0")
+      .timeConf
+      .createWithDefaultString("PT2M")
+
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")
       .doc("The heap memory for the JDBC query engine")

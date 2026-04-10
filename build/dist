@@ -288,6 +288,7 @@ mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/externals/engines/hive"
 mkdir -p "$DISTDIR/externals/engines/jdbc"
 mkdir -p "$DISTDIR/externals/engines/chat"
+mkdir -p "$DISTDIR/externals/engines/data-agent"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -360,6 +361,18 @@ cp -r "$KYUUBI_HOME"/externals/kyuubi-chat-engine/target/scala-$SCALA_VERSION/ja
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/externals/engines/chat/$jar" ]]; then
     (cd $DISTDIR/externals/engines/chat; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/chat/$jar")
+  fi
+done
+
+# Copy data-agent engines
+cp "$KYUUBI_HOME/externals/kyuubi-data-agent-engine/target/kyuubi-data-agent-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/data-agent/"
+cp -r "$KYUUBI_HOME"/externals/kyuubi-data-agent-engine/target/scala-$SCALA_VERSION/jars/*.jar "$DISTDIR/externals/engines/data-agent/"
+
+# Share the jars w/ server to reduce binary size
+# shellcheck disable=SC2045
+for jar in $(ls "$DISTDIR/jars/"); do
+  if [[ -f "$DISTDIR/externals/engines/data-agent/$jar" ]]; then
+    (cd $DISTDIR/externals/engines/data-agent; ln -snf "../../../jars/$jar" "$DISTDIR/externals/engines/data-agent/$jar")
   fi
 done
 
