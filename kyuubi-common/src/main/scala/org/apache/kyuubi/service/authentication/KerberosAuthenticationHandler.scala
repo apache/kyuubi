@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.authentication
+package org.apache.kyuubi.service.authentication
 
 import java.io.{File, IOException}
 import java.security.{PrivilegedActionException, PrivilegedExceptionAction}
@@ -32,8 +32,8 @@ import org.ietf.jgss.{GSSContext, GSSCredential, GSSManager, Oid}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.{NEGOTIATE, WWW_AUTHENTICATE_HEADER}
+import org.apache.kyuubi.service.authentication.AuthSchemes.AuthScheme
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{NEGOTIATE, WWW_AUTHENTICATE_HEADER}
 
 class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
 

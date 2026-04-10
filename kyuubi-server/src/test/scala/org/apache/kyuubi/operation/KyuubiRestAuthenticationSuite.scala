@@ -29,9 +29,9 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.RestClientTestHelper
 import org.apache.kyuubi.client.api.v1.dto.{SessionHandle, SessionOpenCount, SessionOpenRequest}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.http.authentication.AuthSchemes
-import org.apache.kyuubi.server.http.util.HttpAuthUtils._
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor, UserDefineAuthenticationProviderImpl, UserDefineTokenAuthenticationProviderImpl}
+import org.apache.kyuubi.service.authentication.AuthSchemes
+import org.apache.kyuubi.service.authentication.utils.HttpAuthUtils.{basicAuthorizationHeader, bearerAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.session.KyuubiSession
 
 class KyuubiRestAuthenticationSuite extends RestClientTestHelper {

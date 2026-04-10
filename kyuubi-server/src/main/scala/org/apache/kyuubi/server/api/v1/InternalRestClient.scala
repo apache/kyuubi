@@ -26,7 +26,7 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.{BaseRestApi, BatchRestApi, KyuubiRestClient}
 import org.apache.kyuubi.client.api.v1.dto.{Batch, CloseBatchResponse, OperationLog}
 import org.apache.kyuubi.client.auth.AuthHeaderGenerator
-import org.apache.kyuubi.server.http.authentication.AuthSchemes
+import org.apache.kyuubi.service.authentication.AuthSchemes
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 /**

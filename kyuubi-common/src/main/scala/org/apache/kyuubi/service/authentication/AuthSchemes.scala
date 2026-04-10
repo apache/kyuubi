@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.http.authentication
+package org.apache.kyuubi.service.authentication
 
 object AuthSchemes extends Enumeration {
   type AuthScheme = Value
