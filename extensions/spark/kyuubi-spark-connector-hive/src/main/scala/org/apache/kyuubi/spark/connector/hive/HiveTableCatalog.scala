@@ -317,12 +317,12 @@ class HiveTableCatalog(sparkSession: SparkSession)
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
       val maybeProvider = Option(properties.get(TableCatalog.PROP_PROVIDER))
+      val tableProperties = properties.asScala.toMap
       val (storage, provider) =
         getStorageFormatAndProvider(
           maybeProvider,
           location,
-          properties.asScala.toMap)
-      val tableProperties = properties.asScala
+          toOptions(tableProperties))
       val isExternal = properties.containsKey(TableCatalog.PROP_EXTERNAL)
       val tableType =
         if (isExternal || location.isDefined) {
@@ -339,7 +339,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
         provider = Some(provider),
         partitionColumnNames = partitionColumns,
         bucketSpec = maybeBucketSpec,
-        properties = tableProperties.toMap,
+        properties = tableProperties,
         tracksPartitionsInCatalog = conf.manageFilesourcePartitions,
         comment = Option(properties.get(TableCatalog.PROP_COMMENT)))
 
@@ -609,7 +609,7 @@ private object HiveTableCatalog extends Logging {
               outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
               // User specified serde takes precedence over the one inferred from file format.
               serde = maybeSerde.orElse(hiveSerde.serde).orElse(defaultHiveStorage.serde),
-              properties = options ++ defaultHiveStorage.properties)
+              properties = defaultHiveStorage.properties)
           case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
         }
       } else {
@@ -619,7 +619,7 @@ private object HiveTableCatalog extends Logging {
           outputFormat =
             maybeOutputFormat.orElse(defaultHiveStorage.outputFormat),
           serde = maybeSerde.orElse(defaultHiveStorage.serde),
-          properties = options ++ defaultHiveStorage.properties)
+          properties = defaultHiveStorage.properties)
       }
       (storageFormat, DDLUtils.HIVE_PROVIDER)
     } else {
