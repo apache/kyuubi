@@ -322,6 +322,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
         getStorageFormatAndProvider(
           maybeProvider,
           location,
+          tableProperties,
           toOptions(tableProperties))
       val isExternal = properties.containsKey(TableCatalog.PROP_EXTERNAL)
       val tableType =
@@ -583,15 +584,16 @@ private object HiveTableCatalog extends Logging {
   private def getStorageFormatAndProvider(
       provider: Option[String],
       location: Option[String],
-      options: Map[String, String]): (CatalogStorageFormat, String) = {
+      options: Map[String, String],
+      serdeProperties: Map[String, String]): (CatalogStorageFormat, String) = {
     val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = serdeProperties)
 
     val conf = SQLConf.get
     val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = serdeProperties)
 
     if (provider.isDefined) {
       (nonHiveStorageFormat, provider.get)
