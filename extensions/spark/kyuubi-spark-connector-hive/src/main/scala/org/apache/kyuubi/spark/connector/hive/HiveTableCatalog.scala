@@ -437,9 +437,9 @@ class HiveTableCatalog(sparkSession: SparkSession)
   /**
    * Splits properties into optionsProps and serdeProps based on the `options.` prefix.
    *
-   * - optionsProps: keys with "options." prefix whose stripped key does NOT exist in properties,
+   * - optionsProps: keys with "options." prefix whose stripped key ALREADY exist in properties,
    *   indicating they were originally specified via OPTIONS clause.
-   * - serdeProps: keys with "options." prefix whose stripped key ALREADY exists in properties,
+   * - serdeProps: keys with "options." prefix whose stripped key does NOT exists in properties,
    *   indicating they were originally specified via SERDEPROPERTIES clause
    *
    * @param properties the full properties map
@@ -447,7 +447,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
    */
   private def toOptionsAndSerdeProps(
       properties: Map[String, String]): (Map[String, String], Map[String, String]) = {
-    val (serdeProps, optionsProps) = properties
+    val (optionsProps, serdeProps) = properties
       .filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX))
       .map { case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value }
       .toMap
