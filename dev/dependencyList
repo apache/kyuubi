@@ -124,11 +124,11 @@ kubernetes-model-rbac/6.14.0//kubernetes-model-rbac-6.14.0.jar
 kubernetes-model-resource/6.14.0//kubernetes-model-resource-6.14.0.jar
 kubernetes-model-scheduling/6.14.0//kubernetes-model-scheduling-6.14.0.jar
 kubernetes-model-storageclass/6.14.0//kubernetes-model-storageclass-6.14.0.jar
-log4j-1.2-api/2.25.3//log4j-1.2-api-2.25.3.jar
-log4j-api/2.25.3//log4j-api-2.25.3.jar
-log4j-core/2.25.3//log4j-core-2.25.3.jar
-log4j-layout-template-json/2.25.3//log4j-layout-template-json-2.25.3.jar
-log4j-slf4j-impl/2.25.3//log4j-slf4j-impl-2.25.3.jar
+log4j-1.2-api/2.25.4//log4j-1.2-api-2.25.4.jar
+log4j-api/2.25.4//log4j-api-2.25.4.jar
+log4j-core/2.25.4//log4j-core-2.25.4.jar
+log4j-layout-template-json/2.25.4//log4j-layout-template-json-2.25.4.jar
+log4j-slf4j-impl/2.25.4//log4j-slf4j-impl-2.25.4.jar
 logging-interceptor/3.12.12//logging-interceptor-3.12.12.jar
 metrics-annotation/4.2.30//metrics-annotation-4.2.30.jar
 metrics-core/4.2.30//metrics-core-4.2.30.jar
