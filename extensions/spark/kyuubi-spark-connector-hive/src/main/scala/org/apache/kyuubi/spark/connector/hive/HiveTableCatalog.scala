@@ -450,6 +450,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
     val (serdeProps, optionsProps) = properties
       .filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX))
       .map { case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value }
+      .toMap
       .partition { case (strippedKey, _) => properties.contains(strippedKey) }
     (optionsProps, serdeProps)
   }
