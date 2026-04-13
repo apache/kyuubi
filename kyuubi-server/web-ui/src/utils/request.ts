@@ -19,7 +19,7 @@ import { useAuthStore } from '@/pinia/auth/auth'
 
 interface RequestConfig {
   url: string
-  method: string
+  method: 'get' | 'post' | 'put' | 'delete'
   data?: unknown
   params?: Record<string, any>
   auth?: { username: string; password: string }
@@ -43,7 +43,8 @@ async function request(config: RequestConfig): Promise<unknown> {
     headers['Content-Type'] = 'application/json'
   }
 
-  let fullUrl = url
+  // Ensure absolute path to avoid resolving relative to the app's base path (/ui/)
+  let fullUrl = url.startsWith('/') ? url : `/${url}`
   if (params) {
     const searchParams = new URLSearchParams()
     for (const [key, value] of Object.entries(params)) {
@@ -53,7 +54,7 @@ async function request(config: RequestConfig): Promise<unknown> {
     }
     const queryString = searchParams.toString()
     if (queryString) {
-      fullUrl = `${url}?${queryString}`
+      fullUrl = `${fullUrl}?${queryString}`
     }
   }
 
@@ -77,7 +78,8 @@ async function request(config: RequestConfig): Promise<unknown> {
     return undefined
   }
 
-  return response.json()
+  const text = await response.text()
+  return text ? JSON.parse(text) : undefined
 }
 
 export default request
