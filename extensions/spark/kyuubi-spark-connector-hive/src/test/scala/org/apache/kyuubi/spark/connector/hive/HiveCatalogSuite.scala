@@ -298,12 +298,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       TableCatalog.OPTION_PREFIX + "field.delim" -> ",",
       TableCatalog.OPTION_PREFIX + "line.delim" -> "\n")
 
-    val method = classOf[HiveTableCatalog].getDeclaredMethod(
-      "toOptionsAndSerdeProps",
-      classOf[scala.collection.immutable.Map[_, _]])
-    method.setAccessible(true)
-    val (optionsProps, serdeProps) = method.invoke(catalog, properties)
-      .asInstanceOf[(Map[String, String], Map[String, String])]
+    val (optionsProps, serdeProps) = catalog.toOptionsAndSerdeProps(properties)
 
     assert(optionsProps == Map(
       "header" -> "false",
