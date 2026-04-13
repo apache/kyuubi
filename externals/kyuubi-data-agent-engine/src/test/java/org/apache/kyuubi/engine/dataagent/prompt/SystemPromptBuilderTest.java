@@ -78,15 +78,20 @@ public class SystemPromptBuilderTest {
     String prompt =
         SystemPromptBuilder.create()
             .toolDescriptions("- `sql_query`: Execute SQL.")
-            .datasource("sqlite")
             .datasource("spark")
             .section("Limit all queries to 1000 rows.")
             .build();
     assertTrue(prompt.contains("sql_query"));
-    assertTrue(prompt.contains("SQLite SQL compatibility"));
     assertTrue(prompt.contains("Spark SQL"));
     assertTrue(prompt.contains("Limit all queries to 1000 rows."));
     assertTrue(prompt.contains(LocalDate.now().toString()));
+  }
+
+  @Test
+  public void testDatasourceReplacesNotAppends() {
+    String prompt = SystemPromptBuilder.create().datasource("sqlite").datasource("spark").build();
+    assertTrue("Last datasource wins", prompt.contains("Spark SQL"));
+    assertFalse("Previous datasource replaced", prompt.contains("SQLite SQL compatibility"));
   }
 
   @Test
@@ -97,35 +102,15 @@ public class SystemPromptBuilderTest {
   }
 
   @Test
-  public void testJdbcUrlUnknownUsesGenericDialectSection() {
-    String prompt = SystemPromptBuilder.create().jdbcUrl("jdbc:derby://localhost/db").build();
-    assertTrue(prompt.contains("Current SQL dialect: derby"));
-    assertFalse(prompt.contains("MySQL"));
-  }
-
-  @Test
-  public void testJdbcUrlClickhouseUsesGenericDialectSection() {
-    String prompt =
-        SystemPromptBuilder.create().jdbcUrl("jdbc:clickhouse://localhost:8123").build();
+  public void testDatasourceClickhouseUsesGenericDialectSection() {
+    String prompt = SystemPromptBuilder.create().datasource("clickhouse").build();
     assertTrue(prompt.contains("Current SQL dialect: clickhouse"));
   }
 
   @Test
-  public void testJdbcUrlSqliteAppliesDialect() {
-    String prompt = SystemPromptBuilder.create().jdbcUrl("jdbc:sqlite:/tmp/test.db").build();
-    assertTrue(prompt.contains("SQLite SQL compatibility"));
-  }
-
-  @Test
-  public void testJdbcUrlHive2AppliesSparkDialectAndEngine() {
-    String prompt = SystemPromptBuilder.create().jdbcUrl("jdbc:hive2://localhost:10009").build();
-    assertTrue(prompt.contains("Spark SQL"));
-  }
-
-  @Test
-  public void testJdbcUrlNullFallsBack() {
-    String plain = SystemPromptBuilder.create().build();
-    assertEquals(plain, SystemPromptBuilder.create().jdbcUrl(null).build());
+  public void testDatasourceMysql() {
+    String prompt = SystemPromptBuilder.create().datasource("mysql").build();
+    assertTrue(prompt.contains("MySQL"));
   }
 
   @Test(expected = IllegalArgumentException.class)

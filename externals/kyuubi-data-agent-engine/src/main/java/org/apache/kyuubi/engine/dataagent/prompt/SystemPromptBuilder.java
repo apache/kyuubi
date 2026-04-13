@@ -26,7 +26,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 
 /**
  * Builder for composing system prompts from Markdown resource sections.
@@ -38,8 +37,10 @@ import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
  *   <li>{@code {{tool_descriptions}}} — replaced by {@link #toolDescriptions(String)}
  * </ul>
  *
- * <p>Datasource-specific sections ({@code prompts/datasource-{name}.md}) and free-form text are
- * appended after the base.
+ * <p>A single datasource section ({@code prompts/datasource-{name}.md}) is set via {@link
+ * #datasource(String)}. Calling it again <b>replaces</b> the previous datasource section — an agent
+ * session talks to exactly one datasource. Free-form text sections are appended after the
+ * datasource section.
  *
  * <p>Usage:
  *
@@ -57,6 +58,7 @@ public final class SystemPromptBuilder {
 
   private String base;
   private String toolDescriptions = "";
+  private String datasourceSection;
   private final List<String> sections = new ArrayList<>();
 
   private SystemPromptBuilder() {
@@ -82,32 +84,16 @@ public final class SystemPromptBuilder {
   }
 
   /**
-   * Add datasource-specific guidelines. Loads {@code prompts/datasource-{name}.md} from the
-   * classpath and appends as a section. If the resource does not exist, falls back to a generic
-   * "current dialect is X" hint so the LLM still knows which SQL flavor it is targeting — modern
-   * LLMs already know the syntax of common engines (postgresql, oracle, clickhouse, ...).
+   * Set the datasource-specific guidelines. Loads {@code prompts/datasource-{name}.md} from the
+   * classpath. If the resource does not exist, falls back to a generic "current dialect is X" hint.
+   *
+   * <p>Calling this method again <b>replaces</b> the previous datasource section.
    */
   public SystemPromptBuilder datasource(String name) {
     if (name != null) {
       String lower = name.toLowerCase();
       String content = loadResourceOrNull("datasource-" + lower);
-      if (content != null) {
-        sections.add(content);
-      } else {
-        sections.add(genericDialectSection(lower));
-      }
-    }
-    return this;
-  }
-
-  /**
-   * Auto-detect datasource from a JDBC URL and apply the corresponding prompt section. Equivalent
-   * to calling {@link #datasource(String)} with the name inferred from the URL.
-   */
-  public SystemPromptBuilder jdbcUrl(String jdbcUrl) {
-    JdbcDialect d = JdbcDialect.fromUrl(jdbcUrl);
-    if (d != null) {
-      datasource(d.datasourceName());
+      this.datasourceSection = (content != null) ? content : genericDialectSection(lower);
     }
     return this;
   }
@@ -135,6 +121,9 @@ public final class SystemPromptBuilder {
 
     StringBuilder sb = new StringBuilder(result);
     sb.append("\n\nToday's date: ").append(LocalDate.now()).append(".");
+    if (datasourceSection != null) {
+      sb.append("\n\n").append(datasourceSection);
+    }
     for (String section : sections) {
       sb.append("\n\n").append(section);
     }

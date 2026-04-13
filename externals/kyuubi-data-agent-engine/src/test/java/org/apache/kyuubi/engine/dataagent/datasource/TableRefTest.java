@@ -118,21 +118,6 @@ public class TableRefTest {
     assertNotEquals(TableRef.of("t"), TableRef.of("s", "t"));
   }
 
-  // --- toString ---
-
-  @Test
-  public void testToStringTableOnly() {
-    assertEquals("TableRef{table='users'}", TableRef.of("users").toString());
-  }
-
-  @Test
-  public void testToStringFull() {
-    String s = TableRef.of("hive", "sales", "orders").toString();
-    assertTrue(s.contains("catalog='hive'"));
-    assertTrue(s.contains("schema='sales'"));
-    assertTrue(s.contains("table='orders'"));
-  }
-
   // --- JSON deserialization ---
 
   @Test

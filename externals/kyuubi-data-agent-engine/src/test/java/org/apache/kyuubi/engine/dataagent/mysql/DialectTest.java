@@ -82,10 +82,9 @@ public class DialectTest extends WithMySQLContainer {
   }
 
   @Test
-  public void testPromptBuilderWithMySQLUrl() {
-    String prompt = SystemPromptBuilder.create().jdbcUrl(mysql.getJdbcUrl()).build();
-    // The prompt should contain the mysql dialect hint (either from datasource-mysql.md
-    // or the generic fallback "Current SQL dialect: mysql")
+  public void testPromptBuilderWithMySQLDatasource() {
+    JdbcDialect dialect = JdbcDialect.fromUrl(mysql.getJdbcUrl());
+    String prompt = SystemPromptBuilder.create().datasource(dialect.datasourceName()).build();
     assertTrue("Prompt should mention mysql dialect", prompt.toLowerCase().contains("mysql"));
   }
 }

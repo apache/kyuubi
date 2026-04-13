@@ -94,7 +94,7 @@ public interface JdbcDialect {
   /**
    * Extract the subprotocol name from a JDBC URL: {@code jdbc:postgresql://host} → {@code
    * "postgresql"}. Returns null if the URL does not start with {@code jdbc:} or has no second
-   * colon. todo: replace with more robust method
+   * colon.
    */
   static String extractSubprotocol(String jdbcUrl) {
     if (jdbcUrl == null) {

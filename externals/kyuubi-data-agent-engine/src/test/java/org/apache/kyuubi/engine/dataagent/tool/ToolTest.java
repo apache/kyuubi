@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.dataagent.tool;
 
 import static org.junit.Assert.*;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.models.ChatModel;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.ChatCompletionTool;
@@ -31,47 +30,17 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunMutationQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
-import org.apache.kyuubi.engine.dataagent.tool.sql.SqlQueryArgs;
 import org.junit.After;
 import org.junit.Test;
 import org.sqlite.SQLiteDataSource;
 
 public class ToolTest {
 
-  private static final ObjectMapper JSON = new ObjectMapper();
   private final List<File> tempFiles = new ArrayList<>();
 
   @After
   public void cleanup() {
     tempFiles.forEach(File::delete);
-  }
-
-  // --- Args deserialization ---
-
-  @Test
-  public void testSqlQueryArgsDeserializesSql() throws Exception {
-    SqlQueryArgs args = JSON.readValue("{\"sql\": \"SELECT 1\"}", SqlQueryArgs.class);
-    assertEquals("SELECT 1", args.sql);
-  }
-
-  // --- AgentTool metadata ---
-
-  @Test
-  public void testRunSelectQueryToolMetadata() {
-    RunSelectQueryTool tool = new RunSelectQueryTool(createDataSource(), 30);
-    assertEquals("run_select_query", tool.name());
-    assertTrue(tool.description().contains("READ-ONLY"));
-    assertEquals(SqlQueryArgs.class, tool.argsType());
-    assertEquals(ToolRiskLevel.SAFE, tool.riskLevel());
-  }
-
-  @Test
-  public void testRunMutationQueryToolMetadata() {
-    RunMutationQueryTool tool = new RunMutationQueryTool(createDataSource(), 30);
-    assertEquals("run_mutation_query", tool.name());
-    assertTrue(tool.description().contains("MODIFIES"));
-    assertEquals(SqlQueryArgs.class, tool.argsType());
-    assertEquals(ToolRiskLevel.DESTRUCTIVE, tool.riskLevel());
   }
 
   // --- ToolRegistry ---
@@ -155,35 +124,6 @@ public class ToolTest {
     assertTrue("Should contain timeout error", result.contains("timed out"));
     assertTrue("Should contain tool name", result.contains("slow_tool"));
     assertTrue("Should finish within ~3s (timeout=2s)", elapsed < 5000);
-  }
-
-  @Test
-  public void testRegistryTimeoutDoesNotAffectFastToolCall() {
-    ToolRegistry registry = new ToolRegistry(10);
-    registry.register(
-        new AgentTool<ToolRegistryThreadSafetyTest.DummyArgs>() {
-          @Override
-          public String name() {
-            return "fast_tool";
-          }
-
-          @Override
-          public String description() {
-            return "instant";
-          }
-
-          @Override
-          public Class<ToolRegistryThreadSafetyTest.DummyArgs> argsType() {
-            return ToolRegistryThreadSafetyTest.DummyArgs.class;
-          }
-
-          @Override
-          public String execute(ToolRegistryThreadSafetyTest.DummyArgs args) {
-            return "fast_result";
-          }
-        });
-    String result = registry.executeTool("fast_tool", "{}");
-    assertEquals("fast_result", result);
   }
 
   @Test

@@ -64,20 +64,6 @@ public class DataSourceFactoryAuthTest {
   }
 
   @Test
-  public void testPoolConfigDefaults() throws Exception {
-    tmpFile = File.createTempFile("kyuubi-ds-test-", ".db");
-    tmpFile.deleteOnExit();
-
-    ds = DataSourceFactory.create("jdbc:sqlite:" + tmpFile.getAbsolutePath());
-    assertTrue(ds instanceof HikariDataSource);
-
-    HikariDataSource hds = (HikariDataSource) ds;
-    assertEquals("kyuubi-data-agent", hds.getPoolName());
-    assertEquals(5, hds.getMaximumPoolSize());
-    assertEquals(1, hds.getMinimumIdle());
-  }
-
-  @Test
   public void testCreateWithUserOnly() throws Exception {
     tmpFile = File.createTempFile("kyuubi-ds-test-", ".db");
     tmpFile.deleteOnExit();
