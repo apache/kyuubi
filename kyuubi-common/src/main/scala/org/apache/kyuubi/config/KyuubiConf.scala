@@ -3336,21 +3336,6 @@ object KyuubiConf {
       .regexConf
       .createOptional
 
-  val SESSION_CONF_DISPLAY_MODE: ConfigEntry[String] =
-    buildConf("kyuubi.session.conf.display.mode")
-      .serverOnly
-      .doc("Controls how session configurations are returned in REST API responses. " +
-        "Supported values: " +
-        "<ul>" +
-        "<li>REDACTED: Mask values that match kyuubi.server.redaction.regex (default).</li>" +
-        "<li>ORIGINAL: Return the raw config values as-is.</li>" +
-        "<li>NONE: Omit the conf map from responses entirely.</li>" +
-        "</ul>")
-      .version("1.12.0")
-      .stringConf
-      .checkValues(Set("REDACTED", "ORIGINAL", "NONE"))
-      .createWithDefault("REDACTED")
-
   val SERVER_PERIODIC_GC_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.server.periodicGC.interval")
       .doc("How often to trigger the periodic garbage collection. 0 will disable it.")

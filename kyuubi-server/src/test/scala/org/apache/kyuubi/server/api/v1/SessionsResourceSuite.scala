@@ -396,7 +396,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessionHandle.toString.equals(operations.head.getSessionId))
   }
 
-  test("get /sessions returns redacted spark confs when mode is REDACTED") {
+  test("get /sessions returns redacted spark confs") {
     val sensitiveKey = "spark.password"
     val sensitiveValue = "superSecret123"
     val requestObj = new SessionOpenRequest(Map(sensitiveKey -> sensitiveValue).asJava)
@@ -417,51 +417,5 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val delResp = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
     assert(200 == delResp.getStatus)
-  }
-
-  test("get /sessions returns empty conf when mode is NONE") {
-    withSessionConfDisplayMode("NONE") {
-      val requestObj =
-        new SessionOpenRequest(Map("spark.password" -> "secret", "key" -> "val").asJava)
-      val r = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == r.getStatus)
-      val sessionHandle = r.readEntity(classOf[SessionHandle]).getIdentifier
-
-      val r2 = webTarget.path("api/v1/sessions").request().get()
-      assert(200 == r2.getStatus)
-      val sessions = r2.readEntity(new GenericType[Seq[SessionData]]() {})
-      val sessionConf = sessions.find(_.getIdentifier == sessionHandle.toString).get.getConf
-      assert(sessionConf.isEmpty)
-
-      webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
-    }
-  }
-
-  test("get /sessions returns raw conf when mode is ORIGINAL") {
-    withSessionConfDisplayMode("ORIGINAL") {
-      val sensitiveKey = "spark.password"
-      val sensitiveValue = "plainVisible"
-      val requestObj = new SessionOpenRequest(Map(sensitiveKey -> sensitiveValue).asJava)
-      val r = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == r.getStatus)
-      val sessionHandle = r.readEntity(classOf[SessionHandle]).getIdentifier
-
-      val r2 = webTarget.path("api/v1/sessions").request().get()
-      assert(200 == r2.getStatus)
-      val sessions = r2.readEntity(new GenericType[Seq[SessionData]]() {})
-      val sessionConf = sessions.find(_.getIdentifier == sessionHandle.toString).get.getConf
-      assert(sessionConf.get(sensitiveKey) == sensitiveValue)
-
-      webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
-    }
-  }
-
-  private def withSessionConfDisplayMode(mode: String)(f: => Unit): Unit = {
-    conf.set(KyuubiConf.SESSION_CONF_DISPLAY_MODE, mode)
-    try f finally conf.set(KyuubiConf.SESSION_CONF_DISPLAY_MODE, "REDACTED")
   }
 }
