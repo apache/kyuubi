@@ -22,16 +22,28 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
-import org.apache.kyuubi.config.KyuubiConf.SERVER_SECRET_REDACTION_PATTERN
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_SECRET_REDACTION_PATTERN, SESSION_CONF_DISPLAY_MODE}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
 
 object ApiUtils extends Logging {
+
+  private def buildConf(
+      rawConf: Map[String, String],
+      session: KyuubiSession): java.util.Map[String, String] = {
+    session.sessionManager.getConf.get(SESSION_CONF_DISPLAY_MODE) match {
+      case "NONE" => Map.empty[String, String].asJava
+      case "ORIGINAL" => rawConf.asJava
+      case _ =>
+        val pattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
+        Utils.redact(pattern, rawConf.toSeq).toMap.asJava
+    }
+  }
+
   def sessionEvent(session: KyuubiSession): dto.KyuubiSessionEvent = {
     session.getSessionEvent.map { event =>
-      val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
-      val redactedConf = Utils.redact(redactionPattern, event.conf.toSeq).toMap.asJava
+      val conf = buildConf(event.conf, session)
       dto.KyuubiSessionEvent.builder()
         .sessionId(event.sessionId)
         .clientVersion(event.clientVersion)
@@ -40,7 +52,7 @@ object ApiUtils extends Logging {
         .user(event.user)
         .clientIp(event.clientIP)
         .serverIp(event.serverIP)
-        .conf(redactedConf)
+        .conf(conf)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
         .engineName(event.engineName)
@@ -57,14 +69,13 @@ object ApiUtils extends Logging {
 
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
-    val redactionPattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
-    val redactedConf = Utils.redact(redactionPattern, session.conf.toSeq).toMap.asJava
+    val conf = buildConf(session.conf, session)
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),
       session.user,
       session.ipAddress,
-      redactedConf,
+      conf,
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
