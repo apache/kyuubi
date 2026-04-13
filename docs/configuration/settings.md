@@ -594,6 +594,18 @@ jdbc:hive2://localhost:10009/default;#spark.sql.shuffle.partitions=2;spark.execu
 
 Please refer to the Spark official online documentation for [SET Command](https://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)
 
+### Dangerous Join Watchdog
+
+You can enable dangerous join detection for Spark SQL extension with:
+
+|                      Name                      | Default |                                    Description                                     |
+|------------------------------------------------|---------|------------------------------------------------------------------------------------|
+| `kyuubi.watchdog.dangerousJoin.enabled`        | `true`  | Enable dangerous join detection                                                    |
+| `kyuubi.watchdog.dangerousJoin.broadcastRatio` | `0.8`   | Ratio against Spark broadcast threshold to identify oversized broadcast fallback   |
+| `kyuubi.watchdog.dangerousJoin.action`         | `WARN`  | `WARN` logs warning diagnostics, `REJECT` throws exception with error code `41101` |
+
+Please see [Dangerous Join Watchdog](../watchdog/dangerous-join.md) for rules and examples.
+
 ## Flink Configurations
 
 ### Via flink-conf.yaml
