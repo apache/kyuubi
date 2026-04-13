@@ -287,6 +287,32 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     catalog.dropTable(testIdent)
   }
 
+  test("toOptionsAndSerdeProps") {
+    val properties = Map(
+      "hive.serde" -> "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+      "owner" -> "hadoop",
+      "header" -> "false",
+      "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "header" -> "false",
+      TableCatalog.OPTION_PREFIX + "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "field.delim" -> ",",
+      TableCatalog.OPTION_PREFIX + "line.delim" -> "\n")
+
+    val method = classOf[HiveTableCatalog].getDeclaredMethod(
+      "toOptionsAndSerdeProps",
+      classOf[scala.collection.immutable.Map[_, _]])
+    method.setAccessible(true)
+    val (optionsProps, serdeProps) = method.invoke(catalog, properties)
+      .asInstanceOf[(Map[String, String], Map[String, String])]
+
+    assert(optionsProps == Map(
+      "header" -> "false",
+      "delimiter" -> "#"))
+    assert(serdeProps == Map(
+      "field.delim" -> ",",
+      "line.delim" -> "\n"))
+  }
+
   test("createTable: SERDEPROPERTIES") {
     val properties = new util.HashMap[String, String]()
     properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
