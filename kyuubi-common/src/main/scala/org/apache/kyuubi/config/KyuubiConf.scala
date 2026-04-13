@@ -3283,6 +3283,32 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
+  val SERVER_LIMIT_CONNECTIONS_IP_ALLOWLIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.server.limit.connections.ip.allowlist")
+      .doc("When this list is not empty, only the client ip in the allow list will be" +
+        " permitted to connect to kyuubi server, all other ips will be denied." +
+        " If this list is empty (default), no ip allowlist restriction is applied." +
+        " Note: if a client ip is in both ip.allowlist and ip.deny.list," +
+        " the deny list takes higher priority.")
+      .version("1.10.0")
+      .serverOnly
+      .stringConf
+      .toSet()
+      .createWithDefault(Set.empty)
+
+  val SERVER_LIMIT_CONNECTIONS_USER_ALLOWLIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.server.limit.connections.user.allowlist")
+      .doc("When this list is not empty, only the user in the allow list will be" +
+        " permitted to connect to kyuubi server, all other users will be denied." +
+        " If this list is empty (default), no user allowlist restriction is applied." +
+        " Note: if a user is in both user.allowlist and user.deny.list," +
+        " the deny list takes higher priority.")
+      .version("1.10.0")
+      .serverOnly
+      .stringConf
+      .toSet()
+      .createWithDefault(Set.empty)
+
   val SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.batch.connections.per.user")
       .doc("Maximum kyuubi server batch connections per user." +
