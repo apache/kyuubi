@@ -287,6 +287,46 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     catalog.dropTable(testIdent)
   }
 
+  test("toOptionsAndSerdeProps") {
+    val properties = Map(
+      "hive.serde" -> "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+      "owner" -> "hadoop",
+      "header" -> "false",
+      "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "header" -> "false",
+      TableCatalog.OPTION_PREFIX + "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "field.delim" -> ",",
+      TableCatalog.OPTION_PREFIX + "line.delim" -> "\n")
+
+    val (optionsProps, serdeProps) = catalog.toOptionsAndSerdeProps(properties)
+
+    assert(optionsProps == Map(
+      "header" -> "false",
+      "delimiter" -> "#"))
+    assert(serdeProps == Map(
+      "field.delim" -> ",",
+      "line.delim" -> "\n"))
+  }
+
+  test("createTable: SERDEPROPERTIES") {
+    val properties = new util.HashMap[String, String]()
+    properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
+    properties.put(TableCatalog.OPTION_PREFIX + "field.delim", ",")
+    assert(!catalog.tableExists(testIdent))
+
+    val table = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
+
+    assert(!table.catalogTable.storage.properties.keys.exists(
+      _.startsWith(TableCatalog.OPTION_PREFIX)))
+    assert(!table.catalogTable.storage.properties.contains("hive.serde"))
+    assert(table.catalogTable.storage.properties.contains("field.delim"))
+    catalog.dropTable(testIdent)
+  }
+
   test("loadTable") {
     val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
     val loaded = catalog.loadTable(testIdent)
