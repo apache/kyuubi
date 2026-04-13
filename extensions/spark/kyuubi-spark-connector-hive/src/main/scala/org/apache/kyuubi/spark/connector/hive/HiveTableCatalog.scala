@@ -317,12 +317,15 @@ class HiveTableCatalog(sparkSession: SparkSession)
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
       val maybeProvider = Option(properties.get(TableCatalog.PROP_PROVIDER))
+      val tableProps = properties.asScala.toMap
+      val (optionsProps, serdeProps) = toOptionsAndSerdeProps(tableProps)
       val (storage, provider) =
         getStorageFormatAndProvider(
           maybeProvider,
           location,
-          properties.asScala.toMap)
-      val tableProperties = properties.asScala
+          tableProps,
+          optionsProps,
+          serdeProps)
       val isExternal = properties.containsKey(TableCatalog.PROP_EXTERNAL)
       val tableType =
         if (isExternal || location.isDefined) {
@@ -339,7 +342,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
         provider = Some(provider),
         partitionColumnNames = partitionColumns,
         bucketSpec = maybeBucketSpec,
-        properties = tableProperties.toMap,
+        properties = tableProps,
         tracksPartitionsInCatalog = conf.manageFilesourcePartitions,
         comment = Option(properties.get(TableCatalog.PROP_COMMENT)))
 
@@ -431,10 +434,25 @@ class HiveTableCatalog(sparkSession: SparkSession)
       catalog.renameTable(oldIdent.asTableIdentifier, newIdent.asTableIdentifier)
     }
 
-  private def toOptions(properties: Map[String, String]): Map[String, String] = {
-    properties.filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX)).map {
-      case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value
-    }.toMap
+  /**
+   * Splits properties into optionsProps and serdeProps based on the `options.` prefix.
+   *
+   * - optionsProps: keys with "options." prefix whose stripped key ALREADY exist in properties,
+   *   indicating they were originally specified via OPTIONS clause.
+   * - serdeProps: keys with "options." prefix whose stripped key does NOT exists in properties,
+   *   indicating they were originally specified via SERDEPROPERTIES clause
+   *
+   * @param properties the full properties map
+   * @return a tuple of (optionsProps, serdeProps), both with the "options." prefix stripped
+   */
+  private def toOptionsAndSerdeProps(
+      properties: Map[String, String]): (Map[String, String], Map[String, String]) = {
+    val (optionsProps, serdeProps) = properties
+      .filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX))
+      .map { case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value }
+      .toMap
+      .partition { case (strippedKey, _) => properties.contains(strippedKey) }
+    (optionsProps, serdeProps)
   }
 
   override def listNamespaces(): Array[Array[String]] =
@@ -583,23 +601,25 @@ private object HiveTableCatalog extends Logging {
   private def getStorageFormatAndProvider(
       provider: Option[String],
       location: Option[String],
-      options: Map[String, String]): (CatalogStorageFormat, String) = {
+      tableProps: Map[String, String],
+      optionsProps: Map[String, String],
+      serdeProps: Map[String, String]): (CatalogStorageFormat, String) = {
     val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = optionsProps)
 
     val conf = SQLConf.get
     val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = optionsProps)
 
     if (provider.isDefined) {
       (nonHiveStorageFormat, provider.get)
-    } else if (serdeIsDefined(options)) {
-      val maybeSerde = options.get("hive.serde")
-      val maybeStoredAs = options.get("hive.stored-as")
-      val maybeInputFormat = options.get("hive.input-format")
-      val maybeOutputFormat = options.get("hive.output-format")
+    } else if (serdeIsDefined(tableProps)) {
+      val maybeSerde = tableProps.get("hive.serde")
+      val maybeStoredAs = tableProps.get("hive.stored-as")
+      val maybeInputFormat = tableProps.get("hive.input-format")
+      val maybeOutputFormat = tableProps.get("hive.output-format")
       val storageFormat = if (maybeStoredAs.isDefined) {
         // If `STORED AS fileFormat` is used, infer inputFormat, outputFormat and serde from it.
         HiveSerDe.sourceToSerDe(maybeStoredAs.get) match {
@@ -609,7 +629,7 @@ private object HiveTableCatalog extends Logging {
               outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
               // User specified serde takes precedence over the one inferred from file format.
               serde = maybeSerde.orElse(hiveSerde.serde).orElse(defaultHiveStorage.serde),
-              properties = options ++ defaultHiveStorage.properties)
+              properties = serdeProps ++ defaultHiveStorage.properties)
           case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
         }
       } else {
@@ -619,7 +639,7 @@ private object HiveTableCatalog extends Logging {
           outputFormat =
             maybeOutputFormat.orElse(defaultHiveStorage.outputFormat),
           serde = maybeSerde.orElse(defaultHiveStorage.serde),
-          properties = options ++ defaultHiveStorage.properties)
+          properties = serdeProps ++ defaultHiveStorage.properties)
       }
       (storageFormat, DDLUtils.HIVE_PROVIDER)
     } else {

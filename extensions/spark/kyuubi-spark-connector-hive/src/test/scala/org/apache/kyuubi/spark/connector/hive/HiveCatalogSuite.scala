@@ -287,6 +287,25 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     catalog.dropTable(testIdent)
   }
 
+  test("createTable: SERDEPROPERTIES") {
+    val properties = new util.HashMap[String, String]()
+    properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
+    properties.put(TableCatalog.OPTION_PREFIX + "field.delim", ",")
+    assert(!catalog.tableExists(testIdent))
+
+    val table = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
+
+    assert(!table.catalogTable.storage.properties.keys.exists(
+      _.startsWith(TableCatalog.OPTION_PREFIX)))
+    assert(!table.catalogTable.storage.properties.contains("hive.serde"))
+    assert(table.catalogTable.storage.properties.contains("field.delim"))
+    catalog.dropTable(testIdent)
+  }
+
   test("loadTable") {
     val table = catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
     val loaded = catalog.loadTable(testIdent)
