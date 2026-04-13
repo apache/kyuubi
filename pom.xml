@@ -188,6 +188,8 @@
         <mockito.version>4.11.0</mockito.version>
         <netty.version>4.2.7.Final</netty.version>
         <openai.java.version>0.12.0</openai.java.version>
+        <openai.sdk.version>4.30.0</openai.sdk.version>
+        <victools.jsonschema.version>4.37.0</victools.jsonschema.version>
         <retrofit.version>2.9.0</retrofit.version>
         <paimon.version>0.8.2</paimon.version>
         <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
@@ -218,6 +220,7 @@
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
         <swagger.version>2.2.1</swagger.version>
+        <testcontainers-java.version>2.0.3</testcontainers-java.version>
         <testcontainers-scala.version>0.44.1</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
@@ -578,6 +581,12 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-mysql</artifactId>
+                <version>${testcontainers-java.version}</version>
             </dependency>
 
             <dependency>
@@ -1199,6 +1208,24 @@
                 <groupId>com.theokanning.openai-gpt3-java</groupId>
                 <artifactId>service</artifactId>
                 <version>${openai.java.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.openai</groupId>
+                <artifactId>openai-java</artifactId>
+                <version>${openai.sdk.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>${victools.jsonschema.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-jackson</artifactId>
+                <version>${victools.jsonschema.version}</version>
             </dependency>
 
             <dependency>

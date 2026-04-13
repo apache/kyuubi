@@ -145,7 +145,7 @@ class ExecuteStatement(
               n.put("requestId", req.requestId())
               n.put("id", req.toolCallId())
               n.put("name", req.toolName())
-              n.put("args", req.toolArgs().toString)
+              n.set("args", JSON.valueToTree(req.toolArgs()))
               n.put("riskLevel", req.riskLevel().name())
             }))
           case EventType.AGENT_FINISH =>
