@@ -565,7 +565,8 @@ public class Utils {
   }
 
   public static String parsePropertyFromUrl(final String url, final String key) {
-    String[] tokens = url.split(";");
+    String urlClientPropertiesSection = url.split("[?#]")[0];
+    String[] tokens = urlClientPropertiesSection.split(";");
     for (String token : tokens) {
       if (token.trim().startsWith(key.trim() + "=")) {
         return token.trim().substring((key.trim() + "=").length());

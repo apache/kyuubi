@@ -48,6 +48,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.withSparkSQLConf
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.{getStorageFormatAndProvider, toCatalogDatabase, CatalogDatabaseHelper, IdentifierHelper, NamespaceHelper}
+import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.DROP_TABLE_AS_PURGE_TABLE
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorDelegationTokenProvider.metastoreTokenSignature
 import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
@@ -316,12 +317,15 @@ class HiveTableCatalog(sparkSession: SparkSession)
       val (partitionColumns, maybeBucketSpec) = partitions.toSeq.convertTransforms
       val location = Option(properties.get(TableCatalog.PROP_LOCATION))
       val maybeProvider = Option(properties.get(TableCatalog.PROP_PROVIDER))
+      val tableProps = properties.asScala.toMap
+      val (optionsProps, serdeProps) = toOptionsAndSerdeProps(tableProps)
       val (storage, provider) =
         getStorageFormatAndProvider(
           maybeProvider,
           location,
-          properties.asScala.toMap)
-      val tableProperties = properties.asScala
+          tableProps,
+          optionsProps,
+          serdeProps)
       val isExternal = properties.containsKey(TableCatalog.PROP_EXTERNAL)
       val tableType =
         if (isExternal || location.isDefined) {
@@ -338,7 +342,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
         provider = Some(provider),
         partitionColumnNames = partitionColumns,
         bucketSpec = maybeBucketSpec,
-        properties = tableProperties.toMap,
+        properties = tableProps,
         tracksPartitionsInCatalog = conf.manageFilesourcePartitions,
         comment = Option(properties.get(TableCatalog.PROP_COMMENT)))
 
@@ -392,14 +396,23 @@ class HiveTableCatalog(sparkSession: SparkSession)
       loadTable(ident)
     }
 
-  override def dropTable(ident: Identifier): Boolean =
+  override def purgeTable(ident: Identifier): Boolean = {
+    dropTableInternal(ident, purge = true)
+  }
+
+  override def dropTable(ident: Identifier): Boolean = {
+    val purge = sessionState.conf.getConf(DROP_TABLE_AS_PURGE_TABLE)
+    dropTableInternal(ident, purge)
+  }
+
+  private def dropTableInternal(ident: Identifier, purge: Boolean): Boolean =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
       try {
         if (loadTable(ident) != null) {
           catalog.dropTable(
             ident.asTableIdentifier,
             ignoreIfNotExists = true,
-            purge = true /* skip HDFS trash */ )
+            purge /* whether to skip HDFS trash */ )
           true
         } else {
           false
@@ -421,10 +434,25 @@ class HiveTableCatalog(sparkSession: SparkSession)
       catalog.renameTable(oldIdent.asTableIdentifier, newIdent.asTableIdentifier)
     }
 
-  private def toOptions(properties: Map[String, String]): Map[String, String] = {
-    properties.filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX)).map {
-      case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value
-    }.toMap
+  /**
+   * Splits properties into optionsProps and serdeProps based on the `options.` prefix.
+   *
+   * - optionsProps: keys with "options." prefix whose stripped key ALREADY exist in properties,
+   *   indicating they were originally specified via OPTIONS clause.
+   * - serdeProps: keys with "options." prefix whose stripped key does NOT exists in properties,
+   *   indicating they were originally specified via SERDEPROPERTIES clause.
+   *
+   * @param properties the full properties map
+   * @return a tuple of (optionsProps, serdeProps), both with the "options." prefix stripped
+   */
+  private[hive] def toOptionsAndSerdeProps(
+      properties: Map[String, String]): (Map[String, String], Map[String, String]) = {
+    val (optionsProps, serdeProps) = properties
+      .filterKeys(_.startsWith(TableCatalog.OPTION_PREFIX))
+      .map { case (key, value) => key.drop(TableCatalog.OPTION_PREFIX.length) -> value }
+      .toMap
+      .partition { case (strippedKey, _) => properties.contains(strippedKey) }
+    (optionsProps, serdeProps)
   }
 
   override def listNamespaces(): Array[Array[String]] =
@@ -467,7 +495,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       namespace match {
         case Array(db) if !catalog.databaseExists(db) =>
           catalog.createDatabase(
-            toCatalogDatabase(db, metadata, defaultLocation = Some(catalog.getDefaultDBPath(db))),
+            toCatalogDatabase(db, metadata, defaultLocation = Some(getCatalogDefaultDBPath(db))),
             ignoreIfExists = false)
 
         case Array(_) =>
@@ -477,6 +505,25 @@ class HiveTableCatalog(sparkSession: SparkSession)
           throw new IllegalArgumentException(s"Invalid namespace name: ${namespace.quoted}")
       }
     }
+
+  /**
+   * Returns the default database path with catalog-level warehouse configuration precedence.
+   *
+   * This method resolves the database path using the following priority order:
+   *   1. Catalog-level `spark.sql.catalog.<catalog>.hive.metastore.warehouse.dir`
+   *   2. Global-level `spark.sql.warehouse.dir` (Underlying)
+   *
+   * @param db database name
+   * @return qualified URI path for the database
+   */
+  private def getCatalogDefaultDBPath(db: String): URI = {
+    Option(catalogOptions.get("hive.metastore.warehouse.dir")).filter(_.nonEmpty) match {
+      case Some(dir) =>
+        CatalogUtils.makeQualifiedDBObjectPath(catalog.getDefaultDBPath(db), dir, hadoopConf)
+      case None =>
+        catalog.getDefaultDBPath(db)
+    }
+  }
 
   override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
     withSparkSQLConf(LEGACY_NON_IDENTIFIER_OUTPUT_CATALOG_NAME -> "true") {
@@ -554,23 +601,25 @@ private object HiveTableCatalog extends Logging {
   private def getStorageFormatAndProvider(
       provider: Option[String],
       location: Option[String],
-      options: Map[String, String]): (CatalogStorageFormat, String) = {
+      tableProps: Map[String, String],
+      optionsProps: Map[String, String],
+      serdeProps: Map[String, String]): (CatalogStorageFormat, String) = {
     val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = optionsProps)
 
     val conf = SQLConf.get
     val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
       locationUri = location.map(CatalogUtils.stringToURI),
-      properties = options)
+      properties = optionsProps)
 
     if (provider.isDefined) {
       (nonHiveStorageFormat, provider.get)
-    } else if (serdeIsDefined(options)) {
-      val maybeSerde = options.get("hive.serde")
-      val maybeStoredAs = options.get("hive.stored-as")
-      val maybeInputFormat = options.get("hive.input-format")
-      val maybeOutputFormat = options.get("hive.output-format")
+    } else if (serdeIsDefined(tableProps)) {
+      val maybeSerde = tableProps.get("hive.serde")
+      val maybeStoredAs = tableProps.get("hive.stored-as")
+      val maybeInputFormat = tableProps.get("hive.input-format")
+      val maybeOutputFormat = tableProps.get("hive.output-format")
       val storageFormat = if (maybeStoredAs.isDefined) {
         // If `STORED AS fileFormat` is used, infer inputFormat, outputFormat and serde from it.
         HiveSerDe.sourceToSerDe(maybeStoredAs.get) match {
@@ -580,7 +629,7 @@ private object HiveTableCatalog extends Logging {
               outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
               // User specified serde takes precedence over the one inferred from file format.
               serde = maybeSerde.orElse(hiveSerde.serde).orElse(defaultHiveStorage.serde),
-              properties = options ++ defaultHiveStorage.properties)
+              properties = serdeProps ++ defaultHiveStorage.properties)
           case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
         }
       } else {
@@ -590,7 +639,7 @@ private object HiveTableCatalog extends Logging {
           outputFormat =
             maybeOutputFormat.orElse(defaultHiveStorage.outputFormat),
           serde = maybeSerde.orElse(defaultHiveStorage.serde),
-          properties = options ++ defaultHiveStorage.properties)
+          properties = serdeProps ++ defaultHiveStorage.properties)
       }
       (storageFormat, DDLUtils.HIVE_PROVIDER)
     } else {

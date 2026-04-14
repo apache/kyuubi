@@ -65,6 +65,7 @@
         <module>extensions/spark/kyuubi-spark-lineage-shaded</module>
         <module>extensions/spark/kyuubi-spark-jvm-quake</module>
         <module>externals/kyuubi-chat-engine</module>
+        <module>externals/kyuubi-data-agent-engine</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-hive-sql-engine</module>
@@ -114,7 +115,7 @@
     </distributionManagement>
 
     <properties>
-        <maven.version>3.9.12</maven.version>
+        <maven.version>3.9.14</maven.version>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <enforcer.maxJdkVersion>8</enforcer.maxJdkVersion>
@@ -129,7 +130,7 @@
         <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.17.6</byte-buddy.version>
-        <bouncycastle.version>1.78</bouncycastle.version>
+        <bouncycastle.version>1.79</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
@@ -150,7 +151,7 @@
         <grpc.version>1.76.2</grpc.version>
         <guava.version>33.4.8-jre</guava.version>
         <guava.failureaccess.version>1.0.3</guava.failureaccess.version>
-        <hadoop.version>3.3.6</hadoop.version>
+        <hadoop.version>3.4.3</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
         <fliptables.verion>1.1.1</fliptables.verion>
         <hive.version>3.1.3</hive.version>
@@ -175,14 +176,14 @@
         <jetty.version>9.4.57.v20241219</jetty.version>
         <jline.version>2.14.6</jline.version>
         <junit.version>4.13.2</junit.version>
-        <kafka.version>3.9.1</kafka.version>
+        <kafka.version>3.9.2</kafka.version>
         <!-- 6.14.0 requires Jackson 2.19.0+
              https://github.com/fabric8io/kubernetes-client/releases/tag/v6.14.0 -->
         <kubernetes-client.version>6.14.0</kubernetes-client.version>
         <kyuubi-relocated.version>0.6.0</kyuubi-relocated.version>
         <kyuubi-relocated-zookeeper.artifacts>kyuubi-relocated-zookeeper-34</kyuubi-relocated-zookeeper.artifacts>
         <ldapsdk.version>6.0.5</ldapsdk.version>
-        <log4j.version>2.24.3</log4j.version>
+        <log4j.version>2.25.4</log4j.version>
         <mysql.jdbc.version>8.4.0</mysql.jdbc.version>
         <mockito.version>4.11.0</mockito.version>
         <netty.version>4.2.7.Final</netty.version>
@@ -217,7 +218,7 @@
         <sqlite.version>3.46.1.3</sqlite.version>
         <supercsv.version>2.2.0</supercsv.version>
         <swagger.version>2.2.1</swagger.version>
-        <testcontainers-scala.version>0.43.0</testcontainers-scala.version>
+        <testcontainers-scala.version>0.44.1</testcontainers-scala.version>
         <!-- https://github.com/ThreeTen/threeten-extra/issues/226 -->
         <threeten.version>1.7.0</threeten.version>
         <!-- trino-client involves kotlin runtime dependencies since 412 because of upgrading okhttp -->
@@ -1035,7 +1036,7 @@
                         <artifactId>zstd-jni</artifactId>
                     </exclusion>
                     <exclusion>
-                        <groupId>org.lz4</groupId>
+                        <groupId>at.yawk.lz4</groupId>
                         <artifactId>lz4-java</artifactId>
                     </exclusion>
                     <exclusion>
@@ -2087,7 +2088,7 @@
             <id>spark-master</id>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.0-SNAPSHOT</spark.version>
+                <spark.version>4.2.0-SNAPSHOT</spark.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.PySparkTest</maven.plugin.scalatest.exclude.tags>
             </properties>

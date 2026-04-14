@@ -29,7 +29,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
-import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{Identifier, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.execution.datasources.v2.orc.OrcScan
 import org.apache.spark.sql.execution.datasources.v2.parquet.ParquetScan
@@ -54,12 +54,13 @@ class HiveCatalogSuite extends KyuubiHiveTest {
 
   var catalog: HiveTableCatalog = _
 
-  private def newCatalog(): HiveTableCatalog = {
+  private def newCatalog(extraOptions: Map[String, String] = Map.empty): HiveTableCatalog = {
     val catalog = new HiveTableCatalog
     val catalogName = "hive"
     val properties = Maps.newHashMap[String, String]()
     properties.put("javax.jdo.option.ConnectionURL", "jdbc:derby:memory:memorydb;create=true")
     properties.put("javax.jdo.option.ConnectionDriverName", "org.apache.derby.jdbc.EmbeddedDriver")
+    extraOptions.foreach { case (k, v) => properties.put(k, v) }
     catalog.initialize(catalogName, new CaseInsensitiveStringMap(properties))
     catalog
   }
@@ -71,8 +72,15 @@ class HiveCatalogSuite extends KyuubiHiveTest {
   }
 
   def makeQualifiedPathWithWarehouse(path: String): URI = {
-    val p = new Path(catalog.conf.warehousePath, path)
-    val fs = p.getFileSystem(catalog.hadoopConfiguration())
+    makeQualifiedPathWithWarehouse(path, catalog.conf.warehousePath, catalog)
+  }
+
+  private def makeQualifiedPathWithWarehouse(
+      path: String,
+      warehousePath: String,
+      targetCatalog: HiveTableCatalog): URI = {
+    val p = new Path(warehousePath, path)
+    val fs = p.getFileSystem(targetCatalog.hadoopConfiguration())
     fs.makeQualified(p).toUri
   }
 
@@ -221,6 +229,18 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     assert(!catalog.tableExists(testIdent))
   }
 
+  test("purgeTable") {
+    assert(!catalog.tableExists(testIdent))
+
+    catalog.createTable(testIdent, schema, Array.empty[Transform], emptyProps)
+
+    assert(catalog.tableExists(testIdent))
+
+    catalog.purgeTable(testIdent)
+
+    assert(!catalog.tableExists(testIdent))
+  }
+
   test("createTable: location") {
     val properties = new util.HashMap[String, String]()
     properties.put(TableCatalog.PROP_PROVIDER, "parquet")
@@ -264,6 +284,46 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       Array.empty[Transform],
       properties).asInstanceOf[HiveTable]
     assert(t4.catalogTable.location.toString === "file:/absolute/path")
+    catalog.dropTable(testIdent)
+  }
+
+  test("toOptionsAndSerdeProps") {
+    val properties = Map(
+      "hive.serde" -> "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+      "owner" -> "hadoop",
+      "header" -> "false",
+      "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "header" -> "false",
+      TableCatalog.OPTION_PREFIX + "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "field.delim" -> ",",
+      TableCatalog.OPTION_PREFIX + "line.delim" -> "\n")
+
+    val (optionsProps, serdeProps) = catalog.toOptionsAndSerdeProps(properties)
+
+    assert(optionsProps == Map(
+      "header" -> "false",
+      "delimiter" -> "#"))
+    assert(serdeProps == Map(
+      "field.delim" -> ",",
+      "line.delim" -> "\n"))
+  }
+
+  test("createTable: SERDEPROPERTIES") {
+    val properties = new util.HashMap[String, String]()
+    properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
+    properties.put(TableCatalog.OPTION_PREFIX + "field.delim", ",")
+    assert(!catalog.tableExists(testIdent))
+
+    val table = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
+
+    assert(!table.catalogTable.storage.properties.keys.exists(
+      _.startsWith(TableCatalog.OPTION_PREFIX)))
+    assert(!table.catalogTable.storage.properties.contains("hive.serde"))
+    assert(table.catalogTable.storage.properties.contains("field.delim"))
     catalog.dropTable(testIdent)
   }
 
@@ -343,6 +403,45 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     checkMetadata(metadata.asScala.toMap, emptyProps.asScala.toMap)
 
     catalog.dropNamespace(testNs, cascade = false)
+  }
+
+  test("createNamespace location: use global-level warehouse dir") {
+    val ns = Array("ns_default_path")
+    try {
+      catalog.createNamespace(ns, emptyProps)
+      val location = catalog.loadNamespaceMetadata(ns)
+        .asScala(SupportsNamespaces.PROP_LOCATION)
+
+      val expectedUri = makeQualifiedPathWithWarehouse(s"${ns.head}.db")
+      assert(new URI(location) === expectedUri)
+    } finally {
+      catalog.dropNamespace(ns, cascade = true)
+    }
+  }
+
+  test("createNamespace location: use catalog-level warehouse dir") {
+    withTempDir { tmpDir =>
+      val customWarehouseDir = tmpDir.getCanonicalPath
+      val customCatalog = newCatalog(Map("hive.metastore.warehouse.dir" -> customWarehouseDir))
+      val ns = Array("ns_custom_path")
+      try {
+        customCatalog.createNamespace(ns, emptyProps)
+        val location = customCatalog.loadNamespaceMetadata(ns)
+          .asScala(SupportsNamespaces.PROP_LOCATION)
+
+        val expectedUri =
+          makeQualifiedPathWithWarehouse(s"${ns.head}.db", customWarehouseDir, customCatalog)
+        assert(new URI(location) === expectedUri)
+
+        val defaultUri = makeQualifiedPathWithWarehouse(
+          s"${ns.head}.db",
+          customCatalog.conf.warehousePath,
+          customCatalog)
+        assert(new URI(location) !== defaultUri)
+      } finally {
+        customCatalog.dropNamespace(ns, cascade = true)
+      }
+    }
   }
 
   test("Support Parquet/Orc provider is splitable") {

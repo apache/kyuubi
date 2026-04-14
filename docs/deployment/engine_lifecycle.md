@@ -51,7 +51,7 @@ To better improve the overall resource utilization of the cluster,
 
 The above two configurations can be used together to set the TTL of engines.
 These configurations are user-facing and able to use in JDBC urls.
-Note that, for [connection](engine_share_level.html#connection) share level engines that will be terminated at once when the connection is disconnected, these configurations not necessarily work in this case.
+Note that, for [connection](engine_share_level.md#connection) share level engines that will be terminated at once when the connection is disconnected, these configurations not necessarily work in this case.
 
 ### Executor TTL
 

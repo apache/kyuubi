@@ -79,7 +79,7 @@ abstract class Benchmark(
       variations: Seq[Variation[_]] = Seq(Variation("StandardRun", Seq("true")) { _ => {} }),
       tags: Map[String, String] = Map.empty,
       timeout: Long = 0L,
-      resultsDir: String = resultsLocation,
+      resultPath: String = resultsLocation,
       forkThread: Boolean = true): ExperimentStatus = {
 
     new ExperimentStatus(
@@ -89,7 +89,7 @@ abstract class Benchmark(
       variations,
       tags,
       timeout,
-      resultsDir,
+      resultPath,
       sparkSession,
       currentConfiguration,
       forkThread = forkThread)
@@ -140,7 +140,7 @@ object Benchmark {
       variations: Seq[Variation[_]],
       tags: Map[String, String],
       timeout: Long,
-      resultsDir: String,
+      val resultPath: String,
       sparkSession: SparkSession,
       currentConfiguration: BenchmarkConfiguration,
       forkThread: Boolean = true) {
@@ -169,7 +169,6 @@ object Benchmark {
     }
 
     val timestamp: Long = System.currentTimeMillis()
-    val resultPath = s"$resultsDir/timestamp=$timestamp"
     val combinations: Seq[List[Int]] =
       cartesianProduct(variations.map(l => l.options.indices.toList).toList)
     val resultsFuture: Future[Unit] = Future {

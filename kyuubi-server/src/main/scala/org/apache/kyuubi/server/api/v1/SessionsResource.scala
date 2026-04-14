@@ -165,8 +165,14 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
     info(s"Received request of closing $sessionHandleStr")
-    fe.be.closeSession(sessionHandleStr)
-    Response.ok().build()
+    val sessionHandle = SessionHandle.fromUUID(sessionHandleStr)
+    fe.be.sessionManager.getSessionOption(sessionHandle) match {
+      case Some(_) =>
+        fe.be.closeSession(sessionHandle)
+        Response.ok().build()
+      case None =>
+        throw new NotFoundException(s"Invalid session handle: $sessionHandleStr")
+    }
   }
 
   @ApiResponse(
