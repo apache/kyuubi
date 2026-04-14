@@ -461,7 +461,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
   }
 
   private def withSessionConfDisplayMode(mode: String)(f: => Unit): Unit = {
-    conf.set(KyuubiConf.SESSION_CONF_DISPLAY_MODE, mode)
-    try f finally conf.set(KyuubiConf.SESSION_CONF_DISPLAY_MODE, "REDACTED")
+    conf.set(KyuubiConf.SERVER_CONF_RETRIEVE_MODE, mode)
+    try f finally conf.set(KyuubiConf.SERVER_CONF_RETRIEVE_MODE, "REDACTED")
   }
 }

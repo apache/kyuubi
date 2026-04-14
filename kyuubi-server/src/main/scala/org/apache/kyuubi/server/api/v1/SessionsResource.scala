@@ -32,6 +32,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto._
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_REST_SESSION_LIST_LEGACY_MODE
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
@@ -55,12 +56,15 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "get the list of live sessions for the current user")
   @GET
   def sessions(): Seq[SessionData] = {
-    val userName = fe.getSessionUser(Map.empty[String, String])
-    sessionManager
-      .allSessions()
-      .filter(session => session.user == userName)
-      .map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession]))
-      .toSeq
+    val legacyMode = sessionManager.getConf.get(FRONTEND_REST_SESSION_LIST_LEGACY_MODE)
+    val allSessions = sessionManager.allSessions()
+    val filtered =
+      if (legacyMode) allSessions
+      else {
+        val userName = fe.getSessionUser(Map.empty[String, String])
+        allSessions.filter(session => session.user == userName)
+      }
+    filtered.map(session => ApiUtils.sessionData(session.asInstanceOf[KyuubiSession])).toSeq
   }
 
   @ApiResponse(

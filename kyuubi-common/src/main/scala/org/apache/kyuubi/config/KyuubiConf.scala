@@ -3336,8 +3336,8 @@ object KyuubiConf {
       .regexConf
       .createOptional
 
-  val SESSION_CONF_DISPLAY_MODE: ConfigEntry[String] =
-    buildConf("kyuubi.session.conf.display.mode")
+  val SERVER_CONF_RETRIEVE_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.server.conf.retrieveMode")
       .serverOnly
       .doc("Controls how session configurations are returned in REST API responses. " +
         "Supported values: " +
@@ -3350,6 +3350,17 @@ object KyuubiConf {
       .stringConf
       .checkValues(Set("REDACTED", "ORIGINAL", "NONE"))
       .createWithDefault("REDACTED")
+
+  val FRONTEND_REST_SESSION_LIST_LEGACY_MODE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.legacy.v1.sessionsReturnAllUsers")
+      .serverOnly
+      .doc("When true, GET /api/v1/sessions returns all sessions on the server regardless " +
+        "of the calling user (legacy behavior). When false (default), only sessions owned " +
+        "by the authenticated user are returned. " +
+        "This flag is provided for backward compatibility and will be removed in a future release.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(false)
 
   val SERVER_PERIODIC_GC_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.server.periodicGC.interval")

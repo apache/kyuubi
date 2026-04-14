@@ -22,20 +22,25 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
-import org.apache.kyuubi.config.KyuubiConf.{SERVER_SECRET_REDACTION_PATTERN, SESSION_CONF_DISPLAY_MODE}
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_CONF_RETRIEVE_MODE, SERVER_SECRET_REDACTION_PATTERN}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
+
+object ConfRetrieveMode extends Enumeration {
+  val REDACTED, ORIGINAL, NONE = Value
+}
 
 object ApiUtils extends Logging {
 
   private def buildConf(
       rawConf: Map[String, String],
       session: KyuubiSession): java.util.Map[String, String] = {
-    session.sessionManager.getConf.get(SESSION_CONF_DISPLAY_MODE) match {
-      case "NONE" => Map.empty[String, String].asJava
-      case "ORIGINAL" => rawConf.asJava
-      case _ =>
+    ConfRetrieveMode.withName(
+      session.sessionManager.getConf.get(SERVER_CONF_RETRIEVE_MODE)) match {
+      case ConfRetrieveMode.NONE => Map.empty[String, String].asJava
+      case ConfRetrieveMode.ORIGINAL => rawConf.asJava
+      case ConfRetrieveMode.REDACTED =>
         val pattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
         Utils.redact(pattern, rawConf.toSeq).toMap.asJava
     }
