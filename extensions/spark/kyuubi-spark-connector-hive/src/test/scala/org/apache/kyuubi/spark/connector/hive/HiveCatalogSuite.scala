@@ -354,7 +354,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     properties.put(TableCatalog.OPTION_PREFIX + "field.delim", ",")
     properties.put("field.delim", ",")
     properties.put(TableCatalog.PROP_EXTERNAL, "true")
-    properties.put(TableCatalog.PROP_LOCATION, "file:/absolute/path")
+    properties.put(TableCatalog.PROP_LOCATION, "file:/tmp/path")
     properties.put("foo", "bar")
     assert(!catalog.tableExists(testIdent))
 
@@ -365,7 +365,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       properties).asInstanceOf[HiveTable]
 
     assert(table.catalogTable.tableType === CatalogTableType.EXTERNAL)
-    assert(table.catalogTable.location.toString === "file:/absolute/path")
+    assert(table.catalogTable.location.toString === "file:/tmp/path")
 
     assert(Set(
       "hive.serde",
