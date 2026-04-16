@@ -111,14 +111,12 @@ class KyuubiBatchService(
                     error(s"$batchId does not existed in metastore, assume it is finished")
                     true
                 }
-                if (!submitted) Thread.sleep(1000)
-              }
+                if (!submitted) Thread.sleep(1000)              }
               info(s"$batchId is submitted or finished.")
           }
         } catch {
-          // GEICO: If the batch session is not opened,
-          // reinitialize the batch state to ERROR
-          // This can be due to a DB error or connection limits
+          // If the batch session failed to open, reinitialize the batch state to ERROR
+          // This can be due to a DB error or batch_connection_limits exceeded
           case e: Exception =>
             if (batchId == UNINITIALIZED_BATCH_ID) {
               error(s"Error picking batch for submission", e)
@@ -126,7 +124,6 @@ class KyuubiBatchService(
               error(s"Error opening batch session for $batchId", e)
               try {
                 metadataManager.failScheduledBatch(batchId)
-                info(s"$batchId is marked as ERROR")
               } catch {
                 case ex: Exception =>
                   error(s"Unable to modify metadata for $batchId to ERROR", ex)
