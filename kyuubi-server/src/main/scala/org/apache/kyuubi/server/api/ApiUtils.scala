@@ -22,13 +22,33 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
+import org.apache.kyuubi.config.KyuubiConf.{SERVER_CONF_RETRIEVE_MODE, SERVER_SECRET_REDACTION_PATTERN}
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
 
+object ConfRetrieveMode extends Enumeration {
+  val REDACTED, ORIGINAL, NONE = Value
+}
+
 object ApiUtils extends Logging {
+
+  private def buildConf(
+      rawConf: Map[String, String],
+      session: KyuubiSession): java.util.Map[String, String] = {
+    ConfRetrieveMode.withName(
+      session.sessionManager.getConf.get(SERVER_CONF_RETRIEVE_MODE)) match {
+      case ConfRetrieveMode.NONE => Map.empty[String, String].asJava
+      case ConfRetrieveMode.ORIGINAL => rawConf.asJava
+      case ConfRetrieveMode.REDACTED =>
+        val pattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
+        Utils.redact(pattern, rawConf.toSeq).toMap.asJava
+    }
+  }
+
   def sessionEvent(session: KyuubiSession): dto.KyuubiSessionEvent = {
-    session.getSessionEvent.map(event =>
+    session.getSessionEvent.map { event =>
+      val conf = buildConf(event.conf, session)
       dto.KyuubiSessionEvent.builder()
         .sessionId(event.sessionId)
         .clientVersion(event.clientVersion)
@@ -37,7 +57,7 @@ object ApiUtils extends Logging {
         .user(event.user)
         .clientIp(event.clientIP)
         .serverIp(event.serverIP)
-        .conf(event.conf.asJava)
+        .conf(conf)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
         .engineName(event.engineName)
@@ -48,17 +68,19 @@ object ApiUtils extends Logging {
         .endTime(event.endTime)
         .totalOperations(event.totalOperations)
         .exception(event.exception.orNull)
-        .build()).orNull
+        .build()
+    }.orNull
   }
 
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
+    val conf = buildConf(session.conf, session)
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),
       session.user,
       session.ipAddress,
-      session.conf.asJava,
+      conf,
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,
