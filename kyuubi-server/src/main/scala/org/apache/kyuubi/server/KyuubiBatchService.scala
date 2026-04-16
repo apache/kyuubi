@@ -111,7 +111,8 @@ class KyuubiBatchService(
                     error(s"$batchId does not existed in metastore, assume it is finished")
                     true
                 }
-                if (!submitted) Thread.sleep(1000)              }
+                if (!submitted) Thread.sleep(1000)
+              }
               info(s"$batchId is submitted or finished.")
           }
         } catch {
