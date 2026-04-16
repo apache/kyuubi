@@ -28,6 +28,7 @@ import com.google.common.collect.Maps
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{NoSuchNamespaceException, NoSuchTableException, TableAlreadyExistsException}
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.connector.catalog.{Identifier, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -308,6 +309,26 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       "line.delim" -> "\n"))
   }
 
+  test("toTableProps") {
+    val properties = Map(
+      "foo" -> "bar",
+      TableCatalog.PROP_EXTERNAL -> "true",
+      TableCatalog.PROP_OWNER -> "hadoop",
+      TableCatalog.PROP_COMMENT -> "test table",
+      "hive.serde" -> "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe",
+      "header" -> "false",
+      "field.delim" -> ",",
+      TableCatalog.OPTION_PREFIX + "header" -> "false",
+      TableCatalog.OPTION_PREFIX + "delimiter" -> "#",
+      TableCatalog.OPTION_PREFIX + "field.delim" -> ",",
+      TableCatalog.OPTION_PREFIX + "line.delim" -> "\n")
+
+    val (optionsProps, serdeProps) = catalog.toOptionsAndSerdeProps(properties)
+    val tableProps = catalog.toTableProps(properties, optionsProps ++ serdeProps)
+
+    assert(tableProps == Map("foo" -> "bar"))
+  }
+
   test("createTable: SERDEPROPERTIES") {
     val properties = new util.HashMap[String, String]()
     properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
@@ -324,6 +345,36 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       _.startsWith(TableCatalog.OPTION_PREFIX)))
     assert(!table.catalogTable.storage.properties.contains("hive.serde"))
     assert(table.catalogTable.storage.properties.contains("field.delim"))
+    catalog.dropTable(testIdent)
+  }
+
+  test("createTable: external") {
+    val properties = new util.HashMap[String, String]()
+    properties.put("hive.serde", "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe")
+    properties.put(TableCatalog.OPTION_PREFIX + "field.delim", ",")
+    properties.put("field.delim", ",")
+    properties.put(TableCatalog.PROP_EXTERNAL, "true")
+    properties.put(TableCatalog.PROP_LOCATION, "file:/tmp/path")
+    properties.put("foo", "bar")
+    assert(!catalog.tableExists(testIdent))
+
+    val table = catalog.createTable(
+      testIdent,
+      schema,
+      Array.empty[Transform],
+      properties).asInstanceOf[HiveTable]
+
+    assert(table.catalogTable.tableType === CatalogTableType.EXTERNAL)
+    assert(table.catalogTable.location.toString === "file:/tmp/path")
+
+    assert(Set(
+      "hive.serde",
+      TableCatalog.OPTION_PREFIX + "field.delim",
+      "field.delim",
+      TableCatalog.PROP_EXTERNAL,
+      TableCatalog.PROP_LOCATION)
+      .forall(key => !table.catalogTable.properties.contains(key)))
+    assert(table.catalogTable.properties.get("foo").contains("bar"))
     catalog.dropTable(testIdent)
   }
 
