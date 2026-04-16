@@ -474,7 +474,7 @@ class HiveTableCatalog(sparkSession: SparkSession)
       !CatalogV2Util.TABLE_RESERVED_PROPERTIES.contains(key)
         && !key.startsWith(TableCatalog.OPTION_PREFIX)
         && !optionsAndSerdeProps.contains(key)
-        && !HIVE_TABLE_RESERVED_SERDE_PROPERTIES.contains(key))
+        && !HIVE_TABLE_RESERVED_SERDE_PROPERTIES.contains(key)).toMap
   }
 
   override def listNamespaces(): Array[Array[String]] =
