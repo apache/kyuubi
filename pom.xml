@@ -130,7 +130,7 @@
         <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.17.6</byte-buddy.version>
-        <bouncycastle.version>1.79</bouncycastle.version>
+        <bouncycastle.version>1.84</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
