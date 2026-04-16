@@ -48,7 +48,7 @@ class KyuubiInternalAuthenticationHandler extends AuthenticationHandler with Log
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
       .getOrElse(Array.empty[Byte])
-    val creds = new String(inputToken, StandardCharsets.UTF_8).split(":")
+    val creds = new String(inputToken, StandardCharsets.UTF_8).split(":", 2)
 
     if (creds.size < 2 || creds(0).trim.isEmpty || creds(1).trim.isEmpty) {
       response.setHeader(WWW_AUTHENTICATE_HEADER, authScheme.toString)

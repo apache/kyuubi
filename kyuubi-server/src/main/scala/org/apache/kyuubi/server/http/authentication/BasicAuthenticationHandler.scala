@@ -69,7 +69,7 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
     val authorization = getAuthorization(request)
     val inputToken = Option(authorization).map(a => Base64.getDecoder.decode(a.getBytes()))
       .getOrElse(Array.empty[Byte])
-    val creds = new String(inputToken, Charset.forName("UTF-8")).split(":")
+    val creds = new String(inputToken, Charset.forName("UTF-8")).split(":", 2)
 
     if (allowAnonymous) {
       authUser = creds.take(1).headOption.filterNot(_.isEmpty).getOrElse("anonymous")

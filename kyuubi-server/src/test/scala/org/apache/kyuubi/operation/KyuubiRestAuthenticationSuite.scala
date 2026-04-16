@@ -240,6 +240,15 @@ class KyuubiRestCustomAuthenticationTest extends KyuubiRestAuthenticationSuite {
     assert(HttpServletResponse.SC_OK == response.getStatus)
   }
 
+  test("test with invalid CUSTOM http basic authorization that contains colon") {
+    val response = webTarget.path("api/v1/sessions/count")
+      .request()
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("user", "password:with:colons"))
+      .get()
+
+    assert(HttpServletResponse.SC_FORBIDDEN == response.getStatus)
+  }
+
   test("test with invalid CUSTOM http basic authorization") {
     val response = webTarget.path("api/v1/sessions/count")
       .request()
