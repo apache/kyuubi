@@ -20,7 +20,7 @@ package org.apache.kyuubi.service.authentication.ldap
 import java.util
 import javax.naming.directory.SearchControls
 
-import org.stringtemplate.v4.ST
+import org.stringtemplate.v4.{ST, STGroup}
 
 /**
  * The object that encompasses all components of a Directory Service search query.
@@ -56,7 +56,8 @@ object Query {
      * @return the current instance of the builder
      */
     def filter(filterTemplate: String): Query.QueryBuilder = {
-      this.filterTemplate = new ST(filterTemplate)
+      val group = new STGroup()
+      this.filterTemplate = new ST(group, filterTemplate)
       this
     }
 
@@ -127,6 +128,8 @@ object Query {
     def build: Query = {
       validate()
       val filter: String = createFilter
+      // Unload template cache after render to avoid CompliedST/STToken retntion
+      Option(filterTemplate.groupThatCreatedThisInstance).foreach(_.unload())
       updateControls()
       new Query(filter, controls)
     }
