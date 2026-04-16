@@ -639,7 +639,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  // GEICO: Check if pod is stuck at failedMount Loop
+  // Check if pod is stuck at failedMount Loop
   private def checkPodFailedMountLoop(
       kubernetesInfo: KubernetesInfo,
       pod: Pod): Unit = {
