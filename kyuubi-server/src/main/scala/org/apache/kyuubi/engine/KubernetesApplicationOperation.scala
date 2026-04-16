@@ -224,7 +224,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       "cleanup-failed-mount-loop-pod-thread")
     initializeKubernetesClient(kyuubiConf)
 
-    // GEICO: start a periodic FailedMount checker for Pending pods
+    // start a periodic FailedMount checker for Pending pods
     if (kyuubiConf.get(KyuubiConf.KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_ENABLED)) {
       val interval = kyuubiConf.get(KyuubiConf.KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_INTERVAL)
       failedMountLoopPeriodicChecker = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
@@ -653,7 +653,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  // GEICO: Check if pod is stuck at failedMount Loop
+  // Check if pod is stuck at failedMount Loop
   private def checkPodFailedMountLoop(
       kubernetesInfo: KubernetesInfo,
       pod: Pod): Unit = {

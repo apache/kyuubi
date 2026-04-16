@@ -1441,7 +1441,7 @@ object KyuubiConf {
       .checkValues(KubernetesApplicationStateSource)
       .createWithDefault(KubernetesApplicationStateSource.POD.toString)
 
-  // GEICO: Configuration for checking and deleting pods stuck in FailedMount loop
+  // Configuration for checking and deleting pods stuck in FailedMount loop
   // Kubernetes will retry ~every 2 minutes,
   // Thus 30 count correspond to (30*2)/60 = 1 hours
   val KUBERNETES_POD_FAILED_MOUNT_LOOP_THRESHOLD: ConfigEntry[Int] =
