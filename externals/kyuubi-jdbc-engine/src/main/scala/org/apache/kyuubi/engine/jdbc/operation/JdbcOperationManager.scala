@@ -18,6 +18,8 @@ package org.apache.kyuubi.engine.jdbc.operation
 
 import java.util
 
+import org.apache.commons.lang3.StringUtils
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT}
@@ -91,7 +93,12 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
+    val effectiveSchema = if (StringUtils.isBlank(schemaName) || schemaName == "%") {
+      session.asInstanceOf[JdbcSessionImpl].effectiveDatabase.orNull
+    } else {
+      schemaName
+    }
+    val query = dialect.getTablesQuery(catalogName, effectiveSchema, tableName, tableTypes)
     val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
     val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
       .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))

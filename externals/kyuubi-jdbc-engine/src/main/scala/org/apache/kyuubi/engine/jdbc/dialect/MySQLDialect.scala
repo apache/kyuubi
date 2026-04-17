@@ -36,6 +36,34 @@ class MySQLDialect extends JdbcDialect {
     statement
   }
 
+  override def getCatalogsOperation(): String = {
+    "SELECT CATALOG_NAME FROM INFORMATION_SCHEMA.SCHEMATA GROUP BY CATALOG_NAME"
+  }
+
+  override def getSchemasOperation(catalog: String, schema: String): String = {
+    // Alias the MySQL-native columns to the JDBC-standard names expected by
+    // DatabaseMetaData.getSchemas(): TABLE_CATALOG and TABLE_SCHEM.
+    val query = new StringBuilder(
+      """SELECT CATALOG_NAME AS TABLE_CATALOG, SCHEMA_NAME AS TABLE_SCHEM
+        |FROM INFORMATION_SCHEMA.SCHEMATA
+        |""".stripMargin)
+
+    val filters = ArrayBuffer[String]()
+    if (StringUtils.isNotBlank(catalog)) {
+      filters += s"CATALOG_NAME LIKE '$catalog'"
+    }
+    if (StringUtils.isNotBlank(schema)) {
+      filters += s"SCHEMA_NAME LIKE '$schema'"
+    }
+
+    if (filters.nonEmpty) {
+      query.append(" WHERE ")
+      query.append(filters.mkString(" AND "))
+    }
+
+    query.toString()
+  }
+
   override def getTablesQuery(
       catalog: String,
       schema: String,
@@ -120,6 +148,16 @@ class MySQLDialect extends JdbcDialect {
     }
 
     query.toString()
+  }
+
+  override def setCurrentDatabase(connection: Connection, database: String): Boolean = {
+    val stmt = connection.createStatement()
+    try {
+      stmt.execute(s"USE `$database`")
+      true
+    } finally {
+      stmt.close()
+    }
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new MySQLTRowSetGenerator

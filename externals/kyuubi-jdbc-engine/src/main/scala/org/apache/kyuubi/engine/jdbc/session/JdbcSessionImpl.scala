@@ -19,14 +19,16 @@ package org.apache.kyuubi.engine.jdbc.session
 import java.sql.{Connection, DatabaseMetaData}
 
 import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialects
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_DATABASE}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class JdbcSessionImpl(
@@ -44,6 +46,13 @@ class JdbcSessionImpl(
   private[jdbc] var sessionConnection: Connection = _
 
   private var databaseMetaData: DatabaseMetaData = _
+
+  /**
+   * The database that was successfully applied to the backend connection during session open.
+   * `None` when no `USE_DATABASE` was requested, or when the request was for "default"
+   * (the Hive JDBC driver's fallback) and the backend had no such database.
+   */
+  private[jdbc] var effectiveDatabase: Option[String] = None
 
   val sessionConf: KyuubiConf = normalizeConf
 
@@ -67,6 +76,20 @@ class JdbcSessionImpl(
       sessionConf,
       sessionConnection,
       sessionConf.get(ENGINE_JDBC_SESSION_INITIALIZE_SQL))
+    conf.get(USE_DATABASE).foreach { database =>
+      try {
+        if (JdbcDialects.get(sessionConf).setCurrentDatabase(sessionConnection, database)) {
+          effectiveDatabase = Some(database)
+          info(s"Switched to database: $database")
+        }
+      } catch {
+        case NonFatal(e) if database == "default" =>
+          // The Hive JDBC driver sends "default" when the user didn't specify a database
+          // in the connection URL. Tolerate USE failure in that case so the session can
+          // still open against backends that have no "default" database.
+          warn(s"Failed to switch to database 'default', ignored.", e)
+      }
+    }
     super.open()
     info(s"The jdbc session is started.")
   }
