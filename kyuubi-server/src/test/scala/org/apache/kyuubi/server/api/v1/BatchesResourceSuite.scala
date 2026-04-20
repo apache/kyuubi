@@ -87,7 +87,6 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
       }
       override def getBatch(batchId: String) = realMetadataManager.getBatch(batchId)
     }
-    wrapperMetadataManager.initialize(sessionManager.getConf)
 
     val originalMetadataManager = sessionManager.metadataManager
     try {
