@@ -128,7 +128,7 @@ object Query {
     def build: Query = {
       validate()
       val filter: String = createFilter
-      // Unload template cache after render to avoid CompliedST/STToken retntion
+      // Unload template cache after render to avoid CompiledST/STToken retention
       Option(filterTemplate.groupThatCreatedThisInstance).foreach(_.unload())
       updateControls()
       new Query(filter, controls)
