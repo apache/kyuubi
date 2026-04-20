@@ -110,9 +110,9 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
         assert(batchInfoResponse.getStatus == 200)
         val batchInfo = batchInfoResponse.readEntity(classOf[Batch])
         assert(
-          batchInfo.getState === "INITIALIZED",
-          "Batch should remain INITIALIZED after openBatchSession failed and catch block ran " +
-            "(failScheduledBatch only transitions PENDING->ERROR)")
+          batchInfo.getState === "ERROR",
+           "Batch should eventually become ERROR after being picked and failed by the " +
+             "catch path, rather than remaining stuck in PENDING")
       }
 
       sessionManager.metadataManager = originalMetadataManager
