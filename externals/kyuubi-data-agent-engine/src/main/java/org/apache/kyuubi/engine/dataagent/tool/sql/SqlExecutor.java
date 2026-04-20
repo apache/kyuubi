@@ -84,7 +84,7 @@ final class SqlExecutor {
     sb.append("| ");
     for (int i = 1; i <= colCount; i++) {
       if (i > 1) sb.append(" | ");
-      sb.append(meta.getColumnName(i));
+      sb.append(meta.getColumnLabel(i));
     }
     sb.append(" |\n|");
     for (int i = 1; i <= colCount; i++) {

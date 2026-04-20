@@ -60,6 +60,23 @@ public class RunSelectQueryTest extends WithMySQLContainer {
   }
 
   @Test
+  public void testColumnAliasRenderedInHeader() {
+    // Verifies getColumnLabel (not getColumnName) is used so AS aliases show in the markdown
+    // header. MySQL is one of the drivers that distinguishes the two — getColumnName returns
+    // "id"/"name" here while getColumnLabel returns the AS alias. SQLite does not distinguish,
+    // so this guard lives on the MySQL integration path.
+    String result = select("SELECT id AS user_id, name AS user_name FROM select_test LIMIT 1");
+    assertFalse(result.startsWith("Error:"));
+    assertTrue(
+        "header should contain alias 'user_id', got:\n" + result, result.contains("user_id"));
+    assertTrue(
+        "header should contain alias 'user_name', got:\n" + result, result.contains("user_name"));
+    assertFalse(
+        "header should NOT leak the base column name 'id', got:\n" + result,
+        result.contains("| id |") || result.contains("| id "));
+  }
+
+  @Test
   public void testMySQLTypes() {
     String result = select("SELECT * FROM select_test WHERE id = 1");
     assertFalse(result.startsWith("Error:"));

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
@@ -40,6 +42,7 @@ public abstract class WithMySQLContainer {
 
   private static final long TOOL_CALL_TIMEOUT_SECONDS = 30;
   private static final int QUERY_TIMEOUT_SECONDS = 10;
+  private static final ObjectMapper JSON = new ObjectMapper();
 
   protected static MySQLContainer mysql;
   protected static HikariDataSource dataSource;
@@ -73,6 +76,9 @@ public abstract class WithMySQLContainer {
 
   @AfterClass
   public static void stopContainer() {
+    if (registry != null) {
+      registry.close();
+    }
     if (dataSource != null) {
       dataSource.close();
     }
@@ -96,7 +102,13 @@ public abstract class WithMySQLContainer {
    * envelope automatically.
    */
   protected static String callTool(String toolName, String sql) {
-    return registry.executeTool(toolName, "{\"sql\": \"" + sql.replace("\"", "\\\"") + "\"}");
+    ObjectNode args = JSON.createObjectNode();
+    args.put("sql", sql);
+    try {
+      return registry.executeTool(toolName, JSON.writeValueAsString(args));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   /** Shorthand for {@code callTool("run_select_query", sql)}. */

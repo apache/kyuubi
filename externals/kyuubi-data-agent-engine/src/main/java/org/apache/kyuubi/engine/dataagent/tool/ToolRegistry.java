@@ -29,10 +29,13 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,10 +54,19 @@ import org.slf4j.LoggerFactory;
  * around the read path. If we ever need true runtime registration, the right move is to swap {@code
  * tools} for an immutable snapshot per refresh, not to grab a mutex on the hot path.
  */
-public class ToolRegistry {
+public class ToolRegistry implements AutoCloseable {
 
   private static final Logger LOG = LoggerFactory.getLogger(ToolRegistry.class);
   private static final ObjectMapper JSON = new ObjectMapper();
+
+  /**
+   * Hard ceiling on concurrent tool-call workers. Sized for the realistic working set: one LLM turn
+   * rarely dispatches more than a handful of parallel {@code tool_calls}, and a Kyuubi data-agent
+   * engine serves a small number of overlapping sessions. When the ceiling is reached we reject
+   * fast and tell the LLM to retry — better UX than burying the request in a queue for minutes.
+   * Tuned as a safety rail, not a user knob.
+   */
+  private static final int MAX_POOL_SIZE = 8;
 
   private final Map<String, AgentTool<?>> tools = new LinkedHashMap<>();
   private volatile Map<String, ChatCompletionTool> cachedSpecs;
@@ -68,13 +80,25 @@ public class ToolRegistry {
    */
   public ToolRegistry(long toolCallTimeoutSeconds) {
     this.toolCallTimeoutSeconds = toolCallTimeoutSeconds;
+    AtomicLong threadId = new AtomicLong();
     this.executor =
-        Executors.newCachedThreadPool(
+        new ThreadPoolExecutor(
+            0,
+            MAX_POOL_SIZE,
+            60L,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<>(),
             r -> {
-              Thread t = new Thread(r, "tool-call-worker");
+              Thread t = new Thread(r, "tool-call-worker-" + threadId.incrementAndGet());
               t.setDaemon(true);
               return t;
             });
+  }
+
+  /** Shut down the worker pool. Idempotent. */
+  @Override
+  public void close() {
+    executor.shutdownNow();
   }
 
   /** Register a tool. Keyed by {@link AgentTool#name()}. */
@@ -141,7 +165,16 @@ public class ToolRegistry {
           T args = JSON.readValue(argsJson, tool.argsType());
           return tool.execute(args);
         };
-    Future<String> future = executor.submit(task);
+    Future<String> future;
+    try {
+      future = executor.submit(task);
+    } catch (RejectedExecutionException e) {
+      LOG.warn("Tool call '{}' rejected — worker pool saturated at {}", tool.name(), MAX_POOL_SIZE);
+      return "Error: tool call '"
+          + tool.name()
+          + "' rejected — server is handling too many concurrent tool calls. "
+          + "Retry in a moment.";
+    }
     try {
       return future.get(toolCallTimeoutSeconds, TimeUnit.SECONDS);
     } catch (TimeoutException e) {

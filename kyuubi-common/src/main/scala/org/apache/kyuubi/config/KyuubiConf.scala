@@ -3832,6 +3832,7 @@ object KyuubiConf {
         "has time to react before the outer wall-clock cap fires.")
       .version("1.12.0")
       .timeConf
+      .checkValue(_ >= 1000, "must >= 1s")
       .createWithDefaultString("PT3M")
 
   val ENGINE_DATA_AGENT_TOOL_CALL_TIMEOUT: ConfigEntry[Long] =
@@ -3844,6 +3845,7 @@ object KyuubiConf {
         "so server-side cancellation has time to react before this hard cap fires.")
       .version("1.12.0")
       .timeConf
+      .checkValue(_ >= 1000, "must >= 1s")
       .createWithDefaultString("PT5M")
 
   val ENGINE_DATA_AGENT_JDBC_URL: OptionalConfigEntry[String] =
