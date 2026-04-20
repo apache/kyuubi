@@ -40,6 +40,8 @@ object Query {
    * A builder of the [[Query]].
    */
   final class QueryBuilder {
+    /** The [[STGroup]] used only for this builder's filter template; unloaded in [[build]]. */
+    private var filterTemplateGroup: Option[STGroup] = None
     private var filterTemplate: ST = _
     private val controls: SearchControls = {
       val _controls = new SearchControls
@@ -57,6 +59,7 @@ object Query {
      */
     def filter(filterTemplate: String): Query.QueryBuilder = {
       val group = new STGroup()
+      this.filterTemplateGroup = Some(group)
       this.filterTemplate = new ST(group, filterTemplate)
       this
     }
@@ -129,7 +132,7 @@ object Query {
       validate()
       val filter: String = createFilter
       // Unload template cache after render to avoid CompiledST/STToken retention
-      Option(filterTemplate.groupThatCreatedThisInstance).foreach(_.unload())
+      filterTemplateGroup.foreach(_.unload())
       updateControls()
       new Query(filter, controls)
     }
