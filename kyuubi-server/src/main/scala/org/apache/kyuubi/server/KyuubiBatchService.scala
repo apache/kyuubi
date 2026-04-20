@@ -116,6 +116,19 @@ class KyuubiBatchService(
               info(s"$batchId is submitted or finished.")
           }
         } catch {
+          case e: InterruptedException =>
+            if (batchId == UNINITIALIZED_BATCH_ID) {
+              error(s"Interrupted while picking batch for submission", e)
+            } else {
+              error(s"Interrupted while opening batch session for $batchId", e)
+              try {
+                metadataManager.failScheduledBatch(batchId)
+              } catch {
+                case ex: Exception =>
+                  error(s"Unable to modify metadata for $batchId to ERROR", ex)
+              }
+            }
+            throw e
           // If the batch session failed to open, reinitialize the batch state to ERROR
           // This can be due to a DB error or batch_connection_limits exceeded
           case e: Exception =>
