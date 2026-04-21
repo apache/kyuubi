@@ -143,7 +143,6 @@ class KyuubiBatchService(
                   error(s"Unable to modify metadata for $batchId to ERROR", ex)
               }
             }
-            Thread.sleep(1000)
         }
       }
     }

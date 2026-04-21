@@ -111,8 +111,8 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
         val batchInfo = batchInfoResponse.readEntity(classOf[Batch])
         assert(
           batchInfo.getState === "ERROR",
-           "Batch should eventually become ERROR after being picked and failed by the " +
-             "catch path, rather than remaining stuck in PENDING")
+          "Batch should eventually become ERROR after being picked and failed by the " +
+            "catch path, rather than remaining stuck in PENDING")
       }
 
       sessionManager.metadataManager = originalMetadataManager
