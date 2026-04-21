@@ -117,6 +117,55 @@ class HiveQuerySuite extends KyuubiHiveTest {
     }
   }
 
+  test("[KYUUBI #7335] DynamicPartitionDataSingleWriter needs sort before write") {
+    withSparkSession(Map(
+      "hive.exec.dynamic.partition.mode" -> "nonstrict",
+      "spark.sql.shuffle.partitions" -> "1")) { spark =>
+      val table = "hive.default.test_part_table"
+      val tempTable = "hive.default.test_part_table_tmp"
+      withTable(table, tempTable) {
+        spark.sql(
+          s"""
+             | CREATE TABLE $table (
+             |   word STRING,
+             |   num BIGINT
+             | ) PARTITIONED BY (dt STRING)
+             | STORED AS ORC
+             |""".stripMargin)
+        spark.sql(
+          s"""
+             | CREATE TABLE $tempTable (
+             |   word STRING,
+             |   num BIGINT,
+             |   dt STRING
+             | ) STORED AS ORC
+             |""".stripMargin)
+        spark.sql(
+          s"""
+             | INSERT INTO $tempTable VALUES
+             | ('1', 1, '1111'),
+             | ('2', 2, '2222'),
+             | ('3', 4, '1111')
+             |""".stripMargin)
+
+        spark.sql(
+          s"""
+             | INSERT OVERWRITE TABLE $table PARTITION (dt)
+             | SELECT word, num, dt
+             | FROM $tempTable
+             | ORDER BY word
+             |""".stripMargin).collect()
+
+        checkAnswer(
+          spark.sql(s"SELECT * FROM $table"),
+          Seq(
+            Row("1", 1L, "1111"),
+            Row("2", 2L, "2222"),
+            Row("3", 4L, "1111")))
+      }
+    }
+  }
+
   test("[KYUUBI #4525] Partitioning predicates should take effect to filter data") {
     withSparkSession(Map("hive.exec.dynamic.partition.mode" -> "nonstrict")) { spark =>
       val table = "hive.default.employee"

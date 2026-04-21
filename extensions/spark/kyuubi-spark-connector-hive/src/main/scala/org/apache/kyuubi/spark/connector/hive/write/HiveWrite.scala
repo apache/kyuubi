@@ -32,7 +32,9 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, Write}
+import org.apache.spark.sql.connector.distributions.{Distribution, Distributions}
+import org.apache.spark.sql.connector.expressions.{Expressions, SortDirection, SortOrder}
+import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, RequiresDistributionAndOrdering}
 import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, WriteJobDescription}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
@@ -50,7 +52,8 @@ case class HiveWrite(
     info: LogicalWriteInfo,
     hiveTableCatalog: HiveTableCatalog,
     forceOverwrite: Boolean,
-    dynamicPartition: Map[String, Option[String]]) extends Write with Logging {
+    dynamicPartition: Map[String, Option[String]])
+  extends RequiresDistributionAndOrdering with Logging {
 
   private val options = info.options()
 
@@ -72,6 +75,14 @@ case class HiveWrite(
     hiveTable.getMetadata)
 
   override def description(): String = "Kyuubi-Hive-Connector"
+
+  override def requiredDistribution(): Distribution = Distributions.unspecified()
+
+  override def requiredOrdering(): Array[SortOrder] = {
+    partColumns.map { col =>
+      Expressions.sort(Expressions.column(col.name), SortDirection.ASCENDING)
+    }.toArray
+  }
 
   override def toBatch: BatchWrite = {
     val tmpLocation = HiveWriteHelper.getExternalTmpPath(externalCatalog, hadoopConf, tableLocation)
