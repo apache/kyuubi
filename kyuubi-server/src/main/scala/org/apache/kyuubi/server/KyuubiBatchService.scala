@@ -149,7 +149,7 @@ class KyuubiBatchService(
                     ex)
               }
             }
-            // sleep 1 second to avoid excessive retries during transient network/DB failures 
+            // sleep 1 second to avoid excessive retries during transient network/DB failures
             Thread.sleep(1000)
         }
       }
