@@ -69,17 +69,22 @@ async function request(config: RequestConfig): Promise<unknown> {
     throw new Error('Unauthorized')
   }
 
+  const contentType = response.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const rawText = await response.text()
+  const parsedBody = isJson && rawText ? JSON.parse(rawText) : rawText || undefined
+
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`)
+    const message =
+      (parsedBody && typeof parsedBody === 'object' && (parsedBody as any).message) ||
+      (typeof parsedBody === 'string' && parsedBody) ||
+      `HTTP error! status: ${response.status}`
+    const err: any = new Error(message)
+    err.response = { status: response.status, data: parsedBody }
+    throw err
   }
 
-  const contentType = response.headers.get('content-type')
-  if (!contentType || !contentType.includes('application/json')) {
-    return undefined
-  }
-
-  const text = await response.text()
-  return text ? JSON.parse(text) : undefined
+  return parsedBody
 }
 
 export default request
