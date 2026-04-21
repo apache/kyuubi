@@ -3850,9 +3850,28 @@ object KyuubiConf {
 
   val ENGINE_DATA_AGENT_QUERY_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.data.agent.query.timeout")
-      .doc("The query execution timeout for the Data Agent SQL tool.")
+      .doc("The JDBC query execution timeout for the Data Agent SQL tools. " +
+        "Passed to <code>Statement.setQueryTimeout</code> so the server (Spark/Trino/...) " +
+        "can cooperatively cancel long-running queries and release cluster resources. " +
+        "Should be set lower than " +
+        "<code>kyuubi.engine.data.agent.tool.call.timeout</code> so server-side cancellation " +
+        "has time to react before the outer wall-clock cap fires.")
       .version("1.12.0")
       .timeConf
+      .checkValue(_ >= 1000, "must >= 1s")
+      .createWithDefaultString("PT3M")
+
+  val ENGINE_DATA_AGENT_TOOL_CALL_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.data.agent.tool.call.timeout")
+      .doc("The maximum wall-clock execution time for any tool call in the Data Agent " +
+        "engine. Acts as the outer safety net enforced by the agent runtime via " +
+        "<code>Future.cancel()</code>, applied uniformly to every tool. " +
+        "For SQL tools the inner JDBC-level timeout is controlled separately by " +
+        "<code>kyuubi.engine.data.agent.query.timeout</code>, which should be set lower " +
+        "so server-side cancellation has time to react before this hard cap fires.")
+      .version("1.12.0")
+      .timeConf
+      .checkValue(_ >= 1000, "must >= 1s")
       .createWithDefaultString("PT5M")
 
   val ENGINE_DATA_AGENT_JDBC_URL: OptionalConfigEntry[String] =

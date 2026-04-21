@@ -308,6 +308,9 @@ com.squareup.retrofit2:retrofit
 com.squareup.okhttp3:okhttp
 org.apache.kafka:kafka-clients
 org.xerial:sqlite-jdbc
+com.openai:openai-java
+com.github.victools:jsonschema-generator
+com.github.victools:jsonschema-module-jackson
 
 BSD
 ------------
