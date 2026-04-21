@@ -40,6 +40,7 @@ object Query {
    * A builder of the [[Query]].
    */
   final class QueryBuilder {
+
     /** The [[STGroup]] used only for this builder's filter template; unloaded in [[build]]. */
     private var filterTemplateGroup: Option[STGroup] = None
     private var filterTemplate: ST = _
@@ -116,7 +117,7 @@ object Query {
       require(filterTemplate != null, "filter is required for LDAP search query")
     }
 
-    private def createFilter: String = filterTemplate.render
+    private def createFilter(): String = filterTemplate.render()
 
     private def updateControls(): Unit = {
       if (!returningAttributes.isEmpty) controls.setReturningAttributes(
@@ -130,7 +131,7 @@ object Query {
      */
     def build: Query = {
       validate()
-      val filter: String = createFilter
+      val filter: String = createFilter()
       // Unload template cache after render to avoid CompiledST/STToken retention
       filterTemplateGroup.foreach(_.unload())
       updateControls()
