@@ -72,11 +72,14 @@ async function request(config: RequestConfig): Promise<unknown> {
   const contentType = response.headers.get('content-type') || ''
   const isJson = contentType.includes('application/json')
   const rawText = await response.text()
-  const parsedBody = isJson && rawText ? JSON.parse(rawText) : rawText || undefined
+  const parsedBody =
+    isJson && rawText ? JSON.parse(rawText) : rawText || undefined
 
   if (!response.ok) {
     const message =
-      (parsedBody && typeof parsedBody === 'object' && (parsedBody as any).message) ||
+      (parsedBody &&
+        typeof parsedBody === 'object' &&
+        (parsedBody as any).message) ||
       (typeof parsedBody === 'string' && parsedBody) ||
       `HTTP error! status: ${response.status}`
     const err: any = new Error(message)
