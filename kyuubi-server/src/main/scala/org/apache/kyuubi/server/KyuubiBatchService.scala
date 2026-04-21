@@ -125,7 +125,10 @@ class KyuubiBatchService(
                 metadataManager.failScheduledBatch(batchId)
               } catch {
                 case ex: Exception =>
-                  error(s"Unable to modify metadata for $batchId to ERROR", ex)
+                  error(
+                    s"Unable to modify metadata for $batchId to ERROR; " +
+                      "an administrator may need to reset the batch state manually.",
+                    ex)
               }
             }
             throw e
@@ -140,9 +143,14 @@ class KyuubiBatchService(
                 metadataManager.failScheduledBatch(batchId)
               } catch {
                 case ex: Exception =>
-                  error(s"Unable to modify metadata for $batchId to ERROR", ex)
+                  error(
+                    s"Unable to modify metadata for $batchId to ERROR; " +
+                      "an administrator may need to reset the batch state manually.",
+                    ex)
               }
             }
+            // sleep 1 second to avoid excessive retries during transient network/DB failures 
+            Thread.sleep(1000)
         }
       }
     }
