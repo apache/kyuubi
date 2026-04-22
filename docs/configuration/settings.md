@@ -540,6 +540,12 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 | kyuubi.session.timeout                                  | PT6H                    | (deprecated)session timeout, it will be closed when it's not accessed for this duration                                                                                                                                                                                                                                                                                                                                  | duration | 1.0.0  |
 | kyuubi.session.user.sign.enabled                        | false                   | Whether to verify the integrity of session user name on the engine side, e.g. Authz plugin in Spark.                                                                                                                                                                                                                                                                                                                     | boolean  | 1.7.0  |
 
+### Spark
+
+| Key | Default |                                                                          Meaning                                                                          | Type | Since  |
+|-----|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|------|--------|
+| kyuubi.spark.file.config.list || A comma-separated list of additional Spark parameters for which Kyuubi checks whether the upload path is included in kyuubi.session.local.dir.allow.list. | set  | 1.12.0 |
+
 ### Spnego
 
 |           Key           |      Default      |                                                                                                                Meaning                                                                                                                 |  Type  | Since |
