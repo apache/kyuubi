@@ -20,8 +20,9 @@ package org.apache.kyuubi.engine.dataagent.mysql;
 import static org.junit.Assert.*;
 
 import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
-import org.apache.kyuubi.engine.dataagent.datasource.MysqlDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.MysqlDialect;
 import org.apache.kyuubi.engine.dataagent.prompt.SystemPromptBuilder;
+import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.SqlQueryArgs;
 import org.junit.BeforeClass;
@@ -66,7 +67,7 @@ public class DialectTest extends WithMySQLContainer {
 
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT " + quotedCol + " FROM " + quotedTable + " WHERE id = 1";
-    String result = selectTool.execute(args);
+    String result = selectTool.execute(args, ToolContext.EMPTY);
     assertFalse(result.startsWith("Error:"));
     assertTrue(result.contains("value1"));
 

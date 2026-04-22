@@ -15,23 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.runtime;
 
-/** Trino SQL dialect. Uses double-quote quoting for identifiers. */
-public final class TrinoDialect implements JdbcDialect {
-
-  static final TrinoDialect INSTANCE = new TrinoDialect();
-
-  private TrinoDialect() {}
-
-  @Override
-  public String datasourceName() {
-    return "trino";
-  }
-
-  @Override
-  public String quoteIdentifier(String identifier) {
-    String escaped = identifier.replace("\"", "\"\"");
-    return "\"" + escaped + "\"";
-  }
+/** Approval modes for tool execution in the Data Agent engine. */
+public enum ApprovalMode {
+  /** All tools require explicit user approval. */
+  STRICT,
+  /** Only non-readonly tools require approval. */
+  NORMAL,
+  /** All tools are auto-approved. */
+  AUTO_APPROVE
 }

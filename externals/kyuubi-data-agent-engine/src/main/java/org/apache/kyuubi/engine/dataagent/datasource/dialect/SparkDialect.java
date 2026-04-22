@@ -15,31 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.datasource.dialect;
 
-/**
- * Fallback dialect for JDBC subprotocols that have no dedicated implementation. Carries the
- * subprotocol name (e.g. "postgresql", "clickhouse") so prompts can still tell the LLM which SQL
- * flavor it is talking to. {@link #quoteIdentifier(String)} is intentionally unsupported — callers
- * that need quoting must check the dialect type first or pick a tool that does not depend on
- * dialect-specific identifier quoting.
- */
-public final class GenericDialect implements JdbcDialect {
+import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 
-  private final String name;
+/** Spark SQL dialect. Uses backtick quoting for identifiers. */
+public final class SparkDialect implements JdbcDialect {
 
-  public GenericDialect(String name) {
-    this.name = name;
-  }
+  public static final SparkDialect INSTANCE = new SparkDialect();
+
+  private SparkDialect() {}
 
   @Override
   public String datasourceName() {
-    return name;
+    return "spark";
   }
 
   @Override
   public String quoteIdentifier(String identifier) {
-    throw new UnsupportedOperationException(
-        "quoteIdentifier is not supported for generic dialect: " + name);
+    String escaped = identifier.replace("`", "``");
+    return "`" + escaped + "`";
   }
 }

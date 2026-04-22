@@ -15,23 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.tool;
 
-/** Spark SQL dialect. Uses backtick quoting for identifiers. */
-public final class SparkDialect implements JdbcDialect {
+/**
+ * Per-invocation context handed to {@link AgentTool#execute(Object, ToolContext)}. Today it carries
+ * just the session id so session-scoped tools (e.g. the offloaded tool-output retrievers) can
+ * restrict their filesystem view; extend here when a tool needs user/approval/etc.
+ */
+public final class ToolContext {
 
-  static final SparkDialect INSTANCE = new SparkDialect();
+  /** Sentinel for call sites that have no session to attribute — tests, direct CLI use. */
+  public static final ToolContext EMPTY = new ToolContext(null);
 
-  private SparkDialect() {}
+  private final String sessionId;
 
-  @Override
-  public String datasourceName() {
-    return "spark";
+  public ToolContext(String sessionId) {
+    this.sessionId = sessionId;
   }
 
-  @Override
-  public String quoteIdentifier(String identifier) {
-    String escaped = identifier.replace("`", "``");
-    return "`" + escaped + "`";
+  /** Upstream session id, or {@code null} when invoked outside a session. */
+  public String sessionId() {
+    return sessionId;
   }
 }

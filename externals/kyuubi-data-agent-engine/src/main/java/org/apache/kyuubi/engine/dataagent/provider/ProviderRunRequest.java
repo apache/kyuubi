@@ -17,12 +17,22 @@
 
 package org.apache.kyuubi.engine.dataagent.provider;
 
+import org.apache.kyuubi.engine.dataagent.runtime.ApprovalMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * User-facing request parameters for a provider-level agent invocation. Only contains fields from
  * the caller (question, model override, etc.). Adding new per-request options does not require
  * changing the {@link DataAgentProvider} interface.
+ *
+ * <p>The approval mode is accepted as a raw string (natural for config-driven callers) and parsed
+ * into {@link ApprovalMode} by {@link #getApprovalMode()}. Unrecognised values fall back to {@link
+ * ApprovalMode#NORMAL} with a warning.
  */
 public class ProviderRunRequest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ProviderRunRequest.class);
 
   private final String question;
   private String modelName;
@@ -45,8 +55,20 @@ public class ProviderRunRequest {
     return this;
   }
 
-  public String getApprovalMode() {
-    return approvalMode;
+  /**
+   * Resolved approval mode. Returns {@link ApprovalMode#NORMAL} when the caller did not set one or
+   * supplied an unknown value.
+   */
+  public ApprovalMode getApprovalMode() {
+    if (approvalMode == null || approvalMode.isEmpty()) {
+      return ApprovalMode.NORMAL;
+    }
+    try {
+      return ApprovalMode.valueOf(approvalMode.toUpperCase());
+    } catch (IllegalArgumentException e) {
+      LOG.warn("Unknown approval mode '{}', using default NORMAL", approvalMode);
+      return ApprovalMode.NORMAL;
+    }
   }
 
   public ProviderRunRequest approvalMode(String approvalMode) {

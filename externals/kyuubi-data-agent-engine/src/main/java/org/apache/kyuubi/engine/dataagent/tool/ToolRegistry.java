@@ -26,15 +26,16 @@ import com.openai.models.chat.completions.ChatCompletionFunctionTool;
 import com.openai.models.chat.completions.ChatCompletionTool;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,15 +69,20 @@ public class ToolRegistry implements AutoCloseable {
    */
   private static final int MAX_POOL_SIZE = 8;
 
+  /** Default wall-clock cap for a single tool call, used when no explicit value is configured. */
+  public static final long DEFAULT_TIMEOUT_SECONDS = 300;
+
   private final Map<String, AgentTool<?>> tools = new LinkedHashMap<>();
   private volatile Map<String, ChatCompletionTool> cachedSpecs;
   private final long toolCallTimeoutSeconds;
   private final ExecutorService executor;
+  private final ScheduledExecutorService timeoutScheduler;
 
   /**
-   * @param toolCallTimeoutSeconds wall-clock cap on every {@link #executeTool} call, sourced from
-   *     {@code kyuubi.engine.data.agent.tool.call.timeout}. When the timeout fires, the thread is
-   *     interrupted and a descriptive error is returned to the LLM.
+   * @param toolCallTimeoutSeconds wall-clock cap on every {@link #executeTool} / {@link
+   *     #submitTool} call, sourced from {@code kyuubi.engine.data.agent.tool.call.timeout}. When
+   *     the timeout fires, the worker thread is interrupted and a descriptive error is returned to
+   *     the LLM.
    */
   public ToolRegistry(long toolCallTimeoutSeconds) {
     this.toolCallTimeoutSeconds = toolCallTimeoutSeconds;
@@ -93,12 +99,20 @@ public class ToolRegistry implements AutoCloseable {
               t.setDaemon(true);
               return t;
             });
+    this.timeoutScheduler =
+        Executors.newSingleThreadScheduledExecutor(
+            r -> {
+              Thread t = new Thread(r, "tool-call-timeout");
+              t.setDaemon(true);
+              return t;
+            });
   }
 
-  /** Shut down the worker pool. Idempotent. */
+  /** Shut down the worker pool and the timeout scheduler. Idempotent. */
   @Override
   public void close() {
     executor.shutdownNow();
+    timeoutScheduler.shutdownNow();
   }
 
   /** Register a tool. Keyed by {@link AgentTool#name()}. */
@@ -138,61 +152,100 @@ public class ToolRegistry implements AutoCloseable {
   }
 
   /**
-   * Execute a tool call: deserialize the JSON args, then delegate to the tool, with a wall-clock
-   * timeout sourced from {@code kyuubi.engine.data.agent.tool.call.timeout}. If the tool does not
-   * finish within the timeout, the worker thread is interrupted and a descriptive error is returned
-   * to the LLM so it can react (e.g. simplify the query, retry with LIMIT).
+   * Synchronous entry point. Blocks until the tool finishes, times out, or the registry rejects the
+   * submission. Errors are surfaced as strings (never as exceptions) so the LLM can observe and
+   * react to them.
    *
    * @param toolName the function name from the LLM response
    * @param argsJson the raw JSON arguments string
    * @return the result string, or an error message
    */
-  @SuppressWarnings("unchecked")
   public String executeTool(String toolName, String argsJson) {
-    AgentTool<?> tool;
-    synchronized (this) {
-      tool = tools.get(toolName);
-    }
-    if (tool == null) {
-      return "Error: unknown tool '" + toolName + "'";
-    }
-    return executeWithTimeout((AgentTool<Object>) tool, argsJson);
+    return submitTool(toolName, argsJson, ToolContext.EMPTY).join();
   }
 
-  private <T> String executeWithTimeout(AgentTool<T> tool, String argsJson) {
-    Callable<String> task =
-        () -> {
-          T args = JSON.readValue(argsJson, tool.argsType());
-          return tool.execute(args);
-        };
-    Future<String> future;
+  /** Synchronous entry point with an explicit {@link ToolContext}. */
+  public String executeTool(String toolName, String argsJson, ToolContext ctx) {
+    return submitTool(toolName, argsJson, ctx).join();
+  }
+
+  public CompletableFuture<String> submitTool(String toolName, String argsJson) {
+    return submitTool(toolName, argsJson, ToolContext.EMPTY);
+  }
+
+  /**
+   * Asynchronous entry point. Deserialize args, run the tool on the worker pool, and apply a
+   * wall-clock timeout sourced from {@code kyuubi.engine.data.agent.tool.call.timeout}. The
+   * returned future is guaranteed to complete normally — timeouts, pool saturation, unknown tool,
+   * and execution failures are all translated into error strings. Callers can therefore use {@code
+   * .join()} / {@code .get()} without handling {@link java.util.concurrent.TimeoutException} or
+   * {@link java.util.concurrent.ExecutionException}.
+   *
+   * @param toolName the function name from the LLM response
+   * @param argsJson the raw JSON arguments string
+   */
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<String> submitTool(String toolName, String argsJson, ToolContext ctx) {
+    AgentTool<Object> tool;
+    synchronized (this) {
+      tool = (AgentTool<Object>) tools.get(toolName);
+    }
+    if (tool == null) {
+      return CompletableFuture.completedFuture("Error: unknown tool '" + toolName + "'");
+    }
+    ToolContext toolCtx = ctx != null ? ctx : ToolContext.EMPTY;
+
+    CompletableFuture<String> result = new CompletableFuture<>();
+    Future<?> submitted;
     try {
-      future = executor.submit(task);
+      submitted =
+          executor.submit(
+              () -> {
+                try {
+                  Object args = JSON.readValue(argsJson, tool.argsType());
+                  String out = tool.execute(args, toolCtx);
+                  // When the timeout handler interrupts us, the tool may still unwind cleanly and
+                  // produce a stale return value — don't race the scheduler's timeout message with
+                  // it. Let the timeout path be the single authority for the final result.
+                  if (!Thread.currentThread().isInterrupted()) {
+                    result.complete(out);
+                  }
+                } catch (Exception e) {
+                  result.complete("Error executing " + toolName + ": " + e.getMessage());
+                }
+              });
     } catch (RejectedExecutionException e) {
-      LOG.warn("Tool call '{}' rejected — worker pool saturated at {}", tool.name(), MAX_POOL_SIZE);
-      return "Error: tool call '"
-          + tool.name()
-          + "' rejected — server is handling too many concurrent tool calls. "
-          + "Retry in a moment.";
+      LOG.warn("Tool call '{}' rejected — worker pool saturated at {}", toolName, MAX_POOL_SIZE);
+      return CompletableFuture.completedFuture(
+          "Error: tool call '"
+              + toolName
+              + "' rejected — server is handling too many concurrent tool calls. "
+              + "Retry in a moment.");
     }
-    try {
-      return future.get(toolCallTimeoutSeconds, TimeUnit.SECONDS);
-    } catch (TimeoutException e) {
-      future.cancel(true);
-      LOG.warn("Tool call '{}' timed out after {} seconds", tool.name(), toolCallTimeoutSeconds);
-      return "Error: tool call '"
-          + tool.name()
-          + "' timed out after "
-          + toolCallTimeoutSeconds
-          + " seconds. "
-          + "Try simplifying the query or adding filters to reduce execution time.";
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause() != null ? e.getCause() : e;
-      return "Error executing " + tool.name() + ": " + cause.getMessage();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      return "Error: tool call '" + tool.name() + "' was interrupted.";
-    }
+
+    ScheduledFuture<?> timer =
+        timeoutScheduler.schedule(
+            () -> {
+              if (!result.isDone()) {
+                // cancel(true) interrupts the worker thread directly — the inner task's
+                // catch-all will see the interrupt and call result.complete(...), but the
+                // timeout message below wins because complete() is idempotent on first-winner.
+                submitted.cancel(true);
+                LOG.warn(
+                    "Tool call '{}' timed out after {} seconds", toolName, toolCallTimeoutSeconds);
+                result.complete(
+                    "Error: tool call '"
+                        + toolName
+                        + "' timed out after "
+                        + toolCallTimeoutSeconds
+                        + " seconds. "
+                        + "Try simplifying the query or adding filters to reduce execution time.");
+              }
+            },
+            toolCallTimeoutSeconds,
+            TimeUnit.SECONDS);
+    result.whenComplete((r, e) -> timer.cancel(false));
+    return result;
   }
 
   private static ChatCompletionTool buildChatCompletionTool(AgentTool<?> tool) {

@@ -53,6 +53,7 @@ final class SqlReadOnlyChecker {
    *   <li>{@code USE} — switch session catalog/database; not data-mutating
    *   <li>{@code LIST} — Spark {@code LIST FILE} / {@code LIST JAR} inspection
    *   <li>{@code HELP} — some engines expose interactive help
+   *   <li>{@code PRAGMA} — SQLite schema/metadata inspection
    * </ul>
    */
   private static final Set<String> READ_ONLY_KEYWORDS =
@@ -70,7 +71,8 @@ final class SqlReadOnlyChecker {
                   "EXPLAIN",
                   "USE",
                   "LIST",
-                  "HELP")));
+                  "HELP",
+                  "PRAGMA")));
 
   private SqlReadOnlyChecker() {}
 

@@ -21,6 +21,8 @@ package org.apache.kyuubi.engine.dataagent.runtime.event;
  * Enumerates the types of events emitted by the ReAct agent loop. Each value maps to a
  * corresponding {@link AgentEvent} subclass and carries an SSE event name used for wire
  * serialization.
+ *
+ * @see org.apache.kyuubi.engine.dataagent.runtime.ReactAgent
  */
 public enum EventType {
 
@@ -50,6 +52,9 @@ public enum EventType {
 
   /** The agent requires user approval before executing a tool. */
   APPROVAL_REQUEST("approval_request"),
+
+  /** The conversation history was compacted by the compaction middleware. */
+  COMPACTION("compaction"),
 
   /** The agent has finished its analysis. */
   AGENT_FINISH("agent_finish");

@@ -66,7 +66,7 @@ public class ToolRegistryThreadSafetyTest {
                       }
 
                       @Override
-                      public String execute(DummyArgs args) {
+                      public String execute(DummyArgs args, ToolContext ctx) {
                         return "result_" + idx;
                       }
                     });
@@ -118,7 +118,7 @@ public class ToolRegistryThreadSafetyTest {
           }
 
           @Override
-          public String execute(DummyArgs args) {
+          public String execute(DummyArgs args, ToolContext ctx) {
             return "existing_result";
           }
         });
@@ -159,7 +159,7 @@ public class ToolRegistryThreadSafetyTest {
                         }
 
                         @Override
-                        public String execute(DummyArgs args) {
+                        public String execute(DummyArgs args, ToolContext ctx) {
                           return "dynamic";
                         }
                       });

@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.datasource.dialect;
+
+import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 
 /** MySQL dialect. Uses backtick quoting for identifiers. */
 public final class MysqlDialect implements JdbcDialect {
 
-  static final MysqlDialect INSTANCE = new MysqlDialect();
+  public static final MysqlDialect INSTANCE = new MysqlDialect();
 
   private MysqlDialect() {}
 

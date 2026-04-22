@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.dataagent.datasource;
 
 import static org.junit.Assert.*;
 
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.GenericDialect;
 import org.junit.Test;
 
 public class JdbcDialectTest {

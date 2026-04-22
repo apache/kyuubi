@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.dataagent.tool.sql;
 
 import javax.sql.DataSource;
 import org.apache.kyuubi.engine.dataagent.tool.AgentTool;
+import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
 
 /**
@@ -69,7 +70,7 @@ public class RunMutationQueryTool implements AgentTool<SqlQueryArgs> {
   }
 
   @Override
-  public String execute(SqlQueryArgs args) {
+  public String execute(SqlQueryArgs args, ToolContext ctx) {
     return SqlExecutor.execute(dataSource, args.sql, queryTimeoutSeconds);
   }
 }

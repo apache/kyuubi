@@ -3848,6 +3848,21 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(100)
 
+  val ENGINE_DATA_AGENT_COMPACTION_TRIGGER_TOKENS: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.data.agent.compaction.trigger.tokens")
+      .doc("The prompt-token threshold above which the Data Agent's compaction middleware " +
+        "summarizes older conversation history into a compact message. The check is made each " +
+        "turn as " +
+        "<code>real_prompt_tokens_of_previous_LLM_call + estimate_of_newly_appended_tail</code>; " +
+        "when this predicted prompt size reaches the configured value, older messages are " +
+        "replaced by a single summary message while the most recent exchanges are kept verbatim. " +
+        "Set to a very large value (e.g., <code>9223372036854775807</code>) to effectively " +
+        "disable compaction.")
+      .version("1.12.0")
+      .longConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(128000L)
+
   val ENGINE_DATA_AGENT_QUERY_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.data.agent.query.timeout")
       .doc("The JDBC query execution timeout for the Data Agent SQL tools. " +

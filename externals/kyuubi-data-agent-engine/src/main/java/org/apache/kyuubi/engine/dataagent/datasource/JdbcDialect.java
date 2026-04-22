@@ -17,6 +17,12 @@
 
 package org.apache.kyuubi.engine.dataagent.datasource;
 
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.GenericDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.MysqlDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.SparkDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.SqliteDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.TrinoDialect;
+
 /**
  * SQL dialect abstraction for datasource-specific SQL generation.
  *
