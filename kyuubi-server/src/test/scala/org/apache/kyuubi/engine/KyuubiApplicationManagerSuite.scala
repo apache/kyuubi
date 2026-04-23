@@ -88,7 +88,7 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
       appConf,
       noLocalDirLimitConf)
 
-    localDirLimitConf.set(KyuubiConf.SPARK_FILE_CONFIG_LIST, Set("spark.new.access.local"))
+    appConf = Map("spark.new.access.local" -> "/apache/jars/a.jar")
     KyuubiApplicationManager.checkApplicationAccessPaths(
       "SPARK",
       appConf,
@@ -97,6 +97,13 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
       "SPARK",
       appConf,
       noLocalDirLimitConf)
+
+    localDirLimitConf.set(KyuubiConf.SPARK_FILE_CONFIG_LIST, Set("spark.new.access.local"))
+    appConf = Map("spark.new.access.local" -> "/apache/kyuubi/jars/a.jar")
+    KyuubiApplicationManager.checkApplicationAccessPaths(
+      "SPARK",
+      appConf,
+      localDirLimitConf)
 
     appConf = Map("spark.new.access.local" -> "/apache/jars/a.jar")
     intercept[KyuubiException] {
