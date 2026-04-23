@@ -76,10 +76,11 @@
             <version>${sqlite.version}</version>
         </dependency>
 
-        <!-- MySQL JDBC driver (also works for StarRocks) -->
+        <!-- MySQL JDBC driver (test scope: GPL-licensed, cannot be bundled in Apache binary release) -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <!-- Trino JDBC driver -->
