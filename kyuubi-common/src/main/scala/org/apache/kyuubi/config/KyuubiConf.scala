@@ -1873,8 +1873,8 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
-  val SPARK_FILE_CONFIG_LIST: ConfigEntry[Set[String]] =
-    buildConf("kyuubi.spark.file.config.list")
+  val SESSION_SPARK_FILE_CONFIG_LIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.session.spark.file.config.list")
       .doc(s"A comma-separated list of additional Spark parameters for which Kyuubi checks " +
         s"whether the upload path is included in ${SESSION_LOCAL_DIR_ALLOW_LIST.key}.")
       .version("1.12.0")

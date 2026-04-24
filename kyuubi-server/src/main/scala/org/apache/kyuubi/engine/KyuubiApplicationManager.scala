@@ -177,7 +177,7 @@ object KyuubiApplicationManager {
       kyuubiConf: KyuubiConf): Unit = {
     if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
       (SparkProcessBuilder.PATH_CONFIGS.toSet ++
-        kyuubiConf.get(KyuubiConf.SPARK_FILE_CONFIG_LIST)).flatMap { key =>
+        kyuubiConf.get(KyuubiConf.SESSION_SPARK_FILE_CONFIG_LIST)).flatMap { key =>
         appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
       }.filter(_.nonEmpty).foreach { path =>
         checkApplicationAccessPath(path, kyuubiConf)
