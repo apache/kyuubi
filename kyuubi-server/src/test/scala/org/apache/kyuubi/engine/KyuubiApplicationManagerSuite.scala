@@ -98,7 +98,7 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
       appConf,
       noLocalDirLimitConf)
 
-    localDirLimitConf.set(KyuubiConf.SESSION_SPARK_FILE_CONFIG_LIST, Set("spark.new.access.local"))
+    localDirLimitConf.set(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST, Set("spark.new.access.local"))
     appConf = Map("spark.new.access.local" -> "/apache/kyuubi/jars/a.jar")
     KyuubiApplicationManager.checkApplicationAccessPaths(
       "SPARK",
@@ -112,7 +112,7 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
         appConf,
         localDirLimitConf)
     }
-    localDirLimitConf.unset(KyuubiConf.SESSION_SPARK_FILE_CONFIG_LIST)
+    localDirLimitConf.unset(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
   }
 
   test("Test kyuubi application Manager tag spark on kubernetes application") {
