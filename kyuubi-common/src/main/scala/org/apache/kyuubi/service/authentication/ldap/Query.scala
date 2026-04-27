@@ -25,6 +25,9 @@ import org.stringtemplate.v4.{ST, STGroup}
 /**
  * The object that encompasses all components of a Directory Service search query.
  *
+ * The caller must and can only call each [[filter]] and [[build]] once,
+ * otherwise [[ST]] internal cache may leak and cause heap OOM.
+ *
  * @see [[LdapSearch]]
  */
 object Query {
