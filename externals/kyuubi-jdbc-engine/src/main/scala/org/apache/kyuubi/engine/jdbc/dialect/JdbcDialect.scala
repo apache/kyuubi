@@ -83,18 +83,15 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
   def getSchemaHelper(): SchemaHelper
 
   /**
-   * Switch the current database on the backend connection.
-   *
-   * Called during session open when the client specified a database in the connection URL
-   * (populated by the Hive JDBC driver into `USE_DATABASE`). Dialects that support an
-   * in-session database context switch should override this and return `true` on success;
-   * the default is a no-op that returns `false`, meaning the backend has no notion of
-   * "current database" that applies to this session.
-   *
-   * The return value is used by `JdbcOperationManager` to decide whether the requested
-   * database can be treated as the effective schema filter for metadata operations.
+   * Mirrors the standard `Connection#setSchema(String)` JDBC API with a leading
+   * `conn` parameter, allowing dialects to customize the call. The default forwards
+   * to the standard API; dialects whose driver does not support it (e.g. Phoenix,
+   * Impala) should override this to a no-op. Callers should treat this as if it
+   * always takes effect.
    */
-  def setCurrentDatabase(connection: Connection, database: String): Boolean = false
+  def setSchema(conn: Connection, schema: String): Unit = {
+    conn.setSchema(schema)
+  }
 
   def cancelStatement(jdbcStatement: Statement): Unit = {
     if (jdbcStatement != null) {

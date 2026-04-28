@@ -48,9 +48,10 @@ class JdbcSessionImpl(
   private var databaseMetaData: DatabaseMetaData = _
 
   /**
-   * The database that was successfully applied to the backend connection during session open.
-   * `None` when no `USE_DATABASE` was requested, or when the request was for "default"
-   * (the Hive JDBC driver's fallback) and the backend had no such database.
+   * The database the client requested via `USE_DATABASE` at session open. Used by
+   * `JdbcOperationManager` as the metadata schema filter. `None` when no `USE_DATABASE`
+   * was requested, or when the request was for "default" (the Hive JDBC driver's fallback)
+   * and the dialect's `setSchema` call failed.
    */
   private[jdbc] var effectiveDatabase: Option[String] = None
 
@@ -78,10 +79,8 @@ class JdbcSessionImpl(
       sessionConf.get(ENGINE_JDBC_SESSION_INITIALIZE_SQL))
     conf.get(USE_DATABASE).foreach { database =>
       try {
-        if (JdbcDialects.get(sessionConf).setCurrentDatabase(sessionConnection, database)) {
-          effectiveDatabase = Some(database)
-          info(s"Switched to database: $database")
-        }
+        JdbcDialects.get(sessionConf).setSchema(sessionConnection, database)
+        effectiveDatabase = Some(database)
       } catch {
         case NonFatal(e) if database == "default" =>
           // The Hive JDBC driver sends "default" when the user didn't specify a database
