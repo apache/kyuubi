@@ -20,10 +20,13 @@ package org.apache.kyuubi.service.authentication.ldap
 import java.util
 import javax.naming.directory.SearchControls
 
-import org.stringtemplate.v4.ST
+import org.stringtemplate.v4.{ST, STGroup}
 
 /**
  * The object that encompasses all components of a Directory Service search query.
+ *
+ * The caller must and can only call each [[filter]] and [[build]] once,
+ * otherwise [[ST]] internal cache may leak and cause heap OOM.
  *
  * @see [[LdapSearch]]
  */
@@ -40,6 +43,9 @@ object Query {
    * A builder of the [[Query]].
    */
   final class QueryBuilder {
+
+    /** The [[STGroup]] used only for this builder's filter template; unloaded in [[build]]. */
+    private var filterTemplateGroup: Option[STGroup] = None
     private var filterTemplate: ST = _
     private val controls: SearchControls = {
       val _controls = new SearchControls
@@ -56,7 +62,9 @@ object Query {
      * @return the current instance of the builder
      */
     def filter(filterTemplate: String): Query.QueryBuilder = {
-      this.filterTemplate = new ST(filterTemplate)
+      val group = new STGroup()
+      this.filterTemplateGroup = Some(group)
+      this.filterTemplate = new ST(group, filterTemplate)
       this
     }
 
@@ -112,7 +120,7 @@ object Query {
       require(filterTemplate != null, "filter is required for LDAP search query")
     }
 
-    private def createFilter: String = filterTemplate.render
+    private def createFilter(): String = filterTemplate.render()
 
     private def updateControls(): Unit = {
       if (!returningAttributes.isEmpty) controls.setReturningAttributes(
@@ -126,7 +134,9 @@ object Query {
      */
     def build: Query = {
       validate()
-      val filter: String = createFilter
+      val filter: String = createFilter()
+      // Unload template cache after render to avoid CompiledST/STToken retention
+      filterTemplateGroup.foreach(_.unload())
       updateControls()
       new Query(filter, controls)
     }
