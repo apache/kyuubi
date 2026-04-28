@@ -151,13 +151,14 @@ class MySQLDialect extends JdbcDialect {
   }
 
   override def setCurrentDatabase(connection: Connection, database: String): Boolean = {
-    val stmt = connection.createStatement()
-    try {
-      stmt.execute(s"USE `$database`")
-      true
-    } finally {
-      stmt.close()
-    }
+    // mysql-connector-j makes setCatalog/setSchema mutually exclusive based on the
+    // `databaseTerm` connection property: with the default CATALOG, setCatalog issues
+    // COM_INIT_DB and setSchema is a silent no-op; with SCHEMA it is the inverse.
+    // Calling both means exactly one fires regardless of how the user configured the
+    // URL. StarRocksDialect / DorisDialect inherit this via MySQLDialect.
+    connection.setCatalog(database)
+    connection.setSchema(database)
+    true
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new MySQLTRowSetGenerator

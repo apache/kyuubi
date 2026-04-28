@@ -16,7 +16,7 @@
  */
 package org.apache.kyuubi.engine.jdbc.starrocks
 
-import java.sql.ResultSet
+import java.sql.{DriverManager, ResultSet}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -256,6 +256,88 @@ abstract class StarRocksOperationSuite extends WithStarRocksEngine with HiveJDBC
       statement.execute("drop database db1")
       statement.execute("drop table db2.test1")
       statement.execute("drop database db2")
+    }
+  }
+
+  test("starrocks - getTables scopes to database from connection URL (KYUUBI #7305)") {
+    withJdbcStatement() { statement =>
+      statement.execute("create database if not exists db7305a")
+      statement.execute("create table db7305a.ta(id bigint)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+      statement.execute("create database if not exists db7305b")
+      statement.execute("create table db7305b.tb(id bigint)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+    }
+
+    val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head
+    val scopedUrl = s"jdbc:hive2://$hostAndPort/db7305a;"
+    val conn = DriverManager.getConnection(scopedUrl, user, password)
+    try {
+      val tables = conn.getMetaData.getTables(null, null, "t%", null)
+      val found = ArrayBuffer[(String, String)]()
+      while (tables.next()) {
+        found += ((tables.getString(TABLE_SCHEMA), tables.getString(TABLE_NAME)))
+      }
+      assert(found.contains(("db7305a", "ta")))
+      assert(!found.exists { case (schema, _) => schema == "db7305b" })
+
+      // Hive driver converts schemaPattern=null to "%", and the fix routes "%" back to
+      // the effective database, so the behavior should match the call above.
+      val tablesPct = conn.getMetaData.getTables(null, "%", "t%", null)
+      val foundPct = ArrayBuffer[(String, String)]()
+      while (tablesPct.next()) {
+        foundPct += ((tablesPct.getString(TABLE_SCHEMA), tablesPct.getString(TABLE_NAME)))
+      }
+      assert(foundPct.contains(("db7305a", "ta")))
+      assert(!foundPct.exists { case (schema, _) => schema == "db7305b" })
+    } finally {
+      conn.close()
+    }
+
+    withJdbcStatement() { statement =>
+      statement.execute("drop table db7305a.ta")
+      statement.execute("drop database db7305a")
+      statement.execute("drop table db7305b.tb")
+      statement.execute("drop database db7305b")
+    }
+  }
+
+  test("starrocks - getTables returns all tables when no database in URL") {
+    withJdbcStatement() { statement =>
+      statement.execute("create database if not exists db7305c")
+      statement.execute("create table db7305c.tc(id bigint)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+      statement.execute("create database if not exists db7305d")
+      statement.execute("create table db7305d.td(id bigint)" +
+        "ENGINE=OLAP DISTRIBUTED BY HASH(`id`) BUCKETS 32 " +
+        "PROPERTIES ('replication_num' = '1')")
+    }
+
+    withJdbcStatement() { statement =>
+      val tables = statement.getConnection.getMetaData.getTables(null, null, "t%", null)
+      val found = ArrayBuffer[(String, String)]()
+      while (tables.next()) {
+        found += ((tables.getString(TABLE_SCHEMA), tables.getString(TABLE_NAME)))
+      }
+      // Without USE_DATABASE, the fix must not filter, so both dbs are visible.
+      assert(found.contains(("db7305c", "tc")))
+      assert(found.contains(("db7305d", "td")))
+
+      statement.execute("drop table db7305c.tc")
+      statement.execute("drop database db7305c")
+      statement.execute("drop table db7305d.td")
+      statement.execute("drop database db7305d")
+    }
+  }
+
+  test("starrocks - session open fails when URL specifies a non-existent database") {
+    val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head
+    val badUrl = s"jdbc:hive2://$hostAndPort/does_not_exist_db_7305;"
+    intercept[java.sql.SQLException] {
+      DriverManager.getConnection(badUrl, user, password).close()
     }
   }
 }
