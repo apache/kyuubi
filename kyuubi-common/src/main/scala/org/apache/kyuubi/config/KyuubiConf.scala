@@ -1873,6 +1873,16 @@ object KyuubiConf {
       .toSet()
       .createWithDefault(Set.empty)
 
+  val SERVER_SPARK_FILE_CONFIG_LIST: ConfigEntry[Set[String]] =
+    buildConf("kyuubi.server.spark.file.config.list")
+      .doc(s"A comma-separated list of additional Spark parameters for which Kyuubi checks " +
+        s"whether the upload path is included in ${SESSION_LOCAL_DIR_ALLOW_LIST.key}.")
+      .version("1.12.0")
+      .serverOnly
+      .stringConf
+      .toSet()
+      .createWithDefault(Set.empty)
+
   val BATCH_APPLICATION_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.batch.application.check.interval")
       .doc("The interval to check batch job application information.")
