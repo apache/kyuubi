@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.jdbc.session
 import java.sql.{Connection, DatabaseMetaData}
 
 import scala.util.{Failure, Success, Try}
-import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -50,8 +49,10 @@ class JdbcSessionImpl(
   /**
    * The database the client requested via `USE_DATABASE` at session open. Used by
    * `JdbcOperationManager` as the metadata schema filter. `None` when no `USE_DATABASE`
-   * was requested, or when the request was for "default" (the Hive JDBC driver's fallback)
-   * and the dialect's `setSchema` call failed.
+   * was requested, or when the request was the literal `"default"`. The Hive JDBC
+   * driver sends `"default"` as a protocol stub when the user did not specify a
+   * database in the URL, so it cannot be distinguished from a genuine request and
+   * is treated as "no scope".
    */
   private[jdbc] var effectiveDatabase: Option[String] = None
 
@@ -77,17 +78,13 @@ class JdbcSessionImpl(
       sessionConf,
       sessionConnection,
       sessionConf.get(ENGINE_JDBC_SESSION_INITIALIZE_SQL))
-    conf.get(USE_DATABASE).foreach { database =>
-      try {
-        JdbcDialects.get(sessionConf).setSchema(sessionConnection, database)
-        effectiveDatabase = Some(database)
-      } catch {
-        case NonFatal(e) if database == "default" =>
-          // The Hive JDBC driver sends "default" when the user didn't specify a database
-          // in the connection URL. Tolerate USE failure in that case so the session can
-          // still open against backends that have no "default" database.
-          warn(s"Failed to switch to database 'default', ignored.", e)
-      }
+    // The Hive JDBC driver sends `"default"` as USE_DATABASE when the user did not
+    // specify a database in the URL: a protocol stub indistinguishable from a real
+    // request. Filter it here so we don't push a non-existent / unintended schema
+    // filter into metadata operations on backends without a `default` database.
+    conf.get(USE_DATABASE).filter(_ != "default").foreach { database =>
+      JdbcDialects.get(sessionConf).setSchema(sessionConnection, database)
+      effectiveDatabase = Some(database)
     }
     super.open()
     info(s"The jdbc session is started.")

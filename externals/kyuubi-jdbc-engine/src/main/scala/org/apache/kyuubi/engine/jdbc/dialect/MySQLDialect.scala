@@ -151,11 +151,12 @@ class MySQLDialect extends JdbcDialect {
   }
 
   override def setSchema(conn: Connection, schema: String): Unit = {
-    // mysql-connector-j makes setCatalog/setSchema mutually exclusive based on the
-    // `databaseTerm` connection property: with the default CATALOG, setCatalog issues
-    // COM_INIT_DB and setSchema is a silent no-op; with SCHEMA it is the inverse.
-    // Calling both means exactly one fires regardless of how the user configured the
-    // URL. StarRocksDialect / DorisDialect inherit this via MySQLDialect.
+    // The MySQL Connector/J `databaseTerm` connection property selects which of
+    // setCatalog / setSchema actually switches the session database; the other
+    // call returns without effect for that mode (verified by black-box testing
+    // and consistent with the reference manual). Invoking both ensures the
+    // database is switched regardless of how the user configured the URL.
+    // StarRocksDialect / DorisDialect inherit this via MySQLDialect.
     conn.setCatalog(schema)
     conn.setSchema(schema)
   }
