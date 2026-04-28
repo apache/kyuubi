@@ -1441,6 +1441,34 @@ object KyuubiConf {
       .checkValues(KubernetesApplicationStateSource)
       .createWithDefault(KubernetesApplicationStateSource.POD.toString)
 
+  // Configuration for checking and deleting pods stuck in FailedMount loop
+  // Kubernetes will retry ~every 2 minutes,
+  // Thus 30 count correspond to (30*2)/60 = 1 hours
+  val KUBERNETES_POD_FAILED_MOUNT_LOOP_THRESHOLD: ConfigEntry[Int] =
+    buildConf("kyuubi.kubernetes.pod.failed.mount.loop.threshold")
+      .serverOnly
+      .doc("The threshold for the number of failed mount loop to trigger pod deletion")
+      .version("1.11.0")
+      .intConf
+      .createWithDefault(30)
+
+  val KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.pod.failed.mount.loop.check.enabled")
+      .serverOnly
+      .doc("Whether to periodically check Pending pods for FailedMount " +
+        "loops and delete them when exceeding the threshold.")
+      .version("1.11.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.kubernetes.pod.failed.mount.loop.check.interval")
+      .serverOnly
+      .doc("Interval for periodically checking Pending pods for FailedMount loops.")
+      .version("1.11.0")
+      .timeConf
+      .createWithDefault(60 * 60 * 1000)
+
   object KubernetesApplicationStateSource extends Enumeration {
     type KubernetesApplicationStateSource = Value
     val POD, CONTAINER = Value
