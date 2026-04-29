@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
 
-import org.apache.kyuubi.sql.watchdog.{KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
+import org.apache.kyuubi.sql.watchdog.{DangerousJoinInterceptor, KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
 
 // scalastyle:off line.size.limit
 /**
@@ -39,6 +39,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // watchdog extension
     extensions.injectCheckRule(_ => KyuubiUnsupportedOperationsCheck)
     extensions.injectPlannerStrategy(MaxScanStrategy)
+    extensions.injectPlannerStrategy(DangerousJoinInterceptor(_))
 
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
