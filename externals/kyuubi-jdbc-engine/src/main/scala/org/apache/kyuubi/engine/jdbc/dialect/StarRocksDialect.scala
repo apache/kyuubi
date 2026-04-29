@@ -26,4 +26,8 @@ class StarRocksDialect extends MySQLDialect {
 
   override def getSchemaHelper(): SchemaHelper = new StarRocksSchemaHelper
 
+
+  override def getCatalogsOperation(): String = {
+    return "show catalogs"
+  }
 }
