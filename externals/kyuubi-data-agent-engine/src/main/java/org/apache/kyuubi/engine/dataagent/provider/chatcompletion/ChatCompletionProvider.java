@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.provider.openai;
+package org.apache.kyuubi.engine.dataagent.provider.chatcompletion;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -55,9 +55,9 @@ import org.slf4j.LoggerFactory;
  * engine is bound to one user + one datasource, so all sessions within the engine naturally share
  * the same data connection.
  */
-public class OpenAiProvider implements DataAgentProvider {
+public class ChatCompletionProvider implements DataAgentProvider {
 
-  private static final Logger LOG = LoggerFactory.getLogger(OpenAiProvider.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ChatCompletionProvider.class);
 
   private final ReactAgent agent;
   private final ToolRegistry toolRegistry;
@@ -65,10 +65,10 @@ public class OpenAiProvider implements DataAgentProvider {
   private final OpenAIClient client;
   private final ConcurrentHashMap<String, ConversationMemory> sessions = new ConcurrentHashMap<>();
 
-  public OpenAiProvider(KyuubiConf conf) {
-    String apiKey = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_LLM_API_KEY());
-    String baseUrl = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_LLM_API_URL());
-    String modelName = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_LLM_MODEL());
+  public ChatCompletionProvider(KyuubiConf conf) {
+    String apiKey = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_OPENAI_API_KEY());
+    String baseUrl = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_OPENAI_ENDPOINT());
+    String modelName = ConfUtils.requireString(conf, KyuubiConf.ENGINE_DATA_AGENT_MODEL());
 
     int maxIterations = ConfUtils.intConf(conf, KyuubiConf.ENGINE_DATA_AGENT_MAX_ITERATIONS());
     long compactionTriggerTokens =

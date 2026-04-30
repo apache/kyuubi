@@ -37,13 +37,13 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
  * The trigger threshold is set extremely low (500 tokens) so that the schema dump plus the
  * first turn's completion already blow past it, forcing compaction before turn 2 or 3.
  *
- * Requires DATA_AGENT_LLM_API_KEY and DATA_AGENT_LLM_API_URL.
+ * Requires DATA_AGENT_OPENAI_API_KEY and DATA_AGENT_OPENAI_ENDPOINT.
  */
 class DataAgentCompactionE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
 
-  private val apiKey = sys.env.getOrElse("DATA_AGENT_LLM_API_KEY", "")
-  private val apiUrl = sys.env.getOrElse("DATA_AGENT_LLM_API_URL", "")
-  private val modelName = sys.env.getOrElse("DATA_AGENT_LLM_MODEL", "")
+  private val apiKey = sys.env.getOrElse("DATA_AGENT_OPENAI_API_KEY", "")
+  private val apiUrl = sys.env.getOrElse("DATA_AGENT_OPENAI_ENDPOINT", "")
+  private val modelName = sys.env.getOrElse("DATA_AGENT_MODEL", "")
   private val dbPath = {
     val tmp = System.getProperty("java.io.tmpdir")
     val uid = java.util.UUID.randomUUID()
@@ -52,9 +52,9 @@ class DataAgentCompactionE2ESuite extends HiveJDBCTestHelper with WithDataAgentE
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_DATA_AGENT_PROVIDER.key -> "OPENAI_COMPATIBLE",
-    ENGINE_DATA_AGENT_LLM_API_KEY.key -> apiKey,
-    ENGINE_DATA_AGENT_LLM_API_URL.key -> apiUrl,
-    ENGINE_DATA_AGENT_LLM_MODEL.key -> modelName,
+    ENGINE_DATA_AGENT_OPENAI_API_KEY.key -> apiKey,
+    ENGINE_DATA_AGENT_OPENAI_ENDPOINT.key -> apiUrl,
+    ENGINE_DATA_AGENT_MODEL.key -> modelName,
     ENGINE_DATA_AGENT_MAX_ITERATIONS.key -> "10",
     ENGINE_DATA_AGENT_APPROVAL_MODE.key -> "AUTO_APPROVE",
     // Force compaction to fire aggressively -- any realistic prompt + one LLM round-trip
@@ -135,7 +135,7 @@ class DataAgentCompactionE2ESuite extends HiveJDBCTestHelper with WithDataAgentE
     "Respond with ONLY the answer, no explanation, no markdown, no punctuation."
 
   test("E2E: compaction fires mid-conversation and preserves facts across turns") {
-    assume(enabled, "DATA_AGENT_LLM_API_KEY/API_URL not set, skipping")
+    assume(enabled, "DATA_AGENT_OPENAI_API_KEY/API_URL not set, skipping")
 
     // CompactionMiddleware.KEEP_RECENT_TURNS is hardcoded to 4. computeSplit needs a
     // non-empty 'old' slice, so at least 5 distinct user turns must accumulate before

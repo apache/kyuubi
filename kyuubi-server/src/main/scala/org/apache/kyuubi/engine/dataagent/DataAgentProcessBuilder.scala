@@ -102,7 +102,7 @@ class DataAgentProcessBuilder(
     } else {
       redactConfValues(
         Utils.redactCommandLineArgs(conf, commands),
-        Set(ENGINE_DATA_AGENT_LLM_API_KEY.key)).map {
+        Set(ENGINE_DATA_AGENT_OPENAI_API_KEY.key)).map {
         case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")

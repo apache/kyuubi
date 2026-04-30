@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  * preventing retriggering.
  *
  * <p><b>Thread safety / shared instance:</b> Instances of this middleware are shared across all
- * sessions inside a provider (see {@code OpenAiProvider} javadoc). All per-session state
+ * sessions inside a provider (see {@code ChatCompletionProvider} javadoc). All per-session state
  * (cumulative and last-call totals) lives on {@link ConversationMemory}, so this middleware itself
  * is stateless across sessions and requires no per-session cleanup.
  *

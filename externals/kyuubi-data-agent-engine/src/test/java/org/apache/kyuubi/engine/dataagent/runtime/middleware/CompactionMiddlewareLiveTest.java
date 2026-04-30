@@ -33,21 +33,23 @@ import org.junit.Test;
 
 /**
  * Live integration test for {@link CompactionMiddleware}: exercises the full compaction path
- * against a real OpenAI-compatible LLM. Requires {@code DATA_AGENT_LLM_API_KEY} and {@code
- * DATA_AGENT_LLM_API_URL} environment variables; skipped otherwise.
+ * against a real OpenAI-compatible LLM. Requires {@code DATA_AGENT_OPENAI_API_KEY} and {@code
+ * DATA_AGENT_OPENAI_ENDPOINT} environment variables; skipped otherwise.
  */
 public class CompactionMiddlewareLiveTest {
 
-  private static final String API_KEY = System.getenv().getOrDefault("DATA_AGENT_LLM_API_KEY", "");
-  private static final String BASE_URL = System.getenv().getOrDefault("DATA_AGENT_LLM_API_URL", "");
-  private static final String MODEL_NAME = System.getenv().getOrDefault("DATA_AGENT_LLM_MODEL", "");
+  private static final String API_KEY =
+      System.getenv().getOrDefault("DATA_AGENT_OPENAI_API_KEY", "");
+  private static final String BASE_URL =
+      System.getenv().getOrDefault("DATA_AGENT_OPENAI_ENDPOINT", "");
+  private static final String MODEL_NAME = System.getenv().getOrDefault("DATA_AGENT_MODEL", "");
 
   private OpenAIClient client;
 
   @Before
   public void setUp() {
-    assumeTrue("DATA_AGENT_LLM_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
-    assumeTrue("DATA_AGENT_LLM_API_URL not set, skipping live tests", !BASE_URL.isEmpty());
+    assumeTrue("DATA_AGENT_OPENAI_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
+    assumeTrue("DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests", !BASE_URL.isEmpty());
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 

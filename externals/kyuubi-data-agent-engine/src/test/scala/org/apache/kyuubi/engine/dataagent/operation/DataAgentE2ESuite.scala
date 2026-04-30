@@ -32,21 +32,21 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
  * Full pipeline: JDBC Client -> Kyuubi Thrift -> DataAgentEngine
  * -> LLM -> Tools -> SQLite -> Results
  *
- * Requires DATA_AGENT_LLM_API_KEY and DATA_AGENT_LLM_API_URL environment variables.
+ * Requires DATA_AGENT_OPENAI_API_KEY and DATA_AGENT_OPENAI_ENDPOINT environment variables.
  */
 class DataAgentE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
 
-  private val apiKey = sys.env.getOrElse("DATA_AGENT_LLM_API_KEY", "")
-  private val apiUrl = sys.env.getOrElse("DATA_AGENT_LLM_API_URL", "")
-  private val modelName = sys.env.getOrElse("DATA_AGENT_LLM_MODEL", "")
+  private val apiKey = sys.env.getOrElse("DATA_AGENT_OPENAI_API_KEY", "")
+  private val apiUrl = sys.env.getOrElse("DATA_AGENT_OPENAI_ENDPOINT", "")
+  private val modelName = sys.env.getOrElse("DATA_AGENT_MODEL", "")
   private val dbPath =
     s"${System.getProperty("java.io.tmpdir")}/dataagent_e2e_test_${java.util.UUID.randomUUID()}.db"
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_DATA_AGENT_PROVIDER.key -> "OPENAI_COMPATIBLE",
-    ENGINE_DATA_AGENT_LLM_API_KEY.key -> apiKey,
-    ENGINE_DATA_AGENT_LLM_API_URL.key -> apiUrl,
-    ENGINE_DATA_AGENT_LLM_MODEL.key -> modelName,
+    ENGINE_DATA_AGENT_OPENAI_API_KEY.key -> apiKey,
+    ENGINE_DATA_AGENT_OPENAI_ENDPOINT.key -> apiUrl,
+    ENGINE_DATA_AGENT_MODEL.key -> modelName,
     ENGINE_DATA_AGENT_MAX_ITERATIONS.key -> "10",
     ENGINE_DATA_AGENT_APPROVAL_MODE.key -> "AUTO_APPROVE",
     ENGINE_DATA_AGENT_JDBC_URL.key -> s"jdbc:sqlite:$dbPath")
@@ -148,7 +148,7 @@ class DataAgentE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
     "Respond with ONLY the answer, no explanation, no markdown, no punctuation."
 
   test("E2E: agent answers data question through full Kyuubi pipeline") {
-    assume(enabled, "DATA_AGENT_LLM_API_KEY/API_URL not set, skipping E2E tests")
+    assume(enabled, "DATA_AGENT_OPENAI_API_KEY/API_URL not set, skipping E2E tests")
     withJdbcStatement() { stmt =>
       val stream = drainReply(
         stmt.executeQuery(
@@ -158,7 +158,7 @@ class DataAgentE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
   }
 
   test("E2E: agent resolves follow-up question using prior conversation context") {
-    assume(enabled, "DATA_AGENT_LLM_API_KEY/API_URL not set, skipping E2E tests")
+    assume(enabled, "DATA_AGENT_OPENAI_API_KEY/API_URL not set, skipping E2E tests")
     // Two executeQuery calls on the same Statement share the JDBC session, which means
     // the provider reuses the same ConversationMemory across turns. Turn 2 uses the
     // demonstrative "that department" - it can only be answered correctly if Turn 1's

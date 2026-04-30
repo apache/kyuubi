@@ -88,7 +88,7 @@ class ExecuteStatement(
       val request = new ProviderRunRequest(statement)
       // Merge session-level conf with per-statement confOverlay (overlay takes precedence)
       val mergedConf = session.conf ++ confOverlay
-      mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_LLM_MODEL.key).foreach(request.modelName)
+      mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key).foreach(request.modelName)
       val approvalMode = mergedConf.getOrElse(
         KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key,
         session.sessionManager.getConf.get(KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE))

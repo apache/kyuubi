@@ -3814,28 +3814,30 @@ object KyuubiConf {
         case "ECHO" | "echo" =>
           "org.apache.kyuubi.engine.dataagent.provider.echo.EchoProvider"
         case "OPENAI_COMPATIBLE" | "openai_compatible" | "openai-compatible" =>
-          "org.apache.kyuubi.engine.dataagent.provider.openai.OpenAiProvider"
+          "org.apache.kyuubi.engine.dataagent.provider.chatcompletion.ChatCompletionProvider"
         case other => other
       }
       .createWithDefault("ECHO")
 
-  val ENGINE_DATA_AGENT_LLM_API_KEY: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.api.key")
-      .doc("The API key to access the LLM service for the Data Agent engine.")
+  val ENGINE_DATA_AGENT_MODEL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.model")
+      .doc("The model ID used by the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional
 
-  val ENGINE_DATA_AGENT_LLM_MODEL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.model")
-      .doc("The model ID used by the Data Agent engine LLM provider.")
+  val ENGINE_DATA_AGENT_OPENAI_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.openai.api.key")
+      .doc("The API key for the OpenAI-compatible chat-completion endpoint used by " +
+        "the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional
 
-  val ENGINE_DATA_AGENT_LLM_API_URL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.api.url")
-      .doc("The API base URL for the LLM service used by the Data Agent engine.")
+  val ENGINE_DATA_AGENT_OPENAI_ENDPOINT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.openai.endpoint")
+      .doc("The base URL of the OpenAI-compatible chat-completion endpoint used by " +
+        "the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional

@@ -48,15 +48,17 @@ import org.sqlite.SQLiteDataSource;
 
 /**
  * Live integration test with a real LLM and real SQLite database. Exercises the full ReAct loop:
- * LLM reasoning -> tool calls -> result verification. Requires DATA_AGENT_LLM_API_KEY and
- * DATA_AGENT_LLM_API_URL environment variables. Works with any OpenAI-compatible LLM service.
+ * LLM reasoning -> tool calls -> result verification. Requires DATA_AGENT_OPENAI_API_KEY and
+ * DATA_AGENT_OPENAI_ENDPOINT environment variables. Works with any OpenAI-compatible LLM service.
  */
 public class ReactAgentLiveTest {
 
-  private static final String API_KEY = System.getenv().getOrDefault("DATA_AGENT_LLM_API_KEY", "");
-  private static final String BASE_URL = System.getenv().getOrDefault("DATA_AGENT_LLM_API_URL", "");
+  private static final String API_KEY =
+      System.getenv().getOrDefault("DATA_AGENT_OPENAI_API_KEY", "");
+  private static final String BASE_URL =
+      System.getenv().getOrDefault("DATA_AGENT_OPENAI_ENDPOINT", "");
   private static final String MODEL_NAME =
-      System.getenv().getOrDefault("DATA_AGENT_LLM_MODEL", "gpt-4o");
+      System.getenv().getOrDefault("DATA_AGENT_MODEL", "gpt-4o");
 
   private static final String SYSTEM_PROMPT =
       SystemPromptBuilder.create().datasource("sqlite").build();
@@ -66,8 +68,8 @@ public class ReactAgentLiveTest {
 
   @Before
   public void setUp() {
-    assumeTrue("DATA_AGENT_LLM_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
-    assumeTrue("DATA_AGENT_LLM_API_URL not set, skipping live tests", !BASE_URL.isEmpty());
+    assumeTrue("DATA_AGENT_OPENAI_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
+    assumeTrue("DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests", !BASE_URL.isEmpty());
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 

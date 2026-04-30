@@ -34,7 +34,7 @@ class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
 
   test("API key is redacted in toString") {
     val conf = new KyuubiConf(false)
-    conf.set(ENGINE_DATA_AGENT_LLM_API_KEY.key, "sk-secret-key-12345")
+    conf.set(ENGINE_DATA_AGENT_OPENAI_API_KEY.key, "sk-secret-key-12345")
     val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(!output.contains("sk-secret-key-12345"), "API key should not appear in toString output")
