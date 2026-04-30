@@ -80,10 +80,10 @@ public class CompactionMiddlewareLiveTest {
 
     CompactionMiddleware mw = new CompactionMiddleware(client, MODEL_NAME, /* trigger */ 50_000L);
 
-    AgentMiddleware.LlmCallAction action = mw.beforeLlmCall(ctx, memory.buildLlmMessages());
+    Decision<List<ChatCompletionMessageParam>> decision =
+        mw.beforeLlmCall(ctx, memory.buildLlmMessages());
 
-    assertNotNull("expected compaction to fire", action);
-    assertTrue(action instanceof AgentMiddleware.LlmModifyMessages);
+    assertEquals("expected compaction to fire", Decision.Kind.REPLACE, decision.kind());
 
     // History got rewritten: [summary user msg] + kept tail.
     List<ChatCompletionMessageParam> hist = memory.getHistory();

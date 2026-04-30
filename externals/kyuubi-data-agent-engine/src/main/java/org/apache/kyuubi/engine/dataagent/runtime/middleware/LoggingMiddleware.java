@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import java.util.List;
-import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.runtime.AgentRunContext;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentError;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
@@ -95,14 +94,15 @@ public class LoggingMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public LlmCallAction beforeLlmCall(
+  public Decision<List<ChatCompletionMessageParam>> beforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
     LOG.info("{}LLM call: step={}, messages={}", prefix(), ctx.getIteration(), messages.size());
-    return LlmNoopAction.INSTANCE;
+    return Decision.proceed();
   }
 
   @Override
-  public void afterLlmCall(AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
+  public Decision<ChatCompletionAssistantMessageParam> afterLlmCall(
+      AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
     String content = response.content().map(Object::toString).orElse("");
     int toolCallCount = response.toolCalls().map(List::size).orElse(0);
     LOG.info(
@@ -115,25 +115,24 @@ public class LoggingMiddleware implements AgentMiddleware {
         ctx.getPromptTokens(),
         ctx.getCompletionTokens(),
         ctx.getTotalTokens());
+    return Decision.proceed();
   }
 
   @Override
-  public ToolCallAction beforeToolCall(
-      AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
-    LOG.info("{}Tool call: id={}, name={}", prefix(), toolCallId, toolName);
-    LOG.debug("{}Tool args: {}", prefix(), toolArgs);
-    return ToolCallApproval.INSTANCE;
+  public Decision<ToolInvocation> beforeToolCall(AgentRunContext ctx, ToolInvocation call) {
+    LOG.info("{}Tool call: id={}, name={}", prefix(), call.id(), call.name());
+    LOG.debug("{}Tool args: {}", prefix(), call.args());
+    return Decision.proceed();
   }
 
   @Override
-  public ToolResultAction afterToolCall(
-      AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
-    LOG.info("{}Tool result: {} -> \"{}\"", prefix(), toolName, truncate(result));
-    return ToolResultUnchanged.INSTANCE;
+  public Decision<String> afterToolCall(AgentRunContext ctx, ToolInvocation call, String result) {
+    LOG.info("{}Tool result: {} -> \"{}\"", prefix(), call.name(), truncate(result));
+    return Decision.proceed();
   }
 
   @Override
-  public AgentEvent onEvent(AgentRunContext ctx, AgentEvent event) {
+  public Decision<AgentEvent> onEvent(AgentRunContext ctx, AgentEvent event) {
     switch (event.eventType()) {
       case STEP_START:
         LOG.info("{}Step {}", prefix(), ((StepStart) event).stepNumber());
@@ -150,7 +149,7 @@ public class LoggingMiddleware implements AgentMiddleware {
       default:
         break;
     }
-    return event;
+    return Decision.proceed();
   }
 
   private static String truncate(String s) {

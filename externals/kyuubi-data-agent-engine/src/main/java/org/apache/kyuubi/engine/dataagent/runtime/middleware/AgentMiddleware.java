@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import java.util.List;
-import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.runtime.AgentRunContext;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
@@ -29,7 +28,9 @@ import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
  * Middleware interface for the Data Agent ReAct loop. Middlewares are executed in onion-model
  * order: before_* hooks run first-to-last, after_* hooks run last-to-first.
  *
- * <p>All hooks have default no-op implementations. Override only what you need.
+ * <p>All hooks have default no-op implementations. Override only what you need. Every interceptor
+ * hook returns {@link Decision} — see that class for the {@code proceed / replace / abort}
+ * vocabulary and per-hook semantics of {@code abort}.
  */
 public interface AgentMiddleware {
 
@@ -46,51 +47,39 @@ public interface AgentMiddleware {
   /** Called when the agent finishes. Runs last-to-first (cleanup order). */
   default void onAgentFinish(AgentRunContext ctx) {}
 
-  /**
-   * Called before each LLM invocation. Runs first-to-last.
-   *
-   * @return {@link LlmNoopAction#INSTANCE} to proceed normally, {@link LlmSkip} to abort, or {@link
-   *     LlmModifyMessages} to replace the message list for this call.
-   */
-  default LlmCallAction beforeLlmCall(
+  /** Called before each LLM invocation. Runs first-to-last. */
+  default Decision<List<ChatCompletionMessageParam>> beforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
-    return LlmNoopAction.INSTANCE;
-  }
-
-  /** Called after each LLM invocation. Runs last-to-first. */
-  default void afterLlmCall(AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {}
-
-  /**
-   * Called before each tool execution. Runs first-to-last.
-   *
-   * @return {@link ToolCallApproval#INSTANCE} to allow the call, {@link ToolCallDenial} to block
-   *     it.
-   */
-  default ToolCallAction beforeToolCall(
-      AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
-    return ToolCallApproval.INSTANCE;
+    return Decision.proceed();
   }
 
   /**
-   * Called after each tool execution. Runs last-to-first.
-   *
-   * <p>Middlewares can intercept and transform the tool result before it is fed back to the LLM —
-   * e.g. for data masking, output truncation, or injecting metadata.
-   *
-   * @return {@link ToolResultUnchanged#INSTANCE} to keep the original result, {@link
-   *     ToolResultReplace} to substitute it.
+   * Called after each LLM invocation, before the assistant message is committed to memory or
+   * inspected for tool calls. Runs last-to-first. Replacing the response lets middleware rewrite
+   * what enters memory or strip tool calls before they execute.
    */
-  default ToolResultAction afterToolCall(
-      AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
-    return ToolResultUnchanged.INSTANCE;
+  default Decision<ChatCompletionAssistantMessageParam> afterLlmCall(
+      AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
+    return Decision.proceed();
   }
 
   /**
-   * Called for every event before it is emitted. Return null to suppress the event. Runs
-   * first-to-last.
+   * Called before each tool execution. Runs first-to-last. Replacing the {@link ToolInvocation}
+   * lets middleware rewrite the tool name or args (e.g. inject a SQL LIMIT, redact parameters)
+   * before execution.
    */
-  default AgentEvent onEvent(AgentRunContext ctx, AgentEvent event) {
-    return event;
+  default Decision<ToolInvocation> beforeToolCall(AgentRunContext ctx, ToolInvocation call) {
+    return Decision.proceed();
+  }
+
+  /** Called after each tool execution. Runs last-to-first. */
+  default Decision<String> afterToolCall(AgentRunContext ctx, ToolInvocation call, String result) {
+    return Decision.proceed();
+  }
+
+  /** Called for every event before it is emitted. Runs first-to-last. */
+  default Decision<AgentEvent> onEvent(AgentRunContext ctx, AgentEvent event) {
+    return Decision.proceed();
   }
 
   /**
@@ -104,105 +93,4 @@ public interface AgentMiddleware {
    * waiting on this middleware. Dispatched by {@code ReactAgent.stop}.
    */
   default void onStop() {}
-
-  /**
-   * Base type for {@code beforeLlmCall} return values. Subtypes: {@link LlmNoopAction} to proceed
-   * normally, {@link LlmSkip} to abort the LLM call, {@link LlmModifyMessages} to replace the
-   * message list for this call.
-   */
-  abstract class LlmCallAction {
-    private LlmCallAction() {}
-  }
-
-  /** Returned from {@code beforeLlmCall} to proceed without changing the LLM call. */
-  final class LlmNoopAction extends LlmCallAction {
-    public static final LlmNoopAction INSTANCE = new LlmNoopAction();
-
-    private LlmNoopAction() {}
-  }
-
-  /** Returned from {@code beforeLlmCall} to skip the LLM call and abort the agent loop. */
-  class LlmSkip extends LlmCallAction {
-    private final String reason;
-
-    public LlmSkip(String reason) {
-      this.reason = reason;
-    }
-
-    public String reason() {
-      return reason;
-    }
-  }
-
-  /**
-   * Returned from {@code beforeLlmCall} to replace the message list for this LLM invocation. The
-   * agent loop continues normally with the modified messages.
-   */
-  class LlmModifyMessages extends LlmCallAction {
-    private final List<ChatCompletionMessageParam> messages;
-
-    public LlmModifyMessages(List<ChatCompletionMessageParam> messages) {
-      this.messages = messages;
-    }
-
-    public List<ChatCompletionMessageParam> messages() {
-      return messages;
-    }
-  }
-
-  /**
-   * Base type for {@code beforeToolCall} return values. Subtypes: {@link ToolCallApproval} to allow
-   * the call, {@link ToolCallDenial} to block it.
-   */
-  abstract class ToolCallAction {
-    private ToolCallAction() {}
-  }
-
-  /** Returned from {@code beforeToolCall} to allow the tool call to proceed. */
-  final class ToolCallApproval extends ToolCallAction {
-    public static final ToolCallApproval INSTANCE = new ToolCallApproval();
-
-    private ToolCallApproval() {}
-  }
-
-  /** Returned from {@code beforeToolCall} to block a tool call. */
-  final class ToolCallDenial extends ToolCallAction {
-    private final String reason;
-
-    public ToolCallDenial(String reason) {
-      this.reason = reason;
-    }
-
-    public String reason() {
-      return reason;
-    }
-  }
-
-  /**
-   * Base type for {@code afterToolCall} return values. Subtypes: {@link ToolResultUnchanged} to
-   * pass the result through, {@link ToolResultReplace} to substitute it.
-   */
-  abstract class ToolResultAction {
-    private ToolResultAction() {}
-  }
-
-  /** Returned from {@code afterToolCall} to keep the tool result as is. */
-  final class ToolResultUnchanged extends ToolResultAction {
-    public static final ToolResultUnchanged INSTANCE = new ToolResultUnchanged();
-
-    private ToolResultUnchanged() {}
-  }
-
-  /** Returned from {@code afterToolCall} to replace the tool result with a new string. */
-  final class ToolResultReplace extends ToolResultAction {
-    private final String replacement;
-
-    public ToolResultReplace(String replacement) {
-      this.replacement = replacement;
-    }
-
-    public String replacement() {
-      return replacement;
-    }
-  }
 }

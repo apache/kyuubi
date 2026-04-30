@@ -46,6 +46,8 @@ import org.apache.kyuubi.engine.dataagent.runtime.event.ToolCall;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ToolResult;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.AgentMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ApprovalMiddleware;
+import org.apache.kyuubi.engine.dataagent.runtime.middleware.Decision;
+import org.apache.kyuubi.engine.dataagent.runtime.middleware.ToolInvocation;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.slf4j.Logger;
@@ -175,17 +177,28 @@ public class ReactAgent {
           emit(ctx, new ContentComplete(result.content), eventConsumer);
         }
         ChatCompletionAssistantMessageParam assistantMsg = buildAssistantMessage(result);
+        Decision<ChatCompletionAssistantMessageParam> after =
+            dispatchAfterLlmCall(ctx, assistantMsg);
+        if (after.kind() == Decision.Kind.ABORT) {
+          emit(
+              ctx,
+              new AgentError("LLM response rejected by middleware: " + after.reason()),
+              eventConsumer);
+          emitFinish(ctx, eventConsumer);
+          return;
+        }
+        if (after.kind() == Decision.Kind.REPLACE) assistantMsg = after.replacement();
         memory.addAssistantMessage(assistantMsg);
-        dispatchAfterLlmCall(ctx, assistantMsg);
 
-        if (result.toolCalls == null || result.toolCalls.isEmpty()) {
+        List<ChatCompletionMessageToolCall> toolCalls = assistantMsg.toolCalls().orElse(null);
+        if (toolCalls == null || toolCalls.isEmpty()) {
           // No tool calls — agent is done.
           emit(ctx, new StepEnd(step), eventConsumer);
           emitFinish(ctx, eventConsumer);
           return;
         }
 
-        executeToolCalls(ctx, memory, result.toolCalls, eventConsumer);
+        executeToolCalls(ctx, memory, toolCalls, eventConsumer);
         emit(ctx, new StepEnd(step), eventConsumer);
       }
 
@@ -212,17 +225,16 @@ public class ReactAgent {
       AgentRunContext ctx,
       List<ChatCompletionMessageParam> messages,
       Consumer<AgentEvent> eventConsumer) {
-    AgentMiddleware.LlmCallAction action = dispatchBeforeLlmCall(ctx, messages);
-    if (action instanceof AgentMiddleware.LlmSkip) {
-      String reason = ((AgentMiddleware.LlmSkip) action).reason();
-      emit(ctx, new AgentError("LLM call skipped by middleware: " + reason), eventConsumer);
+    Decision<List<ChatCompletionMessageParam>> decision = dispatchBeforeLlmCall(ctx, messages);
+    if (decision.kind() == Decision.Kind.ABORT) {
+      emit(
+          ctx,
+          new AgentError("LLM call skipped by middleware: " + decision.reason()),
+          eventConsumer);
       emitFinish(ctx, eventConsumer);
       return null;
     }
-    if (action instanceof AgentMiddleware.LlmModifyMessages) {
-      return ((AgentMiddleware.LlmModifyMessages) action).messages();
-    }
-    return messages;
+    return decision.kind() == Decision.Kind.REPLACE ? decision.replacement() : messages;
   }
 
   private static ChatCompletionAssistantMessageParam buildAssistantMessage(StreamResult result) {
@@ -268,32 +280,36 @@ public class ReactAgent {
         continue;
       }
 
-      AgentMiddleware.ToolCallAction action =
-          dispatchBeforeToolCall(ctx, fnCall.id(), toolName, toolArgs);
-      if (action instanceof AgentMiddleware.ToolCallDenial) {
-        String denied = "Tool call denied: " + ((AgentMiddleware.ToolCallDenial) action).reason();
+      ToolInvocation invocation = new ToolInvocation(fnCall.id(), toolName, toolArgs);
+      Decision<ToolInvocation> decision = dispatchBeforeToolCall(ctx, invocation);
+      if (decision.kind() == Decision.Kind.ABORT) {
+        String denied = "Tool call denied: " + decision.reason();
         memory.addToolResult(fnCall.id(), denied);
         emit(ctx, new ToolResult(fnCall.id(), toolName, denied, true), eventConsumer);
         continue;
       }
+      boolean rewritten = decision.kind() == Decision.Kind.REPLACE;
+      ToolInvocation effective = rewritten ? decision.replacement() : invocation;
 
-      emit(ctx, new ToolCall(fnCall.id(), toolName, toolArgs), eventConsumer);
-      approved.add(new ToolCallEntry(fnCall, toolName, toolArgs));
+      emit(ctx, new ToolCall(effective.id(), effective.name(), effective.args()), eventConsumer);
+      approved.add(new ToolCallEntry(fnCall, effective, rewritten));
     }
 
     ToolContext toolCtx = new ToolContext(ctx.getSessionId());
     List<CompletableFuture<String>> futures = new ArrayList<>(approved.size());
     for (ToolCallEntry entry : approved) {
-      futures.add(
-          toolRegistry.submitTool(entry.toolName, entry.fnCall.function().arguments(), toolCtx));
+      futures.add(toolRegistry.submitTool(entry.invocation.name(), entry.argsJson(), toolCtx));
     }
 
     for (int i = 0; i < approved.size(); i++) {
       ToolCallEntry entry = approved.get(i);
       String raw = futures.get(i).join();
-      String output = dispatchAfterToolCall(ctx, entry.toolName, entry.toolArgs, raw);
+      String output = dispatchAfterToolCall(ctx, entry.invocation, raw);
       memory.addToolResult(entry.fnCall.id(), output);
-      emit(ctx, new ToolResult(entry.fnCall.id(), entry.toolName, output, false), eventConsumer);
+      emit(
+          ctx,
+          new ToolResult(entry.fnCall.id(), entry.invocation.name(), output, false),
+          eventConsumer);
     }
   }
 
@@ -312,19 +328,33 @@ public class ReactAgent {
     }
   }
 
-  /** Holds an approved tool call's parsed metadata for the 3-phase execution pipeline. */
+  /**
+   * Holds an approved tool call's parsed metadata for the 3-phase execution pipeline. {@code
+   * rewritten} is {@code true} when middleware replaced the {@link ToolInvocation}; in that case
+   * args must be re-serialized for {@link ToolRegistry#submitTool}, otherwise the LLM's original
+   * JSON is reused verbatim.
+   */
   private static class ToolCallEntry {
     final ChatCompletionMessageFunctionToolCall fnCall;
-    final String toolName;
-    final Map<String, Object> toolArgs;
+    final ToolInvocation invocation;
+    final boolean rewritten;
 
     ToolCallEntry(
         ChatCompletionMessageFunctionToolCall fnCall,
-        String toolName,
-        Map<String, Object> toolArgs) {
+        ToolInvocation invocation,
+        boolean rewritten) {
       this.fnCall = fnCall;
-      this.toolName = toolName;
-      this.toolArgs = toolArgs;
+      this.invocation = invocation;
+      this.rewritten = rewritten;
+    }
+
+    String argsJson() {
+      if (!rewritten) return fnCall.function().arguments();
+      try {
+        return JSON.writeValueAsString(invocation.args());
+      } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+        throw new IllegalStateException("Failed to serialize rewritten tool args", e);
+      }
     }
   }
 
@@ -477,8 +507,9 @@ public class ReactAgent {
   private void emit(AgentRunContext ctx, AgentEvent event, Consumer<AgentEvent> consumer) {
     AgentEvent filtered = event;
     for (AgentMiddleware mw : middlewares) {
-      filtered = mw.onEvent(ctx, filtered);
-      if (filtered == null) return;
+      Decision<AgentEvent> d = mw.onEvent(ctx, filtered);
+      if (d.kind() == Decision.Kind.ABORT) return;
+      if (d.kind() == Decision.Kind.REPLACE) filtered = d.replacement();
     }
     consumer.accept(filtered);
   }
@@ -501,40 +532,64 @@ public class ReactAgent {
     }
   }
 
-  private AgentMiddleware.LlmCallAction dispatchBeforeLlmCall(
+  /**
+   * Run {@code beforeLlmCall} middleware in onion order, folding REPLACE so later middlewares see
+   * rewritten messages. Returns PROCEED if no middleware touched the value, REPLACE with the final
+   * value if any did, or ABORT if any middleware short-circuited.
+   */
+  private Decision<List<ChatCompletionMessageParam>> dispatchBeforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
+    List<ChatCompletionMessageParam> current = messages;
     for (AgentMiddleware mw : middlewares) {
-      AgentMiddleware.LlmCallAction action = mw.beforeLlmCall(ctx, messages);
-      if (!(action instanceof AgentMiddleware.LlmNoopAction)) return action;
+      Decision<List<ChatCompletionMessageParam>> d = mw.beforeLlmCall(ctx, current);
+      if (d.kind() == Decision.Kind.ABORT) return d;
+      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
     }
-    return AgentMiddleware.LlmNoopAction.INSTANCE;
+    return Decision.of(messages, current);
   }
 
-  private void dispatchAfterLlmCall(
+  /**
+   * Run {@code afterLlmCall} middleware in reverse onion order, folding REPLACE so earlier
+   * middlewares see rewritten responses. Returns the final response, or ABORT if any middleware
+   * short-circuits.
+   */
+  private Decision<ChatCompletionAssistantMessageParam> dispatchAfterLlmCall(
       AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
+    ChatCompletionAssistantMessageParam current = response;
     for (int i = middlewares.size() - 1; i >= 0; i--) {
-      middlewares.get(i).afterLlmCall(ctx, response);
+      Decision<ChatCompletionAssistantMessageParam> d =
+          middlewares.get(i).afterLlmCall(ctx, current);
+      if (d.kind() == Decision.Kind.ABORT) return d;
+      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
     }
+    return Decision.of(response, current);
   }
 
-  private AgentMiddleware.ToolCallAction dispatchBeforeToolCall(
-      AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
+  /**
+   * Run {@code beforeToolCall} middleware in onion order, folding REPLACE so later middlewares can
+   * further rewrite. Returns PROCEED if untouched, REPLACE with the final invocation otherwise, or
+   * ABORT if any middleware denies the call.
+   */
+  private Decision<ToolInvocation> dispatchBeforeToolCall(
+      AgentRunContext ctx, ToolInvocation call) {
+    ToolInvocation current = call;
     for (AgentMiddleware mw : middlewares) {
-      AgentMiddleware.ToolCallAction action =
-          mw.beforeToolCall(ctx, toolCallId, toolName, toolArgs);
-      if (action instanceof AgentMiddleware.ToolCallDenial) return action;
+      Decision<ToolInvocation> d = mw.beforeToolCall(ctx, current);
+      if (d.kind() == Decision.Kind.ABORT) return d;
+      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
     }
-    return AgentMiddleware.ToolCallApproval.INSTANCE;
+    return Decision.of(call, current);
   }
 
-  private String dispatchAfterToolCall(
-      AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
+  private String dispatchAfterToolCall(AgentRunContext ctx, ToolInvocation call, String result) {
     String current = result;
     for (int i = middlewares.size() - 1; i >= 0; i--) {
-      AgentMiddleware.ToolResultAction action =
-          middlewares.get(i).afterToolCall(ctx, toolName, toolArgs, current);
-      if (action instanceof AgentMiddleware.ToolResultReplace) {
-        current = ((AgentMiddleware.ToolResultReplace) action).replacement();
+      Decision<String> d = middlewares.get(i).afterToolCall(ctx, call, current);
+      if (d.kind() == Decision.Kind.REPLACE) {
+        current = d.replacement();
+      } else if (d.kind() == Decision.Kind.ABORT) {
+        // afterToolCall.abort: discard result; reason replaces it so the LLM still sees something.
+        current = d.reason();
       }
     }
     return current;

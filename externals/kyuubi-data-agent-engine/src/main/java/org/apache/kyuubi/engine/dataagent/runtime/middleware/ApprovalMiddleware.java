@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -64,41 +63,41 @@ public class ApprovalMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public ToolCallAction beforeToolCall(
-      AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
+  public Decision<ToolInvocation> beforeToolCall(AgentRunContext ctx, ToolInvocation call) {
+    String toolName = call.name();
     ToolRiskLevel riskLevel = toolRegistry.getRiskLevel(toolName);
 
     if (shouldAutoApprove(ctx.getApprovalMode(), riskLevel)) {
-      return ToolCallApproval.INSTANCE;
+      return Decision.proceed();
     }
 
     String requestId = UUID.randomUUID().toString();
     CompletableFuture<Boolean> future = new CompletableFuture<>();
     pending.put(requestId, future);
 
-    ctx.emit(new ApprovalRequest(requestId, toolCallId, toolName, toolArgs, riskLevel));
+    ctx.emit(new ApprovalRequest(requestId, call.id(), toolName, call.args(), riskLevel));
     LOG.info("Approval requested for tool '{}' (requestId={})", toolName, requestId);
 
     try {
       boolean approved = future.get(timeoutSeconds, TimeUnit.SECONDS);
       if (!approved) {
         LOG.info("Tool '{}' denied by user (requestId={})", toolName, requestId);
-        return new ToolCallDenial("User denied execution of " + toolName);
+        return Decision.abort("User denied execution of " + toolName);
       }
       LOG.info("Tool '{}' approved by user (requestId={})", toolName, requestId);
-      return ToolCallApproval.INSTANCE;
+      return Decision.proceed();
     } catch (TimeoutException e) {
       // Complete the future so that a late resolve() call is a harmless no-op
       // instead of completing a dangling future.
       future.completeExceptionally(e);
       LOG.warn("Approval timed out for tool '{}' (requestId={})", toolName, requestId);
-      return new ToolCallDenial("Approval timed out after " + timeoutSeconds + "s for " + toolName);
+      return Decision.abort("Approval timed out after " + timeoutSeconds + "s for " + toolName);
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
-      return new ToolCallDenial("Approval interrupted for " + toolName);
+      return Decision.abort("Approval interrupted for " + toolName);
     } catch (Exception e) {
       LOG.error("Unexpected error waiting for approval", e);
-      return new ToolCallDenial("Approval error: " + e.getMessage());
+      return Decision.abort("Approval error: " + e.getMessage());
     } finally {
       pending.remove(requestId);
     }

@@ -146,7 +146,7 @@ public class CompactionMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public LlmCallAction beforeLlmCall(
+  public Decision<List<ChatCompletionMessageParam>> beforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
     ConversationMemory mem = ctx.getMemory();
     // 1) Real token count of the previous LLM call (prompt + completion, i.e. everything through
@@ -156,7 +156,7 @@ public class CompactionMiddleware implements AgentMiddleware {
     long newTailEstimate = estimateTailAfterLastAssistant(messages);
 
     if (lastTotal + newTailEstimate < triggerPromptTokens) {
-      return LlmNoopAction.INSTANCE;
+      return Decision.proceed();
     }
 
     List<ChatCompletionMessageParam> history = mem.getHistory();
@@ -165,7 +165,7 @@ public class CompactionMiddleware implements AgentMiddleware {
     //    tool_result.
     Split split = computeSplit(history, KEEP_RECENT_TURNS);
     if (split.old.isEmpty()) {
-      return LlmNoopAction.INSTANCE;
+      return Decision.proceed();
     }
 
     String summary = summarize(mem.getSystemPrompt(), split.old);
@@ -187,7 +187,7 @@ public class CompactionMiddleware implements AgentMiddleware {
         new Compaction(
             split.old.size(), split.kept.size(), triggerPromptTokens, lastTotal + newTailEstimate));
 
-    return new LlmModifyMessages(mem.buildLlmMessages());
+    return Decision.replace(mem.buildLlmMessages());
   }
 
   /** Call the LLM to produce a summary of {@code oldMessages}. Failures propagate. */

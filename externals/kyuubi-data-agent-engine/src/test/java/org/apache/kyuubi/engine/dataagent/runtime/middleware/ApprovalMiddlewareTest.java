@@ -60,12 +60,10 @@ public class ApprovalMiddlewareTest {
     ApprovalMiddleware mw = newApprovalMiddleware();
     AgentRunContext ctx = makeContext(ApprovalMode.AUTO_APPROVE);
 
-    assertSame(
-        AgentMiddleware.ToolCallApproval.INSTANCE,
-        mw.beforeToolCall(ctx, "tc1", "dangerous_tool", Collections.emptyMap()));
-    assertSame(
-        AgentMiddleware.ToolCallApproval.INSTANCE,
-        mw.beforeToolCall(ctx, "tc2", "safe_tool", Collections.emptyMap()));
+    assertEquals(
+        Decision.Kind.PROCEED, mw.beforeToolCall(ctx, invocation("tc1", "dangerous_tool")).kind());
+    assertEquals(
+        Decision.Kind.PROCEED, mw.beforeToolCall(ctx, invocation("tc2", "safe_tool")).kind());
     assertTrue("No approval events should be emitted", emittedEvents.isEmpty());
   }
 
@@ -76,9 +74,8 @@ public class ApprovalMiddlewareTest {
     ApprovalMiddleware mw = newApprovalMiddleware();
     AgentRunContext ctx = makeContext(ApprovalMode.NORMAL);
 
-    assertSame(
-        AgentMiddleware.ToolCallApproval.INSTANCE,
-        mw.beforeToolCall(ctx, "tc1", "safe_tool", Collections.emptyMap()));
+    assertEquals(
+        Decision.Kind.PROCEED, mw.beforeToolCall(ctx, invocation("tc1", "safe_tool")).kind());
     assertTrue(emittedEvents.isEmpty());
   }
 
@@ -97,9 +94,8 @@ public class ApprovalMiddlewareTest {
             eventEmitted.countDown();
           });
 
-      Future<AgentMiddleware.ToolCallAction> future =
-          exec.submit(
-              () -> mw.beforeToolCall(ctx, "tc1", "dangerous_tool", Collections.emptyMap()));
+      Future<Decision<ToolInvocation>> future =
+          exec.submit(() -> mw.beforeToolCall(ctx, invocation("tc1", "dangerous_tool")));
 
       // Wait for the approval request event
       assertTrue("Approval event should be emitted", eventEmitted.await(2, TimeUnit.SECONDS));
@@ -112,10 +108,10 @@ public class ApprovalMiddlewareTest {
 
       // Approve
       assertTrue(mw.resolve(req.requestId(), true));
-      assertSame(
-          "Approved tool should return null (no denial)",
-          AgentMiddleware.ToolCallApproval.INSTANCE,
-          future.get(2, TimeUnit.SECONDS));
+      assertEquals(
+          "Approved tool should proceed",
+          Decision.Kind.PROCEED,
+          future.get(2, TimeUnit.SECONDS).kind());
     } finally {
       exec.shutdownNow();
     }
@@ -135,18 +131,17 @@ public class ApprovalMiddlewareTest {
             eventEmitted.countDown();
           });
 
-      Future<AgentMiddleware.ToolCallAction> future =
-          exec.submit(
-              () -> mw.beforeToolCall(ctx, "tc1", "dangerous_tool", Collections.emptyMap()));
+      Future<Decision<ToolInvocation>> future =
+          exec.submit(() -> mw.beforeToolCall(ctx, invocation("tc1", "dangerous_tool")));
 
       assertTrue(eventEmitted.await(2, TimeUnit.SECONDS));
       ApprovalRequest req = (ApprovalRequest) emittedEvents.get(0);
 
       // Deny
       assertTrue(mw.resolve(req.requestId(), false));
-      AgentMiddleware.ToolCallAction action = future.get(2, TimeUnit.SECONDS);
-      assertTrue(action instanceof AgentMiddleware.ToolCallDenial);
-      assertTrue(((AgentMiddleware.ToolCallDenial) action).reason().contains("denied"));
+      Decision<ToolInvocation> decision = future.get(2, TimeUnit.SECONDS);
+      assertEquals(Decision.Kind.ABORT, decision.kind());
+      assertTrue(decision.reason().contains("denied"));
     } finally {
       exec.shutdownNow();
     }
@@ -168,15 +163,15 @@ public class ApprovalMiddlewareTest {
             eventEmitted.countDown();
           });
 
-      Future<AgentMiddleware.ToolCallAction> future =
-          exec.submit(() -> mw.beforeToolCall(ctx, "tc1", "safe_tool", Collections.emptyMap()));
+      Future<Decision<ToolInvocation>> future =
+          exec.submit(() -> mw.beforeToolCall(ctx, invocation("tc1", "safe_tool")));
 
       assertTrue(eventEmitted.await(2, TimeUnit.SECONDS));
       ApprovalRequest req = (ApprovalRequest) emittedEvents.get(0);
       assertEquals("safe_tool", req.toolName());
 
       assertTrue(mw.resolve(req.requestId(), true));
-      assertSame(AgentMiddleware.ToolCallApproval.INSTANCE, future.get(2, TimeUnit.SECONDS));
+      assertEquals(Decision.Kind.PROCEED, future.get(2, TimeUnit.SECONDS).kind());
     } finally {
       exec.shutdownNow();
     }
@@ -192,14 +187,13 @@ public class ApprovalMiddlewareTest {
 
     ExecutorService exec = Executors.newSingleThreadExecutor();
     try {
-      Future<AgentMiddleware.ToolCallAction> future =
-          exec.submit(() -> mw.beforeToolCall(ctx, "tc1", "safe_tool", Collections.emptyMap()));
+      Future<Decision<ToolInvocation>> future =
+          exec.submit(() -> mw.beforeToolCall(ctx, invocation("tc1", "safe_tool")));
 
       // Don't resolve — let it time out
-      AgentMiddleware.ToolCallAction action = future.get(5, TimeUnit.SECONDS);
-      assertTrue(
-          "Timeout should produce a denial", action instanceof AgentMiddleware.ToolCallDenial);
-      assertTrue(((AgentMiddleware.ToolCallDenial) action).reason().contains("timed out"));
+      Decision<ToolInvocation> decision = future.get(5, TimeUnit.SECONDS);
+      assertEquals("Timeout should produce a denial", Decision.Kind.ABORT, decision.kind());
+      assertTrue(decision.reason().contains("timed out"));
     } finally {
       exec.shutdownNow();
     }
@@ -216,11 +210,11 @@ public class ApprovalMiddlewareTest {
     ExecutorService exec = Executors.newSingleThreadExecutor();
     try {
       CountDownLatch started = new CountDownLatch(1);
-      Future<AgentMiddleware.ToolCallAction> future =
+      Future<Decision<ToolInvocation>> future =
           exec.submit(
               () -> {
                 started.countDown();
-                return mw.beforeToolCall(ctx, "tc1", "safe_tool", Collections.emptyMap());
+                return mw.beforeToolCall(ctx, invocation("tc1", "safe_tool"));
               });
 
       assertTrue(started.await(2, TimeUnit.SECONDS));
@@ -228,9 +222,8 @@ public class ApprovalMiddlewareTest {
 
       mw.onStop();
 
-      AgentMiddleware.ToolCallAction action = future.get(2, TimeUnit.SECONDS);
-      assertTrue(
-          "onStop should unblock with a denial", action instanceof AgentMiddleware.ToolCallDenial);
+      Decision<ToolInvocation> decision = future.get(2, TimeUnit.SECONDS);
+      assertEquals("onStop should unblock with a denial", Decision.Kind.ABORT, decision.kind());
     } finally {
       exec.shutdownNow();
     }
@@ -254,6 +247,10 @@ public class ApprovalMiddlewareTest {
     AgentRunContext ctx = new AgentRunContext(new ConversationMemory(), mode);
     ctx.setEventEmitter(emittedEvents::add);
     return ctx;
+  }
+
+  private static ToolInvocation invocation(String id, String name) {
+    return new ToolInvocation(id, name, Collections.emptyMap());
   }
 
   private static AgentTool<DummyArgs> safeTool(String name) {

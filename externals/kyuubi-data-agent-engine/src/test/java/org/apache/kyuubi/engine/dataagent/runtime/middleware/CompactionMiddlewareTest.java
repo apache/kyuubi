@@ -172,8 +172,7 @@ public class CompactionMiddlewareTest {
     ctx.addTokenUsage(1000, 0, 1000);
     CompactionMiddleware mw = new CompactionMiddleware(DUMMY_CLIENT, "m", 50_000L);
 
-    assertSame(
-        AgentMiddleware.LlmNoopAction.INSTANCE, mw.beforeLlmCall(ctx, memory.buildLlmMessages()));
+    assertEquals(Decision.Kind.PROCEED, mw.beforeLlmCall(ctx, memory.buildLlmMessages()).kind());
     // Nothing was mutated.
     assertEquals(6, memory.size());
   }
@@ -189,8 +188,7 @@ public class CompactionMiddlewareTest {
     ctx.addTokenUsage(60_000, 0, 60_000);
     CompactionMiddleware mw = new CompactionMiddleware(DUMMY_CLIENT, "m", 50_000L);
 
-    assertSame(
-        AgentMiddleware.LlmNoopAction.INSTANCE, mw.beforeLlmCall(ctx, memory.buildLlmMessages()));
+    assertEquals(Decision.Kind.PROCEED, mw.beforeLlmCall(ctx, memory.buildLlmMessages()).kind());
     assertEquals(3, memory.size());
   }
 
@@ -205,12 +203,10 @@ public class CompactionMiddlewareTest {
     CompactionMiddleware mw = new CompactionMiddleware(DUMMY_CLIENT, "m", 50_000L);
 
     ctx.addTokenUsage(4_000, 1_000, 5_000);
-    assertSame(
-        AgentMiddleware.LlmNoopAction.INSTANCE, mw.beforeLlmCall(ctx, memory.buildLlmMessages()));
+    assertEquals(Decision.Kind.PROCEED, mw.beforeLlmCall(ctx, memory.buildLlmMessages()).kind());
 
     ctx.addTokenUsage(8_000, 2_000, 10_000);
-    assertSame(
-        AgentMiddleware.LlmNoopAction.INSTANCE, mw.beforeLlmCall(ctx, memory.buildLlmMessages()));
+    assertEquals(Decision.Kind.PROCEED, mw.beforeLlmCall(ctx, memory.buildLlmMessages()).kind());
 
     assertEquals(10_000L, memory.getLastTotalTokens());
     assertEquals(15_000L, memory.getCumulativeTotalTokens());

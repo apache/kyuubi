@@ -51,9 +51,9 @@ public class ToolResultOffloadMiddlewareTest {
   @Test
   public void underThresholdPassesThrough() {
     String small = "row1\nrow2\nrow3\n";
-    assertSame(
-        AgentMiddleware.ToolResultUnchanged.INSTANCE,
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), small));
+    assertEquals(
+        Decision.Kind.PROCEED,
+        mw.afterToolCall(ctxWithSession, invocation("run_select_query"), small).kind());
   }
 
   @Test
@@ -62,8 +62,7 @@ public class ToolResultOffloadMiddlewareTest {
     for (int i = 0; i < 600; i++) sb.append("row").append(i).append('\n');
     String out =
         replacement(
-            mw.afterToolCall(
-                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
+            mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
 
     assertTrue(out, out.contains("Tool output truncated"));
     assertTrue(out, out.contains("Saved to:"));
@@ -83,8 +82,7 @@ public class ToolResultOffloadMiddlewareTest {
     }
     String out =
         replacement(
-            mw.afterToolCall(
-                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
+            mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
     assertTrue(out, out.contains("Tool output truncated"));
   }
 
@@ -92,31 +90,31 @@ public class ToolResultOffloadMiddlewareTest {
   public void retrievalToolsAreExemptFromGate() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 2000; i++) sb.append("row").append(i).append('\n');
-    assertSame(
-        AgentMiddleware.ToolResultUnchanged.INSTANCE,
-        mw.afterToolCall(
-            ctxWithSession, ReadToolOutputTool.NAME, Collections.emptyMap(), sb.toString()));
-    assertSame(
-        AgentMiddleware.ToolResultUnchanged.INSTANCE,
-        mw.afterToolCall(
-            ctxWithSession, GrepToolOutputTool.NAME, Collections.emptyMap(), sb.toString()));
+    assertEquals(
+        Decision.Kind.PROCEED,
+        mw.afterToolCall(ctxWithSession, invocation(ReadToolOutputTool.NAME), sb.toString())
+            .kind());
+    assertEquals(
+        Decision.Kind.PROCEED,
+        mw.afterToolCall(ctxWithSession, invocation(GrepToolOutputTool.NAME), sb.toString())
+            .kind());
   }
 
   @Test
   public void missingSessionIdPassesThrough() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 1000; i++) sb.append("row").append(i).append('\n');
-    assertSame(
+    assertEquals(
         "without sessionId, cannot offload safely — pass through",
-        AgentMiddleware.ToolResultUnchanged.INSTANCE,
-        mw.afterToolCall(ctxNoSession, "run_select_query", Collections.emptyMap(), sb.toString()));
+        Decision.Kind.PROCEED,
+        mw.afterToolCall(ctxNoSession, invocation("run_select_query"), sb.toString()).kind());
   }
 
   @Test
   public void onSessionCloseClearsCounterAndFiles() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 600; i++) sb.append("row").append(i).append('\n');
-    mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString());
+    mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString());
     assertEquals(1, mw.trackedSessions());
 
     mw.onSessionClose("sess-1");
@@ -129,23 +127,24 @@ public class ToolResultOffloadMiddlewareTest {
     for (int i = 0; i < 600; i++) sb.append("row").append(i).append('\n');
     String out1 =
         replacement(
-            mw.afterToolCall(
-                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
+            mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
     String out2 =
         replacement(
-            mw.afterToolCall(
-                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
+            mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
     // Both previews reference the same session dir, different file names.
     assertNotEquals(extractPath(out1), extractPath(out2));
     assertTrue(extractPath(out1).contains("sess-1"));
     assertTrue(extractPath(out2).contains("sess-1"));
   }
 
-  private static String replacement(AgentMiddleware.ToolResultAction action) {
-    assertTrue(
-        "expected ToolResultReplace but got " + action,
-        action instanceof AgentMiddleware.ToolResultReplace);
-    return ((AgentMiddleware.ToolResultReplace) action).replacement();
+  private static ToolInvocation invocation(String name) {
+    return new ToolInvocation(name + "_id", name, Collections.emptyMap());
+  }
+
+  private static String replacement(Decision<String> decision) {
+    assertEquals(
+        "expected REPLACE but got " + decision.kind(), Decision.Kind.REPLACE, decision.kind());
+    return decision.replacement();
   }
 
   private static String extractPath(String preview) {
