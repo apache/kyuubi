@@ -47,7 +47,7 @@ public class SystemPromptBuilderTest {
   }
 
   @Test
-  public void testDatasourceSqlite() {
+  public void testDatasourceSQLite() {
     String prompt = SystemPromptBuilder.create().datasource("sqlite").build();
     assertTrue(prompt.contains("SQLite SQL compatibility"));
     assertTrue(prompt.contains("JULIANDAY"));
@@ -108,7 +108,7 @@ public class SystemPromptBuilderTest {
   }
 
   @Test
-  public void testDatasourceMysql() {
+  public void testDatasourceMySQL() {
     String prompt = SystemPromptBuilder.create().datasource("mysql").build();
     assertTrue(prompt.contains("MySQL"));
   }

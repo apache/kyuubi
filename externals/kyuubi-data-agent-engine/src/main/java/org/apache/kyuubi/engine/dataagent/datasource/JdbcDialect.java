@@ -18,9 +18,9 @@
 package org.apache.kyuubi.engine.dataagent.datasource;
 
 import org.apache.kyuubi.engine.dataagent.datasource.dialect.GenericDialect;
-import org.apache.kyuubi.engine.dataagent.datasource.dialect.MysqlDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.MySQLDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.SQLiteDialect;
 import org.apache.kyuubi.engine.dataagent.datasource.dialect.SparkDialect;
-import org.apache.kyuubi.engine.dataagent.datasource.dialect.SqliteDialect;
 import org.apache.kyuubi.engine.dataagent.datasource.dialect.TrinoDialect;
 
 /**
@@ -89,9 +89,9 @@ public interface JdbcDialect {
       case "trino":
         return TrinoDialect.INSTANCE;
       case "mysql":
-        return MysqlDialect.INSTANCE;
+        return MySQLDialect.INSTANCE;
       case "sqlite":
-        return SqliteDialect.INSTANCE;
+        return SQLiteDialect.INSTANCE;
       default:
         return new GenericDialect(name);
     }

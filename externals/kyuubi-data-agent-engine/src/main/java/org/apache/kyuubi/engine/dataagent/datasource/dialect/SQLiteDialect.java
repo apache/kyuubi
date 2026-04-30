@@ -19,21 +19,21 @@ package org.apache.kyuubi.engine.dataagent.datasource.dialect;
 
 import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 
-/** MySQL dialect. Uses backtick quoting for identifiers. */
-public final class MysqlDialect implements JdbcDialect {
+/** SQLite dialect. Uses double-quote quoting for identifiers. */
+public final class SQLiteDialect implements JdbcDialect {
 
-  public static final MysqlDialect INSTANCE = new MysqlDialect();
+  public static final SQLiteDialect INSTANCE = new SQLiteDialect();
 
-  private MysqlDialect() {}
+  private SQLiteDialect() {}
 
   @Override
   public String datasourceName() {
-    return "mysql";
+    return "sqlite";
   }
 
   @Override
   public String quoteIdentifier(String identifier) {
-    String escaped = identifier.replace("`", "``");
-    return "`" + escaped + "`";
+    String escaped = identifier.replace("\"", "\"\"");
+    return "\"" + escaped + "\"";
   }
 }

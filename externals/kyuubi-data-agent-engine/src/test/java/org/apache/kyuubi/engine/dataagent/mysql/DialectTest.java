@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.dataagent.mysql;
 import static org.junit.Assert.*;
 
 import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
-import org.apache.kyuubi.engine.dataagent.datasource.dialect.MysqlDialect;
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.MySQLDialect;
 import org.apache.kyuubi.engine.dataagent.prompt.SystemPromptBuilder;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
@@ -28,7 +28,7 @@ import org.apache.kyuubi.engine.dataagent.tool.sql.SqlQueryArgs;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-/** Integration tests for {@link MysqlDialect} end-to-end with a real MySQL instance. */
+/** Integration tests for {@link MySQLDialect} end-to-end with a real MySQL instance. */
 public class DialectTest extends WithMySQLContainer {
 
   private static RunSelectQueryTool selectTool;
@@ -42,7 +42,7 @@ public class DialectTest extends WithMySQLContainer {
   public void testDialectFromUrl() {
     JdbcDialect dialect = JdbcDialect.fromUrl(mysql.getJdbcUrl());
     assertNotNull(dialect);
-    assertTrue(dialect instanceof MysqlDialect);
+    assertTrue(dialect instanceof MySQLDialect);
     assertEquals("mysql", dialect.datasourceName());
   }
 
