@@ -98,7 +98,7 @@ public class LoggingMiddleware implements AgentMiddleware {
   public LlmCallAction beforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
     LOG.info("{}LLM call: step={}, messages={}", prefix(), ctx.getIteration(), messages.size());
-    return null;
+    return LlmNoopAction.INSTANCE;
   }
 
   @Override
@@ -118,18 +118,18 @@ public class LoggingMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public ToolCallDenial beforeToolCall(
+  public ToolCallAction beforeToolCall(
       AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
     LOG.info("{}Tool call: id={}, name={}", prefix(), toolCallId, toolName);
     LOG.debug("{}Tool args: {}", prefix(), toolArgs);
-    return null;
+    return ToolCallApproval.INSTANCE;
   }
 
   @Override
-  public String afterToolCall(
+  public ToolResultAction afterToolCall(
       AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
     LOG.info("{}Tool result: {} -> \"{}\"", prefix(), toolName, truncate(result));
-    return null;
+    return ToolResultUnchanged.INSTANCE;
   }
 
   @Override

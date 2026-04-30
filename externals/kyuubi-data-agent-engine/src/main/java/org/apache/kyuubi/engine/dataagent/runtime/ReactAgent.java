@@ -268,10 +268,10 @@ public class ReactAgent {
         continue;
       }
 
-      AgentMiddleware.ToolCallDenial denial =
+      AgentMiddleware.ToolCallAction action =
           dispatchBeforeToolCall(ctx, fnCall.id(), toolName, toolArgs);
-      if (denial != null) {
-        String denied = "Tool call denied: " + denial.reason();
+      if (action instanceof AgentMiddleware.ToolCallDenial) {
+        String denied = "Tool call denied: " + ((AgentMiddleware.ToolCallDenial) action).reason();
         memory.addToolResult(fnCall.id(), denied);
         emit(ctx, new ToolResult(fnCall.id(), toolName, denied, true), eventConsumer);
         continue;
@@ -290,11 +290,8 @@ public class ReactAgent {
 
     for (int i = 0; i < approved.size(); i++) {
       ToolCallEntry entry = approved.get(i);
-      String output = futures.get(i).join();
-      String modified = dispatchAfterToolCall(ctx, entry.toolName, entry.toolArgs, output);
-      if (modified != null) {
-        output = modified;
-      }
+      String raw = futures.get(i).join();
+      String output = dispatchAfterToolCall(ctx, entry.toolName, entry.toolArgs, raw);
       memory.addToolResult(entry.fnCall.id(), output);
       emit(ctx, new ToolResult(entry.fnCall.id(), entry.toolName, output, false), eventConsumer);
     }
@@ -508,9 +505,9 @@ public class ReactAgent {
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
     for (AgentMiddleware mw : middlewares) {
       AgentMiddleware.LlmCallAction action = mw.beforeLlmCall(ctx, messages);
-      if (action != null) return action;
+      if (!(action instanceof AgentMiddleware.LlmNoopAction)) return action;
     }
-    return null;
+    return AgentMiddleware.LlmNoopAction.INSTANCE;
   }
 
   private void dispatchAfterLlmCall(
@@ -520,29 +517,27 @@ public class ReactAgent {
     }
   }
 
-  private AgentMiddleware.ToolCallDenial dispatchBeforeToolCall(
+  private AgentMiddleware.ToolCallAction dispatchBeforeToolCall(
       AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
     for (AgentMiddleware mw : middlewares) {
-      AgentMiddleware.ToolCallDenial denial =
+      AgentMiddleware.ToolCallAction action =
           mw.beforeToolCall(ctx, toolCallId, toolName, toolArgs);
-      if (denial != null) return denial;
+      if (action instanceof AgentMiddleware.ToolCallDenial) return action;
     }
-    return null;
+    return AgentMiddleware.ToolCallApproval.INSTANCE;
   }
 
   private String dispatchAfterToolCall(
       AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
-    String modified = null;
+    String current = result;
     for (int i = middlewares.size() - 1; i >= 0; i--) {
-      String mwResult =
-          middlewares
-              .get(i)
-              .afterToolCall(ctx, toolName, toolArgs, modified != null ? modified : result);
-      if (mwResult != null) {
-        modified = mwResult;
+      AgentMiddleware.ToolResultAction action =
+          middlewares.get(i).afterToolCall(ctx, toolName, toolArgs, current);
+      if (action instanceof AgentMiddleware.ToolResultReplace) {
+        current = ((AgentMiddleware.ToolResultReplace) action).replacement();
       }
     }
-    return modified;
+    return current;
   }
 
   // --- Builder ---

@@ -78,21 +78,21 @@ public class ToolResultOffloadMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public String afterToolCall(
+  public ToolResultAction afterToolCall(
       AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
-    if (result.isEmpty()) return null;
-    if (EXEMPT_TOOLS.contains(toolName)) return null;
+    if (result.isEmpty()) return ToolResultUnchanged.INSTANCE;
+    if (EXEMPT_TOOLS.contains(toolName)) return ToolResultUnchanged.INSTANCE;
 
     int bytes = result.getBytes(StandardCharsets.UTF_8).length;
     int lines = countLines(result);
     if (lines <= MAX_LINES && bytes <= MAX_BYTES) {
-      return null;
+      return ToolResultUnchanged.INSTANCE;
     }
 
     // AgentRunContext.sessionId is null in unit-test constructions that don't exercise offload.
     // In production the provider always threads it through, so treat null as "skip offload".
     String sessionId = ctx.getSessionId();
-    if (sessionId == null) return null;
+    if (sessionId == null) return ToolResultUnchanged.INSTANCE;
 
     long n = counters.computeIfAbsent(sessionId, k -> new AtomicLong()).incrementAndGet();
     String toolCallId = toolName + "_" + n;
@@ -106,7 +106,7 @@ public class ToolResultOffloadMiddleware implements AgentMiddleware {
           toolName,
           sessionId,
           e);
-      return null;
+      return ToolResultUnchanged.INSTANCE;
     }
 
     LOG.info(
@@ -116,7 +116,7 @@ public class ToolResultOffloadMiddleware implements AgentMiddleware {
         lines,
         bytes,
         file.getFileName());
-    return buildPreview(result, lines, bytes, file);
+    return new ToolResultReplace(buildPreview(result, lines, bytes, file));
   }
 
   /** Clean up counter and temp dir for a closed session. Idempotent. */

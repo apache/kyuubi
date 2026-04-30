@@ -156,7 +156,7 @@ public class CompactionMiddleware implements AgentMiddleware {
     long newTailEstimate = estimateTailAfterLastAssistant(messages);
 
     if (lastTotal + newTailEstimate < triggerPromptTokens) {
-      return null;
+      return LlmNoopAction.INSTANCE;
     }
 
     List<ChatCompletionMessageParam> history = mem.getHistory();
@@ -165,7 +165,7 @@ public class CompactionMiddleware implements AgentMiddleware {
     //    tool_result.
     Split split = computeSplit(history, KEEP_RECENT_TURNS);
     if (split.old.isEmpty()) {
-      return null;
+      return LlmNoopAction.INSTANCE;
     }
 
     String summary = summarize(mem.getSystemPrompt(), split.old);

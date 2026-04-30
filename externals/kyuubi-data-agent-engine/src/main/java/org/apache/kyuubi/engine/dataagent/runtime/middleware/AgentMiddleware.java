@@ -47,37 +47,42 @@ public interface AgentMiddleware {
   default void onAgentFinish(AgentRunContext ctx) {}
 
   /**
-   * Called before each LLM invocation. Return non-null to skip or modify the LLM call. Runs
-   * first-to-last.
+   * Called before each LLM invocation. Runs first-to-last.
    *
-   * @return {@code null} to proceed normally, {@link LlmSkip} to abort, or {@link
+   * @return {@link LlmNoopAction#INSTANCE} to proceed normally, {@link LlmSkip} to abort, or {@link
    *     LlmModifyMessages} to replace the message list for this call.
    */
   default LlmCallAction beforeLlmCall(
       AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
-    return null;
+    return LlmNoopAction.INSTANCE;
   }
 
   /** Called after each LLM invocation. Runs last-to-first. */
   default void afterLlmCall(AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {}
 
-  /** Called before each tool execution. Return non-null to deny the call. Runs first-to-last. */
-  default ToolCallDenial beforeToolCall(
+  /**
+   * Called before each tool execution. Runs first-to-last.
+   *
+   * @return {@link ToolCallApproval#INSTANCE} to allow the call, {@link ToolCallDenial} to block
+   *     it.
+   */
+  default ToolCallAction beforeToolCall(
       AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
-    return null;
+    return ToolCallApproval.INSTANCE;
   }
 
   /**
    * Called after each tool execution. Runs last-to-first.
    *
-   * <p>Returns {@code String} (not {@code void}) so that middlewares can intercept and transform
-   * the tool result before it is fed back to the LLM — e.g. for data masking, output truncation, or
-   * injecting metadata. Return {@code null} to keep the original result unchanged; return a
-   * non-null value to replace it.
+   * <p>Middlewares can intercept and transform the tool result before it is fed back to the LLM —
+   * e.g. for data masking, output truncation, or injecting metadata.
+   *
+   * @return {@link ToolResultUnchanged#INSTANCE} to keep the original result, {@link
+   *     ToolResultReplace} to substitute it.
    */
-  default String afterToolCall(
+  default ToolResultAction afterToolCall(
       AgentRunContext ctx, String toolName, Map<String, Object> toolArgs, String result) {
-    return null;
+    return ToolResultUnchanged.INSTANCE;
   }
 
   /**
@@ -101,11 +106,19 @@ public interface AgentMiddleware {
   default void onStop() {}
 
   /**
-   * Base type for {@code beforeLlmCall} return values. Subtypes: {@link LlmSkip} to abort the LLM
-   * call, {@link LlmModifyMessages} to replace the message list for this call.
+   * Base type for {@code beforeLlmCall} return values. Subtypes: {@link LlmNoopAction} to proceed
+   * normally, {@link LlmSkip} to abort the LLM call, {@link LlmModifyMessages} to replace the
+   * message list for this call.
    */
   abstract class LlmCallAction {
     private LlmCallAction() {}
+  }
+
+  /** Returned from {@code beforeLlmCall} to proceed without changing the LLM call. */
+  final class LlmNoopAction extends LlmCallAction {
+    public static final LlmNoopAction INSTANCE = new LlmNoopAction();
+
+    private LlmNoopAction() {}
   }
 
   /** Returned from {@code beforeLlmCall} to skip the LLM call and abort the agent loop. */
@@ -137,8 +150,23 @@ public interface AgentMiddleware {
     }
   }
 
-  /** Returned from {@code beforeToolCall} to deny a tool call. Non-null means denied. */
-  class ToolCallDenial {
+  /**
+   * Base type for {@code beforeToolCall} return values. Subtypes: {@link ToolCallApproval} to allow
+   * the call, {@link ToolCallDenial} to block it.
+   */
+  abstract class ToolCallAction {
+    private ToolCallAction() {}
+  }
+
+  /** Returned from {@code beforeToolCall} to allow the tool call to proceed. */
+  final class ToolCallApproval extends ToolCallAction {
+    public static final ToolCallApproval INSTANCE = new ToolCallApproval();
+
+    private ToolCallApproval() {}
+  }
+
+  /** Returned from {@code beforeToolCall} to block a tool call. */
+  final class ToolCallDenial extends ToolCallAction {
     private final String reason;
 
     public ToolCallDenial(String reason) {
@@ -147,6 +175,34 @@ public interface AgentMiddleware {
 
     public String reason() {
       return reason;
+    }
+  }
+
+  /**
+   * Base type for {@code afterToolCall} return values. Subtypes: {@link ToolResultUnchanged} to
+   * pass the result through, {@link ToolResultReplace} to substitute it.
+   */
+  abstract class ToolResultAction {
+    private ToolResultAction() {}
+  }
+
+  /** Returned from {@code afterToolCall} to keep the tool result as is. */
+  final class ToolResultUnchanged extends ToolResultAction {
+    public static final ToolResultUnchanged INSTANCE = new ToolResultUnchanged();
+
+    private ToolResultUnchanged() {}
+  }
+
+  /** Returned from {@code afterToolCall} to replace the tool result with a new string. */
+  final class ToolResultReplace extends ToolResultAction {
+    private final String replacement;
+
+    public ToolResultReplace(String replacement) {
+      this.replacement = replacement;
+    }
+
+    public String replacement() {
+      return replacement;
     }
   }
 }

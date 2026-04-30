@@ -64,12 +64,12 @@ public class ApprovalMiddleware implements AgentMiddleware {
   }
 
   @Override
-  public ToolCallDenial beforeToolCall(
+  public ToolCallAction beforeToolCall(
       AgentRunContext ctx, String toolCallId, String toolName, Map<String, Object> toolArgs) {
     ToolRiskLevel riskLevel = toolRegistry.getRiskLevel(toolName);
 
     if (shouldAutoApprove(ctx.getApprovalMode(), riskLevel)) {
-      return null;
+      return ToolCallApproval.INSTANCE;
     }
 
     String requestId = UUID.randomUUID().toString();
@@ -86,7 +86,7 @@ public class ApprovalMiddleware implements AgentMiddleware {
         return new ToolCallDenial("User denied execution of " + toolName);
       }
       LOG.info("Tool '{}' approved by user (requestId={})", toolName, requestId);
-      return null;
+      return ToolCallApproval.INSTANCE;
     } catch (TimeoutException e) {
       // Complete the future so that a late resolve() call is a harmless no-op
       // instead of completing a dangling future.

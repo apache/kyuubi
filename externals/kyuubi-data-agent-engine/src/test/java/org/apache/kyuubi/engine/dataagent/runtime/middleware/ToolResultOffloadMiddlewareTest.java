@@ -51,9 +51,9 @@ public class ToolResultOffloadMiddlewareTest {
   @Test
   public void underThresholdPassesThrough() {
     String small = "row1\nrow2\nrow3\n";
-    String out =
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), small);
-    assertNull(out);
+    assertSame(
+        AgentMiddleware.ToolResultUnchanged.INSTANCE,
+        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), small));
   }
 
   @Test
@@ -61,9 +61,10 @@ public class ToolResultOffloadMiddlewareTest {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 600; i++) sb.append("row").append(i).append('\n');
     String out =
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString());
+        replacement(
+            mw.afterToolCall(
+                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
 
-    assertNotNull(out);
     assertTrue(out, out.contains("Tool output truncated"));
     assertTrue(out, out.contains("Saved to:"));
     assertTrue(out, out.contains(ReadToolOutputTool.NAME));
@@ -81,9 +82,9 @@ public class ToolResultOffloadMiddlewareTest {
       sb.append('\n');
     }
     String out =
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString());
-
-    assertNotNull("byte threshold should trigger", out);
+        replacement(
+            mw.afterToolCall(
+                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
     assertTrue(out, out.contains("Tool output truncated"));
   }
 
@@ -91,10 +92,12 @@ public class ToolResultOffloadMiddlewareTest {
   public void retrievalToolsAreExemptFromGate() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 2000; i++) sb.append("row").append(i).append('\n');
-    assertNull(
+    assertSame(
+        AgentMiddleware.ToolResultUnchanged.INSTANCE,
         mw.afterToolCall(
             ctxWithSession, ReadToolOutputTool.NAME, Collections.emptyMap(), sb.toString()));
-    assertNull(
+    assertSame(
+        AgentMiddleware.ToolResultUnchanged.INSTANCE,
         mw.afterToolCall(
             ctxWithSession, GrepToolOutputTool.NAME, Collections.emptyMap(), sb.toString()));
   }
@@ -103,9 +106,10 @@ public class ToolResultOffloadMiddlewareTest {
   public void missingSessionIdPassesThrough() {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 1000; i++) sb.append("row").append(i).append('\n');
-    String out =
-        mw.afterToolCall(ctxNoSession, "run_select_query", Collections.emptyMap(), sb.toString());
-    assertNull("without sessionId, cannot offload safely — pass through", out);
+    assertSame(
+        "without sessionId, cannot offload safely — pass through",
+        AgentMiddleware.ToolResultUnchanged.INSTANCE,
+        mw.afterToolCall(ctxNoSession, "run_select_query", Collections.emptyMap(), sb.toString()));
   }
 
   @Test
@@ -124,13 +128,24 @@ public class ToolResultOffloadMiddlewareTest {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 600; i++) sb.append("row").append(i).append('\n');
     String out1 =
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString());
+        replacement(
+            mw.afterToolCall(
+                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
     String out2 =
-        mw.afterToolCall(ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString());
+        replacement(
+            mw.afterToolCall(
+                ctxWithSession, "run_select_query", Collections.emptyMap(), sb.toString()));
     // Both previews reference the same session dir, different file names.
     assertNotEquals(extractPath(out1), extractPath(out2));
     assertTrue(extractPath(out1).contains("sess-1"));
     assertTrue(extractPath(out2).contains("sess-1"));
+  }
+
+  private static String replacement(AgentMiddleware.ToolResultAction action) {
+    assertTrue(
+        "expected ToolResultReplace but got " + action,
+        action instanceof AgentMiddleware.ToolResultReplace);
+    return ((AgentMiddleware.ToolResultReplace) action).replacement();
   }
 
   private static String extractPath(String preview) {
