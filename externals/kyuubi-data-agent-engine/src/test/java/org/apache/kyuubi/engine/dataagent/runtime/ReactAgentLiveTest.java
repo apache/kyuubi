@@ -356,8 +356,9 @@ public class ReactAgentLiveTest {
     try {
       agent.run(
           new AgentInvocation(
-              "Increment the 'hits' counter in the counters table by 1, then tell me its"
-                  + " new value. Respond with ONLY the new value, no explanation."),
+              "Increment the 'hits' counter in the counters table by 1. After the update"
+                  + " succeeds, run a SELECT query to read the new value back from the"
+                  + " database, then respond with ONLY that value, no explanation."),
           memory,
           listener);
     } finally {
