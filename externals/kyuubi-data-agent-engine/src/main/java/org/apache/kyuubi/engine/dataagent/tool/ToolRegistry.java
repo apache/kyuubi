@@ -203,7 +203,7 @@ public class ToolRegistry implements AutoCloseable {
               () -> {
                 try {
                   Object args = JSON.readValue(argsJson, tool.argsType());
-                  String out = tool.execute(args, toolCtx);
+                  String out = tool.execute(toolCtx, args);
                   // When the timeout handler interrupts us, the tool may still unwind cleanly and
                   // produce a stale return value — don't race the scheduler's timeout message with
                   // it. Let the timeout path be the single authority for the final result.

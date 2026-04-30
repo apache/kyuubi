@@ -67,7 +67,7 @@ public class DialectTest extends WithMySQLContainer {
 
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT " + quotedCol + " FROM " + quotedTable + " WHERE id = 1";
-    String result = selectTool.execute(args, ToolContext.EMPTY);
+    String result = selectTool.execute(ToolContext.EMPTY, args);
     assertFalse(result.startsWith("Error:"));
     assertTrue(result.contains("value1"));
 

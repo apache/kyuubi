@@ -55,7 +55,7 @@ public class GrepToolOutputTool implements AgentTool<GrepToolOutputArgs> {
   }
 
   @Override
-  public String execute(GrepToolOutputArgs args, ToolContext ctx) {
+  public String execute(ToolContext ctx, GrepToolOutputArgs args) {
     if (args == null || args.path == null || args.path.isEmpty()) {
       return "Error: 'path' parameter is required.";
     }

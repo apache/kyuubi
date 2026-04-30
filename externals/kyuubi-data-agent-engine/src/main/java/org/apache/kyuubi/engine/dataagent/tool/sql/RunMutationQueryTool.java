@@ -70,7 +70,7 @@ public class RunMutationQueryTool implements AgentTool<SqlQueryArgs> {
   }
 
   @Override
-  public String execute(SqlQueryArgs args, ToolContext ctx) {
+  public String execute(ToolContext ctx, SqlQueryArgs args) {
     return SqlExecutor.execute(dataSource, args.sql, queryTimeoutSeconds);
   }
 }

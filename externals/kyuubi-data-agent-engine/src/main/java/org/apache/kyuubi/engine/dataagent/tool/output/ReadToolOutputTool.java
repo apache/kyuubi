@@ -56,7 +56,7 @@ public class ReadToolOutputTool implements AgentTool<ReadToolOutputArgs> {
   }
 
   @Override
-  public String execute(ReadToolOutputArgs args, ToolContext ctx) {
+  public String execute(ToolContext ctx, ReadToolOutputArgs args) {
     if (args == null || args.path == null || args.path.isEmpty()) {
       return "Error: 'path' parameter is required.";
     }

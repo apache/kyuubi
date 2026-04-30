@@ -70,7 +70,7 @@ public class RunSelectQueryTool implements AgentTool<SqlQueryArgs> {
   }
 
   @Override
-  public String execute(SqlQueryArgs args, ToolContext ctx) {
+  public String execute(ToolContext ctx, SqlQueryArgs args) {
     String sql = args.sql;
     if (sql == null || sql.trim().isEmpty()) {
       return "Error: 'sql' parameter is required.";

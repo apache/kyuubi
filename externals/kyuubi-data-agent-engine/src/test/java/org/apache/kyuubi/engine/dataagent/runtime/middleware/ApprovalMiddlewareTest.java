@@ -298,7 +298,7 @@ public class ApprovalMiddlewareTest {
     }
 
     @Override
-    public String execute(DummyArgs args, ToolContext ctx) {
+    public String execute(ToolContext ctx, DummyArgs args) {
       return "ok";
     }
   }
