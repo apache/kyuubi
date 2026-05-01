@@ -41,10 +41,10 @@ class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvide
   override def initialize(conf: KyuubiConf): Unit = _conf = conf
 
   override def getSecret(): String = {
-    _conf.get(SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET).getOrElse {
+    _conf.get(INTERNAL_SECURITY_SECRET_PROVIDER_SIMPLE_SECRET).getOrElse {
       throw new IllegalArgumentException(
-        s"${SIMPLE_SECURITY_SECRET_PROVIDER_PROVIDER_SECRET.key} must be configured " +
-          s"when ${ENGINE_SECURITY_SECRET_PROVIDER.key} is `simple`.")
+        s"${INTERNAL_SECURITY_SECRET_PROVIDER_SIMPLE_SECRET.key} must be configured " +
+          s"when ${INTERNAL_SECURITY_SECRET_PROVIDER.key} is `simple`.")
     }
   }
 }
@@ -52,7 +52,7 @@ class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvide
 object EngineSecuritySecretProvider {
   def create(conf: KyuubiConf): EngineSecuritySecretProvider = {
     val provider = DynConstructors.builder()
-      .impl(conf.get(ENGINE_SECURITY_SECRET_PROVIDER))
+      .impl(conf.get(INTERNAL_SECURITY_SECRET_PROVIDER))
       .buildChecked[EngineSecuritySecretProvider]()
       .newInstance(conf)
     provider.initialize(conf)
