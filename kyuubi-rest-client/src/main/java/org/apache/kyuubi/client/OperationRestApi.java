@@ -55,7 +55,8 @@ public class OperationRestApi {
     return getOperationLog(operationHandleStr, null, maxRows);
   }
 
-  public OperationLog getOperationLog(String operationHandleStr, String fetchOrientation, Integer maxRows) {
+  public OperationLog getOperationLog(
+      String operationHandleStr, String fetchOrientation, Integer maxRows) {
     String path = String.format("%s/%s/log", API_BASE_PATH, operationHandleStr);
     Map<String, Object> params = new HashMap<>();
     if (fetchOrientation != null) params.put("fetchorientation", fetchOrientation);
