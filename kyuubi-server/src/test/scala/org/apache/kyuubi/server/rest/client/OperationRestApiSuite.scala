@@ -85,6 +85,12 @@ class OperationRestApiSuite extends RestClientTestHelper {
         _.contains("select \"test_value\", 1, 0.32d, true")))
       assert(logRowSet.getRowCount === 10)
 
+      val logRowSetWithOrientation =
+        operationRestApi.getOperationLog(statementHandleStr, "FETCH_FIRST", 10)
+      assert(logRowSetWithOrientation.getLogRowSet.asScala.exists(
+        _.contains("select \"test_value\", 1, 0.32d, true")))
+      assert(logRowSetWithOrientation.getRowCount === 10)
+
       val resultRowSet = operationRestApi.getNextRowSet(statementHandleStr)
       assert("test_value".equals(resultRowSet.getRows.asScala.head.getFields.asScala.head.getValue))
       assert(resultRowSet.getRowCount == 1)
