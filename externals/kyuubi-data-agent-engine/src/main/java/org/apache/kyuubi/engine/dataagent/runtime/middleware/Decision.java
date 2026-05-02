@@ -27,7 +27,9 @@ package org.apache.kyuubi.engine.dataagent.runtime.middleware;
  *       <ul>
  *         <li>{@code beforeLlmCall}: skip the LLM call and end the loop
  *         <li>{@code beforeToolCall}: deny the call; reason is fed back to the LLM as the result
- *         <li>{@code afterToolCall}: discard the result; reason replaces it for the LLM
+ *         <li>{@code afterToolCall}: short-circuit the chain; outer middlewares are not invoked,
+ *             reason replaces the result for the LLM, and the emitted {@code ToolResult} is marked
+ *             {@code isError=true}
  *         <li>{@code onEvent}: drop the event
  *       </ul>
  * </ul>

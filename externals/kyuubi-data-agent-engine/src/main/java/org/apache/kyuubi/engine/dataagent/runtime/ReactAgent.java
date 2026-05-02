@@ -20,14 +20,10 @@ package org.apache.kyuubi.engine.dataagent.runtime;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.client.OpenAIClient;
-import com.openai.core.http.StreamResponse;
 import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
-import com.openai.models.chat.completions.ChatCompletionChunk;
-import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.ChatCompletionMessageFunctionToolCall;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
-import com.openai.models.chat.completions.ChatCompletionStreamOptions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -39,13 +35,11 @@ import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentFinish;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentStart;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ContentComplete;
-import org.apache.kyuubi.engine.dataagent.runtime.event.ContentDelta;
 import org.apache.kyuubi.engine.dataagent.runtime.event.StepEnd;
 import org.apache.kyuubi.engine.dataagent.runtime.event.StepStart;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ToolCall;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ToolResult;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.AgentMiddleware;
-import org.apache.kyuubi.engine.dataagent.runtime.middleware.ApprovalMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.Decision;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ToolInvocation;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
@@ -65,11 +59,10 @@ public class ReactAgent {
   private static final Logger LOG = LoggerFactory.getLogger(ReactAgent.class);
   private static final ObjectMapper JSON = new ObjectMapper();
 
-  private final OpenAIClient client;
   private final String defaultModelName;
   private final ToolRegistry toolRegistry;
-  private final List<AgentMiddleware> middlewares;
-  private final ApprovalMiddleware approvalMiddleware;
+  private final MiddlewareDispatcher dispatcher;
+  private final LlmStreamClient llmStreamClient;
   private final int maxIterations;
   private final String systemPrompt;
 
@@ -80,48 +73,27 @@ public class ReactAgent {
       List<AgentMiddleware> middlewares,
       int maxIterations,
       String systemPrompt) {
-    this.client = client;
     this.defaultModelName = modelName;
     this.toolRegistry = toolRegistry;
-    this.middlewares = middlewares;
-    this.approvalMiddleware = findApprovalMiddleware(middlewares);
+    this.dispatcher = new MiddlewareDispatcher(middlewares);
+    this.llmStreamClient = new LlmStreamClient(client, toolRegistry);
     this.maxIterations = maxIterations;
     this.systemPrompt = systemPrompt;
   }
 
-  private static ApprovalMiddleware findApprovalMiddleware(List<AgentMiddleware> middlewares) {
-    for (AgentMiddleware mw : middlewares) {
-      if (mw instanceof ApprovalMiddleware) return (ApprovalMiddleware) mw;
-    }
-    return null;
-  }
-
   /** Resolve a pending approval request. Returns false if no pending request matches. */
   public boolean resolveApproval(String requestId, boolean approved) {
-    if (approvalMiddleware == null) return false;
-    return approvalMiddleware.resolve(requestId, approved);
+    return dispatcher.resolveApproval(requestId, approved);
   }
 
   /** Fan out session-close to every middleware. Errors in one middleware don't block others. */
   public void closeSession(String sessionId) {
-    for (AgentMiddleware mw : middlewares) {
-      try {
-        mw.onSessionClose(sessionId);
-      } catch (Exception e) {
-        LOG.warn("Middleware onSessionClose error", e);
-      }
-    }
+    dispatcher.onSessionClose(sessionId);
   }
 
   /** Fan out engine-stop to every middleware. Errors in one middleware don't block others. */
   public void stop() {
-    for (AgentMiddleware mw : middlewares) {
-      try {
-        mw.onStop();
-      } catch (Exception e) {
-        LOG.warn("Middleware onStop error", e);
-      }
-    }
+    dispatcher.onStop();
   }
 
   /**
@@ -150,41 +122,45 @@ public class ReactAgent {
     memory.addUserMessage(userInput);
 
     AgentRunContext ctx = new AgentRunContext(memory, approvalMode, request.getSessionId());
-    ctx.setEventEmitter(event -> emit(ctx, event, eventConsumer));
-    dispatchAgentStart(ctx);
-    emit(ctx, new AgentStart(), eventConsumer);
+    // Wire the event pipeline: ctx.emit -> middleware.onEvent -> raw consumer.
+    // Splitting filter and forward keeps the middleware composite ignorant of the consumer.
+    ctx.setEventEmitter(
+        event -> {
+          Decision<AgentEvent> d = dispatcher.onEvent(ctx, event);
+          if (d.kind() == Decision.Kind.ABORT) return;
+          eventConsumer.accept(d.kind() == Decision.Kind.REPLACE ? d.replacement() : event);
+        });
+    dispatcher.onAgentStart(ctx);
+    ctx.emit(new AgentStart());
 
     try {
       for (int step = 1; step <= maxIterations; step++) {
         ctx.setIteration(step);
-        emit(ctx, new StepStart(step), eventConsumer);
+        ctx.emit(new StepStart(step));
 
         List<ChatCompletionMessageParam> messages =
-            resolveMessagesForCall(ctx, memory.buildLlmMessages(), eventConsumer);
+            resolveMessagesForCall(ctx, memory.buildLlmMessages());
         if (messages == null) {
           // Middleware asked us to skip — AgentError + AgentFinish have already been emitted.
           return;
         }
 
-        StreamResult result = streamLlmResponse(ctx, messages, effectiveModel, eventConsumer);
+        LlmStreamClient.StreamResult result = llmStreamClient.stream(ctx, messages, effectiveModel);
         if (result.isEmpty()) {
-          emit(ctx, new AgentError("LLM returned empty response"), eventConsumer);
-          emitFinish(ctx, eventConsumer);
+          ctx.emit(new AgentError("LLM returned empty response"));
+          emitFinish(ctx);
           return;
         }
 
         if (!result.content.isEmpty()) {
-          emit(ctx, new ContentComplete(result.content), eventConsumer);
+          ctx.emit(new ContentComplete(result.content));
         }
-        ChatCompletionAssistantMessageParam assistantMsg = buildAssistantMessage(result);
+        ChatCompletionAssistantMessageParam assistantMsg = result.toAssistantMessage();
         Decision<ChatCompletionAssistantMessageParam> after =
-            dispatchAfterLlmCall(ctx, assistantMsg);
+            dispatcher.afterLlmCall(ctx, assistantMsg);
         if (after.kind() == Decision.Kind.ABORT) {
-          emit(
-              ctx,
-              new AgentError("LLM response rejected by middleware: " + after.reason()),
-              eventConsumer);
-          emitFinish(ctx, eventConsumer);
+          ctx.emit(new AgentError("LLM response rejected by middleware: " + after.reason()));
+          emitFinish(ctx);
           return;
         }
         if (after.kind() == Decision.Kind.REPLACE) assistantMsg = after.replacement();
@@ -193,27 +169,34 @@ public class ReactAgent {
         List<ChatCompletionMessageToolCall> toolCalls = assistantMsg.toolCalls().orElse(null);
         if (toolCalls == null || toolCalls.isEmpty()) {
           // No tool calls — agent is done.
-          emit(ctx, new StepEnd(step), eventConsumer);
-          emitFinish(ctx, eventConsumer);
+          ctx.emit(new StepEnd(step));
+          emitFinish(ctx);
           return;
         }
 
-        executeToolCalls(ctx, memory, toolCalls, eventConsumer);
-        emit(ctx, new StepEnd(step), eventConsumer);
+        executeToolCalls(ctx, memory, toolCalls);
+        ctx.emit(new StepEnd(step));
       }
 
-      emit(
-          ctx, new AgentError("Reached maximum iterations (" + maxIterations + ")"), eventConsumer);
-      emitFinish(ctx, eventConsumer);
+      ctx.emit(new AgentError("Reached maximum iterations (" + maxIterations + ")"));
+      emitFinish(ctx);
 
     } catch (Exception e) {
       LOG.error("Agent run failed", e);
-      emit(
-          ctx, new AgentError(e.getClass().getSimpleName() + ": " + e.getMessage()), eventConsumer);
-      emitFinish(ctx, eventConsumer);
+      ctx.emit(new AgentError(e.getClass().getSimpleName() + ": " + e.getMessage()));
+      emitFinish(ctx);
     } finally {
-      dispatchAgentFinish(ctx);
+      dispatcher.onAgentFinish(ctx);
     }
+  }
+
+  private static void emitFinish(AgentRunContext ctx) {
+    ctx.emit(
+        new AgentFinish(
+            ctx.getIteration(),
+            ctx.getPromptTokens(),
+            ctx.getCompletionTokens(),
+            ctx.getTotalTokens()));
   }
 
   /**
@@ -222,30 +205,14 @@ public class ReactAgent {
    * this method has already emitted the terminal events).
    */
   private List<ChatCompletionMessageParam> resolveMessagesForCall(
-      AgentRunContext ctx,
-      List<ChatCompletionMessageParam> messages,
-      Consumer<AgentEvent> eventConsumer) {
-    Decision<List<ChatCompletionMessageParam>> decision = dispatchBeforeLlmCall(ctx, messages);
+      AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
+    Decision<List<ChatCompletionMessageParam>> decision = dispatcher.beforeLlmCall(ctx, messages);
     if (decision.kind() == Decision.Kind.ABORT) {
-      emit(
-          ctx,
-          new AgentError("LLM call skipped by middleware: " + decision.reason()),
-          eventConsumer);
-      emitFinish(ctx, eventConsumer);
+      ctx.emit(new AgentError("LLM call skipped by middleware: " + decision.reason()));
+      emitFinish(ctx);
       return null;
     }
     return decision.kind() == Decision.Kind.REPLACE ? decision.replacement() : messages;
-  }
-
-  private static ChatCompletionAssistantMessageParam buildAssistantMessage(StreamResult result) {
-    ChatCompletionAssistantMessageParam.Builder b = ChatCompletionAssistantMessageParam.builder();
-    if (!result.content.isEmpty()) {
-      b.content(result.content);
-    }
-    if (result.toolCalls != null && !result.toolCalls.isEmpty()) {
-      b.toolCalls(result.toolCalls);
-    }
-    return b.build();
   }
 
   /**
@@ -262,8 +229,7 @@ public class ReactAgent {
   private void executeToolCalls(
       AgentRunContext ctx,
       ConversationMemory memory,
-      List<ChatCompletionMessageToolCall> toolCalls,
-      Consumer<AgentEvent> eventConsumer) {
+      List<ChatCompletionMessageToolCall> toolCalls) {
     List<ToolCallEntry> approved = new ArrayList<>();
     for (ChatCompletionMessageToolCall toolCall : toolCalls) {
       ChatCompletionMessageFunctionToolCall fnCall = toolCall.asFunction();
@@ -276,22 +242,22 @@ public class ReactAgent {
         // assistant/tool_result pairing the next API call needs) and let the loop self-correct.
         String err = "Tool call failed: " + e.getMessage();
         memory.addToolResult(fnCall.id(), err);
-        emit(ctx, new ToolResult(fnCall.id(), toolName, err, true), eventConsumer);
+        ctx.emit(new ToolResult(fnCall.id(), toolName, err, true));
         continue;
       }
 
       ToolInvocation invocation = new ToolInvocation(fnCall.id(), toolName, toolArgs);
-      Decision<ToolInvocation> decision = dispatchBeforeToolCall(ctx, invocation);
+      Decision<ToolInvocation> decision = dispatcher.beforeToolCall(ctx, invocation);
       if (decision.kind() == Decision.Kind.ABORT) {
         String denied = "Tool call denied: " + decision.reason();
         memory.addToolResult(fnCall.id(), denied);
-        emit(ctx, new ToolResult(fnCall.id(), toolName, denied, true), eventConsumer);
+        ctx.emit(new ToolResult(fnCall.id(), toolName, denied, true));
         continue;
       }
       boolean rewritten = decision.kind() == Decision.Kind.REPLACE;
       ToolInvocation effective = rewritten ? decision.replacement() : invocation;
 
-      emit(ctx, new ToolCall(effective.id(), effective.name(), effective.args()), eventConsumer);
+      ctx.emit(new ToolCall(effective.id(), effective.name(), effective.args()));
       approved.add(new ToolCallEntry(fnCall, effective, rewritten));
     }
 
@@ -304,27 +270,16 @@ public class ReactAgent {
     for (int i = 0; i < approved.size(); i++) {
       ToolCallEntry entry = approved.get(i);
       String raw = futures.get(i).join();
-      String output = dispatchAfterToolCall(ctx, entry.invocation, raw);
+      Decision<String> after = dispatcher.afterToolCall(ctx, entry.invocation, raw);
+      // ABORT.afterToolCall: discard the result; surface reason() to the LLM and mark the event
+      // as an error so listeners can distinguish it from a successful tool result.
+      boolean isError = after.kind() == Decision.Kind.ABORT;
+      String output =
+          after.kind() == Decision.Kind.ABORT
+              ? after.reason()
+              : (after.kind() == Decision.Kind.REPLACE ? after.replacement() : raw);
       memory.addToolResult(entry.fnCall.id(), output);
-      emit(
-          ctx,
-          new ToolResult(entry.fnCall.id(), entry.invocation.name(), output, false),
-          eventConsumer);
-    }
-  }
-
-  /** Result of a streaming LLM call, assembled from chunks. */
-  private static class StreamResult {
-    final String content;
-    final List<ChatCompletionMessageToolCall> toolCalls;
-
-    StreamResult(String content, List<ChatCompletionMessageToolCall> toolCalls) {
-      this.content = content;
-      this.toolCalls = toolCalls;
-    }
-
-    boolean isEmpty() {
-      return content.isEmpty() && (toolCalls == null || toolCalls.isEmpty());
+      ctx.emit(new ToolResult(entry.fnCall.id(), entry.invocation.name(), output, isError));
     }
   }
 
@@ -358,125 +313,6 @@ public class ReactAgent {
     }
   }
 
-  /**
-   * Stream LLM response, emitting ContentDelta for each text chunk. Assembles tool calls directly
-   * from streamed chunks — no non-streaming fallback. Exceptions propagate to the top-level handler
-   * in {@link #run}.
-   */
-  private StreamResult streamLlmResponse(
-      AgentRunContext ctx,
-      List<ChatCompletionMessageParam> messages,
-      String effectiveModel,
-      Consumer<AgentEvent> eventConsumer) {
-    ChatCompletionCreateParams.Builder paramsBuilder =
-        ChatCompletionCreateParams.builder()
-            .model(effectiveModel)
-            .streamOptions(ChatCompletionStreamOptions.builder().includeUsage(true).build());
-    for (ChatCompletionMessageParam msg : messages) {
-      paramsBuilder.addMessage(msg);
-    }
-    toolRegistry.addToolsTo(paramsBuilder);
-
-    LOG.info("LLM request: model={}", effectiveModel);
-    StreamAccumulator acc = new StreamAccumulator();
-    try (StreamResponse<ChatCompletionChunk> stream =
-        client.chat().completions().createStreaming(paramsBuilder.build())) {
-      stream.stream().forEach(chunk -> consumeChunk(ctx, chunk, acc, eventConsumer));
-    }
-    return new StreamResult(acc.content.toString(), acc.buildToolCalls());
-  }
-
-  /** Fold one streaming chunk into {@code acc}, emitting per-token {@link ContentDelta}s. */
-  private void consumeChunk(
-      AgentRunContext ctx,
-      ChatCompletionChunk chunk,
-      StreamAccumulator acc,
-      Consumer<AgentEvent> eventConsumer) {
-    if (!acc.serverModelLogged) {
-      LOG.info("LLM response: server-echoed model={}", chunk.model());
-      acc.serverModelLogged = true;
-    }
-    chunk
-        .usage()
-        .ifPresent(u -> ctx.addTokenUsage(u.promptTokens(), u.completionTokens(), u.totalTokens()));
-
-    for (ChatCompletionChunk.Choice c : chunk.choices()) {
-      c.delta()
-          .content()
-          .ifPresent(
-              text -> {
-                acc.content.append(text);
-                emit(ctx, new ContentDelta(text), eventConsumer);
-              });
-      c.delta().toolCalls().ifPresent(acc::mergeToolCallDeltas);
-    }
-  }
-
-  /**
-   * Mutable accumulator for a single streaming LLM turn. Tool call fields are keyed by the chunk's
-   * {@code index} because provider SDKs may deliver a single logical call across multiple chunks
-   * and only surface the {@code id}/{@code name} on the first one.
-   */
-  private static final class StreamAccumulator {
-    final StringBuilder content = new StringBuilder();
-    final Map<Integer, String> toolCallIds = new HashMap<>();
-    final Map<Integer, String> toolCallNames = new HashMap<>();
-    final Map<Integer, StringBuilder> toolCallArgs = new HashMap<>();
-    boolean serverModelLogged = false;
-
-    void mergeToolCallDeltas(List<ChatCompletionChunk.Choice.Delta.ToolCall> deltas) {
-      for (ChatCompletionChunk.Choice.Delta.ToolCall tc : deltas) {
-        int idx = (int) tc.index();
-        tc.id().ifPresent(id -> toolCallIds.put(idx, id));
-        tc.function()
-            .ifPresent(
-                fn -> {
-                  fn.name().ifPresent(name -> toolCallNames.put(idx, name));
-                  fn.arguments()
-                      .ifPresent(
-                          args ->
-                              toolCallArgs
-                                  .computeIfAbsent(idx, k -> new StringBuilder())
-                                  .append(args));
-                });
-      }
-    }
-
-    /**
-     * Materialize accumulated deltas into SDK tool-call objects. Returns {@code null} (not an empty
-     * list) if no tool calls were seen, matching the existing {@link StreamResult} contract.
-     */
-    List<ChatCompletionMessageToolCall> buildToolCalls() {
-      if (toolCallIds.isEmpty()) return null;
-      List<ChatCompletionMessageToolCall> out = new ArrayList<>(toolCallIds.size());
-      for (Map.Entry<Integer, String> e : toolCallIds.entrySet()) {
-        int idx = e.getKey();
-        String id = (e.getValue() == null || e.getValue().isEmpty()) ? synthId() : e.getValue();
-        String args = toolCallArgs.containsKey(idx) ? toolCallArgs.get(idx).toString() : "{}";
-        out.add(
-            ChatCompletionMessageToolCall.ofFunction(
-                ChatCompletionMessageFunctionToolCall.builder()
-                    .id(id)
-                    .function(
-                        ChatCompletionMessageFunctionToolCall.Function.builder()
-                            .name(toolCallNames.getOrDefault(idx, ""))
-                            .arguments(args)
-                            .build())
-                    .build()));
-      }
-      return out;
-    }
-
-    /**
-     * Synthesize an id for tool calls whose id never arrived on the stream (some OpenAI-compatible
-     * providers omit it). The id has to be stable within a turn and unique across turns so the
-     * assistant/tool_result pairing downstream holds.
-     */
-    private static String synthId() {
-      return "local_" + java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 24);
-    }
-  }
-
   private static Map<String, Object> parseToolArgs(String json) {
     if (json == null || json.isEmpty()) {
       return new HashMap<>();
@@ -486,113 +322,6 @@ public class ReactAgent {
     } catch (java.io.IOException e) {
       throw new IllegalArgumentException("Malformed tool-call arguments JSON: " + json, e);
     }
-  }
-
-  // --- Middleware dispatch methods ---
-  //
-  // Middlewares are internal framework code. If one throws, the agent run fails via the
-  // top-level catch in run() — we do not wrap individual dispatch calls in try/catch.
-
-  private void emitFinish(AgentRunContext ctx, Consumer<AgentEvent> eventConsumer) {
-    emit(
-        ctx,
-        new AgentFinish(
-            ctx.getIteration(),
-            ctx.getPromptTokens(),
-            ctx.getCompletionTokens(),
-            ctx.getTotalTokens()),
-        eventConsumer);
-  }
-
-  private void emit(AgentRunContext ctx, AgentEvent event, Consumer<AgentEvent> consumer) {
-    AgentEvent filtered = event;
-    for (AgentMiddleware mw : middlewares) {
-      Decision<AgentEvent> d = mw.onEvent(ctx, filtered);
-      if (d.kind() == Decision.Kind.ABORT) return;
-      if (d.kind() == Decision.Kind.REPLACE) filtered = d.replacement();
-    }
-    consumer.accept(filtered);
-  }
-
-  private void dispatchAgentStart(AgentRunContext ctx) {
-    for (AgentMiddleware mw : middlewares) {
-      mw.onAgentStart(ctx);
-    }
-  }
-
-  private void dispatchAgentFinish(AgentRunContext ctx) {
-    // Runs even when the agent body threw, so swallow here to ensure every middleware's cleanup
-    // gets a chance to run; otherwise we'd leak session state in later middlewares.
-    for (int i = middlewares.size() - 1; i >= 0; i--) {
-      try {
-        middlewares.get(i).onAgentFinish(ctx);
-      } catch (Exception e) {
-        LOG.warn("Middleware onAgentFinish error", e);
-      }
-    }
-  }
-
-  /**
-   * Run {@code beforeLlmCall} middleware in onion order, folding REPLACE so later middlewares see
-   * rewritten messages. Returns PROCEED if no middleware touched the value, REPLACE with the final
-   * value if any did, or ABORT if any middleware short-circuited.
-   */
-  private Decision<List<ChatCompletionMessageParam>> dispatchBeforeLlmCall(
-      AgentRunContext ctx, List<ChatCompletionMessageParam> messages) {
-    List<ChatCompletionMessageParam> current = messages;
-    for (AgentMiddleware mw : middlewares) {
-      Decision<List<ChatCompletionMessageParam>> d = mw.beforeLlmCall(ctx, current);
-      if (d.kind() == Decision.Kind.ABORT) return d;
-      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
-    }
-    return Decision.of(messages, current);
-  }
-
-  /**
-   * Run {@code afterLlmCall} middleware in reverse onion order, folding REPLACE so earlier
-   * middlewares see rewritten responses. Returns the final response, or ABORT if any middleware
-   * short-circuits.
-   */
-  private Decision<ChatCompletionAssistantMessageParam> dispatchAfterLlmCall(
-      AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
-    ChatCompletionAssistantMessageParam current = response;
-    for (int i = middlewares.size() - 1; i >= 0; i--) {
-      Decision<ChatCompletionAssistantMessageParam> d =
-          middlewares.get(i).afterLlmCall(ctx, current);
-      if (d.kind() == Decision.Kind.ABORT) return d;
-      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
-    }
-    return Decision.of(response, current);
-  }
-
-  /**
-   * Run {@code beforeToolCall} middleware in onion order, folding REPLACE so later middlewares can
-   * further rewrite. Returns PROCEED if untouched, REPLACE with the final invocation otherwise, or
-   * ABORT if any middleware denies the call.
-   */
-  private Decision<ToolInvocation> dispatchBeforeToolCall(
-      AgentRunContext ctx, ToolInvocation call) {
-    ToolInvocation current = call;
-    for (AgentMiddleware mw : middlewares) {
-      Decision<ToolInvocation> d = mw.beforeToolCall(ctx, current);
-      if (d.kind() == Decision.Kind.ABORT) return d;
-      if (d.kind() == Decision.Kind.REPLACE) current = d.replacement();
-    }
-    return Decision.of(call, current);
-  }
-
-  private String dispatchAfterToolCall(AgentRunContext ctx, ToolInvocation call, String result) {
-    String current = result;
-    for (int i = middlewares.size() - 1; i >= 0; i--) {
-      Decision<String> d = middlewares.get(i).afterToolCall(ctx, call, current);
-      if (d.kind() == Decision.Kind.REPLACE) {
-        current = d.replacement();
-      } else if (d.kind() == Decision.Kind.ABORT) {
-        // afterToolCall.abort: discard result; reason replaces it so the LLM still sees something.
-        current = d.reason();
-      }
-    }
-    return current;
   }
 
   // --- Builder ---
