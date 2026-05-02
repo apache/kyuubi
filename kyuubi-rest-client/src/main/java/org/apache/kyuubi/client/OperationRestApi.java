@@ -52,9 +52,14 @@ public class OperationRestApi {
   }
 
   public OperationLog getOperationLog(String operationHandleStr, int maxRows) {
+    return getOperationLog(operationHandleStr, null, maxRows);
+  }
+
+  public OperationLog getOperationLog(String operationHandleStr, String fetchOrientation, Integer maxRows) {
     String path = String.format("%s/%s/log", API_BASE_PATH, operationHandleStr);
     Map<String, Object> params = new HashMap<>();
-    params.put("maxrows", maxRows);
+    if (fetchOrientation != null) params.put("fetchorientation", fetchOrientation);
+    if (maxRows != null) params.put("maxrows", maxRows);
     return this.getClient().get(path, params, OperationLog.class, client.getAuthHeader());
   }
 
