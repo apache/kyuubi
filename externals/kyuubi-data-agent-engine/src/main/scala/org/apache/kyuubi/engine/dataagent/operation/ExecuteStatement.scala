@@ -25,7 +25,7 @@ import org.slf4j.MDC
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.dataagent.provider.{DataAgentProvider, ProviderRunRequest}
-import org.apache.kyuubi.engine.dataagent.runtime.event.{AgentError, AgentEvent, AgentFinish, ApprovalRequest, ContentDelta, EventType, StepEnd, StepStart, ToolCall, ToolResult}
+import org.apache.kyuubi.engine.dataagent.runtime.event.{AgentError, AgentEvent, AgentFinish, ApprovalRequest, Compaction, ContentDelta, EventType, StepEnd, StepStart, ToolCall, ToolResult}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -88,7 +88,7 @@ class ExecuteStatement(
       val request = new ProviderRunRequest(statement)
       // Merge session-level conf with per-statement confOverlay (overlay takes precedence)
       val mergedConf = session.conf ++ confOverlay
-      mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_LLM_MODEL.key).foreach(request.modelName)
+      mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key).foreach(request.modelName)
       val approvalMode = mergedConf.getOrElse(
         KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key,
         session.sessionManager.getConf.get(KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE))
@@ -117,7 +117,7 @@ class ExecuteStatement(
               n.put("type", sseType)
               n.put("id", toolCall.toolCallId())
               n.put("name", toolCall.toolName())
-              n.set("args", JSON.valueToTree(toolCall.toolArgs()))
+              n.set[ObjectNode]("args", JSON.valueToTree(toolCall.toolArgs()))
             }))
           case EventType.TOOL_RESULT =>
             val toolResult = event.asInstanceOf[ToolResult]
@@ -147,6 +147,15 @@ class ExecuteStatement(
               n.put("name", req.toolName())
               n.set("args", JSON.valueToTree(req.toolArgs()))
               n.put("riskLevel", req.riskLevel().name())
+            }))
+          case EventType.COMPACTION =>
+            val c = event.asInstanceOf[Compaction]
+            incrementalIter.append(Array(toJson { n =>
+              n.put("type", sseType)
+              n.put("summarized", c.summarizedCount())
+              n.put("kept", c.keptCount())
+              n.put("triggerTokens", c.triggerTokens())
+              n.put("observedTokens", c.observedTokens())
             }))
           case EventType.AGENT_FINISH =>
             val finish = event.asInstanceOf[AgentFinish]

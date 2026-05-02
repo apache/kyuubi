@@ -109,7 +109,7 @@ public class ToolTest {
           }
 
           @Override
-          public String execute(ToolRegistryThreadSafetyTest.DummyArgs args) {
+          public String execute(ToolContext ctx, ToolRegistryThreadSafetyTest.DummyArgs args) {
             try {
               Thread.sleep(60_000);
             } catch (InterruptedException e) {
@@ -147,7 +147,7 @@ public class ToolTest {
           }
 
           @Override
-          public String execute(ToolRegistryThreadSafetyTest.DummyArgs args) {
+          public String execute(ToolContext ctx, ToolRegistryThreadSafetyTest.DummyArgs args) {
             throw new RuntimeException("intentional failure");
           }
         });

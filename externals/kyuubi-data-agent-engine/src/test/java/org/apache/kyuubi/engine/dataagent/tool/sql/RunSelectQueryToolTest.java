@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,7 +57,7 @@ public class RunSelectQueryToolTest {
   public void testRejectsInsert() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "INSERT INTO large_table VALUES (9999, 'x')";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.startsWith("Error:"));
     assertTrue(result.contains("read-only"));
     assertTrue(result.contains("run_mutation_query"));
@@ -66,28 +67,28 @@ public class RunSelectQueryToolTest {
   public void testRejectsUpdate() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "UPDATE large_table SET value = 'x' WHERE id = 1";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
   public void testRejectsDelete() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "DELETE FROM large_table WHERE id = 1";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
   public void testRejectsCreateTable() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "CREATE TABLE x (id INT)";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
   public void testAllowsSelect() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT id FROM large_table LIMIT 100";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertFalse(result.startsWith("Error:"));
     assertTrue(result.contains("[100 row(s) returned]"));
   }
@@ -96,7 +97,7 @@ public class RunSelectQueryToolTest {
   public void testAllowsCte() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "WITH cte AS (SELECT id, value FROM large_table LIMIT 5) SELECT * FROM cte";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertFalse(result.startsWith("Error:"));
     assertTrue(result.contains("row(s)"));
   }
@@ -107,7 +108,7 @@ public class RunSelectQueryToolTest {
   public void testRespectsLimitInSql() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT id FROM large_table LIMIT 5";
-    assertTrue(tool.execute(args).contains("[5 row(s) returned]"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("[5 row(s) returned]"));
   }
 
   @Test
@@ -116,7 +117,7 @@ public class RunSelectQueryToolTest {
     // Cap discipline is delegated to the LLM via the system prompt.
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT id FROM large_table";
-    assertTrue(tool.execute(args).contains("[1500 row(s) returned]"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("[1500 row(s) returned]"));
   }
 
   // --- Zero-row result ---
@@ -125,7 +126,7 @@ public class RunSelectQueryToolTest {
   public void testZeroRowsResult() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT id FROM large_table WHERE id < 0";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertFalse(result.startsWith("Error:"));
     assertTrue(result.contains("[0 row(s) returned]"));
   }
@@ -136,15 +137,15 @@ public class RunSelectQueryToolTest {
   public void testSelectWithLeadingBlockComment() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "/* get count */ SELECT COUNT(*) FROM large_table";
-    assertFalse(tool.execute(args).startsWith("Error:"));
+    assertFalse(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
   public void testRejectsMutationHiddenBehindComment() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "-- looks innocent\nDROP TABLE large_table";
-    assertTrue(tool.execute(args).startsWith("Error:"));
-    assertTrue(tool.execute(args).contains("read-only"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("read-only"));
   }
 
   // --- Edge cases ---
@@ -153,25 +154,25 @@ public class RunSelectQueryToolTest {
   public void testRejectsEmptyAndNullSql() {
     SqlQueryArgs emptyArgs = new SqlQueryArgs();
     emptyArgs.sql = "";
-    assertTrue(tool.execute(emptyArgs).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, emptyArgs).startsWith("Error:"));
 
     SqlQueryArgs nullArgs = new SqlQueryArgs();
     nullArgs.sql = null;
-    assertTrue(tool.execute(nullArgs).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, nullArgs).startsWith("Error:"));
   }
 
   @Test
   public void testRejectsWhitespaceOnlySql() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "   \t\n  ";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
   public void testInvalidSqlReturnsError() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT * FROM nonexistent_table";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   // --- Output formatting ---
@@ -188,7 +189,7 @@ public class RunSelectQueryToolTest {
     }
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT id, name FROM nullable_test ORDER BY ROWID";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.contains("NULL"));
     assertTrue(result.contains("Alice"));
   }
@@ -204,7 +205,7 @@ public class RunSelectQueryToolTest {
     }
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT val FROM pipe_test";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue("Pipe should be escaped for markdown table", result.contains("a\\|b\\|c"));
   }
 
@@ -214,7 +215,7 @@ public class RunSelectQueryToolTest {
   public void testExtractRootCauseFromNestedExceptions() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT * FROM this_table_does_not_exist_at_all";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.startsWith("Error:"));
     assertTrue(result.contains("this_table_does_not_exist_at_all"));
   }
@@ -223,7 +224,7 @@ public class RunSelectQueryToolTest {
   public void testErrorMessageIsConcise() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELEC INVALID SYNTAX HERE !!!";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.startsWith("Error:"));
     long newlines = result.chars().filter(c -> c == '\n').count();
     assertTrue("Error should be concise (<=2 newlines), got " + newlines, newlines <= 2);
@@ -236,7 +237,7 @@ public class RunSelectQueryToolTest {
     RunSelectQueryTool customTool = new RunSelectQueryTool(ds, 5);
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT COUNT(*) FROM large_table";
-    assertFalse(customTool.execute(args).startsWith("Error:"));
+    assertFalse(customTool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   @Test
@@ -314,7 +315,7 @@ public class RunSelectQueryToolTest {
     RunSelectQueryTool timeoutTool = new RunSelectQueryTool(slowDs, 1);
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT * FROM large_table";
-    String result = timeoutTool.execute(args);
+    String result = timeoutTool.execute(ToolContext.EMPTY, args);
     assertTrue("Expected error on timeout", result.startsWith("Error:"));
     assertTrue("Expected timeout message", result.contains("timed out"));
   }

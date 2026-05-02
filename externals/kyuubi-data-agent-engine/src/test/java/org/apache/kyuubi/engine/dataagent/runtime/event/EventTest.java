@@ -113,6 +113,7 @@ public class EventTest {
     assertEquals("step_end", EventType.STEP_END.sseEventName());
     assertEquals("error", EventType.ERROR.sseEventName());
     assertEquals("approval_request", EventType.APPROVAL_REQUEST.sseEventName());
+    assertEquals("compaction", EventType.COMPACTION.sseEventName());
     assertEquals("agent_finish", EventType.AGENT_FINISH.sseEventName());
   }
 
@@ -123,6 +124,6 @@ public class EventTest {
     for (EventType type : values) {
       assertTrue("Duplicate SSE name: " + type.sseEventName(), names.add(type.sseEventName()));
     }
-    assertEquals(10, values.length);
+    assertEquals(11, values.length);
   }
 }

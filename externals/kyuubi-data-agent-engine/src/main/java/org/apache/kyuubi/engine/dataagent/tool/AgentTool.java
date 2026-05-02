@@ -49,8 +49,11 @@ public interface AgentTool<T> {
   /**
    * Execute the tool with the given deserialized arguments.
    *
+   * @param ctx per-invocation context (session id, etc.); never null — use {@link
+   *     ToolContext#EMPTY} for calls without a session. Tools that are session-agnostic may ignore
+   *     it.
    * @param args the deserialized arguments from the LLM's tool call
    * @return the result string to feed back to the LLM
    */
-  String execute(T args);
+  String execute(ToolContext ctx, T args);
 }

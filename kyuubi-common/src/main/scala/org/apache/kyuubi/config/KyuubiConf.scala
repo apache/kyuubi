@@ -3824,28 +3824,30 @@ object KyuubiConf {
         case "ECHO" | "echo" =>
           "org.apache.kyuubi.engine.dataagent.provider.echo.EchoProvider"
         case "OPENAI_COMPATIBLE" | "openai_compatible" | "openai-compatible" =>
-          "org.apache.kyuubi.engine.dataagent.provider.openai.OpenAiProvider"
+          "org.apache.kyuubi.engine.dataagent.provider.chatcompletion.ChatCompletionProvider"
         case other => other
       }
       .createWithDefault("ECHO")
 
-  val ENGINE_DATA_AGENT_LLM_API_KEY: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.api.key")
-      .doc("The API key to access the LLM service for the Data Agent engine.")
+  val ENGINE_DATA_AGENT_MODEL: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.model")
+      .doc("The model ID used by the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional
 
-  val ENGINE_DATA_AGENT_LLM_MODEL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.model")
-      .doc("The model ID used by the Data Agent engine LLM provider.")
+  val ENGINE_DATA_AGENT_OPENAI_API_KEY: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.openai.api.key")
+      .doc("The API key for the OpenAI-compatible chat-completion endpoint used by " +
+        "the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional
 
-  val ENGINE_DATA_AGENT_LLM_API_URL: OptionalConfigEntry[String] =
-    buildConf("kyuubi.engine.data.agent.llm.api.url")
-      .doc("The API base URL for the LLM service used by the Data Agent engine.")
+  val ENGINE_DATA_AGENT_OPENAI_ENDPOINT: OptionalConfigEntry[String] =
+    buildConf("kyuubi.engine.data.agent.openai.endpoint")
+      .doc("The base URL of the OpenAI-compatible chat-completion endpoint used by " +
+        "the Data Agent engine.")
       .version("1.12.0")
       .stringConf
       .createOptional
@@ -3857,6 +3859,21 @@ object KyuubiConf {
       .intConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(100)
+
+  val ENGINE_DATA_AGENT_COMPACTION_TRIGGER_TOKENS: ConfigEntry[Long] =
+    buildConf("kyuubi.engine.data.agent.compaction.trigger.tokens")
+      .doc("The prompt-token threshold above which the Data Agent's compaction middleware " +
+        "summarizes older conversation history into a compact message. The check is made each " +
+        "turn as " +
+        "<code>real_prompt_tokens_of_previous_LLM_call + estimate_of_newly_appended_tail</code>; " +
+        "when this predicted prompt size reaches the configured value, older messages are " +
+        "replaced by a single summary message while the most recent exchanges are kept verbatim. " +
+        "Set to a very large value (e.g., <code>9223372036854775807</code>) to effectively " +
+        "disable compaction.")
+      .version("1.12.0")
+      .longConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(128000L)
 
   val ENGINE_DATA_AGENT_QUERY_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.engine.data.agent.query.timeout")

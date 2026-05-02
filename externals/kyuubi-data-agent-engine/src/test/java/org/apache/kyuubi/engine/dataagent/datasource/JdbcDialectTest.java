@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.dataagent.datasource;
 
 import static org.junit.Assert.*;
 
+import org.apache.kyuubi.engine.dataagent.datasource.dialect.GenericDialect;
 import org.junit.Test;
 
 public class JdbcDialectTest {
@@ -70,26 +71,26 @@ public class JdbcDialectTest {
   }
 
   @Test
-  public void testSqlite() {
+  public void testSQLite() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:sqlite:/tmp/test.db");
     assertNotNull(d);
     assertEquals("sqlite", d.datasourceName());
   }
 
   @Test
-  public void testSqliteCaseInsensitive() {
+  public void testSQLiteCaseInsensitive() {
     assertNotNull(JdbcDialect.fromUrl("JDBC:SQLITE:test.db"));
   }
 
   @Test
-  public void testSqliteQuoteIdentifier() {
+  public void testSQLiteQuoteIdentifier() {
     JdbcDialect sqlite = JdbcDialect.fromUrl("jdbc:sqlite:test.db");
     assertEquals("\"my_table\"", sqlite.quoteIdentifier("my_table"));
     assertEquals("\" \"\"inject\"\" \"", sqlite.quoteIdentifier(" \"inject\" "));
   }
 
   @Test
-  public void testMysql() {
+  public void testMySQL() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:mysql://localhost:3306");
     assertNotNull(d);
     assertEquals("mysql", d.datasourceName());
@@ -119,13 +120,13 @@ public class JdbcDialectTest {
   // --- qualify tests ---
 
   @Test
-  public void testMysqlQualifySchemaAndTable() {
+  public void testMySQLQualifySchemaAndTable() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:mysql://localhost:3306");
     assertEquals("`mydb`.`users`", d.qualify(TableRef.of("mydb", "users")));
   }
 
   @Test
-  public void testMysqlQualifyTableOnly() {
+  public void testMySQLQualifyTableOnly() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:mysql://localhost:3306");
     assertEquals("`users`", d.qualify(TableRef.of("users")));
   }
@@ -151,7 +152,7 @@ public class JdbcDialectTest {
   }
 
   @Test
-  public void testSqliteQualifyTableOnly() {
+  public void testSQLiteQualifyTableOnly() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:sqlite:test.db");
     assertEquals("\"t\"", d.qualify(TableRef.of("t")));
   }

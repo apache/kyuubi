@@ -15,12 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.datasource.dialect;
+
+import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 
 /** Trino SQL dialect. Uses double-quote quoting for identifiers. */
 public final class TrinoDialect implements JdbcDialect {
 
-  static final TrinoDialect INSTANCE = new TrinoDialect();
+  public static final TrinoDialect INSTANCE = new TrinoDialect();
 
   private TrinoDialect() {}
 

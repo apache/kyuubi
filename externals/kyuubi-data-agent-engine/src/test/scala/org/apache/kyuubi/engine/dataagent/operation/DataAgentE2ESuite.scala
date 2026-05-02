@@ -19,6 +19,10 @@ package org.apache.kyuubi.engine.dataagent.operation
 
 import java.sql.DriverManager
 
+import scala.collection.JavaConverters._
+
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.dataagent.WithDataAgentEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -28,21 +32,21 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
  * Full pipeline: JDBC Client -> Kyuubi Thrift -> DataAgentEngine
  * -> LLM -> Tools -> SQLite -> Results
  *
- * Requires DATA_AGENT_LLM_API_KEY and DATA_AGENT_LLM_API_URL environment variables.
+ * Requires DATA_AGENT_OPENAI_API_KEY and DATA_AGENT_OPENAI_ENDPOINT environment variables.
  */
 class DataAgentE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
 
-  private val apiKey = sys.env.getOrElse("DATA_AGENT_LLM_API_KEY", "")
-  private val apiUrl = sys.env.getOrElse("DATA_AGENT_LLM_API_URL", "")
-  private val modelName = sys.env.getOrElse("DATA_AGENT_LLM_MODEL", "gpt-4o")
+  private val apiKey = sys.env.getOrElse("DATA_AGENT_OPENAI_API_KEY", "")
+  private val apiUrl = sys.env.getOrElse("DATA_AGENT_OPENAI_ENDPOINT", "")
+  private val modelName = sys.env.getOrElse("DATA_AGENT_MODEL", "")
   private val dbPath =
     s"${System.getProperty("java.io.tmpdir")}/dataagent_e2e_test_${java.util.UUID.randomUUID()}.db"
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_DATA_AGENT_PROVIDER.key -> "OPENAI_COMPATIBLE",
-    ENGINE_DATA_AGENT_LLM_API_KEY.key -> apiKey,
-    ENGINE_DATA_AGENT_LLM_API_URL.key -> apiUrl,
-    ENGINE_DATA_AGENT_LLM_MODEL.key -> modelName,
+    ENGINE_DATA_AGENT_OPENAI_API_KEY.key -> apiKey,
+    ENGINE_DATA_AGENT_OPENAI_ENDPOINT.key -> apiUrl,
+    ENGINE_DATA_AGENT_MODEL.key -> modelName,
     ENGINE_DATA_AGENT_MAX_ITERATIONS.key -> "10",
     ENGINE_DATA_AGENT_APPROVAL_MODE.key -> "AUTO_APPROVE",
     ENGINE_DATA_AGENT_JDBC_URL.key -> s"jdbc:sqlite:$dbPath")
@@ -107,33 +111,71 @@ class DataAgentE2ESuite extends HiveJDBCTestHelper with WithDataAgentEngine {
     new java.io.File(dbPath).delete()
   }
 
-  test("E2E: agent answers data question through full Kyuubi pipeline") {
-    assume(enabled, "DATA_AGENT_LLM_API_KEY/API_URL not set, skipping E2E tests")
-    // scalastyle:off println
-    withJdbcStatement() { stmt =>
-      // Ask a question that requires schema exploration + SQL execution
-      val result = stmt.executeQuery(
-        "Which department has the highest average salary?")
+  private val mapper = new ObjectMapper()
 
-      val sb = new StringBuilder
-      while (result.next()) {
-        val chunk = result.getString("reply")
-        sb.append(chunk)
-        print(chunk) // real-time output for debugging
-      }
-      println()
-
-      val reply = sb.toString()
-
-      // The agent should have:
-      // 1. Explored the schema (mentioned table names or columns)
-      // 2. Executed SQL (the reply should contain actual data)
-      // 3. Answered with "Engineering" (avg salary 30000)
-      assert(reply.nonEmpty, "Agent should return a non-empty response")
-      assert(
-        reply.toLowerCase.contains("engineering") || reply.contains("30000"),
-        s"Expected the answer to mention 'Engineering' or '30000', got: ${reply.take(500)}")
+  private def drainReply(rs: java.sql.ResultSet): String = {
+    val sb = new StringBuilder
+    while (rs.next()) {
+      sb.append(rs.getString("reply"))
     }
-    // scalastyle:on println
+    val stream = sb.toString()
+    info(s"Agent event stream: $stream")
+    stream
+  }
+
+  /**
+   * The JDBC `reply` column is a concatenated stream of SSE events
+   * (`agent_start`, `tool_call`, `tool_result`, `content_delta`, ...). Only
+   * `content_delta.text` is actual model output - this pulls those out and
+   * joins them to recover the final natural-language answer.
+   */
+  private def extractAnswer(eventStream: String): String = {
+    val parser = mapper.getFactory.createParser(eventStream)
+    val sb = new StringBuilder
+    try {
+      mapper.readValues(parser, classOf[JsonNode]).asScala.foreach { node =>
+        if ("content_delta" == node.path("type").asText()) {
+          sb.append(node.path("text").asText(""))
+        }
+      }
+    } finally {
+      parser.close()
+    }
+    sb.toString()
+  }
+
+  private val strictFormatHint =
+    "Respond with ONLY the answer, no explanation, no markdown, no punctuation."
+
+  test("E2E: agent answers data question through full Kyuubi pipeline") {
+    assume(enabled, "DATA_AGENT_OPENAI_API_KEY/API_URL not set, skipping E2E tests")
+    withJdbcStatement() { stmt =>
+      val stream = drainReply(
+        stmt.executeQuery(
+          s"Which department has the highest average salary? $strictFormatHint"))
+      assert(extractAnswer(stream) == "Engineering")
+    }
+  }
+
+  test("E2E: agent resolves follow-up question using prior conversation context") {
+    assume(enabled, "DATA_AGENT_OPENAI_API_KEY/API_URL not set, skipping E2E tests")
+    // Two executeQuery calls on the same Statement share the JDBC session, which means
+    // the provider reuses the same ConversationMemory across turns. Turn 2 uses the
+    // demonstrative "that department" - it can only be answered correctly if Turn 1's
+    // answer (Engineering) is carried over in the agent's conversation history.
+    withJdbcStatement() { stmt =>
+      val stream1 = drainReply(
+        stmt.executeQuery(
+          s"Which department has the highest average salary? $strictFormatHint"))
+      assert(extractAnswer(stream1) == "Engineering")
+
+      // Engineering has 3 employees (Alice, Bob, Frank). If memory is not shared
+      // the agent cannot resolve "that department" and cannot produce the exact
+      // integer 3 - nothing in Turn 2's prompt points to Engineering.
+      val stream2 = drainReply(
+        stmt.executeQuery(
+          s"How many employees work in that department? $strictFormatHint"))
+      assert(extractAnswer(stream2) == "3")
+    }
   }
 }

@@ -24,6 +24,7 @@ import java.sql.Connection;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
 import org.junit.After;
 import org.junit.Before;
@@ -60,7 +61,7 @@ public class RunMutationQueryToolTest {
   public void testInsert() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "INSERT INTO t VALUES (9999, 'hello')";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.contains("1 row(s) affected"));
   }
 
@@ -68,21 +69,21 @@ public class RunMutationQueryToolTest {
   public void testUpdate() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "UPDATE t SET v = 'updated' WHERE id = 1";
-    assertTrue(tool.execute(args).contains("1 row(s) affected"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("1 row(s) affected"));
   }
 
   @Test
   public void testDelete() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "DELETE FROM t WHERE id = 1";
-    assertTrue(tool.execute(args).contains("1 row(s) affected"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("1 row(s) affected"));
   }
 
   @Test
   public void testCreateTable() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "CREATE TABLE new_t (id INTEGER PRIMARY KEY, v TEXT)";
-    assertTrue(tool.execute(args).contains("executed successfully"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).contains("executed successfully"));
   }
 
   @Test
@@ -90,7 +91,7 @@ public class RunMutationQueryToolTest {
     // Mutation tool does not enforce read-only check; SELECT works fine here.
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT v FROM t WHERE id = 1";
-    String result = tool.execute(args);
+    String result = tool.execute(ToolContext.EMPTY, args);
     assertFalse(result.startsWith("Error:"));
   }
 
@@ -98,18 +99,18 @@ public class RunMutationQueryToolTest {
   public void testRejectsEmptyAndNullSql() {
     SqlQueryArgs emptyArgs = new SqlQueryArgs();
     emptyArgs.sql = "";
-    assertTrue(tool.execute(emptyArgs).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, emptyArgs).startsWith("Error:"));
 
     SqlQueryArgs nullArgs = new SqlQueryArgs();
     nullArgs.sql = null;
-    assertTrue(tool.execute(nullArgs).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, nullArgs).startsWith("Error:"));
   }
 
   @Test
   public void testInvalidSqlReturnsError() {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "INSERT INTO nonexistent_table VALUES (1)";
-    assertTrue(tool.execute(args).startsWith("Error:"));
+    assertTrue(tool.execute(ToolContext.EMPTY, args).startsWith("Error:"));
   }
 
   // --- Helpers ---

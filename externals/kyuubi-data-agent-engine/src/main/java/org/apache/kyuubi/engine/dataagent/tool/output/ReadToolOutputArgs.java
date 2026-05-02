@@ -15,23 +15,23 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.dataagent.datasource;
+package org.apache.kyuubi.engine.dataagent.tool.output;
 
-/** MySQL dialect. Uses backtick quoting for identifiers. */
-public final class MysqlDialect implements JdbcDialect {
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-  static final MysqlDialect INSTANCE = new MysqlDialect();
+/** Args for {@link ReadToolOutputTool}. */
+public class ReadToolOutputArgs {
 
-  private MysqlDialect() {}
+  @JsonProperty(required = true)
+  @JsonPropertyDescription(
+      "Absolute path to the offloaded tool-output file, as reported by the truncation notice.")
+  public String path;
 
-  @Override
-  public String datasourceName() {
-    return "mysql";
-  }
+  @JsonPropertyDescription("0-based line offset into the file. Defaults to 0.")
+  public Integer offset;
 
-  @Override
-  public String quoteIdentifier(String identifier) {
-    String escaped = identifier.replace("`", "``");
-    return "`" + escaped + "`";
-  }
+  @JsonPropertyDescription(
+      "Number of lines to return starting at 'offset'. Defaults to 200; capped at 500.")
+  public Integer limit;
 }
