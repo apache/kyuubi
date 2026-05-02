@@ -32,6 +32,7 @@ import org.eclipse.jetty.servlet.{ErrorPageErrorHandler, FilterHolder}
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
 import org.apache.kyuubi.operation.OperationState
@@ -369,5 +370,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
-  override val discoveryService: Option[Service] = None
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new KyuubiRestServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
 }
