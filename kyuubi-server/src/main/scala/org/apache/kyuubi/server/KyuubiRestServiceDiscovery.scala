@@ -19,7 +19,7 @@ package org.apache.kyuubi.server
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{DiscoveryClientProvider, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.FrontendService
 
 /**
@@ -33,14 +33,8 @@ class KyuubiRestServiceDiscovery(
     fe: FrontendService) extends ServiceDiscovery("KyuubiRestServiceDiscovery", fe) {
 
   override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-
-    _namespace = conf.get(HA_NAMESPACE) + "/rest"
-    _discoveryClient = DiscoveryClientProvider.createDiscoveryClient(conf)
-    discoveryClient.monitorState(this)
-    discoveryClient.createClient()
-
     super.initialize(conf)
+    _namespace = conf.get(HA_NAMESPACE) + "/rest"
   }
 
   override def stop(): Unit = synchronized {
