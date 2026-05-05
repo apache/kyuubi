@@ -162,6 +162,10 @@ class ExecuteStatement(
             incrementalIter.append(Array(toJson { n =>
               n.put("type", sseType)
               n.put("steps", finish.totalSteps())
+              n.put("accumulatedPromptTokens", finish.accumulatedPromptTokens())
+              n.put("accumulatedCompletionTokens", finish.accumulatedCompletionTokens())
+              n.put("lastPromptTokens", finish.lastPromptTokens())
+              n.put("lastCompletionTokens", finish.lastCompletionTokens())
             }))
           case _ => // CONTENT_COMPLETE — internal to middleware pipeline
         }

@@ -17,47 +17,64 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-/** The agent has finished its analysis. */
+/**
+ * The agent has finished its analysis. Carries two distinct usage views: {@code accumulated*} sums
+ * every LLM call in this run (billing / total cost), {@code last*} reflects only the final call
+ * (current context size, last response size).
+ */
 public final class AgentFinish extends AgentEvent {
   private final int totalSteps;
-  private final long promptTokens;
-  private final long completionTokens;
-  private final long totalTokens;
+  private final long accumulatedPromptTokens;
+  private final long accumulatedCompletionTokens;
+  private final long lastPromptTokens;
+  private final long lastCompletionTokens;
 
-  public AgentFinish(int totalSteps, long promptTokens, long completionTokens, long totalTokens) {
+  public AgentFinish(
+      int totalSteps,
+      long accumulatedPromptTokens,
+      long accumulatedCompletionTokens,
+      long lastPromptTokens,
+      long lastCompletionTokens) {
     super(EventType.AGENT_FINISH);
     this.totalSteps = totalSteps;
-    this.promptTokens = promptTokens;
-    this.completionTokens = completionTokens;
-    this.totalTokens = totalTokens;
+    this.accumulatedPromptTokens = accumulatedPromptTokens;
+    this.accumulatedCompletionTokens = accumulatedCompletionTokens;
+    this.lastPromptTokens = lastPromptTokens;
+    this.lastCompletionTokens = lastCompletionTokens;
   }
 
   public int totalSteps() {
     return totalSteps;
   }
 
-  public long promptTokens() {
-    return promptTokens;
+  public long accumulatedPromptTokens() {
+    return accumulatedPromptTokens;
   }
 
-  public long completionTokens() {
-    return completionTokens;
+  public long accumulatedCompletionTokens() {
+    return accumulatedCompletionTokens;
   }
 
-  public long totalTokens() {
-    return totalTokens;
+  public long lastPromptTokens() {
+    return lastPromptTokens;
+  }
+
+  public long lastCompletionTokens() {
+    return lastCompletionTokens;
   }
 
   @Override
   public String toString() {
     return "AgentFinish{totalSteps="
         + totalSteps
-        + ", promptTokens="
-        + promptTokens
-        + ", completionTokens="
-        + completionTokens
-        + ", totalTokens="
-        + totalTokens
+        + ", accumulatedPromptTokens="
+        + accumulatedPromptTokens
+        + ", accumulatedCompletionTokens="
+        + accumulatedCompletionTokens
+        + ", lastPromptTokens="
+        + lastPromptTokens
+        + ", lastCompletionTokens="
+        + lastCompletionTokens
         + "}";
   }
 }

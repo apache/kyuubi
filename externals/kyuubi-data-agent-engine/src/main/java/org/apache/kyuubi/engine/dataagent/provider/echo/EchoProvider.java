@@ -54,7 +54,7 @@ public class EchoProvider implements DataAgentProvider {
 
     onEvent.accept(new ContentComplete(reply));
     onEvent.accept(new StepEnd(1));
-    onEvent.accept(new AgentFinish(1, 0, 0, 0));
+    onEvent.accept(new AgentFinish(1, 0, 0, 0, 0));
   }
 
   @Override
