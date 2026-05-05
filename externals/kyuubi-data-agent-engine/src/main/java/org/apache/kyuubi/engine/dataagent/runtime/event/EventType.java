@@ -35,6 +35,9 @@ public enum EventType {
   /** A single token or chunk from the LLM streaming response. */
   CONTENT_DELTA("content_delta"),
 
+  /** A chunk of the LLM's reasoning / chain-of-thought stream (provider-specific). */
+  REASONING_DELTA("reasoning_delta"),
+
   /** The complete LLM output for one reasoning step. */
   CONTENT_COMPLETE("content_complete"),
 

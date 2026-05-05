@@ -25,7 +25,7 @@ import org.slf4j.MDC
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.dataagent.provider.{DataAgentProvider, ProviderRunRequest}
-import org.apache.kyuubi.engine.dataagent.runtime.event.{AgentError, AgentEvent, AgentFinish, ApprovalRequest, Compaction, ContentDelta, EventType, StepEnd, StepStart, ToolCall, ToolResult}
+import org.apache.kyuubi.engine.dataagent.runtime.event.{AgentError, AgentEvent, AgentFinish, ApprovalRequest, Compaction, ContentDelta, EventType, ReasoningDelta, StepEnd, StepStart, ToolCall, ToolResult}
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -108,6 +108,11 @@ class ExecuteStatement(
             }))
           case EventType.CONTENT_DELTA =>
             val delta = event.asInstanceOf[ContentDelta]
+            incrementalIter.append(Array(toJson { n =>
+              n.put("type", sseType); n.put("text", delta.text())
+            }))
+          case EventType.REASONING_DELTA =>
+            val delta = event.asInstanceOf[ReasoningDelta]
             incrementalIter.append(Array(toJson { n =>
               n.put("type", sseType); n.put("text", delta.text())
             }))

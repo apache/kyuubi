@@ -101,6 +101,7 @@ public class EventTest {
     assertEquals("agent_start", EventType.AGENT_START.sseEventName());
     assertEquals("step_start", EventType.STEP_START.sseEventName());
     assertEquals("content_delta", EventType.CONTENT_DELTA.sseEventName());
+    assertEquals("reasoning_delta", EventType.REASONING_DELTA.sseEventName());
     assertEquals("content_complete", EventType.CONTENT_COMPLETE.sseEventName());
     assertEquals("tool_call", EventType.TOOL_CALL.sseEventName());
     assertEquals("tool_result", EventType.TOOL_RESULT.sseEventName());
@@ -118,6 +119,6 @@ public class EventTest {
     for (EventType type : values) {
       assertTrue(names.add(type.sseEventName()), "Duplicate SSE name: " + type.sseEventName());
     }
-    assertEquals(11, values.length);
+    assertEquals(12, values.length);
   }
 }
