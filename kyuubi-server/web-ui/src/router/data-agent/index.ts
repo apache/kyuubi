@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-function getEngineType() {
-  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC', 'DATA_AGENT']
-}
+const routes = [
+  {
+    path: '/data-agent',
+    name: 'data-agent',
+    component: () => import('@/views/data-agent/index.vue')
+  }
+]
 
-function getShareLevel() {
-  return ['CONNECTION', 'USER', 'GROUP', 'SERVER']
-}
-
-export { getEngineType, getShareLevel }
+export default routes

@@ -15,12 +15,25 @@
  * limitations under the License.
  */
 
-function getEngineType() {
-  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC', 'DATA_AGENT']
+export interface ChatBlock {
+  type: 'text' | 'tool_call' | 'approval_request' | 'reasoning'
+  toolCallId?: string
+  text?: string
+  name?: string
+  args?: unknown
+  result?: string
+  isError?: boolean
+  expanded?: boolean
+  // approval_request fields
+  requestId?: string
+  riskLevel?: string
+  approvalStatus?: 'pending' | 'approved' | 'denied'
 }
 
-function getShareLevel() {
-  return ['CONNECTION', 'USER', 'GROUP', 'SERVER']
+export interface TokenUsage {
+  accumulatedPrompt: number
+  accumulatedCompletion: number
+  lastPrompt: number
+  lastCompletion: number
+  steps?: number
 }
-
-export { getEngineType, getShareLevel }

@@ -27,7 +27,11 @@
           <Header />
         </el-header>
         <el-main>
-          <router-view />
+          <router-view v-slot="slotProps">
+            <keep-alive :include="['DataAgent']">
+              <component :is="slotProps && slotProps.Component" />
+            </keep-alive>
+          </router-view>
         </el-main>
       </el-container>
     </el-container>

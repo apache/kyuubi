@@ -15,12 +15,20 @@
  * limitations under the License.
  */
 
-function getEngineType() {
-  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC', 'DATA_AGENT']
-}
+import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
+import { formatArgs } from './format'
 
-function getShareLevel() {
-  return ['CONNECTION', 'USER', 'GROUP', 'SERVER']
+export function useCopyText() {
+  const { t } = useI18n()
+  return async function copyText(text: unknown) {
+    const payload =
+      typeof text === 'string' ? text : text == null ? '' : formatArgs(text)
+    try {
+      await navigator.clipboard.writeText(payload)
+      ElMessage.success({ message: t('data_agent.copied'), duration: 1500 })
+    } catch {
+      ElMessage.warning(t('data_agent.copy_failed'))
+    }
+  }
 }
-
-export { getEngineType, getShareLevel }
