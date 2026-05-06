@@ -91,14 +91,68 @@ function buildSession(initial?: Partial<DataAgentSession>): DataAgentSession {
   }
 }
 
-// Strip credentials from every session's jdbcUrl before writing to sessionStorage.
-// Raw URL stays in memory for openSession to consume; the persisted copy is always
-// sanitized so credentials don't survive a refresh or aborted connect.
+// Cap a single block string field. Tool results from SELECTs can be megabytes; persisting
+// them verbatim quickly fills the 5MB sessionStorage quota and silently drops further
+// writes. Truncated payload is enough to recognize the block; full content lives in memory
+// during the active session.
+const MAX_PERSIST_FIELD_CHARS = 2000
+// Keep the most recent N messages with full block payloads. Older messages keep their
+// metadata (role, text preview) so the UI can still render the conversation outline after
+// a refresh, but their blocks are dropped.
+const FULL_PERSIST_MESSAGE_COUNT = 20
+const TRUNCATE_MARKER = '… [truncated]'
+
+function truncate(s: string | undefined): string | undefined {
+  if (s == null) return s
+  if (s.length <= MAX_PERSIST_FIELD_CHARS) return s
+  return s.slice(0, MAX_PERSIST_FIELD_CHARS) + TRUNCATE_MARKER
+}
+
+function slimBlock(b: ChatBlock): ChatBlock {
+  const out: ChatBlock = { ...b }
+  if (typeof out.text === 'string') out.text = truncate(out.text)
+  if (typeof out.result === 'string') out.result = truncate(out.result)
+  return out
+}
+
+export function slimMessagesForPersist(
+  messages: DataAgentMessage[]
+): DataAgentMessage[] {
+  if (!messages || messages.length === 0) return messages
+  const total = messages.length
+  return messages.map((m, i) => {
+    const isRecent = i >= total - FULL_PERSIST_MESSAGE_COUNT
+    if (isRecent) {
+      // Recent: keep blocks but cap individual long fields.
+      return {
+        ...m,
+        text: typeof m.text === 'string' ? truncate(m.text) : m.text,
+        blocks: m.blocks?.map(slimBlock)
+      }
+    }
+    // Older: drop blocks entirely, keep a short text preview so the outline renders.
+    return {
+      id: m.id,
+      role: m.role,
+      text: truncate(m.text),
+      usage: m.usage
+    }
+  })
+}
+
+// Strip credentials from every session's jdbcUrl before writing to sessionStorage. Also
+// trim message blocks: long tool outputs (e.g. SELECT results) can blow past the 5MB
+// sessionStorage quota and silently drop further writes. Raw URL and full message content
+// stay in memory for the active session; the persisted copy is sanitized and slimmed.
 export function serializeSanitized(state: any): string {
   const sessions = (state.sessions || {}) as Record<string, DataAgentSession>
   const sanitized: Record<string, DataAgentSession> = {}
   for (const [k, v] of Object.entries(sessions)) {
-    sanitized[k] = { ...v, jdbcUrl: sanitizeJdbcUrl(v.jdbcUrl || '') }
+    sanitized[k] = {
+      ...v,
+      jdbcUrl: sanitizeJdbcUrl(v.jdbcUrl || ''),
+      messages: slimMessagesForPersist(v.messages || [])
+    }
   }
   return JSON.stringify({ ...state, sessions: sanitized })
 }

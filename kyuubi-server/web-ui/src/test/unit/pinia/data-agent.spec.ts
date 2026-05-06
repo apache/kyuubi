@@ -20,6 +20,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import {
   useDataAgentStore,
   serializeSanitized,
+  slimMessagesForPersist,
   isValidApprovalMode
 } from '@/pinia/data-agent'
 
@@ -121,6 +122,138 @@ describe('serializeSanitized (persist serializer)', () => {
     })
     const twice = serializeSanitized(JSON.parse(once))
     expect(twice).toBe(once)
+  })
+})
+
+describe('slimMessagesForPersist', () => {
+  const mkBlock = (overrides: any = {}) => ({
+    type: 'tool_call' as const,
+    text: 'short',
+    result: 'r',
+    ...overrides
+  })
+
+  it('returns empty array for empty input', () => {
+    expect(slimMessagesForPersist([])).toEqual([])
+  })
+
+  it('keeps recent messages with full blocks intact when under cap', () => {
+    const msgs = [
+      { id: 1, role: 'user' as const, text: 'hi', blocks: [mkBlock()] },
+      { id: 2, role: 'assistant' as const, text: 'hey', blocks: [mkBlock()] }
+    ]
+    const out = slimMessagesForPersist(msgs)
+    expect(out[0].blocks).toHaveLength(1)
+    expect(out[1].blocks).toHaveLength(1)
+    expect(out[0].text).toBe('hi')
+  })
+
+  it('truncates long block.result on recent messages', () => {
+    const huge = 'x'.repeat(5000)
+    const msgs = [
+      {
+        id: 1,
+        role: 'assistant' as const,
+        blocks: [mkBlock({ result: huge })]
+      }
+    ]
+    const out = slimMessagesForPersist(msgs)
+    expect(out[0].blocks![0].result!.length).toBeLessThan(huge.length)
+    expect(out[0].blocks![0].result).toContain('truncated')
+  })
+
+  it('truncates long block.text on recent messages', () => {
+    const huge = 'x'.repeat(5000)
+    const msgs = [
+      { id: 1, role: 'assistant' as const, blocks: [mkBlock({ text: huge })] }
+    ]
+    const out = slimMessagesForPersist(msgs)
+    expect(out[0].blocks![0].text!.length).toBeLessThan(huge.length)
+  })
+
+  it('drops blocks on older messages beyond the keep window', () => {
+    // 25 messages > 20-message keep window — first 5 should lose blocks
+    const msgs = Array.from({ length: 25 }, (_, i) => ({
+      id: i,
+      role: (i % 2 === 0 ? 'user' : 'assistant') as 'user' | 'assistant',
+      text: `msg ${i}`,
+      blocks: [mkBlock({ result: 'huge data' })]
+    }))
+    const out = slimMessagesForPersist(msgs)
+    // First 5 (older) — no blocks
+    for (let i = 0; i < 5; i++) {
+      expect(out[i].blocks).toBeUndefined()
+      expect(out[i].text).toBe(`msg ${i}`)
+    }
+    // Last 20 (recent) — blocks preserved
+    for (let i = 5; i < 25; i++) {
+      expect(out[i].blocks).toBeDefined()
+      expect(out[i].blocks).toHaveLength(1)
+    }
+  })
+
+  it('truncates text preview on dropped older messages', () => {
+    const huge = 'x'.repeat(5000)
+    const msgs = Array.from({ length: 25 }, (_, i) => ({
+      id: i,
+      role: 'user' as const,
+      text: i < 5 ? huge : 'recent',
+      blocks: [mkBlock()]
+    }))
+    const out = slimMessagesForPersist(msgs)
+    for (let i = 0; i < 5; i++) {
+      expect(out[i].text!.length).toBeLessThan(huge.length)
+      expect(out[i].text).toContain('truncated')
+    }
+  })
+
+  it('preserves non-truncatable fields on older messages (id, role, usage)', () => {
+    const msgs = Array.from({ length: 22 }, (_, i) => ({
+      id: i,
+      role: 'assistant' as const,
+      text: 'x',
+      blocks: [mkBlock()],
+      usage: {
+        accumulatedPrompt: 10,
+        accumulatedCompletion: 5,
+        lastPrompt: 2,
+        lastCompletion: 1
+      }
+    }))
+    const out = slimMessagesForPersist(msgs)
+    expect(out[0].id).toBe(0)
+    expect(out[0].role).toBe('assistant')
+    expect(out[0].usage).toEqual({
+      accumulatedPrompt: 10,
+      accumulatedCompletion: 5,
+      lastPrompt: 2,
+      lastCompletion: 1
+    })
+  })
+
+  it('handles messages without blocks', () => {
+    const msgs = [
+      { id: 1, role: 'user' as const, text: 'hi' },
+      { id: 2, role: 'assistant' as const, text: 'hey' }
+    ]
+    const out = slimMessagesForPersist(msgs)
+    expect(out).toEqual(msgs)
+  })
+
+  it('serializeSanitized end-to-end stays well under 5MB for huge tool outputs', () => {
+    // Build a session that would otherwise blow the quota: 50 messages each with a 100KB
+    // tool result.
+    const huge = 'x'.repeat(100_000)
+    const messages = Array.from({ length: 50 }, (_, i) => ({
+      id: i,
+      role: 'assistant' as const,
+      blocks: [{ type: 'tool_call' as const, result: huge }]
+    }))
+    const out = serializeSanitized({
+      sessions: { a: { id: 'a', jdbcUrl: '', messages } }
+    })
+    // Without slimming this would be ~5MB. With slimming, it should be a fraction.
+    expect(out.length).toBeLessThan(100_000)
   })
 })
 
