@@ -50,14 +50,37 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
 
   import DataAgentResource._
 
-  private val jsonMapper = new ObjectMapper()
-
   private def verifySessionOwnership(session: KyuubiSessionImpl): Unit = {
     val userName = fe.getSessionUser(Map.empty[String, String])
     if (!fe.isAdministrator(userName) && session.user != userName) {
       throw new ForbiddenException(
         s"$userName is not allowed to access session ${session.handle}")
     }
+  }
+
+  /**
+   * Resolve a session handle, verify ownership, and return the session. Failures throw
+   * WebApplicationException with the appropriate HTTP status so Jersey can return a proper
+   * 4xx instead of a 200 SSE stream -- important for clients fishing for foreign session IDs
+   * (they should see 403/404, not engine error messages echoed back through SSE).
+   */
+  private def resolveAndAuthorize(sessionHandleStr: String): KyuubiSessionImpl = {
+    val sessionHandle =
+      try {
+        SessionHandle.fromUUID(sessionHandleStr)
+      } catch {
+        case _: IllegalArgumentException =>
+          throw new WebApplicationException("invalid sessionHandle", 400)
+      }
+    val session =
+      try {
+        fe.be.sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+      } catch {
+        case _: KyuubiSQLException =>
+          throw new WebApplicationException("session not found", 404)
+      }
+    verifySessionOwnership(session)
+    session
   }
 
   @ApiResponse(
@@ -100,17 +123,15 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       confOverlay = confOverlay + (KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key -> mode)
     }
 
-    // Phase 2: resolve session and wait for the engine client. Errors here happen before any
-    // SSE bytes are sent, so we can still return a clean error response. For backward
-    // compatibility we keep emitting SSE-framed errors (the Web UI already parses the stream).
+    // Phase 2: resolve session and wait for the engine client. Auth/lookup failures throw
+    // WebApplicationException with proper 4xx status BEFORE any SSE bytes are sent, so a
+    // caller probing foreign session IDs sees 403/404 rather than an engine error inside a
+    // 200 SSE frame. Engine launch / readiness failures are expected and surface as SSE errors
+    // (the Web UI already parses them).
+    val session = resolveAndAuthorize(sessionHandleStr)
     val operationTimeoutMs = fe.getConf.get(KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_TIMEOUT)
     val client: KyuubiSyncThriftClient =
       try {
-        val sessionHandle = SessionHandle.fromUUID(sessionHandleStr)
-        val session = fe.be.sessionManager.getSession(sessionHandle)
-          .asInstanceOf[KyuubiSessionImpl]
-        verifySessionOwnership(session)
-
         val launchOp = session.launchEngineOp
         try {
           launchOp.getBackgroundHandle.get(operationTimeoutMs, TimeUnit.MILLISECONDS)
@@ -145,7 +166,10 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     // Emit an immediate ping so the client's watchdog has a known "stream established"
     // anchor while we wait for executeStatement to return an operation handle.
     stream.keepalive()
-    info(s"Data Agent chat: session=$sessionHandleStr, text=${text.take(100)}")
+    // Don't log raw user text -- it's user-supplied and may contain PII or newlines (log
+    // injection). Length + hash is enough to correlate a specific request across log lines.
+    info(s"Data Agent chat: session=$sessionHandleStr, textLen=${text.length}," +
+      s" textHash=${Integer.toHexString(text.hashCode)}")
 
     // executeStatement is synchronous and has no built-in RPC timeout. If the engine hangs
     // before returning an opHandle the servlet thread would block indefinitely, so we run it
@@ -154,17 +178,23 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     //
     // CompletableFuture.cancel cannot interrupt an already-running supplyAsync task. So if
     // our timeout fires but the worker eventually returns an opHandle, that handle is
-    // orphaned -- nobody on the servlet path is listening anymore. The whenComplete callback
-    // closes the orphan: when timedOut is set, the worker hands the handle back to the
-    // engine instead of leaking it.
+    // orphaned -- nobody on the servlet path is listening anymore.
+    //
+    // Two parties may want to close the orphan: the whenComplete callback (worker thread)
+    // and the timeout-recovery branch below (servlet thread). They race on `closed` so
+    // exactly one wins. `timedOut` is set BEFORE either party reads it: if whenComplete
+    // fires before the servlet sees TimeoutException, it sees timedOut=false and does
+    // nothing -- the recovery branch will then notice the future already completed and
+    // close the handle itself.
     val timedOut = new AtomicBoolean(false)
+    val closed = new AtomicBoolean(false)
     val opSubmitFuture: CompletableFuture[TOperationHandle] =
       try {
         val f = CompletableFuture.supplyAsync(
           () => client.executeStatement(text, confOverlay, true, 0L),
           OP_SUBMIT_EXECUTOR)
         f.whenComplete((handle, _) => {
-          if (timedOut.get() && handle != null) {
+          if (handle != null && timedOut.get() && closed.compareAndSet(false, true)) {
             info(s"Closing orphaned op for session $sessionHandleStr (servlet already timed out)")
             closeOperation(client, handle)
           }
@@ -188,6 +218,20 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         case _: TimeoutException =>
           timedOut.set(true)
           opSubmitFuture.cancel(true)
+          // Recover from the race where the worker completed between get() throwing and
+          // timedOut being set: whenComplete already ran with timedOut=false and skipped
+          // cleanup, so we close the orphan here.
+          if (opSubmitFuture.isDone && !opSubmitFuture.isCancelled) {
+            try {
+              val orphan = opSubmitFuture.getNow(null)
+              if (orphan != null && closed.compareAndSet(false, true)) {
+                info(s"Closing orphaned op for session $sessionHandleStr (race recovery)")
+                closeOperation(client, orphan)
+              }
+            } catch {
+              case NonFatal(_) => // future completed exceptionally; nothing to close
+            }
+          }
           stream.event("error", buildJsonMessage("Operation submit timed out"))
           stream.event("done", "{}")
           return
@@ -227,10 +271,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     if (request == null) {
       throw new WebApplicationException("request body is required", 400)
     }
-    val sessionHandle = SessionHandle.fromUUID(sessionHandleStr)
-    val session = fe.be.sessionManager.getSession(sessionHandle)
-      .asInstanceOf[KyuubiSessionImpl]
-    verifySessionOwnership(session)
+    val session = resolveAndAuthorize(sessionHandleStr)
     val client = session.client
     if (client == null) {
       throw new WebApplicationException("Engine session is not ready", 503)
@@ -263,11 +304,11 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       val rowSet = client.fetchResults(opHandle, FetchOrientation.FETCH_NEXT, 1, false)
       val rows = extractStringRows(rowSet)
       rows.headOption.getOrElse {
-        val node = jsonMapper.createObjectNode()
+        val node = JSON_MAPPER.createObjectNode()
         node.put("status", "error")
         node.put("requestId", requestId)
         node.put("message", "No result returned")
-        jsonMapper.writeValueAsString(node)
+        JSON_MAPPER.writeValueAsString(node)
       }
     } finally {
       closeOperation(client, opHandle)
@@ -291,7 +332,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       opHandle: TOperationHandle,
       stream: SseStream,
       deadlineAt: Long): Unit = {
-    waitForRunning(client, opHandle, deadlineAt)
+    waitForRunning(client, opHandle, stream, deadlineAt)
 
     var backoffMs = MIN_BACKOFF_MS
     var done = false
@@ -325,10 +366,13 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
             // fetch, so any rows produced after the previous poll are unrecoverable. We
             // surface the engine-reported error message instead of the raw fetch exception.
             if (opState == TOperationState.FINISHED_STATE) {
-              while (fetchAndEmit(client, opHandle, stream) > 0) {}
+              // Bound the drain by deadline too -- a pathological engine that keeps emitting
+              // rows in FINISHED state must not let us run past STREAM_MAX_DURATION_MS.
+              while (System.currentTimeMillis() < deadlineAt &&
+                fetchAndEmit(client, opHandle, stream) > 0) {}
             }
             opState match {
-              case TOperationState.FINISHED_STATE => // success — no error frame
+              case TOperationState.FINISHED_STATE => // success -- no error frame
               case TOperationState.ERROR_STATE =>
                 val errMsg = Option(status.getErrorMessage).getOrElse("Unknown error")
                 stream.event("error", buildJsonMessage(errMsg))
@@ -359,6 +403,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
   private def waitForRunning(
       client: KyuubiSyncThriftClient,
       opHandle: TOperationHandle,
+      stream: SseStream,
       deadlineAt: Long): Unit = {
     var sleepMs = 50L
     var ready = false
@@ -377,6 +422,11 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
               throw new IllegalStateException("Interrupted while waiting for operation to start")
           }
           sleepMs = math.min(sleepMs * 2, 1000L)
+          // Cold-start can sit in PENDING longer than the client-side watchdog (30s in the
+          // Web UI). Emit a ping when we cross the keepalive interval so the watchdog stays
+          // armed; otherwise the client tears down the stream right as the engine becomes
+          // ready.
+          if (stream.idleMs >= KEEPALIVE_INTERVAL_MS) stream.keepalive()
         case _ =>
           ready = true
       }
@@ -398,7 +448,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
   /** Extract the "type" field from a JSON string for use as SSE event name. */
   private def extractJsonType(json: String): String = {
     try {
-      val node = jsonMapper.readTree(json)
+      val node = JSON_MAPPER.readTree(json)
       Option(node.get("type")).map(_.asText()).getOrElse("message")
     } catch {
       case NonFatal(_) => "message"
@@ -438,9 +488,9 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
 
   /** Build a JSON object with a single "message" field using Jackson to guarantee valid JSON. */
   private def buildJsonMessage(message: String): String = {
-    val node = jsonMapper.createObjectNode()
+    val node = JSON_MAPPER.createObjectNode()
     node.put("message", if (message == null) "" else message)
-    jsonMapper.writeValueAsString(node)
+    JSON_MAPPER.writeValueAsString(node)
   }
 
   /** Send an error event for preflight failures (before the stream has started emitting data). */
@@ -489,6 +539,10 @@ private[v1] object DataAgentResource {
     poolQueueSize = 64,
     keepAliveMs = 60000L,
     threadPoolName = "data-agent-op-submit")
+
+  // Jersey instantiates resources per-request by default; ObjectMapper is heavyweight and
+  // thread-safe, so share one across all DataAgentResource instances.
+  private val JSON_MAPPER: ObjectMapper = new ObjectMapper()
 
   private val MAX_MODEL_LENGTH = 128
   // Alphanumeric, hyphens, underscores, dots, slashes, and colons (covers e.g. "gpt-4o",
