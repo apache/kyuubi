@@ -61,9 +61,6 @@ export interface ApprovalResponse {
   requestId: string
 }
 
-/**
- * Approve or deny a pending tool call.
- */
 export function approveToolCall(
   sessionHandle: string,
   requestId: string,
@@ -76,10 +73,6 @@ export function approveToolCall(
   }) as Promise<ApprovalResponse>
 }
 
-/**
- * Send a chat message and receive SSE streaming response.
- * Uses @microsoft/fetch-event-source for robust SSE parsing and auth header support.
- */
 export function chatStream(
   sessionHandle: string,
   text: string,
@@ -105,17 +98,14 @@ export function chatStream(
     headers,
     body: JSON.stringify(body),
     signal,
+    credentials: 'include',
     openWhenHidden: true,
     onmessage(ev) {
       if (ev.event) {
         onEvent({ event: ev.event, data: ev.data })
       }
     },
-    onclose() {
-      // Stream ended normally
-    },
     onerror(err) {
-      // Don't retry — propagate the error
       throw err
     }
   })

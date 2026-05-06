@@ -18,7 +18,6 @@
 
 <template>
   <div class="data-agent-main">
-    <!-- Header bar -->
     <div class="chat-header">
       <div class="header-left">
         <div class="header-logo">
@@ -103,12 +102,10 @@
       </div>
     </div>
 
-    <!-- Messages area -->
     <div
       ref="messagesContainer"
       class="messages-area"
       @scroll.passive="onMessagesScroll">
-      <!-- Welcome state -->
       <div
         v-if="active && active.messages.length === 0 && !streaming"
         class="welcome">
@@ -122,7 +119,6 @@
           </p>
         </div>
 
-        <!-- Config & quick start card -->
         <div class="config-card">
           <div class="config-card-header">
             <el-icon :size="14"><Setting /></el-icon>
@@ -183,7 +179,6 @@
         </div>
       </div>
 
-      <!-- Message list -->
       <TransitionGroup v-if="active" name="msg-fade">
         <ChatMessage
           v-for="msg in active.messages"
@@ -207,7 +202,6 @@
           @deny="(id: string) => emit('deny', id)" />
       </TransitionGroup>
 
-      <!-- Error display -->
       <Transition name="fade">
         <div v-if="active && active.errorMessage" class="error-banner">
           <el-icon :size="16"><WarningFilled /></el-icon>
@@ -230,13 +224,11 @@
       </Transition>
     </div>
 
-    <!-- Input bar -->
     <InputBar
       :disabled="streaming || initializing"
       :placeholder="inputPlaceholder"
       @send="(text: string) => emit('send', text)" />
 
-    <!-- Initializing pill -->
     <Transition name="slide-up">
       <div v-if="initializing" class="init-pill">
         <el-icon class="is-loading" :size="14" color="#409eff"
@@ -325,7 +317,6 @@
     cb(buildJdbcSuggestions(query, t('data_agent.history')))
   }
 
-  // Re-anchor scroll when switching to a session that has accumulated messages.
   watch(
     () => props.active?.id,
     () => {
@@ -346,7 +337,6 @@
     position: relative;
   }
 
-  // Header
   .chat-header {
     display: flex;
     align-items: center;
@@ -403,7 +393,6 @@
     gap: 8px;
   }
 
-  // Messages
   .messages-area {
     flex: 1;
     overflow-y: auto;
@@ -422,7 +411,6 @@
     }
   }
 
-  // Welcome state
   .welcome {
     display: flex;
     flex-direction: column;
@@ -461,7 +449,6 @@
     box-shadow: 0 8px 24px rgba(64, 158, 255, 0.3);
   }
 
-  // Config card
   .config-card {
     width: 100%;
     max-width: 640px;
@@ -503,7 +490,6 @@
     min-width: 0;
   }
 
-  // JDBC template dropdown options
   .jdbc-option {
     display: flex;
     align-items: center;
@@ -547,7 +533,6 @@
     }
   }
 
-  // Card section header
   .config-card-section {
     display: flex;
     align-items: center;
@@ -584,7 +569,6 @@
     }
   }
 
-  // Error
   .error-banner {
     display: flex;
     align-items: center;
@@ -598,7 +582,6 @@
     margin-top: 12px;
   }
 
-  // Init pill
   .init-pill {
     position: absolute;
     bottom: 84px;
@@ -617,7 +600,6 @@
     z-index: 10;
   }
 
-  // Transitions
   .fade-enter-active,
   .fade-leave-active {
     transition: opacity 0.3s ease;

@@ -20,9 +20,7 @@ import { useI18n } from 'vue-i18n'
 import { chatStream, approveToolCall } from '@/api/data-agent'
 import { type DataAgentMessage, useDataAgentStore } from '@/pinia/data-agent'
 
-// AbortController and watchdog timer can't be serialised, and they belong to in-flight
-// network resources rather than persisted UI state. Keep them in a registry keyed by
-// session id so a stream survives session switching.
+// In-flight network state is kept outside Pinia persistence.
 interface StreamCtx {
   abortController: AbortController
   watchdogTimer: ReturnType<typeof setTimeout> | null
@@ -64,7 +62,6 @@ export function useChatStream(opts: {
     const s = store.sessions[id]
     if (!s || s.streaming || s.initializing) return
     if (!(await ensureSession(id))) return
-    // After ensureSession, store may have updated handle; re-read.
     const sNow = store.sessions[id]
     if (!sNow) return
 
@@ -148,9 +145,7 @@ export function useChatStream(opts: {
         })
       }
     } catch (e: any) {
-      if (watchdogFired) {
-        // already surfaced
-      } else if (e.name !== 'AbortError') {
+      if (!watchdogFired && e.name !== 'AbortError') {
         store.patchSession(sessionId, {
           errorMessage: e.message || t('data_agent.stream_error')
         })
@@ -179,8 +174,11 @@ export function useChatStream(opts: {
       // eslint-disable-next-line no-console
       console.warn('Invalid SSE event data:', event.data)
       store.patchSession(sessionId, {
-        errorMessage: t('data_agent.malformed_response')
+        errorMessage: t('data_agent.malformed_response'),
+        errorCanReset: true
       })
+      // Stop before a later `done` event can make the run look successful.
+      registry.streamContexts.get(sessionId)?.abortController.abort()
       return
     }
 
@@ -258,8 +256,6 @@ export function useChatStream(opts: {
           lastCompletion: Number(parsed.lastCompletionTokens) || 0,
           steps: Number(parsed.steps) || undefined
         }
-        // Auto-collapse reasoning blocks once the answer is in — they're large and
-        // distract from the result. User can re-expand to inspect.
         for (const b of blocks) {
           if (b.type === 'reasoning') b.expanded = false
         }

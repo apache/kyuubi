@@ -66,9 +66,6 @@
         border-radius: 4px;
         color: #c7254e;
       }
-      // Wide tables: scroll inside the table itself, not the surrounding text.
-      // `display: block` makes the table a scroll container so its natural width
-      // (`max-content`) doesn't push the parent.
       :deep(table) {
         display: block;
         max-width: 100%;

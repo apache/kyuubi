@@ -48,9 +48,6 @@
 </template>
 
 <script lang="ts">
-  // Named so <keep-alive include="DataAgent"> in the layout can pin this view —
-  // we want SSE streams to keep updating the store while the user is on another
-  // tab, not get killed by route unmount.
   export default { name: 'DataAgent' }
 </script>
 
@@ -89,7 +86,6 @@
     if (id) store.patchSession(id, patch)
   }
 
-  // Two-way binding helpers — guard against undefined active so component renders cleanly.
   const jdbcUrlInput = computed({
     get: () => active.value?.jdbcUrl ?? '',
     set: (v: string) => patchActive({ jdbcUrl: v })
@@ -132,7 +128,6 @@
     return t('data_agent.input_placeholder')
   })
 
-  // Wire composables: registry → lifecycle (uses cancelStream) → stream (uses ensureSession)
   const registry = useStreamRegistry()
   const { syncUrl, readUrlSessionId } = useUrlSync(store)
   const {
@@ -153,7 +148,6 @@
   })
 
   onMounted(() => {
-    // Reload kills any in-flight stream/init; clear those flags before binding UI.
     store.hydrateTransientFlags()
 
     const urlId = readUrlSessionId()

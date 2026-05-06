@@ -20,10 +20,6 @@ export function formatTokens(n: number): string {
   return String(n)
 }
 
-// The backend can send `args` as either a JSON object (typical: tool_call event payload)
-// or a JSON string. `formatArgs` produces strict JSON (used for copy / fallback);
-// `formatArgsForDisplay` unfolds `\n` inside string values into real line breaks so
-// multi-line payloads (SQL, scripts) read naturally in the UI.
 export function formatArgs(args: unknown): string {
   if (args == null) return ''
   if (typeof args === 'string') {
@@ -53,9 +49,7 @@ export function formatArgsForDisplay(args: unknown): string {
   return prettyPrintLoose(value, 0)
 }
 
-// Like JSON.stringify(_, null, 2) but renders a string value containing `\n`
-// as a multi-line literal (still wrapped in quotes) instead of escaping the
-// newlines. Output is human-readable, not valid JSON — keep this off the copy path.
+// Display-only formatter; formatArgs remains the copy-safe JSON path.
 function prettyPrintLoose(value: unknown, indent: number): string {
   const pad = '  '.repeat(indent)
   const padInner = '  '.repeat(indent + 1)

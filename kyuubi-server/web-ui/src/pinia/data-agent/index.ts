@@ -91,14 +91,7 @@ function buildSession(initial?: Partial<DataAgentSession>): DataAgentSession {
   }
 }
 
-// Cap a single block string field. Tool results from SELECTs can be megabytes; persisting
-// them verbatim quickly fills the 5MB sessionStorage quota and silently drops further
-// writes. Truncated payload is enough to recognize the block; full content lives in memory
-// during the active session.
 const MAX_PERSIST_FIELD_CHARS = 2000
-// Keep the most recent N messages with full block payloads. Older messages keep their
-// metadata (role, text preview) so the UI can still render the conversation outline after
-// a refresh, but their blocks are dropped.
 const FULL_PERSIST_MESSAGE_COUNT = 20
 const TRUNCATE_MARKER = '… [truncated]'
 
@@ -123,14 +116,12 @@ export function slimMessagesForPersist(
   return messages.map((m, i) => {
     const isRecent = i >= total - FULL_PERSIST_MESSAGE_COUNT
     if (isRecent) {
-      // Recent: keep blocks but cap individual long fields.
       return {
         ...m,
         text: typeof m.text === 'string' ? truncate(m.text) : m.text,
         blocks: m.blocks?.map(slimBlock)
       }
     }
-    // Older: drop blocks entirely, keep a short text preview so the outline renders.
     return {
       id: m.id,
       role: m.role,
@@ -140,10 +131,7 @@ export function slimMessagesForPersist(
   })
 }
 
-// Strip credentials from every session's jdbcUrl before writing to sessionStorage. Also
-// trim message blocks: long tool outputs (e.g. SELECT results) can blow past the 5MB
-// sessionStorage quota and silently drop further writes. Raw URL and full message content
-// stay in memory for the active session; the persisted copy is sanitized and slimmed.
+// Persist a sanitized, bounded copy; raw URL and full blocks stay in memory only.
 export function serializeSanitized(state: any): string {
   const sessions = (state.sessions || {}) as Record<string, DataAgentSession>
   const sanitized: Record<string, DataAgentSession> = {}
@@ -167,9 +155,7 @@ export const useDataAgentStore = defineStore('data-agent', {
     activeSession(state): DataAgentSession | undefined {
       return state.sessions[state.activeSessionId]
     },
-    // Newest sessions on top. We keep `sessionOrder` in creation order internally and
-    // only flip the order at the read boundary so positions in the UI stay stable
-    // (existing items don't shuffle when a new conversation is created).
+    // Keep creation order internally; reverse only for display.
     orderedSessions(state): DataAgentSession[] {
       const out: DataAgentSession[] = []
       for (let i = state.sessionOrder.length - 1; i >= 0; i--) {
@@ -183,9 +169,7 @@ export const useDataAgentStore = defineStore('data-agent', {
     }
   },
   actions: {
-    // Drop transient flags that may have been persisted while a stream was active
-    // before the page unloaded. Any in-flight HTTP/SSE was killed by the unload, so
-    // restoring `streaming: true` would leave the UI stuck.
+    // Reload kills in-flight HTTP/SSE; never restore those transient flags.
     hydrateTransientFlags() {
       for (const id of this.sessionOrder) {
         const s = this.sessions[id]
@@ -229,7 +213,6 @@ export const useDataAgentStore = defineStore('data-agent', {
       const s = this.sessions[id]
       if (s) s.sessionHandle = handle
     },
-    // Reset conversation state on a session while keeping its slot in the list.
     resetSession(id: string) {
       const s = this.sessions[id]
       if (!s) return

@@ -18,7 +18,6 @@
 
 <template>
   <div class="chat-message" :class="{ 'is-user': role === 'user' }">
-    <!-- User message -->
     <template v-if="role === 'user'">
       <div class="bubble-wrapper">
         <div class="user-bubble">
@@ -38,7 +37,6 @@
       </div>
     </template>
 
-    <!-- Assistant message -->
     <template v-else>
       <div class="avatar avatar-assistant">
         <el-icon :size="16" color="#fff"><ChatDotRound /></el-icon>
@@ -75,7 +73,6 @@
               @toggle="block.expanded = !block.expanded" />
           </div>
 
-          <!-- Streaming indicator -->
           <div v-if="streaming" class="streaming-indicator">
             <span class="streaming-dot"></span>
             <span class="streaming-label">{{
@@ -267,7 +264,6 @@
     }
   }
 
-  // Streaming indicator
   .streaming-indicator {
     display: flex;
     align-items: center;

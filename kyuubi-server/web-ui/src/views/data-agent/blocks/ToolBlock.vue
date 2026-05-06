@@ -102,8 +102,6 @@
     () => isApproval.value && props.block.approvalStatus === 'denied'
   )
 
-  // Visual state: running / done / error.
-  // Denied approvals render as error (red), regardless of `result`.
   const dotClass = computed(() => ({
     'is-running':
       props.block.result == null &&

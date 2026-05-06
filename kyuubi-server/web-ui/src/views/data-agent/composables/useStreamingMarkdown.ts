@@ -18,9 +18,7 @@
 import { ref, watch, onBeforeUnmount, type Ref } from 'vue'
 import { renderMarkdown } from '../utils/markdown'
 
-// Throttled markdown render for a streaming text source.
-// Re-parsing marked+DOMPurify on every SSE delta is O(n²) and janks the UI;
-// cap to ~12fps while streaming, then flush the full render on completion.
+// Avoid reparsing marked+DOMPurify on every SSE delta.
 export function useStreamingMarkdown(
   text: () => string,
   streaming: () => boolean
@@ -39,8 +37,6 @@ export function useStreamingMarkdown(
     }
   }
 
-  // Render initial content immediately so a block that mounts mid-stream
-  // doesn't show blank until the next delta arrives.
   flush()
 
   watch(text, () => {
@@ -56,7 +52,6 @@ export function useStreamingMarkdown(
     }
   })
 
-  // When streaming flips false, flush immediately so the final text is rendered.
   watch(streaming, (s) => {
     if (!s) flush()
   })

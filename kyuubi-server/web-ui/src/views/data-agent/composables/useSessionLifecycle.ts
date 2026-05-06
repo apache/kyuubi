@@ -85,8 +85,7 @@ export function useSessionLifecycle(opts: {
       if (!handle) throw new Error('No session handle returned')
       store.patchSession(id, { sessionHandle: handle })
       saveJdbcToHistory(rawJdbc)
-      // Replace raw URL with sanitized form so credentials don't survive in
-      // sessionStorage or the input.
+      // Backend used the raw URL; UI/persisted state should not keep credentials.
       store.patchSession(id, { jdbcUrl: sanitizeJdbcUrl(rawJdbc) })
       return true
     } catch (e: any) {
@@ -146,7 +145,6 @@ export function useSessionLifecycle(opts: {
     if (!s) return
     if (s.streaming) registry.cancelStream(id)
     const handle = s.sessionHandle
-    // Best-effort backend cleanup; failures shouldn't block UI removal.
     if (handle) {
       try {
         await closeSession(handle)

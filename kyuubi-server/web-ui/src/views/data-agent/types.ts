@@ -24,7 +24,6 @@ export interface ChatBlock {
   result?: string
   isError?: boolean
   expanded?: boolean
-  // approval_request fields
   requestId?: string
   riskLevel?: string
   approvalStatus?: 'pending' | 'approved' | 'denied'

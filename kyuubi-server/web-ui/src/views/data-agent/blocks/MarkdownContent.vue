@@ -16,9 +16,7 @@
 * limitations under the License.
 -->
 
-<!-- Sanitized markdown renderer. The HTML is produced by marked + DOMPurify
-     in `renderMarkdown` / `useStreamingMarkdown`, which is why v-html is
-     used here exactly once. Callers MUST NOT bypass this component. -->
+<!-- v-html is allowed only for sanitized markdown from renderMarkdown/useStreamingMarkdown. -->
 <template>
   <!-- eslint-disable-next-line vue/no-v-html -->
   <div class="markdown-body" v-html="html"></div>
@@ -34,7 +32,6 @@
     streaming?: boolean
   }>()
 
-  // Streaming path uses a throttled renderer; static path renders synchronously.
   const textRef = toRef(props, 'text')
   const streamingHtml = useStreamingMarkdown(
     () => textRef.value,

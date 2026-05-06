@@ -122,7 +122,6 @@
   const store = useDataAgentStore()
   const railCollapsed = ref(false)
 
-  // Inline rename
   const editingId = ref('')
   const editingTitle = ref('')
   const renameInputs = ref<HTMLInputElement[] | HTMLInputElement | null>(null)
@@ -130,7 +129,6 @@
   function beginRename(s: DataAgentSession) {
     editingId.value = s.id
     editingTitle.value = s.title
-    // Focus & select on next tick once the <input> renders.
     setTimeout(() => {
       const el = Array.isArray(renameInputs.value)
         ? renameInputs.value[0]
@@ -154,8 +152,6 @@
 </script>
 
 <style lang="scss" scoped>
-  // Sessions rail (rendered on the right via flex `order`; DOM order kept so
-  // the conversation column receives focus first.)
   .sessions-rail {
     display: flex;
     flex-direction: column;
