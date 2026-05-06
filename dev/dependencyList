@@ -160,7 +160,7 @@ okio/1.15.0//okio-1.15.0.jar
 osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
 paranamer/2.8.3//paranamer-2.8.3.jar
 perfmark-api/0.27.0//perfmark-api-0.27.0.jar
-postgresql/42.7.2//postgresql-42.7.2.jar
+postgresql/42.7.11//postgresql-42.7.11.jar
 proto-google-common-protos/2.59.2//proto-google-common-protos-2.59.2.jar
 protobuf-java-util/3.25.8//protobuf-java-util-3.25.8.jar
 protobuf-java/3.25.8//protobuf-java-3.25.8.jar
