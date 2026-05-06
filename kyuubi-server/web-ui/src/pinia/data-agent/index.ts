@@ -17,6 +17,7 @@
 
 import { defineStore } from 'pinia'
 import type { ChatBlock } from '@/views/data-agent/types'
+import { sanitizeJdbcUrl } from '@/views/data-agent/utils/jdbc'
 
 export interface DataAgentTokenUsage {
   accumulatedPrompt: number
@@ -88,6 +89,18 @@ function buildSession(initial?: Partial<DataAgentSession>): DataAgentSession {
     updatedAt: now,
     ...initial
   }
+}
+
+// Strip credentials from every session's jdbcUrl before writing to sessionStorage.
+// Raw URL stays in memory for openSession to consume; the persisted copy is always
+// sanitized so credentials don't survive a refresh or aborted connect.
+export function serializeSanitized(state: any): string {
+  const sessions = (state.sessions || {}) as Record<string, DataAgentSession>
+  const sanitized: Record<string, DataAgentSession> = {}
+  for (const [k, v] of Object.entries(sessions)) {
+    sanitized[k] = { ...v, jdbcUrl: sanitizeJdbcUrl(v.jdbcUrl || '') }
+  }
+  return JSON.stringify({ ...state, sessions: sanitized })
 }
 
 export const useDataAgentStore = defineStore('data-agent', {
@@ -200,6 +213,10 @@ export const useDataAgentStore = defineStore('data-agent', {
   persist: {
     key: 'data-agent-sessions',
     storage: sessionStorage,
-    paths: ['activeSessionId', 'sessions', 'sessionOrder']
+    paths: ['activeSessionId', 'sessions', 'sessionOrder'],
+    serializer: {
+      serialize: serializeSanitized,
+      deserialize: JSON.parse
+    }
   }
 })

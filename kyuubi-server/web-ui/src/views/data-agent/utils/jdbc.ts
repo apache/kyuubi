@@ -43,8 +43,8 @@ const SENSITIVE_PARAM = /^(password|pwd|passwd|token|secret|authtoken)$/i
 // and ;a=1;b=2 (Hive2) parameter styles.
 export function sanitizeJdbcUrl(url: string): string {
   return url
-    .replace(/([?&;])([^=&;#]+)=([^&;#]*)/g, (match, _sep, key) =>
-      SENSITIVE_PARAM.test(key) ? '' : match
+    .replace(/([?&;])([^=&;#]+)=([^&;#]*)/g, (match, sep, key) =>
+      SENSITIVE_PARAM.test(key) ? sep : match
     )
     .replace(/([?&;])[?&;]+/g, '$1')
     .replace(/[?&;]$/, '')
