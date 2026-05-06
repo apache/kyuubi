@@ -35,7 +35,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.api.v1.ApiRootResource
+import org.apache.kyuubi.server.api.v1.{ApiRootResource, DataAgentResource}
 import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
@@ -316,6 +316,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def stop(): Unit = synchronized {
     ThreadUtils.shutdown(batchChecker)
+    DataAgentResource.shutdown()
     if (isStarted.getAndSet(false)) {
       server.stop()
     }
