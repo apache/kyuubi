@@ -37,12 +37,12 @@ export const JDBC_TEMPLATES = [
 ]
 
 const JDBC_HISTORY_KEY = 'data-agent-jdbc-history'
-const SENSITIVE_PARAM = /^(password|pwd|passwd|token|secret|authtoken)$/i
+const SENSITIVE_PARAM =
+  /^(password|pwd|passwd|token|secret|authtoken|accesstoken|oauth2token)$/i
 
-// Strip credentials from JDBC URL. Handles both ?a=1&b=2 (Trino/MySQL)
-// and ;a=1;b=2 (Hive2) parameter styles.
 export function sanitizeJdbcUrl(url: string): string {
   return url
+    .replace(/^([a-zA-Z][\w+.-]*:[^/]*\/\/)[^/?#@]*@/, '$1')
     .replace(/([?&;])([^=&;#]+)=([^&;#]*)/g, (match, sep, key) =>
       SENSITIVE_PARAM.test(key) ? sep : match
     )

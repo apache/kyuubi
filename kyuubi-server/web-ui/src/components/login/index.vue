@@ -50,8 +50,10 @@
 
 <script setup lang="ts">
   import { ref, computed, onMounted } from 'vue'
+  import { useI18n } from 'vue-i18n'
   import { useAuthStore } from '@/pinia/auth/auth'
 
+  const { t } = useI18n()
   const authStore = useAuthStore()
   const dialogVisible = ref(false)
   const username = ref('')
@@ -68,13 +70,22 @@
     try {
       await authStore.setUser(username.value, password.value)
       dialogVisible.value = false
+      loginError.value = ''
     } catch (error) {
-      loginError.value = (error as Error).message
+      const status = (error as any)?.response?.status
+      if (status === 401 || status === 403) {
+        loginError.value = t('login.invalid_credentials')
+      } else if (typeof status === 'number' && status >= 500) {
+        loginError.value = t('login.server_error')
+      } else {
+        loginError.value = (error as Error)?.message || t('login.failed')
+      }
     }
   }
 
   onMounted(() => {
     window.addEventListener('auth-required', () => {
+      loginError.value = ''
       dialogVisible.value = true
     })
   })

@@ -52,6 +52,11 @@ export default {
     delete: 'Delete',
     run: 'Run'
   },
+  login: {
+    invalid_credentials: 'Invalid username or password.',
+    server_error: 'Server error, please try again later.',
+    failed: 'Login failed, please try again.'
+  },
   data_agent: {
     title: 'Data Agent',
     welcome_desc:
@@ -117,6 +122,10 @@ export default {
     new_conversation: 'New conversation',
     untitled_session: 'New chat',
     close_conversation: 'Close conversation',
+    close_conversation_confirm:
+      'Close conversation "{title}"? This cannot be undone.',
+    close_conversation_confirm_ok: 'Close',
+    close_conversation_confirm_cancel: 'Cancel',
     rename_conversation: 'Rename',
     expand_rail: 'Expand panel',
     collapse_rail: 'Collapse panel',

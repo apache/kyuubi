@@ -79,17 +79,23 @@ describe('sanitizeJdbcUrl', () => {
   })
 
   describe('alias keys', () => {
-    it.each(['password', 'pwd', 'passwd', 'token', 'secret', 'authToken'])(
-      'strips %s (case-insensitive)',
-      (key) => {
-        expect(sanitizeJdbcUrl(`jdbc:x://h?${key}=v&user=u`)).toBe(
-          'jdbc:x://h?user=u'
-        )
-        expect(
-          sanitizeJdbcUrl(`jdbc:x://h?${key.toUpperCase()}=v&user=u`)
-        ).toBe('jdbc:x://h?user=u')
-      }
-    )
+    it.each([
+      'password',
+      'pwd',
+      'passwd',
+      'token',
+      'secret',
+      'authToken',
+      'accessToken',
+      'oauth2Token'
+    ])('strips %s (case-insensitive)', (key) => {
+      expect(sanitizeJdbcUrl(`jdbc:x://h?${key}=v&user=u`)).toBe(
+        'jdbc:x://h?user=u'
+      )
+      expect(sanitizeJdbcUrl(`jdbc:x://h?${key.toUpperCase()}=v&user=u`)).toBe(
+        'jdbc:x://h?user=u'
+      )
+    })
 
     it('does not strip non-sensitive keys', () => {
       expect(sanitizeJdbcUrl('jdbc:mysql://h/db?user=u&useSSL=false')).toBe(
@@ -100,6 +106,26 @@ describe('sanitizeJdbcUrl', () => {
     it('does not strip keys that merely contain the substring "password"', () => {
       expect(sanitizeJdbcUrl('jdbc:x://h?passwordPolicy=strict&user=u')).toBe(
         'jdbc:x://h?passwordPolicy=strict&user=u'
+      )
+    })
+  })
+
+  describe('userinfo form (user:pass@host)', () => {
+    it('strips user:password before @host', () => {
+      expect(sanitizeJdbcUrl('jdbc:mysql://alice:secret@h:3306/db')).toBe(
+        'jdbc:mysql://h:3306/db'
+      )
+    })
+
+    it('strips user:password and trailing sensitive query params', () => {
+      expect(
+        sanitizeJdbcUrl('jdbc:mysql://alice:secret@h/db?password=p&user=u')
+      ).toBe('jdbc:mysql://h/db?user=u')
+    })
+
+    it('does not touch in-path @ characters', () => {
+      expect(sanitizeJdbcUrl('jdbc:mysql://h/db?email=a@b.com')).toBe(
+        'jdbc:mysql://h/db?email=a@b.com'
       )
     })
   })

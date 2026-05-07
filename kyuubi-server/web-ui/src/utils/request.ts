@@ -76,11 +76,20 @@ async function request(config: RequestConfig): Promise<unknown> {
     isJson && rawText ? JSON.parse(rawText) : rawText || undefined
 
   if (!response.ok) {
+    const messageFromJson =
+      parsedBody &&
+      typeof parsedBody === 'object' &&
+      (parsedBody as any).message
+    const isHtmlBody =
+      typeof parsedBody === 'string' &&
+      /^\s*<(!doctype|html|\?xml)/i.test(parsedBody)
+    const messageFromText =
+      typeof parsedBody === 'string' && !isHtmlBody && parsedBody.trim()
+        ? parsedBody.trim()
+        : null
     const message =
-      (parsedBody &&
-        typeof parsedBody === 'object' &&
-        (parsedBody as any).message) ||
-      (typeof parsedBody === 'string' && parsedBody) ||
+      messageFromJson ||
+      messageFromText ||
       `HTTP error! status: ${response.status}`
     const err: any = new Error(message)
     err.response = { status: response.status, data: parsedBody }

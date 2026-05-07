@@ -94,7 +94,7 @@
             v-if="sessions.length > 1"
             class="rail-icon-btn danger"
             :title="$t('data_agent.close_conversation')"
-            @click.stop="emit('close', s.id)">
+            @click.stop="confirmClose(s)">
             <el-icon :size="12"><Close /></el-icon>
           </button>
         </div>
@@ -105,6 +105,8 @@
 
 <script lang="ts" setup>
   import { ref } from 'vue'
+  import { ElMessageBox } from 'element-plus'
+  import { useI18n } from 'vue-i18n'
   import { Plus, Fold, Expand, EditPen, Close } from '@element-plus/icons-vue'
   import { useDataAgentStore, type DataAgentSession } from '@/pinia/data-agent'
 
@@ -120,7 +122,27 @@
   }>()
 
   const store = useDataAgentStore()
+  const { t } = useI18n()
   const railCollapsed = ref(false)
+
+  async function confirmClose(s: DataAgentSession) {
+    const title = s.title || t('data_agent.untitled_session')
+    try {
+      await ElMessageBox.confirm(
+        t('data_agent.close_conversation_confirm', { title }),
+        t('data_agent.close_conversation'),
+        {
+          confirmButtonText: t('data_agent.close_conversation_confirm_ok'),
+          cancelButtonText: t('data_agent.close_conversation_confirm_cancel'),
+          type: 'warning',
+          autofocus: false
+        }
+      )
+    } catch {
+      return
+    }
+    emit('close', s.id)
+  }
 
   const editingId = ref('')
   const editingTitle = ref('')

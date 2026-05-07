@@ -52,6 +52,11 @@ export default {
     delete: '删除',
     run: '运行'
   },
+  login: {
+    invalid_credentials: '用户名或密码错误。',
+    server_error: '服务器错误，请稍后重试。',
+    failed: '登录失败，请重试。'
+  },
   data_agent: {
     title: 'Data Agent',
     welcome_desc:
@@ -111,6 +116,9 @@ export default {
     new_conversation: '新建会话',
     untitled_session: '新会话',
     close_conversation: '关闭会话',
+    close_conversation_confirm: '关闭会话 "{title}"？此操作无法撤销。',
+    close_conversation_confirm_ok: '关闭',
+    close_conversation_confirm_cancel: '取消',
     rename_conversation: '重命名',
     expand_rail: '展开会话栏',
     collapse_rail: '收起会话栏',
