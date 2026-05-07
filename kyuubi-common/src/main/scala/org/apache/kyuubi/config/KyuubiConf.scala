@@ -2836,8 +2836,9 @@ object KyuubiConf {
     buildConf("kyuubi.internal.security.enabled")
       .doc("Whether to enable secure access across all the internal communications, both<ul>" +
         "<li>between kyuubi server and kyuubi engine</li>" +
-        "<li>across kyuubi server instances</li></ul>" +
-        "You need to also provide configure ")
+        "<li>between kyuubi server instances</li></ul>" +
+        s"You need to also provide configure kyuubi.internal.security.secret.provider to manage " +
+        s"the encryption secret.")
       .version("1.12.0")
       .fallbackConf(ENGINE_SECURITY_ENABLED)
 
@@ -2884,7 +2885,6 @@ object KyuubiConf {
 
   val INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("kyuubi.internal.security.crypto.keyAlgorithm")
-      .internal
       .doc("The algorithm for generated secret keys. Only take affects when" +
         s" ${INTERNAL_SECURITY_ENABLED.key} is set to true.")
       .version("1.12.0")
@@ -2892,7 +2892,6 @@ object KyuubiConf {
 
   val INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("kyuubi.internal.security.crypto.cipher")
-      .internal
       .doc("The cipher transformation to use for encrypting internal access token." +
         s" Only take affects when ${INTERNAL_SECURITY_ENABLED.key} is set to true.")
       .version("1.12.0")
