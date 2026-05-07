@@ -118,15 +118,29 @@ public class ChatCompletionProvider implements DataAgentProvider {
     if (jdbcUrl == null) {
       return null;
     }
-    LOG.info("Data Agent JDBC URL configured ({})", jdbcUrl.replaceAll("//.*@", "//<redacted>@"));
+    JdbcDialect dialect = JdbcDialect.fromUrl(jdbcUrl);
+    if (dialect == null) {
+      throw new IllegalArgumentException(
+          "Invalid " + KyuubiConf.ENGINE_DATA_AGENT_JDBC_URL().key());
+    }
+    LOG.info("Data Agent JDBC datasource configured ({})", dialect.datasourceName());
 
-    String sessionUser =
-        ConfUtils.optionalString(conf, KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY());
+    // The kyuubi session user is only meaningful when we connect back to Kyuubi/HiveServer2,
+    // where it drives proxy-user impersonation for the downstream engine. For external JDBC
+    // backends (mysql, postgresql, trino, ...) it would shadow URL-supplied credentials and
+    // cause auth failures (e.g. MySQL Connector/J overriding ?user=root with anonymous), so
+    // leave the username unset and let the driver read it from the URL.
+    String subprotocol = JdbcDialect.extractSubprotocol(jdbcUrl);
+    boolean isKyuubiBackend = "hive2".equals(subprotocol) || "kyuubi".equals(subprotocol);
+    String hikariUser =
+        isKyuubiBackend
+            ? ConfUtils.optionalString(conf, KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY())
+            : null;
 
-    DataSource ds = DataSourceFactory.create(jdbcUrl, sessionUser);
+    DataSource ds = DataSourceFactory.create(jdbcUrl, hikariUser);
     registry.register(new RunSelectQueryTool(ds, queryTimeoutSeconds));
     registry.register(new RunMutationQueryTool(ds, queryTimeoutSeconds));
-    promptBuilder.datasource(JdbcDialect.fromUrl(jdbcUrl).datasourceName());
+    promptBuilder.datasource(dialect.datasourceName());
     return ds;
   }
 
