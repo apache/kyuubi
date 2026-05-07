@@ -45,7 +45,7 @@ Custom implementations of `EngineSecuritySecretProvider` are also supported for 
 
 ## Configurations
 
-| Key                                                      | Default              | Meaning                                                                                                              | Type     | Since  |
+|                           Key                            |       Default        |                                                       Meaning                                                        |   Type   | Since  |
 |----------------------------------------------------------|----------------------|----------------------------------------------------------------------------------------------------------------------|----------|--------|
 | `kyuubi.internal.security.enabled`                       | false                | Whether to enable secure access across all the internal communications.                                              | boolean  | 1.12.0 |
 | `kyuubi.internal.security.token.max.lifetime`            | PT10M                | The max lifetime of the token used for internal secure access.                                                       | duration | 1.12.0 |
@@ -55,3 +55,4 @@ Custom implementations of `EngineSecuritySecretProvider` are also supported for 
 | `kyuubi.internal.security.crypto.keyLength`              | 128                  | The length in bits of the encryption key to generate. Valid values are 128, 192, and 256.                            | int      | 1.12.0 |
 | `kyuubi.internal.security.crypto.cipher`                 | AES/CBC/PKCS5PADDING | The cipher transformation to use for encrypting internal access token.                                               | string   | 1.12.0 |
 | `kyuubi.internal.security.crypto.ivLength`               | 16                   | Initial vector length, in bytes.                                                                                     | int      | 1.12.0 |
+
