@@ -32,7 +32,7 @@
     <url>https://kyuubi.apache.org/</url>
 
     <properties>
-        <ranger.version>2.6.0</ranger.version>
+        <ranger.version>2.8.0</ranger.version>
         <jersey.client.version>1.19.4</jersey.client.version>
     </properties>
 
@@ -72,7 +72,11 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.ranger</groupId>
-                    <artifactId>ranger-plugins-audit</artifactId>
+                    <artifactId>ranger-audit-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ranger</groupId>
+                    <artifactId>ugsync-util</artifactId>
                 </exclusion>
                 <!-- this is going to be replaced with jersey-client -->
                 <exclusion>
@@ -80,28 +84,8 @@
                     <artifactId>jersey-bundle</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-classic</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>org.apache.commons</groupId>
                     <artifactId>commons-configuration2</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.kstruct</groupId>
@@ -114,6 +98,10 @@
                 <exclusion>
                     <groupId>net.java.dev.jna</groupId>
                     <artifactId>jna-platform</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.mockito</groupId>
+                    <artifactId>mockito-core</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -132,7 +120,7 @@
 
         <dependency>
             <groupId>org.apache.ranger</groupId>
-            <artifactId>ranger-plugins-audit</artifactId>
+            <artifactId>ranger-audit-core</artifactId>
             <version>${ranger.version}</version>
             <exclusions>
                 <exclusion>
@@ -140,83 +128,16 @@
                     <artifactId>ranger-plugins-cred</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.solr</groupId>
-                    <artifactId>solr-solrj</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.client</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.elasticsearch.plugin</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.lucene</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-configuration2</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>com.carrotsearch</groupId>
                     <artifactId>hppc</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.apache.httpcomponents</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hive</groupId>
-                    <artifactId>hive-storage-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.orc</groupId>
-                    <artifactId>orc-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>joda-time</groupId>
                     <artifactId>joda-time</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <!--
-                  RANGER-4831 (2.5.0) switches from aws-java-sdk-bundle to aws-java-sdk-logs
-                  -->
-                <exclusion>
-                    <groupId>com.amazonaws</groupId>
-                    <artifactId>aws-java-sdk-bundle</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.amazonaws</groupId>
-                    <artifactId>aws-java-sdk-logs</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -232,20 +153,15 @@
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
-                    <artifactId>hadoop-common</artifactId>
+                    <artifactId>hadoop-auth</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <!-- they were removed in RANGER-3184 (2.2.0) -->
-                <exclusion>
-                    <groupId>org.eclipse.persistence</groupId>
-                    <artifactId>javax.persistence</artifactId>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-client-api</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.eclipse.persistence</groupId>
-                    <artifactId>eclipselink</artifactId>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-client-runtime</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
