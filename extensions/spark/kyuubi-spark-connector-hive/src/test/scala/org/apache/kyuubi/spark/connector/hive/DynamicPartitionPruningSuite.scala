@@ -32,8 +32,8 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
     def findBatchScan(plan: SparkPlan): Option[BatchScanExec] = plan match {
       case aqe: AdaptiveSparkPlanExec => findBatchScan(aqe.inputPlan)
       case _ => plan.collectFirst {
-        case b: BatchScanExec if b.toString.contains(tableNameHint) => b
-      }
+          case b: BatchScanExec if b.toString.contains(tableNameHint) => b
+        }
     }
     val exec = findBatchScan(spark.sql(sql).queryExecution.executedPlan)
     assert(exec.isDefined)

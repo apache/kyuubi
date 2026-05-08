@@ -48,7 +48,9 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
 
   test("toCatalystPartitionFilters returns Nil for empty predicate array") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array.empty[Predicate], partitionSchema, isCaseSensitive = false)
+      Array.empty[Predicate],
+      partitionSchema,
+      isCaseSensitive = false)
     assert(out.isEmpty)
   }
 
@@ -104,7 +106,9 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
       "=",
       Array[V2Expression](Expressions.column("dt"), Expressions.literal[AnyRef]("x")))
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(eq), partitionSchema, isCaseSensitive = false)
+      Array(eq),
+      partitionSchema,
+      isCaseSensitive = false)
     assert(out.isEmpty)
   }
 
@@ -112,7 +116,9 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
     val good = inPredicate("dt", "2026-05-01")
     val bad = inPredicate("non_partition_col", "x")
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(good, bad), partitionSchema, isCaseSensitive = false)
+      Array(good, bad),
+      partitionSchema,
+      isCaseSensitive = false)
     assert(out.size == 1)
     assert(out.head.asInstanceOf[InSet].child.asInstanceOf[AttributeReference].name == "dt")
   }

@@ -21,9 +21,9 @@ import java.util.Locale
 
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression, InSet}
-import org.apache.spark.sql.catalyst.types.DataTypeUtils
 import org.apache.spark.sql.connector.expressions.{Expressions, Literal => V2Literal, NamedReference}
 import org.apache.spark.sql.connector.expressions.filter.Predicate
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{sameType, StructTypeHelper}
 import org.apache.spark.sql.types.StructType
 
 /**
@@ -56,7 +56,7 @@ object HiveRuntimeFilterSupport extends Logging {
       partitionSchema: StructType,
       isCaseSensitive: Boolean): Seq[Expression] = {
     val attrByName: Map[String, AttributeReference] =
-      DataTypeUtils.toAttributes(partitionSchema)
+      partitionSchema.toAttributes
         .map(a => normalize(a.name, isCaseSensitive) -> a).toMap
 
     val accepted = predicates.toSeq.flatMap(p => convertIn(p, attrByName, isCaseSensitive))
@@ -89,7 +89,7 @@ object HiveRuntimeFilterSupport extends Logging {
           attrByName.get(colName).flatMap { attr =>
             val values = children.tail
             val allLiteralsMatch = values.forall {
-              case lit: V2Literal[_] => DataTypeUtils.sameType(lit.dataType(), attr.dataType)
+              case lit: V2Literal[_] => sameType(lit.dataType(), attr.dataType)
               case _ => false
             }
             if (allLiteralsMatch) {

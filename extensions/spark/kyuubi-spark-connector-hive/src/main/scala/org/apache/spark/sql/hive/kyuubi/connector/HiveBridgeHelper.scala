@@ -52,6 +52,8 @@ object HiveBridgeHelper {
     sc.listenerBus.post(event)
   }
 
+  def sameType(left: DataType, right: DataType): Boolean = left.sameType(right)
+
   implicit class TransformHelper(transforms: Seq[Transform]) {
     def convertTransforms: (Seq[String], Option[BucketSpec]) = {
       val identityCols = new mutable.ArrayBuffer[String]

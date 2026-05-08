@@ -64,9 +64,9 @@ case class HiveScan(
   override def equals(obj: Any): Boolean = obj match {
     case other: HiveScan =>
       super.equals(other) &&
-        catalogTable.identifier == other.catalogTable.identifier &&
-        dataSchema == other.dataSchema &&
-        equivalentFilters(pushedFilters, other.pushedFilters)
+      catalogTable.identifier == other.catalogTable.identifier &&
+      dataSchema == other.dataSchema &&
+      equivalentFilters(pushedFilters, other.pushedFilters)
     case _ => false
   }
 
@@ -192,7 +192,9 @@ case class HiveScan(
 
   override def filter(predicates: Array[Predicate]): Unit = {
     runtimeFilters = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      predicates, fileIndex.partitionSchema, isCaseSensitive)
+      predicates,
+      fileIndex.partitionSchema,
+      isCaseSensitive)
     if (runtimeFilters.nonEmpty) {
       logInfo(s"Received ${runtimeFilters.length} runtime partition filter(s) for " +
         s"${catalogTable.identifier}")

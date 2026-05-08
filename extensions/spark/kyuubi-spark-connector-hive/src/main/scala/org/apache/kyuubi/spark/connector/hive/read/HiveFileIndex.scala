@@ -57,7 +57,7 @@ class HiveCatalogFileIndex(
   override def equals(other: Any): Boolean = other match {
     case that: HiveCatalogFileIndex =>
       this.hiveCatalog.name == that.hiveCatalog.name &&
-        this.catalogTable.identifier == that.catalogTable.identifier
+      this.catalogTable.identifier == that.catalogTable.identifier
     case _ => false
   }
 
