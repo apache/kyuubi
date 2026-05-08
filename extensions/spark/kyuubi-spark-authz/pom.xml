@@ -74,10 +74,6 @@
                     <groupId>org.apache.ranger</groupId>
                     <artifactId>ranger-audit-core</artifactId>
                 </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ranger</groupId>
-                    <artifactId>ugsync-util</artifactId>
-                </exclusion>
                 <!-- this is going to be replaced with jersey-client -->
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
