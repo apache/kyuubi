@@ -65,4 +65,12 @@ object KyuubiHiveConnectorConf {
       .version("1.12.0")
       .booleanConf
       .createWithDefault(false)
+
+  val READ_RUNTIME_FILTER_ENABLED =
+    buildConf("spark.sql.kyuubi.hive.connector.read.runtimeFilter.enabled")
+      .doc("When enabled, partition columns will be exposed as runtime filter attributes, " +
+        "this is required for Spark Dynamic Partition Pruning (DPP).")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(true)
 }
