@@ -26,3 +26,4 @@ Quick Start
     quick_start
     quick_start_with_helm
     quick_start_with_jdbc
+    quick_start_with_data_agent
