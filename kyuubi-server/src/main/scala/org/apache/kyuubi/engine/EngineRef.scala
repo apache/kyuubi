@@ -40,7 +40,7 @@ import org.apache.kyuubi.engine.hive.HiveProcessBuilder
 import org.apache.kyuubi.engine.jdbc.JdbcProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ENGINE_REF_ID, HA_NAMESPACE}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_CLIENT_CLASS, HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -261,12 +261,23 @@ private[kyuubi] class EngineRef(
       case DATA_AGENT =>
         if (conf.get(ENGINE_DATA_AGENT_JDBC_URL).isEmpty) {
           val haAddresses = conf.get(HA_ADDRESSES)
-          if (haAddresses.nonEmpty) {
-            val jdbcUrl = s"jdbc:hive2://$haAddresses/default;" +
+          val isZkHa = haAddresses.nonEmpty &&
+            conf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
+          val jdbcUrl = if (isZkHa) {
+            s"jdbc:hive2://$haAddresses/default;" +
               s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
-            conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
-            info(s"Data Agent JDBC URL not configured, using Kyuubi server via ZK: $jdbcUrl")
+          } else {
+            val port = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
+            if (port == 0) {
+              throw KyuubiSQLException(
+                s"Cannot derive a default Data Agent JDBC URL: " +
+                  s"${FRONTEND_THRIFT_BINARY_BIND_PORT.key} is 0 (random). " +
+                  s"Set ${ENGINE_DATA_AGENT_JDBC_URL.key} explicitly.")
+            }
+            s"jdbc:hive2://localhost:$port/default"
           }
+          conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
+          info(s"Data Agent JDBC URL not configured, using Kyuubi server: $jdbcUrl")
         }
         new DataAgentProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
     }
