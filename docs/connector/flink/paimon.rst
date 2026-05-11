@@ -13,48 +13,48 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
-Apache Paimon (Incubating)
-==========================
+Apache Paimon
+=============
 
-`Apache Paimon (Incubating)`_ is a streaming data lake platform that supports high-speed data ingestion, change data tracking, and efficient real-time analytics.
+`Apache Paimon`_ is a streaming data lake platform that supports high-speed data ingestion, change data tracking, and efficient real-time analytics.
 
 .. tip::
-   This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon (Incubating)`_.
+   This article assumes that you have mastered the basic knowledge and operation of `Apache Paimon`_.
    For the knowledge not mentioned in this article,
    you can obtain it from its `Official Documentation`_.
 
-By using kyuubi, we can run SQL queries towards Apache Paimon (Incubating) which is more
+By using kyuubi, we can run SQL queries towards Apache Paimon which is more
 convenient, easy to understand, and easy to expand than directly using flink.
 
-Apache Paimon (Incubating) Integration
---------------------------------------
+Apache Paimon Integration
+-------------------------
 
-To enable the integration of kyuubi flink sql engine and Apache Paimon (Incubating), you need to:
+To enable the integration of kyuubi flink sql engine and Apache Paimon, you need to:
 
-- Referencing the Apache Paimon (Incubating) :ref:`dependencies<flink-paimon-deps>`
+- Referencing the Apache Paimon :ref:`dependencies<flink-paimon-deps>`
 
 .. _flink-paimon-deps:
 
 Dependencies
 ************
 
-The **classpath** of kyuubi flink sql engine with Apache Paimon (Incubating) supported consists of
+The **classpath** of kyuubi flink sql engine with Apache Paimon supported consists of
 
 1. kyuubi-flink-sql-engine-\ |release|\ _2.12.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of flink distribution
-3. paimon-flink-<version>.jar (example: paimon-flink-1.18-0.8.1.jar), which can be found in the `Apache Paimon (Incubating) Supported Engines Flink`_
+3. paimon-flink-<version>.jar (example: paimon-flink-1.18-0.8.1.jar), which can be found in the `Apache Paimon Supported Engines Flink`_
 4. flink-shaded-hadoop-2-uber-<version>.jar, which code can be found in the `Pre-bundled Hadoop Jar`_
 
-In order to make the Apache Paimon (Incubating) packages visible for the runtime classpath of engines, you need to:
+In order to make the Apache Paimon packages visible for the runtime classpath of engines, you need to:
 
-1. Put the Apache Paimon (Incubating) packages into ``$FLINK_HOME/lib`` directly
+1. Put the Apache Paimon packages into ``$FLINK_HOME/lib`` directly
 2. Setting the HADOOP_CLASSPATH environment variable or copy the `Pre-bundled Hadoop Jar`_ to flink/lib.
 
 .. warning::
-   Please mind the compatibility of different Apache Paimon (Incubating) and Flink versions, which can be confirmed on the page of `Apache Paimon (Incubating) multi engine support`_.
+   Please mind the compatibility of different Apache Paimon and Flink versions, which can be confirmed on the page of `Apache Paimon multi engine support`_.
 
-Apache Paimon (Incubating) Operations
--------------------------------------
+Apache Paimon Operations
+------------------------
 
 Taking ``CREATE CATALOG`` as a example,
 
@@ -103,8 +103,8 @@ Taking ``Rescale Bucket`` as a example,
    INSERT OVERWRITE my_table PARTITION (dt = '2022-01-01');
 
 
-.. _Apache Paimon (Incubating): https://paimon.apache.org/
+.. _Apache Paimon: https://paimon.apache.org/
 .. _Official Documentation: https://paimon.apache.org/docs/master/
-.. _Apache Paimon (Incubating) Supported Engines Flink: https://paimon.apache.org/docs/master/engines/flink/#preparing-paimon-jar-file
+.. _Apache Paimon Supported Engines Flink: https://paimon.apache.org/docs/master/engines/flink/#preparing-paimon-jar-file
 .. _Pre-bundled Hadoop Jar: https://flink.apache.org/downloads/#additional-components
-.. _Apache Paimon (Incubating) multi engine support: https://paimon.apache.org/docs/master/engines/overview/
+.. _Apache Paimon multi engine support: https://paimon.apache.org/docs/master/engines/overview/
