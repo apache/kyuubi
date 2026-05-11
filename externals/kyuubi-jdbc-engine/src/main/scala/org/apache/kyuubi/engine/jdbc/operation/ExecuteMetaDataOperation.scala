@@ -36,7 +36,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TFetchResultsResp
  */
 class ExecuteMetaDataOperation(
     session: Session,
-    metadataCall: (JdbcDialect, Connection) => ResultSet)
+    metadataCall: ExecuteMetaDataOperation.MetaDataCall)
   extends JdbcOperation(session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
@@ -117,4 +117,8 @@ class ExecuteMetaDataOperation(
       }
     }
   }
+}
+
+object ExecuteMetaDataOperation {
+  type MetaDataCall = (JdbcDialect, Connection) => ResultSet
 }

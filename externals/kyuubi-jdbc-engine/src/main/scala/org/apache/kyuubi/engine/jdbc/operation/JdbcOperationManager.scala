@@ -16,11 +16,14 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
+import java.sql.Connection
 import java.util
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT, ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED}
+import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
+import org.apache.kyuubi.engine.jdbc.operation.ExecuteMetaDataOperation.MetaDataCall
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
@@ -77,20 +80,21 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getTypeInfo(conn)))
+    val call: MetaDataCall = (dialect, conn) => dialect.getTypeInfo(conn)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getCatalogs(conn)))
+    val call: MetaDataCall = (dialect, conn) => dialect.getCatalogs(conn)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) => d.getSchemas(conn, catalog, schema)))
+    val call: MetaDataCall = (dialect, conn) => dialect.getSchemas(conn, catalog, schema)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetTablesOperation(
@@ -102,13 +106,14 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
     val typesArray =
       if (tableTypes == null) null
       else tableTypes.toArray(Array.empty[String])
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) => d.getTables(conn, catalogName, schemaName, tableName, typesArray)))
+    val call: MetaDataCall =
+      (dialect, conn) => dialect.getTables(conn, catalogName, schemaName, tableName, typesArray)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getTableTypes(conn)))
+    val call: MetaDataCall = (dialect, conn) => dialect.getTableTypes(conn)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetColumnsOperation(
@@ -117,9 +122,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) => d.getColumns(conn, catalogName, schemaName, tableName, columnName)))
+    val call: MetaDataCall =
+      (dialect, conn) => dialect.getColumns(conn, catalogName, schemaName, tableName, columnName)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetFunctionsOperation(
@@ -127,9 +132,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) => d.getFunctions(conn, catalogName, schemaName, functionName)))
+    val call: MetaDataCall =
+      (dialect, conn) => dialect.getFunctions(conn, catalogName, schemaName, functionName)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetPrimaryKeysOperation(
@@ -137,9 +142,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) => d.getPrimaryKeys(conn, catalogName, schemaName, tableName)))
+    val call: MetaDataCall =
+      (dialect, conn) => dialect.getPrimaryKeys(conn, catalogName, schemaName, tableName)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def newGetCrossReferenceOperation(
@@ -150,17 +155,16 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): Operation = {
-    addOperation(new ExecuteMetaDataOperation(
-      session,
-      (d, conn) =>
-        d.getCrossReference(
-          conn,
-          primaryCatalog,
-          primarySchema,
-          primaryTable,
-          foreignCatalog,
-          foreignSchema,
-          foreignTable)))
+    val call: MetaDataCall = (dialect, conn) =>
+      dialect.getCrossReference(
+        conn,
+        primaryCatalog,
+        primarySchema,
+        primaryTable,
+        foreignCatalog,
+        foreignSchema,
+        foreignTable)
+    addOperation(new ExecuteMetaDataOperation(session, call))
   }
 
   override def getQueryId(operation: Operation): String = {
@@ -168,18 +172,26 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   }
 
   override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
-    addOperation(new SetCurrentCatalog(session, (d, conn) => d.setCatalog(conn, catalog)))
+    val action: (JdbcDialect, Connection) => Unit =
+      (dialect, conn) => dialect.setCatalog(conn, catalog)
+    addOperation(new SetCurrentCatalog(session, action))
   }
 
   override def newGetCurrentCatalogOperation(session: Session): Operation = {
-    addOperation(new GetCurrentCatalog(session, (d, conn) => d.getCatalog(conn)))
+    val fetch: (JdbcDialect, Connection) => String =
+      (dialect, conn) => dialect.getCatalog(conn)
+    addOperation(new GetCurrentCatalog(session, fetch))
   }
 
   override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
-    addOperation(new SetCurrentDatabase(session, (d, conn) => d.setSchema(conn, database)))
+    val action: (JdbcDialect, Connection) => Unit =
+      (dialect, conn) => dialect.setSchema(conn, database)
+    addOperation(new SetCurrentDatabase(session, action))
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    addOperation(new GetCurrentDatabase(session, (d, conn) => d.getCurrentSchema(conn)))
+    val fetch: (JdbcDialect, Connection) => String =
+      (dialect, conn) => dialect.getCurrentSchema(conn)
+    addOperation(new GetCurrentDatabase(session, fetch))
   }
 }
