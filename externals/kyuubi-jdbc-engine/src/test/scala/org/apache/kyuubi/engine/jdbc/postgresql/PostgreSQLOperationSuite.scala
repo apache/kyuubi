@@ -55,8 +55,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
         resultBuffer +=
           Schema(schemas.getString(TABLE_CATALOG), schemas.getString(TABLE_SCHEM))
       }
-      // PostgreSQL JDBC driver returns null for TABLE_CATALOG in `getSchemas`.
-      assert(resultBuffer.contains(Schema(null, "information_schema")))
+      assert(resultBuffer.contains(Schema("postgres", "information_schema")))
       resultBuffer.clear()
     }
   }
