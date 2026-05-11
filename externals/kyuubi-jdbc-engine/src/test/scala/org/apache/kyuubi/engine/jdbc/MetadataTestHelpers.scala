@@ -14,20 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.dialect
+package org.apache.kyuubi.engine.jdbc
 
-import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixSchemaHelper, PhoenixTRowSetGenerator}
-import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import java.sql.ResultSet
 
-class PhoenixDialect extends JdbcDialect {
+import scala.collection.mutable.ArrayBuffer
 
-  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new PhoenixTRowSetGenerator
+object MetadataTestHelpers {
 
-  override def getSchemaHelper(): SchemaHelper = {
-    new PhoenixSchemaHelper
-  }
+  def collectCol(rs: ResultSet, columnLabel: String): Set[String] =
+    try {
+      val out = ArrayBuffer[String]()
+      while (rs.next()) out += rs.getString(columnLabel)
+      out.toSet
+    } finally rs.close()
 
-  override def name(): String = {
-    "phoenix"
-  }
+  def rowCount(rs: ResultSet): Int =
+    try {
+      var n = 0
+      while (rs.next()) n += 1
+      n
+    } finally rs.close()
+
+  def drain(rs: ResultSet): Unit =
+    try while (rs.next()) {}
+    finally rs.close()
 }

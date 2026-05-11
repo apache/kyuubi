@@ -66,6 +66,10 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
     cleanup(OperationState.CLOSED)
   }
 
+  override def cancel(): Unit = {
+    cleanup(OperationState.CANCELED)
+  }
+
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.

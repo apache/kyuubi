@@ -22,9 +22,9 @@ import org.testcontainers.utility.DockerImageName
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 
-trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
+trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll with WithExternalJdbcEngine {
 
   private val mysqlDockerImage = "mysql:8.0.32"
 
@@ -33,15 +33,36 @@ trait WithMySQLEngine extends WithJdbcEngine with TestContainerForAll {
     username = "root",
     password = "kyuubi")
 
-  override def withKyuubiConf: Map[String, String] = withContainers { mysqlContainer =>
-    Map(
-      ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_JDBC_CONNECTION_URL.key -> mysqlContainer.jdbcUrl,
-      ENGINE_JDBC_CONNECTION_USER.key -> mysqlContainer.username,
-      ENGINE_JDBC_CONNECTION_PASSWORD.key -> mysqlContainer.password,
-      ENGINE_TYPE.key -> "jdbc",
-      ENGINE_JDBC_SHORT_NAME.key -> "mysql",
-      KYUUBI_SESSION_USER_KEY -> "kyuubi",
-      ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+  // Optional escape hatch: when KYUUBI_TEST_MYSQL_URL is set, talk to a long-running MySQL
+  // (e.g. one started by `dev/jdbc-tests/docker-compose.yml`) instead of a per-suite
+  // Testcontainers instance. Useful on hosts where Testcontainers is slow or where the
+  // image lacks a native build for the local CPU architecture.
+  private lazy val externalMySQLUrl: Option[String] = sys.env.get("KYUUBI_TEST_MYSQL_URL")
+  override protected def externalJdbcUrl: Option[String] = externalMySQLUrl
+  private def externalMySQLUser: String = sys.env.getOrElse("KYUUBI_TEST_MYSQL_USER", "root")
+  private def externalMySQLPassword: String =
+    sys.env.getOrElse("KYUUBI_TEST_MYSQL_PASSWORD", "kyuubi")
+
+  override def withKyuubiConf: Map[String, String] = externalMySQLUrl match {
+    case Some(url) => Map(
+        ENGINE_SHARE_LEVEL.key -> "SERVER",
+        ENGINE_JDBC_CONNECTION_URL.key -> url,
+        ENGINE_JDBC_CONNECTION_USER.key -> externalMySQLUser,
+        ENGINE_JDBC_CONNECTION_PASSWORD.key -> externalMySQLPassword,
+        ENGINE_TYPE.key -> "jdbc",
+        ENGINE_JDBC_SHORT_NAME.key -> "mysql",
+        KYUUBI_SESSION_USER_KEY -> "kyuubi",
+        ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+    case None => withContainers { mysqlContainer =>
+        Map(
+          ENGINE_SHARE_LEVEL.key -> "SERVER",
+          ENGINE_JDBC_CONNECTION_URL.key -> mysqlContainer.jdbcUrl,
+          ENGINE_JDBC_CONNECTION_USER.key -> mysqlContainer.username,
+          ENGINE_JDBC_CONNECTION_PASSWORD.key -> mysqlContainer.password,
+          ENGINE_TYPE.key -> "jdbc",
+          ENGINE_JDBC_SHORT_NAME.key -> "mysql",
+          KYUUBI_SESSION_USER_KEY -> "kyuubi",
+          ENGINE_JDBC_DRIVER_CLASS.key -> "com.mysql.cj.jdbc.Driver")
+      }
   }
 }

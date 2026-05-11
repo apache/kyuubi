@@ -17,17 +17,9 @@
 package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, ResultSet, Statement}
-import java.util
-
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-
-import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.engine.jdbc.oracle.{OracleSchemaHelper, OracleTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-import org.apache.kyuubi.session.Session
 
 class OracleSQLDialect extends JdbcDialect {
 
@@ -38,72 +30,6 @@ class OracleSQLDialect extends JdbcDialect {
       statement.setFetchSize(fetchSize)
     }
     statement
-  }
-
-  override def getTablesQuery(
-      catalog: String,
-      schema: String,
-      tableName: String,
-      tableTypes: util.List[String]): String = {
-    val tTypes =
-      if (tableTypes == null || tableTypes.isEmpty) {
-        Set()
-      } else {
-        tableTypes.asScala.toSet
-      }
-    val query = new StringBuilder(
-      "SELECT OWNER AS TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE AS TABLE_TYPE FROM ALL_CATALOG")
-
-    val filters = ArrayBuffer[String]()
-    if (StringUtils.isNotBlank(schema)) {
-      filters += s"OWNER LIKE '$schema'"
-    }
-
-    if (StringUtils.isNotBlank(tableName)) {
-      filters += s"$TABLE_NAME LIKE '$tableName'"
-    }
-
-    if (tTypes.nonEmpty) {
-      filters += s"(${
-          tTypes.map { tableType => s"$TABLE_TYPE = '$tableType'" }
-            .mkString(" OR ")
-        })"
-    }
-
-    if (filters.nonEmpty) {
-      query.append(" WHERE ")
-      query.append(filters.mkString(" AND "))
-    }
-
-    query.toString()
-  }
-
-  override def getColumnsQuery(
-      session: Session,
-      catalogName: String,
-      schemaName: String,
-      tableName: String,
-      columnName: String): String = {
-    val query = new StringBuilder(
-      "SELECT OWNER AS TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM ALL_TAB_COLUMNS")
-
-    val filters = ArrayBuffer[String]()
-    if (StringUtils.isNotEmpty(schemaName)) {
-      filters += s"OWNER LIKE '$schemaName'"
-    }
-    if (StringUtils.isNotEmpty(tableName)) {
-      filters += s"$TABLE_NAME LIKE '$tableName'"
-    }
-    if (StringUtils.isNotEmpty(columnName)) {
-      filters += s"$COLUMN_NAME LIKE '$columnName'"
-    }
-
-    if (filters.nonEmpty) {
-      query.append(" WHERE ")
-      query.append(filters.mkString(" AND "))
-    }
-
-    query.toString()
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new OracleTRowSetGenerator

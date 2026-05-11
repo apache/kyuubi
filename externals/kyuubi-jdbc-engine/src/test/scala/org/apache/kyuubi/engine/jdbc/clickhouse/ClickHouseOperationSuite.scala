@@ -16,10 +16,12 @@
  */
 package org.apache.kyuubi.engine.jdbc.clickhouse
 
+import java.sql.DriverManager
 import java.sql.ResultSet
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.engine.jdbc.MetadataTestHelpers._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -35,19 +37,22 @@ abstract class ClickHouseOperationSuite extends WithClickHouseEngine with HiveJD
       while (tables.next()) {
         resultBuffer +=
           Table(
-            tables.getString(TABLE_CATALOG),
-            tables.getString(CK_TABLE_SCHEMA),
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
             tables.getString(TABLE_NAME),
             tables.getString(TABLE_TYPE))
       }
+      // ClickHouse JDBC driver exposes the database as a JDBC catalog (TABLE_CAT) and leaves
+      // TABLE_SCHEM null. User tables come back as "TABLE", views as "VIEW", built-in tables
+      // in `system` as "SYSTEM TABLE", and INFORMATION_SCHEMA entries as "VIEW".
       assert(resultBuffer.contains(Table(
         "INFORMATION_SCHEMA",
-        "INFORMATION_SCHEMA",
+        null,
         "TABLES",
         "VIEW")))
       assert(resultBuffer.contains(Table(
         "INFORMATION_SCHEMA",
-        "INFORMATION_SCHEMA",
+        null,
         "VIEWS",
         "VIEW")))
       resultBuffer.clear()
@@ -62,89 +67,82 @@ abstract class ClickHouseOperationSuite extends WithClickHouseEngine with HiveJD
 
       statement.execute("create view db1.view1 as select id from db1.test1")
 
-      tables = meta.getTables(null, "db1", "test1", Array("BASE TABLE"))
+      tables = meta.getTables("db1", null, "test1", Array("TABLE"))
       while (tables.next()) {
         val table = Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
-        assert(table == Table("db1", "db1", "test1", "BASE TABLE"))
+        assert(table == Table("db1", null, "test1", "TABLE"))
       }
 
-      tables = meta.getTables("db1", "db1", null, null)
+      tables = meta.getTables("db1", null, null, null)
       while (tables.next()) {
         resultBuffer += Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table("db1", "db1", "test2", "BASE TABLE")))
+      assert(resultBuffer.contains(Table("db1", null, "test2", "TABLE")))
       resultBuffer.clear()
 
       tables = meta.getTables(null, null, "test1", null)
       while (tables.next()) {
         resultBuffer += Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table("db1", "db1", "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db2", "db2", "test1", "BASE TABLE")))
+      assert(resultBuffer.contains(Table("db1", null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table("db2", null, "test1", "TABLE")))
       resultBuffer.clear()
 
-      tables = meta.getTables(null, "db%", "test1", null)
+      // NOTE: per JDBC spec the `catalog` argument of getTables is not a pattern (only
+      // schemaPattern / tableNamePattern accept LIKE wildcards), so a "db%" pattern over
+      // catalog is not expressible via the standard API; it was previously possible via
+      // hand-written SQL.
+
+      tables = meta.getTables("db2", null, "test%", null)
       while (tables.next()) {
         resultBuffer += Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table("db1", "db1", "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db2", "db2", "test1", "BASE TABLE")))
+      assert(resultBuffer.contains(Table("db2", null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table("db2", null, "test2", "TABLE")))
       resultBuffer.clear()
 
-      tables = meta.getTables(null, "db2", "test%", null)
-      while (tables.next()) {
-        resultBuffer += Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
-          tables.getString(TABLE_NAME),
-          tables.getString(TABLE_TYPE))
-      }
-      assert(resultBuffer.contains(Table("db2", "db2", "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db2", "db2", "test2", "BASE TABLE")))
-      resultBuffer.clear()
-
-      tables = meta.getTables(null, "fake_db", "test1", null)
+      tables = meta.getTables("fake_db", null, "test1", null)
       assert(!tables.next())
 
-      tables = meta.getTables(null, "db1", null, Array("VIEW"))
+      tables = meta.getTables("db1", null, null, Array("VIEW"))
       while (tables.next()) {
         val table = Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
-        assert(table == Table("db1", "db1", "view1", "VIEW"))
+        assert(table == Table("db1", null, "view1", "VIEW"))
       }
 
-      tables = meta.getTables(null, null, null, Array("VIEW", "BASE TABLE"))
+      tables = meta.getTables(null, null, null, Array("VIEW", "TABLE"))
       while (tables.next()) {
         resultBuffer += Table(
-          tables.getString(TABLE_CATALOG),
-          tables.getString(CK_TABLE_SCHEMA),
+          tables.getString(TABLE_CAT),
+          tables.getString(TABLE_SCHEM),
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table("db1", "db1", "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db1", "db1", "test2", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db2", "db2", "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db2", "db2", "test2", "BASE TABLE")))
-      assert(resultBuffer.contains(Table("db1", "db1", "view1", "VIEW")))
+      assert(resultBuffer.contains(Table("db1", null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table("db1", null, "test2", "TABLE")))
+      assert(resultBuffer.contains(Table("db2", null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table("db2", null, "test2", "TABLE")))
+      assert(resultBuffer.contains(Table("db1", null, "view1", "VIEW")))
       resultBuffer.clear()
 
       statement.execute("drop view db1.view1")
@@ -157,12 +155,56 @@ abstract class ClickHouseOperationSuite extends WithClickHouseEngine with HiveJD
     }
   }
 
+  test("clickhouse - additional metadata operations") {
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      assert(collectCol(meta.getCatalogs, TABLE_CAT).contains("INFORMATION_SCHEMA"))
+      drain(meta.getSchemas)
+      assert(collectCol(meta.getTableTypes, "TABLE_TYPE").contains("TABLE"))
+      assert(rowCount(meta.getTypeInfo) > 0)
+      assert(rowCount(meta.getFunctions(null, null, "%")) > 0)
+    }
+  }
+
+  test("clickhouse - URL database is applied to backend connection") {
+    withJdbcStatement() { statement =>
+      try {
+        statement.execute("create database if not exists db1")
+
+        val connection = DriverManager.getConnection(
+          jdbcUrlWithConf(s"jdbc:hive2://$connectionUrl/db1;"),
+          user,
+          password)
+        try {
+          val currentDbStatement = connection.createStatement()
+          try {
+            val resultSet = currentDbStatement.executeQuery("select currentDatabase()")
+            try {
+              assert(resultSet.next())
+              assert(resultSet.getString(1) == "db1")
+            } finally {
+              resultSet.close()
+            }
+          } finally {
+            currentDbStatement.close()
+          }
+        } finally {
+          connection.close()
+        }
+      } finally {
+        statement.execute("drop database if exists db1")
+      }
+    }
+  }
+
   test("clickhouse - get columns") {
     case class Column(name: String, columnType: String)
 
     def buildColumn(resultSet: ResultSet): Column = {
       val columnName = resultSet.getString("COLUMN_NAME")
-      val columnType = resultSet.getString("DATA_TYPE")
+      // Standard JDBC `getColumns` puts the java.sql.Types int code in DATA_TYPE; the
+      // database-native type name (e.g. "Int64") is exposed via TYPE_NAME.
+      val columnType = resultSet.getString("TYPE_NAME")
       Column(columnName, columnType)
     }
 

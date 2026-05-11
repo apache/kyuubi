@@ -18,13 +18,20 @@ package org.apache.kyuubi.engine.jdbc.impala
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 
-trait WithImpalaEngine extends WithJdbcEngine with WithImpalaContainer {
+trait WithImpalaEngine extends WithJdbcEngine with WithImpalaContainer with WithExternalJdbcEngine {
+
+  // Optional escape hatch: see `WithMySQLEngine` for rationale. When KYUUBI_TEST_IMPALA_URL
+  // is set, point at a long-running Impalad instead of starting a per-suite Testcontainers
+  // compose stack. Expected URL form e.g.
+  // "jdbc:kyuubi://host:21050/;auth=noSasl".
+  private lazy val externalImpalaUrl: Option[String] = sys.env.get("KYUUBI_TEST_IMPALA_URL")
+  override protected def externalJdbcUrl: Option[String] = externalImpalaUrl
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> hiveServerJdbcUrl,
+    ENGINE_JDBC_CONNECTION_URL.key -> externalImpalaUrl.getOrElse(hiveServerJdbcUrl),
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "impala",
     KYUUBI_SESSION_USER_KEY -> "kyuubi",

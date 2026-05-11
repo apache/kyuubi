@@ -16,10 +16,13 @@
  */
 package org.apache.kyuubi.engine.jdbc.oracle
 
+import java.sql.DriverManager
+
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.engine.jdbc.MetadataTestHelpers._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, TABLE_NAME, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{COLUMN_NAME, TABLE_NAME, TABLE_SCHEM, TABLE_TYPE}
 
 abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHelper {
   test("oracle - get tables") {
@@ -29,7 +32,10 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
       val meta = statement.getConnection.getMetaData
       val resultBuffer = ArrayBuffer[Table]()
 
-      var tables = meta.getTables(null, null, null, null)
+      // Narrow the metadata scan with a schema filter so the result stays small enough to be
+      // viable over slow links (the standard JDBC path returns the full catalog otherwise,
+      // which on Oracle is tens of thousands of rows).
+      var tables = meta.getTables(null, "SYS", null, null)
       while (tables.next()) {
         resultBuffer +=
           Table(
@@ -39,8 +45,19 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
             tables.getString(TABLE_TYPE))
       }
       assert(resultBuffer.contains(Table(null, null, "DUAL", "TABLE")))
-      assert(resultBuffer.contains(Table(null, null, "DUAL", "SYNONYM")))
       assert(resultBuffer.contains(Table(null, null, "NLS_SESSION_PARAMETERS", "VIEW")))
+      resultBuffer.clear()
+
+      tables = meta.getTables(null, "PUBLIC", "DUAL", Array("SYNONYM"))
+      while (tables.next()) {
+        resultBuffer +=
+          Table(
+            null,
+            null,
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultBuffer.contains(Table(null, null, "DUAL", "SYNONYM")))
       resultBuffer.clear()
 
       statement.execute("create table T_PEOPLE (ID INTEGER not null " +
@@ -77,7 +94,9 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
       val meta = statement.getConnection.getMetaData
       val resultBuffer = ArrayBuffer[Column]()
 
-      var columns = meta.getColumns(null, null, null, null)
+      // Narrow the metadata scan with a schema/table filter (full-catalog `getColumns` is
+      // tens of thousands of rows on Oracle and unacceptably slow over a remote link).
+      var columns = meta.getColumns(null, "SYS", "DUAL", null)
       while (columns.next()) {
         resultBuffer +=
           Column(
@@ -100,5 +119,42 @@ abstract class OracleOperationSuite extends WithOracleEngine with HiveJDBCTestHe
 
       statement.execute("DROP TABLE T_PEOPLE")
     }
+  }
+
+  test("oracle - additional metadata operations") {
+    val schema = externalOracleUser.toUpperCase
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      // Oracle has no JDBC catalogs; Oracle JDBC driver returns no rows here.
+      drain(meta.getCatalogs)
+      assert(collectCol(meta.getSchemas(null, schema), TABLE_SCHEM).contains(schema))
+      assert(collectCol(meta.getTableTypes, "TABLE_TYPE").contains("TABLE"))
+      assert(rowCount(meta.getTypeInfo) > 0)
+      // Functions in the user schema are typically empty for the bare APP_USER, but the call
+      // must not throw and must serialise its result set cleanly.
+      drain(meta.getFunctions(null, schema, "%"))
+    }
+  }
+
+  test("oracle - URL database is applied to backend connection") {
+    // Oracle treats schemas as users; we point at the same user the engine connects as, since
+    // `setSchema` requires the schema to exist and we cannot create one without DBA privileges.
+    // Oracle uppercases unquoted identifiers, so the schema name comes back as the user
+    // upper-cased. This still exercises the URL-scoped `setSchema` code path end-to-end.
+    val schema = externalOracleUser.toUpperCase
+    val connection = DriverManager.getConnection(
+      jdbcUrlWithConf(s"jdbc:hive2://$connectionUrl/$schema;"),
+      user,
+      password)
+    try {
+      val s = connection.createStatement()
+      try {
+        val rs = s.executeQuery("select sys_context('USERENV','CURRENT_SCHEMA') from dual")
+        try {
+          assert(rs.next())
+          assert(rs.getString(1) == schema)
+        } finally rs.close()
+      } finally s.close()
+    } finally connection.close()
   }
 }

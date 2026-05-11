@@ -18,19 +18,28 @@ package org.apache.kyuubi.engine.jdbc.starrocks
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
-trait WithStarRocksEngine extends WithJdbcEngine with WithStarRocksContainer {
+trait WithStarRocksEngine
+  extends WithJdbcEngine with WithStarRocksContainer with WithExternalJdbcEngine {
 
-  private val user = "root"
-  private val password = ""
+  // Optional escape hatch: see `WithMySQLEngine` for rationale. When
+  // KYUUBI_TEST_STARROCKS_URL is set, point at a long-running StarRocks FE instead of
+  // starting a per-suite Testcontainers instance.
+  private lazy val externalStarRocksUrl: Option[String] =
+    sys.env.get("KYUUBI_TEST_STARROCKS_URL")
+  override protected def externalJdbcUrl: Option[String] = externalStarRocksUrl
+  private def externalStarRocksUser: String =
+    sys.env.getOrElse("KYUUBI_TEST_STARROCKS_USER", "root")
+  private def externalStarRocksPassword: String =
+    sys.env.getOrElse("KYUUBI_TEST_STARROCKS_PASSWORD", "")
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> feJdbcUrl,
-    ENGINE_JDBC_CONNECTION_USER.key -> user,
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> password,
+    ENGINE_JDBC_CONNECTION_URL.key -> externalStarRocksUrl.getOrElse(feJdbcUrl),
+    ENGINE_JDBC_CONNECTION_USER.key -> externalStarRocksUser,
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> externalStarRocksPassword,
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "starrocks",
     KYUUBI_SESSION_USER_KEY -> "kyuubi",

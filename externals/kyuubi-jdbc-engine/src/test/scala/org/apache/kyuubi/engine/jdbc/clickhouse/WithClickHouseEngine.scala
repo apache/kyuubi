@@ -18,19 +18,39 @@ package org.apache.kyuubi.engine.jdbc.clickhouse
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 
-trait WithClickHouseEngine extends WithJdbcEngine with WithClickHouseContainer {
+trait WithClickHouseEngine
+  extends WithJdbcEngine with WithClickHouseContainer with WithExternalJdbcEngine {
 
-  override def withKyuubiConf: Map[String, String] = withContainers { container =>
-    Map(
-      ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_JDBC_CONNECTION_URL.key -> container.jdbcUrl,
-      ENGINE_JDBC_CONNECTION_USER.key -> container.username,
-      ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
-      ENGINE_TYPE.key -> "jdbc",
-      ENGINE_JDBC_SHORT_NAME.key -> "clickhouse",
-      KYUUBI_SESSION_USER_KEY -> "kyuubi",
-      ENGINE_JDBC_DRIVER_CLASS.key -> container.driverClassName)
+  // Optional escape hatch: see `WithMySQLEngine` for rationale. When KYUUBI_TEST_CK_URL is
+  // set, point at a long-running ClickHouse instead of starting a per-suite Testcontainers
+  // instance.
+  private lazy val externalCkUrl: Option[String] = sys.env.get("KYUUBI_TEST_CK_URL")
+  override protected def externalJdbcUrl: Option[String] = externalCkUrl
+  private def externalCkUser: String = sys.env.getOrElse("KYUUBI_TEST_CK_USER", "default")
+  private def externalCkPassword: String = sys.env.getOrElse("KYUUBI_TEST_CK_PASSWORD", "")
+
+  override def withKyuubiConf: Map[String, String] = externalCkUrl match {
+    case Some(url) => Map(
+        ENGINE_SHARE_LEVEL.key -> "SERVER",
+        ENGINE_JDBC_CONNECTION_URL.key -> url,
+        ENGINE_JDBC_CONNECTION_USER.key -> externalCkUser,
+        ENGINE_JDBC_CONNECTION_PASSWORD.key -> externalCkPassword,
+        ENGINE_TYPE.key -> "jdbc",
+        ENGINE_JDBC_SHORT_NAME.key -> "clickhouse",
+        KYUUBI_SESSION_USER_KEY -> "kyuubi",
+        ENGINE_JDBC_DRIVER_CLASS.key -> "com.clickhouse.jdbc.ClickHouseDriver")
+    case None => withContainers { container =>
+        Map(
+          ENGINE_SHARE_LEVEL.key -> "SERVER",
+          ENGINE_JDBC_CONNECTION_URL.key -> container.jdbcUrl,
+          ENGINE_JDBC_CONNECTION_USER.key -> container.username,
+          ENGINE_JDBC_CONNECTION_PASSWORD.key -> container.password,
+          ENGINE_TYPE.key -> "jdbc",
+          ENGINE_JDBC_SHORT_NAME.key -> "clickhouse",
+          KYUUBI_SESSION_USER_KEY -> "kyuubi",
+          ENGINE_JDBC_DRIVER_CLASS.key -> container.driverClassName)
+      }
   }
 }

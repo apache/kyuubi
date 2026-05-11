@@ -20,8 +20,7 @@ import java.util
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT}
-import org.apache.kyuubi.engine.jdbc.dialect.{JdbcDialect, JdbcDialects}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_FETCH_SIZE, ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT, ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
@@ -30,7 +29,9 @@ import org.apache.kyuubi.session.Session
 class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOperationManager")
   with SupportServiceLoader {
 
-  private lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
+  // No engine-level dialect cached: each operation resolves dialect from its sessionConf and
+  // injects it into the closures below so the metadata call and downstream normalisation
+  // never disagree.
 
   override def name(): String = "jdbc"
 
@@ -41,11 +42,29 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val incrementalCollect = normalizedConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT.key).map(
-      _.toBoolean).getOrElse(
-      session.sessionManager.getConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
-    val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
-      .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
+    val engineConf = session.sessionManager.getConf
+    val convertCatalogDatabaseEnabled = normalizedConf
+      .get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
+      .map(_.toBoolean)
+      .getOrElse(engineConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))
+    // Intercept Kyuubi's special `_GET_CATALOG` / `_SET_CATALOG` / `use <db>` /
+    // `select current_database()` statements (sent by KyuubiConnection.getCatalog/setCatalog/
+    // setSchema/getSchema) and route them to the corresponding lifecycle operations instead
+    // of forwarding to the backend JDBC driver as raw SQL.
+    if (convertCatalogDatabaseEnabled) {
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      if (catalogDatabaseOperation != null) {
+        return catalogDatabaseOperation
+      }
+    }
+    val incrementalCollect = normalizedConf
+      .get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT.key)
+      .map(_.toBoolean)
+      .getOrElse(engineConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
+    val fetchSize = normalizedConf
+      .get(ENGINE_JDBC_FETCH_SIZE.key)
+      .map(_.toInt)
+      .getOrElse(engineConf.get(ENGINE_JDBC_FETCH_SIZE))
     val executeStatement =
       new ExecuteStatement(
         session,
@@ -58,31 +77,20 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    val operation = dialect.getTypeInfoOperation(session)
-    addOperation(operation)
+    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getTypeInfo(conn)))
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val query = dialect.getCatalogsOperation()
-    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
-      .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true, fetchSize)
-    addOperation(executeStatement)
+    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getCatalogs(conn)))
   }
 
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    val query = dialect.getSchemasOperation(catalog, schema)
-    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
-      .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true, fetchSize)
-    addOperation(executeStatement)
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) => d.getSchemas(conn, catalog, schema)))
   }
 
   override def newGetTablesOperation(
@@ -91,18 +99,16 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       tableTypes: util.List[String]): Operation = {
-    val query = dialect.getTablesQuery(catalogName, schemaName, tableName, tableTypes)
-    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(_.toInt)
-      .getOrElse(session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true, fetchSize)
-    addOperation(executeStatement)
+    val typesArray =
+      if (tableTypes == null) null
+      else tableTypes.toArray(Array.empty[String])
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) => d.getTables(conn, catalogName, schemaName, tableName, typesArray)))
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    val operation = dialect.getTableTypesOperation(session)
-    addOperation(operation)
+    addOperation(new ExecuteMetaDataOperation(session, (d, conn) => d.getTableTypes(conn)))
   }
 
   override def newGetColumnsOperation(
@@ -111,14 +117,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val query = dialect.getColumnsQuery(session, catalogName, schemaName, tableName, columnName)
-    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val fetchSize = normalizedConf.get(ENGINE_JDBC_FETCH_SIZE.key).map(
-      _.toInt).getOrElse(
-      session.sessionManager.getConf.get(ENGINE_JDBC_FETCH_SIZE))
-    val executeStatement =
-      new ExecuteStatement(session, query, false, 0L, true, fetchSize)
-    addOperation(executeStatement)
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) => d.getColumns(conn, catalogName, schemaName, tableName, columnName)))
   }
 
   override def newGetFunctionsOperation(
@@ -126,8 +127,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    val operation = dialect.getFunctionsOperation(session)
-    addOperation(operation)
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) => d.getFunctions(conn, catalogName, schemaName, functionName)))
   }
 
   override def newGetPrimaryKeysOperation(
@@ -135,8 +137,9 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       catalogName: String,
       schemaName: String,
       tableName: String): Operation = {
-    val operation = dialect.getPrimaryKeysOperation(session)
-    addOperation(operation)
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) => d.getPrimaryKeys(conn, catalogName, schemaName, tableName)))
   }
 
   override def newGetCrossReferenceOperation(
@@ -147,8 +150,17 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
       foreignCatalog: String,
       foreignSchema: String,
       foreignTable: String): Operation = {
-    val operation = dialect.getCrossReferenceOperation(session)
-    addOperation(operation)
+    addOperation(new ExecuteMetaDataOperation(
+      session,
+      (d, conn) =>
+        d.getCrossReference(
+          conn,
+          primaryCatalog,
+          primarySchema,
+          primaryTable,
+          foreignCatalog,
+          foreignSchema,
+          foreignTable)))
   }
 
   override def getQueryId(operation: Operation): String = {
@@ -156,18 +168,18 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   }
 
   override def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    addOperation(new SetCurrentCatalog(session, (d, conn) => d.setCatalog(conn, catalog)))
   }
 
   override def newGetCurrentCatalogOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    addOperation(new GetCurrentCatalog(session, (d, conn) => d.getCatalog(conn)))
   }
 
   override def newSetCurrentDatabaseOperation(session: Session, database: String): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    addOperation(new SetCurrentDatabase(session, (d, conn) => d.setSchema(conn, database)))
   }
 
   override def newGetCurrentDatabaseOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
+    addOperation(new GetCurrentDatabase(session, (d, conn) => d.getCurrentSchema(conn)))
   }
 }

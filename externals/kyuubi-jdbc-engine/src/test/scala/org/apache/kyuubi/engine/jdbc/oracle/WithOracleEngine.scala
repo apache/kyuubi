@@ -19,20 +19,28 @@ package org.apache.kyuubi.engine.jdbc.oracle
 
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_CONNECTION_USER, ENGINE_JDBC_DRIVER_CLASS, ENGINE_JDBC_SHORT_NAME, ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 
-trait WithOracleEngine extends WithJdbcEngine with WithOracleContainer {
+trait WithOracleEngine extends WithJdbcEngine with WithOracleContainer with WithExternalJdbcEngine {
 
-  override def withKyuubiConf: Map[String, String] = withContainers { container =>
-    Map(
-      ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_JDBC_CONNECTION_URL.key -> oracleJdbcUrl,
-      ENGINE_JDBC_CONNECTION_USER.key -> ORACLE_USER_NAME,
-      ENGINE_JDBC_CONNECTION_PASSWORD.key -> ORACLE_PASSWORD,
-      ENGINE_TYPE.key -> "jdbc",
-      ENGINE_JDBC_SHORT_NAME.key -> "oracle",
-      KYUUBI_SESSION_USER_KEY -> "kyuubi",
-      ENGINE_JDBC_DRIVER_CLASS.key -> "oracle.jdbc.OracleDriver")
-  }
+  // Optional escape hatch: see `WithMySQLEngine` for rationale. When KYUUBI_TEST_ORACLE_URL
+  // is set, point at a long-running Oracle instead of starting a per-suite Testcontainers
+  // compose stack.
+  private lazy val externalOracleUrl: Option[String] = sys.env.get("KYUUBI_TEST_ORACLE_URL")
+  override protected def externalJdbcUrl: Option[String] = externalOracleUrl
+  protected def externalOracleUser: String =
+    sys.env.getOrElse("KYUUBI_TEST_ORACLE_USER", ORACLE_USER_NAME)
+  private def externalOraclePassword: String =
+    sys.env.getOrElse("KYUUBI_TEST_ORACLE_PASSWORD", ORACLE_PASSWORD)
+
+  override def withKyuubiConf: Map[String, String] = Map(
+    ENGINE_SHARE_LEVEL.key -> "SERVER",
+    ENGINE_JDBC_CONNECTION_URL.key -> externalOracleUrl.getOrElse(oracleJdbcUrl),
+    ENGINE_JDBC_CONNECTION_USER.key -> externalOracleUser,
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> externalOraclePassword,
+    ENGINE_TYPE.key -> "jdbc",
+    ENGINE_JDBC_SHORT_NAME.key -> "oracle",
+    KYUUBI_SESSION_USER_KEY -> "kyuubi",
+    ENGINE_JDBC_DRIVER_CLASS.key -> "oracle.jdbc.OracleDriver")
 
 }

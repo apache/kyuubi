@@ -25,8 +25,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
+import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialects
 import org.apache.kyuubi.engine.jdbc.util.KyuubiJdbcUtils
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager, USE_DATABASE}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class JdbcSessionImpl(
@@ -62,6 +63,16 @@ class JdbcSessionImpl(
     if (sessionConnection == null) {
       sessionConnection = ConnectionProvider.create(sessionConf)
       databaseMetaData = sessionConnection.getMetaData
+    }
+    // Apply URL database before init SQL so DDL runs in the user-requested database.
+    // "default" is a stub Hive clients send when the URL has no `/<db>` - skip it, since
+    // forwarding it would fail on backends (PG, ClickHouse) lacking that database.
+    conf.get(USE_DATABASE) match {
+      case Some("default") =>
+        info("Ignoring URL database \"default\" stub; backend connection unchanged.")
+      case Some(db) =>
+        JdbcDialects.get(sessionConf).setSchema(sessionConnection, db)
+      case None =>
     }
     KyuubiJdbcUtils.initializeJdbcSession(
       sessionConf,
