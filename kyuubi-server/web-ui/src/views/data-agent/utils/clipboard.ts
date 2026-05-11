@@ -19,15 +19,42 @@ import { ElMessage } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { formatArgs } from './format'
 
+function legacyCopy(text: string): boolean {
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.setAttribute('readonly', '')
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  let ok = false
+  try {
+    ok = document.execCommand('copy')
+  } catch {
+    ok = false
+  }
+  document.body.removeChild(ta)
+  return ok
+}
+
 export function useCopyText() {
   const { t } = useI18n()
   return async function copyText(text: unknown) {
     const payload =
       typeof text === 'string' ? text : text == null ? '' : formatArgs(text)
-    try {
-      await navigator.clipboard.writeText(payload)
+    let ok = false
+    if (navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(payload)
+        ok = true
+      } catch {
+        ok = false
+      }
+    }
+    if (!ok) ok = legacyCopy(payload)
+    if (ok) {
       ElMessage.success({ message: t('data_agent.copied'), duration: 1500 })
-    } catch {
+    } else {
       ElMessage.warning(t('data_agent.copy_failed'))
     }
   }

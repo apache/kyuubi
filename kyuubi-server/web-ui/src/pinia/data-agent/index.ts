@@ -91,8 +91,8 @@ function buildSession(initial?: Partial<DataAgentSession>): DataAgentSession {
   }
 }
 
-const MAX_PERSIST_FIELD_CHARS = 2000
-const FULL_PERSIST_MESSAGE_COUNT = 20
+const MAX_PERSIST_FIELD_CHARS = 1_000_000
+const FULL_PERSIST_MESSAGE_COUNT = 10_000
 const TRUNCATE_MARKER = '… [truncated]'
 
 function truncate(s: string | undefined): string | undefined {
