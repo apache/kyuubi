@@ -29,11 +29,14 @@ class ImpalaSchemaHelper extends SchemaHelper {
   }
 
   // Apache Impala HS2 GetColumns labels the schema column "TABLE_MD" instead of the
-  // JDBC-spec "TABLE_SCHEM" (Impala upstream issue, not Kyuubi's). Rewrite the label so
-  // Hive JDBC clients see the spec-compliant name. Verified against Impala 4.0.0 impalad:
-  // getColumns metadata reports `TABLE_MD` at the position where JDBC requires
-  // `TABLE_SCHEM`. Row data is positional, so renaming the column descriptor is sufficient -
-  // clients calling rs.getString("TABLE_SCHEM") see the right value.
+  // JDBC-spec "TABLE_SCHEM" - an upstream typo. Every other metadata result set in the
+  // same file correctly uses TABLE_SCHEM; the row-population site at L494 even comments
+  // `// TABLE_SCHEM`. See:
+  // scalastyle:off line.size.limit
+  //   https://github.com/apache/impala/blob/4.5.0/fe/src/main/java/org/apache/impala/service/MetadataOp.java#L114
+  // scalastyle:on line.size.limit
+  // Rewrite the label so clients calling rs.getString("TABLE_SCHEM") see the right value.
+  // Row data is positional, so renaming the column descriptor alone is sufficient.
   override def normalizeMetadataColumnLabel(label: String): String =
     if (label != null && label.equalsIgnoreCase("TABLE_MD")) "TABLE_SCHEM" else label
 }
