@@ -20,6 +20,7 @@ import java.sql.Connection
 
 import org.apache.kyuubi.engine.jdbc.impala.{ImpalaSchemaHelper, ImpalaTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import org.apache.kyuubi.util.JdbcUtils.withCloseable
 
 class ImpalaDialect extends JdbcDialect {
 
@@ -30,21 +31,20 @@ class ImpalaDialect extends JdbcDialect {
   // database switch lands as plain Impala SQL the backend understands.
   override def setSchema(conn: Connection, schema: String): Unit = {
     val escaped = schema.replace("`", "``")
-    val stmt = conn.createStatement()
-    try stmt.execute(s"USE `$escaped`")
-    finally stmt.close()
+    withCloseable(conn.createStatement()) { stmt =>
+      stmt.execute(s"USE `$escaped`")
+    }
   }
 
   // Symmetric to `setSchema`: `KyuubiConnection#getSchema` ships a Kyuubi-private session
   // config (`kyuubi.operation.get.current.database`) that Impalad rejects. Read the current
   // database via plain SQL.
   override def getCurrentSchema(conn: Connection): String = {
-    val stmt = conn.createStatement()
-    try {
-      val rs = stmt.executeQuery("SELECT current_database()")
-      try if (rs.next()) rs.getString(1) else null
-      finally rs.close()
-    } finally stmt.close()
+    withCloseable(conn.createStatement()) { stmt =>
+      withCloseable(stmt.executeQuery("SELECT current_database()")) { rs =>
+        if (rs.next()) rs.getString(1) else null
+      }
+    }
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new ImpalaTRowSetGenerator

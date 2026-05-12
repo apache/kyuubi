@@ -21,7 +21,7 @@ import java.sql.{Connection, ResultSet}
 import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.session.Session
 
-class GetTableTypes(session: Session) extends ExecuteMetaDataOperation(session) {
-  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+class GetTableTypes(session: Session) extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
     dialect.getTableTypes(conn)
 }

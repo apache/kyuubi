@@ -22,7 +22,7 @@ import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.session.Session
 
 class GetFunctions(session: Session, catalog: String, schema: String, functionName: String)
-  extends ExecuteMetaDataOperation(session) {
-  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+  extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
     dialect.getFunctions(conn, catalog, schema, functionName)
 }

@@ -22,7 +22,7 @@ import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.session.Session
 
 class GetPrimaryKeys(session: Session, catalog: String, schema: String, tableName: String)
-  extends ExecuteMetaDataOperation(session) {
-  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+  extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
     dialect.getPrimaryKeys(conn, catalog, schema, tableName)
 }

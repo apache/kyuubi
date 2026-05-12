@@ -27,7 +27,7 @@ class GetColumns(
     schema: String,
     tableName: String,
     columnName: String)
-  extends ExecuteMetaDataOperation(session) {
-  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+  extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
     dialect.getColumns(conn, catalog, schema, tableName, columnName)
 }

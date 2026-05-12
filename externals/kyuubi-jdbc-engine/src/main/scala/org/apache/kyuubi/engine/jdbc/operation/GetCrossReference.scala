@@ -29,8 +29,8 @@ class GetCrossReference(
     foreignCatalog: String,
     foreignSchema: String,
     foreignTable: String)
-  extends ExecuteMetaDataOperation(session) {
-  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+  extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
     dialect.getCrossReference(
       conn,
       primaryCatalog,

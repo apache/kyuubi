@@ -32,11 +32,11 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TFetchResultsResp
 
 /**
  * Base class that streams the result of a `DatabaseMetaData.getXxx(...)` call against the
- * session connection. Subclasses fix the particular metadata RPC via [[runMetaDataCall]].
+ * session connection. Subclasses fix the particular metadata RPC via [[fetchMetaData]].
  */
-abstract class ExecuteMetaDataOperation(session: Session) extends JdbcOperation(session) {
+abstract class MetaDataOperation(session: Session) extends JdbcOperation(session) {
 
-  protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet
+  protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -47,7 +47,7 @@ abstract class ExecuteMetaDataOperation(session: Session) extends JdbcOperation(
     setState(OperationState.RUNNING)
     try {
       val connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      val resultSet = runMetaDataCall(dialect, connection)
+      val resultSet = fetchMetaData(dialect, connection)
       val iterator = new ResultSetFetchIterator(resultSet)
       try {
         // Normalise spec-divergent column labels (e.g. Impala HS2 TABLE_MD -> TABLE_SCHEM).

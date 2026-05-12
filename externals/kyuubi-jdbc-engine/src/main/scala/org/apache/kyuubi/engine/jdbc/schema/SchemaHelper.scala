@@ -34,7 +34,7 @@ abstract class SchemaHelper {
    * Intentionally NOT applied inside [[toTTTableSchema]] because that method is also used
    * for ordinary `ExecuteStatement` results - calling it there would silently rewrite a
    * user-defined `SELECT col AS TABLE_MD` column. Only [[org.apache.kyuubi.engine.jdbc.
-   * operation.ExecuteMetaDataOperation]] should route Column labels through this method.
+   * operation.MetaDataOperation]] should route Column labels through this method.
    */
   def normalizeMetadataColumnLabel(label: String): String = label
 
