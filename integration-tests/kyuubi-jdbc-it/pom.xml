@@ -110,6 +110,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.phoenix</groupId>
+            <artifactId>phoenix-queryserver-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!-- YARN -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>
