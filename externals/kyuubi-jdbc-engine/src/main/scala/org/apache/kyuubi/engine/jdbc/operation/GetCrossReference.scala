@@ -16,30 +16,27 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import java.sql.Types
+import java.sql.{Connection, ResultSet}
 
-import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
-import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
-import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
+import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.session.Session
 
-class GetCurrentCatalog(session: Session) extends JdbcOperation(session) {
-
-  override protected def runInternal(): Unit = {
-    setState(OperationState.RUNNING)
-    try {
-      val connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      val catalog = dialect.getCatalog(connection)
-      schema = Schema(List(Column(
-        "TABLE_CAT",
-        "VARCHAR",
-        Types.VARCHAR,
-        precision = 128,
-        scale = 0,
-        label = "TABLE_CAT",
-        displaySize = 128)))
-      iter = new ArrayFetchIterator(Array(Row(List(catalog))))
-      setState(OperationState.FINISHED)
-    } catch onError()
-  }
+class GetCrossReference(
+    session: Session,
+    primaryCatalog: String,
+    primarySchema: String,
+    primaryTable: String,
+    foreignCatalog: String,
+    foreignSchema: String,
+    foreignTable: String)
+  extends ExecuteMetaDataOperation(session) {
+  override protected def runMetaDataCall(dialect: JdbcDialect, conn: Connection): ResultSet =
+    dialect.getCrossReference(
+      conn,
+      primaryCatalog,
+      primarySchema,
+      primaryTable,
+      foreignCatalog,
+      foreignSchema,
+      foreignTable)
 }

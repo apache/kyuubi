@@ -16,21 +16,17 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import java.sql.Connection
-
-import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.session.Session
 
-class SetCurrentDatabase(session: Session, action: (JdbcDialect, Connection) => Unit)
-  extends JdbcOperation(session) {
+class SetCurrentDatabase(session: Session, database: String) extends JdbcOperation(session) {
 
   override protected def runInternal(): Unit = {
     setState(OperationState.RUNNING)
     try {
       val connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      action(dialect, connection)
+      dialect.setSchema(connection, database)
       setHasResultSet(false)
       setState(OperationState.FINISHED)
     } catch onError()

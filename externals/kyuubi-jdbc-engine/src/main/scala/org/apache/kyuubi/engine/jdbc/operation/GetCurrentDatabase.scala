@@ -16,22 +16,20 @@
  */
 package org.apache.kyuubi.engine.jdbc.operation
 
-import java.sql.{Connection, Types}
+import java.sql.Types
 
-import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
 import org.apache.kyuubi.engine.jdbc.schema.{Column, Row, Schema}
 import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
 import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationState}
 import org.apache.kyuubi.session.Session
 
-class GetCurrentDatabase(session: Session, fetch: (JdbcDialect, Connection) => String)
-  extends JdbcOperation(session) {
+class GetCurrentDatabase(session: Session) extends JdbcOperation(session) {
 
   override protected def runInternal(): Unit = {
     setState(OperationState.RUNNING)
     try {
       val connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
-      val database = fetch(dialect, connection)
+      val database = dialect.getCurrentSchema(connection)
       schema = Schema(List(Column(
         "TABLE_SCHEM",
         "VARCHAR",
