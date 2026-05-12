@@ -84,8 +84,6 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
       ns: String,
       tableName: String,
       cat: String = catalogName)(f: String => Unit): Unit = {
-    // scalastyle:off println
-    logInfo(s"${catalogName} catalogVersion is ${catalogVersion}")
     val nsCat = s"$cat.$ns"
     withNamespace(nsCat) {
       sql(s"CREATE NAMESPACE $nsCat")

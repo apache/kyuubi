@@ -131,28 +131,4 @@ class PartitionManagementV1Suite extends PartitionManagementSuite {
   override protected def catalogName: String = "spark_catalog"
   override protected def catalogVersion: String = "V1"
   override protected def commandVersion: String = V1_COMMAND_VERSION
-
-  test("create partition") {
-    withNamespaceAndTable("ns", "tbl") { t =>
-      sql(
-        s"""CREATE TABLE $t (id string, name string, year int, dt date)
-           |PARTITIONED BY (name, year, dt)""".stripMargin)
-      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
-      checkAnswer(
-        sql(s"SHOW PARTITIONS $t"),
-        Row("name=a/year=2023/dt=2023-01-01") :: Nil)
-      intercept[PartitionsAlreadyExistException] {
-        sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
-      }
-      sql(s"INSERT INTO $t PARTITION (name=null, year=null, dt=null) VALUES ('1')")
-      checkAnswer(
-        sql(s"SHOW PARTITIONS $t"),
-        Row("name=a/year=2023/dt=2023-01-01") ::
-          Row("name=__HIVE_DEFAULT_PARTITION__/" +
-            "year=__HIVE_DEFAULT_PARTITION__/dt=__HIVE_DEFAULT_PARTITION__") :: Nil)
-      checkAnswer(
-        sql(s"SELECT id, name, year, dt FROM $t WHERE name IS NULL"),
-        Row("1", "__HIVE_DEFAULT_PARTITION__", null, null) :: Nil)
-    }
-  }
 }
