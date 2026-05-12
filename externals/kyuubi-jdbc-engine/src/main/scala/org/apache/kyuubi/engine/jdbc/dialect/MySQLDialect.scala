@@ -20,12 +20,33 @@ import java.sql.{Connection, ResultSet, Statement}
 import org.apache.kyuubi.engine.jdbc.mysql.{MySQLSchemaHelper, MySQLTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 
-class MySQLDialect extends JdbcDialect with DatabaseTermSupport {
+class MySQLDialect extends JdbcDialect {
   override def createStatement(connection: Connection, fetchSize: Int): Statement = {
     val statement =
       connection.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
     statement.setFetchSize(Integer.MIN_VALUE)
     statement
+  }
+
+  // MySQL Connector/J's setCatalog/setSchema are mutually exclusive via the `databaseTerm`
+  // driver property; write both so the update always lands regardless of user config.
+  // Inherited by Doris/StarRocks.
+  override def setSchema(conn: Connection, schema: String): Unit = setDatabase(conn, schema)
+
+  override def setCatalog(conn: Connection, catalog: String): Unit = setDatabase(conn, catalog)
+
+  override def getCurrentSchema(conn: Connection): String = readDatabase(conn)
+
+  override def getCatalog(conn: Connection): String = readDatabase(conn)
+
+  private def setDatabase(conn: Connection, db: String): Unit = {
+    conn.setCatalog(db)
+    conn.setSchema(db)
+  }
+
+  private def readDatabase(conn: Connection): String = {
+    val c = conn.getCatalog
+    if (c != null && c.nonEmpty) c else conn.getSchema
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new MySQLTRowSetGenerator

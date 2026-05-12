@@ -16,11 +16,33 @@
  */
 package org.apache.kyuubi.engine.jdbc.dialect
 
+import java.sql.Connection
+
 import org.apache.kyuubi.engine.jdbc.clickhouse.{ClickHouseSchemaHelper, ClickHouseTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 
-class ClickHouseDialect extends JdbcDialect with DatabaseTermSupport {
+class ClickHouseDialect extends JdbcDialect {
   override def name(): String = "clickhouse"
+
+  // clickhouse-jdbc's setCatalog/setSchema are mutually exclusive via the `databaseTerm`
+  // driver property; write both so the update always lands regardless of user config.
+  override def setSchema(conn: Connection, schema: String): Unit = setDatabase(conn, schema)
+
+  override def setCatalog(conn: Connection, catalog: String): Unit = setDatabase(conn, catalog)
+
+  override def getCurrentSchema(conn: Connection): String = readDatabase(conn)
+
+  override def getCatalog(conn: Connection): String = readDatabase(conn)
+
+  private def setDatabase(conn: Connection, db: String): Unit = {
+    conn.setCatalog(db)
+    conn.setSchema(db)
+  }
+
+  private def readDatabase(conn: Connection): String = {
+    val c = conn.getCatalog
+    if (c != null && c.nonEmpty) c else conn.getSchema
+  }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new ClickHouseTRowSetGenerator
 

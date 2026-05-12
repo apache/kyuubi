@@ -287,10 +287,10 @@ abstract class MySQLOperationSuite extends WithMySQLEngine with HiveJDBCTestHelp
     // URL-database test above covers only the session-open path.
     //
     // Use two distinct databases so we can prove the *second* call actually moves the backend:
-    // DatabaseTermSupport.setSchema already double-writes both catalog and schema, so reusing
-    // the same target across setSchema/setCatalog would let a no-op setCatalog look correct.
-    // `select database()` is read directly from the backend - the strongest assertion that the
-    // current-database state really shifted.
+    // MySQLDialect double-writes both catalog and schema, so reusing the same target across
+    // setSchema/setCatalog would let a no-op setCatalog look correct. `select database()` is
+    // read directly from the backend - the strongest assertion that the current-database state
+    // really shifted.
     def assertBackendDatabase(connection: java.sql.Connection, expected: String): Unit = {
       val s = connection.createStatement()
       try {
