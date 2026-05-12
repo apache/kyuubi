@@ -35,6 +35,8 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
   // Name of the command as SQL statement, for instance "SHOW PARTITIONS"
   protected def command: String
 
+  protected def catalogName: String = "hive"
+
   // Overrides the `test` method, and adds a prefix to easily find identify the catalog to which
   // the failed test in logs belongs to.
   override def test(testName: String, testTags: Tag*)(testFun: => Any /* Assertion */ )(implicit
@@ -82,6 +84,8 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
       ns: String,
       tableName: String,
       cat: String = catalogName)(f: String => Unit): Unit = {
+    // scalastyle:off println
+    logInfo(s"${catalogName} catalogVersion is ${catalogVersion}")
     val nsCat = s"$cat.$ns"
     withNamespace(nsCat) {
       sql(s"CREATE NAMESPACE $nsCat")

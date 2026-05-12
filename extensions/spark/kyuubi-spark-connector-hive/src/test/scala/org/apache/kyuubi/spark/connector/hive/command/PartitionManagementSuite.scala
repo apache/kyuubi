@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.spark.connector.hive.command
 
+import java.io.File
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{NoSuchPartitionsException, PartitionsAlreadyExistException}
@@ -28,49 +30,42 @@ import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_CO
 trait PartitionManagementSuite extends DDLCommandTestUtils {
   override protected def command: String = "PARTITION MANAGEMENT"
 
-  test("create partition") {
-    withNamespaceAndTable("ns", "tbl") { t =>
-      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01')")
-      checkAnswer(
-        sql(s"SHOW PARTITIONS $t"),
-        Row("year=2023/month=01") :: Nil)
-      intercept[PartitionsAlreadyExistException] {
-        sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01')")
-      }
-    }
-  }
-
   test("drop partition") {
     withNamespaceAndTable("ns", "tbl") { t =>
-      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01')")
-      sql(s"ALTER TABLE $t DROP PARTITION (year='2023', month='01')")
+      sql(
+        s"""CREATE TABLE $t (id string, name string, year int, dt date)
+           |PARTITIONED BY (name, year, dt)""".stripMargin)
+      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
+      sql(s"ALTER TABLE $t DROP PARTITION (name='a', year=2023, dt='2023-01-01')")
       checkAnswer(
         sql(s"SHOW PARTITIONS $t"),
         Nil)
       intercept[NoSuchPartitionsException] {
-        sql(s"ALTER TABLE $t DROP PARTITION (year='9999', month='99')")
+        sql(s"ALTER TABLE $t DROP PARTITION (name='a', year=9999, dt='9999-12-31')")
       }
     }
   }
 
   test("show partitions") {
     withNamespaceAndTable("ns", "tbl") { t =>
-      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01')")
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='02')")
+      sql(
+        s"""CREATE TABLE $t (id string, name string, year int, dt date)
+           |PARTITIONED BY (name, year, dt)""".stripMargin)
+      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
+      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-02-01')")
       checkAnswer(
         sql(s"SHOW PARTITIONS $t"),
-        Row("year=2023/month=01") :: Row("year=2023/month=02") :: Nil)
+        Row("name=a/year=2023/dt=2023-01-01") ::
+          Row("name=a/year=2023/dt=2023-02-01") :: Nil)
 
       checkAnswer(
-        sql(s"SHOW PARTITIONS $t PARTITION (year='2023', month='01')"),
-        Row("year=2023/month=01") :: Nil)
+        sql(s"SHOW PARTITIONS $t PARTITION (name='a', year=2023, dt='2023-01-01')"),
+        Row("name=a/year=2023/dt=2023-01-01") :: Nil)
 
       checkAnswer(
-        sql(s"SHOW PARTITIONS $t PARTITION (year='2023')"),
-        Row("year=2023/month=01") :: Row("year=2023/month=02") :: Nil)
+        sql(s"SHOW PARTITIONS $t PARTITION (name='a', year=2023)"),
+        Row("name=a/year=2023/dt=2023-01-01") ::
+          Row("name=a/year=2023/dt=2023-02-01") :: Nil)
     }
   }
 }
@@ -79,30 +74,85 @@ class PartitionManagementV2Suite extends PartitionManagementSuite {
   override protected def catalogVersion: String = "Hive V2"
   override protected def commandVersion: String = V2_COMMAND_VERSION
 
-  test("create partition with location") {
+  test("create partition") {
     withNamespaceAndTable("ns", "tbl") { t =>
-      sql(s"CREATE TABLE $t (id string, year string, month string) PARTITIONED BY (year, month)")
-      val loc = "file:///tmp/kyuubi/hive_catalog_part_loc"
-      sql(s"ALTER TABLE $t ADD PARTITION (year='2023', month='01') LOCATION '$loc'")
+      sql(
+        s"""CREATE TABLE $t (id string, name string, year int, dt date)
+           |PARTITIONED BY (name, year, dt)""".stripMargin)
+      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
       checkAnswer(
         sql(s"SHOW PARTITIONS $t"),
-        Row("year=2023/month=01") :: Nil)
-      val catalog = spark.sessionState.catalogManager
-        .catalog(catalogName).asInstanceOf[TableCatalog]
-      val partManagement = catalog.loadTable(Identifier.of(Array("ns"), "tbl"))
-        .asInstanceOf[SupportsPartitionManagement]
-      val partIdent = InternalRow.fromSeq(
-        Seq(UTF8String.fromString("2023"), UTF8String.fromString("01")))
-      val metadata = partManagement.loadPartitionMetadata(partIdent)
-      assert(metadata.containsKey("location"))
-      assert(metadata.get("location").contains("hive_catalog_part_loc"))
+        Row("name=a/year=2023/dt=2023-01-01") :: Nil)
+      intercept[PartitionsAlreadyExistException] {
+        sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
+      }
+      sql(s"INSERT INTO $t PARTITION (name=null, year=null, dt=null) VALUES ('1')")
+      checkAnswer(
+        sql(s"SHOW PARTITIONS $t"),
+        Row("name=a/year=2023/dt=2023-01-01") ::
+          Row("name=null/year=null/dt=null") :: Nil)
+      checkAnswer(
+        sql(s"SELECT id, name, year, dt FROM $t WHERE name IS NULL"),
+        Row("1", null, null, null) :: Nil)
+    }
+  }
+
+  test("create partition with location") {
+    withNamespaceAndTable("ns", "tbl") { t =>
+      sql(
+        s"""CREATE TABLE $t (id string, name string, year int, dt date)
+           |PARTITIONED BY (name, year, dt)""".stripMargin)
+      withTempDir { tmpDir =>
+        val loc = new File(tmpDir, "hive_catalog_part_loc").toURI.toString
+        sql(
+          s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01') LOCATION '$loc'")
+        checkAnswer(
+          sql(s"SHOW PARTITIONS $t"),
+          Row("name=a/year=2023/dt=2023-01-01") :: Nil)
+        val catalog = spark.sessionState.catalogManager
+          .catalog(catalogName).asInstanceOf[TableCatalog]
+        val partManagement = catalog.loadTable(Identifier.of(Array("ns"), "tbl"))
+          .asInstanceOf[SupportsPartitionManagement]
+        val partIdent = InternalRow.fromSeq(
+          Seq(
+            UTF8String.fromString("a"),
+            2023,
+            java.sql.Date.valueOf("2023-01-01").toLocalDate.toEpochDay.toInt))
+        val metadata = partManagement.loadPartitionMetadata(partIdent)
+        assert(metadata.containsKey("location"))
+        assert(metadata.get("location").contains("hive_catalog_part_loc"))
+      }
     }
   }
 }
 
 class PartitionManagementV1Suite extends PartitionManagementSuite {
   val SESSION_CATALOG_NAME: String = "spark_catalog"
-  override protected val catalogName: String = SESSION_CATALOG_NAME
+  override protected def catalogName: String = "spark_catalog"
   override protected def catalogVersion: String = "V1"
   override protected def commandVersion: String = V1_COMMAND_VERSION
+
+  test("create partition") {
+    withNamespaceAndTable("ns", "tbl") { t =>
+      sql(
+        s"""CREATE TABLE $t (id string, name string, year int, dt date)
+           |PARTITIONED BY (name, year, dt)""".stripMargin)
+      sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
+      checkAnswer(
+        sql(s"SHOW PARTITIONS $t"),
+        Row("name=a/year=2023/dt=2023-01-01") :: Nil)
+      intercept[PartitionsAlreadyExistException] {
+        sql(s"ALTER TABLE $t ADD PARTITION (name='a', year=2023, dt='2023-01-01')")
+      }
+      sql(s"INSERT INTO $t PARTITION (name=null, year=null, dt=null) VALUES ('1')")
+      checkAnswer(
+        sql(s"SHOW PARTITIONS $t"),
+        Row("name=a/year=2023/dt=2023-01-01") ::
+          Row("name=__HIVE_DEFAULT_PARTITION__/" +
+            "year=__HIVE_DEFAULT_PARTITION__/dt=__HIVE_DEFAULT_PARTITION__") :: Nil)
+      checkAnswer(
+        sql(s"SELECT id, name, year, dt FROM $t WHERE name IS NULL"),
+        Row("1", "__HIVE_DEFAULT_PARTITION__", null, null) :: Nil)
+    }
+  }
 }

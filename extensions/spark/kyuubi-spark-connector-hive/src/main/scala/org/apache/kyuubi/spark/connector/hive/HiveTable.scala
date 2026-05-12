@@ -29,7 +29,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.NoSuchPartitionException
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition, ExternalCatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.{GenericInternalRow, Literal}
 import org.apache.spark.sql.connector.catalog.{SupportsPartitionManagement, SupportsRead, SupportsWrite, Table, TableCapability}
 import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH_WRITE, OVERWRITE_BY_FILTER, OVERWRITE_DYNAMIC}
@@ -149,7 +149,7 @@ case class HiveTable(
   override def replacePartitionMetadata(
       ident: InternalRow,
       properties: util.Map[String, String]): Unit = {
-    throw new UnsupportedOperationException("Replace partition is not supported")
+    throw new UnsupportedOperationException("Replace partition metadata is not supported")
   }
 
   override def loadPartitionMetadata(ident: InternalRow): util.Map[String, String] = {
@@ -181,7 +181,11 @@ case class HiveTable(
       partialSpec).map { part =>
       val values = partitionSchema.map { field =>
         val strValue = part.spec(field.name)
-        HiveConnectorUtils.castExpression(Literal(strValue), field.dataType).eval()
+        if (strValue == ExternalCatalogUtils.DEFAULT_PARTITION_NAME) {
+          null
+        } else {
+          HiveConnectorUtils.castExpression(Literal(strValue), field.dataType).eval()
+        }
       }
       new GenericInternalRow(values.toArray)
     }.toArray

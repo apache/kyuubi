@@ -105,7 +105,7 @@ class ShowTablesV1Suite extends ShowTablesSuiteBase {
 
   val SESSION_CATALOG_NAME: String = "spark_catalog"
 
-  override protected val catalogName: String = SESSION_CATALOG_NAME
+  override protected def catalogName: String = SESSION_CATALOG_NAME
 
   override protected def catalogVersion: String = "V1"
 
