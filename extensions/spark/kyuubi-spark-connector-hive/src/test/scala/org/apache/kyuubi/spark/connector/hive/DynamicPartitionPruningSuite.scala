@@ -25,16 +25,26 @@ import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
 
+import org.apache.kyuubi.spark.connector.hive.read.HiveScan
+
 class DynamicPartitionPruningSuite extends KyuubiHiveTest {
 
   private def findScan(spark: SparkSession, sql: String, tableNameHint: String): Scan = {
+    // Match on `HiveScan.catalogTable` rather than the node's `toString` because
+    // `BatchScanExec.toString` shape differs across Spark versions.
+    def matchesHint(b: BatchScanExec): Boolean = b.scan match {
+      case h: HiveScan => h.catalogTable.identifier.table == tableNameHint
+      case _ => false
+    }
+
     @tailrec
     def findBatchScan(plan: SparkPlan): Option[BatchScanExec] = plan match {
       case aqe: AdaptiveSparkPlanExec => findBatchScan(aqe.inputPlan)
       case _ => plan.collectFirst {
-          case b: BatchScanExec if b.toString.contains(tableNameHint) => b
+          case b: BatchScanExec if matchesHint(b) => b
         }
     }
+
     val exec = findBatchScan(spark.sql(sql).queryExecution.executedPlan)
     assert(exec.isDefined)
     exec.get.scan
