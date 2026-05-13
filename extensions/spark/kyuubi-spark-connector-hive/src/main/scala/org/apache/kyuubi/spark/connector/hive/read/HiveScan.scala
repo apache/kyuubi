@@ -28,8 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.expressions.NamedReference
-import org.apache.spark.sql.connector.expressions.filter.Predicate
-import org.apache.spark.sql.connector.read.{PartitionReaderFactory, SupportsRuntimeV2Filtering}
+import org.apache.spark.sql.connector.read.{PartitionReaderFactory, SupportsRuntimeFiltering}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
@@ -50,7 +49,7 @@ case class HiveScan(
     pushedFilters: Array[Filter] = Array.empty,
     partitionFilters: Seq[Expression] = Seq.empty,
     dataFilters: Seq[Expression] = Seq.empty) extends FileScan
-  with SupportsRuntimeV2Filtering {
+  with SupportsRuntimeFiltering {
 
   private val isCaseSensitive = sparkSession.sessionState.conf.caseSensitiveAnalysis
 
@@ -179,7 +178,7 @@ case class HiveScan(
     structType.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
 
   // -------------------------------------------------------------------------------
-  // SupportsRuntimeV2Filtering implementation
+  // SupportsRuntimeFiltering implementation
   // -------------------------------------------------------------------------------
 
   override def filterAttributes(): Array[NamedReference] = {
@@ -190,9 +189,9 @@ case class HiveScan(
     }
   }
 
-  override def filter(predicates: Array[Predicate]): Unit = {
+  override def filter(filters: Array[Filter]): Unit = {
     runtimeFilters = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      predicates,
+      filters,
       fileIndex.partitionSchema,
       isCaseSensitive)
     if (runtimeFilters.nonEmpty) {

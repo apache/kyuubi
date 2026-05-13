@@ -20,7 +20,7 @@ package org.apache.kyuubi.spark.connector.hive
 import scala.annotation.tailrec
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.connector.read.{Scan, SupportsRuntimeV2Filtering}
+import org.apache.spark.sql.connector.read.{Scan, SupportsRuntimeFiltering}
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
@@ -82,8 +82,8 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
               Row(4, "d", "2026-05-01")))
 
           val scan = findScan(spark, sql, fact.split('.').last)
-          assert(scan.isInstanceOf[SupportsRuntimeV2Filtering])
-          val filterAttrs = scan.asInstanceOf[SupportsRuntimeV2Filtering]
+          assert(scan.isInstanceOf[SupportsRuntimeFiltering])
+          val filterAttrs = scan.asInstanceOf[SupportsRuntimeFiltering]
             .filterAttributes().map(_.fieldNames().mkString("."))
           assert(filterAttrs.toSeq == expectedFilterAttrs)
         }

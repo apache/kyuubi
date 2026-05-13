@@ -18,9 +18,8 @@
 package org.apache.kyuubi.spark.connector.hive.read
 
 import org.apache.spark.SparkFunSuite
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, InSet}
-import org.apache.spark.sql.connector.expressions.{Expression => V2Expression, Expressions}
-import org.apache.spark.sql.connector.expressions.filter.Predicate
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, In, Literal}
+import org.apache.spark.sql.sources.{EqualTo, Filter, In => FilterIn}
 import org.apache.spark.sql.types._
 
 class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
@@ -28,13 +27,6 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
   private val partitionSchema = StructType(Seq(
     StructField("dt", StringType),
     StructField("id", LongType)))
-
-  // Build a V2 `IN` predicate with a single column ref followed by literals.
-  private def inPredicate(column: String, values: AnyRef*): Predicate = {
-    val children: Array[V2Expression] =
-      (Expressions.column(column) +: values.map(Expressions.literal[AnyRef])).toArray
-    new Predicate("IN", children)
-  }
 
   test("filterAttributes returns one NamedReference per partition column") {
     val refs = HiveRuntimeFilterSupport.filterAttributes(Seq("dt", "id"))
@@ -46,39 +38,32 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
     assert(HiveRuntimeFilterSupport.filterAttributes(Seq.empty).isEmpty)
   }
 
-  test("toCatalystPartitionFilters returns Nil for empty predicate array") {
+  test("toCatalystPartitionFilters returns Nil for empty filter array") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array.empty[Predicate],
+      Array.empty[Filter],
       partitionSchema,
       isCaseSensitive = false)
     assert(out.isEmpty)
   }
 
-  test("IN against a partition column is translated to catalyst InSet") {
+  test("IN against a partition column is translated to catalyst In") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(inPredicate("dt", "2026-01-01", "2026-05-01")),
+      Array[Filter](FilterIn("dt", Array[Any]("2026-01-01", "2026-05-01"))),
       partitionSchema,
       isCaseSensitive = false)
 
     assert(out.size == 1)
-    val inSet = out.head.asInstanceOf[InSet]
-    val attr = inSet.child.asInstanceOf[AttributeReference]
+    val in = out.head.asInstanceOf[In]
+    val attr = in.value.asInstanceOf[AttributeReference]
     assert(attr.name == "dt")
     assert(attr.dataType == StringType)
-    assert(inSet.hset.map(_.toString) === Set("2026-01-01", "2026-05-01"))
+    val literalValues = in.list.map(_.asInstanceOf[Literal].value.toString)
+    assert(literalValues === Seq("2026-01-01", "2026-05-01"))
   }
 
   test("IN against a non-partition column is dropped as a whole") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(inPredicate("non_partition_col", "x")),
-      partitionSchema,
-      isCaseSensitive = false)
-    assert(out.isEmpty)
-  }
-
-  test("IN with mismatched literal dataType is dropped as a whole") {
-    val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(inPredicate("dt", java.lang.Long.valueOf(123L), java.lang.Long.valueOf(456L))),
+      Array[Filter](FilterIn("non_partition_col", Array[Any]("x"))),
       partitionSchema,
       isCaseSensitive = false)
     assert(out.isEmpty)
@@ -86,40 +71,37 @@ class HiveRuntimeFilterSupportSuite extends SparkFunSuite {
 
   test("IN with case-different column name is accepted in case-insensitive mode") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(inPredicate("DT", "2026-01-01")),
+      Array[Filter](FilterIn("DT", Array[Any]("2026-01-01"))),
       partitionSchema,
       isCaseSensitive = false)
     assert(out.size == 1)
-    assert(out.head.asInstanceOf[InSet].child.asInstanceOf[AttributeReference].name == "dt")
+    assert(out.head.asInstanceOf[In].value.asInstanceOf[AttributeReference].name == "dt")
   }
 
   test("IN with case-different column name is rejected in case-sensitive mode") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(inPredicate("DT", "2026-01-01")),
+      Array[Filter](FilterIn("DT", Array[Any]("2026-01-01"))),
       partitionSchema,
       isCaseSensitive = true)
     assert(out.isEmpty)
   }
 
-  test("non-IN predicate is ignored") {
-    val eq = new Predicate(
-      "=",
-      Array[V2Expression](Expressions.column("dt"), Expressions.literal[AnyRef]("x")))
+  test("non-IN filter is ignored") {
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(eq),
+      Array[Filter](EqualTo("dt", "x")),
       partitionSchema,
       isCaseSensitive = false)
     assert(out.isEmpty)
   }
 
-  test("mixed predicate list keeps the accepted ones and drops the rest") {
-    val good = inPredicate("dt", "2026-05-01")
-    val bad = inPredicate("non_partition_col", "x")
+  test("mixed filter list keeps the accepted ones and drops the rest") {
+    val good = FilterIn("dt", Array[Any]("2026-05-01"))
+    val bad = FilterIn("non_partition_col", Array[Any]("x"))
     val out = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
-      Array(good, bad),
+      Array[Filter](good, bad),
       partitionSchema,
       isCaseSensitive = false)
     assert(out.size == 1)
-    assert(out.head.asInstanceOf[InSet].child.asInstanceOf[AttributeReference].name == "dt")
+    assert(out.head.asInstanceOf[In].value.asInstanceOf[AttributeReference].name == "dt")
   }
 }

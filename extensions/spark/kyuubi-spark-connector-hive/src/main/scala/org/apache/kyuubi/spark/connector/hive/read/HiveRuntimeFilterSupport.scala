@@ -20,22 +20,25 @@ package org.apache.kyuubi.spark.connector.hive.read
 import java.util.Locale
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression, InSet}
-import org.apache.spark.sql.connector.expressions.{Expressions, Literal => V2Literal, NamedReference}
-import org.apache.spark.sql.connector.expressions.filter.Predicate
-import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{sameType, StructTypeHelper}
+import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression, In, Literal}
+import org.apache.spark.sql.connector.expressions.{Expressions, NamedReference}
+import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.StructTypeHelper
+import org.apache.spark.sql.sources.{Filter, In => FilterIn}
 import org.apache.spark.sql.types.StructType
 
 /**
  * Helpers for a Hive-backed V2 [[org.apache.spark.sql.connector.read.Scan]] to
- * implement [[org.apache.spark.sql.connector.read.SupportsRuntimeV2Filtering]]
+ * implement [[org.apache.spark.sql.connector.read.SupportsRuntimeFiltering]]
  * for Dynamic Partition Pruning (DPP).
  *
- * Spark's `DataSourceV2Strategy` currently only emits the `IN` form of V2
- * [[Predicate]] as a DPP runtime filter, so translation here handles `IN` only.
- * Any predicate that does not match the expected shape (single partition column
- * ref + scalar literals with matching dataType) is dropped as a whole to
- * avoid incorrect pruning; drops are logged at DEBUG.
+ * Spark's `DataSourceV2Strategy` currently only emits the `IN` form as a DPP
+ * runtime filter, so translation here handles `In` only. Any filter whose
+ * attribute does not match a known partition column is dropped; drops are
+ * logged at DEBUG.
+ *
+ * We deliberately use the V1 `SupportsRuntimeFiltering` instead of the newer
+ * `SupportsRuntimeV2Filtering` to keep this connector compilable against
+ * Spark 3.3, where `SupportsRuntimeV2Filtering` was introduced in Spark 3.4.
  */
 object HiveRuntimeFilterSupport extends Logging {
 
@@ -48,62 +51,35 @@ object HiveRuntimeFilterSupport extends Logging {
   }
 
   /**
-   * Translate Spark's runtime V2 `IN` predicates into catalyst `InSet(attr, Set[Any])`
-   * expressions bound to the given partition attributes.
+   * Translate Spark's runtime V1 `In` filters into catalyst [[In]] expressions
+   * bound to the given partition attributes.
+   *
+   * A filter is accepted only when it is a [[FilterIn]] whose attribute resolves
+   * to a known partition column.
    */
   def toCatalystPartitionFilters(
-      predicates: Array[Predicate],
+      filters: Array[Filter],
       partitionSchema: StructType,
       isCaseSensitive: Boolean): Seq[Expression] = {
     val attrByName: Map[String, AttributeReference] =
       partitionSchema.toAttributes
         .map(a => normalize(a.name, isCaseSensitive) -> a).toMap
 
-    val accepted = predicates.toSeq.flatMap(p => convertIn(p, attrByName, isCaseSensitive))
-    if (accepted.length < predicates.length) {
+    val accepted = filters.toSeq.flatMap {
+      case FilterIn(attribute, values) =>
+        attrByName.get(normalize(attribute, isCaseSensitive)).map { attr =>
+          In(attr, values.toSeq.map(v => Literal.create(v, attr.dataType)))
+        }
+      case _ => None
+    }
+
+    if (accepted.length < filters.length) {
       logDebug(
-        s"Dropped ${predicates.length - accepted.length} of ${predicates.length} runtime " +
+        s"Dropped ${filters.length - accepted.length} of ${filters.length} runtime " +
           s"filter(s) not applicable to partition columns " +
           s"[${partitionSchema.fieldNames.mkString(", ")}]")
     }
     accepted
-  }
-
-  /**
-   * Convert a single V2 `IN` predicate into a catalyst [[InSet]], or `None` if it cannot
-   * be safely converted. A predicate is accepted only when its first child is a
-   * [[NamedReference]] resolving to a known partition column and every remaining child
-   * is a scalar V2 [[V2Literal]] whose dataType matches the partition column's dataType.
-   */
-  private def convertIn(
-      predicate: Predicate,
-      attrByName: Map[String, AttributeReference],
-      isCaseSensitive: Boolean): Option[InSet] = {
-    val children = predicate.children()
-    if (predicate.name() != "IN" || children.length < 2) {
-      None
-    } else {
-      children.head match {
-        case ref: NamedReference =>
-          val colName = normalize(ref.fieldNames().mkString("."), isCaseSensitive)
-          attrByName.get(colName).flatMap { attr =>
-            val values = children.tail
-            val allLiteralsMatch = values.forall {
-              case lit: V2Literal[_] => sameType(lit.dataType(), attr.dataType)
-              case _ => false
-            }
-            if (allLiteralsMatch) {
-              val literalValues = values.iterator.map {
-                case lit: V2Literal[_] => lit.value()
-              }.toSet[Any]
-              Some(InSet(attr, literalValues))
-            } else {
-              None
-            }
-          }
-        case _ => None
-      }
-    }
   }
 
   private def normalize(name: String, isCaseSensitive: Boolean): String =
