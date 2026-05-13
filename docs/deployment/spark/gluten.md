@@ -18,7 +18,9 @@
 
 # Gluten
 
-[Gluten](https://oap-project.github.io/gluten/) is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries. Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with Spark 3.3/3.4, are supported. Users can employ the following methods to utilize the Gluten with Velox native libraries.
+[Apache Gluten](https://gluten.apache.org/) is a Spark plugin developed by Intel, designed to accelerate Apache Spark with native libraries.
+Currently, only CentOS 7/8 and Ubuntu 20.04/22.04, along with certain Spark versions, are supported.
+Users can employ the following methods to utilize the Gluten with Velox native libraries.
 
 ## Building(with velox Backend)
 
@@ -27,10 +29,10 @@
 Git clone gluten project, use gluten build script `buildbundle-veloxbe.sh`, and target package is in `/path/to/gluten/package/target/`
 
 ```bash
-git clone https://github.com/oap-project/gluten.git
-cd /path/to/gluten
+git clone https://github.com/apache/gluten.git
+cd gluten
 
-## The script builds two jars for spark 3.3.x, and 3.4.x.
+## The script builds jars for spark.
 ./dev/buildbundle-veloxbe.sh
 ```
 
@@ -47,10 +49,10 @@ Add gluten jar: `copy /path/to/gluten/package/target/gluten-velox-bundle-spark3.
 Add the following minimal configuration into `spark-defaults.conf`:
 
 ```properties
-spark.plugins=io.glutenproject.GlutenPlugin
+spark.plugins=org.apache.gluten.GlutenPlugin
 spark.memory.offHeap.size=20g
 spark.memory.offHeap.enabled=true
 spark.shuffle.manager=org.apache.spark.shuffle.sort.ColumnarShuffleManager
 ```
 
-For more configuration can be found in the doc of [Configuration](https://oap-project.github.io/gluten/Configuration.html).
+More configuration can be found in the [documentation](https://apache.github.io/gluten/).
