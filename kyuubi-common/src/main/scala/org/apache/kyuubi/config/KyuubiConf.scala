@@ -2853,7 +2853,7 @@ object KyuubiConf {
     buildConf("kyuubi.internal.security.secret.provider")
       .doc("The class used to manage the internal security secret. This class must be a " +
         "subclass of `EngineSecuritySecretProvider`. Kyuubi provides the following " +
-        "built-in implementations: <ul><li>simple: Use the secret set by " +
+        "built-in implementations: <ul><li>simple: Use the pre-shared secret set by " +
         s"kyuubi.internal.security.secret.provider.simple.secret.</li> " +
         "<li>zookeeper: Use the secret stored in ZooKeeper. " +
         "kyuubi.ha.zookeeper.engine.secure.secret.node must be configured.</li></ul> " +

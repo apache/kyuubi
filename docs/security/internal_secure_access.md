@@ -20,9 +20,11 @@
 Kyuubi supports secure communication channels for all internal interactions, both:
 
 * Between the Kyuubi server and Kyuubi engines.
-* Between Kyuubi server instances (High availability mode).
+* Between Kyuubi server instances (REST API high availability mode).
 
 If `kyuubi.internal.security.enabled` is set to `true`, all internal communication are encrypted.
+Currently, it's enforced to set `kyuubi.internal.security.enabled` to `true` if you want to use
+REST API high availability mode.
 
 ## Managing encryption secrets
 
@@ -31,7 +33,7 @@ which can be configured via `kyuubi.internal.security.secret.provider`.
 
 Kyuubi provides the following built-in implementations:
 
-* simple: Use the secret configured by `kyuubi.internal.security.secret.provider.simple.secret`.
+* simple: Use the pre-shared secret configured by `kyuubi.internal.security.secret.provider.simple.secret`.
 * zookeeper: Use the secret stored in the ZooKeeper znode configured by `kyuubi.ha.zookeeper.engine.secure.secret.node`.
 
 We strongly recommend restricting access to these secrets.
