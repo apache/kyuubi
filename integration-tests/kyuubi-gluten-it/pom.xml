@@ -43,7 +43,7 @@
             <artifactId>${gluten.artifact.name}</artifactId>
             <version>${gluten.version}</version>
             <scope>system</scope>
-            <systemPath>${project.basedir}/../../incubator-gluten/package/target/${gluten.artifact.name}-${gluten.version}.jar</systemPath>
+            <systemPath>${project.basedir}/../../gluten/package/target/${gluten.artifact.name}-${gluten.version}.jar</systemPath>
         </dependency>
 
         <dependency>
