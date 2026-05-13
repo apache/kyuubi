@@ -16,43 +16,48 @@
  */
 package org.apache.kyuubi.engine.jdbc.impala
 
-import java.sql.ResultSet
+import java.sql.{DriverManager, ResultSet}
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.engine.jdbc.MetadataTestHelpers._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 abstract class ImpalaOperationSuite extends WithImpalaEngine with HiveJDBCTestHelper {
   test("impala - get tables") {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
 
-      statement.execute("create table test1(id bigint)")
-      statement.execute("create table test2(id bigint)")
-      statement.execute("create database db1")
-      statement.execute("create table db1.test3(id bigint)")
+      // `IF NOT EXISTS` keeps the test idempotent across reruns against a long-running Impala.
+      statement.execute("create table if not exists test1(id bigint)")
+      statement.execute("create table if not exists test2(id bigint)")
+      statement.execute("create database if not exists db1")
+      statement.execute("create table if not exists db1.test3(id bigint)")
 
       var tables = meta.getTables(null, null, "test1", null)
       while (tables.next()) {
-        assert(tables.getString(1) == "test1")
+        assert(tables.getString(TABLE_NAME) == "test1")
       }
 
       tables = meta.getTables(null, null, "test2", null)
       while (tables.next()) {
-        assert(tables.getString(1) == "test2")
+        assert(tables.getString(TABLE_NAME) == "test2")
       }
 
-      tables = meta.getTables(null, null, "test*", null)
-
+      // Standard JDBC `getTables` accepts SQL LIKE patterns (`%` / `_`), not the `*`
+      // wildcard that the previous Impala custom-SQL builder used.
+      tables = meta.getTables(null, null, "test%", null)
       val actualTables = ArrayBuffer[String]()
       while (tables.next()) {
-        actualTables += tables.getString(1)
+        actualTables += tables.getString(TABLE_NAME)
       }
-      assert(ArrayBuffer("test1", "test2") == actualTables)
+      assert(actualTables.contains("test1"))
+      assert(actualTables.contains("test2"))
 
-      tables = meta.getTables(null, "db1", "test*", null)
+      tables = meta.getTables(null, "db1", "test%", null)
       while (tables.next()) {
-        assert(tables.getString(1) == "test3")
+        assert(tables.getString(TABLE_NAME) == "test3")
       }
 
       statement.execute("drop table test1")
@@ -66,8 +71,10 @@ abstract class ImpalaOperationSuite extends WithImpalaEngine with HiveJDBCTestHe
     case class Column(name: String, columnType: String)
 
     def buildColumn(resultSet: ResultSet): Column = {
-      val columnName = resultSet.getString("Column")
-      val columnType = resultSet.getString("Type")
+      // Standard JDBC `getColumns` returns COLUMN_NAME / TYPE_NAME; the literal
+      // "Column" / "Type" labels were specific to the old `show column stats` path.
+      val columnName = resultSet.getString(COLUMN_NAME)
+      val columnType = resultSet.getString(TYPE_NAME)
       Column(columnName, columnType)
     }
 
@@ -76,7 +83,7 @@ abstract class ImpalaOperationSuite extends WithImpalaEngine with HiveJDBCTestHe
       statement.execute("create table if not exists test1" +
         "(id bigint, str1 string, str2 string, age int)")
 
-      statement.execute("create database db1")
+      statement.execute("create database if not exists db1")
       statement.execute("create table if not exists db1.test2" +
         "(id bigint, str1 string)")
 
@@ -103,6 +110,46 @@ abstract class ImpalaOperationSuite extends WithImpalaEngine with HiveJDBCTestHe
       statement.execute("drop table test1")
       statement.execute("drop table db1.test2")
       statement.execute("drop database db1")
+    }
+  }
+
+  test("impala - additional metadata operations") {
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      drain(meta.getCatalogs)
+      assert(collectCol(meta.getSchemas, TABLE_SCHEM).contains("default"))
+      assert(collectCol(meta.getTableTypes, "TABLE_TYPE").contains("TABLE"))
+      assert(rowCount(meta.getTypeInfo) > 0)
+      drain(meta.getFunctions(null, null, "%"))
+    }
+  }
+
+  test("impala - URL database is applied to backend connection") {
+    withJdbcStatement() { statement =>
+      try {
+        statement.execute("create database if not exists db1")
+
+        val connection = DriverManager.getConnection(
+          jdbcUrlWithConf(s"jdbc:hive2://$connectionUrl/db1;"),
+          user,
+          password)
+        try {
+          val s = connection.createStatement()
+          try {
+            val rs = s.executeQuery("select current_database()")
+            try {
+              assert(rs.next())
+              assert(rs.getString(1) == "db1")
+            } finally rs.close()
+          } finally s.close()
+          // Roundtrip via JDBC `Connection#getSchema` to confirm the engine's
+          // `dialect.getCurrentSchema` path also works against Impalad (the default would
+          // ship a Kyuubi-private query option Impala rejects).
+          assert(connection.getSchema == "db1")
+        } finally connection.close()
+      } finally {
+        statement.execute("drop database if exists db1")
+      }
     }
   }
 }

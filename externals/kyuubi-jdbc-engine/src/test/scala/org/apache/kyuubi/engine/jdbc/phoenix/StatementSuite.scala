@@ -24,6 +24,7 @@ class StatementSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
 
   test("phoenix - test select") {
     withJdbcStatement("test1") { statement =>
+      statement.execute("drop table if exists db1.test1")
       statement.execute("create table db1.test1(id bigint primary key, " +
         "name varchar(255), age integer)")
       statement.execute("upsert into db1.test1 values(1, 'a', 11)")
@@ -42,6 +43,7 @@ class StatementSuite extends WithPhoenixEngine with HiveJDBCTestHelper {
 
   test("test types") {
     withJdbcStatement("test1") { statement =>
+      statement.execute("drop table if exists db1.type_test")
       statement.execute("create table db1.type_test(" +
         "id bigint primary key, " +
         "tiny_col tinyint, smallint_col smallint, " +

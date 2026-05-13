@@ -14,20 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.dialect
+package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixSchemaHelper, PhoenixTRowSetGenerator}
-import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import org.apache.kyuubi.engine.jdbc.session.JdbcSessionImpl
+import org.apache.kyuubi.operation.OperationState
+import org.apache.kyuubi.session.Session
 
-class PhoenixDialect extends JdbcDialect {
+class SetCurrentCatalog(session: Session, catalog: String) extends JdbcOperation(session) {
 
-  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new PhoenixTRowSetGenerator
-
-  override def getSchemaHelper(): SchemaHelper = {
-    new PhoenixSchemaHelper
-  }
-
-  override def name(): String = {
-    "phoenix"
+  override protected def runInternal(): Unit = {
+    setState(OperationState.RUNNING)
+    try {
+      val connection = session.asInstanceOf[JdbcSessionImpl].sessionConnection
+      dialect.setCatalog(connection, catalog)
+      setHasResultSet(false)
+      setState(OperationState.FINISHED)
+    } catch onError()
   }
 }

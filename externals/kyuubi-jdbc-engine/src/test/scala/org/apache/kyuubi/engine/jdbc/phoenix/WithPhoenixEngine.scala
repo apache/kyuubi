@@ -18,19 +18,30 @@ package org.apache.kyuubi.engine.jdbc.phoenix
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.jdbc.WithJdbcEngine
+import org.apache.kyuubi.engine.jdbc.{WithExternalJdbcEngine, WithJdbcEngine}
 
-trait WithPhoenixEngine extends WithJdbcEngine with WithPhoenixContainer {
+trait WithPhoenixEngine extends WithJdbcEngine with WithPhoenixContainer
+  with WithExternalJdbcEngine {
 
   private val PHOENIX_DOCKER_IMAGE = "iteblog/hbase-phoenix-docker:1.0"
   private val serialization = "serialization=PROTOBUF"
   private val jdbcUrlPrefix = "jdbc:phoenix:thin:url"
 
+  // Optional escape hatch: see `WithMySQLEngine` for rationale. When
+  // KYUUBI_TEST_PHOENIX_URL is set, point at a long-running Phoenix Query Server instead
+  // of starting a per-suite Testcontainers instance. Provide the full Phoenix Thin JDBC
+  // URL (e.g. "jdbc:phoenix:thin:url=http://host:8765;serialization=PROTOBUF").
+  private lazy val externalPhoenixUrl: Option[String] = sys.env.get("KYUUBI_TEST_PHOENIX_URL")
+  override protected def externalJdbcUrl: Option[String] = externalPhoenixUrl
+  private def externalPhoenixUser: String = sys.env.getOrElse("KYUUBI_TEST_PHOENIX_USER", "root")
+  private def externalPhoenixPassword: String =
+    sys.env.getOrElse("KYUUBI_TEST_PHOENIX_PASSWORD", "")
+
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_SHARE_LEVEL.key -> "SERVER",
-    ENGINE_JDBC_CONNECTION_URL.key -> s"$getConnectString",
-    ENGINE_JDBC_CONNECTION_USER.key -> "root",
-    ENGINE_JDBC_CONNECTION_PASSWORD.key -> "",
+    ENGINE_JDBC_CONNECTION_URL.key -> externalPhoenixUrl.getOrElse(getConnectString),
+    ENGINE_JDBC_CONNECTION_USER.key -> externalPhoenixUser,
+    ENGINE_JDBC_CONNECTION_PASSWORD.key -> externalPhoenixPassword,
     ENGINE_TYPE.key -> "jdbc",
     ENGINE_JDBC_SHORT_NAME.key -> "phoenix",
     KYUUBI_SESSION_USER_KEY -> "kyuubi",

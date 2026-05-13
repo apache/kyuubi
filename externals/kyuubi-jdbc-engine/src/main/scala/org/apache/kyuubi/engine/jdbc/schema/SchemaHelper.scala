@@ -25,8 +25,24 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 abstract class SchemaHelper {
 
+  /**
+   * Rewrite a column label produced by a backend `DatabaseMetaData.getXxx` ResultSet so it
+   * matches the JDBC spec column name before reaching the Hive JDBC client over Thrift.
+   * Default is identity. Dialects whose backend driver returns spec-violating labels (e.g.
+   * Apache Impala HS2's `TABLE_MD` in place of `TABLE_SCHEM`) override this.
+   *
+   * Intentionally NOT applied inside [[toTTTableSchema]] because that method is also used
+   * for ordinary `ExecuteStatement` results - calling it there would silently rewrite a
+   * user-defined `SELECT col AS TABLE_MD` column. Only [[org.apache.kyuubi.engine.jdbc.
+   * operation.MetaDataOperation]] should route Column labels through this method.
+   */
+  def normalizeMetadataColumnLabel(label: String): String = label
+
   def toTTTableSchema(schema: List[Column]): TTableSchema = {
     val tTableSchema = new TTableSchema()
+    // `columns` is a Thrift required field; pre-init so an empty schema (some drivers' metadata
+    // calls return zero columns, e.g. Phoenix Avatica `getTypeInfo`) still serialises cleanly.
+    tTableSchema.setColumns(new java.util.ArrayList[TColumnDesc]())
     schema.zipWithIndex.foreach { case (f, i) =>
       tTableSchema.addToColumns(toTColumnDesc(f, i))
     }

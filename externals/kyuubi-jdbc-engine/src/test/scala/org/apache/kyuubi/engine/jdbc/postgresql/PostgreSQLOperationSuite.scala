@@ -16,10 +16,11 @@
  */
 package org.apache.kyuubi.engine.jdbc.postgresql
 
-import java.sql.ResultSet
+import java.sql.{DriverManager, ResultSet}
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.engine.jdbc.MetadataTestHelpers._
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -34,7 +35,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
       val catalogs = meta.getCatalogs
       while (catalogs.next()) {
         resultBuffer +=
-          Catalog(catalogs.getString("catalog_name"))
+          Catalog(catalogs.getString(TABLE_CAT))
       }
       assert(resultBuffer.contains(Catalog("postgres")))
       resultBuffer.clear()
@@ -52,7 +53,7 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
       val schemas = meta.getSchemas
       while (schemas.next()) {
         resultBuffer +=
-          Schema(schemas.getString("catalog_name"), schemas.getString("schema_name"))
+          Schema(schemas.getString(TABLE_CATALOG), schemas.getString(TABLE_SCHEM))
       }
       assert(resultBuffer.contains(Schema("postgres", "information_schema")))
       resultBuffer.clear()
@@ -75,21 +76,24 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
             tables.getString(TABLE_NAME),
             tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "pg_statistic", "BASE TABLE")))
-      assert(resultBuffer.contains(Table(null, null, "pg_roles", "VIEW")))
+      // PostgreSQL JDBC driver classifies tables/views in pg_catalog as SYSTEM TABLE/SYSTEM VIEW,
+      // and user tables/views as TABLE/VIEW (not "BASE TABLE", which only appears in
+      // INFORMATION_SCHEMA).
+      assert(resultBuffer.contains(Table(null, null, "pg_statistic", "SYSTEM TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "pg_roles", "SYSTEM VIEW")))
       resultBuffer.clear()
 
       statement.execute("create table public.test1(id bigint primary key)")
       statement.execute("create table public.test2(id bigint primary key)")
 
-      tables = meta.getTables(null, null, "test1", Array("BASE TABLE"))
+      tables = meta.getTables(null, null, "test1", Array("TABLE"))
       while (tables.next()) {
         val table = Table(
           null,
           null,
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
-        assert(table == Table(null, null, "test1", "BASE TABLE"))
+        assert(table == Table(null, null, "test1", "TABLE"))
       }
 
       tables = meta.getTables(null, null, "test2", null)
@@ -100,10 +104,10 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test2", "BASE TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "test2", "TABLE")))
       resultBuffer.clear()
 
-      tables = meta.getTables(null, null, null, Array("BASE TABLE"))
+      tables = meta.getTables(null, null, null, Array("TABLE"))
       while (tables.next()) {
         resultBuffer += Table(
           null,
@@ -111,11 +115,11 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table(null, null, "test2", "BASE TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "test2", "TABLE")))
       resultBuffer.clear()
 
-      tables = meta.getTables(null, null, null, Array("BASE TABLE", "VIEW"))
+      tables = meta.getTables(null, null, null, Array("TABLE", "SYSTEM VIEW"))
       while (tables.next()) {
         resultBuffer += Table(
           null,
@@ -123,10 +127,10 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
           tables.getString(TABLE_NAME),
           tables.getString(TABLE_TYPE))
       }
-      assert(resultBuffer.contains(Table(null, null, "test1", "BASE TABLE")))
-      assert(resultBuffer.contains(Table(null, null, "test2", "BASE TABLE")))
-      assert(resultBuffer.contains(Table(null, null, "pg_shadow", "VIEW")))
-      assert(resultBuffer.contains(Table(null, null, "pg_roles", "VIEW")))
+      assert(resultBuffer.contains(Table(null, null, "test1", "TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "test2", "TABLE")))
+      assert(resultBuffer.contains(Table(null, null, "pg_shadow", "SYSTEM VIEW")))
+      assert(resultBuffer.contains(Table(null, null, "pg_roles", "SYSTEM VIEW")))
       resultBuffer.clear()
 
       statement.execute("drop table public.test1")
@@ -210,6 +214,44 @@ abstract class PostgreSQLOperationSuite extends WithPostgreSQLEngine with HiveJD
 
       statement.execute("drop table public.test1")
       statement.execute("drop table public.test2")
+    }
+  }
+
+  test("postgreSQL - additional metadata operations") {
+    // getCatalogs / getSchemas already covered by dedicated tests above.
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      assert(collectCol(meta.getTableTypes, "TABLE_TYPE").contains("TABLE"))
+      assert(rowCount(meta.getTypeInfo) > 0)
+      assert(rowCount(meta.getFunctions(null, null, "%")) > 0)
+    }
+  }
+
+  test("postgreSQL - URL database is applied to backend connection") {
+    withJdbcStatement() { statement =>
+      try {
+        statement.execute("create schema if not exists db1")
+
+        val connection = DriverManager.getConnection(
+          jdbcUrlWithConf(s"jdbc:hive2://$connectionUrl/db1;"),
+          user,
+          password)
+        try {
+          // PostgreSQL exposes the JDBC schema as the connection's `search_path`. After session
+          // open the URL-scoped schema is applied via `Connection#setSchema`, so
+          // `current_schema()` returns "db1".
+          val s = connection.createStatement()
+          try {
+            val rs = s.executeQuery("select current_schema()")
+            try {
+              assert(rs.next())
+              assert(rs.getString(1) == "db1")
+            } finally rs.close()
+          } finally s.close()
+        } finally connection.close()
+      } finally {
+        statement.execute("drop schema if exists db1")
+      }
     }
   }
 }

@@ -27,4 +27,16 @@ class ImpalaSchemaHelper extends SchemaHelper {
   override protected def realToTTypeId: TTypeId = {
     TTypeId.DOUBLE_TYPE
   }
+
+  // Apache Impala HS2 GetColumns labels the schema column "TABLE_MD" instead of the
+  // JDBC-spec "TABLE_SCHEM" - an upstream typo. Every other metadata result set in the
+  // same file correctly uses TABLE_SCHEM; the row-population site at L494 even comments
+  // `// TABLE_SCHEM`. See:
+  // scalastyle:off line.size.limit
+  //   https://github.com/apache/impala/blob/4.5.0/fe/src/main/java/org/apache/impala/service/MetadataOp.java#L114
+  // scalastyle:on line.size.limit
+  // Rewrite the label so clients calling rs.getString("TABLE_SCHEM") see the right value.
+  // Row data is positional, so renaming the column descriptor alone is sufficient.
+  override def normalizeMetadataColumnLabel(label: String): String =
+    if (label != null && label.equalsIgnoreCase("TABLE_MD")) "TABLE_SCHEM" else label
 }

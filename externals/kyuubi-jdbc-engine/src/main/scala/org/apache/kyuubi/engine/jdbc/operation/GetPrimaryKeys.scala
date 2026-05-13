@@ -14,20 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.dialect
+package org.apache.kyuubi.engine.jdbc.operation
 
-import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixSchemaHelper, PhoenixTRowSetGenerator}
-import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import java.sql.{Connection, ResultSet}
 
-class PhoenixDialect extends JdbcDialect {
+import org.apache.kyuubi.engine.jdbc.dialect.JdbcDialect
+import org.apache.kyuubi.session.Session
 
-  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new PhoenixTRowSetGenerator
-
-  override def getSchemaHelper(): SchemaHelper = {
-    new PhoenixSchemaHelper
-  }
-
-  override def name(): String = {
-    "phoenix"
-  }
+class GetPrimaryKeys(session: Session, catalog: String, schema: String, tableName: String)
+  extends MetaDataOperation(session) {
+  override protected def fetchMetaData(dialect: JdbcDialect, conn: Connection): ResultSet =
+    dialect.getPrimaryKeys(conn, catalog, schema, tableName)
 }

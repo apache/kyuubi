@@ -16,65 +16,35 @@
  */
 package org.apache.kyuubi.engine.jdbc.dialect
 
-import java.util
+import java.sql.Connection
 
-import org.apache.commons.lang3.StringUtils
-
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.jdbc.impala.{ImpalaSchemaHelper, ImpalaTRowSetGenerator}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.JdbcUtils.withCloseable
 
 class ImpalaDialect extends JdbcDialect {
 
-  override def getTablesQuery(
-      catalog: String,
-      schema: String,
-      tableName: String,
-      tableTypes: util.List[String]): String = {
-    if (isPattern(schema)) {
-      throw KyuubiSQLException.featureNotSupported("Pattern-like schema names not supported")
+  // The JDBC engine talks to Impalad via `KyuubiHiveDriver` (see `ImpalaConnectionProvider`,
+  // chosen for its fixed `getMoreResults()` behavior). `KyuubiConnection#setSchema` ships a
+  // Kyuubi-private session config (`kyuubi.operation.set.current.database`) that Impalad
+  // does not recognize and rejects with "Invalid query option". Issue `USE` directly so the
+  // database switch lands as plain Impala SQL the backend understands.
+  override def setSchema(conn: Connection, schema: String): Unit = {
+    val escaped = schema.replace("`", "``")
+    withCloseable(conn.createStatement()) { stmt =>
+      stmt.execute(s"USE `$escaped`")
     }
-
-    val query = new StringBuilder("show tables ")
-
-    if (StringUtils.isNotEmpty(schema) && !isWildcardSetByKyuubi(schema)) {
-      query.append(s"in $schema ")
-    }
-
-    if (StringUtils.isNotEmpty(tableName)) {
-      query.append(s"like '${toImpalaRegex(tableName)}'")
-    }
-
-    query.toString()
   }
 
-  override def getColumnsQuery(
-      session: Session,
-      catalogName: String,
-      schemaName: String,
-      tableName: String,
-      columnName: String): String = {
-    if (StringUtils.isEmpty(tableName)) {
-      throw KyuubiSQLException("Table name should not be empty")
+  // Symmetric to `setSchema`: `KyuubiConnection#getSchema` ships a Kyuubi-private session
+  // config (`kyuubi.operation.get.current.database`) that Impalad rejects. Read the current
+  // database via plain SQL.
+  override def getCurrentSchema(conn: Connection): String = {
+    withCloseable(conn.createStatement()) { stmt =>
+      withCloseable(stmt.executeQuery("SELECT current_database()")) { rs =>
+        if (rs.next()) rs.getString(1) else null
+      }
     }
-
-    if (isPattern(schemaName)) {
-      throw KyuubiSQLException.featureNotSupported("Pattern-like schema names not supported")
-    }
-
-    if (isPattern(tableName)) {
-      throw KyuubiSQLException.featureNotSupported("Pattern-like table names not supported")
-    }
-
-    val query = new StringBuilder("show column stats ")
-
-    if (StringUtils.isNotEmpty(schemaName) && !isWildcardSetByKyuubi(schemaName)) {
-      query.append(s"$schemaName.")
-    }
-
-    query.append(tableName)
-    query.toString()
   }
 
   override def getTRowSetGenerator(): JdbcTRowSetGenerator = new ImpalaTRowSetGenerator
@@ -82,14 +52,4 @@ class ImpalaDialect extends JdbcDialect {
   override def getSchemaHelper(): SchemaHelper = new ImpalaSchemaHelper
 
   override def name(): String = "impala"
-
-  private def isPattern(value: String): Boolean = {
-    value != null && !isWildcardSetByKyuubi(value) && value.contains("*")
-  }
-
-  private def isWildcardSetByKyuubi(pattern: String): Boolean = pattern == "%"
-
-  private def toImpalaRegex(pattern: String): String = {
-    pattern.replace("%", "*")
-  }
 }

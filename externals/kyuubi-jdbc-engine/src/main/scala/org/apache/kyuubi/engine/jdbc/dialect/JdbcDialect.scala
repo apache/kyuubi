@@ -17,15 +17,12 @@
 package org.apache.kyuubi.engine.jdbc.dialect
 
 import java.sql.{Connection, ResultSet, Statement}
-import java.util
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_SHORT_NAME}
 import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
 import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
-import org.apache.kyuubi.operation.Operation
-import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class JdbcDialect extends SupportServiceLoader with Logging {
@@ -37,46 +34,75 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
     statement
   }
 
-  def getTypeInfoOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
+  // --- Connection-level current catalog/schema hooks ---
 
-  def getCatalogsOperation(): String = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
+  def getCatalog(conn: Connection): String = conn.getCatalog
 
-  def getSchemasOperation(catalog: String, schema: String): String = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
+  def setCatalog(conn: Connection, catalog: String): Unit = conn.setCatalog(catalog)
 
-  def getTablesQuery(
+  def getCurrentSchema(conn: Connection): String = conn.getSchema
+
+  def setSchema(conn: Connection, schema: String): Unit = conn.setSchema(schema)
+
+  // --- Metadata hooks; default impl forwards to standard JDBC DatabaseMetaData ---
+
+  def getTypeInfo(conn: Connection): ResultSet =
+    conn.getMetaData.getTypeInfo
+
+  def getCatalogs(conn: Connection): ResultSet =
+    conn.getMetaData.getCatalogs
+
+  def getSchemas(conn: Connection, catalog: String, schemaPattern: String): ResultSet =
+    conn.getMetaData.getSchemas(catalog, schemaPattern)
+
+  def getTableTypes(conn: Connection): ResultSet =
+    conn.getMetaData.getTableTypes
+
+  def getTables(
+      conn: Connection,
+      catalog: String,
+      schemaPattern: String,
+      tableNamePattern: String,
+      types: Array[String]): ResultSet =
+    conn.getMetaData.getTables(catalog, schemaPattern, tableNamePattern, types)
+
+  def getColumns(
+      conn: Connection,
+      catalog: String,
+      schemaPattern: String,
+      tableNamePattern: String,
+      columnNamePattern: String): ResultSet =
+    conn.getMetaData.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern)
+
+  def getFunctions(
+      conn: Connection,
+      catalog: String,
+      schemaPattern: String,
+      functionNamePattern: String): ResultSet =
+    conn.getMetaData.getFunctions(catalog, schemaPattern, functionNamePattern)
+
+  def getPrimaryKeys(
+      conn: Connection,
       catalog: String,
       schema: String,
-      tableName: String,
-      tableTypes: util.List[String]): String
+      table: String): ResultSet =
+    conn.getMetaData.getPrimaryKeys(catalog, schema, table)
 
-  def getTableTypesOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  def getColumnsQuery(
-      session: Session,
-      catalogName: String,
-      schemaName: String,
-      tableName: String,
-      columnName: String): String
-
-  def getFunctionsOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  def getPrimaryKeysOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
-
-  def getCrossReferenceOperation(session: Session): Operation = {
-    throw KyuubiSQLException.featureNotSupported()
-  }
+  def getCrossReference(
+      conn: Connection,
+      primaryCatalog: String,
+      primarySchema: String,
+      primaryTable: String,
+      foreignCatalog: String,
+      foreignSchema: String,
+      foreignTable: String): ResultSet =
+    conn.getMetaData.getCrossReference(
+      primaryCatalog,
+      primarySchema,
+      primaryTable,
+      foreignCatalog,
+      foreignSchema,
+      foreignTable)
 
   def getTRowSetGenerator(): JdbcTRowSetGenerator
 

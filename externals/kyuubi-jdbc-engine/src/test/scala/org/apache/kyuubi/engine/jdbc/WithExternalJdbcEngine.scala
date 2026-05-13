@@ -14,20 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.engine.jdbc.dialect
+package org.apache.kyuubi.engine.jdbc
 
-import org.apache.kyuubi.engine.jdbc.phoenix.{PhoenixSchemaHelper, PhoenixTRowSetGenerator}
-import org.apache.kyuubi.engine.jdbc.schema.{JdbcTRowSetGenerator, SchemaHelper}
+import org.scalatest.{Args, BeforeAndAfterAll, Status, Suite}
 
-class PhoenixDialect extends JdbcDialect {
+trait WithExternalJdbcEngine extends BeforeAndAfterAll {
+  this: Suite =>
 
-  override def getTRowSetGenerator(): JdbcTRowSetGenerator = new PhoenixTRowSetGenerator
+  protected def externalJdbcUrl: Option[String]
 
-  override def getSchemaHelper(): SchemaHelper = {
-    new PhoenixSchemaHelper
-  }
-
-  override def name(): String = {
-    "phoenix"
+  // Testcontainers-scala wraps Suite.run to start/stop containers. When an external JDBC URL
+  // is supplied, bypass that wrapper but still keep BeforeAndAfterAll so the Kyuubi engine's
+  // beforeAll/afterAll lifecycle runs.
+  abstract override def run(testName: Option[String], args: Args): Status = {
+    if (externalJdbcUrl.isDefined) super[BeforeAndAfterAll].run(testName, args)
+    else super.run(testName, args)
   }
 }
