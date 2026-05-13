@@ -51,8 +51,7 @@ object HiveConnectorUtils extends Logging {
         classOf[Option[_]])
       .build[Expression]()
 
-  // Reflection-based constructor lookup to keep compatible
-  // with the Cast constructor signature change introduced by SPARK-40054: 3.4.0.
+  // Compat for Cast ctor signature change in SPARK-40054: 3.4.0.
   def castExpression(
       child: Expression,
       dataType: DataType,
