@@ -50,7 +50,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
-  if (conf.get(ENGINE_SECURITY_ENABLED)) {
+  if (conf.get(INTERNAL_SECURITY_ENABLED)) {
     InternalSecurityAccessor.initialize(conf, isServer)
   }
 

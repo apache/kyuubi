@@ -25,4 +25,5 @@ Securing Kyuubi involves enabling authentication(authn), authorization(authz) an
     Authorization <authorization/index>
     kinit
     hadoop_credentials_manager
+    internal_secure_access
 
