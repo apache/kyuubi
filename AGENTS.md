@@ -17,302 +17,206 @@
 
 # Apache Kyuubi — Agent Instructions
 
-A guide for AI coding agents (Claude Code, Codex, Cursor, Copilot, Gemini, etc.) contributing to Apache Kyuubi. Pairs with `CONTRIBUTING.md` and the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html); this file is terser, command-oriented, and surfaces conventions that recur in code review.
+A guide for AI coding agents contributing to Apache Kyuubi. Pairs with `CONTRIBUTING.md`, the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html), and review-derived rules in `docs/design/merged_rules.md` (the source of truth when this file is silent).
 
 ## Pre-flight Checks
 
 Before the first edit or test in a session:
 
-1. `git remote -v` — confirm `upstream` (or equivalent) points to `apache/kyuubi`. If only a personal fork is configured, ask the user to add one.
-2. If the latest commit on `<upstream>/master` is more than a day old (`git log -1 --format="%ci" <upstream>/master`), run `git fetch <upstream> master`.
-3. `git status` must be clean; ask the user to stash uncommitted work before proceeding. Also keep private ignored files outside the repository root; RAT scans the working tree and can fail on ignored local scripts or generated HTML.
-4. Pick a working branch:
-   - **Existing PR**: resolve via `gh api repos/apache/kyuubi/pulls/<num> --jq '.head.ref'` and check out that branch (or fetch it).
-   - **New work**: branch from `<upstream>/master` (e.g. `git switch -c kyuubi-NNNN-short-slug <upstream>/master`).
-5. Ensure `git config user.email` matches an email linked to the GitHub account that will open the PR; otherwise GitHub may not attribute the commit to the PR author. Fix it before publishing the branch.
+1. Run `git remote -v`. An `upstream` (or equivalent) remote must point to `apache/kyuubi`; do not work from a fork-only checkout.
+2. If `<upstream>/master` is stale, `git fetch <upstream> master` before branching or rebasing.
+3. Check `git status`. If the tree is dirty, ask the user to stash before any branch switch or release/RAT-style check.
+4. Existing PR: resolve the branch via `gh api repos/apache/kyuubi/pulls/<num> --jq '.head.ref'`, then check it out.
+5. New work: branch from `<upstream>/master`. Branch names like `kyuubi-NNNN-short-slug` are convention, not policy.
+6. Confirm `git config user.email` matches an email on the GitHub account that will open the PR.
+7. Keep private/ignored files outside the repo root — RAT scans generated local files even when `.gitignore`d.
 
 ## Architecture
 
-Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink, Hive, Trino, JDBC). The architecture is non-negotiable in code review.
+Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink, Hive, Trino, JDBC). The module split is load-bearing in code review.
 
 ### Module Layout
 
-- `kyuubi-server/` — the gateway process. Must not depend on Kyuubi engine modules under `externals/` and must not implement engine-side runtime behavior. Official protocol/client libraries (e.g. `io.trino:trino-client` for the Trino frontend) are fine when they are used purely for wire-protocol or client-model needs.
-- `kyuubi-common/` — shared service abstractions, config registry, session/operation base classes, and relocated Hive Thrift RPC types.
-- `kyuubi-ha/`, `kyuubi-events/`, `kyuubi-metrics/`, `kyuubi-rest-client/`, `kyuubi-zookeeper/` — focused libraries used by the server and engines.
+- `kyuubi-server/` — gateway process. Must not depend on engine modules under `externals/` or implement engine-side runtime behavior.
+- `kyuubi-common/` — shared service abstractions, config registry, session/operation base classes, relocated Hive Thrift RPC.
+- `kyuubi-ha/`, `kyuubi-events/`, `kyuubi-metrics/`, `kyuubi-rest-client/`, `kyuubi-zookeeper/` — focused libraries.
 - `kyuubi-ctl/` — admin CLI.
 - `kyuubi-hive-jdbc/`, `kyuubi-hive-beeline/` — JDBC client and shell.
-- `externals/kyuubi-spark-sql-engine/`, `externals/kyuubi-flink-sql-engine/`, `externals/kyuubi-hive-sql-engine/`, `externals/kyuubi-trino-engine/`, `externals/kyuubi-jdbc-engine/`, `externals/kyuubi-data-agent-engine/` — engine processes. **Engine modules must not depend on each other.** Each engine process runs detached from the server and from other engine processes.
+- `externals/kyuubi-{spark,flink,hive,trino,jdbc,data-agent}-sql-engine/` — engine processes. Must not depend on each other.
 - `extensions/{server,spark,flink}/` — opt-in plug-ins.
-- `integration-tests/` — cross-module integration suites.
-- `kyuubi-assembly/` — produces the binary distribution.
+- `integration-tests/` — cross-module suites.
+- `kyuubi-assembly/` — binary distribution.
 
 ### Hard Boundaries
 
-- **Server must not depend on Kyuubi engine modules.** `kyuubi-server` cannot have a compile-time dependency on `externals/kyuubi-*-engine` or use engine runtime APIs (Spark internals, Flink internals, etc.) to implement engine behavior server-side. Official protocol/client libraries used by frontends, launchers, or metadata translation (e.g. `io.trino:trino-client`) are allowed. Detect drift with `mvn dependency:tree`. If you genuinely need engine logic server-side, the answer is almost always "you don't — move it to the engine and call over Thrift."
-- **Engines must not depend on sibling engines.** No `kyuubi-flink-sql-engine` → `kyuubi-spark-sql-engine` dependencies.
-- **Server-only configs use `.serverOnly` on the `ConfigBuilder`.** The registry tracks them in `serverOnlyConfEntries`; without the `.serverOnly` flag they leak to the engine side.
-- **Public APIs are abstract over the cluster manager.** Use `killApplication`, not `closeYarnJob`. Methods, classes, and config keys must work whether the engine is on YARN, Kubernetes, or a future CM.
-- **Be deliberate about Spark SQL syntax extensions.** Kyuubi's Spark extensions already add a few project-specific clauses (e.g. `OPTIMIZE ... ZORDER BY`); new ones need maintainer agreement, version-gated parser support, and an explicit case for why the feature does not belong upstream in Spark.
-- **Don't break the Thrift wire protocol.** Kyuubi speaks Hive's TCLIService over Thrift via the relocated Thrift and Hive service-RPC dependencies (`kyuubi-relocated-thrift`, `kyuubi-relocated-hive-service-rpc`); the canonical IDL lives upstream in Hive. The only Kyuubi-side schema delta is `python/scripts/thrift-patches/`. Wire changes are extremely high-risk and need explicit maintainer sign-off; never remove or renumber fields.
+- Server must not depend on Kyuubi engine modules or use engine runtime APIs (Spark/Flink internals) to implement engine behavior server-side.
+- Protocol/client libraries are not a blanket exception — if one is needed in `kyuubi-server`, keep it limited to wire-protocol or client-model translation and verify the dep tree.
+- Engines must not depend on sibling engines (e.g. no `kyuubi-flink-sql-engine` → `kyuubi-spark-sql-engine`).
+- Public APIs are abstract over the cluster manager. Use `killApplication`, not `closeYarnJob`; APIs, classes, and config keys must work for YARN, Kubernetes, and future managers.
+- Spark SQL syntax extensions need maintainer agreement, version-aware parser support, and a clear reason they cannot stay upstream-compatible.
+- Do not break the Thrift wire protocol. Kyuubi speaks Hive TCLIService through relocated dependencies; Python bindings are patched under `python/scripts/thrift-patches/`. Never remove or renumber wire fields.
 
 ### High-Sensitivity Areas
 
-Treat these as load-bearing; check with reviewers before changing:
+Get reviewer attention before changing:
 
-- `python/scripts/thrift-patches/` — patches against the upstream Hive TCLIService schema. Anything touching wire compatibility.
-- `kyuubi-common/.../session/SessionManager`, `kyuubi-common/.../operation/OperationManager` — session and operation lifecycle. Concurrency and shutdown semantics are subtle.
-- `kyuubi-server/.../engine/KubernetesApplicationOperation` — cluster manager integration. Tests must not assume a real cluster.
-- `kyuubi-common/.../config/KyuubiConf` — configuration registry. Changes require `settings.md` regeneration (see §Configuration).
-- REST endpoints under `kyuubi-server/.../api/v1/` — public surface; add auth checks before exposing.
+- `python/scripts/thrift-patches/` — patches against upstream Hive TCLIService schema.
+- `kyuubi-common/.../session/SessionManager`, `.../operation/OperationManager` — lifecycle, concurrency, shutdown.
+- `kyuubi-server/.../engine/KubernetesApplicationOperation` — cluster-manager integration; tests must not assume a real cluster.
+- `kyuubi-common/.../config/KyuubiConf` — config registry; changes require regenerating `settings.md`.
+- `kyuubi-server/.../api/v1/` — public REST surface; add auth checks before exposing.
 
 ## Build and Test
 
-Maven only (no SBT). Use the bundled wrapper to ensure the project's Maven version: `build/mvn` (it auto-installs the right Maven into `build/apache-maven-*`).
-
-### Fast iteration
+Use the bundled Maven wrapper (`build/mvn`).
 
 ```
-build/mvn -Pfast clean package -DskipTests
-```
-
-The `fast` profile skips tests, style checks, scaladoc, enforcer rules, and bundled-engine downloads. Use it when you only need to verify compilation.
-
-### Single-module build
-
-```
+build/mvn -Pfast clean package -DskipTests        # local compile, skips tests/style/docs/RAT/downloads
 build/mvn clean package -pl kyuubi-common -DskipTests
-build/mvn clean package -pl kyuubi-common,kyuubi-ha -DskipTests
-```
-
-### Engine profile matrix
-
-Kyuubi has Maven profile matrices for Spark, Flink, and Scala. Hive and Trino are pinned to single versions via `hive.version` and `trino.client.version` in the root `pom.xml`.
-
-| Profile | Notes |
-|---|---|
-| `-Pspark-3.5` | Spark 3.5 (current default) |
-| `-Pspark-3.3`, `-Pspark-3.4`, `-Pspark-4.0`, `-Pspark-4.1` | other supported Sparks |
-| `-Pflink-1.20` | Flink 1.20 (current default) |
-| `-Pflink-1.17`, `-Pflink-1.18`, `-Pflink-1.19` | other supported Flinks |
-| `-Pscala-2.13` | Scala 2.13 build (default is 2.12) |
-| `-Pflink-provided`, `-Pspark-provided`, `-Phive-provided` | exclude bundled engine downloads |
-| `-Pmirror-cdn` | use the Apache mirror CDN for engine archives |
-| `-Pfast` | skip tests/style/docs/enforcer/downloads |
-
-When adding engine code that varies across versions, gate it with the matching profile, not a runtime version check.
-
-### Running tests
-
-All tests:
-
-```
-build/mvn clean install
-```
-
-Single module:
-
-```
-build/mvn clean install -pl kyuubi-common
-```
-
-Single Scala suite:
-
-```
+build/mvn clean install                           # all tests
+build/mvn clean install -pl kyuubi-common         # one module's tests
 build/mvn test -pl kyuubi-server -Dtest=none \
     -DwildcardSuites=org.apache.kyuubi.server.api.v1.SessionsResourceSuite
-```
-
-Single Java test:
-
-```
 build/mvn test -pl kyuubi-hive-jdbc -Dtest=KyuubiStatementTest -DwildcardSuites=none
 ```
 
-Integration-style tests that exercise the packaged `kyuubi-spark-sql-engine` (or other engine modules) require building the engine distribution first via `build/dist`.
+Integration-style tests that exercise a packaged engine require `build/dist` first.
 
-### Style and formatting
+### Engine profile matrix
 
-```
-dev/reformat
-```
+| Profile | Notes |
+|---|---|
+| `-Pspark-3.5` (default), `-Pspark-{3.3,3.4,4.0,4.1,master}` | Spark version |
+| `-Pflink-1.20` (default), `-Pflink-{1.17,1.18,1.19}` | Flink version |
+| `-Pscala-2.13` | Scala 2.13 (default is 2.12) |
+| `-P{spark,flink,hive}-provided` | skip bundled engine downloads |
+| `-Pmirror-cdn` | use Apache mirror CDN for engine archives |
+| `-Pfast` | skip tests/style/docs/enforcer/RAT/downloads |
 
-Runs Spotless (google-java-format + Scalafmt) and Python `black` if available. Run before every commit; format violations are a routine reviewer complaint that costs a round trip.
+When engine code varies across versions, gate source/binary differences by Maven profile and runtime capability differences by feature detection — not by parsing version strings.
 
-### Dependency list
-
-After adding/removing a runtime dependency:
-
-```
-build/dependency.sh                # detect drift
-build/dependency.sh --replace      # update dev/dependencyList
-```
-
-CI fails if `dev/dependencyList` is out of sync.
-
-### Regenerating `settings.md`
-
-After adding or modifying any `ConfigEntry` in `KyuubiConf`:
+### Style, deps, docs
 
 ```
-dev/gen/gen_all_config_docs.sh
+dev/reformat                          # Spotless (+ Python Spotless if `black` is installed); run before every commit
+build/dependency.sh [--replace]       # detect / update dev/dependencyList drift after dep changes
+dev/gen/gen_all_config_docs.sh        # regenerate docs/configuration/settings.md after KyuubiConf changes
 ```
 
-This runs the scoped `AllKyuubiConfiguration` test under `kyuubi-server` with `KYUUBI_UPDATE=1` and regenerates `docs/configuration/settings.md`. Commit the diff.
+Runtime dep changes may also require `LICENSE-binary` and `NOTICE` updates.
 
 ## Coding Conventions
 
 ### Languages
 
-- New business logic: **Java by default.** Use Scala only for code that sits in Scala-heavy framework layers (e.g. Spark engine internals, Scala test suites). Mixing Java callers with Scala-only libraries (Option/Either etc.) creates friction at module boundaries.
-- Scala code follows the [Databricks Scala Coding Style Guide](https://github.com/databricks/scala-style-guide).
-- Java code follows the [Google Java Style](https://google.github.io/styleguide/javaguide.html).
-- Formatting is enforced by Spotless; `dev/reformat` is authoritative.
+- Prefer Java for new cross-module business logic. Use Scala for Spark/Flink extension internals, Scala test suites, and APIs already dominated by Scala types.
+- Scala follows the Scalafmt/Scalastyle config; Java follows Spotless/google-java-format. `dev/reformat` enforces both.
 
-### Scala specifics
+### Scala
 
-- Use `Option[T]`, never `null`, for nullable values.
-- Prefer pattern-match guards (`case X(...) if cond =>`) over nested `if`/`match`.
-- Add `()` to no-arg methods that have side effects; omit `()` on pure ones (standard Scala convention).
-- Prefer early return for guard conditions over nested `if-else`.
-- Avoid new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly unless a Spark plugin/catalog entry point leaves no parameterized path.
+- `Option[T]`, never `null`.
+- Pattern-match guards (`case X(...) if cond =>`) over nested `if`/`match`.
+- `()` on no-arg methods with side effects; omit on pure methods.
+- Early return for guard conditions over nested `if-else`.
+- Avoid new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly unless a Spark entry point gives no parameterized path.
 
 ### Naming
 
-- Names describe purpose, not type or inheritance. Avoid `line`, `clue`, `principal`, and similar generic terms that inherit a misleading meaning.
-- No abbreviations (`currentUser`, not `currUser`). Applies to fields, enum constants, parameters, and config values.
-- Avoid generic factory names like `from(...)` — prefer `fromConfig`/`fromUserInput` so call sites read clearly.
-- Names must reflect scope. Don't name a connection-level counter `totalRows` if it actually means `rowsForThisOperation`.
-- No magic numbers or magic strings. Extract to named constants; for enums use `MyEnum.X.toString` rather than hardcoded string literals.
+- Names describe purpose, not type. Avoid generic terms like `line`, `clue`, `principal`.
+- No abbreviations (`currentUser`, not `currUser`).
+- Avoid generic factories like `from(...)` — prefer `fromConfig`, `fromUserInput`.
+- Names must reflect scope: a connection-level counter is not `totalRows` if it counts one operation.
+- No magic numbers/strings. Use named constants; for enums use `MyEnum.X.toString`.
 
 ### Comments
 
-- Explain *why*, not *what*. Self-explanatory code does not need a comment.
-- Comment intentional omissions (`// no check needed because ...`) and surprising decisions (`// kept until <issue> is fixed upstream`).
-- TODO/FIXME comments should link to a tracking issue when the work is deferred.
+- Explain why, not what. Self-explanatory code needs no comment.
+- Comment intentional omissions and surprising decisions.
+- TODO/FIXME should link a tracking issue when the work is deferred.
 
-### Error Handling
+### Error handling and logging
 
 - Throw for unsupported features and invalid configs; do not silently ignore.
-- Do not introduce direct `process.destroy()` / `destroyForcibly()` for engine shutdown — notify engines to shut themselves down so shutdown hooks run.
-- Catch the specific exception (e.g. `IOException`, `JsonProcessingException`), not its parent.
-- Log a warning (not an exception) only for genuinely non-critical recoverable failures.
-
-### Logging
-
-- Log levels: `error` for actionable failures only; `warn` for recoverable degradation; `info` for lifecycle events users care about; `debug` for everything else.
-- Use SLF4J placeholders, not string concatenation: `log.info("opened session {}", sessionHandle)`.
+- Do not introduce direct `process.destroy()` / `destroyForcibly()` for engine shutdown — notify engines so their shutdown hooks run.
+- Catch the specific exception (`IOException`, `JsonProcessingException`), not its parent.
+- Log levels: `error` = actionable failure, `warn` = recoverable degradation, `info` = lifecycle, `debug` = diagnostics.
+- SLF4J placeholders, not concatenation: `log.info("opened session {}", handle)`.
 
 ## Configuration
 
-Configs are `ConfigEntry` instances in `KyuubiConf` (or per-engine config classes).
+Configs are `ConfigEntry` instances in `KyuubiConf` or per-engine config classes.
 
-- Add new entries to the right config class. Server-only entries call `.serverOnly` on the builder; the registry then tracks them in `serverOnlyConfEntries`.
-- `version()` on `ConfigEntry` must be the release the key first ships in (not a placeholder, not the future major).
-- Operation-level configs go under `kyuubi.operation.*`. Session-level under `kyuubi.session.*`. Engine-internal under `kyuubi.<engine>.*`. Match the namespace to the scope.
-- Provide a sensible default; if no safe default exists, leave it undefined and document the requirement (don't invent a misleading fallback).
-- After adding/modifying any entry, run `dev/gen/gen_all_config_docs.sh` to regenerate `docs/configuration/settings.md`.
+- Server-only entries call `.serverOnly` on the builder; `KyuubiConf` tracks them in `serverOnlyConfEntries` so they are stripped before engine-side propagation.
+- `version()` on `ConfigEntry` is the release the key first ships in.
+- Namespace matches scope: `kyuubi.operation.*`, `kyuubi.session.*`, `kyuubi.<engine>.*`.
+- Provide a sensible default; if none is safe, leave it undefined and document the requirement.
 - Initialize config-dependent fields in `initialize(conf)`, not at declaration time.
-- Reuse the existing `fallbackConf` chain to share defaults across frontend implementations; don't copy identical entries.
+- Reuse `fallbackConf` to share defaults across frontends; do not copy identical entries.
+- After any entry change, run `dev/gen/gen_all_config_docs.sh` and commit the diff.
 
 ## Testing
 
-- Add tests in the same PR as the feature. "Tests will follow in a follow-up" is rejected.
-- Place tests in the **existing** suite for the area (e.g. `KyuubiOperationPerConnectionSuite`, `org.apache.kyuubi.operation.PlanOnlyOperationSuite`). Create a new suite only when the domain is genuinely new.
-- Use `withSessionConf` from `HiveJDBCTestHelper` for per-test config overrides. Don't modify shared fixtures or class-level defaults — it leaks between tests.
-- ScalaTest style for Scala tests; do not use JUnit `@Test` annotations.
-- Java tests use JUnit 4 (`Assert.assertEquals`, `Assert.assertThrows`); follow the existing style in the surrounding module rather than introducing a new assertion library.
-- A passing test that still passes when the change under test is reverted is not a test. Verify by reverting locally.
-- Do not introduce new `Utils.isTesting` branches in production code; configure test-specific behavior via test config or build properties. A few legacy usages remain (e.g. process builders, `EngineRef` timeouts) — adding new ones needs reviewer agreement.
+- Tests ship in the same PR as the feature. "Tests will follow" is rejected.
+- Place tests in the existing suite for the area; create a new suite only when the domain is genuinely new.
+- Use `withSessionConf` from `HiveJDBCTestHelper` for per-test config overrides; do not mutate shared fixtures.
+- Scala tests use ScalaTest style — no JUnit `@Test` annotations.
+- Java tests follow surrounding module style (JDBC tests use JUnit 4: `Assert.assertEquals`, `Assert.assertThrows`).
+- A test that still passes when the change under test is reverted is not a test. Verify meaningful failure locally when practical.
+- Do not add new `Utils.isTesting` branches in production code; use test config or build properties.
 - Benchmarks belong in the Spark benchmark framework, not regular suites.
-- Integration-style tests that exercise a packaged engine require building a distribution first: `build/dist`.
 
 ## PR Workflow
 
-### Title and description
+PR title: `[KYUUBI #NNNN][COMPONENT] Short imperative summary`. `NNNN` is the linked issue number; `[COMPONENT]` is optional but encouraged (use existing tags from recent `git log` for precedent). Use `[WIP]` while iterating. Update title and description if scope expands — both flow into the merge commit.
 
-PR title: `[KYUUBI #NNNN][COMPONENT] Short imperative summary`
+Fill in `.github/PULL_REQUEST_TEMPLATE`:
 
-- `NNNN` is the linked GitHub issue number (open one first if missing — Kyuubi uses GitHub Issues, not JIRA).
-- `[COMPONENT]` is optional but encouraged; common tags include `[SERVER]`, `[SPARK]`, `[FLINK]`, `[HIVE]`, `[TRINO]`, `[JDBC]`, `[KSHC]`, `[AUTHZ]`, `[LINEAGE]`, `[METRICS]`, `[REST]`, `[CTL]`, `[DOC]`. Use existing tags from `git log master | head -100` for precedent.
-- Use `[WIP]` prefix while still iterating.
-- Update the title and description if the scope expands during review. Both flow into the merge commit message; `git log` is the authoritative narrative.
+- **Why are the changes needed?** — motivation. Reviewers read the diff for "what".
+- **How was this patch tested?** — concrete commands or manual steps; explain if tests were not added.
+- **Was this patch authored or co-authored using generative AI tooling?** — fill the field.
 
-Fill in the template:
-
-- **Why are the changes needed?** — motivation; reviewers read the diff for "what".
-- **How was this patch tested?** — concrete commands or a description of manual testing. If untested, say so explicitly.
-- **Generative AI tooling?** — see §AI-Assisted Contributions.
-
-### One PR, one concern
-
-Refactoring goes in its own PR. Don't bundle a refactor with a feature or bug fix. If an unrelated nit catches your eye while editing, open a separate PR (or note it as a follow-up issue).
+One concern per PR. Refactors go in their own PR; if an unrelated nit catches your eye, open a separate PR or follow-up issue.
 
 ### Investigating CI failures
 
-Kyuubi CI surfaces failures via uploaded test-log artifacts and the per-job log, not via check-run annotations. Don't download the full run log — it is many MB. Use `gh run` to scope to failed steps:
+Use scoped `gh run` commands instead of downloading full logs first.
 
 ```
-# Find the workflow run(s) for the PR branch
 gh run list -R apache/kyuubi -b <pr-branch> -L 5
-
-# View only the failed steps for a specific run
 gh run view <run-id> -R apache/kyuubi --log-failed
-
-# Or zoom in on one job within a run
 gh run view <run-id> -R apache/kyuubi -j <job-id> --log-failed
-```
-
-For the full test logs of a failed Kyuubi-and-Spark job, download the matching `unit-tests-log-*` artifact:
-
-```
-gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>
+gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>   # full logs of a failed Kyuubi+Spark job
 ```
 
 ## AI-Assisted Contributions
 
-AI-assisted contributions are welcome under the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html). The PR template already has a disclosure field — fill it in.
+Allowed under ASF guidance and Kyuubi's PR template.
 
-- Disclose tools via `Generated-by: <tool name and version>` in the PR description and (optionally) in commit trailers. Do **not** use `Co-Authored-By: <AI tool>` — co-author is reserved for human contributors per the ASF guidance.
-- The contributing human author is responsible for the patch — review every line as if you had written it. "I had Claude/Copilot/Codex do it" is not a defense for incorrect or low-quality code.
-- Do not include `Generated by AI`, model names, or other agent self-references in source code, comments, commit messages, or in the PR title. Disclosure happens in the PR description, not the code.
-- Verify license compatibility of any generated content; do not paste output that the tool's terms forbid for open-source distribution.
+- Disclose tools via `Generated-by: <tool name and version>` in the PR template field.
+- Do not use `Co-Authored-By: <AI tool>`.
+- The human author is responsible for the patch and must review every line.
+- No AI self-references in source, comments, commit messages, or PR titles — disclosure stays in the PR description.
+- Verify license/terms compatibility for generated content.
 
 ## Boundaries
 
 ### Never
 
 - Push directly to `apache/kyuubi`. All changes go through a PR.
-- Force-push to a shared branch. Force-push to your own PR branch is fine.
-- Break Thrift wire compatibility (the Hive TCLIService schema Kyuubi speaks; see §Hard Boundaries). Adding optional fields is OK; removing or renumbering is not.
-- Commit a `kyuubi_state_store.db`, log files, generated configs, IDE files, or credentials. Check `.gitignore` if unsure.
-- Skip `dev/reformat` or git hooks (`--no-verify`).
-- Introduce new direct `process.destroy()` / `destroyForcibly()` for engine shutdown — notify the engine to shut itself down so shutdown hooks run.
-- Introduce new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly. Some legacy usages remain in Spark extension, connector, and helper code; don't copy them without a reviewer-approved reason.
+- Force-push to a shared branch. Force-push to your own PR branch is fine when coordinated.
+- Break Thrift wire compatibility. Adding optional fields is less risky than removing/renumbering, but any wire change needs reviewer attention.
+- Commit `kyuubi_state_store.db`, logs, generated local configs, IDE files, credentials, or other private artifacts.
+- Skip `dev/reformat` before committing.
+- Introduce new direct `process.destroy()` / `destroyForcibly()` for engine shutdown.
+- Introduce new `SparkSession.active` lookups in production code without a reviewer-approved reason.
 
 ### Ask first
 
-- New runtime dependencies (especially with non-ASL2-compatible licenses; `LICENSE-binary` and `dev/dependencyList` must be updated).
+- New runtime dependencies, especially with non-ASL2-compatible licenses.
 - Public API changes (`kyuubi-common`, REST endpoints, Thrift IDL).
 - Cross-engine refactors that touch more than one `externals/*` module.
-- New Kyuubi configuration entries that gate user-visible behavior.
-- New subsystems, large architectural shifts, or anything that warrants a KPIP (`kpip.md`). Surface on the dev mailing list first.
-- Anything in the high-sensitivity areas above.
-
-## Repository Layout (quick reference)
-
-```
-build/                  Maven wrapper, dependency tooling
-charts/                 Helm charts
-conf/                   Default kyuubi-defaults.conf etc.
-dev/                    Contributor scripts (reformat, dependency, gen)
-docker/                 Docker assets
-docs/                   User and contributor documentation
-externals/              Engine implementations
-extensions/             Optional plug-ins (server, spark, flink)
-integration-tests/      Cross-module integration suites
-kyuubi-*/               Server core and shared libraries
-.github/                CI workflows, PR/issue templates
-```
+- New configuration entries that gate user-visible behavior.
+- New subsystems or large architectural shifts — discuss on the dev mailing list when scope warrants community design input.
+- Anything in High-Sensitivity Areas above.
 
 For anything not covered here, see the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html) or ask on the [Apache Kyuubi mailing list](https://kyuubi.apache.org/mailing_lists.html).
