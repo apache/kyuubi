@@ -35,12 +35,25 @@ github:
     squash: true
     merge: false
     rebase: false
-  protected_branches: ~
+  protected_branches:
   features:
     issues: true
     discussions: true
     wiki: false
     projects: true
+  rulesets:
+    - name: "Default Branch Protection"
+      type: branch
+      branches:
+        includes:
+          - "~DEFAULT_BRANCH"
+          - "release/*"
+          - "rel/*"
+        excludes: []
+      bypass_teams:
+        - root
+      restrict_deletion: true
+      restrict_force_push: true
 notifications:
   commits: commits@kyuubi.apache.org
   issues: notifications@kyuubi.apache.org
