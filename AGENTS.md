@@ -61,12 +61,16 @@ in code review.
   the server and engines.
 - `kyuubi-ctl/` — admin CLI.
 - `kyuubi-hive-jdbc/`, `kyuubi-hive-beeline/` — JDBC client and shell.
-- `externals/kyuubi-*-sql-engine/` — engine processes. **Engine modules
-  must not depend on each other.** Each engine process runs detached
-  from the server and from other engine processes.
-- `externals/kyuubi-jdbc-engine/`, `externals/kyuubi-chat-engine/`,
-  `externals/kyuubi-data-agent-engine/` — additional engine
-  implementations following the same isolation rules.
+- `externals/kyuubi-spark-sql-engine/`,
+  `externals/kyuubi-flink-sql-engine/`,
+  `externals/kyuubi-hive-sql-engine/`,
+  `externals/kyuubi-trino-engine/`,
+  `externals/kyuubi-jdbc-engine/`,
+  `externals/kyuubi-chat-engine/`,
+  `externals/kyuubi-data-agent-engine/` — engine processes.
+  **Engine modules must not depend on each other.** Each engine
+  process runs detached from the server and from other engine
+  processes.
 - `extensions/{server,spark,flink}/` — opt-in plug-ins.
 - `integration-tests/` — cross-module integration suites.
 - `kyuubi-assembly/` — produces the binary distribution.
@@ -88,21 +92,26 @@ in code review.
   CM.
 - **No SQL syntax that Spark itself doesn't support.** Extensions must
   not diverge into a Kyuubi-specific SQL dialect.
-- **Don't break Thrift wire format.** Thrift IDL lives in
-  `kyuubi-common/src/main/thrift/`. Edits there are reviewed for
-  backward compatibility; never remove or renumber fields.
+- **Don't break the Thrift wire protocol.** Kyuubi speaks Hive's
+  TCLIService over Thrift via the `kyuubi-relocated-thrift`
+  dependency; the canonical IDL lives upstream in Hive. The only
+  Kyuubi-side schema delta is `python/scripts/thrift-patches/`. Wire
+  changes are extremely high-risk and need explicit maintainer
+  sign-off; never remove or renumber fields.
 
 ### High-Sensitivity Areas
 
 Treat these as load-bearing; check with reviewers before changing:
 
-- `kyuubi-common/src/main/thrift/` — Thrift IDL. Wire compatibility.
-- `kyuubi-server/.../SessionManager`, `OperationManager` — session and
+- `python/scripts/thrift-patches/` — patches against the upstream Hive
+  TCLIService schema. Anything touching wire compatibility.
+- `kyuubi-common/.../session/SessionManager`,
+  `kyuubi-common/.../operation/OperationManager` — session and
   operation lifecycle. Concurrency and shutdown semantics are subtle.
-- `kyuubi-server/.../KubernetesApplicationOperation` — cluster manager
-  integration. Tests must not assume a real cluster.
-- `kyuubi-common/.../KyuubiConf` — configuration registry. Changes
-  require `settings.md` regeneration (see §Configuration).
+- `kyuubi-server/.../engine/KubernetesApplicationOperation` — cluster
+  manager integration. Tests must not assume a real cluster.
+- `kyuubi-common/.../config/KyuubiConf` — configuration registry.
+  Changes require `settings.md` regeneration (see §Configuration).
 - REST endpoints under `kyuubi-server/.../api/v1/` — public surface;
   add auth checks before exposing.
 
@@ -171,7 +180,7 @@ build/mvn test -pl kyuubi-server -Dtest=none \
 Single Java test:
 
 ```
-build/mvn test -pl kyuubi-hive-jdbc -Dtest=KyuubiBaseConnectionTest -DwildcardSuites=none
+build/mvn test -pl kyuubi-hive-jdbc -Dtest=KyuubiStatementTest -DwildcardSuites=none
 ```
 
 Tests for `kyuubi-spark-sql-engine` etc. require building a binary
@@ -203,10 +212,12 @@ CI fails if `dev/dependencyList` is out of sync.
 After adding or modifying any `ConfigEntry` in `KyuubiConf`:
 
 ```
-KYUUBI_UPDATE=1 build/mvn clean test
+dev/gen/gen_all_config_docs.sh
 ```
 
-This regenerates `docs/configuration/settings.md`. Commit the diff.
+This runs the scoped `AllKyuubiConfiguration` test under
+`kyuubi-server` with `KYUUBI_UPDATE=1` and regenerates
+`docs/configuration/settings.md`. Commit the diff.
 
 ## Coding Conventions
 
@@ -290,8 +301,8 @@ config classes).
 - Provide a sensible default; if no safe default exists, leave it
   undefined and document the requirement (don't invent a misleading
   fallback).
-- After adding/modifying any entry, run `KYUUBI_UPDATE=1 build/mvn
-  clean test` to regenerate `docs/configuration/settings.md`.
+- After adding/modifying any entry, run `dev/gen/gen_all_config_docs.sh`
+  to regenerate `docs/configuration/settings.md`.
 - Initialize config-dependent fields in `initialize(conf)`, not at
   declaration time.
 - Reuse the existing `fallbackConf` chain to share defaults across
@@ -303,7 +314,7 @@ config classes).
   follow-up" is rejected.
 - Place tests in the **existing** suite for the area (e.g.
   `KyuubiOperationPerConnectionSuite`,
-  `org.apache.kyuubi.operation.PlanOnlyStatementSuite`). Create a new
+  `org.apache.kyuubi.operation.PlanOnlyOperationSuite`). Create a new
   suite only when the domain is genuinely new.
 - Use `withSessionConf` from `HiveJDBCTestHelper` for per-test config
   overrides. Don't modify shared fixtures or class-level defaults — it
@@ -354,22 +365,27 @@ separate PR (or note it as a follow-up issue).
 
 ### Investigating CI failures
 
-Don't download full job logs. Use the test-report annotations:
+Kyuubi CI surfaces failures via uploaded test-log artifacts and the
+per-job log, not via check-run annotations. Don't download the full
+run log — it is many MB. Use `gh run` to scope to failed steps:
 
 ```
-# Step 1: PR head fork + SHA
-gh api repos/apache/kyuubi/pulls/<num> --jq '{owner: .head.repo.owner.login, sha: .head.sha}'
+# Find the workflow run(s) for the PR branch
+gh run list -R apache/kyuubi -b <pr-branch> -L 5
 
-# Step 2: find the test-report check run
-gh api repos/<OWNER>/kyuubi/commits/<SHA>/check-runs \
-  --jq '.check_runs[] | select(.name | contains("Report test")) | {id: .id, n: .output.annotations_count}'
+# View only the failed steps for a specific run
+gh run view <run-id> -R apache/kyuubi --log-failed
 
-# Step 3: pull annotations
-gh api repos/<OWNER>/kyuubi/check-runs/<CHECK_RUN_ID>/annotations
+# Or zoom in on one job within a run
+gh run view <run-id> -R apache/kyuubi -j <job-id> --log-failed
 ```
 
-If the check name varies, list check-run names with
-`.check_runs[] | .name | unique`.
+For the full test logs of a failed Kyuubi-and-Spark job, download the
+matching `unit-tests-log-*` artifact:
+
+```
+gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>
+```
 
 ## AI-Assisted Contributions
 
@@ -397,8 +413,9 @@ The PR template already has a disclosure field — fill it in.
 - Push directly to `apache/kyuubi`. All changes go through a PR.
 - Force-push to a shared branch. Force-push to your own PR branch is
   fine.
-- Break Thrift wire compatibility (`kyuubi-common/src/main/thrift/`).
-  Adding optional fields is OK; removing or renumbering is not.
+- Break Thrift wire compatibility (the Hive TCLIService schema Kyuubi
+  speaks; see §Hard Boundaries). Adding optional fields is OK;
+  removing or renumbering is not.
 - Commit a `kyuubi_state_store.db`, log files, generated configs, IDE
   files, or credentials. Check `.gitignore` if unsure.
 - Skip `dev/reformat` or git hooks (`--no-verify`).
