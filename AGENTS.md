@@ -55,7 +55,8 @@ in code review.
 
 - `kyuubi-server/` — the gateway process. Engine-agnostic. **Must not
   depend on engine libraries** (Spark, Flink, Hive, Trino classes).
-- `kyuubi-common/` — shared utilities, Thrift IDL, base classes.
+- `kyuubi-common/` — shared service abstractions, config registry,
+  session/operation base classes, and relocated Hive Thrift RPC types.
 - `kyuubi-ha/`, `kyuubi-events/`, `kyuubi-metrics/`,
   `kyuubi-rest-client/`, `kyuubi-zookeeper/` — focused libraries used by
   the server and engines.
@@ -66,7 +67,6 @@ in code review.
   `externals/kyuubi-hive-sql-engine/`,
   `externals/kyuubi-trino-engine/`,
   `externals/kyuubi-jdbc-engine/`,
-  `externals/kyuubi-chat-engine/`,
   `externals/kyuubi-data-agent-engine/` — engine processes.
   **Engine modules must not depend on each other.** Each engine
   process runs detached from the server and from other engine
@@ -84,8 +84,9 @@ in code review.
   engine and call over Thrift."
 - **Engines must not depend on sibling engines.** No
   `kyuubi-flink-sql-engine` → `kyuubi-spark-sql-engine` dependencies.
-- **Server-only configs go in `serverOnlyConfEntries`** in
-  `KyuubiConf`. Otherwise they leak to the engine side.
+- **Server-only configs use `.serverOnly` on the `ConfigBuilder`.**
+  The registry tracks them in `serverOnlyConfEntries`; without the
+  `.serverOnly` flag they leak to the engine side.
 - **Public APIs are abstract over the cluster manager.** Use
   `killApplication`, not `closeYarnJob`. Methods, classes, and config
   keys must work whether the engine is on YARN, Kubernetes, or a future
@@ -140,20 +141,21 @@ build/mvn clean package -pl kyuubi-common,kyuubi-ha -DskipTests
 
 ### Engine profile matrix
 
-Kyuubi compiles against multiple Spark/Flink/Hive/Trino versions via
-Maven profiles. The default is the most recent supported version of
-each engine.
+Kyuubi uses Maven profiles mainly for the Spark and Scala version
+matrices. Flink, Hive, and Trino are pinned to single versions
+(`flink.version`, `hive.version`, `trino.client.version` in the root
+`pom.xml`).
 
 | Profile | Notes |
 |---|---|
-| `-Pspark-3.5` | default Spark |
-| `-Pspark-3.4`, `-Pspark-3.3`, `-Pspark-4.0`, `-Pspark-4.1` | other supported Sparks |
+| `-Pspark-3.5` | Spark 3.5 (current default) |
+| `-Pspark-3.3`, `-Pspark-3.4`, `-Pspark-4.0`, `-Pspark-4.1` | other supported Sparks |
 | `-Pscala-2.13` | Scala 2.13 build (default is 2.12) |
 | `-Pflink-provided`, `-Pspark-provided`, `-Phive-provided` | exclude bundled engine downloads |
 | `-Pmirror-cdn` | use the Apache mirror CDN for engine archives |
 | `-Pfast` | skip tests/style/docs/enforcer/downloads |
 
-When adding code that varies across engine versions, gate it with the
+When adding Spark code that varies across versions, gate it with the
 matching profile, not a runtime version check.
 
 ### Running tests
@@ -183,8 +185,9 @@ Single Java test:
 build/mvn test -pl kyuubi-hive-jdbc -Dtest=KyuubiStatementTest -DwildcardSuites=none
 ```
 
-Tests for `kyuubi-spark-sql-engine` etc. require building a binary
-distribution first (`build/dist`).
+Integration-style tests that exercise the packaged
+`kyuubi-spark-sql-engine` (or other engine modules) require building
+the engine distribution first via `build/dist`.
 
 ### Style and formatting
 
@@ -291,8 +294,9 @@ This runs the scoped `AllKyuubiConfiguration` test under
 Configs are `ConfigEntry` instances in `KyuubiConf` (or per-engine
 config classes).
 
-- Add new entries to the right config class. Server-only entries belong
-  in `serverOnlyConfEntries`.
+- Add new entries to the right config class. Server-only entries call
+  `.serverOnly` on the builder; the registry then tracks them in
+  `serverOnlyConfEntries`.
 - `version()` on `ConfigEntry` must be the release the key first ships
   in (not a placeholder, not the future major).
 - Operation-level configs go under `kyuubi.operation.*`. Session-level
@@ -321,15 +325,17 @@ config classes).
   leaks between tests.
 - ScalaTest style for Scala tests; do not use JUnit `@Test`
   annotations.
-- AssertJ for Java tests (`assertThat`, `assertThatThrownBy`).
+- Java tests use JUnit 4 (`Assert.assertEquals`, `Assert.assertThrows`);
+  follow the existing style in the surrounding module rather than
+  introducing a new assertion library.
 - A passing test that still passes when the change under test is
   reverted is not a test. Verify by reverting locally.
 - No `Utils.isTesting` branches in production code. Configure
   test-specific behavior via test config or build properties.
 - Benchmarks belong in the Spark benchmark framework, not regular
   suites.
-- Integration tests that need a real Spark engine require building a
-  distribution first: `build/dist`.
+- Integration-style tests that exercise a packaged engine require
+  building a distribution first: `build/dist`.
 
 ## PR Workflow
 
@@ -419,8 +425,12 @@ The PR template already has a disclosure field — fill it in.
 - Commit a `kyuubi_state_store.db`, log files, generated configs, IDE
   files, or credentials. Check `.gitignore` if unsure.
 - Skip `dev/reformat` or git hooks (`--no-verify`).
-- Use `process.destroy()` to kill an engine — notify it instead.
-- Reference `SparkSession.active` — pass `SparkSession` explicitly.
+- Introduce new direct `process.destroy()` / `destroyForcibly()` for
+  engine shutdown — notify the engine to shut itself down so shutdown
+  hooks run.
+- Introduce new `SparkSession.active` lookups in production code; pass
+  `SparkSession` explicitly. Existing usages remain in Spark
+  plugin/catalog entry points that require a no-arg constructor.
 
 ### Ask first
 
