@@ -41,7 +41,7 @@ jobs:
           - branch: branch-1.9
             profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ matrix.branch }}
       - name: Free up disk space
