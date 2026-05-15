@@ -25,7 +25,7 @@ Before the first edit or test in a session:
 
 1. `git remote -v` — confirm `upstream` (or equivalent) points to `apache/kyuubi`. If only a personal fork is configured, ask the user to add one.
 2. If the latest commit on `<upstream>/master` is more than a day old (`git log -1 --format="%ci" <upstream>/master`), run `git fetch <upstream> master`.
-3. `git status` must be clean; ask the user to stash uncommitted work before proceeding.
+3. `git status` must be clean; ask the user to stash uncommitted work before proceeding. Also keep private ignored files outside the repository root; RAT scans the working tree and can fail on ignored local scripts or generated HTML.
 4. Pick a working branch:
    - **Existing PR**: resolve via `gh api repos/apache/kyuubi/pulls/<num> --jq '.head.ref'` and check out that branch (or fetch it).
    - **New work**: branch from `<upstream>/master` (e.g. `git switch -c kyuubi-NNNN-short-slug <upstream>/master`).
@@ -175,7 +175,7 @@ This runs the scoped `AllKyuubiConfiguration` test under `kyuubi-server` with `K
 - Prefer pattern-match guards (`case X(...) if cond =>`) over nested `if`/`match`.
 - Add `()` to no-arg methods that have side effects; omit `()` on pure ones (standard Scala convention).
 - Prefer early return for guard conditions over nested `if-else`.
-- Don't reach for `SparkSession.active`; pass `SparkSession` explicitly as a parameter.
+- Avoid new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly unless a Spark plugin/catalog entry point leaves no parameterized path.
 
 ### Naming
 
@@ -194,7 +194,7 @@ This runs the scoped `AllKyuubiConfiguration` test under `kyuubi-server` with `K
 ### Error Handling
 
 - Throw for unsupported features and invalid configs; do not silently ignore.
-- Don't `process.destroy()` engines — notify them to shut down so shutdown hooks run.
+- Do not introduce direct `process.destroy()` / `destroyForcibly()` for engine shutdown — notify engines to shut themselves down so shutdown hooks run.
 - Catch the specific exception (e.g. `IOException`, `JsonProcessingException`), not its parent.
 - Log a warning (not an exception) only for genuinely non-critical recoverable failures.
 
