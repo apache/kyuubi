@@ -214,10 +214,10 @@ com.fasterxml.jackson.jaxrs:jackson-jaxrs-base
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider
 com.fasterxml.jackson.module:jackson-module-jaxb-annotations
 com.fasterxml.jackson.module:jackson-module-scala_*
-org.apache.ranger:ranger-plugins-common
+org.apache.ranger:ranger-audit-core
 org.apache.ranger:ranger-authz-api
 org.apache.ranger:ranger-plugin-classloader
-org.apache.ranger:ranger-audit-core
+org.apache.ranger:ranger-plugins-common
 org.apache.ranger:ranger-plugins-cred
 org.apache.ranger:ugsync-util
 
