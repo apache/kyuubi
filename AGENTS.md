@@ -288,7 +288,7 @@ AI-assisted contributions are welcome under the [ASF Generative Tooling Guidance
 - Commit a `kyuubi_state_store.db`, log files, generated configs, IDE files, or credentials. Check `.gitignore` if unsure.
 - Skip `dev/reformat` or git hooks (`--no-verify`).
 - Introduce new direct `process.destroy()` / `destroyForcibly()` for engine shutdown — notify the engine to shut itself down so shutdown hooks run.
-- Introduce new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly. Existing usages remain in Spark plugin/catalog entry points that require a no-arg constructor.
+- Introduce new `SparkSession.active` lookups in production code; pass `SparkSession` explicitly. Some legacy usages remain in Spark extension, connector, and helper code; don't copy them without a reviewer-approved reason.
 
 ### Ask first
 
