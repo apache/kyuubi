@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.KyuubiConf.EVENT_JSON_LOG_MANAGE_PERMISSIONS_ENABLED
 import org.apache.kyuubi.events.KyuubiEvent
 
 /**
@@ -53,6 +54,7 @@ class JsonLoggingEventHandler(
   private var logRoot: URI = _
   private var fs: FileSystem = _
   private val writers = HashMap.empty[String, Logger]
+  private val manageLogPermissions = kyuubiConf.get(EVENT_JSON_LOG_MANAGE_PERMISSIONS_ENABLED)
 
   initialize(kyuubiConf)
 
@@ -86,7 +88,7 @@ class JsonLoggingEventHandler(
           } else {
             new Path(new Path(new Path(logRoot), event.eventType), partitions)
           }
-        FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
+        createLogDir(eventPath)
         val logFile = new Path(eventPath, logName + ".json")
         var hadoopDataStream: FSDataOutputStream = null
         val rawStream =
@@ -96,11 +98,25 @@ class JsonLoggingEventHandler(
             hadoopDataStream = fs.create(logFile)
             hadoopDataStream
           }
-        fs.setPermission(logFile, JSON_LOG_FILE_PERM)
+        manageLogFilePermission(logFile)
         val bStream = new BufferedOutputStream(rawStream)
         info(s"Logging kyuubi events to $logFile")
         (new PrintWriter(bStream), Option(hadoopDataStream))
       })
+  }
+
+  private def createLogDir(path: Path): Unit = {
+    if (manageLogPermissions) {
+      FileSystem.mkdirs(fs, path, JSON_LOG_DIR_PERM)
+    } else {
+      fs.mkdirs(path)
+    }
+  }
+
+  private def manageLogFilePermission(path: Path): Unit = {
+    if (manageLogPermissions) {
+      fs.setPermission(path, JSON_LOG_FILE_PERM)
+    }
   }
 
   private def requireLogRootWritable(): Unit = {
@@ -113,7 +129,7 @@ class JsonLoggingEventHandler(
   private def initialize(conf: KyuubiConf): Unit = synchronized {
     logRoot = URI.create(conf.get(logPath))
     fs = FileSystem.get(logRoot, hadoopConf)
-    FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
+    createLogDir(new Path(logRoot))
     requireLogRootWritable()
   }
 }

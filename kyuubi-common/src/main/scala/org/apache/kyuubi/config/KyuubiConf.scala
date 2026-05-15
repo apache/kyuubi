@@ -2649,6 +2649,17 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("file:///tmp/kyuubi/events")
 
+  val EVENT_JSON_LOG_MANAGE_PERMISSIONS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.event.json.log.managePermissions.enabled")
+      .doc("Whether the built-in JSON event logger manages the permissions of event log " +
+        "directories and files. When enabled, Kyuubi sets event log directories to 770 and " +
+        "event log files to 660. When disabled, Kyuubi only creates and writes event log " +
+        "paths, leaving permissions to the underlying file system defaults, inherited ACLs, " +
+        "or external authorization systems.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val SERVER_EVENT_KAFKA_TOPIC: OptionalConfigEntry[String] =
     buildConf("kyuubi.backend.server.event.kafka.topic")
       .doc("The topic of server events go for the built-in Kafka logger")
