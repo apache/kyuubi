@@ -29,7 +29,7 @@ Before the first edit or test in a session:
 4. Pick a working branch:
    - **Existing PR**: resolve via `gh api repos/apache/kyuubi/pulls/<num> --jq '.head.ref'` and check out that branch (or fetch it).
    - **New work**: branch from `<upstream>/master` (e.g. `git switch -c kyuubi-NNNN-short-slug <upstream>/master`).
-5. Ensure `git config user.email` matches an email linked to the GitHub account that will open the PR — otherwise the contribution is not counted on GitHub. Reviewers will block on this.
+5. Ensure `git config user.email` matches an email linked to the GitHub account that will open the PR; otherwise GitHub may not attribute the commit to the PR author. Fix it before publishing the branch.
 
 ## Architecture
 
@@ -37,7 +37,7 @@ Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink
 
 ### Module Layout
 
-- `kyuubi-server/` — the gateway process. Engine-agnostic. **Must not depend on engine libraries** (Spark, Flink, Hive, Trino classes).
+- `kyuubi-server/` — the gateway process. Must not depend on Kyuubi engine modules under `externals/` and must not implement engine-side runtime behavior. Official protocol/client libraries (e.g. `io.trino:trino-client` for the Trino frontend) are fine when they are used purely for wire-protocol or client-model needs.
 - `kyuubi-common/` — shared service abstractions, config registry, session/operation base classes, and relocated Hive Thrift RPC types.
 - `kyuubi-ha/`, `kyuubi-events/`, `kyuubi-metrics/`, `kyuubi-rest-client/`, `kyuubi-zookeeper/` — focused libraries used by the server and engines.
 - `kyuubi-ctl/` — admin CLI.
@@ -49,12 +49,12 @@ Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink
 
 ### Hard Boundaries
 
-- **Server must not import engine code.** `kyuubi-server` cannot have a compile-time dependency on Spark/Flink/Hive/Trino. Detect indirect pulls with `mvn dependency:tree`. If you genuinely need engine logic server-side, the answer is almost always "you don't — move it to the engine and call over Thrift."
+- **Server must not depend on Kyuubi engine modules.** `kyuubi-server` cannot have a compile-time dependency on `externals/kyuubi-*-engine` or use engine runtime APIs (Spark internals, Flink internals, etc.) to implement engine behavior server-side. Official protocol/client libraries used by frontends, launchers, or metadata translation (e.g. `io.trino:trino-client`) are allowed. Detect drift with `mvn dependency:tree`. If you genuinely need engine logic server-side, the answer is almost always "you don't — move it to the engine and call over Thrift."
 - **Engines must not depend on sibling engines.** No `kyuubi-flink-sql-engine` → `kyuubi-spark-sql-engine` dependencies.
 - **Server-only configs use `.serverOnly` on the `ConfigBuilder`.** The registry tracks them in `serverOnlyConfEntries`; without the `.serverOnly` flag they leak to the engine side.
 - **Public APIs are abstract over the cluster manager.** Use `killApplication`, not `closeYarnJob`. Methods, classes, and config keys must work whether the engine is on YARN, Kubernetes, or a future CM.
-- **No SQL syntax that Spark itself doesn't support.** Extensions must not diverge into a Kyuubi-specific SQL dialect.
-- **Don't break the Thrift wire protocol.** Kyuubi speaks Hive's TCLIService over Thrift via the `kyuubi-relocated-thrift` dependency; the canonical IDL lives upstream in Hive. The only Kyuubi-side schema delta is `python/scripts/thrift-patches/`. Wire changes are extremely high-risk and need explicit maintainer sign-off; never remove or renumber fields.
+- **Be deliberate about Spark SQL syntax extensions.** Kyuubi's Spark extensions already add a few project-specific clauses (e.g. `OPTIMIZE ... ZORDER BY`); new ones need maintainer agreement, version-gated parser support, and an explicit case for why the feature does not belong upstream in Spark.
+- **Don't break the Thrift wire protocol.** Kyuubi speaks Hive's TCLIService over Thrift via the relocated Thrift and Hive service-RPC dependencies (`kyuubi-relocated-thrift`, `kyuubi-relocated-hive-service-rpc`); the canonical IDL lives upstream in Hive. The only Kyuubi-side schema delta is `python/scripts/thrift-patches/`. Wire changes are extremely high-risk and need explicit maintainer sign-off; never remove or renumber fields.
 
 ### High-Sensitivity Areas
 
@@ -87,18 +87,20 @@ build/mvn clean package -pl kyuubi-common,kyuubi-ha -DskipTests
 
 ### Engine profile matrix
 
-Kyuubi uses Maven profiles mainly for the Spark and Scala version matrices. Flink, Hive, and Trino are pinned to single versions (`flink.version`, `hive.version`, `trino.client.version` in the root `pom.xml`).
+Kyuubi has Maven profile matrices for Spark, Flink, and Scala. Hive and Trino are pinned to single versions via `hive.version` and `trino.client.version` in the root `pom.xml`.
 
 | Profile | Notes |
 |---|---|
 | `-Pspark-3.5` | Spark 3.5 (current default) |
 | `-Pspark-3.3`, `-Pspark-3.4`, `-Pspark-4.0`, `-Pspark-4.1` | other supported Sparks |
+| `-Pflink-1.20` | Flink 1.20 (current default) |
+| `-Pflink-1.17`, `-Pflink-1.18`, `-Pflink-1.19` | other supported Flinks |
 | `-Pscala-2.13` | Scala 2.13 build (default is 2.12) |
 | `-Pflink-provided`, `-Pspark-provided`, `-Phive-provided` | exclude bundled engine downloads |
 | `-Pmirror-cdn` | use the Apache mirror CDN for engine archives |
 | `-Pfast` | skip tests/style/docs/enforcer/downloads |
 
-When adding Spark code that varies across versions, gate it with the matching profile, not a runtime version check.
+When adding engine code that varies across versions, gate it with the matching profile, not a runtime version check.
 
 ### Running tests
 
@@ -221,7 +223,7 @@ Configs are `ConfigEntry` instances in `KyuubiConf` (or per-engine config classe
 - ScalaTest style for Scala tests; do not use JUnit `@Test` annotations.
 - Java tests use JUnit 4 (`Assert.assertEquals`, `Assert.assertThrows`); follow the existing style in the surrounding module rather than introducing a new assertion library.
 - A passing test that still passes when the change under test is reverted is not a test. Verify by reverting locally.
-- No `Utils.isTesting` branches in production code. Configure test-specific behavior via test config or build properties.
+- Do not introduce new `Utils.isTesting` branches in production code; configure test-specific behavior via test config or build properties. A few legacy usages remain (e.g. process builders, `EngineRef` timeouts) — adding new ones needs reviewer agreement.
 - Benchmarks belong in the Spark benchmark framework, not regular suites.
 - Integration-style tests that exercise a packaged engine require building a distribution first: `build/dist`.
 
