@@ -207,18 +207,25 @@ This project bundles some components that are licensed under the
 
 Apache License Version 2.0
 --------------------------
+com.fasterxml.jackson.core:jackson-annotations
+com.fasterxml.jackson.core:jackson-core
+com.fasterxml.jackson.core:jackson-databind
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-base
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider
+com.fasterxml.jackson.module:jackson-module-jaxb-annotations
+com.fasterxml.jackson.module:jackson-module-scala_*
 org.apache.ranger:ranger-plugins-common
-org.apache.ranger:ranger-plugins-audit
-org.codehaus.jackson:jackson-jaxrs
-org.codehaus.jackson:jackson-core-asl
-org.codehaus.jackson:jackson-mapper-asl
-net.java.dev.jna:jna
-net.java.dev.jna:jna-platform
+org.apache.ranger:ranger-authz-api
+org.apache.ranger:ranger-plugin-classloader
+org.apache.ranger:ranger-audit-core
+org.apache.ranger:ranger-plugins-cred
+org.apache.ranger:ugsync-util
 
 Common Development and Distribution License (CDDL) 1.1
 ------------------------------------------------------
 com.sun.jersey:jersey-client
 com.sun.jersey:jersey-core
+javax.ws.rs:jsr311-api
 
 MIT license
 -----------
