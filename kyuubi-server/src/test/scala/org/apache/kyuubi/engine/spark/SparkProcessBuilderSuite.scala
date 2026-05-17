@@ -421,6 +421,70 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     }
   }
 
+  test("Fix NullPointerException when SPARK_HOME is invalid") {
+    val notFoundMsg = "Failed to extract Scala version"
+    val listFailMsg = "Failed to list jars"
+
+    def newConf(sparkHome: String): KyuubiConf = {
+      KyuubiConf(false)
+        .set("kyuubi.engineEnv.SPARK_HOME", sparkHome)
+        .set("kyuubi.engineEnv.SPARK_SCALA_VERSION", "")
+    }
+
+    // case 1: SPARK_HOME does not exists
+    val nonExistentHome = Paths.get(
+      Utils.createTempDir("invalid-spark-home").toString,
+      s"not-exist-${UUID.randomUUID()}").toString
+    val nonExistentErr = intercept[KyuubiException] {
+      new SparkProcessBuilder("kentyao", true, newConf(nonExistentHome))
+    }
+    assert(!nonExistentErr.getMessage.contains("NullPointerException"))
+    assert(nonExistentErr.getMessage.contains(listFailMsg))
+
+    // case 2: SPARK_HOME exists but the `jars` subdirectory is missing
+    val homeWithoutJarsDir = Utils.createTempDir("spark-home-no-jars-dir")
+    val withoutJarsErr = intercept[KyuubiException] {
+      new SparkProcessBuilder("kentyao", true, newConf(homeWithoutJarsDir.toString))
+    }
+    assert(!withoutJarsErr.getMessage.contains("NullPointerException"))
+    assert(withoutJarsErr.getMessage.contains(listFailMsg))
+
+    // case 3: SPARK_HOME exists, but the `jars` is a regular file instead of a directory
+    val homeWithJarsAsFile = Utils.createTempDir("spark-home-jars-as-file")
+    Files.createFile(homeWithJarsAsFile.resolve("jars"))
+    val jarsAsFileErr = intercept[KyuubiException] {
+      new SparkProcessBuilder("kentyao", true, newConf(homeWithJarsAsFile.toString))
+    }
+    assert(!jarsAsFileErr.getMessage.contains("NullPointerException"))
+    assert(jarsAsFileErr.getMessage.contains(listFailMsg))
+
+    // case 4: SPARK_HOME exists, but the `jars` is an empty directory
+    val homeWithEmptyJars = Utils.createTempDir("spark-home-empty-jars")
+    Files.createDirectory(homeWithEmptyJars.resolve("jars"))
+    val emptyJarsHomeErr = intercept[KyuubiException] {
+      new SparkProcessBuilder("kentyao", true, newConf(homeWithEmptyJars.toString))
+    }
+    assert(!emptyJarsHomeErr.getMessage.contains("NullPointerException"))
+    assert(emptyJarsHomeErr.getMessage.contains(notFoundMsg))
+
+    // case 5: SPARK_HOME exists, but the `jars` does not contain any spark-core jar
+    val homeWithoutCoreJar = Utils.createTempDir("spark-home-no-core")
+    val noCoreJarsDir = Files.createDirectory(homeWithoutCoreJar.resolve("jars"))
+    Files.createFile(noCoreJarsDir.resolve("hadoop-common-3.3.4.jar"))
+    Files.createFile(noCoreJarsDir.resolve("scala-library-2.12.18.jar"))
+    val noCoreErr = intercept[KyuubiException] {
+      new SparkProcessBuilder("kentyao", true, newConf(homeWithoutCoreJar.toString))
+    }
+    assert(!noCoreErr.getMessage.contains("NullPointerException"))
+    assert(noCoreErr.getMessage.contains(notFoundMsg))
+
+    // case 6: SPARK_HOME exists, and the `jars` contains spark-core jar
+    val validSparkHome = Utils.createTempDir("spark-home-valid")
+    val validJarsDir = Files.createDirectory(validSparkHome.resolve("jars"))
+    Files.createFile(validJarsDir.resolve("spark-core_2.12-3.5.0.jar"))
+    new SparkProcessBuilder("kentyao", true, newConf(validSparkHome.toString))
+  }
+
   test("match scala version of spark home") {
     Seq(
       "spark-3.2.4-bin-hadoop3.2",
