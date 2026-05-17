@@ -18,7 +18,7 @@ package org.apache.kyuubi.spark.connector.yarn
 
 import java.util
 
-import scala.jdk.CollectionConverters.setAsJavaSetConverter
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.connector.catalog.{SupportsRead, Table, TableCapability}
 import org.apache.spark.sql.connector.read.ScanBuilder
