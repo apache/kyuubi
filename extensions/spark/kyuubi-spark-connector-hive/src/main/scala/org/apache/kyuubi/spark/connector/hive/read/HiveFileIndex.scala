@@ -52,6 +52,18 @@ class HiveCatalogFileIndex(
 
   private val baseLocation: Option[URI] = table.storage.locationUri
 
+  // Align with Spark's built-in CatalogFileIndex by explicitly overriding equals.
+  // This keeps `BatchScanExec#equals` stable and enables BroadcastExchange reuse under DPP.
+  override def equals(other: Any): Boolean = other match {
+    case that: HiveCatalogFileIndex =>
+      this.hiveCatalog.name == that.hiveCatalog.name &&
+      this.catalogTable.identifier == that.catalogTable.identifier
+    case _ => false
+  }
+
+  override def hashCode(): Int =
+    31 * hiveCatalog.name.hashCode + catalogTable.identifier.hashCode
+
   override def partitionSchema: StructType = table.partitionSchema
 
   override def listFiles(

@@ -27,7 +27,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTablePartition}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
-import org.apache.spark.sql.connector.read.PartitionReaderFactory
+import org.apache.spark.sql.connector.expressions.NamedReference
+import org.apache.spark.sql.connector.read.{PartitionReaderFactory, SupportsRuntimeFiltering}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
@@ -46,12 +47,28 @@ case class HiveScan(
     readPartitionSchema: StructType,
     pushedFilters: Array[Filter] = Array.empty,
     partitionFilters: Seq[Expression] = Seq.empty,
-    dataFilters: Seq[Expression] = Seq.empty) extends FileScan {
+    dataFilters: Seq[Expression] = Seq.empty) extends FileScan
+  with SupportsRuntimeFiltering {
 
   private val isCaseSensitive = sparkSession.sessionState.conf.caseSensitiveAnalysis
 
   private val partFileToHivePartMap: mutable.Map[PartitionedFile, CatalogTablePartition] =
     mutable.Map()
+
+  private var runtimeFilters: Seq[Expression] = Seq.empty
+
+  // Align with Spark's built-in ParquetScan/OrcScan by explicitly overriding equals.
+  // This keeps `BatchScanExec#equals` stable and enables BroadcastExchange reuse under DPP.
+  override def equals(obj: Any): Boolean = obj match {
+    case other: HiveScan =>
+      super.equals(other) &&
+      catalogTable.identifier == other.catalogTable.identifier &&
+      dataSchema == other.dataSchema &&
+      equivalentFilters(pushedFilters, other.pushedFilters)
+    case _ => false
+  }
+
+  override def hashCode(): Int = getClass.hashCode()
 
   override def isSplitable(path: Path): Boolean = {
     catalogTable.provider.map(_.toUpperCase(Locale.ROOT)).exists {
@@ -83,8 +100,9 @@ case class HiveScan(
   }
 
   override protected def partitions: Seq[FilePartition] = {
+    val effectivePartitionFilters = partitionFilters ++ runtimeFilters
     val (selectedPartitions, partDirToHivePartMap) =
-      fileIndex.listHiveFiles(partitionFilters, dataFilters)
+      fileIndex.listHiveFiles(effectivePartitionFilters, dataFilters)
     val maxSplitBytes = FilePartition.maxSplitBytes(sparkSession, selectedPartitions)
     val partitionAttributes = toAttributes(fileIndex.partitionSchema)
     val attributeMap = partitionAttributes.map(a => normalizeName(a.name) -> a).toMap
@@ -157,4 +175,25 @@ case class HiveScan(
 
   def toAttributes(structType: StructType): Seq[AttributeReference] =
     structType.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
+
+  // -------------------------------------------------------------------------------
+  // SupportsRuntimeFiltering implementation
+  // -------------------------------------------------------------------------------
+
+  override def filterAttributes(): Array[NamedReference] = {
+    HiveRuntimeFilterSupport.filterAttributes(readPartitionSchema.fieldNames.toSeq)
+  }
+
+  override def filter(filters: Array[Filter]): Unit = {
+    runtimeFilters = HiveRuntimeFilterSupport.toCatalystPartitionFilters(
+      filters,
+      fileIndex.partitionSchema,
+      isCaseSensitive)
+    if (runtimeFilters.nonEmpty) {
+      logInfo(s"Received ${runtimeFilters.length} runtime partition filter(s) for " +
+        s"${catalogTable.identifier}")
+      logDebug(s"Runtime partition filter(s) for ${catalogTable.identifier}: " +
+        s"${runtimeFilters.mkString(", ")}")
+    }
+  }
 }
