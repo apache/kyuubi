@@ -17,23 +17,23 @@
 
 # Apache Kyuubi — Agent Instructions
 
-A guide for AI coding agents contributing to Apache Kyuubi. Pairs with `CONTRIBUTING.md`, the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html), and review-derived rules in `docs/design/merged_rules.md` (the source of truth when this file is silent).
+A guide for AI coding agents contributing to Apache Kyuubi. Pairs with `CONTRIBUTING.md` and the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html).
 
 ## Pre-flight Checks
 
 Before the first edit or test in a session:
 
-1. Run `git remote -v`. An `upstream` (or equivalent) remote must point to `apache/kyuubi`; do not work from a fork-only checkout.
-2. If `<upstream>/master` is stale, `git fetch <upstream> master` before branching or rebasing.
+1. Run `git remote -v`. An `apache` remote must point to `apache/kyuubi`; do not work from a fork-only checkout.
+2. If `apache/master` is stale, `git fetch apache master` before branching or rebasing.
 3. Check `git status`. If the tree is dirty, ask the user to stash before any branch switch or release/RAT-style check.
 4. Existing PR: resolve the branch via `gh api repos/apache/kyuubi/pulls/<num> --jq '.head.ref'`, then check it out.
-5. New work: branch from `<upstream>/master`. Branch names like `kyuubi-NNNN-short-slug` are convention, not policy.
+5. New work: branch from `apache/master`. Branch names like `kyuubi-NNNN-short-slug` are convention, not policy.
 6. Confirm `git config user.email` matches an email on the GitHub account that will open the PR.
 7. Keep private/ignored files outside the repo root — RAT scans generated local files even when `.gitignore`d.
 
 ## Architecture
 
-Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink, Hive, Trino, JDBC). The module split is load-bearing in code review.
+Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink, Trino, JDBC, etc.). The module split is load-bearing in code review.
 
 ### Module Layout
 
@@ -50,17 +50,17 @@ Kyuubi is a multi-tenant gateway that fronts pluggable SQL engines (Spark, Flink
 ### Hard Boundaries
 
 - Server must not depend on Kyuubi engine modules or use engine runtime APIs (Spark/Flink internals) to implement engine behavior server-side.
-- Protocol/client libraries are not a blanket exception — if one is needed in `kyuubi-server`, keep it limited to wire-protocol or client-model translation and verify the dep tree.
+- Protocol/client libraries are not a blanket exception — if one is needed in `kyuubi-server`, keep it limited to wire-protocol or client-model translation and verify the dependency tree.
 - Engines must not depend on sibling engines (e.g. no `kyuubi-flink-sql-engine` → `kyuubi-spark-sql-engine`).
 - Public APIs are abstract over the cluster manager. Use `killApplication`, not `closeYarnJob`; APIs, classes, and config keys must work for YARN, Kubernetes, and future managers.
 - Spark SQL syntax extensions need maintainer agreement, version-aware parser support, and a clear reason they cannot stay upstream-compatible.
-- Do not break the Thrift wire protocol. Kyuubi speaks Hive TCLIService through relocated dependencies; Python bindings are patched under `python/scripts/thrift-patches/`. Never remove or renumber wire fields.
+- Do not break the Thrift wire protocol. Kyuubi speaks Hive TCLIService through relocated dependencies; never remove or renumber wire fields.
+- Prefer reusing existing Thrift-defined operations with an operation-level config key over extending the wire schema; change the wire schema only with maintainer agreement.
 
 ### High-Sensitivity Areas
 
 Get reviewer attention before changing:
 
-- `python/scripts/thrift-patches/` — patches against upstream Hive TCLIService schema.
 - `kyuubi-common/.../session/SessionManager`, `.../operation/OperationManager` — lifecycle, concurrency, shutdown.
 - `kyuubi-server/.../engine/KubernetesApplicationOperation` — cluster-manager integration; tests must not assume a real cluster.
 - `kyuubi-common/.../config/KyuubiConf` — config registry; changes require regenerating `settings.md`.
@@ -71,16 +71,16 @@ Get reviewer attention before changing:
 Use the bundled Maven wrapper (`build/mvn`).
 
 ```
-build/mvn -Pfast clean package -DskipTests        # local compile, skips tests/style/docs/RAT/downloads
-build/mvn clean package -pl kyuubi-common -DskipTests
-build/mvn clean install                           # all tests
-build/mvn clean install -pl kyuubi-common         # one module's tests
-build/mvn test -pl kyuubi-server -Dtest=none \
+build/mvn -Pfast clean package -DskipTests           # local compile, skips tests/style/docs/RAT/downloads
+build/mvn clean package -pl kyuubi-common -am -DskipTests
+build/mvn clean install                              # all tests
+build/mvn clean install -pl kyuubi-common -am        # one module's tests
+build/mvn test -pl kyuubi-server -am -Dtest=none \
     -DwildcardSuites=org.apache.kyuubi.server.api.v1.SessionsResourceSuite
-build/mvn test -pl kyuubi-hive-jdbc -Dtest=KyuubiStatementTest -DwildcardSuites=none
+build/mvn test -pl kyuubi-hive-jdbc -am -Dtest=KyuubiStatementTest -DwildcardSuites=none
 ```
 
-Integration-style tests that exercise a packaged engine require `build/dist` first.
+Use `-am` (also-make) when building or testing a single module — without it, Maven fails unless the dependency's artifact is already in `~/.m2`. Integration-style tests that exercise a packaged engine require `build/dist` first.
 
 ### Engine profile matrix
 
@@ -95,26 +95,26 @@ Integration-style tests that exercise a packaged engine require `build/dist` fir
 
 When engine code varies across versions, gate source/binary differences by Maven profile and runtime capability differences by feature detection — not by parsing version strings.
 
-### Style, deps, docs
+### Style, dependencies, docs
 
 ```
 dev/reformat                          # Spotless (+ Python Spotless if `black` is installed); run before every commit
-build/dependency.sh [--replace]       # detect / update dev/dependencyList drift after dep changes
+build/dependency.sh [--replace]       # detect / update dev/dependencyList drift after dependency changes
 dev/gen/gen_all_config_docs.sh        # regenerate docs/configuration/settings.md after KyuubiConf changes
 ```
 
-Runtime dep changes may also require `LICENSE-binary` and `NOTICE` updates.
+Runtime dependency changes may also require `LICENSE-binary` and `NOTICE` updates.
 
 ## Coding Conventions
 
 ### Languages
 
-- Prefer Java for new cross-module business logic. Use Scala for Spark/Flink extension internals, Scala test suites, and APIs already dominated by Scala types.
+- Java and Scala are both first-class. Match the surrounding module's language and idioms rather than introducing the other.
 - Scala follows the Scalafmt/Scalastyle config; Java follows Spotless/google-java-format. `dev/reformat` enforces both.
 
 ### Scala
 
-- `Option[T]`, never `null`.
+- Prefer `Option[T]` over `null`, except for performance-sensitive code paths.
 - Pattern-match guards (`case X(...) if cond =>`) over nested `if`/`match`.
 - `()` on no-arg methods with side effects; omit on pure methods.
 - Early return for guard conditions over nested `if-else`.
@@ -133,6 +133,8 @@ Runtime dep changes may also require `LICENSE-binary` and `NOTICE` updates.
 - Explain why, not what. Self-explanatory code needs no comment.
 - Comment intentional omissions and surprising decisions.
 - TODO/FIXME should link a tracking issue when the work is deferred.
+- When referencing upstream or external issues, include the fixed version or release when known.
+- Keep PR descriptions, review replies, and commit messages precise and concise.
 
 ### Error handling and logging
 
@@ -160,7 +162,7 @@ Configs are `ConfigEntry` instances in `KyuubiConf` or per-engine config classes
 - Place tests in the existing suite for the area; create a new suite only when the domain is genuinely new.
 - Use `withSessionConf` from `HiveJDBCTestHelper` for per-test config overrides; do not mutate shared fixtures.
 - Scala tests use ScalaTest style — no JUnit `@Test` annotations.
-- Java tests follow surrounding module style (JDBC tests use JUnit 4: `Assert.assertEquals`, `Assert.assertThrows`).
+- Java tests follow the surrounding module style; inspect existing test dependencies and imports before choosing JUnit APIs or assertions.
 - A test that still passes when the change under test is reverted is not a test. Verify meaningful failure locally when practical.
 - Do not add new `Utils.isTesting` branches in production code; use test config or build properties.
 - Benchmarks belong in the Spark benchmark framework, not regular suites.
@@ -190,10 +192,10 @@ gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>   # full logs 
 
 ## AI-Assisted Contributions
 
-Allowed under ASF guidance and Kyuubi's PR template.
+Allowed under [ASF generative tooling guidance](https://www.apache.org/legal/generative-tooling.html) and Kyuubi's PR template. AI is used for more than code generation (review, reading, solution exploration), so disclose assistance rather than implying the patch was machine-authored.
 
-- Disclose tools via `Generated-by: <tool name and version>` in the PR template field.
-- Do not use `Co-Authored-By: <AI tool>`.
+- Disclose assistance via `Assisted-by: <AGENT>:<MODEL_VERSION>` in the PR template field, following the [Linux kernel convention](https://docs.kernel.org/process/coding-assistants.html). Example: `Assisted-by: Claude:claude-opus-4-7`.
+- Do not list AI tools as co-authors; disclose tool assistance in the PR description.
 - The human author is responsible for the patch and must review every line.
 - No AI self-references in source, comments, commit messages, or PR titles — disclosure stays in the PR description.
 - Verify license/terms compatibility for generated content.
@@ -204,7 +206,6 @@ Allowed under ASF guidance and Kyuubi's PR template.
 
 - Push directly to `apache/kyuubi`. All changes go through a PR.
 - Force-push to a shared branch. Force-push to your own PR branch is fine when coordinated.
-- Break Thrift wire compatibility. Adding optional fields is less risky than removing/renumbering, but any wire change needs reviewer attention.
 - Commit `kyuubi_state_store.db`, logs, generated local configs, IDE files, credentials, or other private artifacts.
 - Skip `dev/reformat` before committing.
 - Introduce new direct `process.destroy()` / `destroyForcibly()` for engine shutdown.
@@ -216,7 +217,7 @@ Allowed under ASF guidance and Kyuubi's PR template.
 - Public API changes (`kyuubi-common`, REST endpoints, Thrift IDL).
 - Cross-engine refactors that touch more than one `externals/*` module.
 - New configuration entries that gate user-visible behavior.
-- New subsystems or large architectural shifts — discuss on the dev mailing list when scope warrants community design input.
+- New subsystems or large architectural shifts — discuss on GitHub Discussions or the dev mailing list when scope warrants community design input (GitHub activity is mirrored to the ASF mailing list archives).
 - Anything in High-Sensitivity Areas above.
 
-For anything not covered here, see the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html) or ask on the [Apache Kyuubi mailing list](https://kyuubi.apache.org/mailing_lists.html).
+For anything not covered here, see the [Contributor Guide](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html), [GitHub Discussions](https://github.com/apache/kyuubi/discussions), or the [Apache Kyuubi mailing list](https://kyuubi.apache.org/mailing_lists.html).
