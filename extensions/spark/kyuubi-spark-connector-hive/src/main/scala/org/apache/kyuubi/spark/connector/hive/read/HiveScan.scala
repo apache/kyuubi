@@ -37,7 +37,6 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, KyuubiHiveConnectorException}
-import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.READ_RUNTIME_FILTER_ENABLED
 
 case class HiveScan(
     sparkSession: SparkSession,
@@ -182,11 +181,7 @@ case class HiveScan(
   // -------------------------------------------------------------------------------
 
   override def filterAttributes(): Array[NamedReference] = {
-    if (!sparkSession.sessionState.conf.getConf(READ_RUNTIME_FILTER_ENABLED)) {
-      Array.empty
-    } else {
-      HiveRuntimeFilterSupport.filterAttributes(readPartitionSchema.fieldNames.toSeq)
-    }
+    HiveRuntimeFilterSupport.filterAttributes(readPartitionSchema.fieldNames.toSeq)
   }
 
   override def filter(filters: Array[Filter]): Unit = {

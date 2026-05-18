@@ -20,7 +20,7 @@ package org.apache.kyuubi.spark.connector.hive
 import scala.annotation.tailrec
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.connector.read.{Scan, SupportsRuntimeFiltering}
+import org.apache.spark.sql.catalyst.expressions.DynamicPruningExpression
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
@@ -29,7 +29,10 @@ import org.apache.kyuubi.spark.connector.hive.read.HiveScan
 
 class DynamicPartitionPruningSuite extends KyuubiHiveTest {
 
-  private def findScan(spark: SparkSession, sql: String, tableNameHint: String): Scan = {
+  private def findBatchScanExec(
+      spark: SparkSession,
+      sql: String,
+      tableNameHint: String): BatchScanExec = {
     // Match on `HiveScan.catalogTable` rather than the node's `toString` because
     // `BatchScanExec.toString` shape differs across Spark versions.
     def matchesHint(b: BatchScanExec): Boolean = b.scan match {
@@ -41,23 +44,21 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
     def findBatchScan(plan: SparkPlan): Option[BatchScanExec] = plan match {
       case aqe: AdaptiveSparkPlanExec => findBatchScan(aqe.inputPlan)
       case _ => plan.collectFirst {
-          case b: BatchScanExec if matchesHint(b) => b
-        }
+        case b: BatchScanExec if matchesHint(b) => b
+      }
     }
 
     val exec = findBatchScan(spark.sql(sql).queryExecution.executedPlan)
     assert(exec.isDefined)
-    exec.get.scan
+    exec.get
   }
 
   test("HiveScan supports DPP runtime filtering on partition columns") {
-    Seq(
-      ("true", Seq("dt")),
-      ("false", Seq.empty[String])).foreach { case (enabled, expectedFilterAttrs) =>
+    Seq(true, false).foreach { enabled =>
       withSparkSession(Map(
         "hive.exec.dynamic.partition.mode" -> "nonstrict",
-        "spark.sql.kyuubi.hive.connector.read.runtimeFilter.enabled" -> enabled)) { spark =>
-        val suffix = if (enabled == "true") "on" else "off"
+        "spark.sql.optimizer.dynamicPartitionPruning.enabled" -> enabled.toString)) { spark =>
+        val suffix = if (enabled) "on" else "off"
         val fact = s"hive.default.dpp_fact_$suffix"
         val dim = s"hive.default.dpp_dim_$suffix"
 
@@ -91,11 +92,11 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
               Row(3, "c", "2026-05-01"),
               Row(4, "d", "2026-05-01")))
 
-          val scan = findScan(spark, sql, fact.split('.').last)
-          assert(scan.isInstanceOf[SupportsRuntimeFiltering])
-          val filterAttrs = scan.asInstanceOf[SupportsRuntimeFiltering]
-            .filterAttributes().map(_.fieldNames().mkString("."))
-          assert(filterAttrs.toSeq == expectedFilterAttrs)
+          // DPP being actually applied is observable as a `DynamicPruningExpression`
+          // injected into `BatchScanExec.runtimeFilters`.
+          val exec = findBatchScanExec(spark, sql, fact.split('.').last)
+          val hasDpp = exec.runtimeFilters.exists(_.isInstanceOf[DynamicPruningExpression])
+          assert(hasDpp == enabled)
         }
       }
     }
