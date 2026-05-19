@@ -194,7 +194,7 @@ gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>   # full logs 
 
 Allowed under [ASF generative tooling guidance](https://www.apache.org/legal/generative-tooling.html) and Kyuubi's PR template. AI is used for more than code generation (review, reading, solution exploration), so disclose assistance rather than implying the patch was machine-authored.
 
-- Disclose assistance via `Assisted-by: <AGENT>:<MODEL_VERSION>` in the PR template field, following the [Linux kernel convention](https://docs.kernel.org/process/coding-assistants.html). Example: `Assisted-by: Claude:claude-opus-4-7`.
+- Disclose assistance via `Assisted-by: <AGENT>:<MODEL_ID_OR_VERSION>` in the PR template field, following the [Linux kernel convention](https://docs.kernel.org/process/coding-assistants.html). Example: `Assisted-by: Claude:claude-opus-4-7`.
 - Do not list AI tools as co-authors; disclose tool assistance in the PR description.
 - The human author is responsible for the patch and must review every line.
 - No AI self-references in source, comments, commit messages, or PR titles — disclosure stays in the PR description.
