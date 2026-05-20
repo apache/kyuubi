@@ -134,7 +134,6 @@ Runtime dependency changes may also require `LICENSE-binary` and `NOTICE` update
 - Comment intentional omissions and surprising decisions.
 - TODO/FIXME should link a tracking issue when the work is deferred.
 - When referencing upstream or external issues, include the fixed version or release when known.
-- Keep PR descriptions, review replies, and commit messages precise and concise.
 
 ### Error handling and logging
 
@@ -176,6 +175,7 @@ Fill in `.github/PULL_REQUEST_TEMPLATE`:
 - **Why are the changes needed?** — motivation. Reviewers read the diff for "what".
 - **How was this patch tested?** — concrete commands or manual steps; explain if tests were not added.
 - **Was this patch authored or co-authored using generative AI tooling?** — fill the field.
+- Keep prose precise and concise — match length to the size of the change; avoid filler and verbose restating.
 
 One concern per PR. Refactors go in their own PR; if an unrelated nit catches your eye, open a separate PR or follow-up issue.
 
@@ -194,7 +194,7 @@ gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>   # full logs 
 
 Allowed under [ASF generative tooling guidance](https://www.apache.org/legal/generative-tooling.html) and Kyuubi's PR template. AI is used for more than code generation (review, reading, solution exploration), so disclose assistance rather than implying the patch was machine-authored.
 
-- Disclose assistance via `Assisted-by: <AGENT>:<MODEL_ID_OR_VERSION>` in the PR template field, following the [Linux kernel convention](https://docs.kernel.org/process/coding-assistants.html). Example: `Assisted-by: Claude:claude-opus-4-7`.
+- Disclose assistance via an `Assisted-by:` trailer in the PR template field. Identify the agent and model so the contribution is traceable; the exact format is free-form. Examples: `Assisted-by: Claude:claude-opus-4-7`, `Assisted-by: Claude Opus 4.7`, `Assisted-by: OpenCode with DeepSeek V4 Pro`.
 - Do not list AI tools as co-authors; disclose tool assistance in the PR description.
 - The human author is responsible for the patch and must review every line.
 - No AI self-references in source, comments, commit messages, or PR titles — disclosure stays in the PR description.
