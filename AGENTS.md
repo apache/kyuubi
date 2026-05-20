@@ -194,7 +194,7 @@ gh run download <run-id> -R apache/kyuubi -n <unit-tests-log-...>   # full logs 
 
 Allowed under [ASF generative tooling guidance](https://www.apache.org/legal/generative-tooling.html) and Kyuubi's PR template. AI is used for more than code generation (review, reading, solution exploration), so disclose assistance rather than implying the patch was machine-authored.
 
-- Disclose assistance via an `Assisted-by:` trailer in the PR template field. Identify the agent and model so the contribution is traceable; the exact format is free-form. Examples: `Assisted-by: Claude:claude-opus-4-7`, `Assisted-by: Claude Opus 4.7`, `Assisted-by: OpenCode with DeepSeek V4 Pro`.
+- Disclose assistance via an `Assisted-by:` trailer in the PR template field. Identify the agent and model so the contribution is traceable. Examples: `Assisted-by: Claude:claude-opus-4-7`, `Assisted-by: Claude Opus 4.7`, `Assisted-by: OpenCode with DeepSeek V4 Pro`.
 - Do not list AI tools as co-authors; disclose tool assistance in the PR description.
 - The human author is responsible for the patch and must review every line.
 - No AI self-references in source, comments, commit messages, or PR titles — disclosure stays in the PR description.
