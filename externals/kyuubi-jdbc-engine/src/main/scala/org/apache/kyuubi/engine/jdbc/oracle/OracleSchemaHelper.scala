@@ -25,7 +25,7 @@ class OracleSchemaHelper extends SchemaHelper {
   override protected def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
     sqlType match {
       // case for int, returns NUMERIC type in Oracle JDBC
-      case Types.NUMERIC if scale == 0 =>
+      case Types.NUMERIC if scale == 0 && (precision > 0 && precision <= 9) =>
         super.toTTypeDesc(Types.INTEGER, precision, scale)
       // except for int
       case Types.NUMERIC =>
