@@ -115,7 +115,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - name: Build and test Kyuubi and Spark with maven w/o linters
