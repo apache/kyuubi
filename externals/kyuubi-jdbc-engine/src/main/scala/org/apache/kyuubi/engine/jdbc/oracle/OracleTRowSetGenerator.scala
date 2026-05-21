@@ -34,9 +34,10 @@ class OracleTRowSetGenerator extends DefaultJdbcTRowSetGenerator {
   }
 
   override def getColumnType(schema: Seq[Column], ordinal: Int): Int = {
-    schema(ordinal).sqlType match {
+    val col = schema(ordinal)
+    col.sqlType match {
       // case for int, returns NUMERIC type in Oracle JDBC
-      case Types.NUMERIC if schema(ordinal).scale == 0 =>
+      case Types.NUMERIC if col.scale == 0 && (col.precision > 0 && col.precision <= 9) =>
         Types.INTEGER
       case Types.NUMERIC =>
         Types.DECIMAL
