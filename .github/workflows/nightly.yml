@@ -27,6 +27,7 @@ jobs:
     if: ${{ startsWith(github.repository, 'apache/') }}
     runs-on: ubuntu-24.04
     strategy:
+      max-parallel: 15
       matrix:
         profiles:
           - '-Pscala-2.13 -Pspark-master -pl externals/kyuubi-spark-sql-engine -am'

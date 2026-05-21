@@ -32,6 +32,7 @@ jobs:
     name: Style check
     runs-on: ubuntu-24.04
     strategy:
+      max-parallel: 15
       matrix:
         profiles:
           - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it'

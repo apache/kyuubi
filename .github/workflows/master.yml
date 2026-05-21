@@ -149,6 +149,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      max-parallel: 15
       matrix:
         scala:
           - '2.13'
@@ -384,6 +385,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      max-parallel: 15
       matrix:
         java: [ 8 ]
         comment: [ "normal" ]
