@@ -19,6 +19,7 @@ package org.apache.kyuubi.spark.connector.yarn
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
+import org.apache.hadoop.yarn.api.records.ApplicationId
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
@@ -80,6 +81,10 @@ case class YarnLogBatchScan(
     pushedFilters.foreach {
       case EqualTo("app_id", appId: String) =>
         path = path.replace("{{APP_ID}}", appId)
+        // see o.a.h.yarn.logaggregation.LogAggregationUtils#getRemoteBucketDir
+        val appIdObj = ApplicationId.fromString(appId)
+        val bucket = "%04d".format(appIdObj.getId % 10000)
+        path = path.replace("{{BUCKET}}", bucket)
       case EqualTo("user", user: String) =>
         path = path.replace("{{USER}}", user)
       case EqualTo("host", host: String) =>
