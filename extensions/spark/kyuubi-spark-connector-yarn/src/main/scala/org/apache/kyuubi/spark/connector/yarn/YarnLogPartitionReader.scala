@@ -49,7 +49,7 @@ class YarnLogPartitionReaderFactory extends PartitionReaderFactory {
 /**
  * Streaming reader for a single YARN aggregated log file.
  *
- * Path layout (Hadoop 3, file-controller = TFile):
+ * Path layout for YARN-6929 (3.3.0), file-controller = TFile:
  *   {remoteAppLogDir}/{user}/bucket-{suffix}-tfile/{bucket}/{appId}/{host}_{port}
  * e.g. /tmp/logs/root/bucket-logs-tfile/0001/application_1734530210878_0001/localhost_24232
  *

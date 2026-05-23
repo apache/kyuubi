@@ -63,6 +63,9 @@ case class YarnLogBatchScan(
     val fs = path.getFileSystem(hadoopConf)
 
     val start = System.currentTimeMillis()
+    // TODO: consider calling `fs.msync()` before listing to avoid stale read
+    //       from Observer NameNode, see discussion in
+    //       https://github.com/apache/kyuubi/pull/7455#discussion_r3256302662
     val files = fs.globStatus(path)
     val taken = System.currentTimeMillis() - start
     logInfo(s"Listing $pathStr takes $taken ms, found ${files.length} files")
@@ -71,6 +74,7 @@ case class YarnLogBatchScan(
 
   private def listFilesWithFilters(): Array[FileStatus] = {
     val baseDir = remoteAppLogDir
+    // TODO: support path layout prior YARN-6929 (3.3.0)
     val bucketDir = s"bucket-$remoteAppLogDirSuffix-tfile"
     var path = s"$baseDir/{{USER}}/$bucketDir/{{BUCKET}}/{{APP_ID}}/{{HOST}}_*"
     pushedFilters.foreach {
