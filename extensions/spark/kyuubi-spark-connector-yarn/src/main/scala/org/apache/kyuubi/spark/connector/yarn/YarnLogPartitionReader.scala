@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.spark.connector.yarn
 
-import java.io.{BufferedReader, DataInputStream, EOFException, InputStreamReader, IOException}
+import java.io.{BufferedReader, DataInputStream, EOFException, FileNotFoundException, InputStreamReader, IOException}
 import java.lang.{Long => JLong}
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
@@ -35,6 +35,7 @@ import org.apache.spark.util.SerializableConfiguration
 
 case class YarnLogPartition(
     serializableHadoopConf: SerializableConfiguration,
+    ignoreMissingFiles: Boolean,
     filePath: String,
     length: Long,
     mtime: Long) extends InputPartition
@@ -71,12 +72,18 @@ class YarnLogPartitionReader(split: YarnLogPartition)
   private lazy val logReader: AggregatedLogFormat.LogReader = {
     logInfo(s"Task (TID ${TaskContext.get().taskAttemptId()}) input split: " +
       s"${split.filePath}:0-${split.length}")
-    new AggregatedLogFormat.LogReader(hadoopConf, path)
+    try {
+      new AggregatedLogFormat.LogReader(hadoopConf, path)
+    } catch {
+      case e: FileNotFoundException if split.ignoreMissingFiles =>
+        logWarning(s"Skipped missing file: ${split.filePath}", e)
+        null
+    }
   }
 
   // Current container being read; null when no more containers.
   private var key: AggregatedLogFormat.LogKey = new AggregatedLogFormat.LogKey
-  private var valueStream: DataInputStream = logReader.next(key)
+  private var valueStream: DataInputStream = if (logReader != null) logReader.next(key) else null
   private var containerId: String = if (valueStream != null) key.toString else null
 
   // Current file (e.g. stdout / stderr) within the current container.
@@ -182,7 +189,7 @@ class YarnLogPartitionReader(split: YarnLogPartition)
 
   private def advanceContainer(): Unit = {
     key = new AggregatedLogFormat.LogKey
-    valueStream = logReader.next(key)
+    valueStream = if (logReader != null) logReader.next(key) else null
     containerId = if (valueStream != null) key.toString else null
   }
 

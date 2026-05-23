@@ -39,6 +39,9 @@ case class YarnLogBatchScan(
   protected val hadoopConf: Configuration =
     SparkSession.active.sessionState.newHadoopConf()
 
+  protected val ignoreMissingFiles: Boolean =
+    SparkSession.active.sessionState.conf.ignoreMissingFiles
+
   private val _formats = hadoopConf.get(YarnConfiguration.LOG_AGGREGATION_FILE_FORMATS, "TFile")
   if (!_formats.equalsIgnoreCase("TFile")) {
     throw new UnsupportedOperationException(
@@ -98,6 +101,7 @@ case class YarnLogBatchScan(
     listFilesWithFilters().map { fileStatus =>
       YarnLogPartition(
         serializableHadoopConf,
+        ignoreMissingFiles,
         fileStatus.getPath.toString,
         fileStatus.getLen,
         fileStatus.getModificationTime)
