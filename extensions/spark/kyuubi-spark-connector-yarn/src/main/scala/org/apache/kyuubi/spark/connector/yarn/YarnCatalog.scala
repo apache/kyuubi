@@ -37,13 +37,14 @@ class YarnCatalog extends TableCatalog with Logging {
     catalogName = name
   }
 
-  override def listTables(namespace: Array[String]): Array[Identifier] = {
-    Array(Identifier.of(namespace, "app_logs"))
+  override def listTables(namespace: Array[String]): Array[Identifier] = namespace match {
+    case Array() => Array(Identifier.of(namespace, "app_logs"))
+    case _ => Array.empty
   }
 
   override def loadTable(identifier: Identifier): Table = identifier.name match {
-    case "app_logs" => new YarnLogTable
-    case _ => throw new NoSuchTableException(identifier.name)
+    case "app_logs" if identifier.namespace().isEmpty => new YarnLogTable
+    case _ => throw new NoSuchTableException(identifier.toString)
   }
 
   override def createTable(

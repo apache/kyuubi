@@ -28,12 +28,12 @@ object LocalSparkSession {
     System.clearProperty("spark.driver.port")
   }
 
-  /** Runs `f` by passing in `sc` and ensures that `sc` is stopped. */
-  def withSparkSession[T](sc: SparkSession)(f: SparkSession => T): T = {
+  /** Runs `f` by passing in `spark` and ensures that `spark` is stopped. */
+  def withSparkSession[T](spark: SparkSession)(f: SparkSession => T): T = {
     try {
-      f(sc)
+      f(spark)
     } finally {
-      stop(sc)
+      stop(spark)
     }
   }
 }
