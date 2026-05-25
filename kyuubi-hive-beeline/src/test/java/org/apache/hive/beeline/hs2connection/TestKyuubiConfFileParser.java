@@ -17,13 +17,13 @@
  */
 package org.apache.hive.beeline.hs2connection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Properties;
 import org.apache.kyuubi.util.JavaUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestKyuubiConfFileParser {
 

@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 import java.util.Collections;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ConversationMemoryTest {
 
@@ -40,8 +40,8 @@ public class ConversationMemoryTest {
             ChatCompletionUserMessageParam.builder().content("summary").build());
     memory.replaceHistory(Collections.singletonList(summary));
 
-    assertEquals("lastTotalTokens reset after compaction", 0L, memory.getLastTotalTokens());
-    assertEquals("cumulative totals preserved", 300L, memory.getCumulativePromptTokens());
-    assertEquals("cumulative totals preserved", 430L, memory.getCumulativeTotalTokens());
+    assertEquals(0L, memory.getLastTotalTokens(), "lastTotalTokens reset after compaction");
+    assertEquals(300L, memory.getCumulativePromptTokens(), "cumulative totals preserved");
+    assertEquals(430L, memory.getCumulativeTotalTokens(), "cumulative totals preserved");
   }
 }

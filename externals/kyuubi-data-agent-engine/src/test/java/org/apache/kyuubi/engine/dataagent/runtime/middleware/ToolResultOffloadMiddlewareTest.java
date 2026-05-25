@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Collections;
 import org.apache.kyuubi.engine.dataagent.runtime.AgentRunContext;
@@ -25,9 +27,9 @@ import org.apache.kyuubi.engine.dataagent.runtime.ApprovalMode;
 import org.apache.kyuubi.engine.dataagent.runtime.ConversationMemory;
 import org.apache.kyuubi.engine.dataagent.tool.output.GrepToolOutputTool;
 import org.apache.kyuubi.engine.dataagent.tool.output.ReadToolOutputTool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ToolResultOffloadMiddlewareTest {
 
@@ -35,7 +37,7 @@ public class ToolResultOffloadMiddlewareTest {
   private AgentRunContext ctxWithSession;
   private AgentRunContext ctxNoSession;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     mw = new ToolResultOffloadMiddleware();
     ctxWithSession =
@@ -43,7 +45,7 @@ public class ToolResultOffloadMiddlewareTest {
     ctxNoSession = new AgentRunContext(new ConversationMemory(), ApprovalMode.AUTO_APPROVE, null);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     mw.onStop();
   }
@@ -64,12 +66,12 @@ public class ToolResultOffloadMiddlewareTest {
         replacement(
             mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
 
-    assertTrue(out, out.contains("Tool output truncated"));
-    assertTrue(out, out.contains("Saved to:"));
-    assertTrue(out, out.contains(ReadToolOutputTool.NAME));
-    assertTrue(out, out.contains(GrepToolOutputTool.NAME));
-    assertTrue(out, out.contains("row0"));
-    assertTrue(out, out.contains("row599"));
+    assertTrue(out.contains("Tool output truncated"), out);
+    assertTrue(out.contains("Saved to:"), out);
+    assertTrue(out.contains(ReadToolOutputTool.NAME), out);
+    assertTrue(out.contains(GrepToolOutputTool.NAME), out);
+    assertTrue(out.contains("row0"), out);
+    assertTrue(out.contains("row599"), out);
   }
 
   @Test
@@ -83,7 +85,7 @@ public class ToolResultOffloadMiddlewareTest {
     String out =
         replacement(
             mw.afterToolCall(ctxWithSession, invocation("run_select_query"), sb.toString()));
-    assertTrue(out, out.contains("Tool output truncated"));
+    assertTrue(out.contains("Tool output truncated"), out);
   }
 
   @Test
@@ -105,9 +107,9 @@ public class ToolResultOffloadMiddlewareTest {
     StringBuilder sb = new StringBuilder();
     for (int i = 0; i < 1000; i++) sb.append("row").append(i).append('\n');
     assertEquals(
-        "without sessionId, cannot offload safely — pass through",
         Decision.Kind.PROCEED,
-        mw.afterToolCall(ctxNoSession, invocation("run_select_query"), sb.toString()).kind());
+        mw.afterToolCall(ctxNoSession, invocation("run_select_query"), sb.toString()).kind(),
+        "without sessionId, cannot offload safely — pass through");
   }
 
   @Test
@@ -143,7 +145,7 @@ public class ToolResultOffloadMiddlewareTest {
 
   private static String replacement(Decision<String> decision) {
     assertEquals(
-        "expected REPLACE but got " + decision.kind(), Decision.Kind.REPLACE, decision.kind());
+        Decision.Kind.REPLACE, decision.kind(), "expected REPLACE but got " + decision.kind());
     return decision.replacement();
   }
 

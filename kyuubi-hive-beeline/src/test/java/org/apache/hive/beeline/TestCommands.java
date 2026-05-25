@@ -19,10 +19,10 @@
 package org.apache.hive.beeline;
 
 import static org.apache.hive.beeline.common.util.HiveStringUtils.removeComments;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestCommands {
 

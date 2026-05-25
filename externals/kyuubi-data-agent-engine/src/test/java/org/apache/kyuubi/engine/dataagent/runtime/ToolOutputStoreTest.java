@@ -17,19 +17,20 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ToolOutputStoreTest {
 
   private ToolOutputStore store;
 
-  @Before
+  @BeforeEach
   public void setUp() throws IOException {
     store = ToolOutputStore.create();
   }
@@ -42,11 +43,11 @@ public class ToolOutputStoreTest {
     assertTrue(Files.exists(p));
 
     String out = store.read("sess1", p.toString(), 10, 5);
-    assertTrue(out, out.contains("lines 11-15 of"));
-    assertTrue(out, out.contains("row11"));
-    assertTrue(out, out.contains("row15"));
-    assertFalse(out, out.contains("row16"));
-    assertFalse(out, out.contains("row10"));
+    assertTrue(out.contains("lines 11-15 of"), out);
+    assertTrue(out.contains("row11"), out);
+    assertTrue(out.contains("row15"), out);
+    assertFalse(out.contains("row16"), out);
+    assertFalse(out.contains("row10"), out);
   }
 
   @Test
@@ -55,9 +56,9 @@ public class ToolOutputStoreTest {
     Path p = store.write("sess1", "call1", content);
 
     String out = store.grep("sess1", p.toString(), "apple", 10);
-    assertTrue(out, out.contains("1:apple"));
-    assertTrue(out, out.contains("4:apple pie"));
-    assertFalse(out, out.contains("banana"));
+    assertTrue(out.contains("1:apple"), out);
+    assertTrue(out.contains("4:apple pie"), out);
+    assertFalse(out.contains("banana"), out);
   }
 
   @Test
@@ -67,17 +68,17 @@ public class ToolOutputStoreTest {
     Path p = store.write("sess1", "call1", sb.toString());
 
     String out = store.grep("sess1", p.toString(), "hit", 3);
-    assertTrue(out, out.contains("[3 matches]"));
-    assertTrue(out, out.contains("1:hit"));
-    assertTrue(out, out.contains("3:hit"));
-    assertFalse("should stop after 3 matches", out.contains("4:hit"));
+    assertTrue(out.contains("[3 matches]"), out);
+    assertTrue(out.contains("1:hit"), out);
+    assertTrue(out.contains("3:hit"), out);
+    assertFalse(out.contains("4:hit"), "should stop after 3 matches");
   }
 
   @Test
   public void grepInvalidRegexReturnsError() throws IOException {
     Path p = store.write("sess1", "call1", "x\n");
     String out = store.grep("sess1", p.toString(), "[", 10);
-    assertTrue(out, out.startsWith("Error:"));
+    assertTrue(out.startsWith("Error:"), out);
   }
 
   @Test
@@ -86,16 +87,16 @@ public class ToolOutputStoreTest {
     assertTrue(Files.exists(victim));
 
     String out = store.read("attacker", victim.toString(), 0, 10);
-    assertTrue(out, out.startsWith("Error:"));
-    assertFalse(out, out.contains("top secret"));
+    assertTrue(out.startsWith("Error:"), out);
+    assertFalse(out.contains("top secret"), out);
   }
 
   @Test
   public void grepRejectsCrossSessionPath() throws IOException {
     Path victim = store.write("victim", "secret_call", "api_key=xyz\n");
     String out = store.grep("attacker", victim.toString(), "api_key", 10);
-    assertTrue(out, out.startsWith("Error:"));
-    assertFalse(out, out.contains("xyz"));
+    assertTrue(out.startsWith("Error:"), out);
+    assertFalse(out.contains("xyz"), out);
   }
 
   @Test
@@ -111,6 +112,6 @@ public class ToolOutputStoreTest {
 
     assertFalse(Files.exists(p1));
     assertFalse(Files.exists(p2));
-    assertTrue("other sessions untouched", Files.exists(p3));
+    assertTrue(Files.exists(p3), "other sessions untouched");
   }
 }

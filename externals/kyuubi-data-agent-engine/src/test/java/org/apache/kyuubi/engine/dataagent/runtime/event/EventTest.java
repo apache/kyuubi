@@ -17,12 +17,16 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EventTest {
 
@@ -122,7 +126,7 @@ public class EventTest {
     EventType[] values = EventType.values();
     java.util.Set<String> names = new java.util.HashSet<>();
     for (EventType type : values) {
-      assertTrue("Duplicate SSE name: " + type.sseEventName(), names.add(type.sseEventName()));
+      assertTrue(names.add(type.sseEventName()), "Duplicate SSE name: " + type.sseEventName());
     }
     assertEquals(11, values.length);
   }

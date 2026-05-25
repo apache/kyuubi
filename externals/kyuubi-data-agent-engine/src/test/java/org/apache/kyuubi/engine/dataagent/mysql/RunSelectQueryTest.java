@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * Integration tests for run_select_query tool against a real MySQL instance. All calls go through
@@ -28,7 +29,7 @@ import org.junit.Test;
  */
 public class RunSelectQueryTest extends WithMySQLContainer {
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() {
     exec(
         "CREATE TABLE IF NOT EXISTS select_test ("
@@ -68,23 +69,23 @@ public class RunSelectQueryTest extends WithMySQLContainer {
     String result = select("SELECT id AS user_id, name AS user_name FROM select_test LIMIT 1");
     assertFalse(result.startsWith("Error:"));
     assertTrue(
-        "header should contain alias 'user_id', got:\n" + result, result.contains("user_id"));
+        result.contains("user_id"), "header should contain alias 'user_id', got:\n" + result);
     assertTrue(
-        "header should contain alias 'user_name', got:\n" + result, result.contains("user_name"));
+        result.contains("user_name"), "header should contain alias 'user_name', got:\n" + result);
     assertFalse(
-        "header should NOT leak the base column name 'id', got:\n" + result,
-        result.contains("| id |") || result.contains("| id "));
+        result.contains("| id |") || result.contains("| id "),
+        "header should NOT leak the base column name 'id', got:\n" + result);
   }
 
   @Test
   public void testMySQLTypes() {
     String result = select("SELECT * FROM select_test WHERE id = 1");
     assertFalse(result.startsWith("Error:"));
-    assertTrue("DECIMAL value", result.contains("99.123456789"));
-    assertTrue("DATE value", result.contains("1990-01-15"));
-    assertTrue("DATETIME value", result.contains("2024-06-01"));
-    assertTrue("DOUBLE value", result.contains("88.5"));
-    assertTrue("ENUM value", result.contains("ACTIVE"));
+    assertTrue(result.contains("99.123456789"), "DECIMAL value");
+    assertTrue(result.contains("1990-01-15"), "DATE value");
+    assertTrue(result.contains("2024-06-01"), "DATETIME value");
+    assertTrue(result.contains("88.5"), "DOUBLE value");
+    assertTrue(result.contains("ACTIVE"), "ENUM value");
   }
 
   @Test
@@ -172,6 +173,6 @@ public class RunSelectQueryTest extends WithMySQLContainer {
 
     String result = select("SELECT val FROM pipe_test WHERE id = 1");
     assertFalse(result.startsWith("Error:"));
-    assertTrue("Pipe should be escaped for markdown table", result.contains("a\\|b\\|c"));
+    assertTrue(result.contains("a\\|b\\|c"), "Pipe should be escaped for markdown table");
   }
 }

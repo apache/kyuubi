@@ -20,8 +20,8 @@ package org.apache.hive.beeline;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestShutdownHook {
   @Test
@@ -32,9 +32,9 @@ public class TestShutdownHook {
     DatabaseConnections dbConnections = beeline.getDatabaseConnections();
     dbConnections.setConnection(new DatabaseConnection(beeline, null, null, null));
     dbConnections.setConnection(new DatabaseConnection(beeline, null, null, null));
-    Assert.assertEquals(2, dbConnections.size());
+    Assertions.assertEquals(2, dbConnections.size());
     beeline.setOutputStream(ops);
     beeline.getShutdownHook().run();
-    Assert.assertEquals(0, dbConnections.size());
+    Assertions.assertEquals(0, dbConnections.size());
   }
 }

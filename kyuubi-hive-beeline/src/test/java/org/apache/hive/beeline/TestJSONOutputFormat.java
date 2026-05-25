@@ -17,7 +17,7 @@
  */
 package org.apache.hive.beeline;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -27,8 +27,8 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Types;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -58,7 +58,7 @@ public class TestJSONOutputFormat {
     assertEquals(expResult, captureOutput.getValue());
   }
 
-  @Before
+  @BeforeEach
   public void setupMockData() throws SQLException {
     mockResultSet = mock(ResultSet.class);
     ResultSetMetaData mockResultSetMetaData = mock(ResultSetMetaData.class);

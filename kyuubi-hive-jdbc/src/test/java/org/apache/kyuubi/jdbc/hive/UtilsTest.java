@@ -19,81 +19,69 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Pattern;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class UtilsTest {
 
-  private String expectedHost;
-  private String expectedPort;
-  private String expectedCatalog;
-  private String expectedDb;
-  private Map<String, String> expectedHiveConf;
-  private String uri;
-
-  @Parameterized.Parameters
-  public static Collection<Object[]> data() throws UnsupportedEncodingException {
-    return Arrays.asList(
-        new Object[][] {
-          {
+  static Stream<Arguments> data() throws UnsupportedEncodingException {
+    return Stream.of(
+        Arguments.of(
             "localhost",
             "10009",
             null,
             "db",
             new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
-            "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"
-          },
-          {
+            "jdbc:hive2:///db;k1=v1?k2=v2#k3=v3"),
+        Arguments.of(
             "localhost",
             "10009",
             null,
             "default",
             new ImmutableMap.Builder<String, String>().build(),
-            "jdbc:hive2:///"
-          },
-          {
+            "jdbc:hive2:///"),
+        Arguments.of(
             "localhost",
             "10009",
             null,
             "default",
             new ImmutableMap.Builder<String, String>().build(),
-            "jdbc:kyuubi://"
-          },
-          {
+            "jdbc:kyuubi://"),
+        Arguments.of(
             "localhost",
             "10009",
             null,
             "default",
             new ImmutableMap.Builder<String, String>().build(),
-            "jdbc:hive2://"
-          },
-          {
+            "jdbc:hive2://"),
+        Arguments.of(
             "hostname",
             "10018",
             null,
             "db",
             new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
-            "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"
-          },
-          {
+            "jdbc:hive2://hostname:10018/db;k1=v1?k2=v2#k3=v3"),
+        Arguments.of(
             "hostname",
             "10018",
             "catalog",
             "db",
             new ImmutableMap.Builder<String, String>().put("k2", "v2").build(),
-            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2#k3=v3"
-          },
-          {
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2#k3=v3"),
+        Arguments.of(
             "hostname",
             "10018",
             "catalog",
@@ -107,9 +95,8 @@ public class UtilsTest {
                         "k2=v2;k3=-Xmx2g -XX:+PrintGCDetails -XX:HeapDumpPath=/heap.hprof",
                         StandardCharsets.UTF_8.toString())
                     .replaceAll("\\+", "%20")
-                + "#k4=v4"
-          },
-          {
+                + "#k4=v4"),
+        Arguments.of(
             "hostname",
             "10018",
             "catalog",
@@ -118,28 +105,19 @@ public class UtilsTest {
                 .put("k2", "v2")
                 .put("k3", "hostname:10018")
                 .build(),
-            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2;k3=hostname:10018"
-          }
-        });
+            "jdbc:hive2://hostname:10018/catalog/db;k1=v1?k2=v2;k3=hostname:10018"));
   }
 
-  public UtilsTest(
+  @ParameterizedTest
+  @MethodSource("data")
+  public void testExtractURLComponents(
       String expectedHost,
       String expectedPort,
       String expectedCatalog,
       String expectedDb,
       Map<String, String> expectedHiveConf,
-      String uri) {
-    this.expectedHost = expectedHost;
-    this.expectedPort = expectedPort;
-    this.expectedCatalog = expectedCatalog;
-    this.expectedDb = expectedDb;
-    this.expectedHiveConf = expectedHiveConf;
-    this.uri = uri;
-  }
-
-  @Test
-  public void testExtractURLComponents() throws JdbcUriParseException {
+      String uri)
+      throws JdbcUriParseException {
     JdbcConnectionParams jdbcConnectionParams1 = extractURLComponents(uri, new Properties());
     assertEquals(expectedHost, jdbcConnectionParams1.getHost());
     assertEquals(Integer.parseInt(expectedPort), jdbcConnectionParams1.getPort());
@@ -230,9 +208,9 @@ public class UtilsTest {
     assertEquals("JWT", authFromParseProperty);
     assertEquals("JWT", authFromExtract);
     assertEquals(
-        "parsePropertyFromUrl and extractURLComponents should return the same auth value",
         authFromExtract,
-        authFromParseProperty);
+        authFromParseProperty,
+        "parsePropertyFromUrl and extractURLComponents should return the same auth value");
 
     // Verify query string parameters are correctly parsed
     assertEquals("clusterA", params.getHiveConfs().get("kyuubi.session.cluster"));

@@ -17,14 +17,17 @@
 
 package org.apache.kyuubi.engine.dataagent.tool;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.tool.sql.SqlQueryArgs;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ToolSchemaGeneratorTest {
 
@@ -43,7 +46,7 @@ public class ToolSchemaGeneratorTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> sqlProp = (Map<String, Object>) props.get("sql");
     assertEquals("string", sqlProp.get("type"));
-    assertNotNull("sql should have a description", sqlProp.get("description"));
+    assertNotNull(sqlProp.get("description"), "sql should have a description");
 
     @SuppressWarnings("unchecked")
     List<String> required = (List<String>) schema.get("required");
@@ -106,8 +109,8 @@ public class ToolSchemaGeneratorTest {
     @SuppressWarnings("unchecked")
     List<String> required = (List<String>) schema.get("required");
     assertNotNull(required);
-    assertTrue("stringField should be required", required.contains("stringField"));
-    assertFalse("intField should not be required", required.contains("intField"));
+    assertTrue(required.contains("stringField"), "stringField should be required");
+    assertFalse(required.contains("intField"), "intField should not be required");
   }
 
   // --- Edge cases ---
@@ -136,7 +139,7 @@ public class ToolSchemaGeneratorTest {
   @Test
   public void testSchemaDoesNotContainDollarSchema() {
     Map<String, Object> schema = ToolSchemaGenerator.generateSchema(AllTypesArgs.class);
-    assertFalse("$schema key should be stripped", schema.containsKey("$schema"));
+    assertFalse(schema.containsKey("$schema"), "$schema key should be stripped");
   }
 
   public static class ArrayArgs {
@@ -157,14 +160,14 @@ public class ToolSchemaGeneratorTest {
   @SuppressWarnings("unchecked")
   private static String getType(Map<String, Object> props, String fieldName) {
     Map<String, Object> prop = (Map<String, Object>) props.get(fieldName);
-    assertNotNull("Property " + fieldName + " should exist", prop);
+    assertNotNull(prop, "Property " + fieldName + " should exist");
     return (String) prop.get("type");
   }
 
   @SuppressWarnings("unchecked")
   private static String getDescription(Map<String, Object> props, String fieldName) {
     Map<String, Object> prop = (Map<String, Object>) props.get(fieldName);
-    assertNotNull("Property " + fieldName + " should exist", prop);
+    assertNotNull(prop, "Property " + fieldName + " should exist");
     return (String) prop.get("description");
   }
 }

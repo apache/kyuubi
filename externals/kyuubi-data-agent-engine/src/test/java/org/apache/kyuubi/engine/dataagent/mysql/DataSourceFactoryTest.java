@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
@@ -25,7 +27,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import javax.sql.DataSource;
 import org.apache.kyuubi.engine.dataagent.datasource.DataSourceFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Integration tests for {@link DataSourceFactory} against a real MySQL instance. */
 public class DataSourceFactoryTest extends WithMySQLContainer {
@@ -56,8 +58,8 @@ public class DataSourceFactoryTest extends WithMySQLContainer {
       // The exception chain should contain the MySQL access-denied message.
       String fullMsg = getFullExceptionMessage(e);
       assertTrue(
-          "Expected auth error, got: " + fullMsg,
-          fullMsg.contains("Access denied") || fullMsg.contains("password"));
+          fullMsg.contains("Access denied") || fullMsg.contains("password"),
+          "Expected auth error, got: " + fullMsg);
     } finally {
       if (ds instanceof HikariDataSource) {
         ((HikariDataSource) ds).close();

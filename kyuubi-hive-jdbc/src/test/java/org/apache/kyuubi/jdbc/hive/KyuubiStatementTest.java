@@ -17,10 +17,11 @@
  */
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.sql.SQLException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class KyuubiStatementTest {
 
@@ -41,17 +42,25 @@ public class KyuubiStatementTest {
     }
   }
 
-  @Test(expected = SQLException.class)
+  @Test
   public void testSetFetchSize3() throws SQLException {
-    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
-      stmt.setFetchSize(-1);
-    }
+    assertThrows(
+        SQLException.class,
+        () -> {
+          try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+            stmt.setFetchSize(-1);
+          }
+        });
   }
 
-  @Test(expected = SQLException.class)
+  @Test
   public void testaddBatch() throws SQLException {
-    try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
-      stmt.addBatch(null);
-    }
+    assertThrows(
+        SQLException.class,
+        () -> {
+          try (KyuubiStatement stmt = new KyuubiStatement(null, null, null)) {
+            stmt.addBatch(null);
+          }
+        });
   }
 }

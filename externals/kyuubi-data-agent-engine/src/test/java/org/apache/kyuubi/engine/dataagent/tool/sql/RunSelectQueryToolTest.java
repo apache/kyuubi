@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine.dataagent.tool.sql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.sql.Connection;
@@ -25,9 +26,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sqlite.SQLiteDataSource;
 
 /** Tests for RunSelectQueryTool. Uses real SQLite — no mocks. */
@@ -39,14 +40,14 @@ public class RunSelectQueryToolTest {
   private RunSelectQueryTool tool;
   private final List<File> tempFiles = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     ds = createDataSource();
     setupLargeTable(ds);
     tool = new RunSelectQueryTool(ds, TEST_TIMEOUT_SECONDS);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     tempFiles.forEach(File::delete);
   }
@@ -206,7 +207,7 @@ public class RunSelectQueryToolTest {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT val FROM pipe_test";
     String result = tool.execute(ToolContext.EMPTY, args);
-    assertTrue("Pipe should be escaped for markdown table", result.contains("a\\|b\\|c"));
+    assertTrue(result.contains("a\\|b\\|c"), "Pipe should be escaped for markdown table");
   }
 
   // --- Error formatting ---
@@ -227,7 +228,7 @@ public class RunSelectQueryToolTest {
     String result = tool.execute(ToolContext.EMPTY, args);
     assertTrue(result.startsWith("Error:"));
     long newlines = result.chars().filter(c -> c == '\n').count();
-    assertTrue("Error should be concise (<=2 newlines), got " + newlines, newlines <= 2);
+    assertTrue(newlines <= 2, "Error should be concise (<=2 newlines), got " + newlines);
   }
 
   // --- Query timeout ---
@@ -316,8 +317,8 @@ public class RunSelectQueryToolTest {
     SqlQueryArgs args = new SqlQueryArgs();
     args.sql = "SELECT * FROM large_table";
     String result = timeoutTool.execute(ToolContext.EMPTY, args);
-    assertTrue("Expected error on timeout", result.startsWith("Error:"));
-    assertTrue("Expected timeout message", result.contains("timed out"));
+    assertTrue(result.startsWith("Error:"), "Expected error on timeout");
+    assertTrue(result.contains("timed out"), "Expected timeout message");
   }
 
   // --- Helpers ---

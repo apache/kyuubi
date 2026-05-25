@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
 public class TestClientCommandHookFactory {
@@ -50,40 +50,40 @@ public class TestClientCommandHookFactory {
   @Test
   public void testGetHookBeeLineWithShowDbInPrompt() {
     BeeLine beeLine = setupMockData(true, true);
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a=b;"));
-    Assert.assertTrue(
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a=b;"));
+    Assertions.assertTrue(
         ClientCommandHookFactory.get().getHook(beeLine, "USE a.b")
             instanceof ClientCommandHookFactory.UseCommandHook);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         ClientCommandHookFactory.get().getHook(beeLine, "coNNect a.b")
             instanceof ClientCommandHookFactory.ConnectCommandHook);
-    Assert.assertTrue(
+    Assertions.assertTrue(
         ClientCommandHookFactory.get().getHook(beeLine, "gO 1")
             instanceof ClientCommandHookFactory.GoCommandHook);
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "g"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "g"));
   }
 
   @Test
   public void testGetHookBeeLineWithoutShowDbInPrompt() {
     BeeLine beeLine = setupMockData(true, false);
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a=b;"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "USE a.b"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "coNNect a.b"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "gO 1"));
-    Assert.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "g"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a;"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "set a=b;"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "USE a.b"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "coNNect a.b"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "gO 1"));
+    Assertions.assertNull(ClientCommandHookFactory.get().getHook(beeLine, "g"));
   }
 
   @Test
   public void testUseHook() {
     BeeLine beeLine = setupMockData(true, true);
     ClientHook hook = ClientCommandHookFactory.get().getHook(beeLine, "USE newDatabase1");
-    Assert.assertTrue(hook instanceof ClientCommandHookFactory.UseCommandHook);
+    Assertions.assertTrue(hook instanceof ClientCommandHookFactory.UseCommandHook);
     hook.postHook(beeLine);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(beeLine).setCurrentDatabase(argument.capture());
-    Assert.assertEquals("newDatabase1", argument.getValue());
+    Assertions.assertEquals("newDatabase1", argument.getValue());
   }
 
   @Test
@@ -92,21 +92,21 @@ public class TestClientCommandHookFactory {
     ClientHook hook =
         ClientCommandHookFactory.get()
             .getHook(beeLine, "coNNect jdbc:hive2://localhost:10000/newDatabase2 a a");
-    Assert.assertTrue(hook instanceof ClientCommandHookFactory.ConnectCommandHook);
+    Assertions.assertTrue(hook instanceof ClientCommandHookFactory.ConnectCommandHook);
     hook.postHook(beeLine);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(beeLine).setCurrentDatabase(argument.capture());
-    Assert.assertEquals("newDatabase2", argument.getValue());
+    Assertions.assertEquals("newDatabase2", argument.getValue());
   }
 
   @Test
   public void testGoHook() {
     BeeLine beeLine = setupMockData(true, true);
     ClientHook hook = ClientCommandHookFactory.get().getHook(beeLine, "go 1");
-    Assert.assertTrue(hook instanceof ClientCommandHookFactory.GoCommandHook);
+    Assertions.assertTrue(hook instanceof ClientCommandHookFactory.GoCommandHook);
     hook.postHook(beeLine);
     ArgumentCaptor<String> argument = ArgumentCaptor.forClass(String.class);
     verify(beeLine).setCurrentDatabase(argument.capture());
-    Assert.assertEquals("newDatabase", argument.getValue());
+    Assertions.assertEquals("newDatabase", argument.getValue());
   }
 }

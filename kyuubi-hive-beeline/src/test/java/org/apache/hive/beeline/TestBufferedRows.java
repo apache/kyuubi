@@ -23,8 +23,8 @@ import static org.mockito.Mockito.when;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -59,7 +59,7 @@ public class TestBufferedRows {
     while (bfRows.hasNext()) {
       Rows.Row row = (Rows.Row) bfRows.next();
       for (int colSize : row.sizes) {
-        Assert.assertTrue(colSize <= mockBeeLineOpts.getMaxColumnWidth());
+        Assertions.assertTrue(colSize <= mockBeeLineOpts.getMaxColumnWidth());
       }
     }
   }

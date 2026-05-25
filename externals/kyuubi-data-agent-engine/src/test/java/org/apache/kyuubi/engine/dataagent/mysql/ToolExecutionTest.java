@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /**
  * Integration tests for ToolRegistry-level behavior and cross-tool workflows against a real MySQL
@@ -32,7 +33,7 @@ import org.junit.Test;
  */
 public class ToolExecutionTest extends WithMySQLContainer {
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() {
     exec(
         "CREATE TABLE IF NOT EXISTS workflow_test ("
@@ -112,10 +113,10 @@ public class ToolExecutionTest extends WithMySQLContainer {
     long elapsed = System.currentTimeMillis() - start;
 
     // Must not block for 60 seconds
-    assertTrue("Should return within 10s, took " + elapsed + "ms", elapsed < 10_000);
+    assertTrue(elapsed < 10_000, "Should return within 10s, took " + elapsed + "ms");
     // Either JDBC timeout or ToolRegistry timeout fires
     assertTrue(
-        "Expected timeout or interrupted sleep, got: " + result,
-        result.contains("timed out") || result.startsWith("Error:") || result.contains("1"));
+        result.contains("timed out") || result.startsWith("Error:") || result.contains("1"),
+        "Expected timeout or interrupted sleep, got: " + result);
   }
 }

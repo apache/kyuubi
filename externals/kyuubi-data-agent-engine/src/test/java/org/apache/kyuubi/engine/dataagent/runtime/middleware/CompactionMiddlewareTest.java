@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -36,8 +37,8 @@ import java.util.Set;
 import org.apache.kyuubi.engine.dataagent.runtime.AgentRunContext;
 import org.apache.kyuubi.engine.dataagent.runtime.ApprovalMode;
 import org.apache.kyuubi.engine.dataagent.runtime.ConversationMemory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests that exercise only the deterministic, LLM-free parts of {@link CompactionMiddleware}:
@@ -69,7 +70,7 @@ public class CompactionMiddlewareTest {
   private ConversationMemory memory;
   private AgentRunContext ctx;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     memory = new ConversationMemory();
     memory.setSystemPrompt("SYS");
@@ -125,8 +126,8 @@ public class CompactionMiddlewareTest {
     CompactionMiddleware.Split s = CompactionMiddleware.computeSplit(history, 4);
     assertNoOrphanToolResult(s.kept);
     // Verify the tc1 pair really did end up in kept, not old.
-    assertTrue("a3(tc1) must be in kept", containsToolCallId(s.kept, "tc1"));
-    assertTrue("tool_result(tc1) must be in kept", containsToolCallIdAsResult(s.kept, "tc1"));
+    assertTrue(containsToolCallId(s.kept, "tc1"), "a3(tc1) must be in kept");
+    assertTrue(containsToolCallIdAsResult(s.kept, "tc1"), "tool_result(tc1) must be in kept");
   }
 
   @Test
@@ -314,8 +315,8 @@ public class CompactionMiddlewareTest {
     for (ChatCompletionMessageParam m : msgs) {
       if (m.isTool()) {
         assertTrue(
-            "tool_result id=" + m.asTool().toolCallId() + " has no matching tool_call",
-            issued.contains(m.asTool().toolCallId()));
+            issued.contains(m.asTool().toolCallId()),
+            "tool_result id=" + m.asTool().toolCallId() + " has no matching tool_call");
       }
     }
   }

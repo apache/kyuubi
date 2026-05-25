@@ -18,7 +18,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -26,45 +26,33 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.Collection;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class TestJdbcDriver {
   private static File file = null;
-  private String input;
-  private String expected;
 
-  public TestJdbcDriver(String input, String expected) throws Exception {
-    this.input = input;
-    this.expected = expected;
+  static Stream<Arguments> data() {
+    return Stream.of(
+        // Here are some positive cases which can be executed as below :
+        Arguments.of("show databases;show tables;", "show databases,show tables"),
+        Arguments.of(" show\n\r  tables;", "show tables"),
+        Arguments.of("show databases; show\ntables;", "show databases,show tables"),
+        Arguments.of("show    tables;", "show    tables"),
+        Arguments.of("show tables ;", "show tables"),
+        // Here are some negative cases as below :
+        Arguments.of("show tables", ","),
+        Arguments.of("show tables show tables;", "show tables show tables"),
+        Arguments.of("show tab les;", "show tab les"),
+        Arguments.of("#show tables; show\n tables;", "tables"),
+        Arguments.of("show tab les;show tables;", "show tab les,show tables"));
   }
 
-  @Parameters
-  public static Collection<Object[]> data() {
-    return Arrays.asList(
-        new Object[][] {
-          // Here are some positive cases which can be executed as below :
-          {"show databases;show tables;", "show databases,show tables"},
-          {" show\n\r  tables;", "show tables"},
-          {"show databases; show\ntables;", "show databases,show tables"},
-          {"show    tables;", "show    tables"},
-          {"show tables ;", "show tables"},
-          // Here are some negative cases as below :
-          {"show tables", ","},
-          {"show tables show tables;", "show tables show tables"},
-          {"show tab les;", "show tab les"},
-          {"#show tables; show\n tables;", "tables"},
-          {"show tab les;show tables;", "show tab les,show tables"}
-        });
-  }
-
-  @BeforeClass
+  @BeforeAll
   public static void setUpBeforeClass() throws Exception {
     file = new File(System.getProperty("user.dir") + File.separator + "Init.sql");
     if (!file.exists()) {
@@ -72,15 +60,16 @@ public class TestJdbcDriver {
     }
   }
 
-  @AfterClass
+  @AfterAll
   public static void cleanUpAfterClass() throws Exception {
     if (file != null) {
       Files.deleteIfExists(file.toPath());
     }
   }
 
-  @Test
-  public void testParseInitFile() throws IOException {
+  @ParameterizedTest
+  @MethodSource("data")
+  public void testParseInitFile(String input, String expected) throws IOException {
     try (BufferedWriter bw = new BufferedWriter(new FileWriter(file))) {
       bw.write(input);
       bw.flush();

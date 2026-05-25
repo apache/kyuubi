@@ -20,8 +20,8 @@ package org.apache.hive.beeline;
 import static org.mockito.Mockito.*;
 
 import java.io.*;
-import junit.framework.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TestBeeLineOpts {
   @Test
@@ -30,6 +30,6 @@ public class TestBeeLineOpts {
     when(mockBeeLine.isBeeLine()).thenReturn(true);
     when(mockBeeLine.getReflector()).thenReturn(new Reflector(mockBeeLine));
     BeeLineOpts beeLineOpts = new BeeLineOpts(mockBeeLine, System.getProperties());
-    Assert.assertFalse(beeLineOpts.propertyNamesSet().contains("conf"));
+    Assertions.assertFalse(beeLineOpts.propertyNamesSet().contains("conf"));
   }
 }
