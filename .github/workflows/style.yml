@@ -32,6 +32,7 @@ jobs:
     name: Style check
     runs-on: ubuntu-24.04
     strategy:
+      max-parallel: 15
       matrix:
         profiles:
           - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it'
@@ -49,7 +50,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python 3
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -96,7 +97,7 @@ jobs:
           echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
           echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
       - name: setup npm
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{env.NODEJS_VERSION}}
       - name: Web UI Style with node

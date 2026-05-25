@@ -48,13 +48,13 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
       - name: Get Ccache
         id: gluten-ccache-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: gluten/.ccache
           key: ccache-centos7-release-default-${{github.sha}}
@@ -78,13 +78,13 @@ jobs:
             cp -r $GITHUB_WORKSPACE/gluten/.m2/repository/org/apache/arrow/* ~/.m2/repository/org/apache/arrow/
             mvn clean package -Pbackends-velox -Pceleborn -Puniffle -Pspark-3.5 -DskipTests
           fi
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         if: steps.gluten-cache.outputs.cache-hit != 'true'
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}
       - name: Save Ccache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         if: steps.gluten-ccache-cache.outputs.cache-hit != 'true'
         with:
           path: gluten/.ccache/
@@ -96,6 +96,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      max-parallel: 15
       matrix:
         spark: [ '3.5' ]
     steps:
@@ -111,7 +112,7 @@ jobs:
         run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
       - name: Check gluten cache
         id: gluten-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: gluten/package/target/
           key: gluten_package_${{ steps.date.outputs.date }}

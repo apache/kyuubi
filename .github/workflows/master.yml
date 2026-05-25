@@ -115,7 +115,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
       - name: Build and test Kyuubi and Spark with maven w/o linters
@@ -149,6 +149,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      max-parallel: 15
       matrix:
         scala:
           - '2.13'
@@ -384,6 +385,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
+      max-parallel: 15
       matrix:
         java: [ 8 ]
         comment: [ "normal" ]
@@ -440,7 +442,7 @@ jobs:
         run: |
           docker pull apache/spark:3.5.7
       - name: Build Kyuubi Docker Image
-        uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7.0.0
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           # passthrough CI into build container
           build-args: |

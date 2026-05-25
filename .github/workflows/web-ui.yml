@@ -34,13 +34,13 @@ jobs:
           echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
           echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
       - name: Setup Nodejs and NPM
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{env.NODEJS_VERSION}}
           cache: npm
           cache-dependency-path: ./kyuubi-server/web-ui/package.json
       - name: Cache NPM dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ./kyuubi-server/web-ui/node_modules
           key: webui-dependencies-${{ hashFiles('kyuubi-server/web-ui/pnpm-lock.yaml') }}

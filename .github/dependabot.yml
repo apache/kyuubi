@@ -15,34 +15,11 @@
 # limitations under the License.
 #
 
-name: Docs
-
-on:
-  pull_request:
-    branches:
-      - master
-
-concurrency:
-  group: docs-${{ github.head_ref || github.run_id }}
-  cancel-in-progress: true
-
-jobs:
-  sphinx:
-    name: sphinx-build
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-          cache-dependency-path: docs/requirements.txt
-      - run: pip install -r docs/requirements.txt
-      - name: make html
-        run: make -d --directory docs html
-      - name: upload html
-        uses: actions/upload-artifact@v4
-        with:
-          path: |
-            docs/_build/html/
-            !docs/_build/html/_sources/
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 4

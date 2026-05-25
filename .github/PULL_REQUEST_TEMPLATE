@@ -25,9 +25,9 @@ If tests were not added, please describe why they were not added and/or why it w
 
 ### Was this patch authored or co-authored using generative AI tooling?
 <!--
-If a generative AI tooling has been used in the process of authoring this patch, please include
-phrase 'Generated-by: ' followed by the name of the tool and its version.
+If generative AI tooling has assisted in authoring or reviewing this patch, please include
+an 'Assisted-by: ' trailer that identifies the agent and model.
+For example: 'Assisted-by: Claude:claude-opus-4-7' or 'Assisted-by: Claude Opus 4.7'.
 If no, write 'No'.
 Please refer to the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html) for details.
 -->
-
