@@ -85,7 +85,7 @@ private[server] object ApiRootResource {
   }
 
   def getEngineUIProxyHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
-    val proxyServlet = new EngineUIProxyServlet()
+    val proxyServlet = EngineUIProxyServlet(fe)
     val holder = new ServletHolder(proxyServlet)
     val conf = fe.getConf
     holder.setInitParameter(
@@ -108,6 +108,7 @@ private[server] object ApiRootResource {
       conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_TIMEOUT).toString)
     val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     proxyHandler.setContextPath("/engine-ui")
+    FrontendServiceContext.set(proxyHandler, fe)
     proxyHandler.addServlet(holder, "/*")
     proxyHandler
   }

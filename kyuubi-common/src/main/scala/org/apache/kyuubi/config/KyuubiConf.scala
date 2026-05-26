@@ -656,6 +656,16 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT60S")
 
+  val FRONTEND_REST_ENGINE_UI_PROXY_FILTER_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.engine.ui.proxy.filter.enabled")
+      .serverOnly
+      .doc("Whether to restrict Engine UI proxy routing to registered engine UI URLs. " +
+        "Disable this only for compatibility if users intentionally rely on routing arbitrary " +
+        "Engine UI proxy targets.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val FRONTEND_REST_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.rest.jetty.stopTimeout")
       .serverOnly
