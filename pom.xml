@@ -174,7 +174,7 @@
         <jetcd.version>0.7.7</jetcd.version>
         <jetty.version>9.4.57.v20241219</jetty.version>
         <jline.version>2.14.6</jline.version>
-        <junit.jupiter.version>5.11.4</junit.jupiter.version>
+        <junit.jupiter.version>5.14.4</junit.jupiter.version>
         <kafka.version>3.9.2</kafka.version>
         <!-- 6.14.0 requires Jackson 2.19.0+
              https://github.com/fabric8io/kubernetes-client/releases/tag/v6.14.0 -->
