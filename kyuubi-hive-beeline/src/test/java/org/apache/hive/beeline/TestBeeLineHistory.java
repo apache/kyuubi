@@ -81,8 +81,8 @@ public class TestBeeLineHistory {
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     String[] tmp = output.split("\n");
-    Assertions.assertTrue(tmp[0].equals("1     : select 1;"));
-    Assertions.assertTrue(tmp[9].equals("10    : select 10;"));
+    Assertions.assertEquals("1     : select 1;", tmp[0]);
+    Assertions.assertEquals("10    : select 10;", tmp[9]);
     beeline.close();
   }
 

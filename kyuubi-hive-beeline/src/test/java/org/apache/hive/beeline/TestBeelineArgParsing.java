@@ -123,8 +123,8 @@ public class TestBeelineArgParsing {
           "-u", "url", "-n", "name", "-p", "password", "-d", "driver", "-a", "authType"
         };
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
-    assertTrue(bl.getOpts().getAuthType().equals("authType"));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("authType", bl.getOpts().getAuthType());
   }
 
   @Test
@@ -153,8 +153,8 @@ public class TestBeelineArgParsing {
     bl.initArgs(args);
     System.out.println(bl.connectArgs);
     // Password file contents are trimmed of trailing whitespaces and newlines
-    assertTrue(bl.connectArgs.equals("url name mypass driver"));
-    assertTrue(bl.getOpts().getAuthType().equals("authType"));
+    assertEquals("url name mypass driver", bl.connectArgs);
+    assertEquals("authType", bl.getOpts().getAuthType());
     passFile.delete();
   }
 
@@ -165,7 +165,7 @@ public class TestBeelineArgParsing {
     String args[] =
         new String[] {"-u", "url", "-u", "url2", "-n", "name", "-p", "password", "-d", "driver"};
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
+    assertEquals("url name password driver", bl.connectArgs);
   }
 
   @Test
@@ -187,7 +187,7 @@ public class TestBeelineArgParsing {
           "select2"
         };
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
+    assertEquals("url name password driver", bl.connectArgs);
     assertTrue(bl.queries.contains("select1"));
     assertTrue(bl.queries.contains("select2"));
   }
@@ -220,13 +220,13 @@ public class TestBeelineArgParsing {
           "f=fvalue"
         };
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
-    assertTrue(bl.getOpts().getHiveConfVariables().get("a").equals("avalue"));
-    assertTrue(bl.getOpts().getHiveConfVariables().get("b").equals("bvalue"));
-    assertTrue(bl.getOpts().getHiveVariables().get("c").equals("cvalue"));
-    assertTrue(bl.getOpts().getHiveVariables().get("d").equals("dvalue"));
-    assertTrue(bl.getOpts().getHiveConfVariables().get("e").equals("evalue"));
-    assertTrue(bl.getOpts().getHiveConfVariables().get("f").equals("fvalue"));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("avalue", bl.getOpts().getHiveConfVariables().get("a"));
+    assertEquals("bvalue", bl.getOpts().getHiveConfVariables().get("b"));
+    assertEquals("cvalue", bl.getOpts().getHiveVariables().get("c"));
+    assertEquals("dvalue", bl.getOpts().getHiveVariables().get("d"));
+    assertEquals("evalue", bl.getOpts().getHiveConfVariables().get("e"));
+    assertEquals("fvalue", bl.getOpts().getHiveConfVariables().get("f"));
   }
 
   @Test
@@ -247,7 +247,7 @@ public class TestBeelineArgParsing {
           "--truncateTable"
         };
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
+    assertEquals("url name password driver", bl.connectArgs);
     assertTrue(bl.getOpts().getAutoCommit());
     assertTrue(bl.getOpts().getVerbose());
     assertTrue(bl.getOpts().getTruncateTable());
@@ -297,8 +297,8 @@ public class TestBeelineArgParsing {
           "-u", "url", "-n", "name", "-p", "password", "-d", "driver", "-f", "myscript"
         };
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.connectArgs.equals("url name password driver"));
-    assertTrue(bl.getOpts().getScriptFile().equals("myscript"));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("myscript", bl.getOpts().getScriptFile());
   }
 
   /** Test beeline with -f and -e simultaneously */
@@ -408,7 +408,7 @@ public class TestBeelineArgParsing {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--property-file", "props"};
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.properties.get(0).equals("props"));
+    assertEquals("props", bl.properties.get(0));
     bl.close();
   }
 
@@ -418,7 +418,7 @@ public class TestBeelineArgParsing {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--maxHistoryRows=100"};
     assertEquals(0, bl.initArgs(args));
-    assertTrue(bl.getOpts().getMaxHistoryRows() == 100);
+    assertEquals(100, bl.getOpts().getMaxHistoryRows());
     bl.close();
   }
 }

@@ -62,7 +62,7 @@ public class TestUserHS2ConnectionFileParser {
   public void testParseNoAuthentication() throws BeelineHS2ConnectionFileParseException {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-config-noauth.xml");
     String expectedUrl = "jdbc:hive2://localhost:10000/default;user=hive";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-zookeeper-config.xml");
     String expectedUrl =
         "jdbc:hive2://zk-node-1:10000,zk-node-2:10001,zk-node-3:10004/default;serviceDiscoveryMode=zookeeper;zooKeeperNamespace=hiveserver2";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -78,7 +78,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-conn-conf-kerberos-nossl.xml");
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;principal=hive/dummy-hostname@domain.com;ssl=false";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -87,7 +87,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;principal=hive/dummy-hostname@domain.com;ssl=true;"
             + "sslTrustStore=test/truststore;trustStorePassword=testTruststorePassword";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -96,7 +96,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;httpPath=testHTTPPath;principal=hive/dummy-hostname@domain.com;"
             + "ssl=true;sslTrustStore=test/truststore;transportMode=http;trustStorePassword=testTruststorePassword";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -104,7 +104,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-conf-list.xml");
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;user=hive?hive.cli.print.current.db=false#testVarName1=value1";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -113,7 +113,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;user=hive?hive.cli.print.current.db=true;"
             + "hive.cli.print.header=true#testVarName1=value1;testVarName2=value2";
-    Assertions.assertTrue(expectedUrl.equals(url), "Expected " + expectedUrl + " got " + url);
+    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   /*
