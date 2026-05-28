@@ -25,7 +25,7 @@ This page covers how to configure the engine, how the web UI behaves at runtime,
 
 - **Engine type**: `DATA_AGENT`, share level follows `kyuubi.engine.share.level` like every other engine
 - **LLM provider**: any OpenAI-compatible chat-completion endpoint (OpenAI, Azure OpenAI, vLLM, llama.cpp, or any other provider that exposes the OpenAI chat-completion API)
-- **Datasource**: any JDBC URL the engine can reach. When unset, defaults to ZooKeeper service discovery for ZK-HA deployments, or `jdbc:hive2://localhost:<thrift-port>/default` otherwise
+- **Datasource**: any JDBC URL the engine can reach. When unset, defaults to ZooKeeper service discovery for ZK-HA deployments, or `jdbc:kyuubi://<host>:<thrift-port>/default` otherwise
 - **Tools** (built in): `run_select_query` (low-risk, read-only) and `run_mutation_query` (high-risk, mutating). Per-dialect prompt templates ship for Spark / Trino / MySQL / SQLite / Generic
 - **Interface**: the bundled Kyuubi web UI. Pick **Data Agent** from the left navigation after logging in
 
@@ -39,26 +39,41 @@ Add the following to `$KYUUBI_HOME/conf/kyuubi-defaults.conf`:
 kyuubi.engine.data.agent.provider OPENAI_COMPATIBLE
 
 # OpenAI-compatible endpoint and credentials
-kyuubi.engine.data.agent.openai.endpoint https://api.openai.com/v1
+kyuubi.engine.data.agent.openai.endpoint  https://api.openai.com/v1
 kyuubi.engine.data.agent.openai.api.key   sk-xxxxxxxxxxxxxxxxxxxxxxxx
 kyuubi.engine.data.agent.model            gpt-4o-mini
 ```
 
 Substitute the endpoint, API key, and model ID for whichever OpenAI-compatible provider you use.
 
-### 2. Restart Kyuubi and open the UI
+### 2. Start Kyuubi and open the UI
 
 ```
-$KYUUBI_HOME/bin/kyuubi restart
+$KYUUBI_HOME/bin/kyuubi start
 ```
 
 Open `http://<kyuubi-host>:10099/ui` in a browser (the port comes from `kyuubi.frontend.rest.bind.port`, default `10099`). Pick **Data Agent** in the left navigation.
 
-### 3. Ask a question
+### 3. Try it with the TPC-H demo dataset
+
+Kyuubi ships a [Spark TPC-H connector](../connector/spark/tpch.rst) that generates the standard TPC-H decision-support dataset on the fly — no external database needed. Add the following to `$SPARK_HOME/conf/spark-defaults.conf` (or `$KYUUBI_HOME/conf/kyuubi-defaults.conf` with the `spark.` prefix):
+
+```
+spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
+```
+
+Make sure `kyuubi-spark-connector-tpch-<version>_2.12.jar` is on the Spark engine classpath (drop it into `$SPARK_HOME/jars` or set `spark.jars`).
+
+### 4. Ask a question
 
 ![Welcome page](../imgs/data-agent/01-welcome.png)
 
-Leave the **JDBC URL** field empty to query the same Kyuubi cluster the UI is running on. Type a question into the input box and press <kbd>Enter</kbd>.
+Leave the **JDBC URL** field empty to query the same Kyuubi cluster the UI is running on. Type a question into the input box and press <kbd>Enter</kbd>. With the TPC-H catalog registered above, make the demo prompt name the `tpch.sf1` namespace explicitly so the agent explores the generated TPC-H catalog instead of the cluster's default catalog:
+
+- *"Use the TPC-H demo namespace `tpch.sf1`. Show me the available tables and briefly describe what each table represents."*
+- *"Use `tpch.sf1`. Who are the top 5 customers by total order value?"*
+
+Broad prompts such as *"What databases are available?"* enumerate the default Spark catalog and may show unrelated databases from the metastore. They are useful for cluster discovery, but they are not a TPC-H demo smoke test.
 
 The agent reasons through the request, runs SQL on your behalf, and renders the result inline:
 
@@ -68,22 +83,22 @@ The agent reasons through the request, runs SQL on your behalf, and renders the 
 
 All keys live under `kyuubi.engine.data.agent.*`. They can be set in `kyuubi-defaults.conf` (cluster default) or, for the few that have a UI control, overridden per request from the chat header. Server-side defaults from the source of truth in `org.apache.kyuubi.config.KyuubiConf`:
 
-|                         Key                          | Default  |                                                                                                              Purpose                                                                                                              |
-|------------------------------------------------------|----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `kyuubi.engine.data.agent.provider`                  | `ECHO`   | Set to `OPENAI_COMPATIBLE` to use any OpenAI-style chat-completion endpoint.                                                                                                                                                      |
-| `kyuubi.engine.data.agent.model`                     | _unset_  | Model ID. The UI **Model** input on the chat header overrides this for a single turn; leave it empty in the UI to fall back to this value.                                                                                        |
-| `kyuubi.engine.data.agent.openai.endpoint`           | _unset_  | Base URL of the OpenAI-compatible chat-completion endpoint.                                                                                                                                                                       |
-| `kyuubi.engine.data.agent.openai.api.key`            | _unset_  | API key for that endpoint. Treat as a secret; see [Security notes](#security-notes).                                                                                                                                              |
-| `kyuubi.engine.data.agent.jdbc.url`                  | _unset_  | JDBC URL the agent should query. When unset, the engine falls back to the same Kyuubi cluster the UI is running on. The UI **JDBC URL** field on the welcome screen overrides this per session.                                   |
-| `kyuubi.engine.data.agent.approval.mode`             | `NORMAL` | Default approval policy: `AUTO_APPROVE` runs every tool without prompting, `NORMAL` only prompts before `DESTRUCTIVE` tools, `STRICT` prompts before every tool call. The UI dropdown on the chat header overrides this per turn. |
-| `kyuubi.engine.data.agent.max.iterations`            | `100`    | Cap on ReAct loop steps for a single user turn. Hitting the cap surfaces a `Reached maximum iterations (N)` banner in the UI.                                                                                                     |
-| `kyuubi.engine.data.agent.compaction.trigger.tokens` | `128000` | When the predicted next prompt size (real previous prompt tokens + estimated new tail) exceeds this value, older conversation history is summarised into a single message.                                                        |
-| `kyuubi.engine.data.agent.query.timeout`             | `PT3M`   | Inner JDBC `Statement.setQueryTimeout` for SQL tools. Should be **lower than** `tool.call.timeout` so the backend has time to react before the outer cap fires.                                                                   |
-| `kyuubi.engine.data.agent.tool.call.timeout`         | `PT5M`   | Outer wall-clock cap on every tool call, enforced by the agent runtime.                                                                                                                                                           |
-| `kyuubi.engine.data.agent.memory`                    | `1g`     | Heap allocated to the engine JVM.                                                                                                                                                                                                 |
-| `kyuubi.engine.data.agent.java.options`              | _unset_  | Extra JVM options.                                                                                                                                                                                                                |
-| `kyuubi.engine.data.agent.extra.classpath`           | _unset_  | Extra classpath, e.g. for the LLM SDK or the JDBC driver of the target datasource.                                                                                                                                                |
-| `kyuubi.frontend.data.agent.operation.timeout`       | `PT2M`   | Server-side timeout for engine launch and operation start. Surfaces as an error banner if exceeded.                                                                                                                               |
+|                         Key                          | Default  |                                                                                                                                             Purpose                                                                                                                                              |
+|------------------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `kyuubi.engine.data.agent.provider`                  | `ECHO`   | Set to `OPENAI_COMPATIBLE` to use any OpenAI-style chat-completion endpoint.                                                                                                                                                                                                                     |
+| `kyuubi.engine.data.agent.model`                     | _unset_  | Model ID. The UI **Model** input on the chat header overrides this for a single turn; leave it empty in the UI to fall back to this value.                                                                                                                                                       |
+| `kyuubi.engine.data.agent.openai.endpoint`           | _unset_  | Base URL of the OpenAI-compatible chat-completion endpoint.                                                                                                                                                                                                                                      |
+| `kyuubi.engine.data.agent.openai.api.key`            | _unset_  | API key for that endpoint. Treat as a secret; see [Security notes](#security-notes).                                                                                                                                                                                                             |
+| `kyuubi.engine.data.agent.jdbc.url`                  | _unset_  | JDBC URL the agent should query. When unset, the engine falls back to the same Kyuubi cluster the UI is running on. The UI **JDBC URL** field on the welcome screen overrides this per session. Credentials embedded in the URL (e.g. `;user=...;password=...`) are honoured and not overridden. |
+| `kyuubi.engine.data.agent.approval.mode`             | `NORMAL` | Default approval policy: `AUTO_APPROVE` runs every tool without prompting, `NORMAL` only prompts before `DESTRUCTIVE` tools, `STRICT` prompts before every tool call. The UI dropdown on the chat header overrides this per turn.                                                                |
+| `kyuubi.engine.data.agent.max.iterations`            | `100`    | Cap on ReAct loop steps for a single user turn. Hitting the cap surfaces a `Reached maximum iterations (N)` banner in the UI.                                                                                                                                                                    |
+| `kyuubi.engine.data.agent.compaction.trigger.tokens` | `128000` | When the predicted next prompt size (real previous prompt tokens + estimated new tail) exceeds this value, older conversation history is summarised into a single message.                                                                                                                       |
+| `kyuubi.engine.data.agent.query.timeout`             | `PT3M`   | Inner JDBC `Statement.setQueryTimeout` for SQL tools. Should be **lower than** `tool.call.timeout` so the backend has time to react before the outer cap fires.                                                                                                                                  |
+| `kyuubi.engine.data.agent.tool.call.timeout`         | `PT5M`   | Outer wall-clock cap on every tool call, enforced by the agent runtime.                                                                                                                                                                                                                          |
+| `kyuubi.engine.data.agent.memory`                    | `1g`     | Heap allocated to the engine JVM.                                                                                                                                                                                                                                                                |
+| `kyuubi.engine.data.agent.java.options`              | _unset_  | Extra JVM options.                                                                                                                                                                                                                                                                               |
+| `kyuubi.engine.data.agent.extra.classpath`           | _unset_  | Extra classpath, e.g. for the LLM SDK or the JDBC driver of the target datasource.                                                                                                                                                                                                               |
+| `kyuubi.frontend.data.agent.operation.timeout`       | `PT2M`   | Server-side timeout for engine launch and operation start. Surfaces as an error banner if exceeded.                                                                                                                                                                                              |
 
 ## Approval and risk model
 
@@ -143,7 +158,7 @@ The default. Leave the JDBC URL empty and the engine connects back to this Kyuub
 #### Spark / Kyuubi (a different cluster, or pinned host:port)
 
 ```
-kyuubi.engine.data.agent.jdbc.url jdbc:hive2://kyuubi-host:10009/default
+kyuubi.engine.data.agent.jdbc.url jdbc:kyuubi://kyuubi-host:10009/default
 ```
 
 Add `;user=...;password=...` to the URL when the target cluster requires authentication.
@@ -184,14 +199,14 @@ Anything else with a JDBC driver works behind the `Generic` dialect — point th
 When `kyuubi.engine.data.agent.jdbc.url` is unset, Kyuubi derives a default URL:
 
 - **ZooKeeper HA** (`kyuubi.ha.addresses` set with the default `ZookeeperDiscoveryClient`): use ZK service discovery against the configured addresses.
-- **Other deployments** (single-node, or HA with non-ZooKeeper discovery such as etcd): assume Kyuubi is reachable on `localhost` and produce `jdbc:hive2://localhost:<kyuubi.frontend.thrift.binary.bind.port>/default`.
+- **Other deployments** (single-node, or HA with non-ZooKeeper discovery such as etcd): produce `jdbc:kyuubi://<host>:<kyuubi.frontend.thrift.binary.bind.port>/default`, where `<host>` is resolved from `kyuubi.frontend.advertised.host`, then `kyuubi.frontend.thrift.binary.bind.host`, and finally the machine's local IP address.
 
-If the Data Agent engine runs in a different network namespace from the Kyuubi server, or Kyuubi is not listening on `localhost`, set `kyuubi.engine.data.agent.jdbc.url` (or the welcome-screen field) explicitly.
+If the Data Agent engine runs in a different network namespace from the Kyuubi server, or the derived host is not reachable from the engine, set `kyuubi.engine.data.agent.jdbc.url` (or the welcome-screen field) explicitly.
 
 This works out of the box when the Kyuubi server is configured with `kyuubi.authentication=NONE`. **It does not work when LDAP authentication is enabled**, because the engine's JDBC connection carries the user identity (e.g. `alice`) but no password, and Kyuubi's LDAP provider rejects the empty bind with `LDAP error code 49`. In an authenticated deployment, embed credentials in the JDBC URL instead:
 
 ```
-jdbc:hive2://kyuubi-host:10009/default;user=alice;password=...
+jdbc:kyuubi://kyuubi-host:10009/default;user=alice;password=...
 ```
 
 ## Operating notes

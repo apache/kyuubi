@@ -125,23 +125,37 @@ public class ChatCompletionProvider implements DataAgentProvider {
     }
     LOG.info("Data Agent JDBC datasource configured ({})", dialect.datasourceName());
 
-    // The kyuubi session user is only meaningful when we connect back to Kyuubi/HiveServer2,
-    // where it drives proxy-user impersonation for the downstream engine. For external JDBC
-    // backends (mysql, postgresql, trino, ...) it would shadow URL-supplied credentials and
-    // cause auth failures (e.g. MySQL Connector/J overriding ?user=root with anonymous), so
-    // leave the username unset and let the driver read it from the URL.
+    // For Kyuubi/HiveServer2 backends, pass the session user for proxy-user impersonation —
+    // but only when the URL does not already carry explicit credentials, because URL-supplied
+    // credentials should win (some users pass credentials via session variables).
     String subprotocol = JdbcDialect.extractSubprotocol(jdbcUrl);
-    boolean isKyuubiBackend = "hive2".equals(subprotocol) || "kyuubi".equals(subprotocol);
-    String hikariUser =
-        isKyuubiBackend
-            ? ConfUtils.optionalString(conf, KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY())
-            : null;
+    boolean isKyuubiBackend = "kyuubi".equals(subprotocol) || "hive2".equals(subprotocol);
+    String hikariUser = null;
+    if (isKyuubiBackend && !hasKyuubiUrlCredentials(jdbcUrl)) {
+      hikariUser = ConfUtils.optionalString(conf, KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY());
+    }
 
     DataSource ds = DataSourceFactory.create(jdbcUrl, hikariUser);
     registry.register(new RunSelectQueryTool(ds, queryTimeoutSeconds));
     registry.register(new RunMutationQueryTool(ds, queryTimeoutSeconds));
     promptBuilder.datasource(dialect.datasourceName());
     return ds;
+  }
+
+  /**
+   * Return true when a Kyuubi/HiveServer2 JDBC URL carries an explicit user identity as the
+   * semicolon-delimited {@code ;user=...} session variable. Only semicolon parameters are checked
+   * because the Kyuubi/Hive JDBC driver reads them as auth session vars — query parameters ({@code
+   * ?key=val}) are parsed as Hive configuration, not authentication. A URL that only carries {@code
+   * ;password=} without a user is not considered credentialed, so the session user is still passed
+   * for proxy-user impersonation.
+   */
+  static boolean hasKyuubiUrlCredentials(String jdbcUrl) {
+    if (jdbcUrl == null) {
+      return false;
+    }
+    String lower = jdbcUrl.toLowerCase();
+    return lower.contains(";user=");
   }
 
   @Override

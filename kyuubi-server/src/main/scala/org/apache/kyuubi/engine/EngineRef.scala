@@ -264,7 +264,7 @@ private[kyuubi] class EngineRef(
           val isZkHa = haAddresses.nonEmpty &&
             conf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
           val jdbcUrl = if (isZkHa) {
-            s"jdbc:hive2://$haAddresses/default;" +
+            s"jdbc:kyuubi://$haAddresses/default;" +
               s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
           } else {
             val port = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
@@ -274,7 +274,10 @@ private[kyuubi] class EngineRef(
                   s"${FRONTEND_THRIFT_BINARY_BIND_PORT.key} is 0 (random). " +
                   s"Set ${ENGINE_DATA_AGENT_JDBC_URL.key} explicitly.")
             }
-            s"jdbc:hive2://localhost:$port/default"
+            val host = conf.get(FRONTEND_ADVERTISED_HOST)
+              .orElse(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
+              .getOrElse(JavaUtils.findLocalInetAddress.getHostAddress)
+            s"jdbc:kyuubi://$host:$port/default"
           }
           conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
           info(s"Data Agent JDBC URL not configured, using Kyuubi server: $jdbcUrl")

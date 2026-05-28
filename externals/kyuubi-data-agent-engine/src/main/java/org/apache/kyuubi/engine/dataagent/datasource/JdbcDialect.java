@@ -83,6 +83,7 @@ public interface JdbcDialect {
       return null;
     }
     switch (name) {
+      case "kyuubi":
       case "hive2":
       case "spark":
         return SparkDialect.INSTANCE;

@@ -17,9 +17,9 @@
 
 export const JDBC_TEMPLATES = [
   {
-    label: 'Spark / Hive (Thrift)',
+    label: 'Kyuubi / Spark (Thrift)',
     value:
-      'jdbc:hive2://localhost:10009/default;user=username;password=password',
+      'jdbc:kyuubi://localhost:10009/default;user=username;password=password',
     isHistory: false
   },
   {

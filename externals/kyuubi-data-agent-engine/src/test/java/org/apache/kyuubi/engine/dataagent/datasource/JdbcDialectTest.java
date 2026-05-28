@@ -36,6 +36,13 @@ public class JdbcDialectTest {
   }
 
   @Test
+  public void testSparkViaKyuubi() {
+    JdbcDialect d = JdbcDialect.fromUrl("jdbc:kyuubi://localhost:10009/default");
+    assertNotNull(d);
+    assertEquals("spark", d.datasourceName());
+  }
+
+  @Test
   public void testSparkViaSpark() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:spark://localhost:10009/default");
     assertNotNull(d);
@@ -44,6 +51,7 @@ public class JdbcDialectTest {
 
   @Test
   public void testCaseInsensitive() {
+    assertNotNull(JdbcDialect.fromUrl("JDBC:KYUUBI://localhost:10009"));
     assertNotNull(JdbcDialect.fromUrl("JDBC:HIVE2://localhost:10009"));
     assertNotNull(JdbcDialect.fromUrl("JDBC:SPARK://localhost:10009"));
   }
