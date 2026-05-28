@@ -326,7 +326,7 @@ public class TestBeelineArgParsing {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--help"};
     assertEquals(0, bl.initArgs(args));
-    assertEquals(true, bl.getOpts().isHelpAsked());
+    assertTrue(bl.getOpts().isHelpAsked());
   }
 
   /** Displays the usage. */

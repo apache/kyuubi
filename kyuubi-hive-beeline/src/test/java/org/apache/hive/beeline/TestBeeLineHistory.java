@@ -18,13 +18,14 @@
 
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -63,7 +64,7 @@ public class TestBeeLineHistory {
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     int numHistories = output.split("\n").length;
-    Assertions.assertEquals(10, numHistories);
+    assertEquals(10, numHistories);
     beeline.close();
   }
 
@@ -81,8 +82,8 @@ public class TestBeeLineHistory {
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     String[] tmp = output.split("\n");
-    Assertions.assertEquals("1     : select 1;", tmp[0]);
-    Assertions.assertEquals("10    : select 10;", tmp[9]);
+    assertEquals("1     : select 1;", tmp[0]);
+    assertEquals("10    : select 10;", tmp[9]);
     beeline.close();
   }
 

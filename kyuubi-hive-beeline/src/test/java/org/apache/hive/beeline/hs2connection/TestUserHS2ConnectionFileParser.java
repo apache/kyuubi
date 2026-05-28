@@ -17,12 +17,14 @@
  */
 package org.apache.hive.beeline.hs2connection;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.hive.beeline.common.HiveTestUtils;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestUserHS2ConnectionFileParser {
@@ -62,7 +64,7 @@ public class TestUserHS2ConnectionFileParser {
   public void testParseNoAuthentication() throws BeelineHS2ConnectionFileParseException {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-config-noauth.xml");
     String expectedUrl = "jdbc:hive2://localhost:10000/default;user=hive";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -70,7 +72,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-zookeeper-config.xml");
     String expectedUrl =
         "jdbc:hive2://zk-node-1:10000,zk-node-2:10001,zk-node-3:10004/default;serviceDiscoveryMode=zookeeper;zooKeeperNamespace=hiveserver2";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -78,7 +80,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-conn-conf-kerberos-nossl.xml");
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;principal=hive/dummy-hostname@domain.com;ssl=false";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -87,7 +89,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;principal=hive/dummy-hostname@domain.com;ssl=true;"
             + "sslTrustStore=test/truststore;trustStorePassword=testTruststorePassword";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -96,7 +98,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;httpPath=testHTTPPath;principal=hive/dummy-hostname@domain.com;"
             + "ssl=true;sslTrustStore=test/truststore;transportMode=http;trustStorePassword=testTruststorePassword";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -104,7 +106,7 @@ public class TestUserHS2ConnectionFileParser {
     String url = getParsedUrlFromConfigFile("test-hs2-connection-conf-list.xml");
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;user=hive?hive.cli.print.current.db=false#testVarName1=value1";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   @Test
@@ -113,7 +115,7 @@ public class TestUserHS2ConnectionFileParser {
     String expectedUrl =
         "jdbc:hive2://localhost:10000/default;user=hive?hive.cli.print.current.db=true;"
             + "hive.cli.print.header=true#testVarName1=value1;testVarName2=value2";
-    Assertions.assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
+    assertEquals(expectedUrl, url, "Expected " + expectedUrl + " got " + url);
   }
 
   /*
@@ -126,7 +128,7 @@ public class TestUserHS2ConnectionFileParser {
     testLocations.add(LOCATION_3);
     UserHS2ConnectionFileParser testHS2ConfigManager =
         new UserHS2ConnectionFileParser(testLocations);
-    Assertions.assertTrue(testHS2ConfigManager.getConnectionProperties().isEmpty());
+    assertTrue(testHS2ConfigManager.getConnectionProperties().isEmpty());
   }
 
   /*
@@ -140,8 +142,9 @@ public class TestUserHS2ConnectionFileParser {
     testLocations.add(LOCATION_3);
     UserHS2ConnectionFileParser testHS2ConfigManager =
         new UserHS2ConnectionFileParser(testLocations);
-    Assertions.assertTrue(
-        LOCATION_1.equals(testHS2ConfigManager.getFileLocation()),
+    assertEquals(
+        LOCATION_1,
+        testHS2ConfigManager.getFileLocation(),
         "File location " + LOCATION_1 + " was not returned");
   }
 
@@ -156,8 +159,9 @@ public class TestUserHS2ConnectionFileParser {
     testLocations.add(LOCATION_3);
     UserHS2ConnectionFileParser testHS2ConfigManager =
         new UserHS2ConnectionFileParser(testLocations);
-    Assertions.assertTrue(
-        LOCATION_3.equals(testHS2ConfigManager.getFileLocation()),
+    assertEquals(
+        LOCATION_3,
+        testHS2ConfigManager.getFileLocation(),
         "File location " + LOCATION_3 + " was not returned");
   }
 
@@ -174,8 +178,9 @@ public class TestUserHS2ConnectionFileParser {
     testLocations.add(LOCATION_3);
     UserHS2ConnectionFileParser testHS2ConfigManager =
         new UserHS2ConnectionFileParser(testLocations);
-    Assertions.assertTrue(
-        LOCATION_2.equals(testHS2ConfigManager.getFileLocation()),
+    assertEquals(
+        LOCATION_2,
+        testHS2ConfigManager.getFileLocation(),
         "File location " + LOCATION_2 + " was not returned");
   }
 

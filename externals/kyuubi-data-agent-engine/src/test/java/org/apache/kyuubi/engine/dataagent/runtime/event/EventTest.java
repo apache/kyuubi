@@ -20,8 +20,8 @@ package org.apache.kyuubi.engine.dataagent.runtime.event;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,12 +56,7 @@ public class EventTest {
     Map<String, Object> args = new HashMap<>();
     args.put("key", "value");
     ToolCall event = new ToolCall("tc-1", "tool", args);
-    try {
-      event.toolArgs().put("new", "entry");
-      fail("Should throw on modification");
-    } catch (UnsupportedOperationException expected) {
-      // expected
-    }
+    assertThrows(UnsupportedOperationException.class, () -> event.toolArgs().put("new", "entry"));
   }
 
   @Test
@@ -91,12 +86,7 @@ public class EventTest {
     Map<String, Object> args = new HashMap<>();
     args.put("key", "value");
     ApprovalRequest event = new ApprovalRequest("req-1", "tc-1", "tool", args, ToolRiskLevel.SAFE);
-    try {
-      event.toolArgs().put("new", "entry");
-      fail("Should throw on modification");
-    } catch (UnsupportedOperationException expected) {
-      // expected
-    }
+    assertThrows(UnsupportedOperationException.class, () -> event.toolArgs().put("new", "entry"));
   }
 
   @Test

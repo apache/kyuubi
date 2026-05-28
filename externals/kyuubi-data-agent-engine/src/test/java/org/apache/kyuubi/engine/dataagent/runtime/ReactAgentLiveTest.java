@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine.dataagent.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -36,7 +37,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.kyuubi.engine.dataagent.prompt.SystemPromptBuilder;
-import org.apache.kyuubi.engine.dataagent.runtime.event.*;
+import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
+import org.apache.kyuubi.engine.dataagent.runtime.event.AgentFinish;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ApprovalRequest;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ContentComplete;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ContentDelta;
+import org.apache.kyuubi.engine.dataagent.runtime.event.StepStart;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ToolCall;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ToolResult;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ApprovalMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.LoggingMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ToolResultOffloadMiddleware;
@@ -70,8 +78,8 @@ public class ReactAgentLiveTest {
 
   @BeforeEach
   public void setUp() {
-    assumeTrue(!API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
-    assumeTrue(!BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
+    assumeFalse(API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
+    assumeFalse(BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 
@@ -107,7 +115,7 @@ public class ReactAgentLiveTest {
     assertFalse(String.join("", deltas).isEmpty(), "Streamed text should not be empty");
     assertTrue(events.stream().anyMatch(e -> e instanceof StepStart));
     assertTrue(events.stream().anyMatch(e -> e instanceof ContentComplete));
-    assertTrue(events.get(events.size() - 1) instanceof AgentFinish);
+    assertInstanceOf(AgentFinish.class, events.get(events.size() - 1));
     assertEquals(2, memory.getHistory().size()); // user + assistant
   }
 
@@ -170,8 +178,8 @@ public class ReactAgentLiveTest {
 
     // Verify agent finished successfully
     AgentEvent last = events.get(events.size() - 1);
-    assertTrue(last instanceof AgentFinish);
-    assertTrue(((AgentFinish) last).totalSteps() > 1, "Should take multiple steps");
+    AgentFinish finish = assertInstanceOf(AgentFinish.class, last);
+    assertTrue(finish.totalSteps() > 1, "Should take multiple steps");
   }
 
   @Test
@@ -202,7 +210,7 @@ public class ReactAgentLiveTest {
             .anyMatch(
                 e -> e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())),
         "Turn 1 should query the database");
-    assertTrue(events1.get(events1.size() - 1) instanceof AgentFinish);
+    assertInstanceOf(AgentFinish.class, events1.get(events1.size() - 1));
 
     // Turn 2: follow-up relying on conversation context
     List<AgentEvent> events2 = new CopyOnWriteArrayList<>();
@@ -214,7 +222,7 @@ public class ReactAgentLiveTest {
             .anyMatch(
                 e -> e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())),
         "Turn 2 should also query the database");
-    assertTrue(events2.get(events2.size() - 1) instanceof AgentFinish);
+    assertInstanceOf(AgentFinish.class, events2.get(events2.size() - 1));
 
     // Verify memory accumulated across both turns
     assertTrue(

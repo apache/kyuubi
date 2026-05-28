@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.dataagent.datasource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -73,7 +74,7 @@ public class DataSourceFactoryAuthTest {
 
     ds = DataSourceFactory.create("jdbc:sqlite:" + tmpFile.getAbsolutePath(), "testuser");
     assertNotNull(ds);
-    assertTrue(ds instanceof HikariDataSource);
+    assertInstanceOf(HikariDataSource.class, ds);
     assertEquals("testuser", ((HikariDataSource) ds).getUsername());
   }
 

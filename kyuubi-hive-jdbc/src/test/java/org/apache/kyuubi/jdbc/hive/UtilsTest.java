@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.UnsupportedEncodingException;
@@ -129,7 +130,7 @@ public class UtilsTest {
   @Test
   public void testGetVersion() {
     Pattern pattern = Pattern.compile("^\\d+\\.\\d+\\.\\d+.*");
-    assert pattern.matcher(Utils.getVersion()).matches();
+    assertTrue(pattern.matcher(Utils.getVersion()).matches());
   }
 
   @Test

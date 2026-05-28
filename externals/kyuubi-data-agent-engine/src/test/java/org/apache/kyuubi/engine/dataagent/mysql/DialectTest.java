@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.dataagent.mysql;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -45,7 +46,7 @@ public class DialectTest extends WithMySQLContainer {
   public void testDialectFromUrl() {
     JdbcDialect dialect = JdbcDialect.fromUrl(mysql.getJdbcUrl());
     assertNotNull(dialect);
-    assertTrue(dialect instanceof MySQLDialect);
+    assertInstanceOf(MySQLDialect.class, dialect);
     assertEquals("mysql", dialect.datasourceName());
   }
 

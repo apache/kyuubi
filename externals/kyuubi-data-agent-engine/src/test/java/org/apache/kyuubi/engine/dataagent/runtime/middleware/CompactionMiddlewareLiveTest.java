@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -49,8 +49,8 @@ public class CompactionMiddlewareLiveTest {
 
   @BeforeEach
   public void setUp() {
-    assumeTrue(!API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
-    assumeTrue(!BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
+    assumeFalse(API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
+    assumeFalse(BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 

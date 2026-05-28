@@ -18,9 +18,10 @@
 
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class TestShutdownHook {
@@ -32,9 +33,9 @@ public class TestShutdownHook {
     DatabaseConnections dbConnections = beeline.getDatabaseConnections();
     dbConnections.setConnection(new DatabaseConnection(beeline, null, null, null));
     dbConnections.setConnection(new DatabaseConnection(beeline, null, null, null));
-    Assertions.assertEquals(2, dbConnections.size());
+    assertEquals(2, dbConnections.size());
     beeline.setOutputStream(ops);
     beeline.getShutdownHook().run();
-    Assertions.assertEquals(0, dbConnections.size());
+    assertEquals(0, dbConnections.size());
   }
 }

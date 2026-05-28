@@ -18,11 +18,10 @@
 package org.apache.kyuubi.engine.dataagent.datasource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.kyuubi.engine.dataagent.datasource.dialect.GenericDialect;
 import org.junit.jupiter.api.Test;
@@ -106,7 +105,7 @@ public class JdbcDialectTest {
   public void testUnknownReturnsGenericDialectWithName() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:postgresql://localhost:5432/db");
     assertNotNull(d);
-    assertTrue(d instanceof GenericDialect);
+    assertInstanceOf(GenericDialect.class, d);
     assertEquals("postgresql", d.datasourceName());
   }
 
@@ -114,12 +113,7 @@ public class JdbcDialectTest {
   public void testGenericDialectQuoteIdentifierUnsupported() {
     JdbcDialect d = JdbcDialect.fromUrl("jdbc:clickhouse://localhost:8123");
     assertEquals("clickhouse", d.datasourceName());
-    try {
-      d.quoteIdentifier("col");
-      fail("expected UnsupportedOperationException");
-    } catch (UnsupportedOperationException expected) {
-      // ok
-    }
+    assertThrows(UnsupportedOperationException.class, () -> d.quoteIdentifier("col"));
   }
 
   // --- qualify tests ---

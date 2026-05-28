@@ -17,13 +17,13 @@
  */
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 import org.mockito.invocation.InvocationOnMock;
@@ -59,7 +59,7 @@ public class TestBufferedRows {
     while (bfRows.hasNext()) {
       Rows.Row row = (Rows.Row) bfRows.next();
       for (int colSize : row.sizes) {
-        Assertions.assertTrue(colSize <= mockBeeLineOpts.getMaxColumnWidth());
+        assertTrue(colSize <= mockBeeLineOpts.getMaxColumnWidth());
       }
     }
   }
