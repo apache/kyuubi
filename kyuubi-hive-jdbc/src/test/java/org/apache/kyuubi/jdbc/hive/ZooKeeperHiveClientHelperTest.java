@@ -19,38 +19,24 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Properties;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-@RunWith(Parameterized.class)
 public class ZooKeeperHiveClientHelperTest {
 
-  private String uri;
-
-  @Parameterized.Parameters
-  public static Collection<String[]> data() {
-    return Arrays.asList(
-        new String[][] {
-          {"jdbc:hive2://hostname:10018/db;zooKeeperNamespace=zookeeper/namespace"},
-          {"jdbc:hive2://hostname:10018/db;zooKeeperNamespace=/zookeeper/namespace"},
-          {"jdbc:hive2://hostname:10018/db;zooKeeperNamespace=zookeeper/namespace/"},
-          {"jdbc:hive2://hostname:10018/db;zooKeeperNamespace=/zookeeper/namespace/"},
-          {"jdbc:hive2://hostname:10018/db;zooKeeperNamespace=///zookeeper/namespace///"}
-        });
-  }
-
-  public ZooKeeperHiveClientHelperTest(String uri) {
-    this.uri = uri;
-  }
-
-  @Test
-  public void testGetZooKeeperNamespace() throws JdbcUriParseException {
+  @ParameterizedTest
+  @ValueSource(
+      strings = {
+        "jdbc:hive2://hostname:10018/db;zooKeeperNamespace=zookeeper/namespace",
+        "jdbc:hive2://hostname:10018/db;zooKeeperNamespace=/zookeeper/namespace",
+        "jdbc:hive2://hostname:10018/db;zooKeeperNamespace=zookeeper/namespace/",
+        "jdbc:hive2://hostname:10018/db;zooKeeperNamespace=/zookeeper/namespace/",
+        "jdbc:hive2://hostname:10018/db;zooKeeperNamespace=///zookeeper/namespace///"
+      })
+  public void testGetZooKeeperNamespace(String uri) throws JdbcUriParseException {
     JdbcConnectionParams jdbcConnectionParams = extractURLComponents(uri, new Properties());
     assertEquals(
         "zookeeper/namespace",

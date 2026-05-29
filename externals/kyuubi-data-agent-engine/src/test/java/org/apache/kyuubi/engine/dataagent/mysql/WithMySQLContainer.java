@@ -26,8 +26,8 @@ import java.sql.Statement;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunMutationQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.testcontainers.mysql.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -48,7 +48,7 @@ public abstract class WithMySQLContainer {
   protected static HikariDataSource dataSource;
   protected static ToolRegistry registry;
 
-  @BeforeClass
+  @BeforeAll
   public static void startContainer() {
     DockerImageName imageName =
         DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
@@ -74,7 +74,7 @@ public abstract class WithMySQLContainer {
     registry.register(new RunMutationQueryTool(dataSource, QUERY_TIMEOUT_SECONDS));
   }
 
-  @AfterClass
+  @AfterAll
   public static void stopContainer() {
     if (registry != null) {
       registry.close();

@@ -19,13 +19,13 @@
 
 package org.apache.kyuubi.util;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class JavaUtilsTest {
 

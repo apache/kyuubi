@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.tool.sql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.sql.Connection;
@@ -26,9 +28,9 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sqlite.SQLiteDataSource;
 
 /** Tests for RunMutationQueryTool. Uses real SQLite — no mocks. */
@@ -40,14 +42,14 @@ public class RunMutationQueryToolTest {
   private RunMutationQueryTool tool;
   private final List<File> tempFiles = new ArrayList<>();
 
-  @Before
+  @BeforeEach
   public void setUp() {
     ds = createDataSource();
     setupTable(ds);
     tool = new RunMutationQueryTool(ds, TEST_TIMEOUT_SECONDS);
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     tempFiles.forEach(File::delete);
   }

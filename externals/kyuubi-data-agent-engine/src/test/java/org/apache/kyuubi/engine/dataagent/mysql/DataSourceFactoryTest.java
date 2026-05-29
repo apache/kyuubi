@@ -17,15 +17,18 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import javax.sql.DataSource;
 import org.apache.kyuubi.engine.dataagent.datasource.DataSourceFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Integration tests for {@link DataSourceFactory} against a real MySQL instance. */
 public class DataSourceFactoryTest extends WithMySQLContainer {
@@ -49,15 +52,20 @@ public class DataSourceFactoryTest extends WithMySQLContainer {
   @Test
   public void testCreateWithWrongPassword() {
     DataSource ds = DataSourceFactory.create(mysql.getJdbcUrl(), "root", "wrong_password");
-    try (Connection conn = ds.getConnection()) {
-      fail("Expected exception for wrong password");
-    } catch (Exception e) {
-      // HikariCP wraps MySQL auth error — just verify we get an exception.
-      // The exception chain should contain the MySQL access-denied message.
+    try {
+      Exception e =
+          assertThrows(
+              SQLException.class,
+              () -> {
+                Connection conn = ds.getConnection();
+                conn.close();
+              });
+      // HikariCP wraps MySQL auth error; verify the chain carries the MySQL access-denied
+      // message.
       String fullMsg = getFullExceptionMessage(e);
       assertTrue(
-          "Expected auth error, got: " + fullMsg,
-          fullMsg.contains("Access denied") || fullMsg.contains("password"));
+          fullMsg.contains("Access denied") || fullMsg.contains("password"),
+          "Expected auth error, got: " + fullMsg);
     } finally {
       if (ds instanceof HikariDataSource) {
         ((HikariDataSource) ds).close();

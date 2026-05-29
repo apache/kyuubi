@@ -18,8 +18,9 @@
 package org.apache.kyuubi.client;
 
 import static org.apache.kyuubi.client.RestClientTestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.kyuubi.client.api.v1.dto.Batch;
 import org.apache.kyuubi.client.api.v1.dto.BatchRequest;
@@ -29,9 +30,9 @@ import org.apache.kyuubi.client.api.v1.dto.OperationLog;
 import org.apache.kyuubi.client.api.v1.dto.ReassignBatchRequest;
 import org.apache.kyuubi.client.api.v1.dto.ReassignBatchResponse;
 import org.apache.kyuubi.client.exception.KyuubiRestException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BatchRestClientTest {
 
@@ -43,7 +44,7 @@ public class BatchRestClientTest {
   private KerberizedTestHelper kerberizedTestHelper;
   private ServerTestHelper serverTestHelper;
 
-  @Before
+  @BeforeEach
   public void setUp() throws Exception {
     kerberizedTestHelper = new KerberizedTestHelper();
     serverTestHelper = new ServerTestHelper();
@@ -69,7 +70,7 @@ public class BatchRestClientTest {
     basicBatchRestApi = new BatchRestApi(basicClient);
   }
 
-  @After
+  @AfterEach
   public void tearDown() throws Exception {
     kerberizedTestHelper.stop();
     serverTestHelper.stop();
@@ -77,26 +78,34 @@ public class BatchRestClientTest {
     basicClient.close();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEmptyHostUrl() {
-    KyuubiRestClient.builder("")
-        .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
-        .username("test")
-        .password("test")
-        .build();
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          KyuubiRestClient.builder("")
+              .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+              .username("test")
+              .password("test")
+              .build();
+        });
   }
 
-  @Test(expected = KyuubiRestException.class)
+  @Test
   public void testInvalidUrl() {
-    KyuubiRestClient basicClient =
-        KyuubiRestClient.builder("https://localhost:8443")
-            .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
-            .username("test")
-            .password("test")
-            .build();
-    BatchRestApi invalidBasicBatchRestApi = new BatchRestApi(basicClient);
+    assertThrows(
+        KyuubiRestException.class,
+        () -> {
+          KyuubiRestClient basicClient =
+              KyuubiRestClient.builder("https://localhost:8443")
+                  .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+                  .username("test")
+                  .password("test")
+                  .build();
+          BatchRestApi invalidBasicBatchRestApi = new BatchRestApi(basicClient);
 
-    invalidBasicBatchRestApi.getBatchById("fake");
+          invalidBasicBatchRestApi.getBatchById("fake");
+        });
   }
 
   @Test
@@ -115,18 +124,18 @@ public class BatchRestClientTest {
     Batch expectedBatch = generateTestBatch();
     Batch result = noPasswordBasicBatchRestApi.createBatch(batchRequest);
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getUser(), expectedBatch.getUser());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getName(), expectedBatch.getName());
-    assertEquals(result.getAppStartTime(), expectedBatch.getAppStartTime());
-    assertEquals(result.getAppId(), expectedBatch.getAppId());
-    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
-    assertEquals(result.getAppState(), expectedBatch.getAppState());
-    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
-    assertEquals(result.getState(), expectedBatch.getState());
-    assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
-    assertEquals(result.getEndTime(), expectedBatch.getEndTime());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getUser(), result.getUser());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getName(), result.getName());
+    assertEquals(expectedBatch.getAppStartTime(), result.getAppStartTime());
+    assertEquals(expectedBatch.getAppId(), result.getAppId());
+    assertEquals(expectedBatch.getAppUrl(), result.getAppUrl());
+    assertEquals(expectedBatch.getAppState(), result.getAppState());
+    assertEquals(expectedBatch.getAppDiagnostic(), result.getAppDiagnostic());
+    assertEquals(expectedBatch.getState(), result.getState());
+    assertEquals(expectedBatch.getCreateTime(), result.getCreateTime());
+    assertEquals(expectedBatch.getEndTime(), result.getEndTime());
   }
 
   @Test
@@ -144,18 +153,18 @@ public class BatchRestClientTest {
     Batch expectedBatch = generateTestBatch();
     Batch result = anonymousBasicBatchRestApi.createBatch(batchRequest);
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getUser(), expectedBatch.getUser());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getName(), expectedBatch.getName());
-    assertEquals(result.getAppStartTime(), expectedBatch.getAppStartTime());
-    assertEquals(result.getAppId(), expectedBatch.getAppId());
-    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
-    assertEquals(result.getAppState(), expectedBatch.getAppState());
-    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
-    assertEquals(result.getState(), expectedBatch.getState());
-    assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
-    assertEquals(result.getEndTime(), expectedBatch.getEndTime());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getUser(), result.getUser());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getName(), result.getName());
+    assertEquals(expectedBatch.getAppStartTime(), result.getAppStartTime());
+    assertEquals(expectedBatch.getAppId(), result.getAppId());
+    assertEquals(expectedBatch.getAppUrl(), result.getAppUrl());
+    assertEquals(expectedBatch.getAppState(), result.getAppState());
+    assertEquals(expectedBatch.getAppDiagnostic(), result.getAppDiagnostic());
+    assertEquals(expectedBatch.getState(), result.getState());
+    assertEquals(expectedBatch.getCreateTime(), result.getCreateTime());
+    assertEquals(expectedBatch.getEndTime(), result.getEndTime());
   }
 
   @Test
@@ -167,27 +176,27 @@ public class BatchRestClientTest {
     Batch expectedBatch = generateTestBatch();
     Batch result = spnegoBatchRestApi.createBatch(batchRequest);
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getState(), expectedBatch.getState());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getState(), result.getState());
 
     // test basic auth
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
     BatchTestServlet.allowAnonymous(false);
     result = basicBatchRestApi.createBatch(batchRequest);
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getUser(), expectedBatch.getUser());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getName(), expectedBatch.getName());
-    assertEquals(result.getAppStartTime(), expectedBatch.getAppStartTime());
-    assertEquals(result.getAppId(), expectedBatch.getAppId());
-    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
-    assertEquals(result.getAppState(), expectedBatch.getAppState());
-    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
-    assertEquals(result.getState(), expectedBatch.getState());
-    assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
-    assertEquals(result.getEndTime(), expectedBatch.getEndTime());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getUser(), result.getUser());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getName(), result.getName());
+    assertEquals(expectedBatch.getAppStartTime(), result.getAppStartTime());
+    assertEquals(expectedBatch.getAppId(), result.getAppId());
+    assertEquals(expectedBatch.getAppUrl(), result.getAppUrl());
+    assertEquals(expectedBatch.getAppState(), result.getAppState());
+    assertEquals(expectedBatch.getAppDiagnostic(), result.getAppDiagnostic());
+    assertEquals(expectedBatch.getState(), result.getState());
+    assertEquals(expectedBatch.getCreateTime(), result.getCreateTime());
+    assertEquals(expectedBatch.getEndTime(), result.getEndTime());
   }
 
   @Test
@@ -198,9 +207,9 @@ public class BatchRestClientTest {
     Batch expectedBatch = generateTestBatch();
     Batch result = spnegoBatchRestApi.getBatchById("71535");
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getState(), expectedBatch.getState());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getState(), result.getState());
 
     // test basic auth
     BatchTestServlet.setAuthSchema(BASIC_AUTH);
@@ -208,18 +217,18 @@ public class BatchRestClientTest {
 
     result = basicBatchRestApi.getBatchById("71535");
 
-    assertEquals(result.getId(), expectedBatch.getId());
-    assertEquals(result.getUser(), expectedBatch.getUser());
-    assertEquals(result.getBatchType(), expectedBatch.getBatchType());
-    assertEquals(result.getName(), expectedBatch.getName());
-    assertEquals(result.getAppStartTime(), expectedBatch.getAppStartTime());
-    assertEquals(result.getAppId(), expectedBatch.getAppId());
-    assertEquals(result.getAppUrl(), expectedBatch.getAppUrl());
-    assertEquals(result.getAppState(), expectedBatch.getAppState());
-    assertEquals(result.getAppDiagnostic(), expectedBatch.getAppDiagnostic());
-    assertEquals(result.getState(), expectedBatch.getState());
-    assertEquals(result.getCreateTime(), expectedBatch.getCreateTime());
-    assertEquals(result.getEndTime(), expectedBatch.getEndTime());
+    assertEquals(expectedBatch.getId(), result.getId());
+    assertEquals(expectedBatch.getUser(), result.getUser());
+    assertEquals(expectedBatch.getBatchType(), result.getBatchType());
+    assertEquals(expectedBatch.getName(), result.getName());
+    assertEquals(expectedBatch.getAppStartTime(), result.getAppStartTime());
+    assertEquals(expectedBatch.getAppId(), result.getAppId());
+    assertEquals(expectedBatch.getAppUrl(), result.getAppUrl());
+    assertEquals(expectedBatch.getAppState(), result.getAppState());
+    assertEquals(expectedBatch.getAppDiagnostic(), result.getAppDiagnostic());
+    assertEquals(expectedBatch.getState(), result.getState());
+    assertEquals(expectedBatch.getCreateTime(), result.getCreateTime());
+    assertEquals(expectedBatch.getEndTime(), result.getEndTime());
   }
 
   @Test

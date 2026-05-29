@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.engine.dataagent.datasource;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TableRefTest {
 
@@ -62,19 +65,31 @@ public class TableRefTest {
 
   // --- Validation ---
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNullTableThrows() {
-    TableRef.of(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TableRef.of(null);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEmptyTableThrows() {
-    TableRef.of("");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TableRef.of("");
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNullTableInThreeArgThrows() {
-    TableRef.of("cat", "sch", null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          TableRef.of("cat", "sch", null);
+        });
   }
 
   @Test
@@ -146,8 +161,12 @@ public class TableRefTest {
     assertEquals("orders", ref.getTable());
   }
 
-  @Test(expected = Exception.class)
+  @Test
   public void testDeserializeMissingTableThrows() throws Exception {
-    JSON.readValue("{\"schema\":\"mydb\"}", TableRef.class);
+    assertThrows(
+        Exception.class,
+        () -> {
+          JSON.readValue("{\"schema\":\"mydb\"}", TableRef.class);
+        });
   }
 }

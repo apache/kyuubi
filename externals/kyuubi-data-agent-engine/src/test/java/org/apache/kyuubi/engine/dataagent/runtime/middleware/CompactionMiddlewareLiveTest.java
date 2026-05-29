@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -28,8 +29,8 @@ import java.util.List;
 import org.apache.kyuubi.engine.dataagent.runtime.AgentRunContext;
 import org.apache.kyuubi.engine.dataagent.runtime.ApprovalMode;
 import org.apache.kyuubi.engine.dataagent.runtime.ConversationMemory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Live integration test for {@link CompactionMiddleware}: exercises the full compaction path
@@ -46,10 +47,10 @@ public class CompactionMiddlewareLiveTest {
 
   private OpenAIClient client;
 
-  @Before
+  @BeforeEach
   public void setUp() {
-    assumeTrue("DATA_AGENT_OPENAI_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
-    assumeTrue("DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests", !BASE_URL.isEmpty());
+    assumeFalse(API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
+    assumeFalse(BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 
@@ -83,7 +84,7 @@ public class CompactionMiddlewareLiveTest {
     Decision<List<ChatCompletionMessageParam>> decision =
         mw.beforeLlmCall(ctx, memory.buildLlmMessages());
 
-    assertEquals("expected compaction to fire", Decision.Kind.REPLACE, decision.kind());
+    assertEquals(Decision.Kind.REPLACE, decision.kind(), "expected compaction to fire");
 
     // History got rewritten: [summary user msg] + kept tail.
     List<ChatCompletionMessageParam> hist = memory.getHistory();
@@ -91,12 +92,12 @@ public class CompactionMiddlewareLiveTest {
     assertTrue(hist.get(0).isUser());
     String first = hist.get(0).asUser().content().text().orElse("");
     assertTrue(
-        "summary message should be wrapped in <conversation_summary>",
-        first.contains("<conversation_summary>"));
+        first.contains("<conversation_summary>"),
+        "summary message should be wrapped in <conversation_summary>");
 
     // The LLM was told to emit 8 markdown sections; sanity-check a couple show up.
     assertTrue(
-        "summary should contain '## User Intent' section",
-        first.contains("## User Intent") || first.contains("User Intent"));
+        first.contains("## User Intent") || first.contains("User Intent"),
+        "summary should contain '## User Intent' section");
   }
 }

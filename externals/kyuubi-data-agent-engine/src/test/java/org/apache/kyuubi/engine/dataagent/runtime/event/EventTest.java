@@ -17,12 +17,16 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.event;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class EventTest {
 
@@ -52,12 +56,7 @@ public class EventTest {
     Map<String, Object> args = new HashMap<>();
     args.put("key", "value");
     ToolCall event = new ToolCall("tc-1", "tool", args);
-    try {
-      event.toolArgs().put("new", "entry");
-      fail("Should throw on modification");
-    } catch (UnsupportedOperationException expected) {
-      // expected
-    }
+    assertThrows(UnsupportedOperationException.class, () -> event.toolArgs().put("new", "entry"));
   }
 
   @Test
@@ -87,12 +86,7 @@ public class EventTest {
     Map<String, Object> args = new HashMap<>();
     args.put("key", "value");
     ApprovalRequest event = new ApprovalRequest("req-1", "tc-1", "tool", args, ToolRiskLevel.SAFE);
-    try {
-      event.toolArgs().put("new", "entry");
-      fail("Should throw on modification");
-    } catch (UnsupportedOperationException expected) {
-      // expected
-    }
+    assertThrows(UnsupportedOperationException.class, () -> event.toolArgs().put("new", "entry"));
   }
 
   @Test
@@ -122,7 +116,7 @@ public class EventTest {
     EventType[] values = EventType.values();
     java.util.Set<String> names = new java.util.HashSet<>();
     for (EventType type : values) {
-      assertTrue("Duplicate SSE name: " + type.sseEventName(), names.add(type.sseEventName()));
+      assertTrue(names.add(type.sseEventName()), "Duplicate SSE name: " + type.sseEventName());
     }
     assertEquals(11, values.length);
   }

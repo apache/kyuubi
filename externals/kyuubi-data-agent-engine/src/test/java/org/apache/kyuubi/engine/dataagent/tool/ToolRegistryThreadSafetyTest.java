@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.tool;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.openai.models.ChatModel;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
@@ -26,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Thread safety tests for ToolRegistry. Uses real tool implementations. */
 public class ToolRegistryThreadSafetyTest {
@@ -91,7 +93,7 @@ public class ToolRegistryThreadSafetyTest {
 
     pool.shutdown();
     assertTrue(pool.awaitTermination(10, TimeUnit.SECONDS));
-    assertEquals("Should have no errors from concurrent access", 0, errors.get());
+    assertEquals(0, errors.get(), "Should have no errors from concurrent access");
     assertFalse(registry.isEmpty());
   }
 

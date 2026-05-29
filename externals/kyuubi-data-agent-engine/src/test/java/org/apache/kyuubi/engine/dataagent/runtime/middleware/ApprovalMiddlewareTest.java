@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,15 +38,15 @@ import org.apache.kyuubi.engine.dataagent.tool.AgentTool;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRiskLevel;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class ApprovalMiddlewareTest {
 
   private ToolRegistry registry;
   private List<AgentEvent> emittedEvents;
 
-  @Before
+  @BeforeEach
   public void setUp() {
     registry = new ToolRegistry(30);
     registry.register(safeTool("safe_tool"));
@@ -64,7 +65,7 @@ public class ApprovalMiddlewareTest {
         Decision.Kind.PROCEED, mw.beforeToolCall(ctx, invocation("tc1", "dangerous_tool")).kind());
     assertEquals(
         Decision.Kind.PROCEED, mw.beforeToolCall(ctx, invocation("tc2", "safe_tool")).kind());
-    assertTrue("No approval events should be emitted", emittedEvents.isEmpty());
+    assertTrue(emittedEvents.isEmpty(), "No approval events should be emitted");
   }
 
   // --- Normal mode: safe auto-approved, destructive needs approval ---
@@ -98,7 +99,7 @@ public class ApprovalMiddlewareTest {
           exec.submit(() -> mw.beforeToolCall(ctx, invocation("tc1", "dangerous_tool")));
 
       // Wait for the approval request event
-      assertTrue("Approval event should be emitted", eventEmitted.await(2, TimeUnit.SECONDS));
+      assertTrue(eventEmitted.await(2, TimeUnit.SECONDS), "Approval event should be emitted");
       assertEquals(1, emittedEvents.size());
       assertEquals(EventType.APPROVAL_REQUEST, emittedEvents.get(0).eventType());
 
@@ -109,9 +110,9 @@ public class ApprovalMiddlewareTest {
       // Approve
       assertTrue(mw.resolve(req.requestId(), true));
       assertEquals(
-          "Approved tool should proceed",
           Decision.Kind.PROCEED,
-          future.get(2, TimeUnit.SECONDS).kind());
+          future.get(2, TimeUnit.SECONDS).kind(),
+          "Approved tool should proceed");
     } finally {
       exec.shutdownNow();
     }
@@ -192,7 +193,7 @@ public class ApprovalMiddlewareTest {
 
       // Don't resolve — let it time out
       Decision<ToolInvocation> decision = future.get(5, TimeUnit.SECONDS);
-      assertEquals("Timeout should produce a denial", Decision.Kind.ABORT, decision.kind());
+      assertEquals(Decision.Kind.ABORT, decision.kind(), "Timeout should produce a denial");
       assertTrue(decision.reason().contains("timed out"));
     } finally {
       exec.shutdownNow();
@@ -223,7 +224,7 @@ public class ApprovalMiddlewareTest {
       mw.onStop();
 
       Decision<ToolInvocation> decision = future.get(2, TimeUnit.SECONDS);
-      assertEquals("onStop should unblock with a denial", Decision.Kind.ABORT, decision.kind());
+      assertEquals(Decision.Kind.ABORT, decision.kind(), "onStop should unblock with a denial");
     } finally {
       exec.shutdownNow();
     }

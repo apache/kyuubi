@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.engine.dataagent.datasource;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.zaxxer.hikari.HikariDataSource;
 import java.io.File;
@@ -25,8 +29,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import javax.sql.DataSource;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 /** Tests for DataSourceFactory. Uses real SQLite. */
 public class DataSourceFactoryAuthTest {
@@ -34,7 +38,7 @@ public class DataSourceFactoryAuthTest {
   private DataSource ds;
   private File tmpFile;
 
-  @After
+  @AfterEach
   public void tearDown() {
     if (ds instanceof HikariDataSource) {
       ((HikariDataSource) ds).close();
@@ -70,7 +74,7 @@ public class DataSourceFactoryAuthTest {
 
     ds = DataSourceFactory.create("jdbc:sqlite:" + tmpFile.getAbsolutePath(), "testuser");
     assertNotNull(ds);
-    assertTrue(ds instanceof HikariDataSource);
+    assertInstanceOf(HikariDataSource.class, ds);
     assertEquals("testuser", ((HikariDataSource) ds).getUsername());
   }
 
@@ -136,13 +140,21 @@ public class DataSourceFactoryAuthTest {
     tmpFile2.delete();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testNullJdbcUrlThrows() {
-    DataSourceFactory.create(null);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          DataSourceFactory.create(null);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testEmptyJdbcUrlThrows() {
-    DataSourceFactory.create("");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          DataSourceFactory.create("");
+        });
   }
 }

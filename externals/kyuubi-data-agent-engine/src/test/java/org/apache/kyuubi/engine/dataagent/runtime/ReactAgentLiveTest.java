@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine.dataagent.runtime;
 
-import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -34,16 +37,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.kyuubi.engine.dataagent.prompt.SystemPromptBuilder;
-import org.apache.kyuubi.engine.dataagent.runtime.event.*;
+import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
+import org.apache.kyuubi.engine.dataagent.runtime.event.AgentFinish;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ApprovalRequest;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ContentComplete;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ContentDelta;
+import org.apache.kyuubi.engine.dataagent.runtime.event.StepStart;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ToolCall;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ToolResult;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ApprovalMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.LoggingMiddleware;
 import org.apache.kyuubi.engine.dataagent.runtime.middleware.ToolResultOffloadMiddleware;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunMutationQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sqlite.SQLiteDataSource;
 
 /**
@@ -66,14 +76,14 @@ public class ReactAgentLiveTest {
   private final List<File> tempFiles = new ArrayList<>();
   private OpenAIClient client;
 
-  @Before
+  @BeforeEach
   public void setUp() {
-    assumeTrue("DATA_AGENT_OPENAI_API_KEY not set, skipping live tests", !API_KEY.isEmpty());
-    assumeTrue("DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests", !BASE_URL.isEmpty());
+    assumeFalse(API_KEY.isEmpty(), "DATA_AGENT_OPENAI_API_KEY not set, skipping live tests");
+    assumeFalse(BASE_URL.isEmpty(), "DATA_AGENT_OPENAI_ENDPOINT not set, skipping live tests");
     client = OpenAIOkHttpClient.builder().apiKey(API_KEY).baseUrl(BASE_URL).build();
   }
 
-  @After
+  @AfterEach
   public void tearDown() {
     tempFiles.forEach(File::delete);
   }
@@ -101,11 +111,11 @@ public class ReactAgentLiveTest {
             .map(e -> ((ContentDelta) e).text())
             .collect(Collectors.toList());
 
-    assertTrue("Expected multiple ContentDelta events", deltas.size() > 1);
-    assertFalse("Streamed text should not be empty", String.join("", deltas).isEmpty());
+    assertTrue(deltas.size() > 1, "Expected multiple ContentDelta events");
+    assertFalse(String.join("", deltas).isEmpty(), "Streamed text should not be empty");
     assertTrue(events.stream().anyMatch(e -> e instanceof StepStart));
     assertTrue(events.stream().anyMatch(e -> e instanceof ContentComplete));
-    assertTrue(events.get(events.size() - 1) instanceof AgentFinish);
+    assertInstanceOf(AgentFinish.class, events.get(events.size() - 1));
     assertEquals(2, memory.getHistory().size()); // user + assistant
   }
 
@@ -146,14 +156,14 @@ public class ReactAgentLiveTest {
             .map(e -> (ToolResult) e)
             .collect(Collectors.toList());
 
-    assertFalse("Agent should have called at least one tool", toolCalls.isEmpty());
-    assertFalse("Agent should have received tool results", toolResults.isEmpty());
-    assertTrue("Tool calls should not error", toolResults.stream().noneMatch(ToolResult::isError));
+    assertFalse(toolCalls.isEmpty(), "Agent should have called at least one tool");
+    assertFalse(toolResults.isEmpty(), "Agent should have received tool results");
+    assertTrue(toolResults.stream().noneMatch(ToolResult::isError), "Tool calls should not error");
 
     // Verify SQL query was called
     assertTrue(
-        "Agent should execute at least one SQL query",
-        toolCalls.stream().anyMatch(tc -> "run_select_query".equals(tc.toolName())));
+        toolCalls.stream().anyMatch(tc -> "run_select_query".equals(tc.toolName())),
+        "Agent should execute at least one SQL query");
 
     // Verify final answer mentions "Electronics" (highest revenue)
     List<String> completions =
@@ -163,13 +173,13 @@ public class ReactAgentLiveTest {
             .collect(Collectors.toList());
     String lastAnswer = completions.get(completions.size() - 1);
     assertTrue(
-        "Final answer should mention Electronics, got: " + lastAnswer,
-        lastAnswer.toLowerCase().contains("electronics"));
+        lastAnswer.toLowerCase().contains("electronics"),
+        "Final answer should mention Electronics, got: " + lastAnswer);
 
     // Verify agent finished successfully
     AgentEvent last = events.get(events.size() - 1);
-    assertTrue(last instanceof AgentFinish);
-    assertTrue("Should take multiple steps", ((AgentFinish) last).totalSteps() > 1);
+    AgentFinish finish = assertInstanceOf(AgentFinish.class, last);
+    assertTrue(finish.totalSteps() > 1, "Should take multiple steps");
   }
 
   @Test
@@ -196,12 +206,11 @@ public class ReactAgentLiveTest {
     agent.run(new AgentInvocation("How many orders are there in total?"), memory, events1::add);
 
     assertTrue(
-        "Turn 1 should query the database",
         events1.stream()
             .anyMatch(
-                e ->
-                    e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())));
-    assertTrue(events1.get(events1.size() - 1) instanceof AgentFinish);
+                e -> e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())),
+        "Turn 1 should query the database");
+    assertInstanceOf(AgentFinish.class, events1.get(events1.size() - 1));
 
     // Turn 2: follow-up relying on conversation context
     List<AgentEvent> events2 = new CopyOnWriteArrayList<>();
@@ -209,17 +218,16 @@ public class ReactAgentLiveTest {
         new AgentInvocation("Now show me only orders above 500 dollars."), memory, events2::add);
 
     assertTrue(
-        "Turn 2 should also query the database",
         events2.stream()
             .anyMatch(
-                e ->
-                    e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())));
-    assertTrue(events2.get(events2.size() - 1) instanceof AgentFinish);
+                e -> e instanceof ToolCall && "run_select_query".equals(((ToolCall) e).toolName())),
+        "Turn 2 should also query the database");
+    assertInstanceOf(AgentFinish.class, events2.get(events2.size() - 1));
 
     // Verify memory accumulated across both turns
     assertTrue(
-        "Memory should contain messages from both turns, got " + memory.getHistory().size(),
-        memory.getHistory().size() > 4);
+        memory.getHistory().size() > 4,
+        "Memory should contain messages from both turns, got " + memory.getHistory().size());
   }
 
   @Test
@@ -288,23 +296,23 @@ public class ReactAgentLiveTest {
     }
 
     assertTrue(
-        "Agent should have run a select query first",
-        toolCalls.stream().anyMatch(tc -> "run_select_query".equals(tc.toolName())));
+        toolCalls.stream().anyMatch(tc -> "run_select_query".equals(tc.toolName())),
+        "Agent should have run a select query first");
 
     // The SELECT returned 800 rows, which must trip the offload threshold.
     assertTrue(
-        "Expected at least one offload preview marker in tool results",
-        toolResults.stream().anyMatch(tr -> tr.output().contains("Tool output truncated")));
+        toolResults.stream().anyMatch(tr -> tr.output().contains("Tool output truncated")),
+        "Expected at least one offload preview marker in tool results");
 
     assertTrue(
-        "Agent should have used grep_tool_output or read_tool_output after seeing"
-            + " the offload preview; actual tool calls: "
-            + toolCalls.stream().map(ToolCall::toolName).collect(Collectors.toList()),
         toolCalls.stream()
             .anyMatch(
                 tc ->
                     "grep_tool_output".equals(tc.toolName())
-                        || "read_tool_output".equals(tc.toolName())));
+                        || "read_tool_output".equals(tc.toolName())),
+        "Agent should have used grep_tool_output or read_tool_output after seeing"
+            + " the offload preview; actual tool calls: "
+            + toolCalls.stream().map(ToolCall::toolName).collect(Collectors.toList()));
 
     String finalAnswer =
         events.stream()
@@ -313,8 +321,8 @@ public class ReactAgentLiveTest {
             .reduce((a, b) -> b)
             .orElse("");
     assertTrue(
-        "Final answer should contain the needle note 'the-answer-is-42', got: " + finalAnswer,
-        finalAnswer.contains("the-answer-is-42"));
+        finalAnswer.contains("the-answer-is-42"),
+        "Final answer should contain the needle note 'the-answer-is-42', got: " + finalAnswer);
   }
 
   @Test
@@ -371,17 +379,17 @@ public class ReactAgentLiveTest {
             .filter(e -> e instanceof ApprovalRequest)
             .map(e -> (ApprovalRequest) e)
             .collect(Collectors.toList());
-    assertFalse("Expected at least one ApprovalRequest", approvals.isEmpty());
+    assertFalse(approvals.isEmpty(), "Expected at least one ApprovalRequest");
     assertTrue(
-        "ApprovalRequest should target run_mutation_query",
-        approvals.stream().anyMatch(a -> "run_mutation_query".equals(a.toolName())));
+        approvals.stream().anyMatch(a -> "run_mutation_query".equals(a.toolName())),
+        "ApprovalRequest should target run_mutation_query");
 
     // Mutation must have actually executed — check the DB directly.
     try (Connection conn = ds.getConnection();
         Statement stmt = conn.createStatement();
         java.sql.ResultSet rs = stmt.executeQuery("SELECT value FROM counters WHERE name='hits'")) {
       assertTrue(rs.next());
-      assertEquals("Counter should be 1 after approved mutation", 1, rs.getInt(1));
+      assertEquals(1, rs.getInt(1), "Counter should be 1 after approved mutation");
     }
 
     String finalAnswer =
@@ -390,7 +398,7 @@ public class ReactAgentLiveTest {
             .map(e -> ((ContentComplete) e).fullText())
             .reduce((a, b) -> b)
             .orElse("");
-    assertTrue("Final answer should mention 1, got: " + finalAnswer, finalAnswer.contains("1"));
+    assertTrue(finalAnswer.contains("1"), "Final answer should mention 1, got: " + finalAnswer);
   }
 
   @Test
@@ -440,15 +448,15 @@ public class ReactAgentLiveTest {
     }
 
     assertTrue(
-        "Expected at least one ApprovalRequest",
-        events.stream().anyMatch(e -> e instanceof ApprovalRequest));
+        events.stream().anyMatch(e -> e instanceof ApprovalRequest),
+        "Expected at least one ApprovalRequest");
 
     // DB must be untouched.
     try (Connection conn = ds.getConnection();
         Statement stmt = conn.createStatement();
         java.sql.ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM counters")) {
       assertTrue(rs.next());
-      assertTrue("Counters rows must survive denied mutation", rs.getInt(1) > 0);
+      assertTrue(rs.getInt(1) > 0, "Counters rows must survive denied mutation");
     }
 
     // LLM should tell the user the operation didn't go through. Loose lexical check to
@@ -461,14 +469,14 @@ public class ReactAgentLiveTest {
             .orElse("")
             .toLowerCase();
     assertTrue(
-        "Final answer should indicate the deletion was refused/denied/not executed, got: "
-            + finalAnswer,
         finalAnswer.contains("den")
             || finalAnswer.contains("reject")
             || finalAnswer.contains("not ")
             || finalAnswer.contains("refus")
             || finalAnswer.contains("unable")
-            || finalAnswer.contains("could not"));
+            || finalAnswer.contains("could not"),
+        "Final answer should indicate the deletion was refused/denied/not executed, got: "
+            + finalAnswer);
   }
 
   // --- Helpers ---

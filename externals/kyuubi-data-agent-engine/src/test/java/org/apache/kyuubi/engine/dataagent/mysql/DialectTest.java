@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.apache.kyuubi.engine.dataagent.datasource.JdbcDialect;
 import org.apache.kyuubi.engine.dataagent.datasource.dialect.MySQLDialect;
@@ -25,15 +29,15 @@ import org.apache.kyuubi.engine.dataagent.prompt.SystemPromptBuilder;
 import org.apache.kyuubi.engine.dataagent.tool.ToolContext;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.SqlQueryArgs;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /** Integration tests for {@link MySQLDialect} end-to-end with a real MySQL instance. */
 public class DialectTest extends WithMySQLContainer {
 
   private static RunSelectQueryTool selectTool;
 
-  @BeforeClass
+  @BeforeAll
   public static void setUp() {
     selectTool = new RunSelectQueryTool(dataSource, 30);
   }
@@ -42,7 +46,7 @@ public class DialectTest extends WithMySQLContainer {
   public void testDialectFromUrl() {
     JdbcDialect dialect = JdbcDialect.fromUrl(mysql.getJdbcUrl());
     assertNotNull(dialect);
-    assertTrue(dialect instanceof MySQLDialect);
+    assertInstanceOf(MySQLDialect.class, dialect);
     assertEquals("mysql", dialect.datasourceName());
   }
 
@@ -86,6 +90,6 @@ public class DialectTest extends WithMySQLContainer {
   public void testPromptBuilderWithMySQLDatasource() {
     JdbcDialect dialect = JdbcDialect.fromUrl(mysql.getJdbcUrl());
     String prompt = SystemPromptBuilder.create().datasource(dialect.datasourceName()).build();
-    assertTrue("Prompt should mention mysql dialect", prompt.toLowerCase().contains("mysql"));
+    assertTrue(prompt.toLowerCase().contains("mysql"), "Prompt should mention mysql dialect");
   }
 }

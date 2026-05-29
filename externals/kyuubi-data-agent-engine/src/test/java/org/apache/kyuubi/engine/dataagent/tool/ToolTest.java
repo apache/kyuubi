@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.engine.dataagent.tool;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.openai.models.ChatModel;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
@@ -30,15 +32,15 @@ import java.util.Collections;
 import java.util.List;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunMutationQueryTool;
 import org.apache.kyuubi.engine.dataagent.tool.sql.RunSelectQueryTool;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.sqlite.SQLiteDataSource;
 
 public class ToolTest {
 
   private final List<File> tempFiles = new ArrayList<>();
 
-  @After
+  @AfterEach
   public void cleanup() {
     tempFiles.forEach(File::delete);
   }
@@ -63,8 +65,8 @@ public class ToolTest {
 
     List<String> names = new ArrayList<>();
     tools.forEach(t -> names.add(t.asFunction().function().name()));
-    assertTrue("Missing run_select_query", names.contains("run_select_query"));
-    assertTrue("Missing run_mutation_query", names.contains("run_mutation_query"));
+    assertTrue(names.contains("run_select_query"), "Missing run_select_query");
+    assertTrue(names.contains("run_mutation_query"), "Missing run_mutation_query");
   }
 
   @Test
@@ -76,7 +78,7 @@ public class ToolTest {
 
     String result =
         registry.executeTool("run_select_query", "{\"sql\": \"SELECT COUNT(*) FROM users\"}");
-    assertTrue("Expected count of 3, got: " + result, result.contains("3"));
+    assertTrue(result.contains("3"), "Expected count of 3, got: " + result);
   }
 
   @Test
@@ -121,9 +123,9 @@ public class ToolTest {
     long start = System.currentTimeMillis();
     String result = registry.executeTool("slow_tool", "{}");
     long elapsed = System.currentTimeMillis() - start;
-    assertTrue("Should contain timeout error", result.contains("timed out"));
-    assertTrue("Should contain tool name", result.contains("slow_tool"));
-    assertTrue("Should finish within ~3s (timeout=2s)", elapsed < 5000);
+    assertTrue(result.contains("timed out"), "Should contain timeout error");
+    assertTrue(result.contains("slow_tool"), "Should contain tool name");
+    assertTrue(elapsed < 5000, "Should finish within ~3s (timeout=2s)");
   }
 
   @Test

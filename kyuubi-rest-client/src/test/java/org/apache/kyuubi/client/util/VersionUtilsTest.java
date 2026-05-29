@@ -17,14 +17,16 @@
 
 package org.apache.kyuubi.client.util;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.regex.Pattern;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class VersionUtilsTest {
 
   @Test
   public void testGetClientVersion() {
     Pattern pattern = Pattern.compile("^\\d+\\.\\d+\\.\\d+.*");
-    assert pattern.matcher(VersionUtils.getVersion()).matches();
+    assertTrue(pattern.matcher(VersionUtils.getVersion()).matches());
   }
 }

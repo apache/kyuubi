@@ -19,10 +19,11 @@
 
 package org.apache.kyuubi.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.UUID;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class UuidUtilsTest {
 
@@ -39,15 +40,23 @@ public class UuidUtilsTest {
     assertEquals(2, uuid.variant());
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void generateUUIDv7NegativeTimestamp() {
-    long value = -0xFEDCBA987654L;
-    UuidUtils.generateUUIDv7(value);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          long value = -0xFEDCBA987654L;
+          UuidUtils.generateUUIDv7(value);
+        });
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void generateUUIDv7GreaterThan48BitsTimestamp() {
-    long value = 1L << 48;
-    UuidUtils.generateUUIDv7(value);
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          long value = 1L << 48;
+          UuidUtils.generateUUIDv7(value);
+        });
   }
 }

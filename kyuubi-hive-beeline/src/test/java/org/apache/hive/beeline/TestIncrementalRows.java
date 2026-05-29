@@ -18,6 +18,7 @@
 
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,9 +27,8 @@ import static org.mockito.Mockito.when;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -39,7 +39,7 @@ public class TestIncrementalRows {
   private Integer incrementalBufferRows = 5;
   private ResultSet mockResultSet;
 
-  @Before
+  @BeforeEach
   public void init() throws SQLException {
 
     // Mock BeeLineOpts
@@ -75,7 +75,7 @@ public class TestIncrementalRows {
 
     convertedIr.next();
     String row = convertedIr.next().toString();
-    Assert.assertEquals("[MMM]", row);
+    assertEquals("[MMM]", row);
   }
 
   @Test
@@ -91,7 +91,7 @@ public class TestIncrementalRows {
 
     convertedIr.next();
     String row = convertedIr.next().toString();
-    Assert.assertEquals("[[77, 77, 77]]", row);
+    assertEquals("[[77, 77, 77]]", row);
   }
 
   public void initNrOfResultSetCalls(final int iter) throws SQLException {

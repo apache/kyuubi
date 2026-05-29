@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.engine.dataagent.prompt;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class SystemPromptBuilderTest {
 
@@ -90,8 +93,8 @@ public class SystemPromptBuilderTest {
   @Test
   public void testDatasourceReplacesNotAppends() {
     String prompt = SystemPromptBuilder.create().datasource("sqlite").datasource("spark").build();
-    assertTrue("Last datasource wins", prompt.contains("Spark SQL"));
-    assertFalse("Previous datasource replaced", prompt.contains("SQLite SQL compatibility"));
+    assertTrue(prompt.contains("Spark SQL"), "Last datasource wins");
+    assertFalse(prompt.contains("SQLite SQL compatibility"), "Previous datasource replaced");
   }
 
   @Test
@@ -113,9 +116,13 @@ public class SystemPromptBuilderTest {
     assertTrue(prompt.contains("MySQL"));
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadResourceThrowsOnMissing() {
-    SystemPromptBuilder.loadResource("nonexistent-resource");
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> {
+          SystemPromptBuilder.loadResource("nonexistent-resource");
+        });
   }
 
   @Test

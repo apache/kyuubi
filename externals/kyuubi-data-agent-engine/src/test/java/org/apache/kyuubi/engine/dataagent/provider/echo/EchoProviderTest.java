@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.dataagent.provider.echo;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +30,7 @@ import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ContentComplete;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ContentDelta;
 import org.apache.kyuubi.engine.dataagent.runtime.event.EventType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Smoke tests for EchoProvider — verify event stream structure and content echo. */
 public class EchoProviderTest {
@@ -41,7 +44,7 @@ public class EchoProviderTest {
     provider.run("session-1", new ProviderRunRequest("What is Kyuubi?"), events::add);
     provider.close("session-1");
 
-    assertFalse("Should emit events", events.isEmpty());
+    assertFalse(events.isEmpty(), "Should emit events");
 
     // Verify event type sequence: AGENT_START -> STEP_START -> CONTENT_DELTA... ->
     //   CONTENT_COMPLETE -> STEP_END -> AGENT_FINISH
@@ -66,6 +69,6 @@ public class EchoProviderTest {
     }
     assertNotNull(complete);
     assertEquals(complete, deltas.toString());
-    assertTrue("Should echo the question", complete.contains("What is Kyuubi?"));
+    assertTrue(complete.contains("What is Kyuubi?"), "Should echo the question");
   }
 }

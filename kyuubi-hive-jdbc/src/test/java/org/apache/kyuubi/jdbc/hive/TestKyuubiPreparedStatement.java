@@ -17,7 +17,8 @@
  */
 package org.apache.kyuubi.jdbc.hive;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -25,8 +26,8 @@ import static org.mockito.Mockito.when;
 import java.sql.SQLException;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -41,7 +42,7 @@ public class TestKyuubiPreparedStatement {
   private TStatus tStatus_SUCCESS = new TStatus(TStatusCode.SUCCESS_STATUS);
   @Mock private TOperationHandle tOperationHandle;
 
-  @Before
+  @BeforeEach
   public void before() throws Exception {
     MockitoAnnotations.initMocks(this);
     when(tExecStatementResp.getStatus()).thenReturn(tStatus_SUCCESS);
@@ -77,11 +78,16 @@ public class TestKyuubiPreparedStatement {
     ps.execute();
   }
 
-  @Test(expected = SQLException.class)
+  @Test
   public void unsetArgument() throws Exception {
-    String sql = "select 1 from x where a=?";
-    KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
-    ps.execute();
+    assertThrows(
+        SQLException.class,
+        () -> {
+          String sql = "select 1 from x where a=?";
+          KyuubiPreparedStatement ps =
+              new KyuubiPreparedStatement(connection, client, sessHandle, sql);
+          ps.execute();
+        });
   }
 
   @Test

@@ -18,7 +18,11 @@
 
 package org.apache.hive.beeline;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,43 +32,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.apache.hive.beeline.common.HiveTestUtils;
 import org.apache.kyuubi.util.JavaUtils;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Unit test for Beeline arg parser. */
-@RunWith(Parameterized.class)
 public class TestBeelineArgParsing {
   private static final Logger LOG = LoggerFactory.getLogger(TestBeelineArgParsing.class.getName());
 
   private static final String dummyDriverClazzName = "DummyDriver";
-
-  private String connectionString;
-  private String driverClazzName;
-  private String driverJarFileName;
-  private boolean defaultSupported;
-
-  public TestBeelineArgParsing(
-      String connectionString,
-      String driverClazzName,
-      String driverJarFileName,
-      boolean defaultSupported) {
-    this.connectionString = connectionString;
-    this.driverClazzName = driverClazzName;
-    this.driverJarFileName = driverJarFileName;
-    this.defaultSupported = defaultSupported;
-  }
 
   public class TestBeeline extends BeeLine {
 
@@ -97,8 +82,7 @@ public class TestBeelineArgParsing {
     }
   }
 
-  @Parameters(name = "{1}")
-  public static Collection<Object[]> data() throws IOException, InterruptedException {
+  public static Stream<Arguments> data() throws IOException, InterruptedException {
     // generate the dummy driver by using txt file
     String u = HiveTestUtils.getFileFromClasspath("DummyDriver.txt");
     Map<File, String> extraContent = new HashMap<>();
@@ -121,16 +105,14 @@ public class TestBeelineArgParsing {
             .toAbsolutePath()
             .toString();
 
-    return Arrays.asList(
-        new Object[][] {
-          {
+    return Stream.of(
+        Arguments.of(
             "jdbc:postgresql://host:5432/testdb",
             "org.postgresql.Driver",
             postgresqlJdbcDriverPath,
-            true
-          },
-          {"jdbc:dummy://host:5432/testdb", dummyDriverClazzName, pathToDummyDriver, false}
-        });
+            true),
+        Arguments.of(
+            "jdbc:dummy://host:5432/testdb", dummyDriverClazzName, pathToDummyDriver, false));
   }
 
   @Test
@@ -140,9 +122,9 @@ public class TestBeelineArgParsing {
         new String[] {
           "-u", "url", "-n", "name", "-p", "password", "-d", "driver", "-a", "authType"
         };
-    org.junit.Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
-    Assert.assertTrue(bl.getOpts().getAuthType().equals("authType"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("authType", bl.getOpts().getAuthType());
   }
 
   @Test
@@ -171,8 +153,8 @@ public class TestBeelineArgParsing {
     bl.initArgs(args);
     System.out.println(bl.connectArgs);
     // Password file contents are trimmed of trailing whitespaces and newlines
-    Assert.assertTrue(bl.connectArgs.equals("url name mypass driver"));
-    Assert.assertTrue(bl.getOpts().getAuthType().equals("authType"));
+    assertEquals("url name mypass driver", bl.connectArgs);
+    assertEquals("authType", bl.getOpts().getAuthType());
     passFile.delete();
   }
 
@@ -182,8 +164,8 @@ public class TestBeelineArgParsing {
     TestBeeline bl = new TestBeeline();
     String args[] =
         new String[] {"-u", "url", "-u", "url2", "-n", "name", "-p", "password", "-d", "driver"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
   }
 
   @Test
@@ -204,10 +186,10 @@ public class TestBeelineArgParsing {
           "-e",
           "select2"
         };
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
-    Assert.assertTrue(bl.queries.contains("select1"));
-    Assert.assertTrue(bl.queries.contains("select2"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertTrue(bl.queries.contains("select1"));
+    assertTrue(bl.queries.contains("select2"));
   }
 
   /** Test setting hive conf and hive vars with --hiveconf, --hivevar and --conf */
@@ -237,14 +219,14 @@ public class TestBeelineArgParsing {
           "--conf",
           "f=fvalue"
         };
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
-    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("a").equals("avalue"));
-    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("b").equals("bvalue"));
-    Assert.assertTrue(bl.getOpts().getHiveVariables().get("c").equals("cvalue"));
-    Assert.assertTrue(bl.getOpts().getHiveVariables().get("d").equals("dvalue"));
-    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("e").equals("evalue"));
-    Assert.assertTrue(bl.getOpts().getHiveConfVariables().get("f").equals("fvalue"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("avalue", bl.getOpts().getHiveConfVariables().get("a"));
+    assertEquals("bvalue", bl.getOpts().getHiveConfVariables().get("b"));
+    assertEquals("cvalue", bl.getOpts().getHiveVariables().get("c"));
+    assertEquals("dvalue", bl.getOpts().getHiveVariables().get("d"));
+    assertEquals("evalue", bl.getOpts().getHiveConfVariables().get("e"));
+    assertEquals("fvalue", bl.getOpts().getHiveConfVariables().get("f"));
   }
 
   @Test
@@ -264,11 +246,11 @@ public class TestBeelineArgParsing {
           "--verbose",
           "--truncateTable"
         };
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
-    Assert.assertTrue(bl.getOpts().getAutoCommit());
-    Assert.assertTrue(bl.getOpts().getVerbose());
-    Assert.assertTrue(bl.getOpts().getTruncateTable());
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertTrue(bl.getOpts().getAutoCommit());
+    assertTrue(bl.getOpts().getVerbose());
+    assertTrue(bl.getOpts().getTruncateTable());
   }
 
   @Test
@@ -276,15 +258,15 @@ public class TestBeelineArgParsing {
     TestBeeline bl = new TestBeeline();
     String[] args = {};
     bl.initArgs(args);
-    Assert.assertTrue(bl.getOpts().getAutoCommit());
+    assertTrue(bl.getOpts().getAutoCommit());
 
     args = new String[] {"--autoCommit=false"};
     bl.initArgs(args);
-    Assert.assertFalse(bl.getOpts().getAutoCommit());
+    assertFalse(bl.getOpts().getAutoCommit());
 
     args = new String[] {"--autoCommit=true"};
     bl.initArgs(args);
-    Assert.assertTrue(bl.getOpts().getAutoCommit());
+    assertTrue(bl.getOpts().getAutoCommit());
     bl.close();
   }
 
@@ -292,18 +274,18 @@ public class TestBeelineArgParsing {
   public void testBeelineShowDbInPromptOptsDefault() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"-u", "url"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertFalse(bl.getOpts().getShowDbInPrompt());
-    Assert.assertEquals("", bl.getFormattedDb());
+    assertEquals(0, bl.initArgs(args));
+    assertFalse(bl.getOpts().getShowDbInPrompt());
+    assertEquals("", bl.getFormattedDb());
   }
 
   @Test
   public void testBeelineShowDbInPromptOptsTrue() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"-u", "url", "--showDbInPrompt=true"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.getOpts().getShowDbInPrompt());
-    Assert.assertEquals(" (default)", bl.getFormattedDb());
+    assertEquals(0, bl.initArgs(args));
+    assertTrue(bl.getOpts().getShowDbInPrompt());
+    assertEquals(" (default)", bl.getFormattedDb());
   }
 
   /** Test setting script file with -f option. */
@@ -314,9 +296,9 @@ public class TestBeelineArgParsing {
         new String[] {
           "-u", "url", "-n", "name", "-p", "password", "-d", "driver", "-f", "myscript"
         };
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.connectArgs.equals("url name password driver"));
-    Assert.assertTrue(bl.getOpts().getScriptFile().equals("myscript"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("url name password driver", bl.connectArgs);
+    assertEquals("myscript", bl.getOpts().getScriptFile());
   }
 
   /** Test beeline with -f and -e simultaneously */
@@ -324,7 +306,7 @@ public class TestBeelineArgParsing {
   public void testCommandAndFileSimultaneously() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"-e", "myselect", "-f", "myscript"};
-    Assert.assertEquals(1, bl.initArgs(args));
+    assertEquals(1, bl.initArgs(args));
   }
 
   /** Test beeline with multiple initfiles in -i. */
@@ -332,10 +314,10 @@ public class TestBeelineArgParsing {
   public void testMultipleInitFiles() {
     TestBeeline bl = new TestBeeline();
     String[] args = new String[] {"-i", "/url/to/file1", "-i", "/url/to/file2"};
-    Assert.assertEquals(0, bl.initArgs(args));
+    assertEquals(0, bl.initArgs(args));
     String[] files = bl.getOpts().getInitFiles();
-    Assert.assertEquals("/url/to/file1", files[0]);
-    Assert.assertEquals("/url/to/file2", files[1]);
+    assertEquals("/url/to/file1", files[0]);
+    assertEquals("/url/to/file2", files[1]);
   }
 
   /** Displays the usage. */
@@ -343,8 +325,8 @@ public class TestBeelineArgParsing {
   public void testHelp() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--help"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertEquals(true, bl.getOpts().isHelpAsked());
+    assertEquals(0, bl.initArgs(args));
+    assertTrue(bl.getOpts().isHelpAsked());
   }
 
   /** Displays the usage. */
@@ -352,35 +334,46 @@ public class TestBeelineArgParsing {
   public void testUnmatchedArgs() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"-u", "url", "-n"};
-    Assert.assertEquals(-1, bl.initArgs(args));
+    assertEquals(-1, bl.initArgs(args));
   }
 
-  @Test
-  public void testAddLocalJar() throws Exception {
+  @ParameterizedTest(name = "{1}")
+  @MethodSource("data")
+  public void testAddLocalJar(
+      String connectionString,
+      String driverClazzName,
+      String driverJarFileName,
+      boolean defaultSupported)
+      throws Exception {
     TestBeeline bl = new TestBeeline();
-    Assert.assertNull(bl.findLocalDriver(connectionString));
+    assertNull(bl.findLocalDriver(connectionString));
 
     LOG.info("Add " + driverJarFileName + " for the driver class " + driverClazzName);
 
     bl.addLocalJar(driverJarFileName);
     bl.addlocaldrivername(driverClazzName);
-    Assert.assertEquals(bl.findLocalDriver(connectionString).getClass().getName(), driverClazzName);
+    assertEquals(driverClazzName, bl.findLocalDriver(connectionString).getClass().getName());
   }
 
-  @Test
-  public void testAddLocalJarWithoutAddDriverClazz() throws Exception {
+  @ParameterizedTest(name = "{1}")
+  @MethodSource("data")
+  public void testAddLocalJarWithoutAddDriverClazz(
+      String connectionString,
+      String driverClazzName,
+      String driverJarFileName,
+      boolean defaultSupported)
+      throws Exception {
     TestBeeline bl = new TestBeeline();
 
     LOG.info("Add " + driverJarFileName + " for the driver class " + driverClazzName);
-    assertTrue("expected to exists: " + driverJarFileName, new File(driverJarFileName).exists());
+    assertTrue(new File(driverJarFileName).exists(), "expected to exists: " + driverJarFileName);
     bl.addLocalJar(driverJarFileName);
     if (!defaultSupported) {
-      Assert.assertNull(bl.findLocalDriver(connectionString));
+      assertNull(bl.findLocalDriver(connectionString));
     } else {
       // no need to add for the default supported local jar driver
-      Assert.assertNotNull(bl.findLocalDriver(connectionString));
-      Assert.assertEquals(
-          bl.findLocalDriver(connectionString).getClass().getName(), driverClazzName);
+      assertNotNull(bl.findLocalDriver(connectionString));
+      assertEquals(driverClazzName, bl.findLocalDriver(connectionString).getClass().getName());
     }
   }
 
@@ -406,7 +399,7 @@ public class TestBeelineArgParsing {
     bl.initArgs(args);
     bl.close();
     String errContents = new String(Files.readAllBytes(Paths.get(errFile.toString())));
-    Assert.assertTrue(errContents.contains(BeeLine.PASSWD_MASK));
+    assertTrue(errContents.contains(BeeLine.PASSWD_MASK));
   }
 
   /** Test property file parameter option. */
@@ -414,8 +407,8 @@ public class TestBeelineArgParsing {
   public void testPropertyFile() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--property-file", "props"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.properties.get(0).equals("props"));
+    assertEquals(0, bl.initArgs(args));
+    assertEquals("props", bl.properties.get(0));
     bl.close();
   }
 
@@ -424,8 +417,8 @@ public class TestBeelineArgParsing {
   public void testMaxHistoryRows() throws Exception {
     TestBeeline bl = new TestBeeline();
     String args[] = new String[] {"--maxHistoryRows=100"};
-    Assert.assertEquals(0, bl.initArgs(args));
-    Assert.assertTrue(bl.getOpts().getMaxHistoryRows() == 100);
+    assertEquals(0, bl.initArgs(args));
+    assertEquals(100, bl.getOpts().getMaxHistoryRows());
     bl.close();
   }
 }

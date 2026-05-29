@@ -18,22 +18,23 @@
 
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Method;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 /** TestBeeLineHistory - executes tests of the !history command of BeeLine */
 public class TestBeeLineHistory {
 
   private static final String fileName = System.getProperty("java.io.tmpdir") + "/history";
 
-  @BeforeClass
+  @BeforeAll
   public static void beforeTests() throws Exception {
     PrintWriter writer = new PrintWriter(fileName);
     writer.println("select 1;");
@@ -63,7 +64,7 @@ public class TestBeeLineHistory {
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     int numHistories = output.split("\n").length;
-    Assert.assertEquals(10, numHistories);
+    assertEquals(10, numHistories);
     beeline.close();
   }
 
@@ -81,12 +82,12 @@ public class TestBeeLineHistory {
     beeline.dispatch("!history");
     String output = os.toString("UTF-8");
     String[] tmp = output.split("\n");
-    Assert.assertTrue(tmp[0].equals("1     : select 1;"));
-    Assert.assertTrue(tmp[9].equals("10    : select 10;"));
+    assertEquals("1     : select 1;", tmp[0]);
+    assertEquals("10    : select 10;", tmp[9]);
     beeline.close();
   }
 
-  @AfterClass
+  @AfterAll
   public static void afterTests() throws Exception {
     File file = new File(fileName);
     file.delete();

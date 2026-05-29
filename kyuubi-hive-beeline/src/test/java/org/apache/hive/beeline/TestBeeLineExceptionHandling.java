@@ -17,10 +17,11 @@
  */
 package org.apache.hive.beeline;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.sql.SQLException;
-import junit.framework.Assert;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestBeeLineExceptionHandling {
 
@@ -36,9 +37,9 @@ public class TestBeeLineExceptionHandling {
     @Override
     boolean error(String log) {
       if (logCount == 0) {
-        Assert.assertEquals(loc(expectedLoc), log);
+        assertEquals(loc(expectedLoc), log);
       } else {
-        Assert.assertEquals(
+        assertEquals(
             "Error: org.apache.kyuubi.shaded.thrift.transport.TTransportException "
                 + "(state=,code=0)",
             log);

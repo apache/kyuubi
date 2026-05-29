@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.engine.dataagent.mysql;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * Integration tests for run_mutation_query tool against a real MySQL instance. All calls go through
@@ -28,7 +29,7 @@ import org.junit.Test;
  */
 public class RunMutationQueryTest extends WithMySQLContainer {
 
-  @Before
+  @BeforeEach
   public void setUp() {
     exec("DROP TABLE IF EXISTS mutation_test");
     exec(
