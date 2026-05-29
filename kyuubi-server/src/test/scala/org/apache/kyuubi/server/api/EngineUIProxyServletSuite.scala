@@ -23,52 +23,50 @@ import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_URL
-import org.apache.kyuubi.ha.client.DiscoveryClient
 
 class EngineUIProxyServletSuite extends KyuubiFunSuite {
 
-  test("rewrite target only for registered engine UI") {
-    val servlet = new EngineUIProxyServlet(true, () => Set("engine-host" -> 4040))
+  test("rewrite target only for allowlisted engine UI hosts") {
+    val servlet = new EngineUIProxyServlet(true, Set("engine-host"))
 
     assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) ===
       "http://engine-host:4040/jobs/")
     assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040/sql/", "id=1")) ===
       "http://engine-host:4040/sql/?id=1")
+    assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4041")) ===
+      "http://engine-host:4041/jobs/")
     assert(servlet.rewriteTarget(request("/engine-ui/unknown-host:4040")) === null)
   }
 
-  test("rewrite target without filter for compatibility") {
-    val servlet = new EngineUIProxyServlet(false, () => Set.empty)
+  test("rewrite target denies all proxy traffic when proxy is disabled") {
+    val servlet = new EngineUIProxyServlet(false, Set.empty)
 
-    assert(servlet.rewriteTarget(request("/engine-ui/unknown-host:4040")) ===
-      "http://unknown-host:4040/jobs/")
+    assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) === null)
   }
 
-  test("normalize registered engine URLs") {
-    assert(EngineUIProxyServlet.normalizeEngineUrl("engine-host:4040") ===
-      Some("engine-host" -> 4040))
-    assert(EngineUIProxyServlet.normalizeEngineUrl("http://ENGINE-HOST:4040/jobs/") ===
-      Some("engine-host" -> 4040))
-    assert(EngineUIProxyServlet.normalizeEngineUrl("https://engine-host:4040") ===
-      Some("engine-host" -> 4040))
-    assert(EngineUIProxyServlet.normalizeEngineUrl("engine-host") === None)
+  test("rewrite target host matching is case-insensitive") {
+    val servlet = new EngineUIProxyServlet(true, Set("ENGINE-HOST"))
+
+    assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) ===
+      "http://engine-host:4040/jobs/")
+    assert(servlet.rewriteTarget(request("/engine-ui/OTHER-HOST:4040")) === null)
   }
 
-  test("registered engine URLs are collected from engine namespaces") {
-    val discoveryClient = mock[DiscoveryClient]
-    val engineNamespace = "/kyuubi_1.12.0-SNAPSHOT_USER_SPARK_SQL"
-    val engineNode = s"serverUri=engine-host:10010;$KYUUBI_ENGINE_URL=engine-host:4040"
-    when(discoveryClient.getChildren("/")).thenReturn(List(
-      "kyuubi",
-      engineNamespace.stripPrefix("/")))
-    when(discoveryClient.getChildren(engineNamespace)).thenReturn(List("anonymous"))
-    when(discoveryClient.getChildren(s"$engineNamespace/anonymous")).thenReturn(List("default"))
-    when(discoveryClient.getChildren(s"$engineNamespace/anonymous/default")).thenReturn(List(
-      engineNode))
+  test("rewrite target supports wildcard host matching") {
+    val servlet = new EngineUIProxyServlet(true, Set("*.example.com", "engine-*.internal"))
 
-    assert(EngineUIProxyServlet.registeredEngineUrls(discoveryClient, "kyuubi") ===
-      Set("engine-host" -> 4040))
+    assert(servlet.rewriteTarget(request("/engine-ui/spark.example.com:4040")) ===
+      "http://spark.example.com:4040/jobs/")
+    assert(servlet.rewriteTarget(request("/engine-ui/ENGINE-1.internal:4040")) ===
+      "http://ENGINE-1.internal:4040/jobs/")
+    assert(servlet.rewriteTarget(request("/engine-ui/example.com:4040")) === null)
+    assert(servlet.rewriteTarget(request("/engine-ui/evil-example.com:4040")) === null)
+  }
+
+  test("empty hosts deny engine UI targets when proxy is enabled") {
+    val servlet = new EngineUIProxyServlet(true, Set.empty)
+
+    assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) === null)
   }
 
   private def request(uri: String, queryString: String = null): HttpServletRequest = {

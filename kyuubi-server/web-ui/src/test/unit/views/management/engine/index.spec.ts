@@ -22,7 +22,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import ElementPlus from 'element-plus'
 import { expect, test } from 'vitest'
 
-test('proxy ui', async () => {
+test('engine ui url', async () => {
   expect(Engine).toBeTruthy()
   const i18n = createI18n({
     legacy: false,
@@ -39,7 +39,10 @@ test('proxy ui', async () => {
       plugins: [i18n, mockRouter, getStore(), ElementPlus]
     }
   })
-  expect(wrapper.vm.getProxyEngineUI('host:ip')).toEqual(
-    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/host:ip/`
+  expect(wrapper.vm.getEngineUI('host:4040')).toEqual('http://host:4040')
+
+  wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = true
+  expect(wrapper.vm.getEngineUI('spark.example.com:4040')).toEqual(
+    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/spark.example.com:4040/`
   )
 })
