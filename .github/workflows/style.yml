@@ -131,7 +131,7 @@ jobs:
           VALIDATE_XML: true
       - name: Upload Super Linter logs
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: super-linter-log
           path: super-linter.log
