@@ -105,7 +105,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -164,7 +164,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -227,7 +227,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -286,7 +286,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -344,7 +344,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -396,7 +396,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
@@ -514,7 +514,7 @@ jobs:
       - name: Cache Engine Archives
         uses: ./.github/actions/cache-engine-archives
       - name: Setup JDK 11
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 11
@@ -568,7 +568,7 @@ jobs:
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: ${{ matrix.java }}
