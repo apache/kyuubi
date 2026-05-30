@@ -131,7 +131,7 @@ jobs:
           matrix.java == 8 &&
           matrix.spark == '3.5' &&
           matrix.spark-archive == ''
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v6
         with:
           verbose: true
       - name: Upload test logs
