@@ -24,6 +24,7 @@
 * Since Kyuubi 1.12, session configurations in REST API responses are redacted by default using `kyuubi.server.redaction.regex`. Use `kyuubi.server.conf.retrieveMode` to control this behavior: `REDACTED` (default), `ORIGINAL` (no redaction), or `NONE` (omit configs entirely).
 * Since Kyuubi 1.12, `GET /api/v1/sessions` returns only sessions owned by the authenticated user instead of all sessions on the server. To restore the previous behavior, set `kyuubi.frontend.rest.legacy.v1.sessionsReturnAllUsers=true`.
 * Since Kyuubi 1.12, the configuration `spark.sql.kyuubi.hive.connector.dropTableAsPurgeTable` is introduced by Kyuubi Spark Hive connector(KSHC) to control whether DROP TABLE command completely remove its data by skipping HDFS trash. The default value is false. To restore the legacy behavior, set it to true.
+* Since Kyuubi 1.12, Engine UI proxy through the Kyuubi REST frontend is disabled by default, and the Web UI links directly to the engine URL. To restore proxied Engine UI links, set `kyuubi.frontend.rest.engine.ui.proxy.enabled=true` and configure allowed target hosts with `kyuubi.frontend.rest.engine.ui.proxy.hosts`.
 * Since Kyuubi 1.12, the `CHAT` engine is removed.
 
 ## Upgrading from Kyuubi 1.10 to 1.11
