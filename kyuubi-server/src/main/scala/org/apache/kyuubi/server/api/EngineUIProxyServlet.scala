@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.server.api
 
-import java.net.URL
+import java.net.{URI, URL}
 import java.util.Locale
 import java.util.regex.Pattern
 import javax.servlet.http.HttpServletRequest
+
+import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
 import org.eclipse.jetty.client.api.Request
@@ -43,19 +45,22 @@ private[api] class EngineUIProxyServlet(
     val requestURI = request.getRequestURI
     // If proxying is enabled and the request URI host is not allowed, return null so Jetty
     // responds with 403 Forbidden.
-    val targetURL = allowedTarget(requestURI).map {
-      case (host, port) =>
-        val targetURI = requestURI.stripPrefix(s"/engine-ui/$host:$port") match {
-          // for some reason, the proxy can not handle redirect well, as a workaround,
-          // we simulate the Spark UI redirection behavior and forcibly rewrite the
-          // empty URI to the Spark Jobs page.
-          case "" | "/" => "/jobs/"
-          case path => path
-        }
-        val targetQueryString =
-          Option(
-            request.getQueryString).filter(StringUtils.isNotEmpty).map(q => s"?$q").getOrElse("")
-        new URL("http", host, port, targetURI + targetQueryString).toString
+    val targetURL = allowedTarget(requestURI).map { targetAddress =>
+      val targetURI = targetAddress.path match {
+        // for some reason, the proxy can not handle redirect well, as a workaround,
+        // we simulate the Spark UI redirection behavior and forcibly rewrite the
+        // empty URI to the Spark Jobs page.
+        case "" | "/" => "/jobs/"
+        case path => path
+      }
+      val targetQueryString =
+        Option(
+          request.getQueryString).filter(StringUtils.isNotEmpty).map(q => s"?$q").getOrElse("")
+      new URL(
+        "http",
+        targetAddress.host,
+        targetAddress.port,
+        targetURI + targetQueryString).toString
     }.orNull
     debug(s"rewrite $requestURL => $targetURL")
     targetURL
@@ -65,7 +70,7 @@ private[api] class EngineUIProxyServlet(
       clientRequest: HttpServletRequest,
       proxyRequest: Request): Unit = {
     allowedTarget(clientRequest.getRequestURI).foreach {
-      case (host, port) =>
+      case TargetAddress(host, port, _) =>
         // SPARK-24209: Knox uses X-Forwarded-Context to notify the application the base path
         proxyRequest.header("X-Forwarded-Context", s"/engine-ui/$host:$port")
     }
@@ -78,17 +83,29 @@ private[api] class EngineUIProxyServlet(
       allowedHostPatterns.exists(_.matcher(normalizedHost).matches())
     }
 
-  private def allowedTarget(requestURI: String): Option[(String, Int)] =
-    extractTargetAddress(requestURI).filter(target => isAllowedHost(target._1))
+  private def allowedTarget(requestURI: String): Option[TargetAddress] =
+    extractTargetAddress(requestURI).filter(target => isAllowedHost(target.host))
 
-  private val r = "^/engine-ui/([^/:]+):(\\d+)/?.*".r
-  private[api] def extractTargetAddress(requestURI: String): Option[(String, Int)] =
-    requestURI match {
-      case r(host, port) => Some(host -> port.toInt)
-      case _ => None
+  private[api] def extractTargetAddress(requestURI: String): Option[TargetAddress] = {
+    val target = requestURI.stripPrefix("/engine-ui/")
+    if (target == requestURI) {
+      None
+    } else {
+      Try(new URI(s"http://$target")).toOption.flatMap { uri =>
+        for {
+          host <- Option(uri.getHost)
+          port <- Option(uri.getPort).filter(_ >= 0)
+        } yield TargetAddress(
+          host,
+          port,
+          Option(uri.getRawPath).filter(_.nonEmpty).getOrElse("/"))
+      }
     }
+  }
 
 }
+
+private[api] case class TargetAddress(host: String, port: Int, path: String)
 
 private[api] object EngineUIProxyServlet {
 

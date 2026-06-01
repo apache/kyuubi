@@ -69,6 +69,22 @@ class EngineUIProxyServletSuite extends KyuubiFunSuite {
     assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) === null)
   }
 
+  test("rewrite target denies request smuggling through user info") {
+    val servlet = new EngineUIProxyServlet(true, Set("spark-x"))
+
+    assert(servlet.rewriteTarget(
+      request("/engine-ui/spark-x@100.100.100.200:80/latest/meta-data/")) === null)
+  }
+
+  test("extract target address with URI parser") {
+    val servlet = new EngineUIProxyServlet(true, Set("engine-host"))
+
+    assert(servlet.extractTargetAddress("/engine-ui/ENGINE-HOST:4040/sql/") ===
+      Some(TargetAddress("ENGINE-HOST", 4040, "/sql/")))
+    assert(servlet.extractTargetAddress("/engine-ui/engine-host") === None)
+    assert(servlet.extractTargetAddress("/api/v1/version") === None)
+  }
+
   private def request(uri: String, queryString: String = null): HttpServletRequest = {
     val request = mock[HttpServletRequest]
     when(request.getRequestURL).thenReturn(new StringBuffer(s"http://kyuubi$uri"))
