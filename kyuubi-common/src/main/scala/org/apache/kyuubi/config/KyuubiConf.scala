@@ -656,6 +656,27 @@ object KyuubiConf {
       .timeConf
       .createWithDefaultString("PT60S")
 
+  val FRONTEND_REST_ENGINE_UI_PROXY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.engine.ui.proxy.enabled")
+      .serverOnly
+      .doc("Whether to route Engine UI traffic via Kyuubi REST frontend proxy. When disabled, " +
+        "the Web UI links directly to the Kyuubi engine URL.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_REST_ENGINE_UI_PROXY_HOSTS: ConfigEntry[Seq[String]] =
+    buildConf("kyuubi.frontend.rest.engine.ui.proxy.hosts")
+      .serverOnly
+      .doc("A comma-separated list of hosts that Engine UI proxy requests can route to when " +
+        s"`${FRONTEND_REST_ENGINE_UI_PROXY_ENABLED.key}` is enabled. " +
+        "Host matching is case-insensitive and supports `*` as a wildcard, for example, " +
+        "`*.example.com`. If empty, all Engine UI proxy requests are denied.")
+      .version("1.12.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
+
   val FRONTEND_REST_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.rest.jetty.stopTimeout")
       .serverOnly

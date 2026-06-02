@@ -25,4 +25,8 @@ interface IServer {
   status: string
 }
 
-export { IServer }
+interface IWebUIConfig {
+  engineUIProxyEnabled: boolean
+}
+
+export { IServer, IWebUIConfig }

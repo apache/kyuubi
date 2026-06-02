@@ -124,6 +124,8 @@
   import { reactive } from 'vue'
   import { getAllEngines, deleteEngine } from '@/api/engine'
   import { IEngineSearch } from '@/api/engine/types'
+  import { getWebUIConfig } from '@/api/server'
+  import { IWebUIConfig } from '@/api/server/types'
   import { useTable } from '@/utils/use-table'
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
@@ -137,11 +139,19 @@
     sharelevel: 'USER',
     'hive.server2.proxy.user': 'anonymous'
   })
+  const engineUIProxyConfig: IWebUIConfig = reactive({
+    engineUIProxyEnabled: false
+  })
   const getList = () => {
     _getList(getAllEngines, searchParam)
   }
   const init = () => {
     getList()
+    getWebUIConfig()
+      .then((config) => {
+        engineUIProxyConfig.engineUIProxyEnabled = config.engineUIProxyEnabled
+      })
+      .catch(() => {})
   }
 
   function handleDeleteEngine(row: any) {
@@ -169,18 +179,36 @@
   }
 
   function getProxyEngineUI(url: string): string {
-    url = (url || '').replaceAll(/http:|https:/gi, '')
-    return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${url}/`
+    const engineURL = normalizeEngineUIUrl(url)
+    const parsedURL = new URL(engineURL)
+    const proxyPath = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`
+    return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${proxyPath}`
+  }
+
+  function getEngineUI(url: string): string {
+    if (engineUIProxyConfig.engineUIProxyEnabled) {
+      return getProxyEngineUI(url)
+    }
+    return normalizeEngineUIUrl(url)
   }
 
   function openEngineUI(url: string) {
-    window.open(getProxyEngineUI(url))
+    window.open(getEngineUI(url))
+  }
+
+  function normalizeEngineUIUrl(url: string): string {
+    if (/^https?:\/\//i.test(url)) {
+      return url
+    }
+    return `http://${url}`
   }
 
   init()
   // export for test
   defineExpose({
-    getProxyEngineUI
+    getEngineUI,
+    getProxyEngineUI,
+    engineUIProxyConfig
   })
 </script>
 
