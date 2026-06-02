@@ -599,6 +599,9 @@ object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
   private val SPARK_APP_ID_LABEL = "spark-app-selector"
   private val SPARK_APP_NAME_LABEL = "spark-app-name"
+  // Annotation set by Spark 4.1+ (spark.kubernetes.driver.annotateExitException=true)
+  // containing the stringified exit exception for the driver pod.
+  private[engine] val SPARK_EXIT_EXCEPTION_ANNOTATION = "spark.exit-exception"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
   val KUBERNETES_SERVICE_PORT = "KUBERNETES_SERVICE_PORT"
   val SPARK_UI_PORT_NAME = "spark-ui"
@@ -659,6 +662,8 @@ object KubernetesApplicationOperation extends Logging {
       case Some(containerAppState) => containerAppState
       case None => podAppState
     }
+    val sparkExitException = Option(pod.getMetadata.getAnnotations)
+      .flatMap(a => Option(a.get(SPARK_EXIT_EXCEPTION_ANNOTATION)))
     val applicationError = {
       if (ApplicationState.isFailed(
           applicationState,
@@ -668,9 +673,10 @@ object KubernetesApplicationOperation extends Logging {
             "Pod" -> podName,
             "PodStatus" -> pod.getStatus,
             "Container" -> appStateContainer,
-            "ContainerStatus" -> cs)
+            "ContainerStatus" -> cs) ++ sparkExitException.map("ExitException" -> _)
         }.getOrElse {
-          Map("Pod" -> podName, "PodStatus" -> pod.getStatus)
+          Map("Pod" -> podName, "PodStatus" -> pod.getStatus) ++
+            sparkExitException.map("ExitException" -> _)
         }
         Some(JsonUtils.toJson(errorMap.asJava))
       } else {

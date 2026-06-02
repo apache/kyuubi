@@ -17,11 +17,15 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
+import java.util.Collections
+
+import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting, ObjectMeta, Pod, PodStatus}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.KubernetesApplicationStateSource
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
+import org.apache.kyuubi.engine.KubernetesResourceEventTypes
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
@@ -144,6 +148,48 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
       val result = KubernetesApplicationOperation.containerStateToApplicationState(containerState)
       assert(result === PENDING)
     }
+  }
+
+  test("parse spark.exit-exception annotation from failed pod") {
+    val exitMsg =
+      "java.lang.OutOfMemoryError: Java heap space\n\tat com.example.Foo.bar(Foo.java:42)"
+
+    def buildPod(phase: String, annotations: java.util.Map[String, String]): Pod = {
+      val meta = new ObjectMeta()
+      meta.setName("spark-driver-pod")
+      meta.setAnnotations(annotations)
+      val status = new PodStatus()
+      status.setPhase(phase)
+      val pod = new Pod()
+      pod.setMetadata(meta)
+      pod.setStatus(status)
+      pod
+    }
+
+    val podWithAnnotation = buildPod(
+      "Failed",
+      Collections.singletonMap(
+        KubernetesApplicationOperation.SPARK_EXIT_EXCEPTION_ANNOTATION,
+        exitMsg))
+    val (state, error) = KubernetesApplicationOperation.toApplicationStateAndError(
+      podWithAnnotation,
+      KubernetesApplicationStateSource.POD,
+      "spark-kubernetes-driver",
+      KubernetesResourceEventTypes.UPDATE)
+    assert(state === FAILED)
+    assert(error.isDefined)
+    assert(error.get.contains("ExitException"))
+    assert(error.get.contains("OutOfMemoryError"))
+
+    // Without annotation the error JSON should not contain ExitException
+    val podNoAnnotation = buildPod("Failed", Collections.emptyMap())
+    val (_, errorNoAnnotation) = KubernetesApplicationOperation.toApplicationStateAndError(
+      podNoAnnotation,
+      KubernetesApplicationStateSource.POD,
+      "spark-kubernetes-driver",
+      KubernetesResourceEventTypes.UPDATE)
+    assert(errorNoAnnotation.isDefined)
+    assert(!errorNoAnnotation.get.contains("ExitException"))
   }
 
   test("containerStateToApplicationState failure reasons and empty reason") {
