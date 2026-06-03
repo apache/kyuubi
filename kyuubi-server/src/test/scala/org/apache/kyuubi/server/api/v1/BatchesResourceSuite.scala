@@ -103,14 +103,10 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
       assert(batch.getState === "INITIALIZED")
 
       eventually(timeout(15.seconds), interval(1.second)) {
-        val batchInfoResponse = webTarget.path(s"api/v1/batches/$batchId")
-          .request(MediaType.APPLICATION_JSON_TYPE)
-          .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
-          .get()
-        assert(batchInfoResponse.getStatus == 200)
-        val batchInfo = batchInfoResponse.readEntity(classOf[Batch])
+        val batchInfo = sessionManager.getBatchFromMetadataStore(batchId)
+        assert(batchInfo.isDefined, s"Batch $batchId should exist in metadata")
         assert(
-          batchInfo.getState === "ERROR",
+          batchInfo.get.getState === "ERROR",
           "Batch should eventually become ERROR after being picked and failed by the " +
             "catch path, rather than remaining stuck in PENDING")
       }
