@@ -229,4 +229,6 @@ class KyuubiBatchSession(
     EventBus.post(sessionEvent)
     traceMetricsOnClose()
   }
+
+  override def closeOnServerStop: Boolean = false
 }

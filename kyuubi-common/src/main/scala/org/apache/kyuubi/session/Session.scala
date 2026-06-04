@@ -97,4 +97,6 @@ trait Session {
   def closeExpiredOperations(): Unit
 
   def isForAliveProbe: Boolean
+
+  def closeOnServerStop: Boolean = true
 }
