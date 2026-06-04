@@ -34,7 +34,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK 17
