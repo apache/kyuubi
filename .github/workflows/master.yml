@@ -24,12 +24,14 @@ on:
       - branch-*
     paths-ignore:
       - 'docs/**'
+      - '.github/workflows/docs.yml'
   pull_request:
     branches:
       - master
       - branch-*
     paths-ignore:
       - 'docs/**'
+      - '.github/workflows/docs.yml'
 
 concurrency:
   group: test-${{ github.head_ref || github.run_id }}
