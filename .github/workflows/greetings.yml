@@ -27,7 +27,7 @@ on:
 
 jobs:
   greeting:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     permissions:
       issues: write
       pull-requests: write
