@@ -44,6 +44,24 @@ private[kyuubi] object PluginLoader {
     }
   }
 
+  def loadStatementInterceptors(conf: KyuubiConf): Seq[StatementInterceptor] = {
+    conf.get(KyuubiConf.STATEMENT_INTERCEPTORS).getOrElse(Nil).map { interceptorClassName =>
+      try {
+        DynConstructors.builder.impl(interceptorClassName)
+          .buildChecked[StatementInterceptor].newInstance()
+      } catch {
+        case _: ClassCastException =>
+          throw new KyuubiException(
+            s"Class $interceptorClassName is not a child of " +
+              s"'${classOf[StatementInterceptor].getName}'.")
+        case NonFatal(e) =>
+          throw new IllegalArgumentException(
+            s"Error while instantiating '$interceptorClassName': ",
+            e)
+      }
+    }
+  }
+
   def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
     val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
     try {
