@@ -437,6 +437,17 @@ class BatchJobSubmission(
             // kill success and we can change state safely
             // note that, the batch operation state should never be closed
             setState(OperationState.CANCELED)
+            // re-poll the resource manager so the persisted application state reflects the kill
+            // rather than the last-seen (e.g. RUNNING) state; otherwise polling stops after close
+            // and the stale state would be reported by the REST API forever.
+            _applicationInfo = currentApplicationInfo()
+            _applicationInfo.filterNot(app => ApplicationState.isTerminated(app.state)).foreach {
+              app =>
+                withOperationLog(info(s"Batch $batchId state is $state," +
+                  s" but the application state is ${app.state}" +
+                  " and not terminated after kill succeeds, set to KILLED."))
+                _applicationInfo = Some(app.copy(state = ApplicationState.KILLED))
+            }
             updateBatchMetadata()
           } else if (killMessage._1) {
             // we can not change state safely

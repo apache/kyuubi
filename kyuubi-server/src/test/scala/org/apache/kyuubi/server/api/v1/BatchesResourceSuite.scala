@@ -37,7 +37,7 @@ import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -900,6 +900,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .delete()
     assert(deleteResp.getStatus === 200)
+
+    val batchResp = webTarget.path(s"api/v1/batches/$batchId")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    assert(batchResp.getStatus === 200)
+    val canceledBatch = batchResp.readEntity(classOf[Batch])
+    assert(canceledBatch.getState === OperationState.CANCELED.toString)
+    assert(ApplicationState.isTerminated(ApplicationState.withName(canceledBatch.getAppState)))
 
     eventually(timeout(10.seconds)) {
       assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) === 0)
