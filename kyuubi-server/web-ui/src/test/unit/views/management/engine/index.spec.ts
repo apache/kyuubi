@@ -39,6 +39,8 @@ test('engine ui url', async () => {
       plugins: [i18n, mockRouter, getStore(), ElementPlus]
     }
   })
+
+  wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = false
   expect(wrapper.vm.getEngineUI('host:4040')).toEqual('http://host:4040')
 
   wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = true

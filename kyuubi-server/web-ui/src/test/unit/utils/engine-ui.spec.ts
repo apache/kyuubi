@@ -15,32 +15,27 @@
  * limitations under the License.
  */
 
-const router = [
-  {
-    path: '/management/engine',
-    name: 'engine',
-    component: () => import('@/views/management/engine/index.vue')
-  },
-  {
-    path: '/management/server',
-    name: 'server',
-    component: () => import('@/views/management/server/index.vue')
-  },
-  {
-    path: '/management/session',
-    name: 'session',
-    component: () => import('@/views/management/session/index.vue')
-  },
-  {
-    path: '/management/operation',
-    name: 'operation',
-    component: () => import('@/views/management/operation/index.vue')
-  },
-  {
-    path: '/management/batch',
-    name: 'batch',
-    component: () => import('@/views/management/batch/index.vue')
-  }
-]
+import {
+  getEngineUIUrl,
+  getProxyEngineUIUrl,
+  normalizeEngineUIUrl
+} from '@/utils/engine-ui'
+import { expect, test } from 'vitest'
 
-export default router
+test('engine ui url direct mode', () => {
+  expect(normalizeEngineUIUrl('host:4040')).toEqual('http://host:4040')
+  expect(getEngineUIUrl('https://host:4040/sql', false)).toEqual(
+    'https://host:4040/sql'
+  )
+})
+
+test('engine ui url proxy mode', () => {
+  expect(getProxyEngineUIUrl('spark.example.com:4040')).toEqual(
+    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/spark.example.com:4040/`
+  )
+  expect(getEngineUIUrl('spark.example.com:4040/sql/?id=1', true)).toEqual(
+    `${
+      import.meta.env.VITE_APP_DEV_WEB_URL
+    }engine-ui/spark.example.com:4040/sql/?id=1`
+  )
+})

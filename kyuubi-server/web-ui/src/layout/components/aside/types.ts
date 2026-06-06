@@ -34,6 +34,10 @@ export const MENUS = [
         router: '/management/operation'
       },
       {
+        label: 'Batch',
+        router: '/management/batch'
+      },
+      {
         label: 'Engine',
         router: '/management/engine'
       },
