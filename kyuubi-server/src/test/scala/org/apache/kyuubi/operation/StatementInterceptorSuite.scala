@@ -1,0 +1,96 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.kyuubi.operation
+
+import java.sql.SQLException
+import java.util.Locale
+
+import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.plugin.{StatementInterceptContext, StatementInterceptor, StatementInterceptResult}
+
+/**
+ * End-to-end coverage of statement interceptors over the real JDBC -> server -> engine path.
+ * Requires a packaged engine, so it runs in the engine-backed CI jobs rather than a bare unit run.
+ */
+class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+
+  override protected def jdbcUrl: String =
+    s"jdbc:kyuubi://${server.frontendServices.head.connectionUrl}/;"
+
+  override protected val conf: KyuubiConf = {
+    KyuubiConf()
+      .set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
+      .set(KyuubiConf.ENGINE_SPARK_MAX_INITIAL_WAIT.key, "0")
+      .set(
+        KyuubiConf.STATEMENT_INTERCEPTORS,
+        Seq(classOf[TestStatementInterceptor].getName))
+  }
+
+  test("PROCEED - statement executes unchanged") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT 1 AS id")
+      assert(rs.next())
+      assert(rs.getInt("id") === 1)
+      assert(!rs.next())
+    }
+  }
+
+  test("REWRITE - the rewritten statement is executed") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT 'rewrite_me' AS result")
+      assert(rs.next())
+      assert(rs.getString("result") === "rewritten")
+      assert(!rs.next())
+    }
+  }
+
+  test("REJECT - an engine-routed statement returns an error to the client") {
+    withJdbcStatement() { statement =>
+      val e = intercept[SQLException] {
+        statement.executeQuery("SELECT 'forbidden' AS col")
+      }
+      assert(e.getMessage.contains("blocked: forbidden keyword"))
+    }
+  }
+
+  test("REJECT - a server-side command (executeOnServer path) is also intercepted") {
+    withJdbcStatement() { statement =>
+      val e = intercept[SQLException] {
+        statement.execute("KYUUBI DESC SESSION")
+      }
+      assert(e.getMessage.contains("blocked: server-side command"))
+    }
+  }
+}
+
+class TestStatementInterceptor extends StatementInterceptor {
+  override def beforeExecuteStatement(
+      context: StatementInterceptContext): StatementInterceptResult = {
+    val sql = context.statement().trim.toLowerCase(Locale.ROOT)
+    if (sql.startsWith("kyuubi ")) {
+      StatementInterceptResult.reject("blocked: server-side command")
+    } else if (sql.contains("forbidden")) {
+      StatementInterceptResult.reject("blocked: forbidden keyword")
+    } else if (sql.contains("rewrite_me")) {
+      StatementInterceptResult.rewrite("SELECT 'rewritten' AS result")
+    } else {
+      StatementInterceptResult.proceed()
+    }
+  }
+}
