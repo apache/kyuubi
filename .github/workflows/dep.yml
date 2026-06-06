@@ -38,7 +38,7 @@ jobs:
     name: Dependency check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: setup java
         uses: actions/setup-java@v5
         with:

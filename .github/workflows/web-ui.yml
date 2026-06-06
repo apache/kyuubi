@@ -19,7 +19,7 @@ jobs:
     name: Kyuubi Web UI check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Setup JDK 8
         uses: actions/setup-java@v5
         with:

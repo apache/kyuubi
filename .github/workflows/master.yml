@@ -101,7 +101,7 @@ jobs:
     env:
       SPARK_LOCAL_IP: localhost
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -160,7 +160,7 @@ jobs:
         spark:
           - '3.5'
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -223,7 +223,7 @@ jobs:
         extensions/spark/kyuubi-spark-connector-tpcds,\
         extensions/spark/kyuubi-spark-connector-tpch"
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -282,7 +282,7 @@ jobs:
             flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.3 -Dflink.archive.name=flink-1.19.3-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.19-binary'
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -340,7 +340,7 @@ jobs:
             hive-archive: '-Dhive.archive.mirror=https://github.com/pan3793/cdh-hive/releases/download/cdh6.3.2-release -Dhive.archive.name=apache-hive-2.1.1-cdh6.3.2-bin.tar.gz -Dhive.archive.query='
             comment: 'verify-on-hive-2.1-cdh6-binary'
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -392,7 +392,7 @@ jobs:
         java: [ 8 ]
         comment: [ "normal" ]
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Tune Runner VM
@@ -432,7 +432,7 @@ jobs:
     name: Kyuubi Server On Kubernetes Integration Test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       # https://github.com/docker/build-push-action
@@ -510,7 +510,7 @@ jobs:
     name: Spark Engine On Kubernetes Integration Test
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
       - name: Cache Engine Archives
@@ -566,7 +566,7 @@ jobs:
         zookeeper: ["3.4", "3.5", "3.6", "3.7" ]
         comment: [ "normal" ]
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v6.0.3
       - name: Tune Runner VM
         uses: ./.github/actions/tune-runner-vm
       - name: Setup JDK ${{ matrix.java }}
