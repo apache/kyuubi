@@ -67,7 +67,7 @@ abstract class ServiceDiscovery(
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
     var blockingSessionCount =
-      fe.be.sessionManager.allSessions().count(_.closeOnServerStop)
+      fe.be.sessionManager.allSessions().count(s => s.closeOnServerStop && !s.isForAliveProbe)
     while (blockingSessionCount > 0) {
       info(s"$blockingSessionCount connection(s) are active, delay shutdown")
       Thread.sleep(TimeUnit.SECONDS.toMillis(10))
