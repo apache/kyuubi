@@ -1885,7 +1885,8 @@ object KyuubiConf {
         " upload some local files when launching the kyuubi engine," +
         " if the local dir allow list is defined, kyuubi will" +
         " check whether the path to upload is in the allow list. Note that, if it is empty, there" +
-        " is no limitation for that. And please use absolute paths.")
+        " is no limitation for that. And please use absolute paths." +
+        " Also, currently this config takes effect only for Spark engine.")
       .version("1.6.0")
       .serverOnly
       .stringConf
