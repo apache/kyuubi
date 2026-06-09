@@ -32,7 +32,7 @@ concurrency:
 jobs:
   sphinx:
     name: sphinx-build
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     steps:
       - uses: actions/checkout@v6.0.3
       - uses: actions/setup-python@v6
