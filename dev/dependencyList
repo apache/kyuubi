@@ -184,6 +184,7 @@ swagger-integration/2.2.1//swagger-integration-2.2.1.jar
 swagger-jaxrs2/2.2.1//swagger-jaxrs2-2.2.1.jar
 swagger-models/2.2.1//swagger-models-2.2.1.jar
 trino-client/411//trino-client-411.jar
+unboundid-ldapsdk/6.0.5//unboundid-ldapsdk-6.0.5.jar
 units/1.7//units-1.7.jar
 vertx-core/4.5.3//vertx-core-4.5.3.jar
 vertx-grpc/4.5.3//vertx-grpc-4.5.3.jar
