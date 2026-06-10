@@ -33,10 +33,14 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 object KubernetesUtils extends Logging {
-  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
-  // 253 - 10 - 6
-  final val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
   final val DRIVER_POD_NAME_MAX_LENGTH = 253
+  final private val POD_UID_MAX_LENGTH = 36
+  final private val POD_LOGS_DIRECTORY_SEPARATOR_LENGTH = 2
+  final private val EXECUTOR_POD_NAME_RESERVED_LENGTH =
+    "-exec-".length + Int.MaxValue.toString.length
+
+  final val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH =
+    maxExecutorPodNamePrefixLength(KUBERNETES_NAMESPACE.defaultValStr)
 
   def buildKubernetesClient(conf: KyuubiConf): Option[KubernetesClient] = {
     val master = conf.get(KUBERNETES_MASTER)
@@ -138,6 +142,14 @@ object KubernetesUtils extends Logging {
       appName: String,
       engineRefId: String,
       forciblyRewrite: Boolean): String = {
+    generateDriverPodName(appName, engineRefId, KUBERNETES_NAMESPACE.defaultValStr, forciblyRewrite)
+  }
+
+  def generateDriverPodName(
+      appName: String,
+      engineRefId: String,
+      namespace: String,
+      forciblyRewrite: Boolean): String = {
     val resourceNamePrefix = if (appName.contains(engineRefId)) {
       getResourceNamePrefix(appName, None)
     } else {
@@ -148,7 +160,7 @@ object KubernetesUtils extends Logging {
     } else {
       s"kyuubi-$resourceNamePrefix-driver"
     }
-    if (forciblyRewrite || resolvedResourceName.length > DRIVER_POD_NAME_MAX_LENGTH) {
+    if (forciblyRewrite || resolvedResourceName.length > maxDriverPodNameLength(namespace)) {
       s"kyuubi-$engineRefId-driver"
     } else {
       resolvedResourceName
@@ -158,6 +170,18 @@ object KubernetesUtils extends Logging {
   def generateExecutorPodNamePrefix(
       appName: String,
       engineRefId: String,
+      forciblyRewrite: Boolean): String = {
+    generateExecutorPodNamePrefix(
+      appName,
+      engineRefId,
+      KUBERNETES_NAMESPACE.defaultValStr,
+      forciblyRewrite)
+  }
+
+  def generateExecutorPodNamePrefix(
+      appName: String,
+      engineRefId: String,
+      namespace: String,
       forciblyRewrite: Boolean): String = {
     val resourceNamePrefix = if (appName.contains(engineRefId)) {
       getResourceNamePrefix(appName, None)
@@ -169,10 +193,22 @@ object KubernetesUtils extends Logging {
     } else {
       s"kyuubi-$resourceNamePrefix"
     }
-    if (forciblyRewrite || resolvedResourceName.length > EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
+    if (forciblyRewrite || resolvedResourceName.length > maxExecutorPodNamePrefixLength(
+        namespace)) {
       s"kyuubi-$engineRefId"
     } else {
       resolvedResourceName
     }
+  }
+
+  private def maxDriverPodNameLength(namespace: String): Int = {
+    DRIVER_POD_NAME_MAX_LENGTH -
+      namespace.length -
+      POD_UID_MAX_LENGTH -
+      POD_LOGS_DIRECTORY_SEPARATOR_LENGTH
+  }
+
+  private def maxExecutorPodNamePrefixLength(namespace: String): Int = {
+    maxDriverPodNameLength(namespace) - EXECUTOR_POD_NAME_RESERVED_LENGTH
   }
 }
