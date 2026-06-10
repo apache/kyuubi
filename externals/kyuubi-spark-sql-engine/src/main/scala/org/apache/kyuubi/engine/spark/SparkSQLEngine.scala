@@ -230,9 +230,14 @@ object SparkSQLEngine extends Logging {
 
   private val sparkSessionCreated = new AtomicBoolean(false)
 
-  // Kubernetes pod name max length - '-exec-' - Int.MAX_VALUE.length
-  // 253 - 10 - 6
-  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH = 237
+  final private val POD_NAME_MAX_LENGTH = 253
+  final private val POD_UID_MAX_LENGTH = 36
+  final private val POD_LOGS_DIRECTORY_SEPARATOR_LENGTH = 2
+  final private val EXECUTOR_POD_NAME_RESERVED_LENGTH =
+    "-exec-".length + Int.MaxValue.toString.length
+
+  val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH =
+    executorPodNamePrefixMaxLength(KUBERNETES_NAMESPACE.defaultValStr)
 
   SignalRegister.registerLogger(logger)
   setupConf()
@@ -292,7 +297,9 @@ object SparkSQLEngine extends Logging {
       // due to the long app name
       _sparkConf.setIfMissing(
         "spark.kubernetes.executor.podNamePrefix",
-        generateExecutorPodNamePrefixForK8s(user))
+        generateExecutorPodNamePrefixForK8s(
+          user,
+          _sparkConf.get("spark.kubernetes.namespace", KUBERNETES_NAMESPACE.defaultValStr)))
 
       if (!isOnK8sClusterMode) {
         // set driver host to ip instead of kyuubi pod name
@@ -460,17 +467,27 @@ object SparkSQLEngine extends Logging {
   }
 
   @VisibleForTesting
-  def generateExecutorPodNamePrefixForK8s(userName: String): String = {
+  def generateExecutorPodNamePrefixForK8s(
+      userName: String,
+      namespace: String = KUBERNETES_NAMESPACE.defaultValStr): String = {
     val resolvedUserName =
       userName.trim.toLowerCase(Locale.ROOT)
         .replaceAll("[^a-z0-9\\-]", "-")
         .replaceAll("-+", "-")
         .replaceAll("^-", "")
     val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
-    if (podNamePrefixWithUser.length <= EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH) {
+    if (podNamePrefixWithUser.length <= executorPodNamePrefixMaxLength(namespace)) {
       podNamePrefixWithUser
     } else {
       s"kyuubi-${UUID.randomUUID()}"
     }
+  }
+
+  private def executorPodNamePrefixMaxLength(namespace: String): Int = {
+    POD_NAME_MAX_LENGTH -
+      namespace.length -
+      POD_UID_MAX_LENGTH -
+      POD_LOGS_DIRECTORY_SEPARATOR_LENGTH -
+      EXECUTOR_POD_NAME_RESERVED_LENGTH
   }
 }
