@@ -21,4 +21,5 @@ Web UI
     :maxdepth: 2
 
     engine_ui
+    batch_ui
 
