@@ -42,7 +42,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.engine.trino.TrinoProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, DiscoveryClientProvider, DiscoveryPaths, ServiceNodeInfo}
-import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_STARTUP_TIME, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
@@ -348,6 +348,9 @@ private[kyuubi] class EngineRef(
           }
         }
       }
+      MetricsSystem.tracing(_.updateHistogram(
+        ENGINE_STARTUP_TIME,
+        System.currentTimeMillis() - started))
       engineRef.get
     } finally {
       if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
