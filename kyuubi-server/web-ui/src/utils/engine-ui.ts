@@ -15,32 +15,25 @@
  * limitations under the License.
  */
 
-const router = [
-  {
-    path: '/management/engine',
-    name: 'engine',
-    component: () => import('@/views/management/engine/index.vue')
-  },
-  {
-    path: '/management/server',
-    name: 'server',
-    component: () => import('@/views/management/server/index.vue')
-  },
-  {
-    path: '/management/session',
-    name: 'session',
-    component: () => import('@/views/management/session/index.vue')
-  },
-  {
-    path: '/management/operation',
-    name: 'operation',
-    component: () => import('@/views/management/operation/index.vue')
-  },
-  {
-    path: '/management/batch',
-    name: 'batch',
-    component: () => import('@/views/management/batch/index.vue')
+function normalizeEngineUIUrl(url: string): string {
+  if (/^https?:\/\//i.test(url)) {
+    return url
   }
-]
+  return `http://${url}`
+}
 
-export default router
+function getProxyEngineUIUrl(url: string): string {
+  const engineURL = normalizeEngineUIUrl(url)
+  const parsedURL = new URL(engineURL)
+  const proxyPath = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`
+  return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${proxyPath}`
+}
+
+function getEngineUIUrl(url: string, proxyEnabled: boolean): string {
+  if (proxyEnabled) {
+    return getProxyEngineUIUrl(url)
+  }
+  return normalizeEngineUIUrl(url)
+}
+
+export { getEngineUIUrl, getProxyEngineUIUrl, normalizeEngineUIUrl }

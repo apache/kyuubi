@@ -86,7 +86,7 @@
               :content="
                 $t('engine_ui') +
                 ': ' +
-                scope.row.attributes['kyuubi.engine.url']
+                getEngineUI(scope.row.attributes['kyuubi.engine.url'])
               "
               placement="top">
               <el-button
@@ -130,6 +130,7 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { getEngineType, getShareLevel } from '@/utils/engine'
+  import { getEngineUIUrl, getProxyEngineUIUrl } from '@/utils/engine-ui'
 
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()
@@ -179,28 +180,15 @@
   }
 
   function getProxyEngineUI(url: string): string {
-    const engineURL = normalizeEngineUIUrl(url)
-    const parsedURL = new URL(engineURL)
-    const proxyPath = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`
-    return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${proxyPath}`
+    return getProxyEngineUIUrl(url)
   }
 
   function getEngineUI(url: string): string {
-    if (engineUIProxyConfig.engineUIProxyEnabled) {
-      return getProxyEngineUI(url)
-    }
-    return normalizeEngineUIUrl(url)
+    return getEngineUIUrl(url, engineUIProxyConfig.engineUIProxyEnabled)
   }
 
   function openEngineUI(url: string) {
     window.open(getEngineUI(url))
-  }
-
-  function normalizeEngineUIUrl(url: string): string {
-    if (/^https?:\/\//i.test(url)) {
-      return url
-    }
-    return `http://${url}`
   }
 
   init()
