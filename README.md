@@ -130,12 +130,6 @@ Ready? [Getting Started](https://kyuubi.readthedocs.io/en/master/quick_start/) w
     <img src="https://img.shields.io/github/actions/workflow/status/apache/kyuubi/master.yml?style=plastic">
   </a>
   <img src="https://img.shields.io/github/languages/top/apache/kyuubi?style=plastic">
-  <a href="https://github.com/apache/kyuubi/pulse">
-    <img src="https://img.shields.io/tokei/lines/github/apache/kyuubi?style=plastic" />
-  </a>
-</p>
-<p align="center">
-  <img src="https://contributor-graph-api.apiseven.com/contributors-svg?chart=contributorOverTime&repo=apache/kyuubi" />
 </p>
 
 ## Aside
