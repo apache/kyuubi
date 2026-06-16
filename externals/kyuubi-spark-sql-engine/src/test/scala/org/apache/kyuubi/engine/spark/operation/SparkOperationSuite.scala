@@ -32,7 +32,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.schema.SchemaHelper.TIMESTAMP_NTZ
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper.{TIMESTAMP_NTZ, VARIANT}
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
@@ -101,6 +101,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
       schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     }
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+      schema = schema.add("c21", "variant", nullable = true, "21")
+    }
 
     val ddl =
       s"""
@@ -139,7 +142,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           STRUCT,
           OTHER,
           OTHER,
-          TIMESTAMP)
+          TIMESTAMP,
+          OTHER)
 
         var pos = 0
 
@@ -154,6 +158,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           val colSize = rowSet.getInt(COLUMN_SIZE)
           schema(pos).dataType match {
             case StringType | BinaryType | _: ArrayType | _: MapType => assert(colSize === 0)
+            case variant if variant.getClass.getSimpleName.equals(VARIANT) =>
+              assert(colSize === 0)
             case d: DecimalType => assert(colSize === d.precision)
             case StructType(fields) if fields.length == 1 => assert(colSize === 0)
             case o => assert(colSize === o.defaultSize)
@@ -191,6 +197,61 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
 
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
       assert(!rowSet.next())
+    }
+  }
+
+  test("get result set metadata with variant column") {
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "4.0")
+
+    withSessionHandle { (client, handle) =>
+      def executeStatement(statement: String): TOperationHandle = {
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(statement)
+        val resp = client.ExecuteStatement(req)
+        assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val opHandle = resp.getOperationHandle
+        waitForOperationToComplete(client, opHandle)
+        val statusResp = client.GetOperationStatus(new TGetOperationStatusReq(opHandle))
+        assert(statusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(statusResp.getOperationState === TOperationState.FINISHED_STATE)
+        opHandle
+      }
+
+      def assertVariantMetadata(opHandle: TOperationHandle): Unit = {
+        val tGetResultSetMetadataResp = client.GetResultSetMetadata(
+          new TGetResultSetMetadataReq(opHandle))
+        assert(tGetResultSetMetadataResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val columns = tGetResultSetMetadataResp.getSchema.getColumns
+        assert(columns.size() === 1)
+        assert(columns.get(0).getColumnName === "v")
+        assert(columns.get(0).getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType ===
+          TTypeId.STRING_TYPE)
+      }
+
+      val directQuery = executeStatement("""SELECT parse_json('{"a":1}') AS v""")
+      assertVariantMetadata(directQuery)
+      val tFetchDirectResultsResp = client.FetchResults(
+        new TFetchResultsReq(directQuery, TFetchOrientation.FETCH_NEXT, 1))
+      assert(tFetchDirectResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val directValues = tFetchDirectResultsResp.getResults.getColumns.get(0).getStringVal.getValues
+      assert(directValues.asScala.nonEmpty)
+
+      val tableName = "spark_variant_result_metadata"
+      executeStatement(s"DROP TABLE IF EXISTS $tableName")
+      try {
+        executeStatement(s"CREATE TABLE $tableName (v VARIANT) USING parquet")
+        executeStatement(s"""INSERT INTO $tableName SELECT parse_json('{"a":1}')""")
+        val tableQuery = executeStatement(s"SELECT * FROM $tableName")
+        assertVariantMetadata(tableQuery)
+        val tFetchTableResultsResp = client.FetchResults(
+          new TFetchResultsReq(tableQuery, TFetchOrientation.FETCH_NEXT, 1))
+        assert(tFetchTableResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        val tableValues = tFetchTableResultsResp.getResults.getColumns.get(0).getStringVal.getValues
+        assert(tableValues.asScala.nonEmpty)
+      } finally {
+        executeStatement(s"DROP TABLE IF EXISTS $tableName")
+      }
     }
   }
 

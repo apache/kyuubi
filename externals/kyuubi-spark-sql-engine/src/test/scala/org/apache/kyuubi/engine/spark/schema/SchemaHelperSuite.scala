@@ -29,6 +29,12 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCLIServiceConstants, T
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 
+  private object VariantType extends DataType {
+    override def defaultSize: Int = 2048
+    override def asNullable: DataType = this
+    override def typeName: String = "variant"
+  }
+
   val innerSchema: StructType = new StructType()
     .add("a", StringType, nullable = true, "")
     .add("b", IntegerType, nullable = true, "")
@@ -70,10 +76,15 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(14).dataType) === TTypeId.MAP_TYPE)
     assert(toTTypeId(outerSchema(15).dataType) === TTypeId.STRUCT_TYPE)
     assert(toTTypeId(outerSchema(16).dataType) === TTypeId.STRING_TYPE)
+    assert(toTTypeId(VariantType) === TTypeId.STRING_TYPE)
     val e1 = intercept[IllegalArgumentException](toTTypeId(CharType(1)))
     assert(e1.getMessage === "Unrecognized type name: char(1)")
     val e2 = intercept[IllegalArgumentException](toTTypeId(VarcharType(1)))
     assert(e2.getMessage === "Unrecognized type name: varchar(1)")
+  }
+
+  test("toJavaSQLType") {
+    assert(toJavaSQLType(VariantType) === java.sql.Types.OTHER)
   }
 
   test("toTTypeQualifiers") {

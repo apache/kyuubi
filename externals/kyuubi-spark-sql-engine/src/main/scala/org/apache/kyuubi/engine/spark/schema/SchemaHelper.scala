@@ -32,6 +32,11 @@ object SchemaHelper {
    */
   final val TIMESTAMP_NTZ = "TimestampNTZType$"
 
+  /**
+   * Spark 4.0.0 DataType VariantType's class name.
+   */
+  final val VARIANT = "VariantType$"
+
   def toTTypeId(typ: DataType): TTypeId = typ match {
     case NullType => TTypeId.NULL_TYPE
     case BooleanType => TTypeId.BOOLEAN_TYPE
@@ -46,6 +51,7 @@ object SchemaHelper {
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
     case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
+    case variant if variant.getClass.getSimpleName.equals(VARIANT) => TTypeId.STRING_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
     case _: DayTimeIntervalType => TTypeId.INTERVAL_DAY_TIME_TYPE
@@ -112,6 +118,7 @@ object SchemaHelper {
     case DateType => java.sql.Types.DATE
     case TimestampType => java.sql.Types.TIMESTAMP
     case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => java.sql.Types.TIMESTAMP
+    case variant if variant.getClass.getSimpleName.equals(VARIANT) => java.sql.Types.OTHER
     case BinaryType => java.sql.Types.BINARY
     case _: ArrayType => java.sql.Types.ARRAY
     case _: MapType => java.sql.Types.JAVA_OBJECT
