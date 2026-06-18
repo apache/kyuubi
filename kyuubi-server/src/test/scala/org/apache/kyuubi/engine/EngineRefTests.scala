@@ -292,13 +292,16 @@ trait EngineRefTests extends KyuubiFunSuite {
     val factory = new NamedThreadFactory("engine-test", false)
     val thread1 = factory.newThread(r1)
     val thread2 = factory.newThread(r2)
+    val startupTimeHistogram =
+      MetricsSystem.getMetricsRegistry.get.histogram(ENGINE_STARTUP_TIME)
+    val beforeStartupTimeRecords = startupTimeHistogram.getCount
     thread1.start()
     thread2.start()
 
     eventually(timeout(90.seconds), interval(1.second)) {
       assert(port1 != 0, "engine started")
       assert(port2 == port1, "engine shared")
-      assert(MetricsSystem.histogramSnapshot(ENGINE_STARTUP_TIME).exists(_.size() > 0))
+      assert(startupTimeHistogram.getCount > beforeStartupTimeRecords)
     }
   }
 
