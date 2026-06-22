@@ -219,6 +219,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       _confRestrictList.contains(normalizedKey)) {
       throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
         s" configuration, please remove it and retry if you want to proceed")
+    } else if (KyuubiConf.isImmutableKey(normalizedKey)) {
+      warn(s"$normalizedKey is an immutable key and cannot be set by the user")
+      None
     } else if (_confIgnoreMatchList.exists(normalizedKey.startsWith) ||
       _confIgnoreList.contains(normalizedKey)) {
       warn(s"$normalizedKey is a ignored key according to the server-side configuration")
@@ -236,6 +239,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   def validateBatchKey(key: String, value: String): Option[(String, String)] = {
     if (_batchConfIgnoreMatchList.exists(key.startsWith) || _batchConfIgnoreList.contains(key)) {
       warn(s"$key is a ignored batch key according to the server-side configuration")
+      None
+    } else if (KyuubiConf.isImmutableKey(key)) {
+      warn(s"$key is an immutable key and cannot be set by the user")
       None
     } else {
       Some((key, value))

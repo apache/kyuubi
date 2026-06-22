@@ -30,7 +30,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, SCALA_COMPILE_VERSION, Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_JDBC_CONNECTION_PASSWORD, ENGINE_JDBC_CONNECTION_URL, ENGINE_JDBC_DEPLOY_MODE, ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_JAVA_OPTIONS, ENGINE_JDBC_MEMORY, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{EngineType, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -100,7 +100,7 @@ class JdbcProcessBuilder(
 
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    buffer ++= confKeyValues(conf.getAll)
+    buffer ++= confKeyValues(conf.getEngineConf(EngineType.JDBC))
 
     buffer
   }
