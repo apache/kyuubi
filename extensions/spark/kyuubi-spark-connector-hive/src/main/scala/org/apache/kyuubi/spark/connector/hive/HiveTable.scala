@@ -32,14 +32,12 @@ import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH
 import org.apache.spark.sql.connector.expressions.Transform
 import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.connector.write.{LogicalWriteInfo, WriteBuilder}
-import org.apache.spark.sql.execution.datasources.v2.orc.OrcScanBuilder
-import org.apache.spark.sql.execution.datasources.v2.parquet.ParquetScanBuilder
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{BucketSpecHelper, LogicalExpressions}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.{READ_CONVERT_METASTORE_ORC, READ_CONVERT_METASTORE_PARQUET}
-import org.apache.kyuubi.spark.connector.hive.read.{HiveCatalogFileIndex, HiveScanBuilder}
+import org.apache.kyuubi.spark.connector.hive.read.{HiveCatalogFileIndex, HiveScanBuilder, KyuubiOrcScanBuilder, KyuubiParquetScanBuilder}
 import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 
 case class HiveTable(
@@ -97,10 +95,22 @@ case class HiveTable(
   override def newScanBuilder(options: CaseInsensitiveStringMap): ScanBuilder = {
     convertedProvider match {
       case Some("ORC") if sparkSession.sessionState.conf.getConf(READ_CONVERT_METASTORE_ORC) =>
-        OrcScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
+        new KyuubiOrcScanBuilder(
+          sparkSession,
+          fileIndex,
+          schema,
+          dataSchema,
+          options,
+          catalogTable)
       case Some("PARQUET")
           if sparkSession.sessionState.conf.getConf(READ_CONVERT_METASTORE_PARQUET) =>
-        ParquetScanBuilder(sparkSession, fileIndex, schema, dataSchema, options)
+        new KyuubiParquetScanBuilder(
+          sparkSession,
+          fileIndex,
+          schema,
+          dataSchema,
+          options,
+          catalogTable)
       case _ => HiveScanBuilder(sparkSession, fileIndex, dataSchema, catalogTable)
     }
   }
