@@ -20,6 +20,7 @@ package org.apache.kyuubi.session
 import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -319,9 +320,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         stateToRecover.toString,
         kyuubiInstance,
         0,
-        Int.MaxValue).map { metadata =>
-        createBatchSessionFromRecovery(metadata)
-      }).getOrElse(Seq.empty)
+        Int.MaxValue).flatMap(createBatchSessionFromRecoverySafely)).getOrElse(Seq.empty)
     }
   }
 
@@ -338,9 +337,36 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           getBatchMetadata(batchId)
             .filter(m =>
               m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
-            .flatMap { metadata => Some(createBatchSessionFromRecovery(metadata)) }
+            .flatMap(createBatchSessionFromRecoverySafely)
       }
     }
+  }
+
+  private def createBatchSessionFromRecoverySafely(
+      metadata: Metadata): Option[KyuubiBatchSession] = {
+    metadata.requestConf.collectFirst { case (key, null) => key } match {
+      case Some(key) =>
+        markBatchRecoveryFailed(
+          metadata,
+          new IllegalArgumentException(s"value cannot be null for key: $key"))
+        None
+      case None =>
+        try {
+          Some(createBatchSessionFromRecovery(metadata))
+        } catch {
+          case NonFatal(e) =>
+            markBatchRecoveryFailed(metadata, e)
+            None
+        }
+    }
+  }
+
+  private def markBatchRecoveryFailed(metadata: Metadata, error: Throwable): Unit = {
+    warn(s"Skip recovering batch ${metadata.identifier} from metadata store", error)
+    updateMetadata(Metadata(
+      identifier = metadata.identifier,
+      state = OperationState.ERROR.toString,
+      engineError = Some(error.getMessage)))
   }
 
   private def createBatchSessionFromRecovery(metadata: Metadata): KyuubiBatchSession = {
