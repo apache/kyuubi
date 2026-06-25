@@ -22,7 +22,7 @@
     "@microsoft/fetch-event-source": "^2.0.1",
     "@types/dompurify": "^3.0.5",
     "date-fns": "^2.29.3",
-    "dompurify": "^3.4.2",
+    "dompurify": "^3.4.11",
     "element-plus": "^2.2.12",
     "marked": "^16.1.2",
     "monaco-editor": "^0.44.0",
