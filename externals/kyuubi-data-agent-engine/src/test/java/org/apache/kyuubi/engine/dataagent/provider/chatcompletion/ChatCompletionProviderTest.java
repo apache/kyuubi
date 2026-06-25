@@ -68,4 +68,44 @@ public class ChatCompletionProviderTest {
         ChatCompletionProvider.hasKyuubiUrlCredentials(
             "jdbc:kyuubi://host:10009/default;username_flag=true"));
   }
+
+  @Test
+  public void testKerberosPrincipalDetected() {
+    assertTrue(
+        ChatCompletionProvider.resolvesToKerberos(
+            "jdbc:hive2://host:10000/default;principal=hive/host@REALM.COM"));
+  }
+
+  @Test
+  public void testKerberosServerPrincipalAliasDetected() {
+    assertTrue(
+        ChatCompletionProvider.resolvesToKerberos(
+            "jdbc:kyuubi://host:10009/default;kyuubiServerPrincipal=kyuubi/host@REALM.COM"));
+  }
+
+  @Test
+  public void testKerberosAuthModeDetected() {
+    assertTrue(
+        ChatCompletionProvider.resolvesToKerberos(
+            "jdbc:hive2://host:10009/db;auth=KERBEROS;transportMode=binary"));
+  }
+
+  @Test
+  public void testNonKerberosUrlNotDetected() {
+    assertFalse(
+        ChatCompletionProvider.resolvesToKerberos(
+            "jdbc:kyuubi://host:10009/default;user=alice;password=secret"));
+  }
+
+  @Test
+  public void testQueryParamPrincipalNotTreatedAsKerberos() {
+    assertFalse(
+        ChatCompletionProvider.resolvesToKerberos(
+            "jdbc:kyuubi://host:10009/default?principal=hive/host@REALM.COM"));
+  }
+
+  @Test
+  public void testKerberosNullUrl() {
+    assertFalse(ChatCompletionProvider.resolvesToKerberos(null));
+  }
 }

@@ -209,6 +209,8 @@ This works out of the box when the Kyuubi server is configured with `kyuubi.auth
 jdbc:kyuubi://kyuubi-host:10009/default;user=alice;password=...
 ```
 
+**Kerberos is not supported yet.** The engine performs no Kerberos login of its own, so it would reuse the Kyuubi server's ambient proxy super-user credentials and could impersonate arbitrary users. Kyuubi therefore rejects both auto-derivation and explicitly Kerberized JDBC URLs under `KERBEROS` authentication. Full support (the engine logging in with its own principal/keytab and proxying the session user) is left for a follow-up; for now point the Data Agent at a non-Kerberos datasource.
+
 ## Operating notes
 
 ### Engine lifecycle

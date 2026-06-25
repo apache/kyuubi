@@ -3864,8 +3864,9 @@ object KyuubiConf {
   val ENGINE_DATA_AGENT_JDBC_URL: OptionalConfigEntry[String] =
     buildConf("kyuubi.engine.data.agent.jdbc.url")
       .doc("The JDBC URL for the Data Agent engine to connect to the target database. " +
-        "If not set, the Data Agent will connect back to Kyuubi server " +
-        "via ZooKeeper service discovery.")
+        "If not set, the Data Agent connects back to this Kyuubi server (via ZooKeeper " +
+        "service discovery for ZK-HA, otherwise the advertised thrift host and port). " +
+        "Kerberos authentication is not supported yet.")
       .version("1.12.0")
       .stringConf
       .createOptional

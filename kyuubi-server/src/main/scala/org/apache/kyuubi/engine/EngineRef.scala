@@ -46,6 +46,7 @@ import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, 
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
+import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
 import org.apache.kyuubi.util.JavaUtils
 
 /**
@@ -260,25 +261,7 @@ private[kyuubi] class EngineRef(
           defaultEngineName)
       case DATA_AGENT =>
         if (conf.get(ENGINE_DATA_AGENT_JDBC_URL).isEmpty) {
-          val haAddresses = conf.get(HA_ADDRESSES)
-          val isZkHa = haAddresses.nonEmpty &&
-            conf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
-          val jdbcUrl = if (isZkHa) {
-            s"jdbc:kyuubi://$haAddresses/default;" +
-              s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
-          } else {
-            val port = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
-            if (port == 0) {
-              throw KyuubiSQLException(
-                s"Cannot derive a default Data Agent JDBC URL: " +
-                  s"${FRONTEND_THRIFT_BINARY_BIND_PORT.key} is 0 (random). " +
-                  s"Set ${ENGINE_DATA_AGENT_JDBC_URL.key} explicitly.")
-            }
-            val host = conf.get(FRONTEND_ADVERTISED_HOST)
-              .orElse(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
-              .getOrElse(JavaUtils.findLocalInetAddress.getHostAddress)
-            s"jdbc:kyuubi://$host:$port/default"
-          }
+          val jdbcUrl = EngineRef.deriveDataAgentJdbcUrl(conf, serverSpace)
           conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
           info(s"Data Agent JDBC URL not configured, using Kyuubi server: $jdbcUrl")
         }
@@ -438,6 +421,47 @@ private[kyuubi] class EngineRef(
         case e: Exception =>
           warn(s"Error closing engine builder, engineRefId: $engineRefId", e)
       }
+    }
+  }
+}
+
+private[kyuubi] object EngineRef {
+
+  /**
+   * Derive the default JDBC URL the Data Agent engine uses to connect back to this Kyuubi server,
+   * used when `kyuubi.engine.data.agent.jdbc.url` is unset. `serverSpace` is passed in rather than
+   * read from `conf` because `create()` has already remapped `HA_NAMESPACE` to the per-engine space
+   * by the time the engine is built.
+   */
+  private[engine] def deriveDataAgentJdbcUrl(conf: KyuubiConf, serverSpace: String): String = {
+    // TODO: temporary fail-closed. The engine does no Kerberos login of its own, so an auto-derived
+    //  back-connection would reuse the server's ambient proxy super-user TGT and could impersonate
+    //  arbitrary users. Lift once the engine logs in with its own principal/keytab and proxies the
+    //  session user via hadoop.proxyuser ACLs.
+    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    if (AuthUtils.kerberosEnabled(authTypes)) {
+      throw KyuubiSQLException(
+        "Data Agent does not support Kerberos yet; configure a non-Kerberos " +
+          s"${ENGINE_DATA_AGENT_JDBC_URL.key} instead.")
+    }
+    val haAddresses = conf.get(HA_ADDRESSES)
+    val isZkHa = haAddresses.nonEmpty &&
+      conf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
+    if (isZkHa) {
+      s"jdbc:kyuubi://$haAddresses/default;" +
+        s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
+    } else {
+      val port = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
+      if (port == 0) {
+        throw KyuubiSQLException(
+          s"Cannot derive a default Data Agent JDBC URL: " +
+            s"${FRONTEND_THRIFT_BINARY_BIND_PORT.key} is 0 (random). " +
+            s"Set ${ENGINE_DATA_AGENT_JDBC_URL.key} explicitly.")
+      }
+      val host = conf.get(FRONTEND_ADVERTISED_HOST)
+        .orElse(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
+        .getOrElse(JavaUtils.findLocalInetAddress.getHostAddress)
+      s"jdbc:kyuubi://$host:$port/default"
     }
   }
 }
