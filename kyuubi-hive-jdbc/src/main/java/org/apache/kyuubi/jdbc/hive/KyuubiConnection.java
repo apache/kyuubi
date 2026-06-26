@@ -1151,23 +1151,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void closeOnLaunchEngineFailure() throws SQLException {
-    boolean interrupted = Thread.currentThread().isInterrupted();
-    try {
-      if (engineLogThread != null && engineLogThread.isAlive()) {
-        engineLogThread.interrupt();
-        try {
-          engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
-        } catch (InterruptedException e) {
-          interrupted = true;
-        }
-      }
-      engineLogThread = null;
-      close();
-    } finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
+    if (engineLogThread != null && engineLogThread.isAlive()) {
+      engineLogThread.interrupt();
+      try {
+        engineLogThread.join(DEFAULT_ENGINE_LOG_THREAD_TIMEOUT);
+      } catch (Exception ignore) {
       }
     }
+    engineLogThread = null;
+    close();
   }
 
   /**
@@ -1522,10 +1514,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         engineLogInflight = false;
         closeOnLaunchEngineFailure();
         if (isInterrupted(e)) {
-          // KyuubiInterruptedException is the public JDBC signal for this path. Cleanup can also
-          // observe an interrupt while joining the engine log thread, so clear the thread flag
-          // before throwing. When this exception reaches the caller, the current thread is not
-          // interrupted.
+          // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
+          // thread flag so callers do not observe both an exception and an interrupted thread.
+          // When this exception reaches the caller, the current thread is not interrupted.
           Thread.interrupted();
           if (e instanceof KyuubiInterruptedException) {
             throw (KyuubiInterruptedException) e;
