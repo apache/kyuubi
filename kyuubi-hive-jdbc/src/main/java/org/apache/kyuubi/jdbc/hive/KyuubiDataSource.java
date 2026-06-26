@@ -46,6 +46,8 @@ public class KyuubiDataSource implements SQLDataSource {
         info.setProperty(AUTH_PASSWD, password);
       }
       return new KyuubiConnection("", info);
+    } catch (SQLException ex) {
+      throw ex;
     } catch (Exception ex) {
       throw new KyuubiSQLException("Error in getting HiveConnection", ex);
     }
