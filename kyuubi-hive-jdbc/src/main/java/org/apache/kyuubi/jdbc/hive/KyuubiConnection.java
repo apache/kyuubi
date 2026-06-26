@@ -1519,32 +1519,23 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           }
         }
       } catch (Exception e) {
-        Exception exceptionToThrow = e;
-        if (isInterrupted(e)) {
-          // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
-          // thread flag so callers do not observe both an exception and an interrupted thread.
-          // When this exception reaches the caller, the current thread is not interrupted.
-          Thread.interrupted();
-          if (!(e instanceof KyuubiInterruptedException)) {
-            exceptionToThrow = newLaunchEngineInterruptedException(e);
-          }
-        }
         engineLogInflight = false;
-        try {
-          closeOnLaunchEngineFailure();
-        } catch (SQLException closeException) {
-          exceptionToThrow.addSuppressed(closeException);
-        }
-        if (exceptionToThrow instanceof KyuubiInterruptedException) {
-          // Cleanup can also observe an interrupt while joining the engine log thread. Keep the
-          // launch cancellation contract simple: KyuubiInterruptedException is the signal, and the
-          // thread is not interrupted when the caller receives it.
+        closeOnLaunchEngineFailure();
+        if (isInterrupted(e)) {
+          // KyuubiInterruptedException is the public JDBC signal for this path. Cleanup can also
+          // observe an interrupt while joining the engine log thread, so clear the thread flag
+          // before throwing. When this exception reaches the caller, the current thread is not
+          // interrupted.
           Thread.interrupted();
+          if (e instanceof KyuubiInterruptedException) {
+            throw (KyuubiInterruptedException) e;
+          }
+          throw newLaunchEngineInterruptedException(e);
         }
-        if (exceptionToThrow instanceof SQLException) {
-          throw (SQLException) exceptionToThrow;
+        if (e instanceof SQLException) {
+          throw (SQLException) e;
         } else {
-          throw new KyuubiSQLException(exceptionToThrow.getMessage(), "08S01", exceptionToThrow);
+          throw new KyuubiSQLException(e.getMessage(), "08S01", e);
         }
       }
     }
