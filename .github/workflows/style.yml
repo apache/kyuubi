@@ -38,7 +38,7 @@ jobs:
           - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it'
 
     steps:
-      - uses: actions/checkout@v6.0.3
+      - uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
       - name: Setup JDK 17
