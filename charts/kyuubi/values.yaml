@@ -137,23 +137,6 @@ server:
       #    clientIP:
       #      timeoutSeconds: 10800
 
-  # MySQL compatible text protocol (experimental)
-  mysql:
-    enabled: false
-    port: 3309
-    service:
-      type: ClusterIP
-      port: "{{ .Values.server.mysql.port }}"
-      nodePort: ~
-      annotations: {}
-      # candidates are ClientIP or None
-      # https://kubernetes.io/docs/reference/kubernetes-api/service-resources/service-v1/
-      sessionAffinity: ~
-      sessionAffinityConfig: {}
-      #  sessionAffinityConfig:
-      #    clientIP:
-      #      timeoutSeconds: 10800
-
 # Kyuubi configuration files
 kyuubiConf:
   # $KYUUBI_CONF_DIR directory
