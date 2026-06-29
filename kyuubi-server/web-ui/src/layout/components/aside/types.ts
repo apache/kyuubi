@@ -56,5 +56,10 @@ export const MENUS = [
     label: 'SQL Editor',
     icon: 'Cpu',
     router: '/editor'
+  },
+  {
+    label: 'Data Agent',
+    icon: 'ChatDotRound',
+    router: '/data-agent'
   }
 ]

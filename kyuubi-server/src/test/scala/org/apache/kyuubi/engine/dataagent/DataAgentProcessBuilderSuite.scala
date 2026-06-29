@@ -43,6 +43,18 @@ class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
       s"toString should contain a redaction marker, got: $output")
   }
 
+  test("JDBC URL with credentials is redacted in toString") {
+    val conf = new KyuubiConf(false)
+    conf.set(
+      ENGINE_DATA_AGENT_JDBC_URL.key,
+      "jdbc:hive2://localhost:10009/default;user=alice;password=Alice2026!")
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
+    val output = builder.toString
+    assert(
+      !output.contains("Alice2026!"),
+      s"JDBC password should not appear in toString output: $output")
+  }
+
   test("memory flag uses configured value") {
     val conf = new KyuubiConf(false)
     conf.set(ENGINE_DATA_AGENT_MEMORY.key, "2g")

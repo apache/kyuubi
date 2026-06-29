@@ -194,9 +194,10 @@ public class ReactAgent {
     ctx.emit(
         new AgentFinish(
             ctx.getIteration(),
-            ctx.getPromptTokens(),
-            ctx.getCompletionTokens(),
-            ctx.getTotalTokens()));
+            ctx.getAccumulatedPromptTokens(),
+            ctx.getAccumulatedCompletionTokens(),
+            ctx.getLastPromptTokens(),
+            ctx.getLastCompletionTokens()));
   }
 
   /**

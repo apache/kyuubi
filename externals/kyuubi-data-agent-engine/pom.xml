@@ -125,13 +125,19 @@
             <version>${victools.jsonschema.version}</version>
         </dependency>
 
-        <!-- JDBC drivers are not bundled; users provide them at runtime via extra classpath.
-             SQLite and MySQL drivers are kept here in test scope only. -->
+        <!-- JDBC drivers. SQLite and PostgreSQL are bundled (Apache-compatible licenses, common
+             in AI demos). MySQL is GPL — kept in test scope only; production users must supply
+             the driver via kyuubi.engine.data.agent.extra.classpath. Other drivers (ClickHouse,
+             Snowflake, Doris, etc.) follow the same extra-classpath path. -->
         <dependency>
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${sqlite.version}</version>
-            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
         </dependency>
 
         <dependency>

@@ -30,9 +30,14 @@ public class AgentRunContext {
   private final String sessionId;
   private Consumer<AgentEvent> eventEmitter;
   private int iteration;
-  private long promptTokens;
-  private long completionTokens;
-  private long totalTokens;
+  // accumulatedXxx: summed across every LLM call in this run (billing).
+  // lastXxx: most recent LLM call only; UIs use lastPromptTokens as "current context size".
+  // total is forwarded from the provider verbatim (not prompt+completion) because reasoning /
+  // cached tokens don't show up in the split, and CompactionMiddleware needs the real total.
+  private long accumulatedPromptTokens;
+  private long accumulatedCompletionTokens;
+  private long lastPromptTokens;
+  private long lastCompletionTokens;
   private ApprovalMode approvalMode;
 
   public AgentRunContext(ConversationMemory memory, ApprovalMode approvalMode) {
@@ -67,27 +72,34 @@ public class AgentRunContext {
     this.iteration = iteration;
   }
 
-  public long getPromptTokens() {
-    return promptTokens;
+  public long getAccumulatedPromptTokens() {
+    return accumulatedPromptTokens;
   }
 
-  public long getCompletionTokens() {
-    return completionTokens;
+  public long getAccumulatedCompletionTokens() {
+    return accumulatedCompletionTokens;
   }
 
-  public long getTotalTokens() {
-    return totalTokens;
+  public long getLastPromptTokens() {
+    return lastPromptTokens;
+  }
+
+  public long getLastCompletionTokens() {
+    return lastCompletionTokens;
   }
 
   /**
    * Record one LLM call's usage. Updates both the per-run counters on this context and the
    * session-level cumulative on the underlying {@link ConversationMemory}, so middlewares that need
    * a session-wide picture can read it directly from memory without keeping their own bookkeeping.
+   * The provider's {@code total} is forwarded as-is and may exceed {@code prompt + completion} when
+   * the provider counts cached or reasoning tokens separately.
    */
   public void addTokenUsage(long prompt, long completion, long total) {
-    this.promptTokens += prompt;
-    this.completionTokens += completion;
-    this.totalTokens += total;
+    this.accumulatedPromptTokens += prompt;
+    this.accumulatedCompletionTokens += completion;
+    this.lastPromptTokens = prompt;
+    this.lastCompletionTokens = completion;
     memory.addCumulativeTokens(prompt, completion, total);
   }
 

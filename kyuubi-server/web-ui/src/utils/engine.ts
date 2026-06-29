@@ -16,7 +16,7 @@
  */
 
 function getEngineType() {
-  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC']
+  return ['SPARK_SQL', 'FLINK_SQL', 'TRINO', 'HIVE_SQL', 'JDBC', 'DATA_AGENT']
 }
 
 function getShareLevel() {

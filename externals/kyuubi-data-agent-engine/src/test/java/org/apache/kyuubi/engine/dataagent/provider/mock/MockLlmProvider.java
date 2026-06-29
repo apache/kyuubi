@@ -133,7 +133,7 @@ public class MockLlmProvider implements DataAgentProvider {
     }
     onEvent.accept(new ContentComplete(answer));
     onEvent.accept(new StepEnd(2));
-    onEvent.accept(new AgentFinish(2, 100, 50, 150));
+    onEvent.accept(new AgentFinish(2, 100, 50, 60, 30));
   }
 
   private void runWithoutToolCall(String question, Consumer<AgentEvent> onEvent) {
@@ -142,7 +142,7 @@ public class MockLlmProvider implements DataAgentProvider {
     onEvent.accept(new ContentDelta(answer));
     onEvent.accept(new ContentComplete(answer));
     onEvent.accept(new StepEnd(1));
-    onEvent.accept(new AgentFinish(1, 50, 20, 70));
+    onEvent.accept(new AgentFinish(1, 50, 20, 50, 20));
   }
 
   @Override

@@ -84,13 +84,19 @@ public class LoggingMiddleware implements AgentMiddleware {
 
   @Override
   public void onAgentFinish(AgentRunContext ctx) {
+    long accPrompt = ctx.getAccumulatedPromptTokens();
+    long accCompletion = ctx.getAccumulatedCompletionTokens();
     LOG.info(
-        "{}FINISH steps={}, prompt_tokens={}, completion_tokens={}, total_tokens={}",
+        "{}FINISH steps={}, "
+            + "accumulated(prompt={}, completion={}, total={}), "
+            + "last(prompt={}, completion={})",
         prefix(),
         ctx.getIteration(),
-        ctx.getPromptTokens(),
-        ctx.getCompletionTokens(),
-        ctx.getTotalTokens());
+        accPrompt,
+        accCompletion,
+        accPrompt + accCompletion,
+        ctx.getLastPromptTokens(),
+        ctx.getLastCompletionTokens());
   }
 
   @Override
@@ -105,16 +111,19 @@ public class LoggingMiddleware implements AgentMiddleware {
       AgentRunContext ctx, ChatCompletionAssistantMessageParam response) {
     String content = response.content().map(Object::toString).orElse("");
     int toolCallCount = response.toolCalls().map(List::size).orElse(0);
+    long accPrompt = ctx.getAccumulatedPromptTokens();
+    long accCompletion = ctx.getAccumulatedCompletionTokens();
     LOG.info(
         "{}LLM response: step={}, content=\"{}\", tool_calls={}, "
-            + "usage(cumulative): prompt={}, completion={}, total={}",
+            + "accumulated(prompt={}, completion={}, total={}), last_prompt={}",
         prefix(),
         ctx.getIteration(),
         truncate(content),
         toolCallCount,
-        ctx.getPromptTokens(),
-        ctx.getCompletionTokens(),
-        ctx.getTotalTokens());
+        accPrompt,
+        accCompletion,
+        accPrompt + accCompletion,
+        ctx.getLastPromptTokens());
     return Decision.proceed();
   }
 

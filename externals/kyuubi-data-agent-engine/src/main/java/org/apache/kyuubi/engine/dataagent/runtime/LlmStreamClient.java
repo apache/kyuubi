@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.dataagent.runtime;
 
 import com.openai.client.OpenAIClient;
+import com.openai.core.JsonValue;
 import com.openai.core.http.StreamResponse;
 import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
 import com.openai.models.chat.completions.ChatCompletionChunk;
@@ -31,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.kyuubi.engine.dataagent.runtime.event.ContentDelta;
+import org.apache.kyuubi.engine.dataagent.runtime.event.ReasoningDelta;
 import org.apache.kyuubi.engine.dataagent.tool.ToolRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,7 +92,25 @@ final class LlmStreamClient {
                 acc.content.append(text);
                 ctx.emit(new ContentDelta(text));
               });
+      // qwen3 / DeepSeek-R1 stream chain-of-thought as a non-standard `reasoning_content`
+      // field on the delta. openai-java exposes it via _additionalProperties().
+      String reasoning = extractReasoningDelta(c.delta()._additionalProperties());
+      if (reasoning != null && !reasoning.isEmpty()) {
+        ctx.emit(new ReasoningDelta(reasoning));
+      }
       c.delta().toolCalls().ifPresent(acc::mergeToolCallDeltas);
+    }
+  }
+
+  private static String extractReasoningDelta(Map<String, JsonValue> extras) {
+    if (extras == null || extras.isEmpty()) return null;
+    JsonValue v = extras.get("reasoning_content");
+    if (v == null) v = extras.get("reasoning");
+    if (v == null) return null;
+    try {
+      return v.convert(String.class);
+    } catch (RuntimeException e) {
+      return null;
     }
   }
 
