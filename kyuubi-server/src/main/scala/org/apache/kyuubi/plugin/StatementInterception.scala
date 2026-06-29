@@ -24,6 +24,7 @@ import org.apache.kyuubi.KyuubiSQLException
 /** A concrete, immutable [[StatementInterceptContext]] built per interceptor invocation. */
 private[kyuubi] class StatementInterceptContextImpl(
     sessionIdValue: String,
+    statementIdValue: String,
     userValue: String,
     ipAddressValue: String,
     statementValue: String,
@@ -32,6 +33,7 @@ private[kyuubi] class StatementInterceptContextImpl(
     queryTimeoutValue: Long,
     engineTypeValue: String) extends StatementInterceptContext {
   override def sessionId(): String = sessionIdValue
+  override def statementId(): String = statementIdValue
   override def user(): String = userValue
   override def ipAddress(): String = ipAddressValue
   override def statement(): String = statementValue

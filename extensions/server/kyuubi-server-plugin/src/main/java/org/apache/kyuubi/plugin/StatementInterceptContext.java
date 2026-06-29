@@ -29,6 +29,13 @@ public interface StatementInterceptContext {
   /** The session identifier the statement belongs to. */
   String sessionId();
 
+  /**
+   * The unique identifier of this statement, equal to the operation handle the client receives. It
+   * is allocated before interception and stays stable through the operation's whole lifecycle, so
+   * it can correlate the intercepted statement with its later operation and result set.
+   */
+  String statementId();
+
   /** The user submitting the statement. */
   String user();
 
