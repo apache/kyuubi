@@ -107,6 +107,8 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
 
 class DropNamespaceV2Suite extends DropNamespaceSuiteBase {
 
+  override protected def catalogName: String = "hive"
+
   override protected def catalogVersion: String = "Hive V2"
 
   override protected def commandVersion: String = V2_COMMAND_VERSION
@@ -116,7 +118,7 @@ class DropNamespaceV1Suite extends DropNamespaceSuiteBase {
 
   val SESSION_CATALOG_NAME: String = "spark_catalog"
 
-  override protected val catalogName: String = SESSION_CATALOG_NAME
+  override protected def catalogName: String = SESSION_CATALOG_NAME
 
   override protected def catalogVersion: String = "V1"
 
