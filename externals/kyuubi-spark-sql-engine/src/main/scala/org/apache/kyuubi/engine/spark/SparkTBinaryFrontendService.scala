@@ -139,6 +139,31 @@ object SparkTBinaryFrontendService extends Logging {
       oldCreds: Credentials,
       updateCreds: Credentials): Unit = {
     val metastoreUris = hiveConf(sc.hadoopConfiguration).getTrimmed("hive.metastore.uris", "")
+    mergeHiveTokens(metastoreUris, newTokens, oldCreds, updateCreds)
+  }
+
+  private[spark] def mergeHiveTokens(
+      metastoreUris: String,
+      newTokens: Map[Text, Token[_ <: TokenIdentifier]],
+      oldCreds: Credentials,
+      updateCreds: Credentials): Unit = {
+    // A Hive delegation token whose service field is non-empty is bound to a specific metastore
+    // via `hive.metastore.token.signature`, which is stored in the token service. When an engine
+    // accesses several metastores with different Kerberos principals, each metastore yields one
+    // such token. The single-metastore matching below only keeps the token whose service is empty,
+    // so these signature-bound tokens were silently dropped and never reached the engine UGI. Add
+    // them keyed by their alias so they survive.
+    val (signatureBoundTokens, defaultServiceTokens) = newTokens.partition {
+      case (_, token) => token.getService != new Text()
+    }
+    signatureBoundTokens.foreach { case (alias, token) =>
+      val oldToken = oldCreds.getToken(alias)
+      if (oldToken == null || KyuubiHadoopUtils.compareIssueDate(token, oldToken) > 0) {
+        updateCreds.addToken(alias, token)
+      } else {
+        warn(s"Ignore Hive token with earlier issue date: $token")
+      }
+    }
 
     // `HiveMetaStoreClient` selects the first token whose service is "" and kind is
     // "HIVE_DELEGATION_TOKEN" to authenticate.
@@ -148,11 +173,11 @@ object SparkTBinaryFrontendService extends Logging {
       }
 
     if (metastoreUris.nonEmpty && oldAliasAndToken.isDefined) {
-      // Each entry of `newTokens` is a <uris, token> pair for a metastore cluster.
+      // Each entry of `defaultServiceTokens` is a <uris, token> pair for a metastore cluster.
       // If entry's uris and engine's metastore uris have at least 1 same uri, we presume they
       // represent the same metastore cluster.
       val uriSet = metastoreUris.split(",").filter(_.nonEmpty).toSet
-      val newToken = newTokens
+      val newToken = defaultServiceTokens
         .find { case (uris, token) =>
           val matched = uris.toString.split(",").exists(uriSet.contains) &&
             token.getService == new Text()
@@ -169,7 +194,7 @@ object SparkTBinaryFrontendService extends Logging {
           warn(s"Ignore Hive token with earlier issue date: $token")
         }
       }
-      if (newToken.isEmpty) {
+      if (newToken.isEmpty && defaultServiceTokens.nonEmpty) {
         warn(s"No matching Hive token found for engine metastore uris $metastoreUris")
       }
     } else if (metastoreUris.isEmpty) {
