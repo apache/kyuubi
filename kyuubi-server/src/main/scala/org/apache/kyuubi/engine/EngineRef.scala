@@ -348,9 +348,9 @@ private[kyuubi] class EngineRef(
           }
         }
       }
-      MetricsSystem.tracing(_.updateHistogram(
-        ENGINE_STARTUP_TIME,
-        System.currentTimeMillis() - started))
+      MetricsSystem.tracing { ms =>
+        ms.updateHistogram(ENGINE_STARTUP_TIME, System.currentTimeMillis() - started)
+      }
       engineRef.get
     } finally {
       if (acquiredPermit) startupProcessSemaphore.foreach(_.release())
