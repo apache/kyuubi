@@ -2962,7 +2962,6 @@ object KyuubiConf {
 
   val SERVER_INFO_PROVIDER: ConfigEntry[String] =
     buildConf("kyuubi.server.info.provider")
-      .serverOnly
       .doc("The server information provider name, some clients may rely on this information" +
         " to check the server compatibilities and functionalities." +
         " <li>SERVER: Return Kyuubi server information.</li>" +
