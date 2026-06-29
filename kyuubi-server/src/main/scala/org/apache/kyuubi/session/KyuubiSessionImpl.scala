@@ -313,8 +313,12 @@ class KyuubiSessionImpl(
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
+    // Allocate the operation handle up front so the interceptor sees the same id the operation
+    // and its result set will carry, then reuse it instead of letting the operation self-generate.
+    val operationHandle = OperationHandle()
     val interceptedStatement = sessionManager.interceptStatement(
       handle.identifier.toString,
+      operationHandle.identifier.toString,
       user,
       ipAddress,
       statement,
@@ -328,10 +332,18 @@ class KyuubiSessionImpl(
         val operation = sessionManager.operationManager.newExecuteOnServerOperation(
           this,
           runAsync,
-          command)
+          command,
+          operationHandle)
         runOperation(operation)
       case _ =>
-        super.executeStatement(interceptedStatement, confOverlay, runAsync, queryTimeout)
+        val operation = sessionManager.operationManager.newExecuteStatementOperation(
+          this,
+          interceptedStatement,
+          confOverlay,
+          runAsync,
+          queryTimeout,
+          operationHandle)
+        runOperation(operation)
     }
   }
 

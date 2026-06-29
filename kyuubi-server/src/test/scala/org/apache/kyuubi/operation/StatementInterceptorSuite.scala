@@ -18,7 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.sql.SQLException
-import java.util.Locale
+import java.util.{Locale, UUID}
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -77,6 +77,17 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
       assert(e.getMessage.contains("blocked: server-side command"))
     }
   }
+
+  test("the statement id is exposed to the interceptor") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT 'echo_stmt_id' AS x")
+      assert(rs.next())
+      // The interceptor rewrote the query to echo back context.statementId(); it must be a UUID.
+      val statementId = rs.getString("sid")
+      assert(UUID.fromString(statementId).toString === statementId)
+      assert(!rs.next())
+    }
+  }
 }
 
 class TestStatementInterceptor extends StatementInterceptor {
@@ -89,6 +100,8 @@ class TestStatementInterceptor extends StatementInterceptor {
       StatementInterceptResult.reject("blocked: forbidden keyword")
     } else if (sql.contains("rewrite_me")) {
       StatementInterceptResult.rewrite("SELECT 'rewritten' AS result")
+    } else if (sql.contains("echo_stmt_id")) {
+      StatementInterceptResult.rewrite(s"SELECT '${context.statementId()}' AS sid")
     } else {
       StatementInterceptResult.proceed()
     }

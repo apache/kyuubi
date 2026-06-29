@@ -52,6 +52,7 @@ The context exposes a stable, gateway-level view of the statement using JDK type
 
    public interface StatementInterceptContext {
      String sessionId();
+     String statementId();            // unique id, equal to the operation handle the client receives
      String user();
      String ipAddress();              // empty string when unknown, never null
      String statement();              // the current statement (after prior rewrites)

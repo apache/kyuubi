@@ -29,6 +29,7 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
   private def contextFor(statement: String): StatementInterceptContext =
     new StatementInterceptContextImpl(
       "session-1",
+      "op-1",
       "alice",
       "127.0.0.1",
       statement,
@@ -82,6 +83,16 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     }
     run(Seq(first, second), "ORIGINAL")
     assert(seenBySecond === "REWRITTEN")
+  }
+
+  test("the context exposes the statement id") {
+    var seenStatementId: String = null
+    val i = interceptor { ctx =>
+      seenStatementId = ctx.statementId()
+      StatementInterceptResult.proceed()
+    }
+    run(Seq(i), "SELECT 1")
+    assert(seenStatementId === "op-1")
   }
 
   test("a throwing interceptor fails the statement") {

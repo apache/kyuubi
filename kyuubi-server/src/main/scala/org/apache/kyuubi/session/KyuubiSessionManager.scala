@@ -127,6 +127,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
    */
   def interceptStatement(
       sessionId: String,
+      statementId: String,
       user: String,
       ipAddress: String,
       statement: String,
@@ -148,6 +149,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         currentStatement =>
           new StatementInterceptContextImpl(
             sessionId,
+            statementId,
             user,
             safeIpAddress,
             currentStatement,
