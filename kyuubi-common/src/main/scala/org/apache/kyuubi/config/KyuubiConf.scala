@@ -423,7 +423,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, TRINO = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -434,7 +434,6 @@ object KyuubiConf {
         " <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li>" +
         " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
-        " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
         " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
@@ -1188,67 +1187,6 @@ object KyuubiConf {
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10099)
-
-  val FRONTEND_MYSQL_BIND_HOST: ConfigEntry[Option[String]] =
-    buildConf("kyuubi.frontend.mysql.bind.host")
-      .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
-      .version("1.4.0")
-      .serverOnly
-      .fallbackConf(FRONTEND_BIND_HOST)
-
-  val FRONTEND_MYSQL_BIND_PORT: ConfigEntry[Int] = buildConf("kyuubi.frontend.mysql.bind.port")
-    .doc("Port of the machine on which to run the MySQL frontend service.")
-    .version("1.4.0")
-    .serverOnly
-    .intConf
-    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
-    .createWithDefault(3309)
-
-  /**
-   * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
-   * In practice, only 2-4 cores should be required to transfer roughly 10 Gb/s, and each core
-   * that we use will have an initial overhead of roughly 32 MB of off-heap memory, which comes
-   * at a premium.
-   *
-   * Thus, this value should still retain maximum throughput and reduce wasted off-heap memory
-   * allocation.
-   */
-  val MAX_NETTY_THREADS: Int = 8
-  val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
-    buildConf("kyuubi.frontend.mysql.netty.worker.threads")
-      .serverOnly
-      .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +
-        s"Use min(cpu_cores, $MAX_NETTY_THREADS) in default.")
-      .version("1.4.0")
-      .intConf
-      .checkValue(
-        n => n > 0 && n <= MAX_NETTY_THREADS,
-        s"Invalid thread number, must in (0, $MAX_NETTY_THREADS]")
-      .createOptional
-
-  val FRONTEND_MYSQL_MIN_WORKER_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.frontend.mysql.min.worker.threads")
-      .serverOnly
-      .doc("Minimum number of threads in the command execution thread pool for the MySQL " +
-        "frontend service")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
-
-  val FRONTEND_MYSQL_MAX_WORKER_THREADS: ConfigEntry[Int] =
-    buildConf("kyuubi.frontend.mysql.max.worker.threads")
-      .serverOnly
-      .doc("Maximum number of threads in the command execution thread pool for the MySQL " +
-        "frontend service")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
-
-  val FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
-    buildConf("kyuubi.frontend.mysql.worker.keepalive.time")
-      .serverOnly
-      .doc("Time(ms) that an idle async thread of the command execution thread pool will wait" +
-        " for a new task to arrive before terminating in MySQL frontend service")
-      .version("1.4.0")
-      .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
   val FRONTEND_TRINO_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.trino.bind.host")

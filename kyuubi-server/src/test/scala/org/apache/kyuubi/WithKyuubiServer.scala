@@ -43,7 +43,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.setIfMissing(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
     conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(FRONTEND_REST_BIND_PORT, 0)
-    conf.set(FRONTEND_MYSQL_BIND_PORT, 0)
 
     zkServer = new EmbeddedZookeeper()
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)

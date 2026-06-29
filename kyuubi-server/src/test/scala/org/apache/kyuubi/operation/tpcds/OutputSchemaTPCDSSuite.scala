@@ -24,7 +24,7 @@ import org.scalatest.tags.Slow
 
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.mysql.MySQLJDBCTestHelper
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.GoldenFileUtils._
@@ -43,7 +43,7 @@ import org.apache.kyuubi.util.GoldenFileUtils._
 @Slow
 @DeltaTest
 class OutputSchemaTPCDSSuite extends WithKyuubiServer
-  with MySQLJDBCTestHelper
+  with HiveJDBCTestHelper
   with TPCDSHelper
   with DeltaSuiteMixin {
 

@@ -26,6 +26,7 @@
 * Since Kyuubi 1.12, the configuration `spark.sql.kyuubi.hive.connector.dropTableAsPurgeTable` is introduced by Kyuubi Spark Hive connector(KSHC) to control whether DROP TABLE command completely remove its data by skipping HDFS trash. The default value is false. To restore the legacy behavior, set it to true.
 * Since Kyuubi 1.12, Engine UI proxy through the Kyuubi REST frontend is disabled by default, and the Web UI links directly to the engine URL. To restore proxied Engine UI links, set `kyuubi.frontend.rest.engine.ui.proxy.enabled=true` and configure allowed target hosts with `kyuubi.frontend.rest.engine.ui.proxy.hosts`.
 * Since Kyuubi 1.12, the `CHAT` engine is removed.
+* Since Kyuubi 1.12, the experimental MySQL frontend protocol (`MYSQL` in `kyuubi.frontend.protocols`) is removed, along with the `kyuubi.frontend.mysql.*` configuration entries.
 
 ## Upgrading from Kyuubi 1.10 to 1.11
 

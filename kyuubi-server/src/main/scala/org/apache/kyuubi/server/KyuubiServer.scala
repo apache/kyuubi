@@ -194,9 +194,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case REST =>
         warn("REST frontend protocol is experimental, API may change in the future.")
         new KyuubiRestFrontendService(this)
-      case MYSQL =>
-        warn("MYSQL frontend protocol is experimental.")
-        new KyuubiMySQLFrontendService(this)
       case TRINO =>
         warn("Trino frontend protocol is experimental.")
         new KyuubiTrinoFrontendService(this)

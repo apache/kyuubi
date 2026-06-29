@@ -79,8 +79,6 @@ and interoperation between supported clients and a Kyuubi server. The current im
    - It provides system management APIs, including engines, sessions, operations, and miscellaneous ones.
    - It provides methods that allow clients to submit SQL queries and receive the query results, submit metadata requests and receive metadata results.
    - It enables easy submission of self-contained applications for batch processing, such as Spark jobs.
-- MySQL Protocol
-   - A MySQL-compatible interface that allows end users to use MySQL Connectors, such as Connector/J, to communicate with Kyuubi.
 - We've planned to add more
    - Please join our mailing lists if you have any ideas or questions.
 
