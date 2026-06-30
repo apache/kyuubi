@@ -72,14 +72,17 @@ trait RebalanceBeforeWritingBase extends Rule[LogicalPlan] {
     if (!conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS) ||
       dynamicPartitionColumns.nonEmpty) {
       RebalancePartitions(
-        dynamicPartitionColumns, query, optAdvisoryPartitionSize = advisoryPartitionSize)
+        dynamicPartitionColumns,
+        query,
+        optAdvisoryPartitionSize = advisoryPartitionSize)
     } else {
       val maxColumns = conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS)
       val inferred = InferRebalanceAndSortOrders.infer(query)
       if (inferred.isDefined) {
         val (partitioning, ordering) = inferred.get
         val rebalance = RebalancePartitions(
-          partitioning.take(maxColumns), query,
+          partitioning.take(maxColumns),
+          query,
           optAdvisoryPartitionSize = advisoryPartitionSize)
         if (ordering.nonEmpty) {
           val sortOrders = ordering.take(maxColumns).map(o => SortOrder(o, Ascending))
@@ -89,7 +92,9 @@ trait RebalanceBeforeWritingBase extends Rule[LogicalPlan] {
         }
       } else {
         RebalancePartitions(
-          dynamicPartitionColumns, query, optAdvisoryPartitionSize = advisoryPartitionSize)
+          dynamicPartitionColumns,
+          query,
+          optAdvisoryPartitionSize = advisoryPartitionSize)
       }
     }
   }
