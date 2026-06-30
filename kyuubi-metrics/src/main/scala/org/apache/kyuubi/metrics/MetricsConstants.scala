@@ -103,4 +103,16 @@ object MetricsConstants {
 
   final private val JETTY = KYUUBI + "jetty."
   final val JETTY_API_V1 = JETTY + "api.v1"
+
+  // Authentication metrics. Dimensions (auth method, failure reason) are encoded as
+  // dot-suffixes on the base name via MetricRegistry.name(BASE, dim, ...) -- the same
+  // pattern used by OPERATION_STATE and CONN_OPEN. Registered names look like
+  // "kyuubi.authentication.success.ldap" or
+  // "kyuubi.authentication.failure.ldap.invalid_credentials" and surface in Prometheus
+  // with dot-to-underscore translation by DropwizardExports.
+  final private val AUTHENTICATION = KYUUBI + "authentication."
+  final val AUTHENTICATION_SUCCESS: String = AUTHENTICATION + "success"
+  final val AUTHENTICATION_FAILURE: String = AUTHENTICATION + "failure"
+  final val AUTHENTICATION_CACHE_HIT: String = AUTHENTICATION + "cache.hit"
+  final val AUTHENTICATION_CACHE_MISS: String = AUTHENTICATION + "cache.miss"
 }
