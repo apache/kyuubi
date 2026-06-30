@@ -36,8 +36,18 @@ public interface StatementInterceptContext {
    */
   String statementId();
 
-  /** The user submitting the statement. */
+  /**
+   * The effective user the statement runs as. With impersonation enabled (for example {@code
+   * hive.server2.proxy.user}), this is the proxy user; otherwise it equals {@link #realUser()}. Use
+   * this as the identity for authorization and auditing.
+   */
   String user();
+
+  /**
+   * The real user that authenticated the connection, before any impersonation. Equals {@link
+   * #user()} when impersonation is not in effect.
+   */
+  String realUser();
 
   /** The client IP address; an empty string when unknown, never {@code null}. */
   String ipAddress();

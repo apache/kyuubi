@@ -26,6 +26,7 @@ private[kyuubi] class StatementInterceptContextImpl(
     sessionIdValue: String,
     statementIdValue: String,
     userValue: String,
+    realUserValue: String,
     ipAddressValue: String,
     statementValue: String,
     confOverlayValue: java.util.Map[String, String],
@@ -35,6 +36,7 @@ private[kyuubi] class StatementInterceptContextImpl(
   override def sessionId(): String = sessionIdValue
   override def statementId(): String = statementIdValue
   override def user(): String = userValue
+  override def realUser(): String = realUserValue
   override def ipAddress(): String = ipAddressValue
   override def statement(): String = statementValue
   override def confOverlay(): java.util.Map[String, String] = confOverlayValue
@@ -104,7 +106,10 @@ private[kyuubi] object StatementInterception {
       result.action() match {
         case StatementInterceptResult.Action.PROCEED => // keep the current statement
         case StatementInterceptResult.Action.REWRITE => current = result.statement()
-        case StatementInterceptResult.Action.REJECT => throw KyuubiSQLException(result.message())
+        case StatementInterceptResult.Action.REJECT =>
+          // SQLState 42000 = "Syntax Error or Access Rule Violation"; lets JDBC/BI clients tell a
+          // policy rejection apart from a syntax error programmatically, not just by the message.
+          throw KyuubiSQLException(result.message(), sqlState = "42000")
       }
     }
     current

@@ -31,6 +31,7 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
       "session-1",
       "op-1",
       "alice",
+      "alice_real",
       "127.0.0.1",
       statement,
       java.util.Collections.emptyMap[String, String](),
@@ -62,10 +63,11 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     assert(run(Seq(i), "SELECT 1") === "SELECT 2")
   }
 
-  test("REJECT throws KyuubiSQLException carrying the message") {
+  test("REJECT throws KyuubiSQLException carrying the message and a policy SQLState") {
     val i = interceptor(_ => StatementInterceptResult.reject("blocked by policy"))
     val e = intercept[KyuubiSQLException](run(Seq(i), "SELECT 1"))
     assert(e.getMessage.contains("blocked by policy"))
+    assert(e.getSQLState === "42000")
   }
 
   test("interceptors run in order and rewrites chain") {
@@ -93,6 +95,19 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     }
     run(Seq(i), "SELECT 1")
     assert(seenStatementId === "op-1")
+  }
+
+  test("the context exposes the effective and real user") {
+    var seenUser: String = null
+    var seenRealUser: String = null
+    val i = interceptor { ctx =>
+      seenUser = ctx.user()
+      seenRealUser = ctx.realUser()
+      StatementInterceptResult.proceed()
+    }
+    run(Seq(i), "SELECT 1")
+    assert(seenUser === "alice")
+    assert(seenRealUser === "alice_real")
   }
 
   test("a throwing interceptor fails the statement") {

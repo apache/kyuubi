@@ -320,6 +320,7 @@ class KyuubiSessionImpl(
       handle.identifier.toString,
       operationHandle.identifier.toString,
       user,
+      realUser,
       ipAddress,
       statement,
       confOverlay,
