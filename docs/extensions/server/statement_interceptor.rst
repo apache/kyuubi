@@ -53,7 +53,8 @@ The context exposes a stable, gateway-level view of the statement using JDK type
    public interface StatementInterceptContext {
      String sessionId();
      String statementId();            // unique id, equal to the operation handle the client receives
-     String user();
+     String user();                   // effective user the statement runs as (proxy user if impersonating)
+     String realUser();               // authenticated user before impersonation; equals user() if none
      String ipAddress();              // empty string when unknown, never null
      String statement();              // the current statement (after prior rewrites)
      Map<String, String> confOverlay();   // statement-level overlay, read-only
@@ -90,7 +91,7 @@ Interceptors run in the configured order. The execution semantics are:
 - the chain starts from the original statement;
 - ``PROCEED`` keeps the current statement and passes it to the next interceptor;
 - ``REWRITE`` replaces the current statement and passes the new one to the next interceptor and ultimately to the engine;
-- ``REJECT`` stops the chain immediately, no operation is created, and the client receives an error;
+- ``REJECT`` stops the chain immediately, no operation is created, and the client receives an error carrying SQLState ``42000`` (access rule violation), so clients can tell a policy rejection from a syntax error;
 - if an interceptor throws or returns ``null``, the statement fails (fail-closed).
 
 The interceptors are eagerly loaded and initialized at server startup, so a misconfigured or failing interceptor fails the server fast rather than at the first query. They are closed in reverse order when the server stops.

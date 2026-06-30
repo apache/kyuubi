@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.sql.SQLException
 import java.util.{Locale, UUID}
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.{StatementInterceptContext, StatementInterceptor, StatementInterceptResult}
 
@@ -37,6 +37,9 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
     KyuubiConf()
       .set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
       .set(KyuubiConf.ENGINE_SPARK_MAX_INITIAL_WAIT.key, "0")
+      // allow the test user to impersonate, so the effective user can differ from the real user
+      .set(s"hadoop.proxyuser.${Utils.currentUser}.groups", "*")
+      .set(s"hadoop.proxyuser.${Utils.currentUser}.hosts", "*")
       .set(
         KyuubiConf.STATEMENT_INTERCEPTORS,
         Seq(classOf[TestStatementInterceptor].getName))
@@ -88,6 +91,22 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
       assert(!rs.next())
     }
   }
+
+  test("the interceptor sees the effective user and the real user under impersonation") {
+    val proxyUser = "proxy_alice"
+    assert(proxyUser !== Utils.currentUser)
+    withSessionConf(Map("hive.server2.proxy.user" -> proxyUser))(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery("SELECT 'echo_users' AS x")
+        assert(rs.next())
+        // The interceptor rewrote the query to echo context.user() and context.realUser().
+        assert(rs.getString("effective_user") === proxyUser)
+        assert(rs.getString("real_user") === Utils.currentUser)
+        assert(rs.getString("effective_user") !== rs.getString("real_user"))
+        assert(!rs.next())
+      }
+    }
+  }
 }
 
 class TestStatementInterceptor extends StatementInterceptor {
@@ -102,6 +121,9 @@ class TestStatementInterceptor extends StatementInterceptor {
       StatementInterceptResult.rewrite("SELECT 'rewritten' AS result")
     } else if (sql.contains("echo_stmt_id")) {
       StatementInterceptResult.rewrite(s"SELECT '${context.statementId()}' AS sid")
+    } else if (sql.contains("echo_users")) {
+      StatementInterceptResult.rewrite(
+        s"SELECT '${context.user()}' AS effective_user, '${context.realUser()}' AS real_user")
     } else {
       StatementInterceptResult.proceed()
     }
