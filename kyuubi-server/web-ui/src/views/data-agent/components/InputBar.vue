@@ -96,7 +96,9 @@
     border-radius: 18px;
     padding: 14px 14px 14px 6px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
 
     &:focus-within {
       border-color: #409eff;

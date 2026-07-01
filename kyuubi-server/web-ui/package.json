@@ -8,8 +8,8 @@
     "build": "vue-tsc --noEmit && vite build --mode production",
     "build-check": "npm run lint && npm run build",
     "preview": "vite preview",
-    "lint": "eslint --ext .ts,vue --ignore-path .gitignore .",
-    "lint-fix": "eslint --fix --ext .ts,vue --ignore-path .gitignore .",
+    "lint": "eslint .",
+    "lint-fix": "eslint --fix .",
     "prettier": "prettier --write \"src/**/*.{vue,ts,tsx}\"",
     "test": "vitest --mode development",
     "coverage": "vitest run --coverage"
@@ -35,23 +35,22 @@
     "vue-router": "^4.1.3"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@iconify-json/ep": "^1.1.6",
     "@types/node": "^22.0.0",
     "@types/swagger-ui-dist": "^3.30.1",
-    "@typescript-eslint/eslint-plugin": "^5.33.0",
-    "@typescript-eslint/parser": "^5.33.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "@vitest/coverage-v8": "^4.1.9",
-    "@vue/eslint-config-prettier": "^7.0.0",
-    "@vue/eslint-config-typescript": "^11.0.0",
+    "@vue/eslint-config-typescript": "^14.9.0",
     "@vue/test-utils": "^2.4.6",
-    "eslint": "^8.21.0",
-    "eslint-plugin-prettier": "^4.2.1",
-    "eslint-plugin-vue": "^9.3.0",
+    "eslint": "^9.39.4",
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-vue": "^10.9.2",
     "jsdom": "^26.0.0",
-    "prettier": "^2.7.1",
+    "prettier": "^3.9.4",
     "sass": "^1.70.0",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.6"
@@ -59,7 +58,9 @@
   "pnpm": {
     "overrides": {
       "lodash": "^4.18.1",
-      "lodash-es": "^4.18.1"
+      "lodash-es": "^4.18.1",
+      "brace-expansion@1": "^1.1.15",
+      "picomatch@2": "^2.3.2"
     }
   }
 }

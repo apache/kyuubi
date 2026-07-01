@@ -140,7 +140,9 @@
                   size="default"
                   clearable
                   style="width: 100%"
-                  @update:model-value="(v: string) => emit('update:jdbcUrl', v)">
+                  @update:model-value="
+                    (v: string) => emit('update:jdbcUrl', v)
+                  ">
                   <template #default="{ item }">
                     <div class="jdbc-option">
                       <div class="jdbc-option-text">
@@ -372,8 +374,8 @@
   }
   .tag-label {
     margin-right: 4px;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-      sans-serif;
+    font-family:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: #909399;
     font-weight: 500;
   }

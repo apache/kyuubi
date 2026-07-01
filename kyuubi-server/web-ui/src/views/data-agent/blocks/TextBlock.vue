@@ -56,8 +56,8 @@
         position: relative;
       }
       :deep(code) {
-        font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo,
-          monospace;
+        font-family:
+          'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
         font-size: 13px;
       }
       :deep(code:not(pre code)) {
