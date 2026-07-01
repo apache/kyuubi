@@ -38,7 +38,7 @@
 <script lang="ts" setup>
   import Editor from './components/Editor.vue'
   import { ref } from 'vue'
-  import { TabPanelName } from 'element-plus'
+  import { TabPaneName } from 'element-plus'
 
   const editableTabsValue = ref('1')
   const editableTabs = ref([
@@ -49,7 +49,7 @@
   ])
 
   const handleTabsEdit = (
-    targetName: TabPanelName | undefined,
+    targetName: TabPaneName | undefined,
     action: 'remove' | 'add'
   ) => {
     if (action === 'add') {
