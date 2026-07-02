@@ -37,14 +37,14 @@ public class RetryableRestClient implements InvocationHandler {
   private static final Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
 
   private final RestClientConf conf;
-  private final List<String> uris;
-  private int currentUriIndex;
+  private List<String> uris;
+  private String currentUri;
   private volatile IRestClient restClient;
 
   private RetryableRestClient(List<String> uris, RestClientConf conf) {
     this.conf = conf;
     this.uris = uris;
-    this.currentUriIndex = ThreadLocalRandom.current().nextInt(uris.size());
+    this.currentUri = uris.get(ThreadLocalRandom.current().nextInt(uris.size()));
     newRestClient();
   }
 
@@ -69,9 +69,23 @@ public class RetryableRestClient implements InvocationHandler {
     }
 
     CloseableHttpClient httpclient = HttpClientFactory.createHttpClient(conf);
-    assert currentUriIndex < uris.size();
-    this.restClient = new RestClient(uris.get(currentUriIndex), httpclient);
-    LOG.info("Current connect server uri {}", uris.get(currentUriIndex));
+    this.restClient = new RestClient(currentUri, httpclient);
+    LOG.info("Current connect server uri {}", currentUri);
+  }
+
+  /**
+   * Update the URI list dynamically (e.g. from service discovery refresh). If the current server is
+   * still in the new list, keep the connection; otherwise pick a random new server and reconnect.
+   */
+  public synchronized void updateUris(List<String> newUris) {
+    this.uris = newUris;
+    if (newUris.contains(currentUri)) {
+      // current server still available, keep connection as-is
+    } else {
+      // current server gone, switch to a random one
+      currentUri = newUris.get(ThreadLocalRandom.current().nextInt(newUris.size()));
+      newRestClient();
+    }
   }
 
   @Override
@@ -93,16 +107,17 @@ public class RetryableRestClient implements InvocationHandler {
             LOG.error("Attempt over {} times", conf.getMaxAttempts(), e.getCause());
             throw e.getCause();
           }
-          if (currentUriIndex == uris.size() - 1) {
-            currentUriIndex = 0;
-          } else {
-            currentUriIndex++;
-          }
+          rotateToNextUri();
           newRestClient();
         } else {
           throw e.getCause();
         }
       }
     }
+  }
+
+  private void rotateToNextUri() {
+    int idx = uris.indexOf(currentUri);
+    currentUri = uris.get((idx + 1) % uris.size());
   }
 }
