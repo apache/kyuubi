@@ -27,13 +27,13 @@ function secondTransfer(val: number) {
     ? min == 0
       ? `${sec} sec`
       : sec === 0
-      ? `${min} min`
-      : `${min} min ${sec} sec`
+        ? `${min} min`
+        : `${min} min ${sec} sec`
     : sec === 0
-    ? min !== 0
-      ? `${h} hour ${min} min`
-      : `${h} hour`
-    : `${h} hour ${min} min ${sec} sec`
+      ? min !== 0
+        ? `${h} hour ${min} min`
+        : `${h} hour`
+      : `${h} hour ${min} min ${sec} sec`
 }
 
 export { millTransfer, secondTransfer }
