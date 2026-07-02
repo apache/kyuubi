@@ -30,7 +30,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEPLOY_YARN_MODE_APP_NAME, ENGINE_HIVE_DEPLOY_MODE, ENGINE_HIVE_EXTRA_CLASSPATH, ENGINE_HIVE_JAVA_OPTIONS, ENGINE_HIVE_MEMORY, ENGINE_KEYTAB, ENGINE_PRINCIPAL}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{EngineType, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.deploy.DeployMode
 import org.apache.kyuubi.engine.deploy.DeployMode.{LOCAL, YARN}
 import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KEY
@@ -110,7 +110,7 @@ class HiveProcessBuilder(
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
     buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
 
-    buffer ++= confKeyValues(conf.getAll)
+    buffer ++= confKeyValues(conf.getEngineConf(EngineType.HIVE_SQL))
 
     buffer
   }

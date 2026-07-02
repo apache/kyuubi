@@ -29,7 +29,7 @@ import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.engine.{EngineType, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -91,7 +91,7 @@ class DataAgentProcessBuilder(
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
     buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
 
-    buffer ++= confKeyValues(conf.getAll)
+    buffer ++= confKeyValues(conf.getEngineConf(EngineType.DATA_AGENT))
 
     buffer
   }

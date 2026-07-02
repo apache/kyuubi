@@ -20,6 +20,7 @@ package org.apache.kyuubi.config
 import java.time.Duration
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.EngineType
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
@@ -231,10 +232,116 @@ class KyuubiConfSuite extends KyuubiFunSuite {
       Some("/var/run/secrets/kubernetes.io/token.ns2"))
   }
 
-  test("KYUUBI #7055 - Support to exclude server only configs with prefixes") {
+  test("getUserDefaults retains server-only configs") {
     val kyuubiConf = KyuubiConf(false)
     kyuubiConf.set("kyuubi.backend.server.event.kafka.broker", "localhost:9092")
-    assert(kyuubiConf.getUserDefaults("kyuubi").getAll.size == 0)
-    assert(kyuubiConf.getUserDefaults("user").getAll.size == 0)
+    kyuubiConf.set(FRONTEND_THRIFT_BINARY_BIND_PORT.key, "10009")
+    val userConf = kyuubiConf.getUserDefaults("kyuubi")
+    assert(
+      userConf.getOption("kyuubi.backend.server.event.kafka.broker") === Some("localhost:9092"))
+    assert(userConf.getOption(FRONTEND_THRIFT_BINARY_BIND_PORT.key) === Some("10009"))
   }
+
+  test("getEngineConf filters server only configs with prefixes") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("kyuubi.backend.server.event.kafka.broker", "localhost:9092")
+    kyuubiConf.set("kyuubi.operation.idle.timeout", "3h")
+    val engineConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(!engineConf.contains("kyuubi.backend.server.event.kafka.broker"))
+    assert(engineConf.contains("kyuubi.operation.idle.timeout"))
+  }
+
+  test("getEngineConf filters by audience") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(FRONTEND_THRIFT_BINARY_BIND_PORT.key, "10009")
+    kyuubiConf.set(ENGINE_SHARE_LEVEL.key, "USER")
+    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(!sparkConf.contains(FRONTEND_THRIFT_BINARY_BIND_PORT.key))
+    assert(sparkConf.contains(ENGINE_SHARE_LEVEL.key))
+  }
+
+  test("getEngineConf infers audience from key for entries without explicit audience") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(ENGINE_TRINO_CONNECTION_USER.key, "trino_user")
+    kyuubiConf.set(ENGINE_SHARE_LEVEL.key, "USER")
+    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(!sparkConf.contains(ENGINE_TRINO_CONNECTION_USER.key))
+    assert(sparkConf.contains(ENGINE_SHARE_LEVEL.key))
+    val trinoConf = kyuubiConf.getEngineConf(EngineType.TRINO)
+    assert(trinoConf.contains(ENGINE_TRINO_CONNECTION_USER.key))
+  }
+
+  test("getEngineConf infers audience for unregistered native-prefix configs") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set("spark.executor.memory", "4g")
+    kyuubiConf.set("flink.execution.target", "yarn-session")
+    kyuubiConf.set("hive.exec.parallel", "true")
+    kyuubiConf.set("trino.max.memory", "8GB")
+
+    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(sparkConf.contains("spark.executor.memory"))
+    assert(!sparkConf.contains("flink.execution.target"))
+    assert(!sparkConf.contains("hive.exec.parallel"))
+    assert(!sparkConf.contains("trino.max.memory"))
+
+    val flinkConf = kyuubiConf.getEngineConf(EngineType.FLINK_SQL)
+    assert(!flinkConf.contains("spark.executor.memory"))
+    assert(flinkConf.contains("flink.execution.target"))
+    assert(!flinkConf.contains("hive.exec.parallel"))
+    assert(!flinkConf.contains("trino.max.memory"))
+
+    val hiveConf = kyuubiConf.getEngineConf(EngineType.HIVE_SQL)
+    assert(!hiveConf.contains("spark.executor.memory"))
+    assert(!hiveConf.contains("flink.execution.target"))
+    assert(hiveConf.contains("hive.exec.parallel"))
+    assert(!hiveConf.contains("trino.max.memory"))
+
+    val trinoConf = kyuubiConf.getEngineConf(EngineType.TRINO)
+    assert(!trinoConf.contains("spark.executor.memory"))
+    assert(!trinoConf.contains("flink.execution.target"))
+    assert(!trinoConf.contains("hive.exec.parallel"))
+    assert(trinoConf.contains("trino.max.memory"))
+  }
+
+  test("getEngineConf resolves fallback from server-only config") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(SERVER_EXEC_POOL_SIZE.key, "200")
+    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(!sparkConf.contains(SERVER_EXEC_POOL_SIZE.key))
+    assert(sparkConf(ENGINE_EXEC_POOL_SIZE.key) === "200")
+  }
+
+  test("getEngineConf respects explicit audience(ANY) on engine-prefixed keys") {
+    val explicitAnyConf = KyuubiConf.buildConf("kyuubi.engine.spark.cross.cutting.feature")
+      .audience(ConfigAudience.ANY)
+      .doc("A cross-cutting feature with explicit ANY audience")
+      .version("test")
+      .stringConf
+      .createWithDefault("default")
+
+    try {
+      val kyuubiConf = KyuubiConf(false)
+      kyuubiConf.set(explicitAnyConf.key, "value")
+
+      val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+      assert(sparkConf.contains(explicitAnyConf.key))
+      val trinoConf = kyuubiConf.getEngineConf(EngineType.TRINO)
+      assert(trinoConf.contains(explicitAnyConf.key))
+    } finally {
+      KyuubiConf.unregister(explicitAnyConf)
+    }
+  }
+
+  test("getEngineConf passes through reserved keys") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(KyuubiReservedKeys.KYUUBI_SERVER_IP_KEY, "10.0.0.1")
+    kyuubiConf.set(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY, "testuser")
+    kyuubiConf.set(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY, "cred")
+
+    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
+    assert(sparkConf(KyuubiReservedKeys.KYUUBI_SERVER_IP_KEY) === "10.0.0.1")
+    assert(sparkConf(KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY) === "testuser")
+    assert(sparkConf(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY) === "cred")
+  }
+
 }
