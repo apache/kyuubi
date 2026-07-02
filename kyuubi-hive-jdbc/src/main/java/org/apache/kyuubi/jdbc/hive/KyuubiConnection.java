@@ -41,6 +41,7 @@ import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NoHttpResponseException;
@@ -209,7 +210,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           // Swallow the exception
           LOG.debug("Error while closing the connection", ex);
         }
-        if (isInterrupted(e)) {
+        if (ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0) {
           // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
           // thread flag so callers do not observe both an exception and an interrupted thread.
           // When this exception reaches the caller, the current thread is not interrupted.
@@ -1513,7 +1514,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (Exception e) {
         engineLogInflight = false;
         closeOnLaunchEngineFailure();
-        if (isInterrupted(e)) {
+        if (ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0) {
           // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
           // thread flag so callers do not observe both an exception and an interrupted thread.
           // When this exception reaches the caller, the current thread is not interrupted.
@@ -1545,17 +1546,6 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private static KyuubiInterruptedException newLaunchEngineInterruptedException(Throwable cause) {
     return new KyuubiInterruptedException(
         "Interrupted while waiting for launch engine", SQL_STATE_LAUNCH_ENGINE_CANCELED, cause);
-  }
-
-  private static boolean isInterrupted(Throwable throwable) {
-    Throwable cause = throwable;
-    while (cause != null) {
-      if (cause instanceof InterruptedException) {
-        return true;
-      }
-      cause = cause.getCause();
-    }
-    return false;
   }
 
   private void fetchLaunchEngineResult() {

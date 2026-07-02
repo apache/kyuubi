@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCloseSessionReq;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TGetOperationStatusReq;
@@ -74,7 +75,7 @@ public class KyuubiConnectionTest {
           assertThrows(KyuubiInterruptedException.class, connection::waitLaunchEngineToComplete);
 
       assertEquals("01000", exception.getSQLState());
-      assertTrue(hasCause(exception, InterruptedException.class));
+      assertTrue(ExceptionUtils.indexOfType(exception, InterruptedException.class) >= 0);
       assertFalse(Thread.currentThread().isInterrupted());
       verify(client).CloseSession(any(TCloseSessionReq.class));
     } finally {
@@ -96,7 +97,7 @@ public class KyuubiConnectionTest {
           assertThrows(KyuubiInterruptedException.class, connection::waitLaunchEngineToComplete);
 
       assertEquals("01000", exception.getSQLState());
-      assertTrue(hasCause(exception, InterruptedException.class));
+      assertTrue(ExceptionUtils.indexOfType(exception, InterruptedException.class) >= 0);
       assertFalse(Thread.currentThread().isInterrupted());
       verify(client).CloseSession(any(TCloseSessionReq.class));
     } finally {
@@ -175,16 +176,5 @@ public class KyuubiConnectionTest {
     Field field = target.getClass().getDeclaredField(name);
     field.setAccessible(true);
     field.set(target, value);
-  }
-
-  private static boolean hasCause(Throwable throwable, Class<? extends Throwable> causeClass) {
-    Throwable cause = throwable;
-    while (cause != null) {
-      if (causeClass.isInstance(cause)) {
-        return true;
-      }
-      cause = cause.getCause();
-    }
-    return false;
   }
 }
