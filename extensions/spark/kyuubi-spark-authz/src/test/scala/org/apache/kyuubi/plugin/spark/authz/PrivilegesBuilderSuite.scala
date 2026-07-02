@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import java.net.URI
+
 import scala.reflect.io.File
+import scala.util.Try
 
 import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -35,6 +38,7 @@ import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.reflect.DynConstructors
 
 abstract class PrivilegesBuilderSuite extends AnyFunSuite
   with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
@@ -1451,6 +1455,33 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(accessType1 == AccessType.WRITE)
   }
 
+  private val emptyCatalogStorageFormat = Try {
+    DynConstructors.builder()
+      .impl(
+        classOf[CatalogStorageFormat],
+        classOf[Option[URI]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Boolean],
+        classOf[Map[String, String]])
+      .build[CatalogStorageFormat]()
+      .newInstance(None, None, None, None, None, Boolean.box(false), Map.empty)
+  }.recover { case _: Exception =>
+    DynConstructors.builder()
+      .impl(
+        classOf[CatalogStorageFormat],
+        classOf[Option[URI]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Boolean],
+        classOf[Map[String, String]])
+      .build[CatalogStorageFormat]()
+      .newInstance(None, None, None, None, Boolean.box(false), Map.empty)
+  }.get
+
   test("InsertIntoDataSourceCommand") {
     val tableName = "InsertIntoDataSourceTable"
     withTable(tableName) { _ =>
@@ -1461,13 +1492,7 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       val newTable = CatalogTable(
         identifier = TableIdentifier(tableName, None),
         tableType = CatalogTableType.MANAGED,
-        storage = CatalogStorageFormat(
-          locationUri = None,
-          inputFormat = None,
-          outputFormat = None,
-          serde = None,
-          compressed = false,
-          properties = Map.empty),
+        storage = emptyCatalogStorageFormat,
         schema = schema,
         provider = Some(classOf[SimpleInsertSource].getName))
 
