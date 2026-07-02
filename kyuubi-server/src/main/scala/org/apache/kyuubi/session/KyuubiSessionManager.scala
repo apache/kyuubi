@@ -20,6 +20,7 @@ package org.apache.kyuubi.session
 import java.util.concurrent.{Semaphore, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
@@ -35,7 +36,7 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
-import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor}
+import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor, StatementInterceptContextImpl, StatementInterception, StatementInterceptor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.TempFileService
@@ -62,6 +63,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   lazy val sessionConfAdvisor: Seq[SessionConfAdvisor] = PluginLoader.loadSessionConfAdvisor(conf)
   lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
+  // Statement interceptors are eagerly loaded and initialized in initialize(conf), not lazy like
+  // the plugins above, so that a misconfigured interceptor fails the server at startup.
+  private var statementInterceptors: Seq[StatementInterceptor] = Nil
+
   private var limiter: Option[SessionLimiter] = None
   private var batchLimiter: Option[SessionLimiter] = None
   lazy val (signingPrivateKey, signingPublicKey) = SignUtils.generateKeyPair()
@@ -84,6 +89,77 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     initSessionLimiter(conf)
     initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
+    // Initialize interceptors after super.initialize so a failure there does not leave them open.
+    // StatementInterception.initialize closes any already-initialized interceptors on its own
+    // failure, and the field is assigned only after all succeed, so stop() never double-closes.
+    val loadedInterceptors = PluginLoader.loadStatementInterceptors(conf)
+    val serverConf: java.util.Map[String, String] =
+      java.util.Collections.unmodifiableMap(
+        new java.util.HashMap[String, String](conf.getAll.asJava))
+    StatementInterception.initialize(loadedInterceptors, serverConf)
+    statementInterceptors = loadedInterceptors
+  }
+
+  override def stop(): Unit = {
+    try {
+      super.stop()
+    } finally {
+      // Release interceptor external resources after services/sessions are stopped.
+      closeStatementInterceptors()
+    }
+  }
+
+  private def closeStatementInterceptors(): Unit = {
+    statementInterceptors.reverse.foreach { interceptor =>
+      try {
+        interceptor.close()
+      } catch {
+        case NonFatal(e) =>
+          warn(s"Error closing statement interceptor ${interceptor.getClass.getName}", e)
+      }
+    }
+  }
+
+  /**
+   * Run the configured statement interceptors before an interactive statement is routed to the
+   * engine. Returns the (possibly rewritten) statement, or throws if an interceptor rejects it,
+   * throws, or returns null. Returns the original statement unchanged when none are configured.
+   */
+  def interceptStatement(
+      sessionId: String,
+      statementId: String,
+      user: String,
+      realUser: String,
+      ipAddress: String,
+      statement: String,
+      confOverlay: Map[String, String],
+      runAsync: Boolean,
+      queryTimeout: Long,
+      engineType: String): String = {
+    if (statementInterceptors.isEmpty) {
+      statement
+    } else {
+      val confOverlayJava: java.util.Map[String, String] =
+        java.util.Collections.unmodifiableMap(
+          new java.util.HashMap[String, String](confOverlay.asJava))
+      val safeIpAddress = if (ipAddress == null) "" else ipAddress
+      val safeEngineType = if (engineType == null) "" else engineType
+      StatementInterception.run(
+        statementInterceptors,
+        statement,
+        currentStatement =>
+          new StatementInterceptContextImpl(
+            sessionId,
+            statementId,
+            user,
+            realUser,
+            safeIpAddress,
+            currentStatement,
+            confOverlayJava,
+            runAsync,
+            queryTimeout,
+            safeEngineType))
+    }
   }
 
   override protected def createSession(

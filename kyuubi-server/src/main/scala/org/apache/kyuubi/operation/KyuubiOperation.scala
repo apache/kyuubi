@@ -35,7 +35,10 @@ import org.apache.kyuubi.shaded.thrift.TException
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 import org.apache.kyuubi.util.ThriftUtils
 
-abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {
+abstract class KyuubiOperation(
+    session: Session,
+    operationHandle: OperationHandle = OperationHandle())
+  extends AbstractOperation(session, operationHandle) {
 
   MetricsSystem.tracing { ms =>
     ms.incCount(MetricRegistry.name(OPERATION_OPEN, opType))
