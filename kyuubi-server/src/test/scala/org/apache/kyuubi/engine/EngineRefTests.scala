@@ -34,7 +34,7 @@ import org.apache.kyuubi.engine.ShareLevel._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 import org.apache.kyuubi.ha.client.DiscoveryPaths
-import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_TOTAL
+import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_STARTUP_TIME, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.plugin.PluginLoader
 import org.apache.kyuubi.util.JavaUtils
@@ -292,12 +292,16 @@ trait EngineRefTests extends KyuubiFunSuite {
     val factory = new NamedThreadFactory("engine-test", false)
     val thread1 = factory.newThread(r1)
     val thread2 = factory.newThread(r2)
+    val startupTimeHistogram =
+      MetricsSystem.getMetricsRegistry.get.histogram(ENGINE_STARTUP_TIME)
+    val beforeStartupTimeRecords = startupTimeHistogram.getCount
     thread1.start()
     thread2.start()
 
     eventually(timeout(90.seconds), interval(1.second)) {
       assert(port1 != 0, "engine started")
       assert(port2 == port1, "engine shared")
+      assert(startupTimeHistogram.getCount > beforeStartupTimeRecords)
     }
   }
 
