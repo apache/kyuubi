@@ -17,10 +17,14 @@
 
 package org.apache.kyuubi.sql
 
-import org.apache.spark.network.util.ByteUnit
+import org.apache.spark.network.util.{ByteUnit, JavaUtils}
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
 object KyuubiSQLConf {
+
+  final val FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY =
+    "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes"
 
   val INSERT_REPARTITION_BEFORE_WRITE =
     buildConf("spark.sql.optimizer.insertRepartitionBeforeWrite.enabled")
@@ -232,6 +236,15 @@ object KyuubiSQLConf {
       .stringConf
       .createOptional
 
+  val REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE =
+    buildConf("spark.sql.adaptive.rebalancePartitionsAdvisoryPartitionSizeInBytes")
+      .doc("The advisory partition size for RebalancePartitions operator. When set, it will be " +
+        "passed to `optAdvisoryPartitionSize` of the RebalancePartitions node. " +
+        "It takes precedence over `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`.")
+      .version("1.12.0")
+      .bytesConf(ByteUnit.BYTE)
+      .createOptional
+
   val DYNAMIC_SHUFFLE_PARTITIONS =
     buildConf("spark.sql.optimizer.dynamicShufflePartitions")
       .doc("If true, adjust the number of shuffle partitions dynamically based on the job" +
@@ -254,4 +267,16 @@ object KyuubiSQLConf {
       .version("1.9.0")
       .booleanConf
       .createWithDefault(true)
+
+  def getAdvisoryPartitionSize(conf: SQLConf): Option[Long] = {
+    conf.getConf(REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE).orElse {
+      if (conf.contains(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY)) {
+        Some(JavaUtils.byteStringAs(
+          conf.getConfString(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY),
+          ByteUnit.BYTE))
+      } else {
+        None
+      }
+    }
+  }
 }
