@@ -20,7 +20,7 @@
   <main>
     <el-row :gutter="12">
       <el-col v-for="(card, index) in cards" :key="index" :md="8">
-        <c-card />
+        <c-card :title="card.title" :value="card.value" />
       </el-col>
     </el-row>
   </main>
@@ -30,7 +30,12 @@
   import { reactive } from 'vue'
   import cCard from '@/components/card/index.vue'
 
-  const cards = reactive([])
+  interface OverviewCard {
+    title: string | number
+    value: string | number | boolean | Date
+  }
+
+  const cards = reactive<OverviewCard[]>([])
 </script>
 
 <style scoped></style>
