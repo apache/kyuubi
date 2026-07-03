@@ -177,4 +177,52 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
       }
     }
   }
+
+  test("remove rebalance shuffle - union of non-expanding branches") {
+    // A union-all of two left-semi joins: every branch is reducing (not expanding) and each forms
+    // its own materialized query stage group. All groups satisfy the small-data condition, so the
+    // rebalance shuffle is removed.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CREATE TABLE tmp1 USING PARQUET as select * from range(10)")
+        assertRebalanceRemoved(
+          sql(
+            "INSERT INTO TABLE tmp1 " +
+              "SELECT a.c1 FROM t1 a LEFT SEMI JOIN t2 b ON a.c1 = b.c1 " +
+              "UNION ALL " +
+              "SELECT a.c1 FROM t1 a LEFT SEMI JOIN t3 b ON a.c1 = b.c1"),
+          removed = true)
+      }
+    }
+  }
+
+  test("keep rebalance shuffle - union with an expanding branch") {
+    // A union-all of a left-semi join and an inner join. The inner join makes the whole rebalance
+    // input both reducing and expanding, so neither the large-data nor the small-data condition can
+    // be satisfied for any group and the rebalance shuffle is kept.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CREATE TABLE tmp1 USING PARQUET as select * from range(10)")
+        assertRebalanceRemoved(
+          sql(
+            "INSERT INTO TABLE tmp1 " +
+              "SELECT a.c1 FROM t1 a LEFT SEMI JOIN t2 b ON a.c1 = b.c1 " +
+              "UNION ALL " +
+              "SELECT a.c1 FROM t1 a JOIN t3 b ON a.c1 = b.c1"),
+          removed = false)
+      }
+    }
+  }
 }

@@ -53,8 +53,8 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  *     size (`max(maxStageSize, groupSum / 2)`) is larger than
  *     `numShufflePartitions * [[KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_SMALL_PARTITION_SIZE]]`; or
  *   - Small data: the rebalance input has no data-expanding operator and the representative size is
- *     smaller than
- *     `advisoryPartitionSize * [[KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM]]`.
+ *     smaller than `advisoryPartitionSize *
+ *     [[KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM]]`.
  */
 case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPlan] {
 
@@ -137,14 +137,13 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
 
     val shufflePartitions = conf.numShufflePartitions
     val smallPartitionSizeThreshold = conf.getConf(REMOVE_REBALANCE_SHUFFLE_SMALL_PARTITION_SIZE)
-    val minAllowStageSize = shufflePartitions * smallPartitionSizeThreshold
     val hasReducingOperators = hasReducingOperator(child)
     val hasExpandingOperators = hasExpandingOperator(child)
     val tolerableSmallFileNum = conf.getConf(REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM)
 
     def shouldRemoveOneGroup(stageSizes: Seq[Long]): Boolean = {
       val maxStageSize = stageSizes.max.max(stageSizes.sum / 2)
-      (!hasReducingOperators && maxStageSize > minAllowStageSize) ||
+      (!hasReducingOperators && maxStageSize > shufflePartitions * smallPartitionSizeThreshold) ||
       (!hasExpandingOperators && maxStageSize < sessionAdvisorySize * tolerableSmallFileNum)
     }
 
@@ -152,8 +151,9 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
     logInfo(s"${if (remove) "Remove" else "Keep"} rebalance shuffle. " +
       s"rebalanceAdvisorySize=$rebalanceAdvisorySize, sessionAdvisorySize=$sessionAdvisorySize, " +
       s"shufflePartitions=$shufflePartitions, smallPartitionSize=$smallPartitionSizeThreshold, " +
-      s"minAllowStageSize=$minAllowStageSize, tolerableSmallFileNum=$tolerableSmallFileNum, " +
-      s"hasReducingOperators=$hasReducingOperators, hasExpandingOperators=$hasExpandingOperators, " +
+      s"tolerableSmallFileNum=$tolerableSmallFileNum," +
+      s"hasReducingOperators=$hasReducingOperators," +
+      s"hasExpandingOperators=$hasExpandingOperators, " +
       s"groupedStageSize=${groupedStageSize.map(_.mkString("[", ",", "]")).mkString(", ")}.")
     remove
   }
