@@ -70,11 +70,18 @@ extensions = [
     "sphinx.ext.mathjax",
     "myst_parser",
     "sphinx_copybutton",
-    "sphinx_markdown_tables",
     "sphinx_togglebutton",
     "notfound.extension",
     "sphinxemoji.sphinxemoji",
 ]
+myst_enable_extensions = [
+    "colon_fence",
+    "substitution"
+]
+
+myst_substitutions = {
+    "release": release
+}
 
 master_doc = "index"
 
