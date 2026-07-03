@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.sql
 
-import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, SparkSessionExtensions}
+import org.apache.spark.sql.{FinalStageResourceManager, InjectCustomResourceProfile, RemoveRebalanceShuffle, SparkSessionExtensions}
 
 import org.apache.kyuubi.sql.watchdog.{KyuubiUnsupportedOperationsCheck, MaxScanStrategy}
 import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder}
@@ -54,5 +54,10 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectQueryStagePrepRule(FinalStageResourceManager(_))
     extensions.injectQueryStagePrepRule(InjectCustomResourceProfile)
+
+    // Remove the rebalance shuffle at AQE time when the materialized upstream data size makes it
+    // not worthwhile. It runs as an AQE runtime optimizer rule so that it can rewrite the logical
+    // plan based on the materialized shuffle statistics.
+    extensions.injectRuntimeOptimizerRule(RemoveRebalanceShuffle(_))
   }
 }
