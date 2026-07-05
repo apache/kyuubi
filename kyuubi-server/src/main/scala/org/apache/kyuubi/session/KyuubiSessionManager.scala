@@ -64,8 +64,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   lazy val groupProvider: GroupProvider = PluginLoader.loadGroupProvider(conf)
 
   // Statement interceptors are eagerly loaded and initialized in initialize(conf), not lazy like
-  // the plugins above, so that a misconfigured interceptor fails the server at startup.
-  private var statementInterceptors: Seq[StatementInterceptor] = Nil
+  // the plugins above, so that a misconfigured interceptor fails the server at startup. Volatile
+  // because it is written once in initialize(conf) and read from many frontend request threads.
+  @volatile private var statementInterceptors: Seq[StatementInterceptor] = Nil
 
   private var limiter: Option[SessionLimiter] = None
   private var batchLimiter: Option[SessionLimiter] = None
@@ -93,9 +94,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     // StatementInterception.initialize closes any already-initialized interceptors on its own
     // failure, and the field is assigned only after all succeed, so stop() never double-closes.
     val loadedInterceptors = PluginLoader.loadStatementInterceptors(conf)
-    val serverConf: java.util.Map[String, String] =
-      java.util.Collections.unmodifiableMap(
-        new java.util.HashMap[String, String](conf.getAll.asJava))
+    // conf.getAll returns a fresh immutable snapshot whose asJava view is already read-only.
+    val serverConf: java.util.Map[String, String] = conf.getAll.asJava
     StatementInterception.initialize(loadedInterceptors, serverConf)
     statementInterceptors = loadedInterceptors
   }
@@ -139,11 +139,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     if (statementInterceptors.isEmpty) {
       statement
     } else {
-      val confOverlayJava: java.util.Map[String, String] =
-        java.util.Collections.unmodifiableMap(
-          new java.util.HashMap[String, String](confOverlay.asJava))
-      val safeIpAddress = if (ipAddress == null) "" else ipAddress
-      val safeEngineType = if (engineType == null) "" else engineType
+      // An immutable Map's asJava view is already read-only, so no defensive copy is needed.
+      val confOverlayJava: java.util.Map[String, String] = confOverlay.asJava
+      val safeIpAddress = Option(ipAddress).getOrElse("")
+      val safeEngineType = Option(engineType).getOrElse("")
       StatementInterception.run(
         statementInterceptors,
         statement,

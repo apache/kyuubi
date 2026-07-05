@@ -60,7 +60,7 @@ The context exposes a stable, gateway-level view of the statement using JDK type
      Map<String, String> confOverlay();   // statement-level overlay, read-only
      boolean runAsync();
      long queryTimeout();             // client-requested timeout in seconds, 0 means none
-     String engineType();             // spark / flink / trino / ...
+     String engineType();             // upper-cased kyuubi.engine.type, e.g. SPARK_SQL / FLINK_SQL / TRINO
    }
 
 An interceptor returns one of three decisions:
@@ -144,8 +144,8 @@ Then deploy the jar and enable it:
 Notes
 -----
 
-.. note:: The configuration is ``serverOnly``, so it cannot be overridden in a session and users cannot bypass the interceptors.
+.. note:: The configuration is ``serverOnly``, so it cannot be overridden or disabled in a session; on the paths where interceptors run (see below), users cannot turn them off.
 
-.. note:: Interceptors only apply to the interactive path (``executeStatement``), covering both engine-routed statements and server-side commands. Batch jobs are submitted as applications and never pass through this hook, and metadata operations such as ``getTables`` are not intercepted.
+.. note:: Interceptors only apply to the interactive statement path (``executeStatement`` on a SQL session), covering both engine-routed statements and server-side commands. Statements that never reach that path are not intercepted: batch jobs (submitted as applications), metadata operations such as ``getTables``, and the Data Agent REST endpoints (which forward the request text straight to the engine).
 
 .. caution:: ``beforeExecuteStatement`` runs synchronously on the statement-submission thread and adds directly to the submission latency. Interceptors that make external calls (for example to an authorization service or an LLM) must enforce their own timeout and retry limits, and choose their own degradation policy: governance interceptors should fail closed (``REJECT`` or throw), while enrichment interceptors may fail open (``PROCEED``).
