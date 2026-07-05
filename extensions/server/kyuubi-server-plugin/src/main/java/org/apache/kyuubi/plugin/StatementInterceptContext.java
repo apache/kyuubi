@@ -64,6 +64,10 @@ public interface StatementInterceptContext {
   /** The client-requested query timeout in seconds; {@code 0} means no timeout. */
   long queryTimeout();
 
-  /** The engine type (spark / flink / trino / ...) resolved from kyuubi.engine.type. */
+  /**
+   * The engine type resolved from {@code kyuubi.engine.type}, upper-cased to the config's enum
+   * names such as {@code SPARK_SQL}, {@code FLINK_SQL}, {@code TRINO}, {@code HIVE_SQL}, {@code
+   * JDBC}. Match against these values, not lower-cased short names like {@code spark}.
+   */
   String engineType();
 }

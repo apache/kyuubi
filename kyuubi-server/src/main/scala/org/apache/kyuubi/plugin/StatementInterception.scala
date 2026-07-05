@@ -23,27 +23,16 @@ import org.apache.kyuubi.KyuubiSQLException
 
 /** A concrete, immutable [[StatementInterceptContext]] built per interceptor invocation. */
 private[kyuubi] class StatementInterceptContextImpl(
-    sessionIdValue: String,
-    statementIdValue: String,
-    userValue: String,
-    realUserValue: String,
-    ipAddressValue: String,
-    statementValue: String,
-    confOverlayValue: java.util.Map[String, String],
-    runAsyncValue: Boolean,
-    queryTimeoutValue: Long,
-    engineTypeValue: String) extends StatementInterceptContext {
-  override def sessionId(): String = sessionIdValue
-  override def statementId(): String = statementIdValue
-  override def user(): String = userValue
-  override def realUser(): String = realUserValue
-  override def ipAddress(): String = ipAddressValue
-  override def statement(): String = statementValue
-  override def confOverlay(): java.util.Map[String, String] = confOverlayValue
-  override def runAsync(): Boolean = runAsyncValue
-  override def queryTimeout(): Long = queryTimeoutValue
-  override def engineType(): String = engineTypeValue
-}
+    override val sessionId: String,
+    override val statementId: String,
+    override val user: String,
+    override val realUser: String,
+    override val ipAddress: String,
+    override val statement: String,
+    override val confOverlay: java.util.Map[String, String],
+    override val runAsync: Boolean,
+    override val queryTimeout: Long,
+    override val engineType: String) extends StatementInterceptContext
 
 private[kyuubi] object StatementInterception {
 
