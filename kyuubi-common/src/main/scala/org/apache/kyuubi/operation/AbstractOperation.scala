@@ -33,14 +33,11 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TFetchResultsResp, TGetResultSetMetadataResp, TProgressUpdateResp, TProtocolVersion, TStatus, TStatusCode}
 
-abstract class AbstractOperation(
-    session: Session,
-    operationHandle: OperationHandle = OperationHandle())
-  extends Operation with Logging {
+abstract class AbstractOperation(session: Session) extends Operation with Logging {
 
   final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
-  protected val handle = operationHandle
+  protected val handle = OperationHandle()
   final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
