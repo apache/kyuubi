@@ -264,7 +264,7 @@ object KyuubiSQLConf {
         s"`${SQLConf.SHUFFLE_PARTITIONS.key}` * this value.")
       .version("1.12.0")
       .bytesConf(ByteUnit.BYTE)
-      .createWithDefault(96L * 1024 * 1024)
+      .createWithDefault(128L * 1024 * 1024)
 
   val REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM =
     buildConf("spark.sql.adaptive.removeRebalanceShuffle.tolerableSmallFileNum")
@@ -274,7 +274,7 @@ object KyuubiSQLConf {
         "is removed.")
       .version("1.12.0")
       .intConf
-      .createWithDefault(5)
+      .createWithDefault(3)
 
   val DYNAMIC_SHUFFLE_PARTITIONS =
     buildConf("spark.sql.optimizer.dynamicShufflePartitions")

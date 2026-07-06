@@ -130,7 +130,7 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
     }
 
     val groupedStageSize = collectQueryStageGroupSize(child)
-    if (groupedStageSize.isEmpty) {
+    if (groupedStageSize.isEmpty || groupedStageSize.exists(_.isEmpty)) {
       logInfo("Keep rebalance shuffle since no materialized query stage group is found below " +
         "the rebalance.")
       return false
