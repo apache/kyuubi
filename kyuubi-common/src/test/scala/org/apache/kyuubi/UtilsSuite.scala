@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, IOException}
+import java.io.{ByteArrayInputStream, File, IOException}
 import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
@@ -189,5 +189,17 @@ class UtilsSuite extends KyuubiFunSuite {
   test("test isCommandAvailable") {
     assert(Utils.isCommandAvailable("java"))
     assertResult(false)(Utils.isCommandAvailable("un_exist_cmd"))
+  }
+
+  test("writeToTempFile rejects illegal filenames") {
+    val dir = Utils.createTempDir()
+    def stream: ByteArrayInputStream = new ByteArrayInputStream("data".getBytes)
+
+    assertThrows[IOException](Utils.writeToTempFile(stream, dir, "../../etc/passwd"))
+    assertThrows[IOException](Utils.writeToTempFile(stream, dir, "../evil.sh"))
+    assertThrows[IOException](Utils.writeToTempFile(stream, dir, "foo/../../bar.jar"))
+
+    val goodFile = Utils.writeToTempFile(stream, dir, "my-app.jar")
+    assert(goodFile.toPath.normalize().startsWith(dir.normalize()))
   }
 }
