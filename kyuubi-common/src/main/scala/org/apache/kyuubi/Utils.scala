@@ -219,9 +219,6 @@ object Utils extends Logging {
       if (source == null) {
         throw new IOException("the source inputstream is null")
       }
-      if (!dir.toFile.exists()) {
-        dir.toFile.mkdirs()
-      }
       val (prefix, suffix) = fileName.lastIndexOf(".") match {
         case i if i > 0 => (fileName.substring(0, i), fileName.substring(i))
         case _ => (fileName, "")
@@ -229,11 +226,14 @@ object Utils extends Logging {
       val currentTime = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date())
       val identifier = s"$currentTime-${tempFileIdCounter.incrementAndGet()}"
       val filePath = Paths.get(dir.toString, s"$prefix-$identifier$suffix")
-      if (!filePath.normalize().startsWith(dir.normalize())) {
-        throw new IOException(
-          s"Resolved path $filePath is outside the target directory $dir")
-      }
       try {
+        if (!filePath.normalize().startsWith(dir.normalize())) {
+          throw new IOException(
+            s"Resolved path $filePath is outside the target directory $dir")
+        }
+        if (!dir.toFile.exists()) {
+          dir.toFile.mkdirs()
+        }
         Files.copy(source, filePath, StandardCopyOption.REPLACE_EXISTING)
       } finally {
         source.close()
