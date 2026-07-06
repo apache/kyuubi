@@ -23,7 +23,8 @@ import org.apache.spark.sql.execution.SparkStrategy
 
 case class FilterDataSourceV2Strategy(spark: SparkSession) extends SparkStrategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
+    case ObjectFilterPlaceHolder(child)
+        if child.nodeName == "ShowNamespaces" || child.nodeName == "ShowNamespacesCommand" =>
       spark.sessionState.planner.plan(child)
         .map(FilteredShowNamespaceExec(_, spark.sparkContext)).toSeq
 
