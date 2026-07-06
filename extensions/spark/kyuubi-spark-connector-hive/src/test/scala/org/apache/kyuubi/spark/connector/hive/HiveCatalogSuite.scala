@@ -254,7 +254,7 @@ class HiveCatalogSuite extends KyuubiHiveTest {
       Array.empty[Transform],
       properties).asInstanceOf[HiveTable]
     assert(t1.catalogTable.location ===
-      catalog.catalog.defaultTablePath(testIdent.asTableIdentifier))
+      catalog.catalog.defaultTablePath(testIdent.asTableIdentifier(catalog.name())))
     catalog.dropTable(testIdent)
 
     // relative path

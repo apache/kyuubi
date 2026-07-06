@@ -27,6 +27,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.catalog.{SupportsRead, SupportsWrite, Table, TableCapability}
 import org.apache.spark.sql.connector.catalog.TableCapability.{BATCH_READ, BATCH_WRITE, OVERWRITE_BY_FILTER, OVERWRITE_DYNAMIC}
 import org.apache.spark.sql.connector.expressions.Transform
@@ -77,7 +78,13 @@ case class HiveTable(
     }
   }
 
-  override def name(): String = catalogTable.identifier.unquotedString
+  override def name(): String = {
+    val ident = catalogTable.identifier
+    ident.database match {
+      case Some(db) => s"${quoteIfNeeded(db)}.${quoteIfNeeded(ident.table)}"
+      case None => quoteIfNeeded(ident.table)
+    }
+  }
 
   override def schema(): StructType = catalogTable.schema
 
