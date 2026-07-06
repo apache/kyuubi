@@ -27,8 +27,8 @@ import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderS
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
-  override protected val extraSparkConf: SparkConf = {
-    new SparkConf()
+  override protected def extraSparkConf: SparkConf = {
+    super.extraSparkConf
       .set("spark.sql.defaultCatalog", "testcat")
       .set("spark.sql.catalog.testcat", v2JdbcTableCatalogClassName)
       .set("spark.sql.catalog.testcat.url", "jdbc:derby:memory:testcat;create=true")
