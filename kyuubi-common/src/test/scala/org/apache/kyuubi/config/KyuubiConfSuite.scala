@@ -332,6 +332,34 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     }
   }
 
+  test("getEngineConf passes engine-shared frontend thrift configs to all engines") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(FRONTEND_THRIFT_MIN_WORKER_THREADS.key, "5")
+    kyuubiConf.set(FRONTEND_THRIFT_MAX_WORKER_THREADS.key, "500")
+    kyuubiConf.set(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key, "30000")
+    kyuubiConf.set(FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key, "209715200")
+    kyuubiConf.set(FRONTEND_CONNECTION_URL_USE_HOSTNAME.key, "false")
+
+    EngineType.values.foreach { engineType =>
+      val engineConf = kyuubiConf.getEngineConf(engineType)
+      assert(
+        engineConf(FRONTEND_THRIFT_MIN_WORKER_THREADS.key) === "5",
+        s"$engineType should receive ${FRONTEND_THRIFT_MIN_WORKER_THREADS.key}")
+      assert(
+        engineConf(FRONTEND_THRIFT_MAX_WORKER_THREADS.key) === "500",
+        s"$engineType should receive ${FRONTEND_THRIFT_MAX_WORKER_THREADS.key}")
+      assert(
+        engineConf(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key) === "30000",
+        s"$engineType should receive ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key}")
+      assert(
+        engineConf(FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key) === "209715200",
+        s"$engineType should receive ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key}")
+      assert(
+        engineConf(FRONTEND_CONNECTION_URL_USE_HOSTNAME.key) === "false",
+        s"$engineType should receive ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key}")
+    }
+  }
+
   test("getEngineConf passes through reserved keys") {
     val kyuubiConf = KyuubiConf(false)
     kyuubiConf.set(KyuubiReservedKeys.KYUUBI_SERVER_IP_KEY, "10.0.0.1")

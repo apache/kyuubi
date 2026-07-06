@@ -28,7 +28,7 @@ import scala.collection.immutable.TreeMap
 import scala.util.matching.Regex
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.config.ConfigAudience.SERVER
+import org.apache.kyuubi.config.ConfigAudience.{ANY, SERVER}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.engine.deploy.DeployMode
@@ -662,6 +662,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_MIN_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.min.worker.threads")
+      .audience(ANY)
       .doc("Minimum number of threads in the frontend worker thread pool for the thrift " +
         "frontend service")
       .version("1.4.0")
@@ -677,6 +678,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_MAX_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.max.worker.threads")
+      .audience(ANY)
       .doc("Maximum number of threads in the frontend worker thread pool for the thrift " +
         "frontend service")
       .version("1.4.0")
@@ -801,6 +803,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.thrift.worker.keepalive.time")
+      .audience(ANY)
       .doc("Keep-alive time (in milliseconds) for an idle worker thread")
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
@@ -815,6 +818,7 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.thrift.max.message.size")
+      .audience(ANY)
       .doc("Maximum message size in bytes a Kyuubi server will accept.")
       .version("1.4.0")
       .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
@@ -2552,6 +2556,7 @@ object KyuubiConf {
 
   val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("kyuubi.frontend.connection.url.use.hostname")
+      .audience(ANY)
       .doc("When true, frontend services prefer hostname, otherwise, ip address. Note that, " +
         "the default value is set to `false` when engine running on Kubernetes to prevent " +
         "potential network issues.")
