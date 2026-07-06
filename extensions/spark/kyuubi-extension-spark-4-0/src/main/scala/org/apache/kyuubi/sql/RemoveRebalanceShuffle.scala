@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.plans.{Inner, LeftExistence}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Expand, Filter, Generate, GlobalLimit, Join, LocalLimit, LogicalPlan, Offset, Project, RebalancePartitions, Sample, Sort, UnaryNode, Union, WindowGroupLimit}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.adaptive.{BroadcastQueryStageExec, ExchangeQueryStageExec, LogicalQueryStage, ShuffleQueryStageExec}
+import org.apache.spark.sql.execution.adaptive.{LogicalQueryStage, QueryStageExec, ShuffleQueryStageExec}
 import org.apache.spark.sql.execution.datasources.WriteFiles
 import org.apache.spark.sql.internal.SQLConf
 
@@ -97,15 +97,16 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
     case u: Union => u.children.flatMap(collectQueryStageGroupSize)
     case p if p.collectLeaves().forall(_.isInstanceOf[LogicalQueryStage]) =>
       val stages = p.collect {
-        case LogicalQueryStage(_, stage: ExchangeQueryStageExec) => stage
+        case stage: LogicalQueryStage => stage
       }
-      val allValid = stages.forall {
-        case s: BroadcastQueryStageExec => s.isMaterialized
+      val allValid = stages.map(_.physicalPlan).forall {
         case s: ShuffleQueryStageExec => s.isMaterialized && s.mapStats.isDefined
+        case s: QueryStageExec => s.isMaterialized
         case _ => false
       }
       if (allValid) {
-        Seq(stages.map(_.getRuntimeStatistics.sizeInBytes.min(Long.MaxValue).toLong))
+        Seq(stages.map(_.physicalPlan.asInstanceOf[QueryStageExec])
+          .map(_.getRuntimeStatistics.sizeInBytes.min(Long.MaxValue).toLong))
       } else {
         Seq.empty
       }

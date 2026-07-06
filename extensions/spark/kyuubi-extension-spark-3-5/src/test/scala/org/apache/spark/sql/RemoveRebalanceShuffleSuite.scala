@@ -225,4 +225,29 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
       }
     }
   }
+
+  test("remove rebalance shuffle - cached table produces TableCacheQueryStageExec") {
+    // A cached table produces a TableCacheQueryStageExec (not an ExchangeQueryStageExec).
+    // The non-expanding cached table scan satisfies the small-data condition, so the
+    // rebalance shuffle should be removed.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CACHE TABLE t2")
+        try {
+          sql("CREATE TABLE tmp1 USING PARQUET as select * from range(10)")
+          assertRebalanceRemoved(
+            sql("INSERT INTO TABLE tmp1 SELECT c1 FROM t2"),
+            removed = true)
+        } finally {
+          sql("UNCACHE TABLE t2")
+        }
+      }
+    }
+  }
 }
