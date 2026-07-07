@@ -17,9 +17,10 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.execution.{CommandResultExec, SparkPlan}
+import org.apache.spark.sql.execution.{CommandResultExec, SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanExec, ShuffleQueryStageExec}
-import org.apache.spark.sql.execution.exchange.{REBALANCE_PARTITIONS_BY_NONE, ShuffleExchangeExec}
+import org.apache.spark.sql.execution.exchange.{REBALANCE_PARTITIONS_BY_COL, REBALANCE_PARTITIONS_BY_NONE, ShuffleExchangeExec}
+import org.apache.spark.sql.execution.joins.SortMergeJoinExec
 import org.apache.spark.sql.internal.SQLConf._
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
@@ -39,8 +40,35 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
     case p => p.children.flatMap(collectExchanges)
   }
 
+  /**
+   * Collects all rebalance shuffle exchanges from the physical plan. Both
+   * [[REBALANCE_PARTITIONS_BY_NONE]] (empty partition expressions, e.g. inserted by
+   * `InsertAdaptor` for non-partitioned tables) and [[REBALANCE_PARTITIONS_BY_COL]]
+   * (non-empty partition expressions, e.g. inferred by `InferRebalanceAndSortOrders`
+   * for partitioned tables) are counted.
+   */
   private def rebalanceExchanges(plan: SparkPlan): Seq[ShuffleExchangeExec] = {
-    collectExchanges(plan).filter(_.shuffleOrigin == REBALANCE_PARTITIONS_BY_NONE)
+    collectExchanges(plan).filter(e =>
+      e.shuffleOrigin == REBALANCE_PARTITIONS_BY_NONE ||
+        e.shuffleOrigin == REBALANCE_PARTITIONS_BY_COL)
+  }
+
+  /**
+   * Collects local [[SortExec]] nodes from the plan that are NOT part of a
+   * [[SortMergeJoinExec]] (whose child Sort nodes are join-required sorts, not the
+   * local Sort injected by `InferRebalanceAndSortOrders`). Used to verify that
+   * [[org.apache.spark.sql.execution.RemoveRedundantSorts]] cleaned up the local Sort
+   * after the rebalance was removed.
+   */
+  private def collectSorts(plan: SparkPlan): Seq[SortExec] = plan match {
+    case p: CommandResultExec => collectSorts(p.commandPhysicalPlan)
+    case p: AdaptiveSparkPlanExec => collectSorts(p.finalPhysicalPlan)
+    case p: ShuffleQueryStageExec => collectSorts(p.plan)
+    // Don't recurse into SortMergeJoinExec — its child Sort nodes are join-required sorts,
+    // not the local Sort injected by InferRebalanceAndSortOrders.
+    case _: SortMergeJoinExec => Seq.empty
+    case p: SortExec => p +: p.children.flatMap(collectSorts).toSeq
+    case p => p.children.flatMap(collectSorts)
   }
 
   private def assertRebalanceRemoved(df: DataFrame, removed: Boolean): Unit = {
@@ -247,6 +275,108 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
         } finally {
           sql("UNCACHE TABLE t2")
         }
+      }
+    }
+  }
+
+  test("remove rebalance shuffle - static partition insert with non-expanding query") {
+    // staticPartitions.size == partitionColumns.size triggers the rule for static partition
+    // inserts. A simple SELECT has no reducing or expanding operators, so the small-data
+    // condition applies and the rebalance shuffle is removed.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CREATE TABLE tmp1 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
+        assertRebalanceRemoved(
+          sql("INSERT INTO TABLE tmp1 PARTITION(c2='a') SELECT c1 FROM t2"),
+          removed = true)
+      }
+    }
+  }
+
+  test("keep rebalance shuffle - static partition insert with inner join") {
+    // An inner join is both reducing and expanding, so neither the large-data nor the small-data
+    // condition can be satisfied and the rebalance shuffle is kept.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CREATE TABLE tmp1 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
+        assertRebalanceRemoved(
+          sql("INSERT INTO TABLE tmp1 PARTITION(c2='a') SELECT a.c1 FROM t1 a JOIN t2 b ON a.c1 = b.c1"),
+          removed = false)
+      }
+    }
+  }
+
+  test("keep rebalance shuffle - dynamic partition insert skips rule") {
+    // Dynamic partition inserts (staticPartitions.size < partitionColumns.size) do not trigger
+    // the rule because the rebalance helps cluster data by partition values, so the rebalance
+    // shuffle is kept regardless of data size or operators.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp1") {
+        sql("CREATE TABLE tmp1 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
+        assertRebalanceRemoved(
+          sql("INSERT INTO TABLE tmp1 PARTITION(c2) SELECT c1, c2 FROM t2"),
+          removed = false)
+      }
+    }
+  }
+
+  test("remove both rebalance and local sort inferred by InferRebalanceAndSortOrders") {
+    // When InferRebalanceAndSortOrders infers non-empty partitionExpressions from a join query
+    // and injects both a RebalancePartitions and a wrapping local Sort, the
+    // RemoveRebalanceShuffle rule removes the RebalancePartitions (the relaxed partitionExpressions
+    // match allows non-empty expressions). The local Sort then serves no purpose and is
+    // removed by Spark's RemoveRedundantSorts rule.
+    // Uses a left-semi join: it is reducing (not expanding), so the small-data condition applies.
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true",
+      KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true",
+      KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS.key -> "2",
+      KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED.key -> "true",
+      ADVISORY_PARTITION_SIZE_IN_BYTES.key -> "64MB",
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "128MB",
+      COALESCE_PARTITIONS_INITIAL_PARTITION_NUM.key -> "2",
+      AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1") {
+      withTable("tmp_pt", "input1", "input2") {
+        sql("CREATE TABLE tmp_pt (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
+        sql("CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
+        sql("CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+
+        val df = sql(
+          """INSERT INTO TABLE tmp_pt PARTITION(p='a')
+            |SELECT input1.col1, input1.col2
+            |FROM input1 LEFT SEMI JOIN input2 ON input1.col1 = input2.col1
+            |""".stripMargin)
+
+        // Verify rebalance is removed
+        assertRebalanceRemoved(df, removed = true)
+
+        // Verify the local Sort injected by InferRebalanceAndSortOrders is also removed
+        df.collect()
+        val sorts = collectSorts(df.queryExecution.executedPlan)
+        assert(
+          sorts.isEmpty,
+          s"Expected no local Sort in the final plan after rebalance removal, " +
+            s"but found ${sorts.size}:\n${df.queryExecution.executedPlan}")
       }
     }
   }

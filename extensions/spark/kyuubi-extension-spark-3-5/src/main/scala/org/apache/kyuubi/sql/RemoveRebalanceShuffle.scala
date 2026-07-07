@@ -33,16 +33,27 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  * plan, the removal is a plain logical rewrite (replace `RebalancePartitions` with its child) and
  * the physical planner re-plans without the rebalance shuffle.
  *
- * Only the rebalance that feeds the final write is considered: starting from the [[WriteFiles]]
- * node, the rule walks down through at most [[Project]] and local [[Sort]] operators to reach the
- * `RebalancePartitions`. Any other operator in between means the rebalance does not directly feed
- * the write, so it is left untouched. A `RebalancePartitions` is only removed when:
+ * This rule only applies when all partition columns of the write have static values assigned
+ * ([[WriteFiles.staticPartitions]].size == [[WriteFiles.partitionColumns]].size), i.e., static
+ * partition inserts or non-partitioned tables. For dynamic partition inserts, where partition
+ * values come from the SELECT clause, the rebalance helps cluster data by partition values and
+ * is left untouched.
+ *
+ * Starting from the [[WriteFiles]] node, the rule walks down through at most [[Project]] and
+ * local [[Sort]] operators to reach the `RebalancePartitions`. Any other operator in between
+ * means the rebalance does not directly feed the write, so it is left untouched. A
+ * `RebalancePartitions` is only removed when:
  *   1. [[KyuubiSQLConf.REMOVE_REBALANCE_SHUFFLE_ENABLED]] is on;
- *   2. it has no partition expressions (i.e. its physical `shuffleOrigin` would be
- *      `REBALANCE_PARTITIONS_BY_NONE`);
- *   3. its `optAdvisoryPartitionSize` is present and larger than the session
+ *   2. its `optAdvisoryPartitionSize` is present and larger than the session
  *      `spark.sql.adaptive.advisoryPartitionSizeInBytes` (otherwise the smaller advisory size
  *      suggests the user intentionally wants to balance data into smaller partitions).
+ *
+ * The `partitionExpressions` of the `RebalancePartitions` may be either empty (from
+ * `InsertAdaptor`, yielding physical `shuffleOrigin` `REBALANCE_PARTITIONS_BY_NONE`) or
+ * non-empty (inferred by `InferRebalanceAndSortOrders`, yielding
+ * `REBALANCE_PARTITIONS_BY_COL`). For the non-empty case, the local [[Sort]] that was
+ * injected alongside the rebalance serves no purpose after removal and is cleaned up by
+ * Spark's `RemoveRedundantSorts` rule.
  *
  * The rebalance input is split into independent "query stage groups" by
  * [[collectQueryStageGroupSize]]: only sub-plans whose leaves are all materialized
@@ -64,7 +75,11 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
     }
 
     plan.transformDown {
-      case write: WriteFiles => write.withNewChildren(Seq(removeRebalance(write.child)))
+      case write: WriteFiles if write.staticPartitions.size == write.partitionColumns.size =>
+        // only remove the rebalance when all partition columns have static values assigned,
+        // i.e., static partition inserts or non-partitioned tables. For dynamic partition
+        // inserts the rebalance helps cluster data by partition values to reduce file count.
+        write.withNewChildren(Seq(removeRebalance(write.child)))
     }
   }
 
@@ -77,9 +92,14 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
   private def removeRebalance(plan: LogicalPlan): LogicalPlan = plan match {
     case p: Project => p.withNewChildren(Seq(removeRebalance(p.child)))
     case s: Sort if !s.global => s.withNewChildren(Seq(removeRebalance(s.child)))
-    case RebalancePartitions(partitionExpressions, child, _, optAdvisoryPartitionSize)
-        if partitionExpressions.isEmpty && optAdvisoryPartitionSize.isDefined &&
-          shouldRemove(child, optAdvisoryPartitionSize.get) =>
+    case RebalancePartitions(_, child, _, optAdvisoryPartitionSize)
+        if optAdvisoryPartitionSize.isDefined && shouldRemove(
+          child,
+          optAdvisoryPartitionSize.get) =>
+      // We have already skipped remove for dynamic partition insert table before.
+      // Here if the partitionExpressions is non-empty, it should be inferred by
+      // `InferRebalanceAndSortOrders`, and that local sort should be removed by Spark rule
+      // `RemoveRedundantSorts`.
       child
     case other => other
   }
