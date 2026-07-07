@@ -245,6 +245,37 @@ object KyuubiSQLConf {
       .bytesConf(ByteUnit.BYTE)
       .createOptional
 
+  val REMOVE_REBALANCE_SHUFFLE_ENABLED =
+    buildConf("spark.sql.adaptive.removeRebalanceShuffle.enabled")
+      .doc("When true, the rebalance shuffle injected before writing can be removed at AQE time " +
+        "if the materialized upstream data size makes the shuffle not worthwhile. Only takes " +
+        "effect on a `RebalancePartitions` shuffle that has no partition expressions and whose " +
+        "advisory partition size is larger than " +
+        s"`${SQLConf.ADVISORY_PARTITION_SIZE_IN_BYTES.key}`.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val REMOVE_REBALANCE_SHUFFLE_SMALL_PARTITION_SIZE =
+    buildConf("spark.sql.adaptive.removeRebalanceShuffle.smallPartitionSize")
+      .doc("The advisory partition size below which a partition is considered small. In the " +
+        "large-data scenario, the rebalance shuffle is removed when the rebalance input has no " +
+        s"data-reducing operator and its stage size is larger than " +
+        s"`${SQLConf.SHUFFLE_PARTITIONS.key}` * this value.")
+      .version("1.12.0")
+      .bytesConf(ByteUnit.BYTE)
+      .createWithDefault(128L * 1024 * 1024)
+
+  val REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM =
+    buildConf("spark.sql.adaptive.removeRebalanceShuffle.tolerableSmallFileNum")
+      .doc("The tolerable number of small output files for the small-data scenario. When the " +
+        "rebalance input has no data-expanding operator and its stage size is smaller than " +
+        s"`${SQLConf.ADVISORY_PARTITION_SIZE_IN_BYTES.key}` * this value, the rebalance shuffle " +
+        "is removed.")
+      .version("1.12.0")
+      .intConf
+      .createWithDefault(3)
+
   val DYNAMIC_SHUFFLE_PARTITIONS =
     buildConf("spark.sql.optimizer.dynamicShufflePartitions")
       .doc("If true, adjust the number of shuffle partitions dynamically based on the job" +
