@@ -64,7 +64,7 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
     case p: CommandResultExec => collectSorts(p.commandPhysicalPlan)
     case p: AdaptiveSparkPlanExec => collectSorts(p.finalPhysicalPlan)
     case p: ShuffleQueryStageExec => collectSorts(p.plan)
-    // Don't recurse into SortMergeJoinExec — its child Sort nodes are join-required sorts,
+    // Don't recurse into SortMergeJoinExec, its child Sort nodes are join-required sorts,
     // not the local Sort injected by InferRebalanceAndSortOrders.
     case _: SortMergeJoinExec => Seq.empty
     case p: SortExec => p +: p.children.flatMap(collectSorts).toSeq
@@ -312,7 +312,8 @@ class RemoveRebalanceShuffleSuite extends KyuubiSparkSQLExtensionTest {
       withTable("tmp1") {
         sql("CREATE TABLE tmp1 (c1 int) USING PARQUET PARTITIONED BY (c2 string)")
         assertRebalanceRemoved(
-          sql("INSERT INTO TABLE tmp1 PARTITION(c2='a') SELECT a.c1 FROM t1 a JOIN t2 b ON a.c1 = b.c1"),
+          sql("INSERT INTO TABLE tmp1 PARTITION(c2='a') " +
+            "SELECT a.c1 FROM t1 a JOIN t2 b ON a.c1 = b.c1"),
           removed = false)
       }
     }
