@@ -141,11 +141,13 @@ case class RemoveRebalanceShuffle(session: SparkSession) extends Rule[LogicalPla
     val hasReducingOperators = hasReducingOperator(child)
     val hasExpandingOperators = hasExpandingOperator(child)
     val tolerableSmallFileNum = conf.getConf(REMOVE_REBALANCE_SHUFFLE_TOLERABLE_SMALL_FILE_NUM)
+    val coalesceEnabled = conf.coalesceShufflePartitionsEnabled
 
     def shouldRemoveOneGroup(stageSizes: Seq[Long]): Boolean = {
       val maxStageSize = stageSizes.max.max(stageSizes.sum / 2)
       (!hasReducingOperators && maxStageSize > shufflePartitions * smallPartitionSizeThreshold) ||
-      (!hasExpandingOperators && maxStageSize < sessionAdvisorySize * tolerableSmallFileNum)
+      (coalesceEnabled && !hasExpandingOperators &&
+        maxStageSize < sessionAdvisorySize * tolerableSmallFileNum)
     }
 
     val remove = groupedStageSize.forall(shouldRemoveOneGroup)
