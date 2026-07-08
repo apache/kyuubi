@@ -163,7 +163,7 @@
         <httpcore.version>4.4.16</httpcore.version>
         <hudi.version>1.0.1</hudi.version>
         <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-        <iceberg.version>1.10.0</iceberg.version>
+        <iceberg.version>1.11.0</iceberg.version>
         <iceberg.artifact>iceberg-spark-runtime-${spark.binary.version}_${scala.binary.version}</iceberg.artifact>
         <jackson.version>2.20.1</jackson.version>
         <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
@@ -2099,7 +2099,7 @@
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
                 <spark.version>4.1.2</spark.version>
-                <spark.binary.version>4.0</spark.binary.version>
+                <spark.binary.version>4.1</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
