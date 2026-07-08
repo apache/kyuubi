@@ -80,7 +80,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
-  private static final String SQL_STATE_LAUNCH_ENGINE_CANCELED = "01000";
+  // Use an error-class SQLState for launch engine cancellation; 01000 is a warning class.
+  private static final String SQL_STATE_LAUNCH_ENGINE_CANCELED = "57014";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
@@ -1493,8 +1494,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               engineLogInflight = false;
               break;
             case CANCELED_STATE:
-              // 01000 -> warning
-              throw new KyuubiSQLException("Launch engine was cancelled", "01000");
+              throw new KyuubiSQLException(
+                  "Launch engine was cancelled", SQL_STATE_LAUNCH_ENGINE_CANCELED);
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Launch engine timeout");
             case ERROR_STATE:

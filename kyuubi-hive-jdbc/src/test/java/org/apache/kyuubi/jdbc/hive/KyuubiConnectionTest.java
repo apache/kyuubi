@@ -74,7 +74,7 @@ public class KyuubiConnectionTest {
       KyuubiInterruptedException exception =
           assertThrows(KyuubiInterruptedException.class, connection::waitLaunchEngineToComplete);
 
-      assertEquals("01000", exception.getSQLState());
+      assertEquals("57014", exception.getSQLState());
       assertTrue(ExceptionUtils.indexOfType(exception, InterruptedException.class) >= 0);
       assertFalse(Thread.currentThread().isInterrupted());
       verify(client).CloseSession(any(TCloseSessionReq.class));
@@ -96,13 +96,29 @@ public class KyuubiConnectionTest {
       KyuubiInterruptedException exception =
           assertThrows(KyuubiInterruptedException.class, connection::waitLaunchEngineToComplete);
 
-      assertEquals("01000", exception.getSQLState());
+      assertEquals("57014", exception.getSQLState());
       assertTrue(ExceptionUtils.indexOfType(exception, InterruptedException.class) >= 0);
       assertFalse(Thread.currentThread().isInterrupted());
       verify(client).CloseSession(any(TCloseSessionReq.class));
     } finally {
       Thread.interrupted();
     }
+  }
+
+  @Test
+  public void waitLaunchEngineToCompleteUsesErrorSqlStateForLaunchCancel() throws Exception {
+    Iface client = mock(Iface.class);
+    TGetOperationStatusResp canceledResp = new TGetOperationStatusResp();
+    canceledResp.setStatus(new TStatus(TStatusCode.SUCCESS_STATUS));
+    canceledResp.setOperationState(TOperationState.CANCELED_STATE);
+    when(client.GetOperationStatus(any(TGetOperationStatusReq.class))).thenReturn(canceledResp);
+    KyuubiConnection connection = newKyuubiConnection(client, null);
+
+    KyuubiSQLException exception =
+        assertThrows(KyuubiSQLException.class, connection::waitLaunchEngineToComplete);
+
+    assertEquals("57014", exception.getSQLState());
+    verify(client).CloseSession(any(TCloseSessionReq.class));
   }
 
   @Test
