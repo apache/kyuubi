@@ -210,7 +210,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.7</spark.version>
+        <spark.version>3.5.8</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -2057,7 +2057,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.7</spark.version>
+                <spark.version>3.5.8</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <delta.version>3.3.1</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
@@ -2073,7 +2073,7 @@
             </modules>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.1</spark.version>
+                <spark.version>4.0.3</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0</delta.version>
@@ -2098,7 +2098,7 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.1.1</spark.version>
+                <spark.version>4.1.2</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.0.0</delta.version>
