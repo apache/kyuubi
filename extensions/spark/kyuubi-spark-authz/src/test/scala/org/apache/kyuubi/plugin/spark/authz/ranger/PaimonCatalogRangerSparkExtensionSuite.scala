@@ -32,7 +32,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val supportPurge: Boolean = false
-  private def isSupportedVersion = isScalaV212
+  private def isSupportedVersion = isScalaV212 || isSparkV40OrGreater
   override protected val sqlExtensions: String =
     if (isSupportedVersion) "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
     else ""
@@ -446,7 +446,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         doAs(
           admin,
           sql(s"SELECT commit_time FROM $catalogV2.$namespace1.`$table1$$snapshots`" +
-            s" ORDER BY commit_time ASC LIMIT 1").collect()(0).getTimestamp(0))
+            s" ORDER BY commit_time ASC LIMIT 1").collect()(0).get(0))
 
       val queryWithTimestamp =
         s"""
@@ -556,7 +556,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       val changingColumnTypeSql =
         s"""
            |ALTER TABLE $catalogV2.$namespace1.$table1
-           |ALTER COLUMN id TYPE DOUBLE
+           |ALTER COLUMN name TYPE STRING
            |""".stripMargin
 
       interceptEndsWith[AccessControlException] {
