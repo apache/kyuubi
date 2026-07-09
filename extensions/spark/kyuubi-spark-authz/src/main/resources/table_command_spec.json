@@ -304,6 +304,27 @@
   "queryDescs" : [ ],
   "uriDescs" : [ ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTableWithFilters",
+  "tableDescs" : [ {
+    "fieldName" : "table",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : ""
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
+  } ],
+  "opType" : "QUERY",
+  "queryDescs" : [ ],
+  "uriDescs" : [ ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
   "tableDescs" : [ {
     "fieldName" : "relation",
@@ -2328,8 +2349,8 @@
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand",
   "tableDescs" : [ {
-    "fieldName" : "dft",
-    "fieldExtractor" : "HudiDataSourceV2RelationTableExtractor",
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "HudiCatalogTableTableExtractor",
     "columnDesc" : null,
     "actionTypeDesc" : {
       "fieldName" : null,
