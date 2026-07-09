@@ -2046,6 +2046,8 @@
                 <spark.binary.version>3.4</spark.binary.version>
                 <delta.version>2.4.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2061,6 +2063,8 @@
                 <spark.binary.version>3.5</spark.binary.version>
                 <delta.version>3.3.1</delta.version>
                 <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -2079,11 +2083,10 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.artifact>hudi-spark${spark.binary.version}-bundle_${scala.binary.version}</hudi.artifact>
-                <!-- TODO: update once Paimon support Spark 4.0.
-                           paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
-                <paimon.artifact>paimon-common</paimon.artifact>
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.SparkLocalClusterTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
