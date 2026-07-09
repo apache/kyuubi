@@ -35,8 +35,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>In JDK 17 the Security Manager and related APIs were deprecated for removal (JEP 411). In JDK
  * 24 the Security Manager was permanently disabled (JEP 486). This class bridges {@code
- * Subject.getSubject()}, {@code Subject.doAs()}, and {@code AccessController.getContext()} to
- * their JDK 18+ replacements ({@code Subject.current()} and {@code Subject.callAs()}) using {@code
+ * Subject.getSubject()}, {@code Subject.doAs()}, and {@code AccessController.getContext()} to their
+ * JDK 18+ replacements ({@code Subject.current()} and {@code Subject.callAs()}) using {@code
  * MethodHandle} lookups resolved once at class load time.
  *
  * <p>Derived from Apache Hadoop's {@code SubjectUtil}, which is itself derived from Apache Calcite
@@ -54,7 +54,8 @@ public final class SubjectUtil {
 
   // "1.8" -> 8, "9" -> 9, "17" -> 17, etc.
   private static final int JAVA_SPEC_VER =
-      Math.max(8, Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[0]));
+      Math.max(
+          8, Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[0]));
 
   /** True if the current JVM copies the current JAAS subject into new threads automatically. */
   public static final boolean THREAD_INHERITS_SUBJECT = checkThreadInheritsSubject();
