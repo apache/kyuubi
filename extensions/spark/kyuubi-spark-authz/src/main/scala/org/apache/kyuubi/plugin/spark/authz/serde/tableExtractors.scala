@@ -321,6 +321,19 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
   }
 }
 
+/**
+ * Extracts a [[Table]] from a Hudi `HoodieCatalogTable` via its `table` field
+ * (a Spark `CatalogTable`). Used as a fallback for Hudi commands whose plan
+ * field was renamed across versions (e.g. `DeleteHoodieTableCommand.dft` in
+ * Hudi 1.0.x vs `query` in 1.2.0); the `catalogTable` field is stable.
+ */
+class HoodieCatalogTableTableExtractor extends TableExtractor {
+  override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
+    val catalogTable = invokeAs[CatalogTable](v1, "table")
+    lookupExtractor[CatalogTableTableExtractor].apply(spark, catalogTable)
+  }
+}
+
 class HudiMergeIntoTargetTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "targetTable") match {

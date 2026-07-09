@@ -2363,6 +2363,21 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false,
     "comment" : "Hudi"
+  }, {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "HoodieCatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : "Hudi"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi 1.2.0+ fallback"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],
