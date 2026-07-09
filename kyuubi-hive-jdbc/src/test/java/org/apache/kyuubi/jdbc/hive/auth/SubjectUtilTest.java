@@ -17,17 +17,63 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 
+import java.security.PrivilegedAction;
+import java.security.PrivilegedExceptionAction;
+import java.util.concurrent.CompletionException;
+import javax.security.auth.Subject;
 import org.junit.jupiter.api.Test;
 
 public class SubjectUtilTest {
 
   @Test
   void current_returnsNullWhenNoSubjectAssociated() {
-    // Outside of a Subject.doAs/callAs block there is no current subject.
-    // This verifies SubjectUtil.current() neither throws nor returns a spurious value.
     assertNull(assertDoesNotThrow(SubjectUtil::current));
+  }
+
+  @Test
+  void callAs_runsActionAndReturnsResult() {
+    Subject subject = new Subject();
+    String result = SubjectUtil.callAs(subject, () -> "hello");
+    assertEquals("hello", result);
+  }
+
+  @Test
+  void callAs_wrapsCheckedExceptionInCompletionException() {
+    Subject subject = new Subject();
+    Exception cause = new Exception("oops");
+    CompletionException ex =
+        assertThrows(
+            CompletionException.class,
+            () ->
+                SubjectUtil.callAs(
+                    subject,
+                    () -> {
+                      throw cause;
+                    }));
+    assertSame(cause, ex.getCause());
+  }
+
+  @Test
+  void doAs_privilegedAction_runsAndReturnsResult() {
+    Subject subject = new Subject();
+    String result = SubjectUtil.doAs(subject, (PrivilegedAction<String>) () -> "world");
+    assertEquals("world", result);
+  }
+
+  @Test
+  void doAs_privilegedExceptionAction_propagatesCheckedException() {
+    Subject subject = new Subject();
+    Exception cause = new Exception("checked");
+    assertThrows(
+        Exception.class,
+        () ->
+            SubjectUtil.doAs(
+                subject,
+                (PrivilegedExceptionAction<Void>)
+                    () -> {
+                      throw cause;
+                    }));
   }
 }
