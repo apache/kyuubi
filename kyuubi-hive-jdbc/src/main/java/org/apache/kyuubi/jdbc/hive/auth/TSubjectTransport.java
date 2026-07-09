@@ -39,7 +39,7 @@ public class TSubjectTransport extends TFilterTransport {
   @Override
   public void open() throws TTransportException {
     try {
-      Subject.doAs(
+      SubjectUtil.doAs(
           subject,
           (PrivilegedExceptionAction<Void>)
               () -> {
