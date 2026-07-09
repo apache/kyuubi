@@ -71,6 +71,7 @@ import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol;
 import org.apache.kyuubi.shaded.thrift.transport.THttpClient;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
+import org.apache.kyuubi.util.SubjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

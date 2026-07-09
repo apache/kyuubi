@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive.auth;
+package org.apache.kyuubi.util;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -39,8 +39,9 @@ import org.slf4j.LoggerFactory;
  * JDK 18+ replacements ({@code Subject.current()} and {@code Subject.callAs()}) using {@code
  * MethodHandle} lookups resolved once at class load time.
  *
- * <p>Derived from Apache Hadoop's {@code SubjectUtil}, which is itself derived from Apache Calcite
- * Avatica and the Jetty implementation.
+ * <p>Ported from Apache Hadoop 3.5.1 ({@code
+ * org.apache.hadoop.security.authentication.util.SubjectUtil}), HADOOP-19212 and HADOOP-19906,
+ * which is itself derived from Apache Calcite Avatica and the Jetty implementation.
  */
 public final class SubjectUtil {
   private static final Logger LOG = LoggerFactory.getLogger(SubjectUtil.class);
@@ -61,7 +62,7 @@ public final class SubjectUtil {
   public static final boolean THREAD_INHERITS_SUBJECT = checkThreadInheritsSubject();
 
   /**
-   * Hadoop-managed {@link InheritableThreadLocal} mirroring the active Subject for the duration of
+   * Kyuubi-managed {@link InheritableThreadLocal} mirroring the active Subject for the duration of
    * {@link #callAs} / {@link #doAs}. On JDK 22+ the JVM stopped propagating the Subject to newly
    * constructed threads via {@code AccessControlContext} (JEP 411 / 486), and the new {@code
    * ScopedValue}-based mechanism behind {@code Subject.current()} also does not inherit across
@@ -260,7 +261,7 @@ public final class SubjectUtil {
         LOG.trace("Get current Subject from JDK API directly");
         return fromJdk;
       }
-      LOG.trace("Get current Subject from Hadoop-managed InheritableThreadLocal");
+      LOG.trace("Get current Subject from Kyuubi-managed InheritableThreadLocal");
       return CURRENT_SUBJECT_TL.get();
     }
     return invokeJdkCurrent();

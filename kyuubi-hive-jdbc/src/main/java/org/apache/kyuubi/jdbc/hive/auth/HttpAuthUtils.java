@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive.auth;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import javax.security.auth.Subject;
+import org.apache.kyuubi.util.SubjectUtil;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;

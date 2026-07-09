@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive.auth;
+package org.apache.kyuubi.util;
 
 import static org.junit.jupiter.api.Assertions.*;
 
