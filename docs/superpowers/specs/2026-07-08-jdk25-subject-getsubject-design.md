@@ -52,10 +52,10 @@ The fallback branch compiles and links on all JDK versions. On JDK 25 it is neve
 
 Two callsites replaced with `SubjectUtil.current()`:
 
-| Method | Before | After |
-|--------|--------|-------|
-| `isHadoopUserGroupInformationDoAs()` line 925 | `Subject.getSubject(AccessController.getContext())` | `SubjectUtil.current()` |
-| `createSubject()` lines 1022–1023 | `AccessControlContext context = ...; Subject.getSubject(context)` | `SubjectUtil.current()` |
+|                    Method                     |                              Before                               |          After          |
+|-----------------------------------------------|-------------------------------------------------------------------|-------------------------|
+| `isHadoopUserGroupInformationDoAs()` line 925 | `Subject.getSubject(AccessController.getContext())`               | `SubjectUtil.current()` |
+| `createSubject()` lines 1022–1023             | `AccessControlContext context = ...; Subject.getSubject(context)` | `SubjectUtil.current()` |
 
 No import changes needed — `KyuubiConnection.java` uses a wildcard `import java.security.*;`; removing the two callsites leaves the wildcard intact with no dangling references.
 
@@ -67,7 +67,8 @@ The `SubjectUtil.current()` method has no branching business logic — it is a o
 
 ## Files Changed
 
-| File | Change |
-|------|--------|
-| `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/auth/SubjectUtil.java` | New |
+|                                        File                                        |                    Change                    |
+|------------------------------------------------------------------------------------|----------------------------------------------|
+| `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/auth/SubjectUtil.java` | New                                          |
 | `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/KyuubiConnection.java` | 2 callsites replaced, unused imports removed |
+

@@ -12,11 +12,11 @@
 
 ## File Map
 
-| Action | Path |
-|--------|------|
-| Create | `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/auth/SubjectUtil.java` |
+| Action |                                          Path                                          |
+|--------|----------------------------------------------------------------------------------------|
+| Create | `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/auth/SubjectUtil.java`     |
 | Create | `kyuubi-hive-jdbc/src/test/java/org/apache/kyuubi/jdbc/hive/auth/SubjectUtilTest.java` |
-| Modify | `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/KyuubiConnection.java` |
+| Modify | `kyuubi-hive-jdbc/src/main/java/org/apache/kyuubi/jdbc/hive/KyuubiConnection.java`     |
 
 ---
 
@@ -162,6 +162,7 @@ build/mvn test -pl kyuubi-hive-jdbc -am -Dtest=SubjectUtilTest -DwildcardSuites=
 ```
 
 Expected output includes:
+
 ```
 Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
 BUILD SUCCESS
@@ -187,60 +188,64 @@ git commit -m "feat: add SubjectUtil to bridge Subject.getSubject() for JDK 25"
 - [ ] **Step 1: Replace callsite in `isHadoopUserGroupInformationDoAs()` (line ~925)**
 
 Find this block:
+
 ```java
-  private boolean isHadoopUserGroupInformationDoAs() {
-    try {
-      @SuppressWarnings("unchecked")
-      Class<? extends Principal> HadoopUserClz =
-          (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
-      Subject subject = Subject.getSubject(AccessController.getContext());
-      return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
+private boolean isHadoopUserGroupInformationDoAs() {
+  try {
+    @SuppressWarnings("unchecked")
+    Class<? extends Principal> HadoopUserClz =
+        (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
+    Subject subject = Subject.getSubject(AccessController.getContext());
+    return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
+  } catch (ClassNotFoundException e) {
+    return false;
   }
+}
 ```
 
 Replace with:
+
 ```java
-  private boolean isHadoopUserGroupInformationDoAs() {
-    try {
-      @SuppressWarnings("unchecked")
-      Class<? extends Principal> HadoopUserClz =
-          (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
-      Subject subject = SubjectUtil.current();
-      return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
-    } catch (ClassNotFoundException e) {
-      return false;
-    }
+private boolean isHadoopUserGroupInformationDoAs() {
+  try {
+    @SuppressWarnings("unchecked")
+    Class<? extends Principal> HadoopUserClz =
+        (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
+    Subject subject = SubjectUtil.current();
+    return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
+  } catch (ClassNotFoundException e) {
+    return false;
   }
+}
 ```
 
 - [ ] **Step 2: Replace callsite in `createSubject()` (line ~1016)**
 
 Find this block:
+
 ```java
-  private Subject createSubject() {
-    if (isKeytabAuthMode()) {
-      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
-      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
-      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
-    } else if (isFromSubjectAuthMode()) {
-      AccessControlContext context = AccessController.getContext();
-      return Subject.getSubject(context);
-    } else if (isTgtCacheAuthMode()) {
+private Subject createSubject() {
+  if (isKeytabAuthMode()) {
+    String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+    String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+    return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
+  } else if (isFromSubjectAuthMode()) {
+    AccessControlContext context = AccessController.getContext();
+    return Subject.getSubject(context);
+  } else if (isTgtCacheAuthMode()) {
 ```
 
 Replace with:
+
 ```java
-  private Subject createSubject() {
-    if (isKeytabAuthMode()) {
-      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
-      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
-      return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
-    } else if (isFromSubjectAuthMode()) {
-      return SubjectUtil.current();
-    } else if (isTgtCacheAuthMode()) {
+private Subject createSubject() {
+  if (isKeytabAuthMode()) {
+    String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+    String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+    return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
+  } else if (isFromSubjectAuthMode()) {
+    return SubjectUtil.current();
+  } else if (isTgtCacheAuthMode()) {
 ```
 
 - [ ] **Step 3: Compile the module to catch any errors**
@@ -250,11 +255,13 @@ build/mvn -Pfast clean package -DskipTests -pl kyuubi-hive-jdbc -am 2>&1 | tail 
 ```
 
 Expected:
+
 ```
 BUILD SUCCESS
 ```
 
 If you see `cannot find symbol: SubjectUtil`, verify the import at the top of `KyuubiConnection.java`. Add:
+
 ```java
 import org.apache.kyuubi.jdbc.hive.auth.SubjectUtil;
 ```
@@ -287,6 +294,7 @@ dev/reformat 2>&1 | tail -10
 ```
 
 If any files were reformatted, stage and amend the previous commit or add a new one:
+
 ```bash
 git add -u
 git commit -m "style: reformat after JDK 25 Subject fix"
@@ -303,7 +311,9 @@ gh pr create \
 JDK 24 made `AccessController.getContext()` throw `UnsupportedOperationException` (JEP 486), and JDK 25 extended this to `Subject.getSubject()`. Both APIs are called in `KyuubiConnection.java` during Kerberos authentication setup, breaking JDBC connections on JDK 25 with:
 
 ```
+
 java.lang.UnsupportedOperationException: getSubject is not supported
+
 ```
 
 ## How was this patch tested?
@@ -318,3 +328,4 @@ Assisted-by: Claude:claude-sonnet-4-6
 EOF
 )"
 ```
+
