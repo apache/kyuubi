@@ -143,6 +143,25 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val SKIP_INFER_SORT_ORDERS =
+    buildConf("spark.sql.optimizer.skipInferRebalanceAndSortOrders.enabled")
+      .doc(s"When true and `${INFER_REBALANCE_AND_SORT_ORDERS.key}` is true, only infer the " +
+        s"rebalance partition columns and skip inferring the sort orders. Skipping the sort " +
+        s"avoids a local sort before writing when only the file layout from rebalance is wanted.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val INFER_REBALANCE_AND_SORT_ORDERS_WITH_CHEAP_COLUMNS =
+    buildConf("spark.sql.optimizer.inferRebalanceAndSortOrdersWithCheapColumns.enabled")
+      .doc(s"When true and `${INFER_REBALANCE_AND_SORT_ORDERS.key}` is true, only infer the " +
+        s"rebalance and sort columns when all inferred columns are cheap expressions, i.e. " +
+        s"attributes, foldable values, or field extractions over cheap expressions. This avoids " +
+        s"evaluating expensive expressions during the inferred shuffle and sort.")
+      .version("1.12.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS =
     buildConf("spark.sql.optimizer.inferRebalanceAndSortOrdersMaxColumns")
       .doc("The max columns of inferred columns.")

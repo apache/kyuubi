@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import scala.annotation.tailrec
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, UnaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, BoundReference, Expression, ExtractValue, NamedExpression, OuterReference, UnaryExpression}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftAnti, LeftOuter, LeftSemi, RightOuter}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Generate, LogicalPlan, Project, Sort, SubqueryAlias, View, Window}
@@ -53,7 +53,16 @@ object InferRebalanceAndSortOrders {
     }.toMap
   }
 
-  def infer(plan: LogicalPlan): Option[PartitioningAndOrdering] = {
+  def isCheap(e: Expression): Boolean = e match {
+    case _: Attribute | _: OuterReference | _: BoundReference => true
+    case _ if e.foldable => true
+    case _: Alias | _: ExtractValue => e.children.forall(isCheap)
+    case _ => false
+  }
+
+  def infer(
+      plan: LogicalPlan,
+      onlyInferWithCheapColumns: Boolean): Option[PartitioningAndOrdering] = {
     def candidateKeys(
         input: LogicalPlan,
         output: AttributeSet = AttributeSet.empty): Option[PartitioningAndOrdering] = {
@@ -107,10 +116,19 @@ object InferRebalanceAndSortOrders {
       }
     }
 
-    candidateKeys(plan).map { case (partitioning, ordering) =>
+    val partitioningAndSort = candidateKeys(plan).map { case (partitioning, ordering) =>
       (
         partitioning.filter(_.references.subsetOf(plan.outputSet)),
         ordering.filter(_.references.subsetOf(plan.outputSet)))
+    }
+    val allCheap = partitioningAndSort.exists {
+      case (partitionings, sorts) =>
+        partitionings.forall(isCheap) && sorts.forall(isCheap)
+    }
+    if (!onlyInferWithCheapColumns || allCheap) {
+      partitioningAndSort
+    } else {
+      None
     }
   }
 }
