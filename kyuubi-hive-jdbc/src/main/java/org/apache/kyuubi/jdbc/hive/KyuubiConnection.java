@@ -41,6 +41,7 @@ import javax.security.auth.Subject;
 import javax.security.sasl.Sasl;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.NoHttpResponseException;
@@ -80,6 +81,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
+  // Use an error-class SQLState for launch engine cancellation; 01000 is a warning class.
+  private static final String SQL_STATE_LAUNCH_ENGINE_CANCELED = "57014";
   public static int DEFAULT_ENGINE_LOG_THREAD_TIMEOUT = 10 * 1000;
 
   private String jdbcUriString;
@@ -208,6 +211,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         } catch (Exception ex) {
           // Swallow the exception
           LOG.debug("Error while closing the connection", ex);
+        }
+        if (ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0) {
+          // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
+          // thread flag so callers do not observe both an exception and an interrupted thread.
+          // When this exception reaches the caller, the current thread is not interrupted.
+          Thread.interrupted();
+          if (e instanceof KyuubiInterruptedException) {
+            throw (SQLException) e;
+          }
+          throw newLaunchEngineInterruptedException(e);
         }
         if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
           errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
@@ -1469,6 +1482,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // Poll on the operation status, till the operation is complete
     while (!launchEngineOpCompleted) {
       try {
+        checkInterruptedWhileLaunchingEngine();
         TGetOperationStatusResp statusResp = client.GetOperationStatus(statusReq);
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
@@ -1480,8 +1494,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
               engineLogInflight = false;
               break;
             case CANCELED_STATE:
-              // 01000 -> warning
-              throw new KyuubiSQLException("Launch engine was cancelled", "01000");
+              throw new KyuubiSQLException(
+                  "Launch engine was cancelled", SQL_STATE_LAUNCH_ENGINE_CANCELED);
             case TIMEDOUT_STATE:
               throw new SQLTimeoutException("Launch engine timeout");
             case ERROR_STATE:
@@ -1501,6 +1515,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       } catch (Exception e) {
         engineLogInflight = false;
         closeOnLaunchEngineFailure();
+        if (ExceptionUtils.indexOfType(e, InterruptedException.class) >= 0) {
+          // KyuubiInterruptedException is the public JDBC signal for this path. Clear the
+          // thread flag so callers do not observe both an exception and an interrupted thread.
+          // When this exception reaches the caller, the current thread is not interrupted.
+          Thread.interrupted();
+          if (e instanceof KyuubiInterruptedException) {
+            throw (KyuubiInterruptedException) e;
+          }
+          throw newLaunchEngineInterruptedException(e);
+        }
         if (e instanceof SQLException) {
           throw (SQLException) e;
         } else {
@@ -1508,6 +1532,21 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         }
       }
     }
+  }
+
+  private void checkInterruptedWhileLaunchingEngine() throws SQLException {
+    if (Thread.currentThread().isInterrupted()) {
+      // The interrupt is converted into a typed JDBC exception, so consume the flag here. The
+      // caller receives KyuubiInterruptedException while the current thread is not interrupted.
+      Thread.interrupted();
+      throw newLaunchEngineInterruptedException(
+          new InterruptedException("Interrupted while waiting for launch engine"));
+    }
+  }
+
+  private static KyuubiInterruptedException newLaunchEngineInterruptedException(Throwable cause) {
+    return new KyuubiInterruptedException(
+        "Interrupted while waiting for launch engine", SQL_STATE_LAUNCH_ENGINE_CANCELED, cause);
   }
 
   private void fetchLaunchEngineResult() {
