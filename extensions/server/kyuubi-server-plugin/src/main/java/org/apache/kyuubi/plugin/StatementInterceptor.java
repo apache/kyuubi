@@ -40,6 +40,10 @@ public interface StatementInterceptor {
   /** Invoked for each statement before operation creation and engine routing. */
   StatementInterceptResult beforeExecuteStatement(StatementInterceptContext context);
 
-  /** Called once when the Kyuubi server stops, to release resources. */
+  /**
+   * Called at most once after initialization is attempted, either when server startup fails or when
+   * the server stops. Implementations must also release resources allocated before {@link
+   * #initialize} throws.
+   */
   default void close() {}
 }
