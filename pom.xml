@@ -191,8 +191,8 @@
         <openai.sdk.version>4.30.0</openai.sdk.version>
         <victools.jsonschema.version>4.37.0</victools.jsonschema.version>
         <retrofit.version>2.9.0</retrofit.version>
-        <paimon.version>1.4.2</paimon.version>
-        <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+        <paimon.version>0.8.2</paimon.version>
+        <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
         <phoenix.version>6.0.0</phoenix.version>
         <postgresql.version>42.7.11</postgresql.version>
         <ojdbc.version>23.2.0.0</ojdbc.version>
@@ -2026,9 +2026,6 @@
                 <spark.binary.version>3.3</spark.binary.version>
                 <delta.version>2.3.0</delta.version>
                 <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
-                <!-- Paimon 1.4.x has known issues with Spark 3.3; keep 0.8.2 -->
-                <paimon.version>0.8.2</paimon.version>
-                <paimon.artifact>paimon-spark-${spark.binary.version}</paimon.artifact>
                 <!--
                   Iceberg drops support for Java 8 since 1.7.0, and drops support for Spark 3.3 since 1.8.0,
                   here we choose 1.6.1 to ensure that tests happy when activate both -Pjava-8 and -Pspark-3.3.
@@ -2081,6 +2078,8 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.SparkLocalClusterTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
@@ -2102,9 +2101,9 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- TODO: update once Paimon support Spark 4.1.
-                           paimon-spark-3.5 contains Scala 2.12 classes cause conflicts with Scala 2.13 -->
-                <paimon.artifact>paimon-common</paimon.artifact>
+                <!-- TODO: update once Paimon support Spark 4.1. -->
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
