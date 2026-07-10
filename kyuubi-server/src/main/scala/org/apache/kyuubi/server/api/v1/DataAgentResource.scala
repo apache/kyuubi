@@ -38,8 +38,13 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.client.api.v1.dto.{ApprovalRequest, ChatRequest}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURITY_ENABLED
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
+import org.apache.kyuubi.ha.client.{DataAgentSessionRoute, DiscoveryClientProvider}
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.ThreadUtils
@@ -50,8 +55,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
 
   import DataAgentResource._
 
-  private def verifySessionOwnership(session: KyuubiSessionImpl): Unit = {
-    val userName = fe.getSessionUser(Map.empty[String, String])
+  private def verifySessionOwnership(session: KyuubiSessionImpl, userName: String): Unit = {
     if (!fe.isAdministrator(userName) && session.user != userName) {
       throw new ForbiddenException(
         s"$userName is not allowed to access session ${session.handle}")
@@ -59,7 +63,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
   }
 
   // Keep auth failures as 4xx responses before any SSE bytes are sent.
-  private def resolveAndAuthorize(sessionHandleStr: String): KyuubiSessionImpl = {
+  private def parseSessionHandle(sessionHandleStr: String): SessionHandle = {
     val sessionHandle =
       try {
         SessionHandle.fromUUID(sessionHandleStr)
@@ -67,15 +71,95 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         case _: IllegalArgumentException =>
           throw new WebApplicationException("invalid sessionHandle", 400)
       }
-    val session =
-      try {
-        fe.be.sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
-      } catch {
-        case _: KyuubiSQLException =>
+    sessionHandle
+  }
+
+  private case class ResolvedClient(
+      client: KyuubiSyncThriftClient,
+      session: Option[KyuubiSessionImpl],
+      closeTransport: () => Unit)
+
+  private def routePath(sessionHandleStr: String): String =
+    DataAgentSessionRoute.path(fe.getConf.get(HA_NAMESPACE), sessionHandleStr)
+
+  private def routeExists(sessionHandleStr: String): Boolean =
+    DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
+      discovery.pathExists(routePath(sessionHandleStr))
+    }
+
+  private def resolveClient(sessionHandleStr: String): ResolvedClient = {
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
+    val userName = fe.getSessionUser(Map.empty[String, String])
+    fe.be.sessionManager.getSessionOption(sessionHandle) match {
+      case Some(session: KyuubiSessionImpl) =>
+        verifySessionOwnership(session, userName)
+        val timeout = fe.getConf.get(KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_TIMEOUT)
+        session.launchEngineOp.getBackgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
+        if (session.client == null) {
+          throw new WebApplicationException("Engine session is not ready", 503)
+        }
+        if (ServiceDiscovery.supportServiceDiscovery(fe.getConf) &&
+          !routeExists(sessionHandleStr)) {
+          try fe.be.closeSession(session.handle)
+          catch {
+            case NonFatal(e) => warn(s"Failed to clean up expired session ${session.handle}", e)
+          }
+          throw new WebApplicationException("session expired", 410)
+        }
+        ResolvedClient(session.client, Some(session), () => ())
+      case _ =>
+        if (!ServiceDiscovery.supportServiceDiscovery(fe.getConf)) {
           throw new WebApplicationException("session not found", 404)
-      }
-    verifySessionOwnership(session)
-    session
+        }
+        val route = DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
+          val path = routePath(sessionHandleStr)
+          if (discovery.pathNonExists(path, isPrefix = false)) {
+            throw new WebApplicationException("session not found", 404)
+          }
+          val found = DataAgentSessionRoute.decode(discovery.getData(path))
+          if (!fe.isAdministrator(userName) && found.user != userName) {
+            throw new WebApplicationException("session not found", 404)
+          }
+          val hostPort = discovery.getEngineByRefId(found.engineSpace, found.engineRefId)
+            .getOrElse {
+              discovery.delete(path)
+              throw new WebApplicationException("session expired", 410)
+            }
+          (found, hostPort)
+        }
+        val password = if (fe.getConf.get(ENGINE_SECURITY_ENABLED)) {
+          InternalSecurityAccessor.get().issueToken()
+        } else {
+          "anonymous"
+        }
+        val client = KyuubiSyncThriftClient.createAttachedClient(
+          route._1.user,
+          password,
+          route._2._1,
+          route._2._2,
+          fe.getConf,
+          sessionHandle)
+        ResolvedClient(client, None, () => client.closeTransport())
+    }
+  }
+
+  @GET
+  @Path("sessions/{sessionHandle}")
+  @Produces(Array(MediaType.APPLICATION_JSON))
+  def getSession(@PathParam("sessionHandle") sessionHandleStr: String): String = {
+    val resolved = resolveClient(sessionHandleStr)
+    try "{\"status\":\"ok\"}"
+    finally resolved.closeTransport()
+  }
+
+  @DELETE
+  @Path("sessions/{sessionHandle}")
+  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Unit = {
+    val resolved = resolveClient(sessionHandleStr)
+    resolved.session match {
+      case Some(session) => fe.be.closeSession(session.handle)
+      case None => resolved.client.closeSession()
+    }
   }
 
   @ApiResponse(
@@ -117,34 +201,17 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     }
 
     // Validate and authorize before engine startup; launching can be expensive.
-    val session = resolveAndAuthorize(sessionHandleStr)
-    val operationTimeoutMs = fe.getConf.get(KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_TIMEOUT)
-    val client: KyuubiSyncThriftClient =
+    val resolved =
       try {
-        val launchOp = session.launchEngineOp
-        try {
-          launchOp.getBackgroundHandle.get(operationTimeoutMs, TimeUnit.MILLISECONDS)
-        } catch {
-          case _: TimeoutException =>
-            sendPreflightSseError(response, "Engine did not start within timeout")
-            return
-          case e: ExecutionException =>
-            val errMsg = Option(e.getCause).map(_.getMessage).getOrElse("Engine launch failed")
-            sendPreflightSseError(response, errMsg)
-            return
-        }
-        val c = session.client
-        if (c == null) {
-          sendPreflightSseError(response, "Engine session is not ready after waiting")
-          return
-        }
-        c
+        resolveClient(sessionHandleStr)
       } catch {
         case NonFatal(e) =>
           error(s"Error processing chat for session $sessionHandleStr", e)
           if (!response.isCommitted) sendPreflightSseError(response, e.getMessage)
           return
       }
+    val client = resolved.client
+    val operationTimeoutMs = fe.getConf.get(KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_TIMEOUT)
 
     val stream = new SseStream(response)
     val deadlineAt = System.currentTimeMillis() + STREAM_MAX_DURATION_MS
@@ -175,6 +242,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
           warn(s"Op-submit pool rejected chat for session $sessionHandleStr (queue full)")
           stream.event("error", buildJsonMessage("Server is busy, please retry"))
           stream.event("done", "{}")
+          resolved.closeTransport()
           return
       }
 
@@ -220,6 +288,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         }
     } finally {
       if (opHandle != null) closeOperation(client, opHandle)
+      resolved.closeTransport()
     }
   }
 
@@ -245,11 +314,8 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       !REQUEST_ID_PATTERN.matcher(requestId).matches()) {
       throw new WebApplicationException("invalid requestId", 400)
     }
-    val session = resolveAndAuthorize(sessionHandleStr)
-    val client = session.client
-    if (client == null) {
-      throw new WebApplicationException("Engine session is not ready", 503)
-    }
+    val resolved = resolveClient(sessionHandleStr)
+    val client = resolved.client
 
     val statement = if (request.isApproved) {
       s"__approve:$requestId"
@@ -257,12 +323,13 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       s"__deny:$requestId"
     }
 
-    val opHandle = client.executeStatement(
-      statement,
-      Map.empty[String, String],
-      false,
-      60000L)
+    var opHandle: TOperationHandle = null
     try {
+      opHandle = client.executeStatement(
+        statement,
+        Map.empty[String, String],
+        false,
+        60000L)
       val rowSet = client.fetchResults(opHandle, FetchOrientation.FETCH_NEXT, 1, false)
       val rows = extractStringRows(rowSet)
       rows.headOption.getOrElse {
@@ -273,7 +340,8 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         JSON_MAPPER.writeValueAsString(node)
       }
     } finally {
-      closeOperation(client, opHandle)
+      if (opHandle != null) closeOperation(client, opHandle)
+      resolved.closeTransport()
     }
   }
 

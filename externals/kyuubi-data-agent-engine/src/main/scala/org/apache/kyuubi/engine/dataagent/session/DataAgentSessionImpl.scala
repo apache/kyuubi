@@ -51,6 +51,8 @@ class DataAgentSessionImpl(
         }
         throw e
     }
+    sessionManager.asInstanceOf[DataAgentSessionManager]
+      .registerRoute(handle.identifier.toString, user)
     info(s"The data agent session is started.")
   }
 
@@ -73,6 +75,8 @@ class DataAgentSessionImpl(
 
   override def close(): Unit = {
     try {
+      sessionManager.asInstanceOf[DataAgentSessionManager]
+        .unregisterRoute(handle.identifier.toString)
       dataAgentProvider.close(handle.identifier.toString)
     } finally {
       super.close()
