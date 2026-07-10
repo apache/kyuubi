@@ -37,10 +37,11 @@ private[kyuubi] class StatementInterceptContextImpl(
 private[kyuubi] object StatementInterception {
 
   /**
-   * Initialize interceptors in order. If an interceptor's initialize throws, the interceptors that
-   * were already initialized are closed in reverse order before the error is rethrown, so that a
-   * failed server startup does not leak resources (threads, connections, external clients) those
-   * interceptors created. Errors raised while closing are attached as suppressed exceptions.
+   * Initialize interceptors in order. If an interceptor's initialize throws, every interceptor
+   * whose initialization was attempted is closed in reverse order before the error is rethrown, so
+   * that a failed server startup does not leak resources (threads, connections, external clients)
+   * allocated before the failure. Errors raised while closing are attached as suppressed
+   * exceptions.
    */
   def initialize(
       interceptors: Seq[StatementInterceptor],
@@ -48,8 +49,8 @@ private[kyuubi] object StatementInterception {
     val initialized = new scala.collection.mutable.ArrayBuffer[StatementInterceptor]()
     try {
       interceptors.foreach { interceptor =>
-        interceptor.initialize(conf)
         initialized += interceptor
+        interceptor.initialize(conf)
       }
     } catch {
       case initError: Throwable =>
@@ -96,9 +97,9 @@ private[kyuubi] object StatementInterception {
         case StatementInterceptResult.Action.PROCEED => // keep the current statement
         case StatementInterceptResult.Action.REWRITE => current = result.statement()
         case StatementInterceptResult.Action.REJECT =>
-          // SQLState 42000 = "Syntax Error or Access Rule Violation"; lets JDBC/BI clients tell a
-          // policy rejection apart from a syntax error programmatically, not just by the message.
-          throw KyuubiSQLException(result.message(), sqlState = "42000")
+          // SQLState 42501 = "Insufficient Privilege". Use the specific access-rule subclass so
+          // clients can distinguish a policy rejection from the generic syntax-error class 42000.
+          throw KyuubiSQLException(result.message(), sqlState = "42501")
       }
     }
     current

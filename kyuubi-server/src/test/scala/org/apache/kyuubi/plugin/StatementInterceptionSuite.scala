@@ -67,7 +67,7 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     val i = interceptor(_ => StatementInterceptResult.reject("blocked by policy"))
     val e = intercept[KyuubiSQLException](run(Seq(i), "SELECT 1"))
     assert(e.getMessage.contains("blocked by policy"))
-    assert(e.getSQLState === "42000")
+    assert(e.getSQLState === "42501")
   }
 
   test("interceptors run in order and rewrites chain") {
@@ -136,7 +136,7 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     intercept[IllegalArgumentException](StatementInterceptResult.reject(""))
   }
 
-  test("initialize closes already-initialized interceptors in reverse order on failure") {
+  test("initialize closes attempted interceptors in reverse order on failure") {
     val closed = new java.util.concurrent.CopyOnWriteArrayList[String]()
     def okInterceptor(name: String): StatementInterceptor = new StatementInterceptor {
       override def beforeExecuteStatement(
@@ -158,8 +158,7 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
         java.util.Collections.emptyMap[String, String]())
     }
     assert(e.getMessage.contains("init failed"))
-    // already-initialized are closed in reverse; the one that failed init is not closed
-    assert(closed.asScala.toList === List("b", "a"))
+    assert(closed.asScala.toList === List("failing", "b", "a"))
   }
 
   test("run is thread-safe under concurrent invocation") {
