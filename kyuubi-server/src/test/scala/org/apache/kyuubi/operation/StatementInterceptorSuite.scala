@@ -33,6 +33,7 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
 
   override protected def jdbcUrl: String =
     s"jdbc:kyuubi://${server.frontendServices.head.connectionUrl}/;"
+  override protected val URL_PREFIX: String = "jdbc:kyuubi://"
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
