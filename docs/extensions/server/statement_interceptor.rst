@@ -20,9 +20,9 @@ Intercept Statements with Custom Statement Interceptor
 
 .. caution:: unstable
 
-Kyuubi supports intercepting interactive statements on the server before they are routed to the engine, through custom statement interceptors. As a unified gateway, Kyuubi can host this governance once at the server layer instead of having every engine reimplement it, so administrators can inspect, reject, or rewrite each statement without forking Kyuubi or writing the same logic for Spark, Flink, Trino, and JDBC separately. Typical use cases include rule-based SQL guards, authorization, risky-statement interception, auditing, and SQL rewriting.
+Kyuubi supports intercepting interactive statements on the server before they are routed to the engine, through custom statement interceptors. As a unified gateway, Kyuubi can host this governance once at the server layer instead of having every engine reimplement it, so administrators can inspect, reject, or rewrite each statement without forking Kyuubi or writing the same logic for Spark, Flink, Trino, and JDBC separately. Typical use cases include rule-based SQL guards, calling an external policy service, risky-statement interception, auditing, and SQL rewriting.
 
-The interceptor is a complement to, not a replacement for, the existing extension points such as custom authentication, ``SessionConfAdvisor``, event handlers, or Spark AuthZ.
+The interceptor sees statement text and gateway-level context, not an engine's analyzed plan or resolved objects. It can enforce text- or external-policy-based authorization, but it is not a replacement for semantic authorization such as Spark AuthZ. It also complements the existing extension points such as custom authentication, ``SessionConfAdvisor``, and event handlers.
 
 The Plugin Interface
 --------------------
@@ -42,7 +42,8 @@ A single instance of each interceptor is created per Kyuubi server via its zero-
      // Invoked for each statement before operation creation and engine routing.
      StatementInterceptResult beforeExecuteStatement(StatementInterceptContext context);
 
-     // Called once when the server stops, to release resources.
+     // Called at most once after initialization is attempted, either during failed startup
+     // or when the server stops. It must release resources allocated before initialize throws.
      default void close() {}
    }
 
@@ -91,7 +92,7 @@ Interceptors run in the configured order. The execution semantics are:
 - the chain starts from the original statement;
 - ``PROCEED`` keeps the current statement and passes it to the next interceptor;
 - ``REWRITE`` replaces the current statement and passes the new one to the next interceptor and ultimately to the engine;
-- ``REJECT`` stops the chain immediately, no operation is created, and the client receives an error carrying SQLState ``42000`` (access rule violation), so clients can tell a policy rejection from a syntax error;
+- ``REJECT`` stops the chain immediately, no operation is created, and the client receives an error carrying SQLState ``42501`` (insufficient privilege), so clients can tell a policy rejection from a generic syntax error;
 - if an interceptor throws or returns ``null``, the statement fails (fail-closed).
 
 The interceptors are eagerly loaded and initialized at server startup, so a misconfigured or failing interceptor fails the server fast rather than at the first query. They are closed in reverse order when the server stops.

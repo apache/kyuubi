@@ -18,11 +18,12 @@
 package org.apache.kyuubi.operation
 
 import java.sql.SQLException
-import java.util.{Locale, UUID}
+import java.util.Locale
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.plugin.{StatementInterceptContext, StatementInterceptor, StatementInterceptResult}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TStatusCode}
 
 /**
  * End-to-end coverage of statement interceptors over the real JDBC -> server -> engine path.
@@ -82,13 +83,21 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
   }
 
   test("the statement id is exposed to the interceptor") {
-    withJdbcStatement() { statement =>
-      val rs = statement.executeQuery("SELECT 'echo_stmt_id' AS x")
-      assert(rs.next())
-      // The interceptor rewrote the query to echo back context.statementId(); it must be a UUID.
-      val statementId = rs.getString("sid")
-      assert(UUID.fromString(statementId).toString === statementId)
-      assert(!rs.next())
+    withSessionHandle { (client, sessionHandle) =>
+      val request = new TExecuteStatementReq(sessionHandle, "SELECT 'echo_stmt_id' AS x")
+      request.setRunAsync(false)
+      val response = client.ExecuteStatement(request)
+      assert(response.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val operationHandle = response.getOperationHandle
+      val fetchRequest = new TFetchResultsReq(
+        operationHandle,
+        TFetchOrientation.FETCH_NEXT,
+        1)
+      val fetchResponse = client.FetchResults(fetchRequest)
+      assert(fetchResponse.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val statementId = fetchResponse.getResults.getColumns.get(0).getStringVal.getValues.get(0)
+      assert(statementId === OperationHandle(operationHandle).identifier.toString)
     }
   }
 

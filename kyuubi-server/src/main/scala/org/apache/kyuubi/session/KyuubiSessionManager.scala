@@ -91,7 +91,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     initEngineStartupProcessSemaphore(conf)
     super.initialize(conf)
     // Initialize interceptors after super.initialize so a failure there does not leave them open.
-    // StatementInterception.initialize closes any already-initialized interceptors on its own
+    // StatementInterception.initialize closes every attempted interceptor on its own
     // failure, and the field is assigned only after all succeed, so stop() never double-closes.
     val loadedInterceptors = PluginLoader.loadStatementInterceptors(conf)
     // conf.getAll returns a fresh immutable snapshot whose asJava view is already read-only.
@@ -110,7 +110,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   private def closeStatementInterceptors(): Unit = {
-    statementInterceptors.reverse.foreach { interceptor =>
+    val interceptorsToClose = synchronized {
+      val current = statementInterceptors
+      statementInterceptors = Nil
+      current
+    }
+    interceptorsToClose.reverse.foreach { interceptor =>
       try {
         interceptor.close()
       } catch {
