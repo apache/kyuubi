@@ -22,6 +22,7 @@ import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
+import org.apache.kyuubi.util.SubjectUtil;
 
 /**
  * This is used on the client side, where the API explicitly opens transport to the server using the
@@ -39,7 +40,7 @@ public class TSubjectTransport extends TFilterTransport {
   @Override
   public void open() throws TTransportException {
     try {
-      Subject.doAs(
+      SubjectUtil.doAs(
           subject,
           (PrivilegedExceptionAction<Void>)
               () -> {

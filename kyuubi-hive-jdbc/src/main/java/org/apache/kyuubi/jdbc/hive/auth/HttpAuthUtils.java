@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive.auth;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import javax.security.auth.Subject;
+import org.apache.kyuubi.util.SubjectUtil;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
@@ -35,7 +36,7 @@ public final class HttpAuthUtils {
   public static String getKerberosServiceTicket(
       String serverPrinciple, String host, Subject loggedInSubject) throws Exception {
     String spn = KerberosUtils.canonicalPrincipal(serverPrinciple, host);
-    return Subject.doAs(loggedInSubject, new HttpKerberosClientAction(spn));
+    return SubjectUtil.doAs(loggedInSubject, new HttpKerberosClientAction(spn));
   }
 
   private HttpAuthUtils() {

@@ -71,6 +71,7 @@ import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol;
 import org.apache.kyuubi.shaded.thrift.transport.THttpClient;
 import org.apache.kyuubi.shaded.thrift.transport.TTransport;
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException;
+import org.apache.kyuubi.util.SubjectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -922,7 +923,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       @SuppressWarnings("unchecked")
       Class<? extends Principal> HadoopUserClz =
           (Class<? extends Principal>) ClassUtils.getClass("org.apache.hadoop.security.User");
-      Subject subject = Subject.getSubject(AccessController.getContext());
+      Subject subject = SubjectUtil.current();
       return subject != null && !subject.getPrincipals(HadoopUserClz).isEmpty();
     } catch (ClassNotFoundException e) {
       return false;
@@ -1019,8 +1020,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
       return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
     } else if (isFromSubjectAuthMode()) {
-      AccessControlContext context = AccessController.getContext();
-      return Subject.getSubject(context);
+      return SubjectUtil.current();
     } else if (isTgtCacheAuthMode()) {
       String ticketCache = sessConfMap.getOrDefault(AUTH_KYUUBI_CLIENT_TICKET_CACHE, "");
       return KerberosAuthenticationManager.getTgtCacheAuthentication(ticketCache).getSubject();
