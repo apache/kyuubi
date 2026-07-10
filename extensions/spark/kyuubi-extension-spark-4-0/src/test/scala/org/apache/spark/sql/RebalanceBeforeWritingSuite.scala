@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationComm
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.{InferRebalanceAndSortOrders, KyuubiSQLConf}
 
 class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
@@ -299,6 +299,91 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
                |ON input1.col1 = input2.col1
                |""".stripMargin)
           checkShuffleAndSort(df7.queryExecution.analyzed, 1, 1)
+        }
+      }
+    }
+  }
+
+  test("Skip inferring sort orders") {
+    def checkShuffleAndSort(dataWritingCommand: LogicalPlan, sSize: Int, rSize: Int): Unit = {
+      assert(dataWritingCommand.isInstanceOf[DataWritingCommand])
+      val plan = dataWritingCommand.asInstanceOf[DataWritingCommand].query
+      assert(plan.collect { case s: Sort => s }.size == sSize)
+      assert(plan.collect {
+        case r: RebalancePartitions if r.partitionExpressions.size == rSize => r
+      }.nonEmpty || rSize == 0)
+    }
+
+    withTable("t", "input1", "input2") {
+      sql(s"CREATE TABLE t (c1 int, c2 long) USING PARQUET PARTITIONED BY (p string)")
+      sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
+      sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+
+      val insert =
+        s"""
+           |INSERT INTO TABLE t PARTITION(p='a')
+           |SELECT /*+ broadcast(input2) */ input1.col1, input2.col1
+           |FROM input1
+           |JOIN input2
+           |ON input1.col1 = input2.col1
+           |""".stripMargin
+
+      // when skip is disabled (default), both rebalance and sort orders are inferred
+      withSQLConf(
+        KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true",
+        KyuubiSQLConf.SKIP_INFER_SORT_ORDERS.key -> "false") {
+        checkShuffleAndSort(sql(insert).queryExecution.analyzed, 1, 1)
+      }
+
+      // when skip is enabled, only the rebalance is inferred and the sort is skipped
+      withSQLConf(
+        KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS.key -> "true",
+        KyuubiSQLConf.SKIP_INFER_SORT_ORDERS.key -> "true") {
+        checkShuffleAndSort(sql(insert).queryExecution.analyzed, 0, 1)
+      }
+    }
+  }
+
+  test("Infer rebalance and sort orders only with cheap columns") {
+    withTable("input1", "input2") {
+      sql(s"CREATE TABLE input1 USING PARQUET AS SELECT * FROM VALUES(1,2),(1,3)")
+      sql(s"CREATE TABLE input2 USING PARQUET AS SELECT * FROM VALUES(1,3),(1,3)")
+
+      // the join keys `input1.col1 + 1` / `input2.col1 + 1` are not cheap expressions
+      val expensivePlan = sql(
+        s"""
+           |SELECT input1.col1, input2.col1
+           |FROM input1
+           |JOIN input2
+           |ON input1.col1 + 1 = input2.col1 + 1
+           |""".stripMargin).queryExecution.analyzed
+
+      // when only cheap columns are allowed, the expensive keys are not inferred
+      assert(InferRebalanceAndSortOrders.infer(expensivePlan, true).isEmpty)
+      // when the cheap-column restriction is disabled, the expensive keys are inferred
+      InferRebalanceAndSortOrders.infer(expensivePlan, false) match {
+        case Some((partitioning, ordering)) =>
+          assert(partitioning.nonEmpty)
+          assert(ordering.nonEmpty)
+        case None => fail("expected inferred columns when cheap-column restriction is disabled")
+      }
+
+      // the join keys `input1.col1` / `input2.col1` are cheap attributes
+      val cheapPlan = sql(
+        s"""
+           |SELECT input1.col1, input2.col1
+           |FROM input1
+           |JOIN input2
+           |ON input1.col1 = input2.col1
+           |""".stripMargin).queryExecution.analyzed
+
+      // cheap columns are inferred regardless of the restriction
+      Seq(true, false).foreach { onlyCheap =>
+        InferRebalanceAndSortOrders.infer(cheapPlan, onlyCheap) match {
+          case Some((partitioning, ordering)) =>
+            assert(partitioning.nonEmpty)
+            assert(ordering.nonEmpty)
+          case None => fail(s"expected inferred columns when onlyCheap=$onlyCheap")
         }
       }
     }
