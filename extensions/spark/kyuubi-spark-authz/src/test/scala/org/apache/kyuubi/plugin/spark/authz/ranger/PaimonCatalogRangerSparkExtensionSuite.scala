@@ -551,12 +551,21 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("Changing Column Type") {
     withCleanTmpResources(Seq(
       (s"$catalogV2.$namespace1.$table1", "table"))) {
-      val createTable = createTableSql(namespace1, table1)
-      doAs(admin, sql(createTable))
+      doAs(admin) {
+        sql(
+          s"""
+             |CREATE TABLE IF NOT EXISTS $catalogV2.$namespace1.$table1
+             |(id int, age int)
+             |USING paimon
+             |OPTIONS (
+             | 'primary-key' = 'id'
+             |)
+             |""".stripMargin)
+      }
       val changingColumnTypeSql =
         s"""
            |ALTER TABLE $catalogV2.$namespace1.$table1
-           |ALTER COLUMN name TYPE STRING
+           |ALTER COLUMN age TYPE BIGINT
            |""".stripMargin
 
       interceptEndsWith[AccessControlException] {
