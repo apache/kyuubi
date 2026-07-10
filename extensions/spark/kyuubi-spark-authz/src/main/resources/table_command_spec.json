@@ -57,6 +57,27 @@
     "comment" : ""
   } ]
 }, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumns",
+  "tableDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : ""
+  } ],
+  "opType" : "ALTERTABLE_ADDCOLS",
+  "queryDescs" : [ ],
+  "uriDescs" : [ {
+    "fieldName" : "child",
+    "fieldExtractor" : "ResolvedTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
   "tableDescs" : [ {
     "fieldName" : "ident",
@@ -2342,6 +2363,21 @@
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false,
     "comment" : "Hudi"
+  }, {
+    "fieldName" : "catalogTable",
+    "fieldExtractor" : "HoodieCatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : {
+      "fieldName" : null,
+      "fieldExtractor" : null,
+      "actionType" : "UPDATE",
+      "comment" : "Hudi"
+    },
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : false,
+    "comment" : "Hudi 1.2.0+ fallback"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],

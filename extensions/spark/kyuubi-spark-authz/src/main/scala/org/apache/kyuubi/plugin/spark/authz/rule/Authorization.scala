@@ -43,6 +43,21 @@ object Authorization {
 
   val KYUUBI_AUTHZ_TAG = TreeNodeTag[Unit]("__KYUUBI_AUTHZ_TAG")
 
+  /**
+   * Clear the authz tag from all nodes in the plan. This is injected as a resolution rule
+   * to strip tags that leaked from a previous query's optimizer into Spark's cached catalog
+   * nodes (e.g. `LogicalRelation` instances reused across queries on Spark 4.0+). Without
+   * this, `buildQuery` would skip privilege extraction for those nodes, bypassing authz.
+   */
+  object RuleClearAuthzTag extends Rule[LogicalPlan] {
+    override def apply(plan: LogicalPlan): LogicalPlan = {
+      plan.transformDown { case p =>
+        p.unsetTagValue(KYUUBI_AUTHZ_TAG)
+        p
+      }
+    }
+  }
+
   def markAllNodesAuthChecked(plan: LogicalPlan): LogicalPlan = {
     plan.transformDown { case p =>
       p.setTagValue(KYUUBI_AUTHZ_TAG, ())

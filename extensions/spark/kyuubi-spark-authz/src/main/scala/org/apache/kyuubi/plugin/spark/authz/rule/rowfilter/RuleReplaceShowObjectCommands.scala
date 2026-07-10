@@ -34,7 +34,8 @@ object RuleReplaceShowObjectCommands extends Rule[LogicalPlan] {
     case r: RunnableCommand if r.nodeName == "ShowTablesCommand" => FilteredShowTablesCommand(r)
     case n: LogicalPlan if n.nodeName == "ShowTables" =>
       ObjectFilterPlaceHolder(n)
-    case n: LogicalPlan if n.nodeName == "ShowNamespaces" =>
+    case n: LogicalPlan
+        if n.nodeName == "ShowNamespaces" || n.nodeName == "ShowNamespacesCommand" =>
       ObjectFilterPlaceHolder(n)
     case r: RunnableCommand if r.nodeName == "ShowFunctionsCommand" =>
       FilteredShowFunctionsCommand(r)

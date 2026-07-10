@@ -238,13 +238,20 @@ object HudiCommands extends CommandSpecs[TableCommandSpec] {
   val DeleteHoodieTableCommand = {
     val cmd = "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand"
     val actionTypeDesc = ActionTypeDesc(actionType = Some(UPDATE), comment = "Hudi")
-    val tableDesc =
+    val dftDesc =
       TableDesc(
         "dft",
         classOf[HudiDataSourceV2RelationTableExtractor],
         actionTypeDesc = Some(actionTypeDesc),
         comment = "Hudi")
-    TableCommandSpec(cmd, Seq(tableDesc))
+    // Hudi 1.2.0+ renamed dft to query; catalogTable is stable across versions
+    val catalogTableDesc =
+      TableDesc(
+        "catalogTable",
+        classOf[HoodieCatalogTableTableExtractor],
+        actionTypeDesc = Some(actionTypeDesc),
+        comment = "Hudi 1.2.0+ fallback")
+    TableCommandSpec(cmd, Seq(dftDesc, catalogTableDesc))
   }
 
   val UpdateHoodieTableCommand = {

@@ -535,7 +535,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   test("table stats must be specified") {
     val table = "hive_src"
     withCleanTmpResources(Seq((table, "table"))) {
-      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $table (id int)"))
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $table (id int) STORED AS TEXTFILE"))
       doAs(
         admin, {
           val hiveTableRelation = sql(s"SELECT * FROM $table")
@@ -1170,12 +1170,17 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   }
 
   test("LoadDataCommand") {
+    // Spark 4.0 rejects `LOAD DATA` for datasource tables, so make the table Hive-native
+    // (STORED AS TEXTFILE); the CommandResult unwrap then lets RuleAuthorization authorize
+    // LoadDataCommand before eager execution.
     val db1 = defaultDb
     val table1 = "table1"
     withSingleCallEnabled {
       withTempDir { path =>
         withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
-          doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
+          doAs(
+            admin,
+            sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int) STORED AS TEXTFILE"))
           val loadDataSql =
             s"""
                |LOAD DATA LOCAL INPATH '$path'
@@ -1323,6 +1328,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
               s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
                 s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
                 s"[write] privilege on [[$path, $path/]]"
+            } else if (isSparkV40OrGreater) {
+              // Spark 4.0 no longer propagates CTAS output columns into the create privilege
+              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
+                s"[create] privilege on [$db1/$table2], " +
+                s"[write] privilege on [[file://$path, file://$path/]]"
             } else {
               s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
                 s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +

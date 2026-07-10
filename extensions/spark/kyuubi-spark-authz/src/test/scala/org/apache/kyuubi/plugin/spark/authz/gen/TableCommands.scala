@@ -71,6 +71,14 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     AddColumns.copy(classname = cmd)
   }
 
+  // SPARK-43995 (Spark 4.0) renames the v2 `ALTER TABLE ... ALTER COLUMN` command from
+  // `AlterColumn` to `AlterColumns`, wrapping a seq of `AlterColumnSpec` changes. The table
+  // is still carried in `child` as a `ResolvedTable`, so it reuses the AddColumns spec.
+  val AlterColumns = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterColumns"
+    AddColumns.copy(classname = cmd)
+  }
+
   val DropColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.DropColumns"
     AddColumns.copy(classname = cmd)
@@ -683,6 +691,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     TruncatePartition,
     AddColumns,
     AlterColumn,
+    AlterColumns,
     DropColumns,
     ReplaceColumns,
     RenameColumn,

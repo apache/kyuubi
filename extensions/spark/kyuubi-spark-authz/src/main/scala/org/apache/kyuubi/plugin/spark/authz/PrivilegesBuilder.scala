@@ -296,9 +296,12 @@ object PrivilegesBuilder {
   def build(
       plan: LogicalPlan,
       spark: SparkSession): PrivilegesAndOpType = {
+    // Spark 4.0 wraps eagerly-executed commands (e.g. CALL) in CommandResult; unwrap so the
+    // underlying command is authorized and its privileges are extracted.
+    val plan0 = unwrapCommandResult(plan)
     val inputObjs = new ArrayBuffer[PrivilegeObject]
     val outputObjs = new ArrayBuffer[PrivilegeObject]
-    val opType = plan match {
+    val opType = plan0 match {
       case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowTables" =>
         OperationType.SHOWTABLES
       case ObjectFilterPlaceHolder(child) if child.nodeName == "ShowNamespaces" =>
@@ -315,9 +318,12 @@ object PrivilegesBuilder {
         OperationType.EXPLAIN
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
+      // Spark 4.0 made some v2 commands (e.g. `Call`) no longer extend `Command`; dispatch
+      // them via the spec table as long as the className is recognized.
+      case cmd if isKnownTableCommand(cmd) => buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
-        buildQuery(Project(plan.output, plan), inputObjs, spark = spark)
+        buildQuery(Project(plan0.output, plan0), inputObjs, spark = spark)
         OperationType.QUERY
     }
     (inputObjs, outputObjs, opType)

@@ -36,7 +36,7 @@ trait SparkSessionProvider {
   protected val extension: SparkSessionExtensions => Unit = _ => ()
   protected val sqlExtensions: String = ""
 
-  protected val extraSparkConf: SparkConf = new SparkConf()
+  protected def extraSparkConf: SparkConf = new SparkConf()
 
   protected val useMysqlEnv: Boolean = false
 

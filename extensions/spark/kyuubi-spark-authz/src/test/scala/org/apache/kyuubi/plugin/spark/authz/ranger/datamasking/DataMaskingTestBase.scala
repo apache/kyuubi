@@ -23,6 +23,7 @@ import scala.util.Try
 
 // scalastyle:off
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.funsuite.AnyFunSuite
@@ -38,6 +39,15 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
 trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with BeforeAndAfterAll {
 // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
+
+  // SPARK-44444 (Spark 4.0) enables ANSI SQL mode by default. Under ANSI mode,
+  // AnsiStringPromotionTypeCoercion resolves coalesce/union of a masked STRING column
+  // and an INT literal/column to LongType (casting the md5 string to bigint) instead of
+  // StringType, causing CAST_INVALID_INPUT at runtime for MASK_HASH'd columns.
+  // Disable ANSI mode here until the data masking rule is ANSI-compatible.
+  // TODO: support ANSI SQL mode in the data masking rule.
+  override protected def extraSparkConf: SparkConf =
+    super.extraSparkConf.set("spark.sql.ansi.enabled", "false")
 
   private def setup(): Unit = {
     sql(s"CREATE TABLE IF NOT EXISTS default.src" +

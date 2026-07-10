@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
+import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.RuleClearAuthzTag
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.expression.RuleApplyTypeOfMarker
@@ -49,6 +50,10 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     // because ConstantFolding will optimize deterministic UDFs with foldable
     // inputs (e.g., literals), replacing them with their results and bypassing permission checks.
     v1.injectCheckRule(RuleFunctionAuthorization)
+    // Clear leaked authz tags from cached catalog nodes after resolution completes and
+    // before the optimizer runs. The tag is only set by optimizer rules, so a single
+    // post-hoc pass is sufficient - no need for fixed-point iteration.
+    v1.injectPostHocResolutionRule(_ => RuleClearAuthzTag)
     v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
     v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
     v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)

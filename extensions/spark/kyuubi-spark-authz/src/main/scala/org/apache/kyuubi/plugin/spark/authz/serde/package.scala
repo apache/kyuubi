@@ -101,12 +101,32 @@ package object serde {
   }
 
   def operationType(plan: LogicalPlan): OperationType = {
-    val classname = plan.getClass.getName
+    val effective = unwrapCommandResult(plan)
+    val classname = effective.getClass.getName
     TABLE_COMMAND_SPECS.get(classname)
       .orElse(DB_COMMAND_SPECS.get(classname))
       .orElse(FUNCTION_COMMAND_SPECS.get(classname))
       .map(s => s.operationType)
       .getOrElse(QUERY)
+  }
+
+  /**
+   * Spark 4.0 eagerly executes `CALL` procedures during analysis and rewrites the `Call`
+   * logical node into a `CommandResult` whose `commandLogicalPlan` field carries the
+   * original command. Restore that inner command so the spec-driven authorization and
+   * privilege extraction can see it. No-op on Spark 3.x where `CommandResult` is absent.
+   */
+  def unwrapCommandResult(plan: LogicalPlan): LogicalPlan = {
+    if (plan != null && plan.getClass.getName ==
+        "org.apache.spark.sql.catalyst.plans.logical.CommandResult") {
+      try {
+        getField[LogicalPlan](plan, "commandLogicalPlan")
+      } catch {
+        case _: Exception => plan
+      }
+    } else {
+      plan
+    }
   }
 
   /**
