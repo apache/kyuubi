@@ -50,8 +50,10 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     // because ConstantFolding will optimize deterministic UDFs with foldable
     // inputs (e.g., literals), replacing them with their results and bypassing permission checks.
     v1.injectCheckRule(RuleFunctionAuthorization)
-    // Clear leaked authz tags from cached catalog nodes before any authz resolution rule runs.
-    v1.injectResolutionRule(_ => RuleClearAuthzTag)
+    // Clear leaked authz tags from cached catalog nodes after resolution completes and
+    // before the optimizer runs. The tag is only set by optimizer rules, so a single
+    // post-hoc pass is sufficient — no need for fixed-point iteration.
+    v1.injectPostHocResolutionRule(_ => RuleClearAuthzTag)
     v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
     v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
     v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)
