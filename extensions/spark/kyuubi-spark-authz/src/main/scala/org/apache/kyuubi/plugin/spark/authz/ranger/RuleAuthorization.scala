@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 import scala.collection.mutable
 
 import org.apache.ranger.plugin.policyengine.RangerAccessRequest
+import org.apache.ranger.plugin.util.RangerPerfTracer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
@@ -31,55 +32,70 @@ import org.apache.kyuubi.plugin.spark.authz.rule.Authorization
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
+  private val PERF_SPARKAUTH_REQUEST_LOG =
+    RangerPerfTracer.getPerfLogger("sparkauth.request")
+
   override def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
-    val auditHandler = new SparkRangerAuditHandler
-    val ugi = getAuthzUgi(spark.sparkContext)
-    val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
-
-    // Use a HashSet to deduplicate the same AccessResource and AccessType, the requests will be all
-    // the non-duplicate requests and in the same order as the input requests.
-    val requests = new mutable.ArrayBuffer[AccessRequest]()
-    val requestsSet = new mutable.HashSet[(AccessResource, AccessType)]()
-
-    def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
-      objects.foreach { obj =>
-        val resource = AccessResource(obj, opType)
-        val accessType = ranger.AccessType(obj, opType, isInput)
-        if (accessType != AccessType.NONE && !requestsSet.contains((resource, accessType))) {
-          requests += AccessRequest(resource, ugi, opType, accessType)
-          requestsSet.add(resource, accessType)
-        }
-      }
+    val perf = if (RangerPerfTracer.isPerfTraceEnabled(PERF_SPARKAUTH_REQUEST_LOG)) {
+      RangerPerfTracer.getPerfTracer(
+        PERF_SPARKAUTH_REQUEST_LOG,
+        "RuleAuthorization.checkPrivileges()")
+    } else {
+      null
     }
 
-    addAccessRequest(inputs, isInput = true)
-    addAccessRequest(outputs, isInput = false)
+    try {
+      val auditHandler = new SparkRangerAuditHandler
+      val ugi = getAuthzUgi(spark.sparkContext)
+      val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
 
-    val requestArrays = requests.map { request =>
-      val resource = request.getResource.asInstanceOf[AccessResource]
-      resource.objectType match {
-        case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
-          resource.getColumns.map { col =>
-            val cr =
-              AccessResource(
-                COLUMN,
-                resource.getDatabase,
-                resource.getTable,
-                col,
-                Option(resource.getOwnerUser),
-                resource.catalog)
-            AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
+      // Use a HashSet to deduplicate the same AccessResource and AccessType. The requests will be
+      // all the non-duplicate requests and in the same order as the input requests.
+      val requests = new mutable.ArrayBuffer[AccessRequest]()
+      val requestsSet = new mutable.HashSet[(AccessResource, AccessType)]()
+
+      def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
+        objects.foreach { obj =>
+          val resource = AccessResource(obj, opType)
+          val accessType = ranger.AccessType(obj, opType, isInput)
+          if (accessType != AccessType.NONE && !requestsSet.contains((resource, accessType))) {
+            requests += AccessRequest(resource, ugi, opType, accessType)
+            requestsSet.add(resource, accessType)
           }
-        case _ => Seq(request)
+        }
       }
-    }.toSeq
 
-    if (authorizeInSingleCall) {
-      verify(requestArrays.flatten, auditHandler)
-    } else {
-      requestArrays.flatten.foreach { req =>
-        verify(Seq(req), auditHandler)
+      addAccessRequest(inputs, isInput = true)
+      addAccessRequest(outputs, isInput = false)
+
+      val requestArrays = requests.map { request =>
+        val resource = request.getResource.asInstanceOf[AccessResource]
+        resource.objectType match {
+          case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
+            resource.getColumns.map { col =>
+              val cr =
+                AccessResource(
+                  COLUMN,
+                  resource.getDatabase,
+                  resource.getTable,
+                  col,
+                  Option(resource.getOwnerUser),
+                  resource.catalog)
+              AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
+            }
+          case _ => Seq(request)
+        }
+      }.toSeq
+
+      if (authorizeInSingleCall) {
+        verify(requestArrays.flatten, auditHandler)
+      } else {
+        requestArrays.flatten.foreach { req =>
+          verify(Seq(req), auditHandler)
+        }
       }
+    } finally {
+      RangerPerfTracer.log(perf)
     }
   }
 }

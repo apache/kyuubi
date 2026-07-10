@@ -32,41 +32,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
-trait KyuubiFunSuite extends AnyFunSuite
-  with BeforeAndAfterAll
-  with BeforeAndAfterEach
-  with Eventually
-  with ThreadAudit
-  with Logging {
-
-  // Redirect jul to sl4j
-  SLF4JBridgeHandler.removeHandlersForRootLogger()
-  SLF4JBridgeHandler.install()
-
-  // scalastyle:on
-  override def beforeAll(): Unit = {
-    System.setProperty(IS_TESTING.key, "true")
-    doThreadPreAudit()
-    InternalSecurityAccessor.reset()
-    super.beforeAll()
-  }
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    doThreadPostAudit()
-  }
-
-  final override def withFixture(test: NoArgTest): Outcome = {
-    val testName = test.text
-    val suiteName = this.getClass.getName
-    val shortSuiteName = suiteName.replaceAll("org\\.apache\\.kyuubi", "o\\.a\\.k")
-    try {
-      info(s"\n\n===== TEST OUTPUT FOR $shortSuiteName: '$testName' =====\n")
-      test()
-    } finally {
-      info(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
-    }
-  }
+trait LogAppenderSuite {
 
   /**
    * Adds a log appender and optionally sets a log level to the root logger or the logger with
@@ -134,6 +100,44 @@ trait KyuubiFunSuite extends AnyFunSuite
 
     def loggingEvents: ArrayBuffer[LogEvent] = _loggingEvents.synchronized {
       _loggingEvents.filterNot(_ == null)
+    }
+  }
+}
+
+trait KyuubiFunSuite extends AnyFunSuite
+  with BeforeAndAfterAll
+  with BeforeAndAfterEach
+  with Eventually
+  with ThreadAudit
+  with Logging
+  with LogAppenderSuite {
+
+  // Redirect jul to sl4j
+  SLF4JBridgeHandler.removeHandlersForRootLogger()
+  SLF4JBridgeHandler.install()
+
+  // scalastyle:on
+  override def beforeAll(): Unit = {
+    System.setProperty(IS_TESTING.key, "true")
+    doThreadPreAudit()
+    InternalSecurityAccessor.reset()
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    doThreadPostAudit()
+  }
+
+  final override def withFixture(test: NoArgTest): Outcome = {
+    val testName = test.text
+    val suiteName = this.getClass.getName
+    val shortSuiteName = suiteName.replaceAll("org\\.apache\\.kyuubi", "o\\.a\\.k")
+    try {
+      info(s"\n\n===== TEST OUTPUT FOR $shortSuiteName: '$testName' =====\n")
+      test()
+    } finally {
+      info(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
     }
   }
 

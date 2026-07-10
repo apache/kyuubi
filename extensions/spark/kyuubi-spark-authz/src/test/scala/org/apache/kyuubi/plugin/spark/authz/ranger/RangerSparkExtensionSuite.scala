@@ -23,6 +23,7 @@ import java.nio.file.Path
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.logging.log4j.Level
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -37,7 +38,7 @@ import org.scalatest.BeforeAndAfterAll
 // scalastyle:off
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{LogAppenderSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
@@ -50,7 +51,7 @@ import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class RangerSparkExtensionSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv {
+  with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv with LogAppenderSuite {
   // scalastyle:on
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
@@ -166,6 +167,31 @@ abstract class RangerSparkExtensionSuite extends AnyFunSuite
     }
 
     assert(logicalPlan.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
+  }
+
+  test("[KYUUBI #2470] RuleAuthorization: trace successful and failed privilege checks") {
+    def assertPrivilegeCheckTraced(f: => Unit): Unit = {
+      val appender = new LogAppender
+      appender.setThreshold(Level.DEBUG)
+      withLogAppender(
+        appender,
+        Seq("org.apache.ranger.perf.sparkauth.request"),
+        Some(Level.DEBUG)) {
+        f
+        assert(appender.loggingEvents.exists(
+          _.getMessage.getFormattedMessage.contains("RuleAuthorization.checkPrivileges()")))
+      }
+    }
+
+    val successPlan = spark.sessionState.sqlParser.parsePlan("SHOW TABLES")
+    assertPrivilegeCheckTraced {
+      doAs(admin, new RuleAuthorization(spark).apply(successPlan))
+    }
+
+    assertPrivilegeCheckTraced {
+      intercept[AccessControlException](
+        doAs(denyUser, sql("CREATE DATABASE kyuubi_2470")))
+    }
   }
 
   test("[KYUUBI #3226]: Another session should also check even if the plan is cached.") {
