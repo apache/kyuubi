@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.io.{IOException, OutputStreamWriter}
+import java.net.ConnectException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.{CompletableFuture, ExecutionException, ExecutorService, RejectedExecutionException, TimeoutException, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
@@ -47,6 +48,7 @@ import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 import org.apache.kyuubi.util.ThreadUtils
 
 @Tag(name = "DataAgent")
@@ -87,6 +89,16 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         fe.getConf.get(HA_NAMESPACE),
         sessionHandleStr).isDefined
     }
+
+  private def expireRoute(sessionHandleStr: String): Nothing = {
+    DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
+      DataAgentSessionRoute.unregister(
+        discovery,
+        fe.getConf.get(HA_NAMESPACE),
+        sessionHandleStr)
+    }
+    throw new WebApplicationException("session expired", 410)
+  }
 
   private def resolveClient(sessionHandleStr: String): ResolvedClient = {
     val sessionHandle = parseSessionHandle(sessionHandleStr)
@@ -132,13 +144,19 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         } else {
           "anonymous"
         }
-        val client = KyuubiSyncThriftClient.createAttachedClient(
-          route.user,
-          password,
-          hostPort._1,
-          hostPort._2,
-          fe.getConf,
-          sessionHandle)
+        val client =
+          try {
+            KyuubiSyncThriftClient.createAttachedClient(
+              route.user,
+              password,
+              hostPort._1,
+              hostPort._2,
+              fe.getConf,
+              sessionHandle)
+          } catch {
+            case e: TTransportException if e.getCause.isInstanceOf[ConnectException] =>
+              expireRoute(sessionHandleStr)
+          }
         ResolvedClient(client, None)
     }
   }

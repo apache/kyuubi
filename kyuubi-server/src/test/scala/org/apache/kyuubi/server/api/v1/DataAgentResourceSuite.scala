@@ -28,7 +28,7 @@ import org.mockito.Mockito.{mock, verify, when}
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto.{ApprovalRequest, ChatRequest}
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_NAMESPACE
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.{DataAgentSessionRoute, DiscoveryClientProvider}
 
 class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -123,6 +123,43 @@ class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper 
       .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
     assert(response.getStatus === 410)
     assert(findRoute(sessionId).isEmpty)
+  }
+
+  test("connection refusal removes a stale route and returns 410") {
+    val sessionId = UUID.randomUUID().toString
+    val engineSpace = s"/unreachable-engine-$sessionId"
+    val engineRefId = s"unreachable-ref-$sessionId"
+    val engineConf = conf.clone.set(HA_ENGINE_REF_ID, engineRefId)
+    val servicePath = DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+      val path = discovery.createAndGetServiceNode(
+        engineConf,
+        engineSpace,
+        "127.0.0.1:1",
+        external = true)
+      DataAgentSessionRoute.register(
+        discovery,
+        conf.get(HA_NAMESPACE),
+        sessionId,
+        DataAgentSessionRoute(engineSpace, engineRefId, "anonymous"))
+      path
+    }
+
+    try {
+      val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+      assert(response.getStatus === 410)
+      assert(findRoute(sessionId).isEmpty)
+
+      val secondResponse = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+      assert(secondResponse.getStatus === 404)
+    } finally {
+      DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+        if (discovery.pathExists(servicePath)) discovery.delete(servicePath)
+      }
+    }
   }
 
   // -- approve preflight ------------------------------------------------------
