@@ -37,9 +37,19 @@ object DataAgentSessionRoute {
       serverSpace: String,
       sessionId: String,
       route: DataAgentSessionRoute): Unit = {
-    discovery.create(
-      DiscoveryPaths.makePath(path(serverSpace, sessionId), encodeEntry(route)),
-      "PERSISTENT")
+    val routePath = path(serverSpace, sessionId)
+    val entry = encodeEntry(route)
+    children(discovery, routePath) match {
+      case Nil =>
+        val entryPath = DiscoveryPaths.makePath(routePath, entry)
+        try discovery.create(entryPath, "PERSISTENT")
+        catch {
+          case NonFatal(_) if discovery.pathExists(entryPath) =>
+        }
+      case existing :: Nil if existing == entry =>
+      case _ =>
+        throw new IllegalStateException(s"A different route exists for session $sessionId")
+    }
   }
 
   def find(
@@ -47,14 +57,10 @@ object DataAgentSessionRoute {
       serverSpace: String,
       sessionId: String): Option[DataAgentSessionRoute] = {
     val routePath = path(serverSpace, sessionId)
-    try {
-      discovery.getChildren(routePath) match {
-        case Nil => None
-        case entry :: Nil => Some(decodeEntry(entry))
-        case _ => throw new IllegalStateException(s"Multiple routes found for session $sessionId")
-      }
-    } catch {
-      case NonFatal(_) if discovery.pathNonExists(routePath, isPrefix = true) => None
+    children(discovery, routePath) match {
+      case Nil => None
+      case entry :: Nil => Some(decodeEntry(entry))
+      case _ => throw new IllegalStateException(s"Multiple routes found for session $sessionId")
     }
   }
 
@@ -84,6 +90,13 @@ object DataAgentSessionRoute {
 
   private def decodeEntry(entry: String): DataAgentSessionRoute =
     decode(Base64.getUrlDecoder.decode(entry))
+
+  private def children(discovery: DiscoveryClient, routePath: String): List[String] = {
+    try discovery.getChildren(routePath)
+    catch {
+      case NonFatal(_) if discovery.pathNonExists(routePath, isPrefix = true) => Nil
+    }
+  }
 
   def decode(bytes: Array[Byte]): DataAgentSessionRoute = {
     val values = new String(bytes, StandardCharsets.UTF_8).split("\n", -1)

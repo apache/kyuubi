@@ -29,6 +29,16 @@ class DataAgentSessionRouteSuite extends KyuubiFunSuite {
     assert(DataAgentSessionRoute.decode(DataAgentSessionRoute.encode(route)) === route)
   }
 
+  test("encode and decode route with unicode and delimiters") {
+    val namespace = Seq(0x547D, 0x540D, 0x7A7A, 0x95F4).map(_.toChar).mkString
+    val user = Seq(0x7528, 0x6237).map(_.toChar).mkString
+    val route = DataAgentSessionRoute(
+      s"$namespace/with spaces",
+      "ref:id/with-delimiters",
+      s"$user+data@example.com")
+    assert(DataAgentSessionRoute.decode(DataAgentSessionRoute.encode(route)) === route)
+  }
+
   test("build route path") {
     assert(DataAgentSessionRoute.path("kyuubi", "session-id") ===
       "/kyuubi_DATA_AGENT_sessions/session-id")
@@ -37,6 +47,12 @@ class DataAgentSessionRouteSuite extends KyuubiFunSuite {
   test("reject malformed route") {
     intercept[IllegalArgumentException] {
       DataAgentSessionRoute.decode("not-a-route".getBytes)
+    }
+  }
+
+  test("reject route with malformed base64 value") {
+    intercept[IllegalArgumentException] {
+      DataAgentSessionRoute.decode("%%%%\nZW5naW5l\ndXNlcg".getBytes)
     }
   }
 }

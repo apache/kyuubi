@@ -76,8 +76,9 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
 
   private case class ResolvedClient(
       client: KyuubiSyncThriftClient,
-      session: Option[KyuubiSessionImpl],
-      closeTransport: () => Unit)
+      localSession: Option[KyuubiSessionImpl]) {
+    def closeTransport(): Unit = if (localSession.isEmpty) client.closeTransport()
+  }
 
   private def routeExists(sessionHandleStr: String): Boolean =
     DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
@@ -106,24 +107,25 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
           }
           throw new WebApplicationException("session expired", 410)
         }
-        ResolvedClient(session.client, Some(session), () => ())
+        ResolvedClient(session.client, Some(session))
       case _ =>
         if (!ServiceDiscovery.supportServiceDiscovery(fe.getConf)) {
           throw new WebApplicationException("session not found", 404)
         }
-        val route = DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
-          val serverSpace = fe.getConf.get(HA_NAMESPACE)
-          val found = DataAgentSessionRoute.find(discovery, serverSpace, sessionHandleStr)
-            .getOrElse(throw new WebApplicationException("session not found", 404))
-          if (!fe.isAdministrator(userName) && found.user != userName) {
-            throw new WebApplicationException("session not found", 404)
-          }
-          val hostPort = discovery.getEngineByRefId(found.engineSpace, found.engineRefId)
-            .getOrElse {
-              DataAgentSessionRoute.unregister(discovery, serverSpace, sessionHandleStr)
-              throw new WebApplicationException("session expired", 410)
+        val (route, hostPort) = DiscoveryClientProvider.withDiscoveryClient(fe.getConf) {
+          discovery =>
+            val serverSpace = fe.getConf.get(HA_NAMESPACE)
+            val found = DataAgentSessionRoute.find(discovery, serverSpace, sessionHandleStr)
+              .getOrElse(throw new WebApplicationException("session not found", 404))
+            if (!fe.isAdministrator(userName) && found.user != userName) {
+              throw new WebApplicationException("session not found", 404)
             }
-          (found, hostPort)
+            val hostPort = discovery.getEngineByRefId(found.engineSpace, found.engineRefId)
+              .getOrElse {
+                DataAgentSessionRoute.unregister(discovery, serverSpace, sessionHandleStr)
+                throw new WebApplicationException("session expired", 410)
+              }
+            (found, hostPort)
         }
         val password = if (fe.getConf.get(ENGINE_SECURITY_ENABLED)) {
           InternalSecurityAccessor.get().issueToken()
@@ -131,13 +133,13 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
           "anonymous"
         }
         val client = KyuubiSyncThriftClient.createAttachedClient(
-          route._1.user,
+          route.user,
           password,
-          route._2._1,
-          route._2._2,
+          hostPort._1,
+          hostPort._2,
           fe.getConf,
           sessionHandle)
-        ResolvedClient(client, None, () => client.closeTransport())
+        ResolvedClient(client, None)
     }
   }
 
@@ -156,7 +158,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
   @Path("sessions/{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Unit = {
     val resolved = resolveClient(sessionHandleStr)
-    resolved.session match {
+    resolved.localSession match {
       case Some(session) => fe.be.closeSession(session.handle)
       case None => resolved.client.closeSession()
     }
