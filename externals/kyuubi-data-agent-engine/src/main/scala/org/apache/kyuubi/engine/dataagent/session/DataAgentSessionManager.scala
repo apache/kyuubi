@@ -70,9 +70,7 @@ class DataAgentSessionManager(name: String)
       discovery <- engineDiscovery
     } {
       val route = DataAgentSessionRoute(conf.get(HA_NAMESPACE), engineRefId, user)
-      val path = DataAgentSessionRoute.path(serverSpace, sessionId)
-      discovery.discoveryClient.create(path, "PERSISTENT")
-      discovery.discoveryClient.setData(path, DataAgentSessionRoute.encode(route))
+      DataAgentSessionRoute.register(discovery.discoveryClient, serverSpace, sessionId, route)
     }
   }
 
@@ -81,10 +79,7 @@ class DataAgentSessionManager(name: String)
       serverSpace <- conf.getOption(KYUUBI_SERVER_HA_NAMESPACE_KEY)
       discovery <- engineDiscovery
     } {
-      val path = DataAgentSessionRoute.path(serverSpace, sessionId)
-      if (discovery.discoveryClient.pathExists(path)) {
-        discovery.discoveryClient.delete(path)
-      }
+      DataAgentSessionRoute.unregister(discovery.discoveryClient, serverSpace, sessionId)
     }
   }
 

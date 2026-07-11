@@ -79,12 +79,12 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       session: Option[KyuubiSessionImpl],
       closeTransport: () => Unit)
 
-  private def routePath(sessionHandleStr: String): String =
-    DataAgentSessionRoute.path(fe.getConf.get(HA_NAMESPACE), sessionHandleStr)
-
   private def routeExists(sessionHandleStr: String): Boolean =
     DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
-      discovery.pathExists(routePath(sessionHandleStr))
+      DataAgentSessionRoute.find(
+        discovery,
+        fe.getConf.get(HA_NAMESPACE),
+        sessionHandleStr).isDefined
     }
 
   private def resolveClient(sessionHandleStr: String): ResolvedClient = {
@@ -112,17 +112,15 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
           throw new WebApplicationException("session not found", 404)
         }
         val route = DiscoveryClientProvider.withDiscoveryClient(fe.getConf) { discovery =>
-          val path = routePath(sessionHandleStr)
-          if (discovery.pathNonExists(path, isPrefix = false)) {
-            throw new WebApplicationException("session not found", 404)
-          }
-          val found = DataAgentSessionRoute.decode(discovery.getData(path))
+          val serverSpace = fe.getConf.get(HA_NAMESPACE)
+          val found = DataAgentSessionRoute.find(discovery, serverSpace, sessionHandleStr)
+            .getOrElse(throw new WebApplicationException("session not found", 404))
           if (!fe.isAdministrator(userName) && found.user != userName) {
             throw new WebApplicationException("session not found", 404)
           }
           val hostPort = discovery.getEngineByRefId(found.engineSpace, found.engineRefId)
             .getOrElse {
-              discovery.delete(path)
+              DataAgentSessionRoute.unregister(discovery, serverSpace, sessionHandleStr)
               throw new WebApplicationException("session expired", 410)
             }
           (found, hostPort)
@@ -148,8 +146,10 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
   @Produces(Array(MediaType.APPLICATION_JSON))
   def getSession(@PathParam("sessionHandle") sessionHandleStr: String): String = {
     val resolved = resolveClient(sessionHandleStr)
-    try "{\"status\":\"ok\"}"
-    finally resolved.closeTransport()
+    try {
+      resolved.client.getInfo(TGetInfoType.CLI_DBMS_VER)
+      "{\"status\":\"ok\"}"
+    } finally resolved.closeTransport()
   }
 
   @DELETE
@@ -201,15 +201,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     }
 
     // Validate and authorize before engine startup; launching can be expensive.
-    val resolved =
-      try {
-        resolveClient(sessionHandleStr)
-      } catch {
-        case NonFatal(e) =>
-          error(s"Error processing chat for session $sessionHandleStr", e)
-          if (!response.isCommitted) sendPreflightSseError(response, e.getMessage)
-          return
-      }
+    val resolved = resolveClient(sessionHandleStr)
     val client = resolved.client
     val operationTimeoutMs = fe.getConf.get(KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_TIMEOUT)
 

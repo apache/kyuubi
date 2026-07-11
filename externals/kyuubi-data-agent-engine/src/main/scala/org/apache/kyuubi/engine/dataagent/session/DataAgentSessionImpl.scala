@@ -16,6 +16,8 @@
  */
 package org.apache.kyuubi.engine.dataagent.session
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
@@ -75,11 +77,18 @@ class DataAgentSessionImpl(
 
   override def close(): Unit = {
     try {
-      sessionManager.asInstanceOf[DataAgentSessionManager]
-        .unregisterRoute(handle.identifier.toString)
-      dataAgentProvider.close(handle.identifier.toString)
+      try {
+        sessionManager.asInstanceOf[DataAgentSessionManager]
+          .unregisterRoute(handle.identifier.toString)
+      } catch {
+        case NonFatal(e) => warn("Failed to unregister data agent session route", e)
+      }
     } finally {
-      super.close()
+      try {
+        dataAgentProvider.close(handle.identifier.toString)
+      } finally {
+        super.close()
+      }
     }
   }
 

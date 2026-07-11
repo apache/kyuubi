@@ -33,4 +33,10 @@ class DataAgentSessionRouteSuite extends KyuubiFunSuite {
     assert(DataAgentSessionRoute.path("kyuubi", "session-id") ===
       "/kyuubi_DATA_AGENT_sessions/session-id")
   }
+
+  test("reject malformed route") {
+    intercept[IllegalArgumentException] {
+      DataAgentSessionRoute.decode("not-a-route".getBytes)
+    }
+  }
 }
