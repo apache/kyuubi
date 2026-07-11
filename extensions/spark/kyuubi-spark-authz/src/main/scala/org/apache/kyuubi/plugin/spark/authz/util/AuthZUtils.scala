@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -67,6 +68,13 @@ private[authz] object AuthZUtils {
         false
     }
   }
+
+  final val SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY =
+    "spark.kyuubi.authz.skipCataloglessV2Relation.enabled"
+
+  def isSkipCataloglessV2RelationEnabled(spark: SparkSession): Boolean =
+    spark.conf.getOption(SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY)
+      .exists(_.equalsIgnoreCase("true"))
 
   lazy val isRanger21orGreater: Boolean = {
     try {

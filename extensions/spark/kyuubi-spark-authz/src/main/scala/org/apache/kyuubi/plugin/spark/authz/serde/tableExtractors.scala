@@ -207,6 +207,16 @@ class DataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     val plan = v1.asInstanceOf[LogicalPlan]
     plan.find(_.getClass.getSimpleName == "DataSourceV2Relation").get match {
+      // A relation from a TableProvider without SupportsCatalogOptions, e.g.
+      // spark.read.format("mongodb"), carries neither catalog nor identifier,
+      // and its table.name() is connector-defined — usually not a resolvable
+      // identifier, so the extracted resource can never match a Ranger policy.
+      // Skipping is opt-in because credentials for the external system may be
+      // ambient to the shared Spark principal rather than supplied per query.
+      case v2Relation: DataSourceV2Relation
+          if v2Relation.identifier.isEmpty && v2Relation.catalog.isEmpty &&
+            isSkipCataloglessV2RelationEnabled(spark) =>
+        None
       case v2Relation: DataSourceV2Relation
           if v2Relation.identifier.isEmpty ||
             !isPathIdentifier(v2Relation.identifier.get.name(), spark) =>
