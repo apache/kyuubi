@@ -22,7 +22,7 @@ import java.util.UUID
 import javax.servlet.{ServletOutputStream, WriteListener}
 import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import org.mockito.Mockito.{mock, verify, when}
 
@@ -50,79 +50,43 @@ class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper 
     assert(response.getStatus === 404)
   }
 
-  test("get and delete return 400 for malformed sessionHandle") {
-    val getResponse = webTarget.path("api/v1/data-agent/sessions/not-a-uuid")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-    assert(getResponse.getStatus === 400)
-
-    val deleteResponse = webTarget.path("api/v1/data-agent/sessions/not-a-uuid")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .delete()
-    assert(deleteResponse.getStatus === 400)
+  test("get and delete validate sessionHandle") {
+    Seq("not-a-uuid" -> 400, UUID.randomUUID().toString -> 404).foreach {
+      case (sessionId, expectedStatus) =>
+        Seq("GET", "DELETE").foreach { method =>
+          val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .method(method)
+          assert(response.getStatus === expectedStatus)
+        }
+    }
   }
 
-  test("get and delete return 404 for unknown sessionHandle") {
-    val unknown = UUID.randomUUID().toString
-    val getResponse = webTarget.path(s"api/v1/data-agent/sessions/$unknown")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-    assert(getResponse.getStatus === 404)
+  test("stale routes are removed by every session endpoint") {
+    val requests: Seq[(String, String => Response)] = Seq(
+      "get" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/sessions/$sessionId").request().get()
+      },
+      "delete" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/sessions/$sessionId").request().delete()
+      },
+      "chat" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/$sessionId/chat").request()
+          .post(Entity.json(new ChatRequest("hi")))
+      },
+      "approve" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/$sessionId/approve").request()
+          .post(Entity.json(new ApprovalRequest("request-id", true)))
+      })
 
-    val deleteResponse = webTarget.path(s"api/v1/data-agent/sessions/$unknown")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .delete()
-    assert(deleteResponse.getStatus === 404)
-  }
-
-  test("stale route returns 410 and is removed") {
-    val sessionId = UUID.randomUUID().toString
-    registerRoute(sessionId, "anonymous")
-
-    val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-    assert(response.getStatus === 410)
-    assert(findRoute(sessionId).isEmpty)
-
-    val secondResponse = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .get()
-    assert(secondResponse.getStatus === 404)
-  }
-
-  test("delete removes a stale route and returns 410") {
-    val sessionId = UUID.randomUUID().toString
-    registerRoute(sessionId, "anonymous")
-
-    val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .delete()
-    assert(response.getStatus === 410)
-    assert(findRoute(sessionId).isEmpty)
-  }
-
-  test("chat removes a stale route before opening the SSE stream") {
-    val sessionId = UUID.randomUUID().toString
-    registerRoute(sessionId, "anonymous")
-
-    val response = webTarget.path(s"api/v1/data-agent/$sessionId/chat")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(new ChatRequest("hi"), MediaType.APPLICATION_JSON_TYPE))
-    assert(response.getStatus === 410)
-    assert(findRoute(sessionId).isEmpty)
-  }
-
-  test("approve removes a stale route and returns 410") {
-    val sessionId = UUID.randomUUID().toString
-    registerRoute(sessionId, "anonymous")
-    val request = new ApprovalRequest("request-id", true)
-
-    val response = webTarget.path(s"api/v1/data-agent/$sessionId/approve")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
-    assert(response.getStatus === 410)
-    assert(findRoute(sessionId).isEmpty)
+    requests.foreach { case (endpoint, request) =>
+      withClue(endpoint) {
+        val sessionId = UUID.randomUUID().toString
+        registerRoute(sessionId, "anonymous")
+        assert(request(sessionId).getStatus === 410)
+        assert(findRoute(sessionId).isEmpty)
+      }
+    }
   }
 
   test("connection refusal removes a stale route and returns 410") {
@@ -150,11 +114,6 @@ class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper 
         .get()
       assert(response.getStatus === 410)
       assert(findRoute(sessionId).isEmpty)
-
-      val secondResponse = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .get()
-      assert(secondResponse.getStatus === 404)
     } finally {
       DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
         if (discovery.pathExists(servicePath)) discovery.delete(servicePath)
