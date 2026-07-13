@@ -44,11 +44,5 @@
                 <module>kyuubi-kubernetes-it</module>
             </modules>
         </profile>
-        <profile>
-            <id>gluten-it</id>
-            <modules>
-                <module>kyuubi-gluten-it</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
