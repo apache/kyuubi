@@ -62,8 +62,8 @@ class KyuubiSyncThriftClient private (
   // Visible for testing.
   private[kyuubi] def remoteSessionHandle: TSessionHandle = _remoteSessionHandle
 
-  private[kyuubi] def attachSession(sessionHandle: SessionHandle): Unit = {
-    require(_remoteSessionHandle == null, "A session is already attached")
+  private[kyuubi] def useExistingSessionHandle(sessionHandle: SessionHandle): Unit = {
+    require(_remoteSessionHandle == null, "A session handle is already set")
     _remoteSessionHandle = sessionHandle.toTSessionHandle
   }
 
@@ -527,7 +527,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       aliveTimeout)
   }
 
-  def createAttachedClient(
+  def createClientWithExistingSessionHandle(
       user: String,
       password: String,
       host: String,
@@ -535,7 +535,7 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       conf: KyuubiConf,
       sessionHandle: SessionHandle): KyuubiSyncThriftClient = {
     val client = createClient(user, password, host, port, conf)
-    client.attachSession(sessionHandle)
+    client.useExistingSessionHandle(sessionHandle)
     client
   }
 }

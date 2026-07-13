@@ -146,7 +146,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         }
         val client =
           try {
-            KyuubiSyncThriftClient.createAttachedClient(
+            KyuubiSyncThriftClient.createClientWithExistingSessionHandle(
               route.user,
               password,
               hostPort._1,
