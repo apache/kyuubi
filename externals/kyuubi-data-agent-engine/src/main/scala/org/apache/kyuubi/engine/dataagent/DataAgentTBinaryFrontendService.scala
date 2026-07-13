@@ -34,7 +34,4 @@ class DataAgentTBinaryFrontendService(override val serverable: Serverable)
     super.attributes ++ conf.getAll
       .get(KYUUBI_ENGINE_ID).map(id => Map(KYUUBI_ENGINE_ID -> id)).getOrElse(Map.empty)
   }
-
-  private[dataagent] def engineDiscovery: Option[EngineServiceDiscovery] =
-    discoveryService.collect { case service: EngineServiceDiscovery => service }
 }

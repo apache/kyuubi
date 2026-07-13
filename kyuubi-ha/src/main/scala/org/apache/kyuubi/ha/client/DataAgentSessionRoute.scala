@@ -27,9 +27,9 @@ case class DataAgentSessionRoute(engineSpace: String, engineRefId: String, user:
 object DataAgentSessionRoute {
   private val ROOT_SUFFIX = "DATA_AGENT_sessions"
 
-  def root(serverSpace: String): String = s"${serverSpace}_$ROOT_SUFFIX"
+  private def root(serverSpace: String): String = s"${serverSpace}_$ROOT_SUFFIX"
 
-  def path(serverSpace: String, sessionId: String): String =
+  private def path(serverSpace: String, sessionId: String): String =
     DiscoveryPaths.makePath(root(serverSpace), sessionId)
 
   def register(

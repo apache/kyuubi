@@ -24,7 +24,7 @@ import org.apache.kyuubi.engine.dataagent.{DataAgentEngine, DataAgentTBinaryFron
 import org.apache.kyuubi.engine.dataagent.operation.DataAgentOperationManager
 import org.apache.kyuubi.engine.dataagent.provider.DataAgentProvider
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
-import org.apache.kyuubi.ha.client.DataAgentSessionRoute
+import org.apache.kyuubi.ha.client.{DataAgentSessionRoute, EngineServiceDiscovery}
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
@@ -55,28 +55,30 @@ class DataAgentSessionManager(name: String)
     new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
   }
 
-  private def engineDiscovery = DataAgentEngine.currentEngine
+  private def discoveryClient = DataAgentEngine.currentEngine
     .flatMap(_.frontendServices.collectFirst {
       case frontend: DataAgentTBinaryFrontendService => frontend
-    }).flatMap(_.engineDiscovery)
+    }).flatMap(_.discoveryService.collect {
+      case service: EngineServiceDiscovery => service.discoveryClient
+    })
 
   private[dataagent] def registerRoute(sessionId: String, user: String): Unit = {
     for {
       serverSpace <- conf.getOption(KYUUBI_SERVER_HA_NAMESPACE_KEY)
       engineRefId <- conf.get(HA_ENGINE_REF_ID)
-      discovery <- engineDiscovery
+      discovery <- discoveryClient
     } {
       val route = DataAgentSessionRoute(conf.get(HA_NAMESPACE), engineRefId, user)
-      DataAgentSessionRoute.register(discovery.discoveryClient, serverSpace, sessionId, route)
+      DataAgentSessionRoute.register(discovery, serverSpace, sessionId, route)
     }
   }
 
   private[dataagent] def unregisterRoute(sessionId: String): Unit = {
     for {
       serverSpace <- conf.getOption(KYUUBI_SERVER_HA_NAMESPACE_KEY)
-      discovery <- engineDiscovery
+      discovery <- discoveryClient
     } {
-      DataAgentSessionRoute.unregister(discovery.discoveryClient, serverSpace, sessionId)
+      DataAgentSessionRoute.unregister(discovery, serverSpace, sessionId)
     }
   }
 
