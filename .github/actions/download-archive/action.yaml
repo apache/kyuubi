@@ -45,7 +45,7 @@ runs:
         echo "path=$path" >> "$GITHUB_OUTPUT"
     - name: Cache archive
       id: cache
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: ${{ steps.archive.outputs.path }}
         key: ${{ inputs.url }}
