@@ -116,11 +116,12 @@ trait WithKyuubiServerAndYarnMiniCluster extends KyuubiFunSuite with WithKyuubiS
     yarnConf.writeXml(writer)
     writer.close()
 
-    val flinkHome = {
-      val candidates = Paths.get(kyuubiHome, "externals", "kyuubi-download", "target")
-        .toFile.listFiles(f => f.getName.contains("flink"))
-      if (candidates == null) None else candidates.map(_.toPath).headOption
-    }
+    val flinkHome = sys.env.get("FLINK_HOME").filter(_.nonEmpty).map(Paths.get(_))
+      .orElse {
+        val candidates = Paths.get(kyuubiHome, "externals", "kyuubi-download", "target")
+          .toFile.listFiles(f => f.getName.contains("flink"))
+        if (candidates == null) None else candidates.map(_.toPath).headOption
+      }
     if (flinkHome.isEmpty) {
       throw new IllegalStateException(s"Flink home not found in $kyuubiHome/externals")
     }

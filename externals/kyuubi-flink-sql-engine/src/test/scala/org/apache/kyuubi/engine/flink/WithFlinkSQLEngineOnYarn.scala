@@ -141,11 +141,12 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
     val envs = scala.collection.mutable.Map[String, String]()
     val kyuubiExternals = JavaUtils.getCodeSourceLocation(getClass)
       .split("externals").head
-    val flinkHome = {
-      val candidates = Paths.get(kyuubiExternals, "externals", "kyuubi-download", "target")
-        .toFile.listFiles(f => f.getName.contains("flink"))
-      if (candidates == null) None else candidates.map(_.toPath).headOption
-    }
+    val flinkHome = sys.env.get("FLINK_HOME").filter(_.nonEmpty).map(Paths.get(_))
+      .orElse {
+        val candidates = Paths.get(kyuubiExternals, "externals", "kyuubi-download", "target")
+          .toFile.listFiles(f => f.getName.contains("flink"))
+        if (candidates == null) None else candidates.map(_.toPath).headOption
+      }
     if (flinkHome.isDefined) {
       envs("FLINK_HOME") = flinkHome.get.toString
       envs("FLINK_CONF_DIR") = Paths.get(flinkHome.get.toString, "conf").toString
