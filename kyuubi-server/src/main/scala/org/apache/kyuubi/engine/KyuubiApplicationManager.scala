@@ -176,11 +176,15 @@ object KyuubiApplicationManager {
       appConf: Map[String, String],
       kyuubiConf: KyuubiConf): Unit = {
     if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
-      (SparkProcessBuilder.PATH_CONFIGS.toSet ++
-        kyuubiConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)).flatMap { key =>
-        appConf.get(key).map(_.split(",")).getOrElse(Array.empty)
-      }.filter(_.nonEmpty).foreach { path =>
-        checkApplicationAccessPath(path, kyuubiConf)
+      val policedKeys = SparkProcessBuilder.PATH_CONFIGS.toSet ++
+        kyuubiConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
+          .map(SparkProcessBuilder.convertConfigKey)
+      appConf.foreach { case (key, value) =>
+        if (policedKeys.contains(SparkProcessBuilder.convertConfigKey(key))) {
+          value.split(",").filter(_.nonEmpty).foreach { path =>
+            checkApplicationAccessPath(path, kyuubiConf)
+          }
+        }
       }
     }
   }
