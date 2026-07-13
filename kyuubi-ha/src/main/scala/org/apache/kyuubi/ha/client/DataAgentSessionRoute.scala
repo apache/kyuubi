@@ -38,7 +38,7 @@ object DataAgentSessionRoute {
       sessionId: String,
       route: DataAgentSessionRoute): Unit = {
     val routePath = path(serverSpace, sessionId)
-    val entry = encodeEntry(route)
+    val entry = encode(route)
     children(discovery, routePath) match {
       case Nil =>
         val entryPath = DiscoveryPaths.makePath(routePath, entry)
@@ -59,7 +59,7 @@ object DataAgentSessionRoute {
     val routePath = path(serverSpace, sessionId)
     children(discovery, routePath) match {
       case Nil => None
-      case entry :: Nil => Some(decodeEntry(entry))
+      case entry :: Nil => Some(decode(entry))
       case _ => throw new IllegalStateException(s"Multiple routes found for session $sessionId")
     }
   }
@@ -76,20 +76,15 @@ object DataAgentSessionRoute {
     }
   }
 
-  def encode(route: DataAgentSessionRoute): Array[Byte] = {
+  private def encode(route: DataAgentSessionRoute): String = {
     Seq(route.engineSpace, route.engineRefId, route.user)
-      .map(value =>
-        Base64.getUrlEncoder.withoutPadding()
-          .encodeToString(value.getBytes(StandardCharsets.UTF_8)))
-      .mkString("\n")
-      .getBytes(StandardCharsets.UTF_8)
+      .map(encodeValue)
+      .mkString(".")
   }
 
-  private def encodeEntry(route: DataAgentSessionRoute): String =
-    Base64.getUrlEncoder.withoutPadding().encodeToString(encode(route))
-
-  private def decodeEntry(entry: String): DataAgentSessionRoute =
-    decode(Base64.getUrlDecoder.decode(entry))
+  private def encodeValue(value: String): String =
+    Base64.getUrlEncoder.withoutPadding()
+      .encodeToString(value.getBytes(StandardCharsets.UTF_8))
 
   private def children(discovery: DiscoveryClient, routePath: String): List[String] = {
     try discovery.getChildren(routePath)
@@ -98,8 +93,8 @@ object DataAgentSessionRoute {
     }
   }
 
-  def decode(bytes: Array[Byte]): DataAgentSessionRoute = {
-    val values = new String(bytes, StandardCharsets.UTF_8).split("\n", -1)
+  private def decode(entry: String): DataAgentSessionRoute = {
+    val values = entry.split("\\.", -1)
     require(values.length == 3, "Invalid Data Agent session route")
     def decodeValue(value: String): String =
       new String(Base64.getUrlDecoder.decode(value), StandardCharsets.UTF_8)
