@@ -75,17 +75,14 @@ class DataAgentSessionImpl(
 
   override def close(): Unit = {
     try {
-      try {
-        dataAgentSessionManager.unregisterRoute(handle.identifier.toString)
-      } catch {
-        case NonFatal(e) => warn("Failed to unregister data agent session route", e)
-      }
+      dataAgentSessionManager.unregisterRoute(handle.identifier.toString)
+    } catch {
+      case NonFatal(e) => warn("Failed to unregister data agent session route", e)
+    }
+    try {
+      dataAgentProvider.close(handle.identifier.toString)
     } finally {
-      try {
-        dataAgentProvider.close(handle.identifier.toString)
-      } finally {
-        super.close()
-      }
+      super.close()
     }
   }
 

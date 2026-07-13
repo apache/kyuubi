@@ -18,7 +18,7 @@ package org.apache.kyuubi.engine.dataagent.session
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SERVER_HA_NAMESPACE_KEY, KYUUBI_SESSION_HANDLE_KEY}
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SERVER_HA_NAMESPACE_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.dataagent.{DataAgentEngine, DataAgentTBinaryFrontendService}
 import org.apache.kyuubi.engine.dataagent.operation.DataAgentOperationManager
@@ -52,10 +52,7 @@ class DataAgentSessionManager(name: String)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
-      .flatMap(getSessionOption).getOrElse {
-        new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
-      }
+    new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
   }
 
   private def engineDiscovery = DataAgentEngine.currentEngine
