@@ -221,8 +221,10 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
           entry.audience.get
         } else if (extraServerPrefixes.exists(prefix => key.startsWith(prefix))) {
           Set(ConfigAudience.SERVER)
-        } else {
+        } else if (entry != null || key.startsWith("kyuubi.")) {
           ConfigAudience.inferAudience(key)
+        } else {
+          Set(ConfigAudience.ANY)
         }
       }
     }

@@ -271,36 +271,28 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(trinoConf.contains(ENGINE_TRINO_CONNECTION_USER.key))
   }
 
-  test("getEngineConf infers audience for unregistered native-prefix configs") {
+  test("getEngineConf forwards unregistered native-prefix configs to all engines") {
     val kyuubiConf = KyuubiConf(false)
     kyuubiConf.set("spark.executor.memory", "4g")
     kyuubiConf.set("flink.execution.target", "yarn-session")
     kyuubiConf.set("hive.exec.parallel", "true")
     kyuubiConf.set("trino.max.memory", "8GB")
 
-    val sparkConf = kyuubiConf.getEngineConf(EngineType.SPARK_SQL)
-    assert(sparkConf.contains("spark.executor.memory"))
-    assert(!sparkConf.contains("flink.execution.target"))
-    assert(!sparkConf.contains("hive.exec.parallel"))
-    assert(!sparkConf.contains("trino.max.memory"))
-
-    val flinkConf = kyuubiConf.getEngineConf(EngineType.FLINK_SQL)
-    assert(!flinkConf.contains("spark.executor.memory"))
-    assert(flinkConf.contains("flink.execution.target"))
-    assert(!flinkConf.contains("hive.exec.parallel"))
-    assert(!flinkConf.contains("trino.max.memory"))
-
-    val hiveConf = kyuubiConf.getEngineConf(EngineType.HIVE_SQL)
-    assert(!hiveConf.contains("spark.executor.memory"))
-    assert(!hiveConf.contains("flink.execution.target"))
-    assert(hiveConf.contains("hive.exec.parallel"))
-    assert(!hiveConf.contains("trino.max.memory"))
-
-    val trinoConf = kyuubiConf.getEngineConf(EngineType.TRINO)
-    assert(!trinoConf.contains("spark.executor.memory"))
-    assert(!trinoConf.contains("flink.execution.target"))
-    assert(!trinoConf.contains("hive.exec.parallel"))
-    assert(trinoConf.contains("trino.max.memory"))
+    EngineType.values.foreach { engineType =>
+      val engineConf = kyuubiConf.getEngineConf(engineType)
+      assert(
+        engineConf.contains("spark.executor.memory"),
+        s"$engineType should receive spark.executor.memory")
+      assert(
+        engineConf.contains("flink.execution.target"),
+        s"$engineType should receive flink.execution.target")
+      assert(
+        engineConf.contains("hive.exec.parallel"),
+        s"$engineType should receive hive.exec.parallel")
+      assert(
+        engineConf.contains("trino.max.memory"),
+        s"$engineType should receive trino.max.memory")
+    }
   }
 
   test("getEngineConf resolves fallback from server-only config") {
