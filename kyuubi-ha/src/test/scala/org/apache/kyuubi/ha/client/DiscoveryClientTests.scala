@@ -182,7 +182,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
       val route = DataAgentSessionRoute(
         "engine space/with.delimiters",
         "engine-ref:id/with.delimiters",
-        "alice+测试@example.com")
+        "alice+route@example.com")
 
       assert(DataAgentSessionRoute.find(discoveryClient, serverSpace, sessionId).isEmpty)
       DataAgentSessionRoute.register(discoveryClient, serverSpace, sessionId, route)
