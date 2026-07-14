@@ -343,6 +343,32 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     }
   }
 
+  test("KYUUBI #7576: UNION-ALL view over another view resolves fine without a masking policy") {
+    // Control for the regression test above: the same UNION-ALL view shape read by admin, who has
+    // no masking policy on value2. This documents that Spark handles the union/view shape itself
+    // and only the masking rewrite was at fault.
+    val supported = doAs(
+      admin,
+      Try {
+        sql("CREATE OR REPLACE VIEW default.plain_view AS SELECT key, value2 FROM default.src")
+        sql("CREATE OR REPLACE VIEW default.plain_view_union AS " +
+          "SELECT key, value2 FROM default.plain_view WHERE key = 1 " +
+          "UNION ALL " +
+          "SELECT key, value2 FROM default.plain_view WHERE key = 10")
+      }.isSuccess)
+    assume(supported, s"view support for '$format' has not been implemented yet")
+
+    withCleanTmpResources(Seq(
+      ("default.plain_view_union", "view"),
+      ("default.plain_view", "view"))) {
+      // admin sees the unmasked value; the query must resolve.
+      checkAnswer(
+        admin,
+        "SELECT key, value2 FROM default.plain_view_union where key = 1",
+        Seq(Row(1, "hello")))
+    }
+  }
+
   // This test only includes a small subset of UCS-2 characters.
   // But in theory, it should work for all characters
   test("test MASK,MASK_SHOW_FIRST_4,MASK_SHOW_LAST_4 rule  with non-English character set") {
