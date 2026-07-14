@@ -1,0 +1,73 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: download-archive
+description: 'Download and cache a binary tarball from an explicit HTTP link, optionally extracting it.'
+inputs:
+  url:
+    description: 'The HTTP(S) link to download the tarball from. Also used as the cache key.'
+    required: true
+  untar-dir:
+    description: 'Directory to extract the downloaded tarball into. When omitted, the archive is only downloaded and cached.'
+    required: false
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Resolve archive path
+      id: archive
+      shell: bash
+      env:
+        URL: ${{ inputs.url }}
+      run: |
+        # Strip the query string before taking the file name, e.g.
+        # .../spark-3.5.8-bin-hadoop3.tgz?action=download -> spark-3.5.8-bin-hadoop3.tgz
+        name="$(basename "${URL%%\?*}")"
+        if [[ -z "$name" ]]; then
+          echo "Cannot resolve an archive file name from URL: $URL" >&2
+          exit 1
+        fi
+        path="/tmp/$name"
+        echo "path=$path" >> "$GITHUB_OUTPUT"
+    - name: Cache archive
+      id: cache
+      uses: actions/cache@v6
+      with:
+        path: ${{ steps.archive.outputs.path }}
+        key: ${{ inputs.url }}
+    - name: Download archive
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        URL: ${{ inputs.url }}
+        ARCHIVE_PATH: ${{ steps.archive.outputs.path }}
+      run: |
+        echo "Downloading $URL"
+        # Download to a temp path and move into place only on success, so a
+        # failed or partial download never populates the cached archive path.
+        curl -fSL --retry 3 --retry-delay 5 --connect-timeout 30 -o "$ARCHIVE_PATH.tmp" "$URL"
+        mv "$ARCHIVE_PATH.tmp" "$ARCHIVE_PATH"
+    - name: Extract archive
+      if: inputs.untar-dir != ''
+      shell: bash
+      env:
+        ARCHIVE_PATH: ${{ steps.archive.outputs.path }}
+        UNTAR_DIR: ${{ inputs.untar-dir }}
+      run: |
+        mkdir -p "$UNTAR_DIR"
+        echo "Extracting $ARCHIVE_PATH into $UNTAR_DIR"
+        tar -xf "$ARCHIVE_PATH" -C "$UNTAR_DIR"

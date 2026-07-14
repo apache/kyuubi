@@ -36,7 +36,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Dmaven.plugin.download.cache.path=/tmp/engine-archives
+  MAVEN_ARGS: -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Pjdbc-shaded,gen-policy -Pflink-provided,hive-provided,spark-provided
   KUBERNETES_VERSION: v1.30.0
   MINIKUBE_VERSION: v1.33.1
 
@@ -98,14 +98,34 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java }}
           cache: 'maven'
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh spark,hive,flink -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }}
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Spark
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.spark-url }}
+          untar-dir: /opt
+      - name: Download Hive
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.hive-url }}
+          untar-dir: /opt
+      - name: Download Flink
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.flink-url }}
+          untar-dir: /opt
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh spark,hive,flink
       - name: Build and test Kyuubi and Spark with maven w/o linters
         run: |
           if [[ "${{ matrix.java }}" == "8" && "${{ matrix.spark }}" == "3.5" && "${{ matrix.spark-archive }}" == "" ]]; then
@@ -158,8 +178,24 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh spark,hive -Pspark-${{ matrix.spark }} -Pscala-${{ matrix.scala }}
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Spark
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.spark-url }}
+          untar-dir: /opt
+      - name: Download Hive
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.hive-url }}
+          untar-dir: /opt
+      # Flink modules are excluded from this job, so Flink is not downloaded.
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh spark,hive
       - name: Build on Scala ${{ matrix.scala }}
         run: |
           TEST_MODULES="!externals/kyuubi-flink-sql-engine,!integration-tests/kyuubi-flink-it"
@@ -282,8 +318,18 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh flink -Pflink-${{ matrix.flink }} ${{ matrix.flink-archive }}
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Flink
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.flink-url }}
+          untar-dir: /opt
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh flink
       - name: Build Flink with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-flink-sql-engine,integration-tests/kyuubi-flink-it"
@@ -340,24 +386,25 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh hive ${{ matrix.hive-archive }}
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Hive
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.hive-url }}
+          untar-dir: /opt
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh hive
       - name: Build and test Hive with maven w/o linters
         run: |
           TEST_MODULES="externals/kyuubi-hive-sql-engine,integration-tests/kyuubi-hive-it"
           ./build/mvn ${{ matrix.hive-archive }} -pl ${TEST_MODULES} -am clean install -DskipTests
-          # unpack avatica-1.8.0.jar and delete Jackson classes to workaround CALCITE-1224
-          if [[ "${{ matrix.hive-archive }}" == *apache-hive-2.3.10-bin.tar.gz* ]]; then
-            HIVE_2310_LIB="$PWD/externals/kyuubi-download/target/apache-hive-2.3.10-bin/lib"
-            mkdir avatica-1.8.0-unpack
-            cd avatica-1.8.0-unpack
-            jar xf $HIVE_2310_LIB/avatica-1.8.0.jar
-            rm -rf com/fasterxml/jackson org/slf4j
-            jar cf avatica-1.8.0-patched.jar .
-            rm $HIVE_2310_LIB/avatica-1.8.0.jar
-            mv avatica-1.8.0-patched.jar $HIVE_2310_LIB/
-            cd ..
-            rm -rf avatica-1.8.0-unpack
+          # delete bundled Jackson/SLF4J classes from avatica-1.8.0.jar to workaround CALCITE-1224
+          if [[ "$(basename "$HIVE_HOME")" == "apache-hive-2.3.10-bin" ]]; then
+            zip -d "$HIVE_HOME/lib/avatica-1.8.0.jar" 'com/fasterxml/jackson/*' 'org/slf4j/*'
           fi
           ./build/mvn ${{ matrix.hive-archive }} -pl ${TEST_MODULES} test
       - name: Upload test logs
@@ -391,8 +438,18 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh spark
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Spark
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.spark-url }}
+          untar-dir: /opt
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh spark
       - name: Build and test JDBC and Trino engines, TPC-H/TPC-DS with maven w/o linters
         run: |
           JDBC_TEST_MODULES="externals/kyuubi-jdbc-engine,integration-tests/kyuubi-jdbc-it"
@@ -441,8 +498,6 @@ jobs:
           file: build/Dockerfile.CI
           load: true
           tags: apache/kyuubi:ci
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -499,14 +554,24 @@ jobs:
       - uses: actions/checkout@v4
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
       - name: Setup JDK 11
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 11
           cache: 'maven'
+      - name: Resolve engine archive download URLs
+        id: engine-archives
+        run: ./.github/scripts/resolve-engine-archive-urls.sh spark
+      - name: Make /opt writable for engine archives
+        run: sudo chown "$(id -un)" /opt
+      - name: Download Spark
+        uses: ./.github/actions/download-archive
+        with:
+          url: ${{ steps.engine-archives.outputs.spark-url }}
+          untar-dir: /opt
+      - name: Expose engine homes
+        run: ./.github/scripts/expose-engine-homes.sh spark
       - name: Setup Minikube
         run: |
           # https://minikube.sigs.k8s.io/docs/start/
@@ -563,8 +628,6 @@ jobs:
           cache: 'maven'
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
-      - name: Cache Engine Archives
-        uses: ./.github/actions/cache-engine-archives
       - name: zookeeper integration tests
         run: |
           export KYUUBI_IT_ZOOKEEPER_VERSION=${{ matrix.zookeeper }}
