@@ -120,15 +120,7 @@ class KyuubiBatchService(
               error(s"Interrupted while picking batch for submission", e)
             } else {
               error(s"Interrupted while opening batch session for $batchId", e)
-              try {
-                metadataManager.failScheduledBatch(batchId)
-              } catch {
-                case ex: Exception =>
-                  error(
-                    s"Unable to modify metadata for $batchId to ERROR; " +
-                      "an administrator may need to reset the batch state manually.",
-                    ex)
-              }
+              failScheduledBatch(batchId)
             }
             throw e
           // If the batch session failed to open, reinitialize the batch state to ERROR
@@ -138,15 +130,7 @@ class KyuubiBatchService(
               error(s"Error picking batch for submission", e)
             } else {
               error(s"Error opening batch session for $batchId", e)
-              try {
-                metadataManager.failScheduledBatch(batchId)
-              } catch {
-                case ex: Exception =>
-                  error(
-                    s"Unable to modify metadata for $batchId to ERROR; " +
-                      "an administrator may need to reset the batch state manually.",
-                    ex)
-              }
+              failScheduledBatch(batchId)
             }
             // sleep 1 second to avoid excessive retries during transient network/DB failures
             Thread.sleep(1000)
@@ -155,6 +139,18 @@ class KyuubiBatchService(
     }
     (0 until batchExecutor.getCorePoolSize).foreach(_ => batchExecutor.submit(submitTask))
     super.start()
+  }
+
+  private def failScheduledBatch(batchId: String): Unit = {
+    try {
+      metadataManager.failScheduledBatch(batchId)
+    } catch {
+      case ex: Exception =>
+        error(
+          s"Unable to modify metadata for $batchId to ERROR; " +
+            "an administrator may need to reset the batch state manually.",
+          ex)
+    }
   }
 
   override def stop(): Unit = {
