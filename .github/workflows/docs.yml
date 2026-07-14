@@ -31,8 +31,8 @@ jobs:
     name: sphinx-build
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -41,7 +41,7 @@ jobs:
       - name: make html
         run: make -d --directory docs html
       - name: upload html
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           path: |
             docs/_build/html/
