@@ -145,11 +145,11 @@ class KyuubiBatchService(
     try {
       metadataManager.failScheduledBatch(batchId)
     } catch {
-      case ex: Exception =>
+      case e: Exception =>
         error(
           s"Unable to modify metadata for $batchId to ERROR; " +
             "an administrator may need to reset the batch state manually.",
-          ex)
+          e)
     }
   }
 
