@@ -24,6 +24,17 @@ trait HttpServletRequestLike {
   def getParameter(name: String): String
 
   def getParameterMap: util.Map[String, Array[String]]
+
+  /**
+   * The underlying raw servlet request, which is required when invoking Spark
+   * private UI helpers (e.g. UIUtils.headerSparkPage) that take a concrete
+   * javax/jakarta HttpServletRequest. Keeping the raw request here, instead of
+   * having the adapter re-implement the whole servlet interface, avoids
+   * depending on servlet API methods that vary across versions (for example,
+   * jakarta.servlet-api 6.0 removed the deprecated isRequestedSessionIdFromUrl
+   * and getRealPath methods that 5.0 still declares abstract).
+   */
+  def underlying: AnyRef
 }
 
 object HttpServletRequestLike {

@@ -95,9 +95,14 @@ case class EngineTab(
   sparkUI.foreach { ui =>
     try {
       val sparkServletContextHandlerClz = DynClasses.builder()
-        // for official Spark releases and distributions built via Maven
+        // for official Spark 4.2+ releases and distributions built via Maven,
+        // Spark relocates Jetty 12 (ee10) under org.sparkproject.jetty.ee10
+        .impl("org.sparkproject.jetty.ee10.servlet.ServletContextHandler")
+        // for official Spark 3.x ~ 4.1 releases and distributions built via Maven
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")
-        // for distributions built via SBT
+        // for dev Spark 4.2+ distributions built via SBT
+        .impl("org.eclipse.jetty.ee10.servlet.ServletContextHandler")
+        // for dev Spark 3.x ~ 4.1 distributions built via SBT
         .impl("org.eclipse.jetty.servlet.ServletContextHandler")
         .buildChecked()
       val attachHandlerMethod = DynMethods.builder("attachHandler")

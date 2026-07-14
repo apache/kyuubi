@@ -97,6 +97,13 @@
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshFunctionCommand",
   "functionDescs" : [ {
+    "fieldName" : "identifier",
+    "fieldExtractor" : "FunctionIdentifierFunctionExtractor",
+    "databaseDesc" : null,
+    "functionTypeDesc" : null,
+    "isInput" : false,
+    "comment" : ""
+  }, {
     "fieldName" : "functionName",
     "fieldExtractor" : "StringFunctionExtractor",
     "databaseDesc" : {

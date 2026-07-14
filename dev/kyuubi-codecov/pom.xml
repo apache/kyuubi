@@ -281,6 +281,31 @@
             </dependencies>
         </profile>
         <profile>
+            <id>spark-4.2</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-extension-spark-4-2_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-lineage_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
             <id>codecov</id>
             <build>
                 <plugins>
