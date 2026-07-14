@@ -60,12 +60,11 @@ class KyuubiBatchService(
   }
 
   override def start(): Unit = {
-    val UNINITIALIZED_BATCH_ID = "UNINITIALIZED_BATCH_ID"
     assert(running.compareAndSet(false, true))
     val submitTask: Runnable = () => {
       restFrontend.waitForServerStarted()
       while (running.get) {
-        var batchId = UNINITIALIZED_BATCH_ID
+        var batchId = KyuubiBatchService.UNINITIALIZED_BATCH_ID
         try {
           metadataManager.pickBatchForSubmitting(kyuubiInstance) match {
             case None => Thread.sleep(1000)
@@ -117,7 +116,7 @@ class KyuubiBatchService(
           }
         } catch {
           case e: InterruptedException =>
-            if (batchId == UNINITIALIZED_BATCH_ID) {
+            if (batchId == KyuubiBatchService.UNINITIALIZED_BATCH_ID) {
               error(s"Interrupted while picking batch for submission", e)
             } else {
               error(s"Interrupted while opening batch session for $batchId", e)
@@ -135,7 +134,7 @@ class KyuubiBatchService(
           // If the batch session failed to open, reinitialize the batch state to ERROR
           // This can be due to a DB error or batch_connection_limits exceeded
           case e: Exception =>
-            if (batchId == UNINITIALIZED_BATCH_ID) {
+            if (batchId == KyuubiBatchService.UNINITIALIZED_BATCH_ID) {
               error(s"Error picking batch for submission", e)
             } else {
               error(s"Error opening batch session for $batchId", e)
@@ -164,4 +163,8 @@ class KyuubiBatchService(
       ThreadUtils.shutdown(batchExecutor)
     }
   }
+}
+
+object KyuubiBatchService {
+  private val UNINITIALIZED_BATCH_ID = "UNINITIALIZED_BATCH_ID"
 }
