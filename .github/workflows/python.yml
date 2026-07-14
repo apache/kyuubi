@@ -48,9 +48,9 @@ jobs:
     env:
       PYTHONHASHSEED: random
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6.3.0
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - name: Start Testing Containers

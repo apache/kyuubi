@@ -19,9 +19,9 @@ jobs:
     name: Kyuubi Web UI check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7.0.0
+      - uses: actions/checkout@v7
       - name: Setup JDK 8
-        uses: actions/setup-java@v5.4.0
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 8
@@ -40,7 +40,7 @@ jobs:
           cache: npm
           cache-dependency-path: ./kyuubi-server/web-ui/package.json
       - name: Cache NPM dependencies
-        uses: actions/cache@v6.1.0
+        uses: actions/cache@v6
         with:
           path: ./kyuubi-server/web-ui/node_modules
           key: webui-dependencies-${{ hashFiles('kyuubi-server/web-ui/pnpm-lock.yaml') }}
