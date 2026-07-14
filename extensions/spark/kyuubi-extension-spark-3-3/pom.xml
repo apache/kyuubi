@@ -146,20 +146,6 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest-maven-plugin</artifactId>
-                <configuration>
-                    <environmentVariables>
-                        <!--
-                          Some tests run Spark in local-cluster mode.
-                          This mode uses SPARK_HOME and SPARK_SCALA_VERSION to build command to launch a Spark Standalone Cluster.
-                          -->
-                        <SPARK_HOME>${spark.home}</SPARK_HOME>
-                        <SPARK_SCALA_VERSION>${scala.binary.version}</SPARK_SCALA_VERSION>
-                    </environmentVariables>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <configuration>
@@ -188,8 +174,49 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+                <configuration>
+                    <environmentVariables>
+                        <!--
+                        Some tests run Spark in local-cluster mode, which uses SPARK_HOME and
+                        SPARK_SCALA_VERSION to build the command that launches a Spark Standalone
+                        cluster. SPARK_SCALA_VERSION is always derived from the build here;
+                        SPARK_HOME is provided by the spark-home-from-archive profile only when the
+                        environment does not already supply it.
+                        -->
+                        <SPARK_SCALA_VERSION>${scala.binary.version}</SPARK_SCALA_VERSION>
+                    </environmentVariables>
+                </configuration>
+            </plugin>
         </plugins>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
+    <profiles>
+        <profile>
+            <!-- When SPARK_HOME is not provided by the environment, point it at the downloaded
+                 Spark archive for tests that launch a Spark Standalone cluster. -->
+            <id>spark-home-from-archive</id>
+            <activation>
+                <property>
+                    <name>!env.SPARK_HOME</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.scalatest</groupId>
+                        <artifactId>scalatest-maven-plugin</artifactId>
+                        <configuration>
+                            <environmentVariables>
+                                <SPARK_HOME>${spark.home}</SPARK_HOME>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
