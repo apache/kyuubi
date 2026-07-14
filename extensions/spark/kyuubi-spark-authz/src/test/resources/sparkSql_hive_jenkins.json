@@ -717,6 +717,45 @@
     } ],
     "isDenyAllElse" : false
   }, {
+    "id" : 140,
+    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc57",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "perm_view_nested_value2_mask",
+    "policyType" : 1,
+    "policyPriority" : 0,
+    "isAuditEnabled" : true,
+    "resources" : {
+      "column" : {
+        "values" : [ "value2" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "database" : {
+        "values" : [ "default", "spark_catalog" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "perm_view_masked" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "dataMaskPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "perm_view_user" ],
+      "delegateAdmin" : true,
+      "dataMaskInfo" : {
+        "dataMaskType" : "MASK"
+      }
+    } ],
+    "isDenyAllElse" : false
+  }, {
     "id" : 15,
     "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
     "isEnabled" : true,

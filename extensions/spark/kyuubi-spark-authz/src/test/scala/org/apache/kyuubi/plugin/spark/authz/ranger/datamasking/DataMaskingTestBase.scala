@@ -305,6 +305,44 @@ trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with Bef
     }
   }
 
+  test("KYUUBI #7576: data masking survives a UNION-ALL view nested over a masked view") {
+    // A view-level MASK policy on perm_view_masked.value2, read through a view that UNION-ALLs
+    // the masked view twice. The two references share output exprIds until DeduplicateRelations
+    // re-instances one branch, so the Stage1 substitution maps collide across branches; without
+    // scoping the substitution, the outer view's schema compensation Project gets rewired to
+    // attributes the Union never outputs and analysis fails with MISSING_ATTRIBUTES. A
+    // single-level masked view (KYUUBI #3581) works; the union nesting is what used to break.
+    //
+    // value2's type-preserving MASK is used on purpose: value1's MASK_HASH would change INT to
+    // STRING and trip CANNOT_UP_CAST first, hiding this bug.
+    val supported = doAs(
+      permViewUser,
+      Try {
+        sql(
+          "CREATE OR REPLACE VIEW default.perm_view_masked AS SELECT key, value2 FROM default.src")
+        sql("CREATE OR REPLACE VIEW default.perm_view_union AS " +
+          "SELECT key, value2 FROM default.perm_view_masked WHERE key = 1 " +
+          "UNION ALL " +
+          "SELECT key, value2 FROM default.perm_view_masked WHERE key = 10")
+      }.isSuccess)
+    assume(supported, s"view support for '$format' has not been implemented yet")
+
+    withCleanTmpResources(Seq(
+      ("default.perm_view_union", "view"),
+      ("default.perm_view_masked", "view"))) {
+      // Single level: the view-level mask applies (baseline, mirrors #3581).
+      checkAnswer(
+        permViewUser,
+        "SELECT key, value2 FROM default.perm_view_masked where key = 1",
+        Seq(Row(1, "xxxxx")))
+      // UNION-ALL nesting: the outer view must still resolve and mask value2.
+      checkAnswer(
+        permViewUser,
+        "SELECT key, value2 FROM default.perm_view_union where key = 1",
+        Seq(Row(1, "xxxxx")))
+    }
+  }
+
   // This test only includes a small subset of UCS-2 characters.
   // But in theory, it should work for all characters
   test("test MASK,MASK_SHOW_FIRST_4,MASK_SHOW_LAST_4 rule  with non-English character set") {
