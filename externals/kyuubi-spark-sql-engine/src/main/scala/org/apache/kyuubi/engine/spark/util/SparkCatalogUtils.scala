@@ -53,7 +53,11 @@ object SparkCatalogUtils extends Logging {
   def setCurrentNamespace(spark: SparkSession, namespace: Array[String]): Unit = {
     val mgr = catalogManager(spark)
     val method = mgr.getClass.getMethod("setCurrentNamespace", classOf[Array[String]])
-    method.invoke(mgr, namespace)
+    try {
+      method.invoke(mgr, namespace)
+    } catch {
+      case e: java.lang.reflect.InvocationTargetException => throw e.getCause
+    }
   }
 
   def currentCatalog(spark: SparkSession): CatalogPlugin =
