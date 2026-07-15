@@ -97,7 +97,7 @@ jobs:
           echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
           echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
       - name: setup npm
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v6.4.0
         with:
           node-version: ${{env.NODEJS_VERSION}}
       - name: Web UI Style with node
