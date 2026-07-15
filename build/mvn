@@ -54,8 +54,8 @@ install_app() {
     wget ${wget_opts} -O "${local_tarball}" "${remote_tarball}"
   # if both were unsuccessful, exit
   [ ! -f "${local_tarball}" ] && \
-    echo -n "ERROR: Cannot download $2 with cURL or wget; " && \
-    echo "please install manually and try again." && \
+    echo -n "ERROR: Cannot download $2 with cURL or wget; " 1>&2 && \
+    echo "please install manually and try again." 1>&2 && \
     exit 2
   cd "${_DIR}" && tar -xzf "$2"
   rm -rf "$local_tarball"
@@ -85,7 +85,7 @@ install_mvn() {
     if [ $(command -v curl) ]; then
       if ! curl -L --output /dev/null --silent --head --fail "${APACHE_MIRROR}/${FILE_PATH}/${MVN_TARBALL}${MIRROR_URL_QUERY}" ; then
         # Fall back to archive.apache.org for older Maven
-        echo "Falling back to archive.apache.org to download Maven"
+        echo "Falling back to archive.apache.org to download Maven" 1>&2
         APACHE_MIRROR="https://archive.apache.org/dist"
         MIRROR_URL_QUERY=""
       fi
