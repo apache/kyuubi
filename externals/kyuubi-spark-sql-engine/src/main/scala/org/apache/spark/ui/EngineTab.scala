@@ -95,8 +95,8 @@ case class EngineTab(
   sparkUI.foreach { ui =>
     try {
       val sparkServletContextHandlerClz = DynClasses.builder()
-        // for official Spark 4.2+ releases and distributions built via Maven,
-        // Spark relocates Jetty 12 (ee10) under org.sparkproject.jetty.ee10
+        // SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10) and relocated it under
+        // org.sparkproject.jetty.ee10 for official releases/distributions built via Maven
         .impl("org.sparkproject.jetty.ee10.servlet.ServletContextHandler")
         // for official Spark 3.x ~ 4.1 releases and distributions built via Maven
         .impl("org.sparkproject.jetty.servlet.ServletContextHandler")

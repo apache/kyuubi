@@ -39,9 +39,9 @@ class DropIgnoreNonexistentSuite extends KyuubiSparkSQLExtensionTest {
         df3.queryExecution.analyzed.asInstanceOf[DropTableCommand].ifExists == true)
 
       // drop nonexistent function
-      // Spark 4.2 eagerly resolves DROP FUNCTION to the v1 DropFunctionCommand during
-      // analysis (deferring the existence check to execution), so the post-hoc rule no
-      // longer sees an unresolved DropFunction to turn into a NoopCommand. Setting
+      // SPARK-54866 (4.2.0) eagerly resolves DROP FUNCTION to the v1 DropFunctionCommand
+      // during analysis (deferring the existence check to execution), so the post-hoc rule
+      // no longer sees an unresolved DropFunction to turn into a NoopCommand. Setting
       // ifExists=true preserves the "drop nonexistent does not fail" contract.
       val df4 = sql("DROP FUNCTION nonexistent_function")
       assert(df4.queryExecution.analyzed.asInstanceOf[DropFunctionCommand].ifExists == true)

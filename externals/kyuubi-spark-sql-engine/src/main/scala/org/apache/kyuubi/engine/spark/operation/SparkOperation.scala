@@ -164,7 +164,8 @@ abstract class SparkOperation(session: Session)
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
         spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
         // Set the session (proxy) user as the current user so that Spark built-in functions
-        // current_user(), session_user() and user return it instead of the engine user.
+        // current_user() (SPARK-21957, 3.2.0), session_user() (SPARK-44860, 4.0.0) and user
+        // return it instead of the engine user.
         CURRENT_USER.set(session.user)
         schedulerPool match {
           case Some(pool) =>

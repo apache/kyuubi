@@ -45,7 +45,7 @@ object SparkUIUtils {
       useTimeline: JBoolean = false): Seq[Node] = {
     val headerSparkPageMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("headerSparkPage")
-        // Spark 4.2 added the useTimeline flag as an 8th parameter
+        // SPARK-56354 (4.2.0) added the useTimeline flag as an 8th parameter
         .impl(
           UIUtils.getClass,
           classOf[jakarta.servlet.http.HttpServletRequest],

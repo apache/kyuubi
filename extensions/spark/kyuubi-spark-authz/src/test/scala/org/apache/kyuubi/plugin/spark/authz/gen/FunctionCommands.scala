@@ -80,7 +80,7 @@ object FunctionCommands extends CommandSpecs[FunctionCommandSpec] {
       "functionName",
       classOf[StringFunctionExtractor],
       Some(databaseDesc))
-    // Spark 4.2 consolidated databaseName/functionName into a single identifier field
+    // SPARK-54866 (4.2.0) consolidated databaseName/functionName into a single identifier field
     val functionIdentifierDesc = FunctionDesc(
       "identifier",
       classOf[FunctionIdentifierFunctionExtractor])

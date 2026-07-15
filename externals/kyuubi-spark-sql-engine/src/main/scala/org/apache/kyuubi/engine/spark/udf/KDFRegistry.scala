@@ -97,8 +97,8 @@ object KDFRegistry {
 
   def registerAll(spark: SparkSession): Unit = {
     for (func <- registeredFunctions) {
-      // Spark 4.0 added a built-in `session_user` (alias for `CurrentUser`). Respect the
-      // built-in instead of registering the Kyuubi UDF of the same name.
+      // SPARK-44860 (4.0.0) added a built-in `session_user` (alias for `CurrentUser`).
+      // Respect the built-in instead of registering the Kyuubi UDF of the same name.
       if (func.name == "session_user" && SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
         // skip
       } else {

@@ -1502,12 +1502,12 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   }
 
   private def extractLineage(sql: String): Lineage = {
-    // Avoid going through QueryExecution.analyzed: starting with Spark 4.2, accessing
-    // `.analyzed` on a QueryExecution lazily begins a transaction on transactional catalogs
-    // (QueryExecution.lazyTransactionOpt). Since this helper only inspects the analyzed plan
-    // and never executes the query, that transaction would be left in the Active state and
-    // the next call would trip InMemoryRowLevelOperationTableCatalog.beginTransaction's
-    // "no nested active transaction" assertion. Analyzing directly produces the same plan.
+    // Avoid going through QueryExecution.analyzed: SPARK-55855 (4.2.0) made `.analyzed`
+    // lazily begin a transaction on transactional catalogs (QueryExecution.lazyTransactionOpt).
+    // Since this helper only inspects the analyzed plan and never executes the query, that
+    // transaction would be left in the Active state and the next call would trip
+    // InMemoryRowLevelOperationTableCatalog.beginTransaction's "no nested active transaction"
+    // assertion. Analyzing directly produces the same plan.
     val parsed = spark.sessionState.sqlParser.parsePlan(sql)
     val analyzed = spark.sessionState.analyzer.execute(parsed)
     spark.sessionState.analyzer.checkAnalysis(analyzed)
