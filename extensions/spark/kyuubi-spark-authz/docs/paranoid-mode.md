@@ -171,7 +171,7 @@ and is maintained by the same generator (`KnownHarmlessNodes` in the test tree, 
 auditor can read, not a reflexive silencing. Each entry also names the exact Spark minor
 versions its review applies to (§4.5); on any other version the entry is inert.
 
-Two patterns emerged during triage that future entries should be checked against:
+Three patterns emerged during triage that future entries should be checked against:
 
 - **"Reads no stored data"** — `LocalRelation`, `OneRowRelation`, `Range`,
   `CTERelationRef`, `CommandResult`, session-conf commands. The straightforward kind.
@@ -183,6 +183,10 @@ Two patterns emerged during triage that future entries should be checked against
   `RuleAuthorization` with the bare command as root and **must be allowed** — enforcement
   lives in the placeholder machinery, not in `PrivilegesBuilder`. Denying it breaks every
   SHOW query. This subtlety is load-bearing; do not "fix" it.
+- **"This plugin's own machinery"** — the `FilteredShow*Command` wrappers the plugin
+  installs in place of the v1 SHOW commands. They are `Command`s by shape, handled by
+  dedicated dispatch arms in `PrivilegesBuilder.build`, with per-row access checks inside
+  the wrapper itself.
 
 Allowlisting a `Command` is higher-stakes than allowlisting a leaf relation, so it takes a
 second, colocated review: the entry must also be exempted by name in
@@ -281,14 +285,25 @@ time instead of in production:
 2. **Allowlist re-review.** Allowlisted classes that are (or became) `Command`s on this
    classpath fail unless explicitly exempted in the suite (§4.3), and no class may have
    both a spec and an allowlist entry.
-3. **Enumeration.** Scan the jars that can contribute plan nodes (spark-catalyst, sql-core,
-   hive, plus whichever catalog plugins are on this profile's classpath), enumerate every
-   concrete class that is a `Command`, `LeafNode`, or `ExecutableDuringAnalysis`, and diff
-   against specs ∪ the allowlist entries verified for this profile's Spark minor (§4.5).
-   The unclassified remainder is pinned, one classname per line, in
-   `src/test/resources/classification_backlog_spark_<minor>.txt` (currently 136 entries
-   for 3.5, 181 for 4.1 — the 4.1 figure includes allowlist entries awaiting 4.x
-   re-review). A class **new** to the diff fails the build with an actionable
+3. **Enumeration (total accounting).** Scan every code source that can contribute plan
+   nodes — the Spark jars, whichever catalog plugins are on this profile's classpath, and
+   this plugin's own classes directory (its markers and filtered-SHOW wrappers are plan
+   nodes too) — and enumerate **every concrete `LogicalPlan` descendant**. Each class
+   lands in exactly one bucket:
+   - *spec'd* — a command/scan spec (or nodeName match) builds privileges for it:
+     definitively authz-relevant;
+   - *allowlisted* — reviewed as harmless for this profile's Spark minor (§4.5);
+   - *pass-through* — neither `Command`, `LeafNode`, nor analysis-time-executable:
+     `buildQuery` recurses through it, and whatever carries relevance beneath it is
+     itself in the enumeration;
+   - *dirty laundry* — relevant by shape but neither spec'd nor allowlisted, pinned one
+     classname per line in `src/test/resources/classification_backlog_spark_<minor>.txt`
+     (currently 136 entries for 3.5, 181 for 4.1 — the 4.1 figure includes allowlist
+     entries awaiting 4.x re-review).
+
+   A companion check keeps the allowlist honest from the other side: an entry whose class
+   is a pass-through shape fails the build, because nothing would ever consult it and it
+   would read as coverage. A class **new** to the diff fails the build with an actionable
    message: classify it, allowlist it with a reason, or consciously regenerate the backlog.
    A class that leaves the diff must also leave the backlog, so the backlog only ever
    shrinks by being triaged, never silently.
@@ -337,3 +352,4 @@ provably complete.
 3. This changes user-visible security posture, so it should land discuss-first: framed as
    "deny-by-default mode for unclassified plan nodes," with a search of existing issues
    and discussions for prior art before opening a new one.
+

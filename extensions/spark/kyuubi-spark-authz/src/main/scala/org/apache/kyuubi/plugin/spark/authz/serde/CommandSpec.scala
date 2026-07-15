@@ -219,7 +219,9 @@ case class ScanSpec(
             None
         }
       }
-      (tables, failures)
+      // .toSeq matters cross-build: on Scala 2.13 scala.Seq is immutable.Seq, which a
+      // mutable ArrayBuffer does not conform to
+      (tables, failures.toSeq)
     }
 
   def uris: LogicalPlan => Seq[Uri] = plan => {
@@ -239,7 +241,7 @@ case class ScanSpec(
           None
       }
     }
-    (uris, failures)
+    (uris, failures.toSeq)
   }
 
   def functions: Expression => Seq[Function] = expr => {

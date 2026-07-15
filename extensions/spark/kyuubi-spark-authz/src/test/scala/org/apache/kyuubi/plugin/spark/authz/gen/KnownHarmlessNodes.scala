@@ -41,6 +41,24 @@ object KnownHarmlessNodes {
 
   val specs: Seq[HarmlessNodeSpec] = Seq(
     HarmlessNodeSpec(
+      "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowColumnsCommand",
+      "This plugin's own row-filtering replacement for ShowColumnsCommand (installed by" +
+        " RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a" +
+        " dedicated dispatch arm and every result row is checked for SHOWCOLUMNS access",
+      spark3x),
+    HarmlessNodeSpec(
+      "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowFunctionsCommand",
+      "This plugin's own row-filtering replacement for ShowFunctionsCommand (installed by" +
+        " RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a" +
+        " dedicated dispatch arm and every result row is checked for SHOWFUNCTIONS access",
+      spark3x),
+    HarmlessNodeSpec(
+      "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowTablesCommand",
+      "This plugin's own row-filtering replacement for ShowTablesCommand (installed by" +
+        " RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a" +
+        " dedicated dispatch arm and every result row is checked for SHOWTABLES access",
+      spark3x),
+    HarmlessNodeSpec(
       "org.apache.spark.sql.catalyst.analysis.ResolvedNamespace",
       "Analysis-time resolution artifact naming a namespace; reads no data itself, and the" +
         " commands resolved over it are classified in their own right",

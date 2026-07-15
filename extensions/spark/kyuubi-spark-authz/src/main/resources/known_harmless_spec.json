@@ -1,4 +1,16 @@
 [ {
+  "classname" : "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowColumnsCommand",
+  "reason" : "This plugin's own row-filtering replacement for ShowColumnsCommand (installed by RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a dedicated dispatch arm and every result row is checked for SHOWCOLUMNS access",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowFunctionsCommand",
+  "reason" : "This plugin's own row-filtering replacement for ShowFunctionsCommand (installed by RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a dedicated dispatch arm and every result row is checked for SHOWFUNCTIONS access",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowTablesCommand",
+  "reason" : "This plugin's own row-filtering replacement for ShowTablesCommand (installed by RuleReplaceShowObjectCommands); PrivilegesBuilder.build handles it with a dedicated dispatch arm and every result row is checked for SHOWTABLES access",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
   "classname" : "org.apache.spark.sql.catalyst.analysis.ResolvedNamespace",
   "reason" : "Analysis-time resolution artifact naming a namespace; reads no data itself, and the commands resolved over it are classified in their own right",
   "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]

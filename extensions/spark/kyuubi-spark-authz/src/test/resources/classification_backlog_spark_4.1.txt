@@ -1,3 +1,6 @@
+org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowColumnsCommand
+org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowFunctionsCommand
+org.apache.kyuubi.plugin.spark.authz.rule.rowfilter.FilteredShowTablesCommand
 org.apache.spark.sql.catalyst.TimeTravel
 org.apache.spark.sql.catalyst.analysis.CurrentNamespace$
 org.apache.spark.sql.catalyst.analysis.RelationTimeTravel

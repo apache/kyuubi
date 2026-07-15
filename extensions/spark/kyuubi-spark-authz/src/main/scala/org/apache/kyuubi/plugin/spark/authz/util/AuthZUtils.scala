@@ -97,7 +97,7 @@ private[authz] object AuthZUtils {
    * the trait does not exist on all supported Spark versions, and the set of such "dangerous"
    * supertypes is open, so this must never be the only line of defense.
    */
-  lazy private val executableDuringAnalysisClass: Option[Class[_]] = {
+  private lazy val executableDuringAnalysisClass: Option[Class[_]] = {
     try {
       Some(Class.forName("org.apache.spark.sql.catalyst.plans.logical.ExecutableDuringAnalysis"))
     } catch {
