@@ -1,0 +1,61 @@
+[ {
+  "classname" : "org.apache.spark.sql.catalyst.analysis.ResolvedNamespace",
+  "reason" : "Analysis-time resolution artifact naming a namespace; reads no data itself, and the commands resolved over it are classified in their own right",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CTERelationRef",
+  "reason" : "Leaf reference to a CTE definition; the definition's own plan appears under WithCTE in the same tree and is authorized there",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommandResult",
+  "reason" : "Holds rows already produced by an eagerly executed command; that command was authorized when it executed",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.LocalRelation",
+  "reason" : "Holds in-memory literal rows (VALUES lists, createDataFrame); reads no stored data",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5", "4.1" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.NoopCommand",
+  "reason" : "Spark's placeholder for commands with nothing to do (e.g. IF EXISTS / IF NOT EXISTS variants when the object is absent); executes nothing",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.OneRowRelation",
+  "reason" : "The implicit single-row relation backing SELECT without FROM; reads no stored data",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5", "4.1" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.Range",
+  "reason" : "Generates rows from a numeric range (e.g. spark.range); reads no stored data",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5", "4.1" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowNamespaces",
+  "reason" : "Enforced elsewhere: results are row-filtered per namespace by ObjectFilterPlaceHolder + FilterDataSourceV2Strategy; Spark eagerly executes the bare command in a nested QueryExecution whose unfiltered result the placeholder discards",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowTables",
+  "reason" : "Enforced elsewhere: results are row-filtered per table by ObjectFilterPlaceHolder + FilterDataSourceV2Strategy; Spark eagerly executes the bare command in a nested QueryExecution whose unfiltered result the placeholder discards",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.ExternalRDD",
+  "reason" : "Wraps a session-created RDD/local collection (e.g. spark.createDataset, and Delta's internal VACUUM plumbing); RDD-level access is outside the plugin's scope and is an existing, separate concern",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.LogicalRDD",
+  "reason" : "Wraps a pre-existing RDD; RDD-level access is outside the plugin's scope and is an existing, separate concern",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.columnar.InMemoryRelation",
+  "reason" : "Cached query results; the originating plan was authorized when the cache was populated",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.DropTempViewCommand",
+  "reason" : "Operates only on session-local temporary views, which are deliberately not authz resources (their reads are authorized against the underlying tables); see KYUUBI #3426",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.ResetCommand",
+  "reason" : "Resets session configuration only; sensitive configs are separately guarded by AuthzConfigurationChecker",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+}, {
+  "classname" : "org.apache.spark.sql.execution.command.SetCommand",
+  "reason" : "Sets session configuration only; sensitive configs are separately guarded by AuthzConfigurationChecker",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+} ]

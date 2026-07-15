@@ -153,3 +153,33 @@ Add `org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension` to the sp
 spark.sql.extensions=org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
 ```
 
+### Handling of unclassified plan nodes
+
+The plugin builds access requests by recognizing Spark logical plan nodes. A plan node it
+does not recognize — for example a command introduced by a newer Spark version or by a
+third-party catalog plugin — carries no access request, so by default it would execute
+without any authorization check. The `spark.kyuubi.authz.unclassifiedNode.behavior`
+configuration controls what happens when such a node is encountered:
+
+```properties
+# allow | warn | deny (default: warn)
+spark.kyuubi.authz.unclassifiedNode.behavior=deny
+```
+
+- `allow`: legacy behavior; the node is silently treated as not authorization-relevant.
+- `warn` (default): the query proceeds, but a warning naming the unclassified plan node
+  class is logged once per class per JVM.
+- `deny`: the query fails with an `AccessControlException` naming the unclassified class.
+  This makes the plugin fail closed and is the recommended setting for security-sensitive
+  deployments.
+
+The same setting governs extraction failures against recognized commands (e.g. after a
+Spark upgrade changes a plan node's shape): `warn` logs them, `deny` fails the query.
+
+Plan nodes that are genuinely not authorization-relevant (e.g. `SELECT` without a table,
+session `SET` commands) are declared in the plugin's `known_harmless_spec.json` resource.
+Each entry carries a human-reviewed reason and names the exact Spark `major.minor`
+versions that review applies to; on any other Spark version the entry is inert and the
+node is treated as unclassified, so upgrading Spark past the reviewed versions surfaces
+each entry for re-review instead of silently trusting it.
+

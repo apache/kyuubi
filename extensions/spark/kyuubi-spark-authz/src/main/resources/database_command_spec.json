@@ -8,7 +8,8 @@
     "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
   "databaseDescs" : [ {
@@ -40,7 +41,8 @@
     "fieldExtractor" : "PropertiesLocationUriExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -51,7 +53,8 @@
     "comment" : ""
   } ],
   "opType" : "DESCDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
   "databaseDescs" : [ {
@@ -62,7 +65,8 @@
     "comment" : ""
   } ],
   "opType" : "DROPDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
@@ -89,7 +93,8 @@
     "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
   "databaseDescs" : [ {
@@ -105,7 +110,8 @@
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {
@@ -116,7 +122,8 @@
     "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
   "databaseDescs" : [ {
@@ -127,7 +134,8 @@
     "comment" : ""
   } ],
   "opType" : "ALTERDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
   "databaseDescs" : [ {
@@ -143,7 +151,8 @@
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -154,7 +163,8 @@
     "comment" : ""
   } ],
   "opType" : "ANALYZE_TABLE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -170,7 +180,8 @@
     "fieldExtractor" : "StringURIExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
   "databaseDescs" : [ {
@@ -181,7 +192,8 @@
     "comment" : ""
   } ],
   "opType" : "DESCDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -192,7 +204,8 @@
     "comment" : ""
   } ],
   "opType" : "DROPDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
   "databaseDescs" : [ {
@@ -203,7 +216,8 @@
     "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
   "databaseDescs" : [ {
@@ -214,5 +228,6 @@
     "comment" : ""
   } ],
   "opType" : "SWITCHDATABASE",
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 } ]

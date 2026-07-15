@@ -7,7 +7,8 @@
     "comment" : ""
   } ],
   "functionDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.catalog.HiveTableRelation",
   "scanDescs" : [ {
@@ -17,7 +18,8 @@
     "comment" : ""
   } ],
   "functionDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.LogicalRelation",
   "scanDescs" : [ {
@@ -32,7 +34,8 @@
     "fieldExtractor" : "BaseRelationFileIndexURIExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation",
   "scanDescs" : [ {
@@ -42,7 +45,8 @@
     "comment" : ""
   } ],
   "functionDescs" : [ ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveGenericUDF",
   "scanDescs" : [ ],
@@ -59,7 +63,8 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveGenericUDTF",
   "scanDescs" : [ ],
@@ -76,7 +81,8 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveSimpleUDF",
   "scanDescs" : [ ],
@@ -93,7 +99,8 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.HiveUDAFFunction",
   "scanDescs" : [ ],
@@ -110,5 +117,6 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "uriDescs" : [ ]
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 } ]
