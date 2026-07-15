@@ -57,12 +57,6 @@ trait SparkSessionProvider {
         "spark.sql.warehouse.dir",
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
-      // Spark 4.2 turns on ANSI mode by default. The authz tests verify authorization
-      // behavior, not ANSI SQL cast semantics, and several data-masking cases rely on
-      // lenient string->numeric casts (e.g. joining a masked md5-hex string column
-      // against an unmasked numeric column). Run them in the same non-ANSI dialect that
-      // earlier Spark versions used.
-      .config("spark.sql.ansi.enabled", "false")
       .withExtensions(extension)
       .config(extraSparkConf)
 
