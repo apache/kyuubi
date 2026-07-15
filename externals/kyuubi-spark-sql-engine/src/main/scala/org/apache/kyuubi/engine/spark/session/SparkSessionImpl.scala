@@ -87,7 +87,7 @@ class SparkSessionImpl(
 
     useCatalogAndDatabaseConf.get("use:database").foreach { database =>
       try {
-        spark.sessionState.catalogManager.setCurrentNamespace(Array(database))
+        SparkCatalogUtils.setCurrentNamespace(spark, Array(database))
       } catch {
         case e
             if database == "default" &&

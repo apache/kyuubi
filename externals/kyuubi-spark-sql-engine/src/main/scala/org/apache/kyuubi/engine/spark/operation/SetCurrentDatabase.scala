@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -29,7 +30,7 @@ class SetCurrentDatabase(session: Session, database: String)
 
   override protected def runInternal(): Unit = {
     try {
-      spark.sessionState.catalogManager.setCurrentNamespace(Array(database))
+      SparkCatalogUtils.setCurrentNamespace(spark, Array(database))
       setHasResultSet(false)
     } catch onError()
   }
