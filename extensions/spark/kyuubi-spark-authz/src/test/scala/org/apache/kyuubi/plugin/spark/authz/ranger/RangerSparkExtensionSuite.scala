@@ -1413,14 +1413,16 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"SELECT typeof(id) AS t FROM $db1.$table1 ORDER BY t",
           Seq(Row("int")))
 
-        // root is Union
-        checkAnswer(
+        // root is Union. UNION ALL has no order guarantee, and an ORDER BY would put a Sort
+        // above the Union, so sort the collected rows instead to keep Union as the root node.
+        doAs(
           admin,
-          s"""
-             |SELECT typeof(id) FROM $db1.$table1
-             |UNION ALL
-             |SELECT typeof(day) FROM $db1.$table1""".stripMargin,
-          Seq(Row("int"), Row("string")))
+          assert(sql(
+            s"""
+               |SELECT typeof(id) FROM $db1.$table1
+               |UNION ALL
+               |SELECT typeof(day) FROM $db1.$table1""".stripMargin)
+            .collect().sortBy(_.getString(0)) === Seq(Row("int"), Row("string"))))
 
         // root is Aggregate
         checkAnswer(
