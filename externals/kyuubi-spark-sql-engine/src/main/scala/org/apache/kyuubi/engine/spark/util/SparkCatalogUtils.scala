@@ -50,17 +50,17 @@ object SparkCatalogUtils extends Logging {
   def catalogManager(spark: SparkSession): AnyRef =
     invokeAs[AnyRef](spark.sessionState, "catalogManager")
 
-  def setCurrentNamespace(spark: SparkSession, namespace: Array[String]): Unit =
-    invokeAs[Unit](
-      catalogManager(spark),
-      "setCurrentNamespace",
-      (classOf[Array[String]], namespace))
+  def setCurrentNamespace(spark: SparkSession, namespace: Array[String]): Unit = {
+    val mgr = catalogManager(spark)
+    val method = mgr.getClass.getMethod("setCurrentNamespace", classOf[Array[String]])
+    method.invoke(mgr, namespace)
+  }
 
   def currentCatalog(spark: SparkSession): CatalogPlugin =
     invokeAs[CatalogPlugin](catalogManager(spark), "currentCatalog")
 
-  def currentNamespace(spark: SparkSession): Seq[String] =
-    invokeAs[Seq[String]](catalogManager(spark), "currentNamespace")
+  def currentNamespace(spark: SparkSession): Array[String] =
+    invokeAs[Array[String]](catalogManager(spark), "currentNamespace")
 
   def catalog(spark: SparkSession, name: String): CatalogPlugin =
     invokeAs[CatalogPlugin](catalogManager(spark), "catalog", (classOf[String], name))
