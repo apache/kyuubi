@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.server.api
 
-import javax.servlet.http.HttpServletRequest
+import java.io.{PrintWriter, StringWriter}
+import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -67,6 +68,21 @@ class EngineUIProxyServletSuite extends KyuubiFunSuite {
     val servlet = new EngineUIProxyServlet(true, Set.empty)
 
     assert(servlet.rewriteTarget(request("/engine-ui/engine-host:4040")) === null)
+  }
+
+  test("denied response explains the required engine UI proxy configuration") {
+    val servlet = new EngineUIProxyServlet(false, Set.empty)
+    val response = mock[HttpServletResponse]
+    val body = new StringWriter
+    when(response.getWriter).thenReturn(new PrintWriter(body))
+
+    servlet.onProxyRewriteFailed(request("/engine-ui/engine-host:4040/"), response)
+
+    verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN)
+    assert(body.toString.contains("Target engine"))
+    assert(body.toString.contains("engine-host:4040"))
+    assert(body.toString.contains("kyuubi.frontend.rest.engine.ui.proxy.enabled"))
+    assert(body.toString.contains("kyuubi.frontend.rest.engine.ui.proxy.hosts"))
   }
 
   test("rewrite target denies request smuggling through user info") {
