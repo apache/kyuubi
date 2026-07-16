@@ -123,7 +123,7 @@ class HiveQuerySuite extends KyuubiHiveTest {
       "spark.sql.shuffle.partitions" -> "1")) { spark =>
       val table = "hive.default.test_part_table"
       val tempTable = "hive.default.test_part_table_tmp"
-      withTable(table, tempTable) {
+      dropTableAfter(table, tempTable) {
         spark.sql(
           s"""
              | CREATE TABLE $table (
@@ -311,7 +311,7 @@ class HiveQuerySuite extends KyuubiHiveTest {
 
   test("ORC filter pushdown") {
     val table = "hive.default.orc_filter_pushdown"
-    withTable(table) {
+    dropTableAfter(table) {
       spark.sql(
         s"""
            | CREATE TABLE $table (
@@ -404,7 +404,7 @@ class HiveQuerySuite extends KyuubiHiveTest {
 
   test("PARQUET filter pushdown") {
     val table = "hive.default.parquet_filter_pushdown"
-    withTable(table) {
+    dropTableAfter(table) {
       spark.sql(
         s"""
            | CREATE TABLE $table (

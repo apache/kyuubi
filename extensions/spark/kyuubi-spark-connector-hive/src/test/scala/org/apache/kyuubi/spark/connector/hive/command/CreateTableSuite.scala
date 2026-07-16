@@ -34,7 +34,7 @@ class CreateTableSuite extends DDLCommandTestUtils {
       .catalog(catalogName).asInstanceOf[HiveTableCatalog]
     val table = "hive.default.employee"
     Seq("parquet", "orc").foreach { provider =>
-      withTable(table) {
+      dropTableAfter(table) {
         sql(
           s"""
              | CREATE TABLE IF NOT EXISTS
@@ -57,7 +57,7 @@ class CreateTableSuite extends DDLCommandTestUtils {
       .catalog(catalogName).asInstanceOf[HiveTableCatalog]
     val table = "hive.default.employee"
     Seq("parquet", "orc").foreach { provider =>
-      withTable(table) {
+      dropTableAfter(table) {
         sql(
           s"""
              | CREATE TABLE IF NOT EXISTS

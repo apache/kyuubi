@@ -39,10 +39,10 @@ trait ShowTablesSuiteBase extends DDLCommandTestUtils {
   }
 
   test("show tables with a pattern") {
-    withNamespace(s"$catalogName.ns1", s"$catalogName.ns2") {
+    dropNamespaceAfter(s"$catalogName.ns1", s"$catalogName.ns2") {
       sql(s"CREATE NAMESPACE $catalogName.ns1")
       sql(s"CREATE NAMESPACE $catalogName.ns2")
-      withTable(
+      dropTableAfter(
         s"$catalogName.ns1.table",
         s"$catalogName.ns1.table_name_1a",
         s"$catalogName.ns1.table_name_2b",
@@ -79,7 +79,7 @@ trait ShowTablesSuiteBase extends DDLCommandTestUtils {
   }
 
   test("change current catalog and namespace with USE statements") {
-    withCurrentCatalogAndNamespace {
+    resetCatalogAndNamespace {
       withNamespaceAndTable("ns", "table") { t =>
         sql(s"CREATE TABLE $t (name STRING, id INT) $defaultUsing")
 

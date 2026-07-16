@@ -62,7 +62,7 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
         val fact = s"hive.default.dpp_fact_$suffix"
         val dim = s"hive.default.dpp_dim_$suffix"
 
-        withTable(fact, dim) {
+        dropTableAfter(fact, dim) {
           spark.sql(
             s"""
                | CREATE TABLE $fact (id INT, v STRING) PARTITIONED BY (dt STRING)
