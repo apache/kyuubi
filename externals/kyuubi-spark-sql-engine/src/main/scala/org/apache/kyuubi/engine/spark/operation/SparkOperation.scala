@@ -23,6 +23,7 @@ import java.time.ZoneId
 import org.apache.spark.kyuubi.{SparkProgressMonitor, SQLOperationListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.catalyst.CurrentUserContext.CURRENT_USER
 import org.apache.spark.sql.execution.SparkSQLExecutionHelper
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 import org.apache.spark.ui.SparkUIUtils.formatDuration
@@ -162,6 +163,10 @@ abstract class SparkOperation(session: Session)
         spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
         spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+        // Set the session (proxy) user as the current user so that Spark built-in functions
+        // current_user() (SPARK-21957, 3.2.0), session_user() (SPARK-44860, 4.0.0) and user
+        // return it instead of the engine user.
+        CURRENT_USER.set(session.user)
         schedulerPool match {
           case Some(pool) =>
             spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
@@ -176,6 +181,7 @@ abstract class SparkOperation(session: Session)
         spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
         spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
         spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+        CURRENT_USER.remove()
         spark.sparkContext.clearJobGroup()
         if (isSessionUserSignEnabled) {
           clearSessionUserSign()

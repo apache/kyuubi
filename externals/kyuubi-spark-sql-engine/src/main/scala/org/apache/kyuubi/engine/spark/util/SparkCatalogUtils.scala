@@ -44,16 +44,42 @@ object SparkCatalogUtils extends Logging {
   //                                          Catalog                                            //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // SPARK-46050 (4.2.0) changed CatalogManager from a class to an interface, breaking
+  // binary compatibility when compiled against Spark 3.5 and run against Spark 4.2.
+  // Access catalogManager reflectively to avoid IncompatibleClassChangeError.
+  def catalogManager(spark: SparkSession): AnyRef =
+    invokeAs[AnyRef](spark.sessionState, "catalogManager")
+
+  def setCurrentNamespace(spark: SparkSession, namespace: Array[String]): Unit = {
+    val mgr = catalogManager(spark)
+    val method = mgr.getClass.getMethod("setCurrentNamespace", classOf[Array[String]])
+    try {
+      method.invoke(mgr, namespace)
+    } catch {
+      case e: java.lang.reflect.InvocationTargetException => throw e.getCause
+    }
+  }
+
+  def currentCatalog(spark: SparkSession): CatalogPlugin =
+    invokeAs[CatalogPlugin](catalogManager(spark), "currentCatalog")
+
+  def currentNamespace(spark: SparkSession): Array[String] =
+    invokeAs[Array[String]](catalogManager(spark), "currentNamespace")
+
+  def catalog(spark: SparkSession, name: String): CatalogPlugin =
+    invokeAs[CatalogPlugin](catalogManager(spark), "catalog", (classOf[String], name))
+
+  def isCatalogRegistered(spark: SparkSession, name: String): Boolean =
+    invokeAs[Boolean](catalogManager(spark), "isCatalogRegistered", (classOf[String], name))
+
   /**
    * Get all register catalogs in Spark's `CatalogManager`
    */
   def getCatalogs(spark: SparkSession): Seq[Row] = {
-
-    // A [[CatalogManager]] is session unique
-    val catalogMgr = spark.sessionState.catalogManager
+    val catalogMgr = catalogManager(spark)
     // get the custom v2 session catalog or default spark_catalog
     val sessionCatalog = invokeAs[AnyRef](catalogMgr, "v2SessionCatalog")
-    val defaultCatalog = catalogMgr.currentCatalog
+    val defaultCatalog = invokeAs[CatalogPlugin](catalogMgr, "currentCatalog")
 
     val defaults = Seq(sessionCatalog, defaultCatalog).distinct.map(invokeAs[String](_, "name"))
     val catalogs = getField[scala.collection.Map[String, _]](catalogMgr, "catalogs")
@@ -61,18 +87,17 @@ object SparkCatalogUtils extends Logging {
   }
 
   def getCatalog(spark: SparkSession, catalogName: String): CatalogPlugin = {
-    val catalogManager = spark.sessionState.catalogManager
     if (StringUtils.isBlank(catalogName)) {
-      catalogManager.currentCatalog
+      currentCatalog(spark)
     } else {
-      catalogManager.catalog(catalogName)
+      catalog(spark, catalogName)
     }
   }
 
   def setCurrentCatalog(spark: SparkSession, catalog: String): Unit = {
-    // SPARK-36841(3.3.0) Ensure setCurrentCatalog method catalog must exist
-    if (spark.sessionState.catalogManager.isCatalogRegistered(catalog)) {
-      spark.sessionState.catalogManager.setCurrentCatalog(catalog)
+    // SPARK-36841 (3.3.0) Ensure setCurrentCatalog method catalog must exist
+    if (isCatalogRegistered(spark, catalog)) {
+      invokeAs[Unit](catalogManager(spark), "setCurrentCatalog", (classOf[String], catalog))
     } else {
       throw new IllegalArgumentException(s"Cannot find catalog plugin class for catalog '$catalog'")
     }

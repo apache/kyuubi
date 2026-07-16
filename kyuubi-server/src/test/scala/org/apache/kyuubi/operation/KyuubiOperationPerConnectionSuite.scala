@@ -83,7 +83,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(errMsg.contains("Caused by: java.net.SocketException: Connection reset") ||
         errMsg.contains(s"Socket for ${SessionHandle(handle)} is closed") ||
         errMsg.contains("Socket is closed by peer") ||
-        errMsg.contains("SparkContext was shut down"))
+        errMsg.contains("SparkContext was shut down") ||
+        errMsg.contains("DAGScheduler.cleanupQueryJobs"))
     }
   }
 

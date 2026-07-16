@@ -21,7 +21,9 @@ import org.apache.spark.SparkConf
 import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.tags.IcebergTest
 
+@IcebergTest
 class RowFilteringForIcebergSuite extends RowFilteringTestBase {
   override protected val extraSparkConf: SparkConf = {
     new SparkConf()

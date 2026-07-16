@@ -203,7 +203,58 @@ class HiveTableCatalog(sparkSession: SparkSession)
       ignoredProperties: Map[String, String] = Map.empty,
       viewOriginalText: Option[String] = None): CatalogTable = {
     // scalastyle:on
-    Try { // SPARK-50675 (4.0.0)
+    Try { // SPARK-52729 (4.2.0)
+      DynConstructors.builder()
+        .impl(
+          classOf[CatalogTable],
+          classOf[TableIdentifier],
+          classOf[CatalogTableType],
+          classOf[CatalogStorageFormat],
+          classOf[StructType],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Option[BucketSpec]],
+          classOf[String],
+          classOf[Long],
+          classOf[Long],
+          classOf[String],
+          classOf[Map[String, String]],
+          classOf[Option[CatalogStatistics]],
+          classOf[Option[String]],
+          classOf[Option[String]],
+          classOf[Option[String]],
+          classOf[Seq[String]],
+          classOf[Boolean],
+          classOf[Boolean],
+          classOf[Map[String, String]],
+          classOf[Option[String]],
+          classOf[Option[Seq[String]]])
+        .buildChecked()
+        .invokeChecked[CatalogTable](
+          null,
+          identifier,
+          tableType,
+          storage,
+          schema,
+          provider,
+          partitionColumnNames,
+          bucketSpec,
+          owner,
+          createTime,
+          lastAccessTime,
+          createVersion,
+          properties,
+          stats,
+          viewText,
+          comment,
+          collation,
+          unsupportedFeatures,
+          tracksPartitionsInCatalog,
+          schemaPreservesCase,
+          ignoredProperties,
+          viewOriginalText,
+          None)
+    }.recover { case _: Exception => // SPARK-50675 (4.0.0)
       DynConstructors.builder()
         .impl(
           classOf[CatalogTable],

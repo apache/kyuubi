@@ -45,7 +45,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
 
   test("basic test") {
     val ns = s"$catalogName.$namespace"
-    withNamespace(ns) {
+    dropNamespaceAfter(ns) {
       sql(s"CREATE NAMESPACE $ns")
       assert(getCatalog(catalogName).asNamespaceCatalog.namespaceExists(namespaceArray))
     }
@@ -53,7 +53,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
 
   test("namespace with location") {
     val ns = s"$catalogName.$namespace"
-    withNamespace(ns) {
+    dropNamespaceAfter(ns) {
       withTempDir { tmpDir =>
         // The generated temp path is not qualified.
         val path = tmpDir.getCanonicalPath
@@ -69,7 +69,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
         sql(s"CREATE NAMESPACE $ns LOCATION '$uri'")
 
         // Make sure the location is qualified.
-        val expected = makeQualifiedPath(tmpDir.toString)
+        val expected = qualifyPath(tmpDir.toString)
         assert("file" === expected.getScheme)
         assert(new Path(getNamespaceLocation(catalogName, namespaceArray)).toUri === expected)
       }
@@ -78,7 +78,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
 
   test("Namespace already exists") {
     val ns = s"$catalogName.$namespace"
-    withNamespace(ns) {
+    dropNamespaceAfter(ns) {
       sql(s"CREATE NAMESPACE $ns")
 
       val e = intercept[NamespaceAlreadyExistsException] {
@@ -105,7 +105,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
     }
     withSQLConf((SQLConf.LEGACY_PROPERTY_NON_RESERVED.key, "true")) {
       NAMESPACE_RESERVED_PROPERTIES.filterNot(_ == PROP_COMMENT).foreach { key =>
-        withNamespace(ns) {
+        dropNamespaceAfter(ns) {
           sql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='foo')")
           assert(
             sql(s"DESC NAMESPACE EXTENDED $ns")

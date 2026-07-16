@@ -80,7 +80,11 @@ object FunctionCommands extends CommandSpecs[FunctionCommandSpec] {
       "functionName",
       classOf[StringFunctionExtractor],
       Some(databaseDesc))
-    FunctionCommandSpec(cmd, Seq(functionDesc), RELOADFUNCTION)
+    // SPARK-54866 (4.2.0) consolidated databaseName/functionName into a single identifier field
+    val functionIdentifierDesc = FunctionDesc(
+      "identifier",
+      classOf[FunctionIdentifierFunctionExtractor])
+    FunctionCommandSpec(cmd, Seq(functionIdentifierDesc, functionDesc), RELOADFUNCTION)
   }
 
   override def specs: Seq[FunctionCommandSpec] = Seq(

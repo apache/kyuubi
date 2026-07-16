@@ -33,6 +33,7 @@ build/mvn clean package -DskipTests -pl :kyuubi-spark-lineage_2.12 -am -Dspark.v
 
 `-Dspark.version=`
 
+- [x] 4.2.x
 - [x] 4.1.x
 - [x] 4.0.x
 - [x] 3.5.x (default)

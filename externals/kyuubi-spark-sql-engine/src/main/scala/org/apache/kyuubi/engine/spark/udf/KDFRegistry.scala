@@ -26,6 +26,7 @@ import org.apache.spark.sql.functions.udf
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_URL, KYUUBI_SESSION_USER_KEY}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 
 object KDFRegistry {
 
@@ -96,7 +97,13 @@ object KDFRegistry {
 
   def registerAll(spark: SparkSession): Unit = {
     for (func <- registeredFunctions) {
-      spark.udf.register(func.name, func.udf)
+      // SPARK-44860 (4.0.0) added a built-in `session_user` (alias for `CurrentUser`).
+      // Respect the built-in instead of registering the Kyuubi UDF of the same name.
+      if (func.name == "session_user" && SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+        // skip
+      } else {
+        spark.udf.register(func.name, func.udf)
+      }
     }
   }
 }

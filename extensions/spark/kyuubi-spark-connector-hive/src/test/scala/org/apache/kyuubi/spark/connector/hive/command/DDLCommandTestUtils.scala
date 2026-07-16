@@ -48,7 +48,7 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
   // So they share a metadata derby db.
   protected val builtinNamespace: Seq[String] = Seq("default")
 
-  protected def withNamespace(namespaces: String*)(f: => Unit): Unit = {
+  protected def dropNamespaceAfter(namespaces: String*)(f: => Unit): Unit = {
     try {
       f
     } finally {
@@ -72,7 +72,7 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
     }
   }
 
-  protected def makeQualifiedPath(path: String): URI = {
+  protected def qualifyPath(path: String): URI = {
     val hadoopPath = new Path(path)
     val fs = hadoopPath.getFileSystem(spark.sessionState.newHadoopConf())
     fs.makeQualified(hadoopPath).toUri
@@ -83,10 +83,10 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
       tableName: String,
       cat: String = catalogName)(f: String => Unit): Unit = {
     val nsCat = s"$cat.$ns"
-    withNamespace(nsCat) {
+    dropNamespaceAfter(nsCat) {
       sql(s"CREATE NAMESPACE $nsCat")
       val t = s"$nsCat.$tableName"
-      withTable(t) {
+      dropTableAfter(t) {
         f(t)
       }
     }
@@ -95,7 +95,7 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
   /**
    * Restores the current catalog/database after calling `f`.
    */
-  protected def withCurrentCatalogAndNamespace(f: => Unit): Unit = {
+  protected def resetCatalogAndNamespace(f: => Unit): Unit = {
     val curCatalog = sql("select current_catalog()").head().getString(0)
     val curDatabase = sql("select current_database()").head().getString(0)
     try {

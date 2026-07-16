@@ -41,9 +41,21 @@ object SparkUIUtils {
       activeTab: SparkUITab,
       helpText: Option[String] = None,
       showVisualization: JBoolean = false,
-      useDataTables: JBoolean = false): Seq[Node] = {
+      useDataTables: JBoolean = false,
+      useTimeline: JBoolean = false): Seq[Node] = {
     val headerSparkPageMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("headerSparkPage")
+        // SPARK-56354 (4.2.0) added the useTimeline flag as an 8th parameter
+        .impl(
+          UIUtils.getClass,
+          classOf[jakarta.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[() => Seq[Node]],
+          classOf[SparkUITab],
+          classOf[Option[String]],
+          classOf[Boolean],
+          classOf[Boolean],
+          classOf[Boolean])
         .impl(
           UIUtils.getClass,
           classOf[jakarta.servlet.http.HttpServletRequest],
@@ -68,13 +80,14 @@ object SparkUIUtils {
         .buildChecked(UIUtils)
     }
     headerSparkPageMethod.invoke[Seq[Node]](
-      request,
+      request.underlying,
       title,
       () => content,
       activeTab,
       helpText,
       showVisualization,
-      useDataTables)
+      useDataTables,
+      useTimeline)
   }
 
   def prependBaseUri(
@@ -98,6 +111,6 @@ object SparkUIUtils {
           classOf[String])
         .buildChecked(UIUtils)
     }
-    prependBaseUriMethod.invoke[String](request, basePath, resource)
+    prependBaseUriMethod.invoke[String](request.underlying, basePath, resource)
   }
 }
