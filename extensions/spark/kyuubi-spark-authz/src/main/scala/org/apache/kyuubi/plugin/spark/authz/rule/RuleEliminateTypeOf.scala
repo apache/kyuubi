@@ -25,7 +25,11 @@ import org.apache.kyuubi.plugin.spark.authz.rule.expression.TypeOfPlaceHolder
 
 object RuleEliminateTypeOf extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transformExpressionsUp {
+    // Must cover the whole plan, mirroring RuleApplyTypeOfMarker. transformExpressionsUp only
+    // visits the root node's expressions, leaving any placeholder below it (under Sort, Union,
+    // Aggregate, a subquery, ...) to reach execution, where it fails: TypeOfPlaceHolder
+    // implements no eval, only doGenCode.
+    plan.transformAllExpressions {
       case toph: TypeOfPlaceHolder => TypeOf(toph.expr)
     }
   }
