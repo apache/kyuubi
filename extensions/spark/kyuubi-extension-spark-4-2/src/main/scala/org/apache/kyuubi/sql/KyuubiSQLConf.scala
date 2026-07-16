@@ -137,7 +137,7 @@ object KyuubiSQLConf {
 
   val INFER_REBALANCE_AND_SORT_ORDERS =
     buildConf("spark.sql.optimizer.inferRebalanceAndSortOrders.enabled")
-      .doc("When ture, infer columns for rebalance and sort orders from original query, " +
+      .doc("When true, infer columns for rebalance and sort orders from original query, " +
         "e.g. the join keys from join. It can avoid compression ratio regression.")
       .version("1.7.0")
       .booleanConf

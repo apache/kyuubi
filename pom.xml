@@ -2120,7 +2120,7 @@
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
                 <spark.version>4.2.0</spark.version>
-                <!-- TODO: update once Delta and Iceberg support Spark 4.1. -->
+                <!-- TODO: update once Delta and Iceberg support Spark 4.2. -->
                 <spark.binary.version>4.1</spark.binary.version>
                 <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
                      Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
@@ -2130,7 +2130,7 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- TODO: update once Paimon support Spark 4.1. -->
+                <!-- TODO: update once Paimon support Spark 4.2. -->
                 <paimon.version>1.4.2</paimon.version>
                 <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
