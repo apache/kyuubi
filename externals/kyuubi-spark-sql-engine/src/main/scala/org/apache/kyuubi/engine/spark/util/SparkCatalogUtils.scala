@@ -95,12 +95,9 @@ object SparkCatalogUtils extends Logging {
   }
 
   def setCurrentCatalog(spark: SparkSession, catalog: String): Unit = {
-    // SPARK-36841(3.3.0) Ensure setCurrentCatalog method catalog must exist
+    // SPARK-36841 (3.3.0) Ensure setCurrentCatalog method catalog must exist
     if (isCatalogRegistered(spark, catalog)) {
-      invokeAs[Unit](
-        catalogManager(spark),
-        "setCurrentCatalog",
-        (classOf[String], catalog))
+      invokeAs[Unit](catalogManager(spark), "setCurrentCatalog", (classOf[String], catalog))
     } else {
       throw new IllegalArgumentException(s"Cannot find catalog plugin class for catalog '$catalog'")
     }
