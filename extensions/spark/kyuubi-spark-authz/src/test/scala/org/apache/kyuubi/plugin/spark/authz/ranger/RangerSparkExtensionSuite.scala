@@ -1377,6 +1377,58 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("[KYUUBI #7568][AUTHZ] Typeof expression is eliminated below the root plan node") {
+    // RuleEliminateTypeOf must walk the whole plan, mirroring RuleApplyTypeOfMarker which
+    // marks with transformAllExpressions. When only the root node is visited, a TypeOfPlaceHolder
+    // living under Sort/Union/Aggregate survives into execution and fails with
+    // CLASS_NOT_OVERRIDE_EXPECTED_METHOD, since the placeholder implements no eval.
+    val db1 = defaultDb
+    val table1 = "table1"
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq((s"$db1.$table1", "table"))) {
+        doAs(
+          admin,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $db1.$table1(
+               |id int,
+               |scope int,
+               |day string)
+               |""".stripMargin))
+        doAs(admin, sql(s"INSERT INTO $db1.$table1 SELECT 1, 2, 'TONY'"))
+
+        // root is Sort
+        checkAnswer(
+          admin,
+          s"SELECT typeof(id) AS t FROM $db1.$table1 ORDER BY t",
+          Seq(Row("int")))
+
+        // root is Union. UNION ALL has no order guarantee, and an ORDER BY would put a Sort
+        // above the Union, so sort the collected rows instead to keep Union as the root node.
+        doAs(
+          admin,
+          assert(sql(
+            s"""
+               |SELECT typeof(id) FROM $db1.$table1
+               |UNION ALL
+               |SELECT typeof(day) FROM $db1.$table1""".stripMargin)
+            .collect().sortBy(_.getString(0)) === Seq(Row("int"), Row("string"))))
+
+        // root is Aggregate
+        checkAnswer(
+          admin,
+          s"SELECT typeof(id), count(*) FROM $db1.$table1 GROUP BY typeof(id)",
+          Seq(Row("int", 1)))
+
+        // typeof inside a subquery
+        checkAnswer(
+          admin,
+          s"SELECT t FROM (SELECT typeof(scope) AS t FROM $db1.$table1) x WHERE t = 'int'",
+          Seq(Row("int")))
+      }
+    }
+  }
+
   test("[KYUUBI #5692][Bug] Authz not skip explain command") {
     val db1 = defaultDb
     val table1 = "table1"
