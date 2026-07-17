@@ -101,13 +101,7 @@ class SparkProcessBuilder(
    * - Otherwise, the key will be added a `spark.` prefix
    */
   protected def convertConfigKey(key: String): String = {
-    if (key.startsWith("spark.")) {
-      key
-    } else if (key.startsWith("hadoop.")) {
-      "spark.hadoop." + key
-    } else {
-      "spark." + key
-    }
+    SparkProcessBuilder.convertConfigKey(key)
   }
 
   private[kyuubi] def extractSparkCoreScalaVersion(fileNames: Iterable[String]): String = {
@@ -408,6 +402,16 @@ class SparkProcessBuilder(
 }
 
 object SparkProcessBuilder {
+  private[kyuubi] def convertConfigKey(key: String): String = {
+    if (key.startsWith("spark.")) {
+      key
+    } else if (key.startsWith("hadoop.")) {
+      "spark.hadoop." + key
+    } else {
+      "spark." + key
+    }
+  }
+
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
   final val MASTER_KEY = "spark.master"
