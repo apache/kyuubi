@@ -79,7 +79,8 @@
     "fieldExtractor" : "ResolvedTableURIExtractor",
     "isInput" : false,
     "comment" : ""
-  } ]
+  } ],
+  "verifiedSparkVersions" : [ "4.0", "4.1", "4.2" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterTable",
   "tableDescs" : [ {

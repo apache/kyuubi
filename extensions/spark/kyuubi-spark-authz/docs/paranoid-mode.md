@@ -42,6 +42,22 @@ enumeration check (§6) first ran, it counted **136 unclassified authz-relevant 
 on the Spark 3.5 classpath and 170 on Spark 4.1** — the population that fail-open behavior
 had been hiding.
 
+Merely running the existing test suite in deny mode then surfaced two live gaps on master
+that green CI had been certifying for years:
+
+- **Iceberg metadata tables were never authorized.** `SELECT * FROM t.snapshots` produces a
+  `DataSourceV2Relation` whose table reports a four-part name; the extractor threw a
+  `MatchError` that vanished into the fail-open path, so metadata reads (snapshot history,
+  manifests, partition statistics) required no privilege at all. Deny mode turned the
+  swallowed exception into a violation, and the fix authorizes metadata reads as reads of
+  the base table.
+- **Connector-planned scans were skipped.** Iceberg's MERGE INTO rewrite embeds an
+  already-planned `DataSourceV2ScanRelation` — the rewrite's own read of the target table —
+  a leaf the builder did not recognize and silently skipped. The named source and target
+  objects were still checked through the command spec, so every test kept passing; the
+  embedded scan is exactly the kind of node nobody thought to test. It is now classified
+  with its own scan spec.
+
 A green test suite does not bound this risk: every test was written for a node type someone
 had already classified, so the suite certifies that the *previously known* sample still
 authorizes correctly and says nothing about nodes nobody thought to test.

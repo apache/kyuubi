@@ -76,7 +76,9 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
   // is still carried in `child` as a `ResolvedTable`, so it reuses the AddColumns spec.
   val AlterColumns = {
     val cmd = "org.apache.spark.sql.catalyst.plans.logical.AlterColumns"
-    AddColumns.copy(classname = cmd)
+    // The node itself only exists on Spark 4.0+, so the pre-Spark-4 default baseline
+    // cannot apply to it.
+    AddColumns.copy(classname = cmd, verifiedSparkVersions = Seq("4.0", "4.1", "4.2"))
   }
 
   val DropColumns = {

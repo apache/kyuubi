@@ -48,6 +48,17 @@
   "uriDescs" : [ ],
   "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
+  "classname" : "org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation",
+  "scanDescs" : [ {
+    "fieldName" : "relation",
+    "fieldExtractor" : "DataSourceV2RelationTableExtractor",
+    "catalogDesc" : null,
+    "comment" : ""
+  } ],
+  "functionDescs" : [ ],
+  "uriDescs" : [ ],
+  "verifiedSparkVersions" : [ "3.5" ]
+}, {
   "classname" : "org.apache.spark.sql.hive.HiveGenericUDF",
   "scanDescs" : [ ],
   "functionDescs" : [ {

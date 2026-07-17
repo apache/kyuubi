@@ -23,14 +23,6 @@ org.apache.spark.sql.catalyst.analysis.UnresolvedView
 org.apache.spark.sql.catalyst.catalog.TemporaryViewRelation
 org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation
 org.apache.spark.sql.catalyst.encoders.DummyExpressionHolder
-org.apache.spark.sql.catalyst.plans.logcal.HoodieFileSystemViewTableValuedFunction
-org.apache.spark.sql.catalyst.plans.logcal.HoodieFileSystemViewTableValuedFunctionByPath
-org.apache.spark.sql.catalyst.plans.logcal.HoodieMetadataTableValuedFunction
-org.apache.spark.sql.catalyst.plans.logcal.HoodieQuery
-org.apache.spark.sql.catalyst.plans.logcal.HoodieTableChanges
-org.apache.spark.sql.catalyst.plans.logcal.HoodieTableChangesByPath
-org.apache.spark.sql.catalyst.plans.logcal.HoodieTimelineTableValuedFunction
-org.apache.spark.sql.catalyst.plans.logcal.HoodieTimelineTableValuedFunctionByPath
 org.apache.spark.sql.catalyst.plans.logical.AlterColumnSyncIdentity
 org.apache.spark.sql.catalyst.plans.logical.AlterTableAddConstraint
 org.apache.spark.sql.catalyst.plans.logical.AlterTableDropConstraint
@@ -54,6 +46,14 @@ org.apache.spark.sql.catalyst.plans.logical.DescribeFunction
 org.apache.spark.sql.catalyst.plans.logical.DropFunction
 org.apache.spark.sql.catalyst.plans.logical.DropIndex
 org.apache.spark.sql.catalyst.plans.logical.DropView
+org.apache.spark.sql.catalyst.plans.logical.HoodieFileSystemViewTableValuedFunction
+org.apache.spark.sql.catalyst.plans.logical.HoodieFileSystemViewTableValuedFunctionByPath
+org.apache.spark.sql.catalyst.plans.logical.HoodieMetadataTableValuedFunction
+org.apache.spark.sql.catalyst.plans.logical.HoodieQuery
+org.apache.spark.sql.catalyst.plans.logical.HoodieTableChanges
+org.apache.spark.sql.catalyst.plans.logical.HoodieTableChangesByPath
+org.apache.spark.sql.catalyst.plans.logical.HoodieTimelineTableValuedFunction
+org.apache.spark.sql.catalyst.plans.logical.HoodieTimelineTableValuedFunctionByPath
 org.apache.spark.sql.catalyst.plans.logical.LoadData
 org.apache.spark.sql.catalyst.plans.logical.RecoverPartitions
 org.apache.spark.sql.catalyst.plans.logical.RefreshFunction
@@ -125,7 +125,6 @@ org.apache.spark.sql.execution.command.ShowViewsCommand
 org.apache.spark.sql.execution.command.StreamingExplainCommand
 org.apache.spark.sql.execution.datasources.RefreshResource
 org.apache.spark.sql.execution.datasources.SparkExpressionConverter$DummyRelation
-org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation
 org.apache.spark.sql.execution.datasources.v2.ScanBuilderHolder
 org.apache.spark.sql.execution.datasources.v2.StreamingDataSourceV2Relation
 org.apache.spark.sql.execution.streaming.OffsetHolder
