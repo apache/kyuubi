@@ -459,7 +459,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       CREATETABLE_AS_SELECT,
       queryDescs = Seq(queryQueryDesc),
       uriDescs = Seq(uriDesc),
-      verifiedSparkVersions = Seq("4.1"))
+      verifiedSparkVersions = Seq("4.0", "4.1", "4.2"))
   }
 
   val CreateHiveTableAsSelect = {

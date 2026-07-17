@@ -314,8 +314,9 @@ time instead of in production:
      itself in the enumeration;
    - *dirty laundry* — relevant by shape but neither spec'd nor allowlisted, pinned one
      classname per line in `src/test/resources/classification_backlog_spark_<minor>.txt`
-     (currently 136 entries for 3.5, 181 for 4.1 — the 4.1 figure includes allowlist
-     entries awaiting 4.x re-review).
+     (currently 135 entries for 3.5, 182 for 4.0, 195 for 4.1, and 208 for 4.2 — the 4.x
+     figures grow with each profile's connector versions, since third-party nodes were
+     never classified to begin with).
 
    A companion check keeps the allowlist honest from the other side: an entry whose class
    is a pass-through shape fails the build, because nothing would ever consult it and it

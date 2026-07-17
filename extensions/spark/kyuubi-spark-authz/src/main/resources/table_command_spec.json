@@ -1585,7 +1585,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "4.1" ]
+  "verifiedSparkVersions" : [ "4.0", "4.1", "4.2" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowColumnsCommand",
   "tableDescs" : [ {

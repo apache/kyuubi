@@ -61,7 +61,9 @@ object Scans extends CommandSpecs[ScanSpec] {
       ScanDesc(
         "relation",
         classOf[DataSourceV2RelationTableExtractor])
-    ScanSpec(r, Seq(tableDesc), verifiedSparkVersions = Seq("3.5"))
+    // Exercised by the Iceberg MERGE INTO tests, which run on the 3.5/4.0/4.1 profiles
+    // (Iceberg is tag-excluded on 4.2).
+    ScanSpec(r, Seq(tableDesc), verifiedSparkVersions = Seq("3.5", "4.0", "4.1"))
   }
 
   val PermanentViewMarker = {
