@@ -107,6 +107,8 @@ class ClassificationCoverageSuite extends AnyFunSuite {
           // row-filtered by ObjectFilterPlaceHolder + FilterDataSourceV2Strategy
           "org.apache.spark.sql.catalyst.plans.logical.ShowNamespaces",
           "org.apache.spark.sql.catalyst.plans.logical.ShowTables",
+          // Spark 4.x's v1 SHOW DATABASES/NAMESPACES; row-filtered like ShowNamespaces
+          "org.apache.spark.sql.execution.command.ShowNamespacesCommand",
           // session-local temp views are deliberately not authz resources
           "org.apache.spark.sql.execution.command.DropTempViewCommand",
           // resolves to literally nothing to execute

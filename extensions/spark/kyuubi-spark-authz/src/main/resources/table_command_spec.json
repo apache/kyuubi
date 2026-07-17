@@ -1561,6 +1561,32 @@
   "uriDescs" : [ ],
   "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
+  "classname" : "org.apache.spark.sql.execution.command.SaveAsV1TableCommand",
+  "tableDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableTableExtractor",
+    "columnDesc" : null,
+    "actionTypeDesc" : null,
+    "tableTypeDesc" : null,
+    "catalogDesc" : null,
+    "isInput" : false,
+    "setCurrentDatabaseIfMissing" : true,
+    "comment" : ""
+  } ],
+  "opType" : "CREATETABLE_AS_SELECT",
+  "queryDescs" : [ {
+    "fieldName" : "query",
+    "fieldExtractor" : "LogicalPlanQueryExtractor",
+    "comment" : ""
+  } ],
+  "uriDescs" : [ {
+    "fieldName" : "tableDesc",
+    "fieldExtractor" : "CatalogTableURIExtractor",
+    "isInput" : false,
+    "comment" : ""
+  } ],
+  "verifiedSparkVersions" : [ "4.1" ]
+}, {
   "classname" : "org.apache.spark.sql.execution.command.ShowColumnsCommand",
   "tableDescs" : [ {
     "fieldName" : "tableName",

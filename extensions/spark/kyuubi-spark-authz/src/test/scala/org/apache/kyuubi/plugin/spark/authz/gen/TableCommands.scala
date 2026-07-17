@@ -441,6 +441,27 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
       queryDescs = Seq(queryQueryDesc))
   }
 
+  // SPARK-49246 (Spark 4.x): DataFrameWriter.saveAsTable on a v1 source analyzes into this
+  // leaf wrapper, which only plans the real Create*TableAsSelect command inside a nested
+  // QueryExecution when it runs. Spec it directly so the write is authorized on the outer
+  // plan rather than relying on the nested pass.
+  val SaveAsV1Table = {
+    val cmd = "org.apache.spark.sql.execution.command.SaveAsV1TableCommand"
+    val tableDesc =
+      TableDesc(
+        "tableDesc",
+        classOf[CatalogTableTableExtractor],
+        setCurrentDatabaseIfMissing = true)
+    val uriDesc = UriDesc("tableDesc", classOf[CatalogTableURIExtractor])
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATETABLE_AS_SELECT,
+      queryDescs = Seq(queryQueryDesc),
+      uriDescs = Seq(uriDesc),
+      verifiedSparkVersions = Seq("4.1"))
+  }
+
   val CreateHiveTableAsSelect = {
     val cmd = "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand"
     val columnDesc = ColumnDesc("outputColumnNames", classOf[StringSeqColumnExtractor])
@@ -723,6 +744,7 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     CreateDataSourceTable.copy(classname =
       "org.apache.spark.sql.execution.command.CreateTableCommand"),
     CreateDataSourceTableAsSelect,
+    SaveAsV1Table,
     CreateHiveTableAsSelect,
     CreateHiveTableAsSelect.copy(classname =
       "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand"),
