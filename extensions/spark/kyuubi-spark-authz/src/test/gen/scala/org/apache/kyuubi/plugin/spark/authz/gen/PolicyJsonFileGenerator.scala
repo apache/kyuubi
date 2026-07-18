@@ -120,7 +120,8 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       policyMaskNullifyForValue2,
       policyMaskShowFirst4ForValue3,
       policyMaskDateShowYearForValue4,
-      policyMaskShowFirst4ForValue5)
+      policyMaskShowFirst4ForValue5,
+      policyMaskForPermViewMaskedValue2)
       // fill the id and guid with auto-increased index
       .zipWithIndex
       .map {
@@ -334,6 +335,20 @@ class PolicyJsonFileGenerator extends AnyFunSuite {
       KRangerDataMaskPolicyItem(
         dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK_SHOW_LAST_4"),
         users = List(bob),
+        accesses = allowTypes(select),
+        delegateAdmin = true)))
+
+  private val policyMaskForPermViewMaskedValue2 = KRangerPolicy(
+    name = "perm_view_nested_value2_mask",
+    policyType = POLICY_TYPE_DATAMASK,
+    resources = Map(
+      databaseRes(defaultDb, sparkCatalog),
+      tableRes("perm_view_masked"),
+      columnRes("value2")),
+    dataMaskPolicyItems = List(
+      KRangerDataMaskPolicyItem(
+        dataMaskInfo = KRangerPolicyItemDataMaskInfo(dataMaskType = "MASK"),
+        users = List(permViewUser),
         accesses = allowTypes(select),
         delegateAdmin = true)))
 
