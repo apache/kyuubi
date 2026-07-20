@@ -21,8 +21,8 @@ import java.util.Base64
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSessionExtensions
-import org.apache.kyuubi.KyuubiFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils

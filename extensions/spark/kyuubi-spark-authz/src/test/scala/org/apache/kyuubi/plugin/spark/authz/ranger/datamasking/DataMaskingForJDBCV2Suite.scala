@@ -21,6 +21,7 @@ import java.sql.DriverManager
 import scala.util.Try
 
 import org.apache.spark.SparkConf
+
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 

@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 import scala.util.Try
 
 import org.apache.spark.sql.Row
+
 import org.apache.kyuubi.Utils
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException

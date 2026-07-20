@@ -20,7 +20,6 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.file.Paths
 
 import org.apache.kyuubi.KyuubiFunSuite
-
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.GoldenFileUtils._
 

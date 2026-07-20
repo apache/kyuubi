@@ -18,8 +18,8 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.kyuubi.KyuubiFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 

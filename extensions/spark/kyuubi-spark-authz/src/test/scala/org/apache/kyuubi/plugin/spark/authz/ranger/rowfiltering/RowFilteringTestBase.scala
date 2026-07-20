@@ -20,8 +20,8 @@ package org.apache.kyuubi.plugin.spark.authz.ranger.rowfiltering
 import scala.util.Try
 
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.apache.kyuubi.KyuubiFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension

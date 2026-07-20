@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 import org.apache.spark.SparkConf
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.tags.IcebergTest
 

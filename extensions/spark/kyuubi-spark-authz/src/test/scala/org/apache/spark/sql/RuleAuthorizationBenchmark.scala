@@ -26,8 +26,8 @@ import scala.concurrent.duration.Duration
 import scala.reflect.io.Path.jfile2path
 
 import org.apache.spark.benchmark.Benchmark
-import org.apache.kyuubi.KyuubiFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.benchmark.KyuubiBenchmarkBase
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization

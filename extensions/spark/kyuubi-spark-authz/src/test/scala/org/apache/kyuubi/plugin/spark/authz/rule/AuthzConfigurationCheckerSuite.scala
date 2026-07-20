@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.kyuubi.KyuubiFunSuite
-
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker

@@ -24,8 +24,8 @@ import scala.util.Try
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.apache.kyuubi.KyuubiFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension

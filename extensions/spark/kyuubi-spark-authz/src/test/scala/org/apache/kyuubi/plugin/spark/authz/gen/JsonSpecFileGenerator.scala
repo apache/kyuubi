@@ -21,7 +21,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 
 import org.apache.kyuubi.KyuubiFunSuite
-
 import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
 import org.apache.kyuubi.plugin.spark.authz.serde.CommandSpecs
 import org.apache.kyuubi.util.AssertionUtils._
