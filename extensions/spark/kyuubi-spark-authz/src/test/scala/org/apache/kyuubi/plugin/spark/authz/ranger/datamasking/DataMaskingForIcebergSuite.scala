@@ -18,8 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 import org.apache.spark.SparkConf
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.tags.IcebergTest
 
@@ -49,7 +47,4 @@ class DataMaskingForIcebergSuite extends DataMaskingTestBase {
     super.afterAll()
   }
 
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
-  }
 }

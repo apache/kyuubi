@@ -18,8 +18,6 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.nio.file.Path
 
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
@@ -74,10 +72,6 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
        |PARTITIONED BY (gender)
        |${propString(props)}
        |""".stripMargin
-
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
-  }
 
   override def beforeAll(): Unit = {
     spark.conf.set(s"spark.sql.catalog.$sparkCatalog", deltaCatalogClassName)

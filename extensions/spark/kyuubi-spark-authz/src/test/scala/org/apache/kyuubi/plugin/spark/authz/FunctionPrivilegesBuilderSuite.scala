@@ -18,16 +18,12 @@
 package org.apache.kyuubi.plugin.spark.authz
 
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.QUERY
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 
-abstract class FunctionPrivilegesBuilderSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
-  // scalastyle:on
+abstract class FunctionPrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
 
   protected def withTable(t: String)(f: String => Unit): Unit = {
     try {

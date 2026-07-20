@@ -34,11 +34,8 @@ import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
-import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.{LogAppenderSuite, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
@@ -50,9 +47,8 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
-abstract class RangerSparkExtensionSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll with MysqlContainerEnv with LogAppenderSuite {
-  // scalastyle:on
+abstract class RangerSparkExtensionSuite extends KyuubiFunSuite
+  with SparkSessionProvider with MysqlContainerEnv {
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   var mysqlJdbcUrl = ""

@@ -20,8 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 
-//scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.serde.{mapper, CommandSpec}
 import org.apache.kyuubi.plugin.spark.authz.serde.CommandSpecs
@@ -41,8 +40,7 @@ import org.apache.kyuubi.util.GoldenFileUtils._
  *   dev/gen/gen_ranger_spec_json.sh
  * }}}
  */
-class JsonSpecFileGenerator extends AnyFunSuite {
-  // scalastyle:on
+class JsonSpecFileGenerator extends KyuubiFunSuite {
   test("check spec json files") {
     writeCommandSpecJson("database", Seq(DatabaseCommands))
     writeCommandSpecJson(

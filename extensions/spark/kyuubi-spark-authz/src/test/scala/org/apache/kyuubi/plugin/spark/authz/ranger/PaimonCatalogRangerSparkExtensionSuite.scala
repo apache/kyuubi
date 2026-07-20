@@ -16,8 +16,6 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -41,9 +39,9 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val namespace1 = "paimon_ns"
   val table1 = "table1"
 
-  override def withFixture(test: NoArgTest): Outcome = {
+  override def beforeEach(): Unit = {
+    super.beforeEach()
     assume(isSupportedVersion)
-    test()
   }
 
   override def beforeAll(): Unit = {

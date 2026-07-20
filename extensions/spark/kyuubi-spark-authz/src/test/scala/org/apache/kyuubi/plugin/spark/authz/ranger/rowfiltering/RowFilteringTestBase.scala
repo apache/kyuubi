@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger.rowfiltering
 
-// scalastyle:off
 import scala.util.Try
 
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
@@ -32,8 +30,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
  * Base trait for row filtering tests, derivative classes shall name themselves following:
  *  RowFilteringFor CatalogImpl?  FileFormat? Additions? Suite
  */
-trait RowFilteringTestBase extends AnyFunSuite with SparkSessionProvider with BeforeAndAfterAll {
-// scalastyle:on
+trait RowFilteringTestBase extends KyuubiFunSuite with SparkSessionProvider {
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   private def setup(): Unit = {

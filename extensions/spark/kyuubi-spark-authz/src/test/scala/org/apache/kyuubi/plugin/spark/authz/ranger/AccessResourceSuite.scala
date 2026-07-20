@@ -17,13 +17,11 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
-class AccessResourceSuite extends AnyFunSuite {
-// scalastyle:on
+class AccessResourceSuite extends KyuubiFunSuite {
   test("generate spark ranger resources") {
     val resource = AccessResource(DATABASE, "my_db_name", None)
     assert(resource.catalog.isEmpty)

@@ -22,8 +22,6 @@ import java.text.SimpleDateFormat
 import scala.util.Try
 
 import org.apache.spark.sql.Row
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.Utils
 // scalastyle:off
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -50,10 +48,6 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   val outputTable1 = "outputTable1"
   val bobNamespace = "default_bob"
   val bobSelectTable = "table_select_bob_1"
-
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
-  }
 
   override def beforeAll(): Unit = {
     super.beforeAll()

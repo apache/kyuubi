@@ -20,8 +20,6 @@ import java.sql.DriverManager
 
 import scala.util.Try
 
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -53,10 +51,6 @@ class V2JdbcTableCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite
     Try {
       DriverManager.getConnection(s"$dbUrl;shutdown=true")
     }
-  }
-
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
   }
 
   test("Extracting table info with ResolvedDbObjectNameTableExtractor") {
