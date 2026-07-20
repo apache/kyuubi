@@ -61,16 +61,36 @@ case class RuleApplyDataMaskingStage1(spark: SparkSession) extends RuleHelper {
       case m: DataMaskingStage0Marker => m
       case m: DataMaskingStage1Marker => m
       case p =>
-        val maskerExprs = p.collect {
+        val maskerExprsPerMarker = p.collect {
           case marker: DataMaskingStage0Marker if marker.resolved => marker.exprToMaskers()
-        }.flatten.toMap
-        if (maskerExprs.isEmpty) {
+        }
+        if (maskerExprsPerMarker.forall(_.isEmpty)) {
           p
         } else {
-          val t = p.transformExpressionsUp {
+          // KYUUBI #7576: marker maps are keyed by pre-masking exprIds, which can collide
+          // across UNION branches once DeduplicateRelations re-instances a repeated masked
+          // scan. Rewrite the children first, keep only the maskers the rewritten children
+          // actually expose, and merge the per-marker maps after that filtering so an
+          // out-of-scope entry cannot shadow the in-scope one on a colliding key. Maskers are
+          // matched by exprId since SubqueryAlias may requalify child outputs.
+          val planWithNewChildren =
+            p.withNewChildren(p.children.map(replaceOriginExprWithMasker))
+          // A type-changing masker (e.g. MASK_HASH) leaves a Union's branches incompatible
+          // until type coercion runs and Union.output fails on them, so the masker visibility
+          // is judged only against resolved children; otherwise keep the unfiltered
+          // substitution.
+          val maskerExprs = if (planWithNewChildren.children.forall(_.resolved)) {
+            val visibleExprIds =
+              planWithNewChildren.children.flatMap(_.output).map(_.exprId).toSet
+            maskerExprsPerMarker.flatMap(_.filter {
+              case (_, masker) => visibleExprIds.contains(masker.exprId)
+            }).toMap
+          } else {
+            maskerExprsPerMarker.flatten.toMap
+          }
+          planWithNewChildren.transformExpressionsUp {
             case e: NamedExpression => maskerExprs.getOrElse(e.exprId, e)
           }
-          t.withNewChildren(t.children.map(replaceOriginExprWithMasker))
         }
     }
     val newPlan = replaceOriginExprWithMasker(plan)
