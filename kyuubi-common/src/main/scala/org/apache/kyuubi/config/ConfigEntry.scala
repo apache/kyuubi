@@ -26,7 +26,8 @@ trait ConfigEntry[T] {
   def version: String
   def typ: String
   def internal: Boolean
-  def serverOnly: Boolean
+  def audience: Option[Set[ConfigAudience.Value]]
+  def immutable: Boolean
 
   def defaultValStr: String
   def defaultVal: Option[T]
@@ -53,7 +54,8 @@ class OptionalConfigEntry[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[Option[T]] {
+    _audience: Option[Set[ConfigAudience.Value]],
+    _immutable: Boolean) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
     s => Option(rawValueConverter(s))
   }
@@ -84,7 +86,9 @@ class OptionalConfigEntry[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
+  override def audience: Option[Set[ConfigAudience.Value]] = _audience
+
+  override def immutable: Boolean = _immutable
 }
 
 class ConfigEntryWithDefault[T](
@@ -97,7 +101,8 @@ class ConfigEntryWithDefault[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[T] {
+    _audience: Option[Set[ConfigAudience.Value]],
+    _immutable: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -122,7 +127,9 @@ class ConfigEntryWithDefault[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
+  override def audience: Option[Set[ConfigAudience.Value]] = _audience
+
+  override def immutable: Boolean = _immutable
 }
 
 class ConfigEntryWithDefaultString[T](
@@ -135,7 +142,8 @@ class ConfigEntryWithDefaultString[T](
     _version: String,
     _type: String,
     _internal: Boolean,
-    _serverOnly: Boolean) extends ConfigEntry[T] {
+    _audience: Option[Set[ConfigAudience.Value]],
+    _immutable: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -161,7 +169,9 @@ class ConfigEntryWithDefaultString[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
+  override def audience: Option[Set[ConfigAudience.Value]] = _audience
+
+  override def immutable: Boolean = _immutable
 }
 
 class ConfigEntryFallback[T](
@@ -170,7 +180,8 @@ class ConfigEntryFallback[T](
     _doc: String,
     _version: String,
     _internal: Boolean,
-    _serverOnly: Boolean,
+    _audience: Option[Set[ConfigAudience.Value]],
+    _immutable: Boolean,
     fallback: ConfigEntry[T]) extends ConfigEntry[T] {
   override def defaultValStr: String = fallback.defaultValStr
 
@@ -181,6 +192,8 @@ class ConfigEntryFallback[T](
   }
 
   override def key: String = _key
+
+  def fallbackKey: String = fallback.key
 
   override def alternatives: List[String] = _alternatives
 
@@ -196,7 +209,9 @@ class ConfigEntryFallback[T](
 
   override def internal: Boolean = _internal
 
-  override def serverOnly: Boolean = _serverOnly
+  override def audience: Option[Set[ConfigAudience.Value]] = _audience
+
+  override def immutable: Boolean = _immutable
 }
 
 object ConfigEntry {

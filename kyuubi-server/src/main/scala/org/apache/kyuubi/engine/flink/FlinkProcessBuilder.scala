@@ -32,7 +32,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -186,7 +186,8 @@ class FlinkProcessBuilder(
 
         buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-        buffer ++= confKeyValues(conf.getAll.filter(_._1.startsWith("kyuubi.")))
+        buffer ++= confKeyValues(
+          conf.getEngineConf(EngineType.FLINK_SQL).filter(_._1.startsWith("kyuubi.")))
 
         buffer
 
@@ -270,7 +271,7 @@ class FlinkProcessBuilder(
 
         buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-        buffer ++= confKeyValues(conf.getAll)
+        buffer ++= confKeyValues(conf.getEngineConf(EngineType.FLINK_SQL))
 
         buffer
     }

@@ -130,7 +130,11 @@ Runtime dependency changes may also require `LICENSE-binary` and `NOTICE` update
 
 Configs are `ConfigEntry` instances in `KyuubiConf` or per-engine config classes.
 
-- Server-only entries call `.serverOnly` on the builder; `KyuubiConf` tracks them in `serverOnlyConfEntries` so they are stripped before engine-side propagation.
+- Each config entry has two independent access-control properties:
+  - **`audience`** — which consumers should receive the config. Set via `.audience(SERVER)`, `.audience(SPARK)`, etc. on the builder. Entries without explicit audience use prefix-based inference (`ConfigAudience.inferAudience`).
+  - **`immutable`** — whether users can override the config at session time. Set via `.immutable` on the builder. Admin-controlled sources (user defaults, session conf advisors) bypass immutable checks.
+- Entries that should stay on the server side use `.audience(SERVER)` on the builder; add `.immutable` if users should not override them.
+- Engine process builders must use `conf.getEngineConf(EngineType.X)` (not `conf.getAll`) to get configs filtered by audience.
 - `version()` on `ConfigEntry` is the release the key first ships in.
 - Namespace matches scope: `kyuubi.operation.*`, `kyuubi.session.*`, `kyuubi.<engine>.*`.
 - Provide a sensible default; if none is safe, leave it undefined and document the requirement.

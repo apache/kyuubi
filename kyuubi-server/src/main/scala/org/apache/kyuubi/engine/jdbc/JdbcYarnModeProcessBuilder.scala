@@ -29,7 +29,7 @@ import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_EXTRA_CLASSPATH, ENGINE_JDBC_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_ID, KYUUBI_SESSION_USER_KEY}
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.deploy.yarn.EngineYarnModeSubmitter._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyValues}
@@ -87,7 +87,7 @@ class JdbcYarnModeProcessBuilder(
       KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY,
       yarnConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
 
-    buffer ++= confKeyValues(conf.getAll)
+    buffer ++= confKeyValues(conf.getEngineConf(EngineType.JDBC))
 
     buffer
   }
