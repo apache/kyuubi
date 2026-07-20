@@ -40,8 +40,8 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val table1 = "table1"
 
   override def beforeEach(): Unit = {
-    super.beforeEach()
     assume(isSupportedVersion)
+    super.beforeEach()
   }
 
   override def beforeAll(): Unit = {
