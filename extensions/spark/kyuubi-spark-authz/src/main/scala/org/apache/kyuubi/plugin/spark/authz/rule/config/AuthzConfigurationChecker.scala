@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.SetCommand
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY
 
 /**
  * For banning end-users from set restricted spark configurations
@@ -31,7 +32,11 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
   final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
 
   private val restrictedConfList: Set[String] =
-    Set(RESTRICT_LIST_KEY, "spark.sql.runSQLOnFiles", "spark.sql.extensions") ++
+    Set(
+      RESTRICT_LIST_KEY,
+      "spark.sql.runSQLOnFiles",
+      "spark.sql.extensions",
+      SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY) ++
       spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toSet).getOrElse(Set.empty)
 
   override def apply(plan: LogicalPlan): Unit = plan match {
