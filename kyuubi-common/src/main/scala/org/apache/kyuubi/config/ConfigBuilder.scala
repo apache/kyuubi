@@ -33,7 +33,8 @@ private[kyuubi] case class ConfigBuilder(key: String) {
   private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
   private[config] var _type = ""
   private[config] var _internal = false
-  private[config] var _serverOnly = false
+  private[config] var _audience: Option[Set[ConfigAudience.Value]] = None
+  private[config] var _immutable = false
   private[config] var _alternatives = List.empty[String]
 
   def internal: ConfigBuilder = {
@@ -41,8 +42,13 @@ private[kyuubi] case class ConfigBuilder(key: String) {
     this
   }
 
-  def serverOnly: ConfigBuilder = {
-    _serverOnly = true
+  def audience(audiences: ConfigAudience.Value*): ConfigBuilder = {
+    _audience = Some(audiences.toSet)
+    this
+  }
+
+  def immutable: ConfigBuilder = {
+    _immutable = true
     this
   }
 
@@ -138,7 +144,8 @@ private[kyuubi] case class ConfigBuilder(key: String) {
         _doc,
         _version,
         _internal,
-        _serverOnly,
+        _audience,
+        _immutable,
         fallback)
     _onCreate.foreach(_(entry))
     entry
@@ -228,12 +235,12 @@ private[kyuubi] case class TypedConfigBuilder[T](
   /** Turns the config entry into a sequence of values of the underlying type. */
   def toSequence(sp: String = ","): TypedConfigBuilder[Seq[T]] = {
     parent._type = "seq"
-    TypedConfigBuilder(parent, strToSeq(_, fromStr, sp), iterableToStr(_, toStr))
+    TypedConfigBuilder(parent, strToSeq(_, fromStr, sp), iterableToStr(_, toStr, sp))
   }
 
   def toSet(sp: String = ",", skipBlank: Boolean = true): TypedConfigBuilder[Set[T]] = {
     parent._type = "set"
-    TypedConfigBuilder(parent, strToSet(_, fromStr, sp, skipBlank), iterableToStr(_, toStr))
+    TypedConfigBuilder(parent, strToSet(_, fromStr, sp, skipBlank), iterableToStr(_, toStr, sp))
   }
 
   def createOptional: OptionalConfigEntry[T] = {
@@ -246,7 +253,8 @@ private[kyuubi] case class TypedConfigBuilder[T](
       parent._version,
       parent._type,
       parent._internal,
-      parent._serverOnly)
+      parent._audience,
+      parent._immutable)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -265,7 +273,8 @@ private[kyuubi] case class TypedConfigBuilder[T](
         parent._version,
         parent._type,
         parent._internal,
-        parent._serverOnly)
+        parent._audience,
+        parent._immutable)
       parent._onCreate.foreach(_(entry))
       entry
   }
@@ -281,7 +290,8 @@ private[kyuubi] case class TypedConfigBuilder[T](
       parent._version,
       parent._type,
       parent._internal,
-      parent._serverOnly)
+      parent._audience,
+      parent._immutable)
     parent._onCreate.foreach(_(entry))
     entry
   }

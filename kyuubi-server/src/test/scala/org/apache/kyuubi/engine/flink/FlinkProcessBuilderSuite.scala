@@ -28,7 +28,7 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_APP_MGR_INFO_KEY, KYUUBI_ENGINE_CREDENTIALS_KEY}
-import org.apache.kyuubi.engine.ApplicationManagerInfo
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType}
 import org.apache.kyuubi.engine.ApplicationManagerInfo.serialize
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 
@@ -75,7 +75,7 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def envWithAllHadoop: ListMap[String, String] = envWithoutHadoopCLASSPATH +
     (FLINK_HADOOP_CLASSPATH_KEY -> s"${File.separator}hadoop")
   private def confStr: String = {
-    sessionModeConf.clone.getAll
+    sessionModeConf.clone.getEngineConf(EngineType.FLINK_SQL)
       .map { case (k, v) => s"\\\\\\n\\t--conf $k=$v" }
       .mkString(" ")
   }

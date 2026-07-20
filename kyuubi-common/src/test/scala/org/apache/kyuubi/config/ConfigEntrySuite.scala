@@ -32,7 +32,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "<none>",
       "int",
       false,
-      false)
+      Some(Set(ConfigAudience.SERVER)),
+      true)
 
     assert(e1.key === "kyuubi.int.spark")
     assert(e1.valueConverter("2") === Some(3))
@@ -43,6 +44,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.version === "<none>")
     assert(e1.typ === "int")
     assert(e1.internal === false)
+    assert(e1.audience === Some(Set(ConfigAudience.SERVER)))
+    assert(e1.immutable === true)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=<undefined>," +
       s" doc=$doc, version=<none>, type=int)")
 
@@ -58,7 +61,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "<none>",
       "int",
       false,
-      false))
+      Some(Set(ConfigAudience.SERVER)),
+      true))
     assert(e.getMessage ===
       "requirement failed: Config entry kyuubi.int.spark already registered!")
     conf.set(e1.key, "2")
@@ -77,6 +81,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "0.11.1",
       "long",
       false,
+      Some(Set(ConfigAudience.SPARK, ConfigAudience.FLINK)),
       false)
 
     assert(e1.key === "kyuubi.long.spark")
@@ -88,6 +93,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.version === "0.11.1")
     assert(e1.typ === "long")
     assert(e1.internal === false)
+    assert(e1.audience === Some(Set(ConfigAudience.SPARK, ConfigAudience.FLINK)))
+    assert(e1.immutable === false)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.long.spark, defaultValue=1," +
       s" doc=doc, version=0.11.1, type=long)")
 
@@ -109,7 +116,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
-      false)
+      Some(Set(ConfigAudience.ALL_ENGINES)),
+      true)
 
     assert(e1.key === "kyuubi.double.spark")
     assert(e1.valueConverter("2") === 2.0)
@@ -120,6 +128,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.version === "")
     assert(e1.typ === "double")
     assert(e1.internal === false)
+    assert(e1.audience === Some(Set(ConfigAudience.ALL_ENGINES)))
+    assert(e1.immutable === true)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.double.spark, defaultValue=3.0," +
       s" doc=doc, version=, type=double)")
 
@@ -141,7 +151,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
         "fallback",
         "1.2.0",
         false,
-        false,
+        Some(Set(ConfigAudience.TRINO)),
+        true,
         origin)
 
     assert(fallback.key === "kyuubi.fallback.spark")
@@ -153,6 +164,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(fallback.version === "1.2.0")
     assert(fallback.typ === "string")
     assert(fallback.internal === false)
+    assert(fallback.audience === Some(Set(ConfigAudience.TRINO)))
+    assert(fallback.immutable === true)
     assert(fallback.toString === s"ConfigEntry(key=kyuubi.fallback.spark, defaultValue=origin," +
       s" doc=fallback, version=1.2.0, type=string)")
 
@@ -174,6 +187,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
+      Some(Set(ConfigAudience.ANY)),
       false)
 
     val conf = KyuubiConf()
@@ -199,6 +213,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "",
       "double",
       false,
+      Some(Set(ConfigAudience.ANY)),
       false)
 
     val conf = KyuubiConf()

@@ -25,8 +25,8 @@ class KyuubiServerInfoProviderSuite extends WithKyuubiServer with HiveJDBCTestHe
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  // `kyuubi.server.info.provider` is set only at the server level, mimicking a
-  // kyuubi-defaults.conf entry, so the test exercises the serverOnly fallback path.
+  // `kyuubi.server.info.provider` has audience(SERVER), mimicking a
+  // kyuubi-defaults.conf entry, so the test exercises the audience(SERVER) fallback path.
   override protected val conf: KyuubiConf =
     KyuubiConf().set(KyuubiConf.SERVER_INFO_PROVIDER, "SERVER")
 
@@ -35,7 +35,7 @@ class KyuubiServerInfoProviderSuite extends WithKyuubiServer with HiveJDBCTestHe
       val req = new TGetInfoReq()
       req.setSessionHandle(handle)
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-      // Without the fix the serverOnly value is stripped from the session conf and getInfo
+      // Without the fix the audience(SERVER) value is stripped from the session conf and getInfo
       // falls back to ENGINE, which would return the engine name ("Spark SQL") instead.
       assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi")
     }

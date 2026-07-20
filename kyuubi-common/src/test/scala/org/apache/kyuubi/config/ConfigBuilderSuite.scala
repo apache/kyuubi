@@ -127,6 +127,80 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(e.getMessage equals "'-1' in kyuubi.invalid.config is invalid. must be positive integer")
   }
 
+  test("audience config") {
+    val serverConf = ConfigBuilder("kyuubi.audience.server.conf")
+      .audience(ConfigAudience.SERVER)
+      .stringConf
+      .createWithDefault("server-value")
+    assert(serverConf.audience === Some(Set(ConfigAudience.SERVER)))
+    assert(serverConf.immutable === false)
+
+    val sparkConf = ConfigBuilder("kyuubi.audience.spark.conf")
+      .audience(ConfigAudience.SPARK, ConfigAudience.FLINK)
+      .stringConf
+      .createWithDefault("multi-engine")
+    assert(sparkConf.audience === Some(Set(ConfigAudience.SPARK, ConfigAudience.FLINK)))
+
+    val defaultConf = ConfigBuilder("kyuubi.audience.default.conf")
+      .stringConf
+      .createWithDefault("default")
+    assert(defaultConf.audience === None)
+  }
+
+  test("immutable config") {
+    val immutableConf = ConfigBuilder("kyuubi.immutable.conf")
+      .immutable
+      .stringConf
+      .createWithDefault("locked")
+    assert(immutableConf.immutable === true)
+    assert(immutableConf.audience === None)
+
+    val mutableConf = ConfigBuilder("kyuubi.mutable.conf")
+      .stringConf
+      .createWithDefault("unlocked")
+    assert(mutableConf.immutable === false)
+  }
+
+  test("audience and immutable combined") {
+    val conf = ConfigBuilder("kyuubi.combined.conf")
+      .audience(ConfigAudience.SERVER)
+      .immutable
+      .stringConf
+      .createWithDefault("secure")
+    assert(conf.audience === Some(Set(ConfigAudience.SERVER)))
+    assert(conf.immutable === true)
+  }
+
+  test("toSequence and toSet preserve custom separator in strConverter") {
+    val semicolonSeq = ConfigBuilder("kyuubi.semicolon.seq.conf")
+      .stringConf
+      .toSequence(";")
+      .createWithDefault(Nil)
+    KyuubiConf.register(semicolonSeq)
+    try {
+      val kyuubiConf = KyuubiConf().set(semicolonSeq.key, "a;b;c")
+      val value = kyuubiConf.get(semicolonSeq)
+      assert(value === Seq("a", "b", "c"))
+      assert(semicolonSeq.strConverter(value) === "a;b;c")
+    } finally {
+      KyuubiConf.unregister(semicolonSeq)
+    }
+
+    val colonSet = ConfigBuilder("kyuubi.colon.set.conf")
+      .stringConf
+      .toSet(":")
+      .createWithDefault(Set.empty)
+    KyuubiConf.register(colonSet)
+    try {
+      val kyuubiConf = KyuubiConf().set(colonSet.key, "a:b:c")
+      val value = kyuubiConf.get(colonSet)
+      assert(value === Set("a", "b", "c"))
+      assert(colonSet.strConverter(value) === "a:b:c")
+    } finally {
+      KyuubiConf.unregister(colonSet)
+    }
+  }
+
   test("invalid config for enum") {
     object TempEnum extends Enumeration {
       type TempEnum = Value

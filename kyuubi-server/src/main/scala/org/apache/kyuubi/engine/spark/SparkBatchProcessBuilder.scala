@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark
 import scala.collection.mutable
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KyuubiApplicationManager
+import org.apache.kyuubi.engine.{EngineType, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -53,7 +53,7 @@ class SparkBatchProcessBuilder(
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 
-    (batchKyuubiConf.getAll ++
+    (batchKyuubiConf.getEngineConf(EngineType.SPARK_SQL) ++
       sparkAppNameConf() ++
       engineLogPathConf() ++
       appendPodNameConf(batchConf) ++

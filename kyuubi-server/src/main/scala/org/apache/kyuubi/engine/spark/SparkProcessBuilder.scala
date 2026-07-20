@@ -34,7 +34,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -140,7 +140,7 @@ class SparkProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
-    var allConf = conf.getAll
+    var allConf = conf.getEngineConf(EngineType.SPARK_SQL)
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server keytab file
     if (AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {

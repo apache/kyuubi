@@ -19,6 +19,7 @@ package org.apache.kyuubi.metrics
 
 import java.time.Duration
 
+import org.apache.kyuubi.config.ConfigAudience.SERVER
 import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf.buildConf
 import org.apache.kyuubi.metrics.ReporterType._
@@ -27,14 +28,16 @@ object MetricsConf {
 
   val METRICS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.metrics.enabled")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .doc("Set to true to enable kyuubi metrics system")
       .version("1.2.0")
       .booleanConf
       .createWithDefault(true)
 
   val METRICS_REPORTERS: ConfigEntry[Set[String]] = buildConf("kyuubi.metrics.reporters")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("A comma-separated list for all metrics reporters" +
       "<ul>" +
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
@@ -51,14 +54,16 @@ object MetricsConf {
     .createWithDefault(Set(PROMETHEUS.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.console.interval")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("How often should report metrics to console")
     .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)
 
   val METRICS_JSON_LOCATION: ConfigEntry[String] = buildConf("kyuubi.metrics.json.location")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("Where the JSON metrics file located. " +
       "Note: this value support the variables substitution: `{{KYUUBI_HOME}}`, " +
       "`{{KYUUBI_WORK_DIR_ROOT}}`.")
@@ -67,14 +72,16 @@ object MetricsConf {
     .createWithDefault("{{KYUUBI_HOME}}/metrics")
 
   val METRICS_JSON_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.json.interval")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("How often should report metrics to JSON file")
     .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)
 
   val METRICS_PROMETHEUS_PORT: ConfigEntry[Int] = buildConf("kyuubi.metrics.prometheus.port")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("Prometheus metrics HTTP server port")
     .version("1.2.0")
     .intConf
@@ -82,7 +89,8 @@ object MetricsConf {
     .createWithDefault(10019)
 
   val METRICS_PROMETHEUS_PATH: ConfigEntry[String] = buildConf("kyuubi.metrics.prometheus.path")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("URI context path of prometheus metrics HTTP server")
     .version("1.2.0")
     .stringConf
@@ -91,14 +99,16 @@ object MetricsConf {
 
   val METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.metrics.prometheus.labels.instance.enabled")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .doc("Whether to add instance label to prometheus metrics")
       .version("1.10.2")
       .booleanConf
       .createWithDefault(false)
 
   val METRICS_SLF4J_INTERVAL: ConfigEntry[Long] = buildConf("kyuubi.metrics.slf4j.interval")
-    .serverOnly
+    .audience(SERVER)
+    .immutable
     .doc("How often should report metrics to SLF4J logger")
     .version("1.2.0")
     .timeConf

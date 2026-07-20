@@ -29,7 +29,7 @@ import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
-import org.apache.kyuubi.engine.{KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{EngineType, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
@@ -99,7 +99,7 @@ class TrinoProcessBuilder(
     // or just leave it, because we can handle it at operation layer
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    buffer ++= confKeyValues(conf.getAll)
+    buffer ++= confKeyValues(conf.getEngineConf(EngineType.TRINO))
 
     buffer
   }
