@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
-import org.scalatest.Outcome
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
@@ -48,10 +46,6 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       s"spark.sql.catalog.$catalogV2.warehouse",
       Utils.createTempDir("iceberg-hadoop").toString)
     super.beforeAll()
-  }
-
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
   }
 
   test("DeleteFromIcebergTable") {

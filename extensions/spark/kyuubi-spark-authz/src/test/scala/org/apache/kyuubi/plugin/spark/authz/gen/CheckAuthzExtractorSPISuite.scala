@@ -19,14 +19,11 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 
 import java.nio.file.Paths
 
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
-
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.GoldenFileUtils._
 
-class CheckAuthzExtractorSPISuite extends AnyFunSuite {
-  // scalastyle:on
+class CheckAuthzExtractorSPISuite extends KyuubiFunSuite {
 
   test("check authz extractor SPI service file sorted") {
     Seq(

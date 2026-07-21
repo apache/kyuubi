@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.rowfiltering
 
 import org.apache.spark.SparkConf
-import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.tags.IcebergTest
@@ -49,7 +48,4 @@ class RowFilteringForIcebergSuite extends RowFilteringTestBase {
     super.afterAll()
   }
 
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
-  }
 }

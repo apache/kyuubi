@@ -21,13 +21,11 @@ import java.sql.Timestamp
 
 import scala.util.Try
 
-// scalastyle:off
 import org.apache.commons.codec.digest.DigestUtils.md5Hex
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{Row, SparkSessionExtensions}
-import org.scalatest.BeforeAndAfterAll
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
@@ -36,8 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.RangerSparkExtension
  * Base trait for data masking tests, derivative classes shall name themselves following:
  *  DataMaskingFor CatalogImpl?  FileFormat? Additions? Suite
  */
-trait DataMaskingTestBase extends AnyFunSuite with SparkSessionProvider with BeforeAndAfterAll {
-// scalastyle:on
+trait DataMaskingTestBase extends KyuubiFunSuite with SparkSessionProvider {
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
 
   // SPARK-44444 (Spark 4.0) enables ANSI SQL mode by default. Under ANSI mode,

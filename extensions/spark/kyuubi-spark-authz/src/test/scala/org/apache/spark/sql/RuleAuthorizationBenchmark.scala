@@ -26,10 +26,8 @@ import scala.concurrent.duration.Duration
 import scala.reflect.io.Path.jfile2path
 
 import org.apache.spark.benchmark.Benchmark
-import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.SparkSessionProvider
 import org.apache.kyuubi.plugin.spark.authz.benchmark.KyuubiBenchmarkBase
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
@@ -44,10 +42,8 @@ import org.apache.kyuubi.util.ThreadUtils
  *   -Dtest=none -DwildcardSuites=org.apache.spark.sql.RuleAuthorizationBenchmark
  * }}}
  */
-class RuleAuthorizationBenchmark extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll
+class RuleAuthorizationBenchmark extends KyuubiFunSuite with SparkSessionProvider
   with KyuubiBenchmarkBase {
-  // scalastyle:on
 
   override protected val catalogImpl: String = "hive"
   private val runBenchmark = sys.env.contains("RUN_BENCHMARK")
