@@ -20,6 +20,9 @@ package org.apache.kyuubi.plugin.spark.authz.gen
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths, StandardOpenOption}
 
+import scala.collection.mutable
+import scala.io.Source
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.serde._
 import org.apache.kyuubi.util.AssertionUtils._
@@ -47,6 +50,7 @@ class JsonSpecFileGenerator extends KyuubiFunSuite {
     writeCommandSpecJson("function", Seq(FunctionCommands))
     writeCommandSpecJson("scan", Seq(Scans))
     writeHarmlessNodeSpecJson()
+    assertLedgerHasNoStaleEntries()
   }
 
   def writeHarmlessNodeSpecJson(): Unit = {
@@ -79,26 +83,58 @@ class JsonSpecFileGenerator extends KyuubiFunSuite {
     }
   }
 
-  // Every entry currently in the spec files predates the Spark 4 port, so this is the
-  // audited baseline for any spec that doesn't declare its own verified versions. Specs
-  // verified on other Spark minors should set verifiedSparkVersions explicitly at their
-  // definition site. Note the field is advisory for command/scan specs (they still engage
-  // on unaudited versions), unlike the allowlist where it gates.
-  private val defaultVerifiedSparkVersions = Seq("3.3", "3.4", "3.5")
+  private val verifiedVersionsLedgerFile = "spec_verified_spark_versions.txt"
 
-  private def withDefaultVerifiedVersions[T <: CommandSpec](spec: T): T = {
+  // Spark-version provenance for specs that do not declare verifiedSparkVersions at their
+  // definition site. There is deliberately no default: a spec that is neither declared nor
+  // listed fails generation, so a new spec cannot silently inherit the pre-Spark-4-port
+  // baseline the way it could when this was a blanket back-fill. See the ledger's header.
+  private lazy val verifiedVersionsLedger: Map[String, Seq[String]] = {
+    val ledgerPath = Paths.get(
+      s"${getCurrentModuleHome(this)}/src/test/resources/$verifiedVersionsLedgerFile")
+    val source = Source.fromFile(ledgerPath.toFile, StandardCharsets.UTF_8.name)
+    val entries =
+      try source.getLines().map(_.takeWhile(_ != '#').trim).filter(_.nonEmpty).toList
+      finally source.close()
+    entries.map { entry =>
+      val fields = entry.split("\\s+").toSeq
+      fields.head -> fields.tail
+    }.toMap
+  }
+
+  private val ledgerEntriesUsed = mutable.Set.empty[String]
+
+  private def withVerifiedVersions[T <: CommandSpec](spec: T): T = {
+    if (spec.verifiedSparkVersions.nonEmpty) {
+      return spec
+    }
+    ledgerEntriesUsed += spec.classname
+    val versions = verifiedVersionsLedger.getOrElse(
+      spec.classname,
+      fail(
+        s"${spec.classname} declares no verifiedSparkVersions and is absent from" +
+          s" $verifiedVersionsLedgerFile. Set verifiedSparkVersions at the spec's" +
+          " definition site to the exact Spark major.minor versions it was reviewed" +
+          " against, using Seq.empty if none. Do not add it to the ledger: that file" +
+          " records the pre-Spark-4-port baseline and is not meant to grow."))
     val populated: CommandSpec = spec match {
-      case s: DatabaseCommandSpec if s.verifiedSparkVersions.isEmpty =>
-        s.copy(verifiedSparkVersions = defaultVerifiedSparkVersions)
-      case s: TableCommandSpec if s.verifiedSparkVersions.isEmpty =>
-        s.copy(verifiedSparkVersions = defaultVerifiedSparkVersions)
-      case s: FunctionCommandSpec if s.verifiedSparkVersions.isEmpty =>
-        s.copy(verifiedSparkVersions = defaultVerifiedSparkVersions)
-      case s: ScanSpec if s.verifiedSparkVersions.isEmpty =>
-        s.copy(verifiedSparkVersions = defaultVerifiedSparkVersions)
+      case s: DatabaseCommandSpec => s.copy(verifiedSparkVersions = versions)
+      case s: TableCommandSpec => s.copy(verifiedSparkVersions = versions)
+      case s: FunctionCommandSpec => s.copy(verifiedSparkVersions = versions)
+      case s: ScanSpec => s.copy(verifiedSparkVersions = versions)
       case s => s
     }
     populated.asInstanceOf[T]
+  }
+
+  // A ledger entry for a spec that no longer exists is dead weight that reads as
+  // provenance, so retire it along with its spec.
+  private def assertLedgerHasNoStaleEntries(): Unit = {
+    val staleEntries = verifiedVersionsLedger.keySet -- ledgerEntriesUsed
+    withClue(
+      s"$verifiedVersionsLedgerFile has entries for specs that no longer take their" +
+        s" versions from it, remove them: $staleEntries")(
+      assertResult(Set.empty[String])(staleEntries))
   }
 
   def writeCommandSpecJson[T <: CommandSpec](
@@ -109,7 +145,7 @@ class JsonSpecFileGenerator extends KyuubiFunSuite {
       s"${getCurrentModuleHome(this)}/src/main/resources/$filename")
 
     val allSpecs = specsArr.flatMap(_.specs.sortBy(_.classname))
-      .map(withDefaultVerifiedVersions)
+      .map(withVerifiedVersions)
     val duplicatedClassnames = allSpecs.groupBy(_.classname).values
       .filter(_.size > 1).flatMap(specs => specs.map(_.classname)).toSet
     withClue(s"Unexpected duplicated classnames: $duplicatedClassnames")(

@@ -272,6 +272,17 @@ The field's force differs by spec kind, deliberately:
   build-time tooling a place to grow (e.g. flagging specs engaged far outside their
   audited range).
 
+Where the values come from differs as well. A new spec declares `verifiedSparkVersions` at
+its definition site, naming the minors it was actually reviewed against. The command and
+scan specs that predate the Spark 4 port instead take theirs from a frozen ledger,
+`src/test/resources/spec_verified_spark_versions.txt`, which records the `3.3, 3.4, 3.5`
+baseline those entries inherited wholesale rather than earned per minor; the ledger's header
+explains why that distinction is preserved rather than laundered into as many individual
+per-minor claims. The ledger is deliberately closed rather than a default: a spec that
+neither declares its own versions nor appears there fails generation, so a newly added spec
+cannot quietly inherit the baseline, and an entry left behind by a deleted spec fails the
+same check rather than lingering as provenance for nothing.
+
 The build-time enumeration (§6) respects the gate: on each profile, only allowlist entries
 verified for that profile's Spark minor count as classified, so porting to a new Spark
 version surfaces every entry awaiting re-review in that profile's backlog at PR time.
