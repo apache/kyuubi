@@ -17,16 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule
 
-import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
-
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 
-class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvider
-  with BeforeAndAfterAll {
+class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionProvider {
 
   override protected val catalogImpl: String = "in-memory"
   override def afterAll(): Unit = {
@@ -51,8 +47,8 @@ class AuthzConfigurationCheckerSuite extends AnyFunSuite with SparkSessionProvid
     intercept[AccessControlException](extension.apply(p6))
     val p7 = sql("set spark.sql.efg=hijk").queryExecution.analyzed
     extension.apply(p7)
-    val p8 = sql(
-      s"set spark.sql.optimizer.excludedRules=${classOf[RuleAuthorization].getName}").queryExecution.analyzed
+    val p8 = sql(s"set spark.sql.optimizer.excludedRules=${classOf[RuleAuthorization].getName}")
+      .queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p8))
     val p9 = sql(
       "set spark.kyuubi.authz.skipCataloglessV2Relation.enabled=true").queryExecution.analyzed

@@ -21,7 +21,6 @@ import java.sql.DriverManager
 import scala.util.Try
 
 import org.apache.spark.SparkConf
-import org.scalatest.Outcome
 
 import org.apache.kyuubi.plugin.spark.authz.V2JdbcTableCatalogPrivilegesBuilderSuite._
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
@@ -53,7 +52,4 @@ class DataMaskingForJDBCV2Suite extends DataMaskingTestBase {
     }
   }
 
-  override def withFixture(test: NoArgTest): Outcome = {
-    test()
-  }
 }

@@ -23,12 +23,10 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.connector.catalog.{Identifier, Table => V2Table, TableCapability}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
-import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
-class DataSourceV2RelationTableExtractorSuite extends AnyFunSuite with BeforeAndAfterAll {
-// scalastyle:on
+import org.apache.kyuubi.KyuubiFunSuite
+
+class DataSourceV2RelationTableExtractorSuite extends KyuubiFunSuite {
 
   private val skipConfKey = "spark.kyuubi.authz.skipCataloglessV2Relation.enabled"
 

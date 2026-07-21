@@ -27,9 +27,8 @@ import com.fasterxml.jackson.databind.json.JsonMapper
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.ranger.plugin.model.RangerPolicy
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.gen.KRangerPolicyItemAccess.allowTypes
@@ -52,8 +51,7 @@ import org.apache.kyuubi.util.GoldenFileUtils._
  *   dev/gen/gen_ranger_policy_json.sh
  * }}}
  */
-class PolicyJsonFileGenerator extends AnyFunSuite {
-  // scalastyle:on
+class PolicyJsonFileGenerator extends KyuubiFunSuite {
   final private val mapper: ObjectMapper = JsonMapper.builder()
     .addModule(DefaultScalaModule)
     .serializationInclusion(Include.NON_NULL)

@@ -25,10 +25,8 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -36,9 +34,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 
-abstract class PrivilegesBuilderSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll with BeforeAndAfterEach {
-// scalastyle:on
+abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
 
   protected def withTable(t: String)(f: String => Unit): Unit = {
     try {

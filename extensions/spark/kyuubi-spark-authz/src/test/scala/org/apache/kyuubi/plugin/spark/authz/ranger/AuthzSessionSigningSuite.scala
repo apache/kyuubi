@@ -21,18 +21,14 @@ import java.util.Base64
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSessionExtensions
-import org.scalatest.BeforeAndAfterAll
-// scalastyle:off
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN}
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils
 import org.apache.kyuubi.util.SignUtils
 
-class AuthzSessionSigningSuite extends AnyFunSuite
-  with SparkSessionProvider with BeforeAndAfterAll {
-  // scalastyle:on
+class AuthzSessionSigningSuite extends KyuubiFunSuite with SparkSessionProvider {
   override protected val extension: SparkSessionExtensions => Unit = new RangerSparkExtension
   override protected val catalogImpl: String = "in-memory"
   override protected val extraSparkConf: SparkConf = new SparkConf()

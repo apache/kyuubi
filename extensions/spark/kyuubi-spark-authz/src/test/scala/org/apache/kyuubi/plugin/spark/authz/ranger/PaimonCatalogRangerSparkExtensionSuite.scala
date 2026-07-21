@@ -16,7 +16,8 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
-import org.scalatest.Outcome
+import org.scalactic.source
+import org.scalatest.Tag
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -41,9 +42,11 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val namespace1 = "paimon_ns"
   val table1 = "table1"
 
-  override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSupportedVersion)
-    test()
+  override protected def test(testName: String, testTags: Tag*)(
+      testFun: => Any)(implicit pos: source.Position): Unit = {
+    if (isSupportedVersion) {
+      super.test(testName, testTags: _*)(testFun)(pos)
+    }
   }
 
   override def beforeAll(): Unit = {
@@ -60,7 +63,6 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override def afterAll(): Unit = {
     if (isSupportedVersion) {
       doAs(admin, sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace1"))
-
       super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
