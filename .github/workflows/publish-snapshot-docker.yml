@@ -19,7 +19,7 @@ name: Publish Snapshot Docker Image
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 */5 * *'
 
 jobs:
   push_to_registry:
