@@ -16,6 +16,7 @@
  */
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import org.scalactic.source
 import org.scalatest.Tag
 
 import org.apache.kyuubi.Utils
@@ -42,19 +43,18 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val table1 = "table1"
 
   override protected def test(testName: String, testTags: Tag*)(
-      testFun: => Any)(implicit pos: org.scalactic.source.Position): Unit = {
-    if (isSupportedVersion) {
-      super.test(testName, testTags: _*)(testFun)(pos)
-    }
+      testFun: => Any)(implicit pos: source.Position): Unit = {
+    assume(isSupportedVersion)
+    super.test(testName, testTags: _*)(testFun)(pos)
   }
 
   override def beforeAll(): Unit = {
-    super.beforeAll()
     if (isSupportedVersion) {
       spark.conf.set(s"spark.sql.catalog.$catalogV2", "org.apache.paimon.spark.SparkCatalog")
       spark.conf.set(
         s"spark.sql.catalog.$catalogV2.warehouse",
         Utils.createTempDir(catalogV2).toString)
+      super.beforeAll()
       doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $catalogV2.$namespace1"))
     }
   }
@@ -62,10 +62,10 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override def afterAll(): Unit = {
     if (isSupportedVersion) {
       doAs(admin, sql(s"DROP DATABASE IF EXISTS $catalogV2.$namespace1"))
+      super.afterAll()
       spark.sessionState.catalog.reset()
       spark.sessionState.conf.clear()
     }
-    super.afterAll()
   }
 
   test("CreateTable") {
