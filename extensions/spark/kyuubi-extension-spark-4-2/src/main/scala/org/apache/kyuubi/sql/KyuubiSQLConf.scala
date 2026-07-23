@@ -259,7 +259,8 @@ object KyuubiSQLConf {
     buildConf("spark.sql.adaptive.rebalancePartitionsAdvisoryPartitionSizeInBytes")
       .doc("The advisory partition size for RebalancePartitions operator. When set, it will be " +
         "passed to `optAdvisoryPartitionSize` of the RebalancePartitions node. " +
-        "It takes precedence over `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`.")
+        "When both this and `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes` are " +
+        "set, the larger value is used.")
       .version("1.12.0")
       .bytesConf(ByteUnit.BYTE)
       .createOptional
@@ -319,14 +320,18 @@ object KyuubiSQLConf {
       .createWithDefault(true)
 
   def getAdvisoryPartitionSize(conf: SQLConf): Option[Long] = {
-    conf.getConf(REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE).orElse {
-      if (conf.contains(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY)) {
-        Some(JavaUtils.byteStringAs(
-          conf.getConfString(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY),
-          ByteUnit.BYTE))
-      } else {
-        None
-      }
+    val rebalanceTargetSize = conf.getConf(REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE)
+    val finalStageTargetSize = if (conf.contains(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY)) {
+      Some(JavaUtils.byteStringAs(
+        conf.getConfString(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY),
+        ByteUnit.BYTE))
+    } else {
+      None
+    }
+    if (rebalanceTargetSize.isDefined && finalStageTargetSize.isDefined) {
+      Some(rebalanceTargetSize.get.max(finalStageTargetSize.get))
+    } else {
+      rebalanceTargetSize.orElse(finalStageTargetSize)
     }
   }
 }

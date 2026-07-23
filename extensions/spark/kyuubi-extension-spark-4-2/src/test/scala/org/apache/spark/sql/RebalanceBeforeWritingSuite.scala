@@ -425,7 +425,7 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
     }
   }
 
-  test("advisory partition size - kyuubi config takes precedence over finalStage") {
+  test("advisory partition size - larger value wins when both configs are set") {
     withSQLConf(
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
       KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE_IF_NO_SHUFFLE.key -> "true",
@@ -438,8 +438,8 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
           val rebalances = write.collect { case r: RebalancePartitions => r }
           assert(rebalances.size === 1)
           assert(rebalances.head.optAdvisoryPartitionSize.isDefined)
-          // kyuubi config takes precedence over finalStage
-          assert(rebalances.head.optAdvisoryPartitionSize.get === 209715200L) // 200MB
+          // both set: the larger of the two values wins
+          assert(rebalances.head.optAdvisoryPartitionSize.get === 314572800L) // 300MB
         }
       }
     }
@@ -477,11 +477,25 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       assert(KyuubiSQLConf.getAdvisoryPartitionSize(conf).get === 1073741824L) // 1GB
     }
 
-    // Both set: kyuubi config takes precedence
+    // Both set: the larger value wins (kyuubi larger)
     withSQLConf(
       KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "1gb",
       KyuubiSQLConf.FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY -> "500MB") {
       assert(KyuubiSQLConf.getAdvisoryPartitionSize(conf).get === 1073741824L) // 1GB
+    }
+
+    // Both set: the larger value wins (finalStage larger)
+    withSQLConf(
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "200MB",
+      KyuubiSQLConf.FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY -> "500MB") {
+      assert(KyuubiSQLConf.getAdvisoryPartitionSize(conf).get === 524288000L) // 500MB
+    }
+
+    // Both set to the same value
+    withSQLConf(
+      KyuubiSQLConf.REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE.key -> "256MB",
+      KyuubiSQLConf.FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY -> "256MB") {
+      assert(KyuubiSQLConf.getAdvisoryPartitionSize(conf).get === 268435456L) // 256MB
     }
   }
 }
