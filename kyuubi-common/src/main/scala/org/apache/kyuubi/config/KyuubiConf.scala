@@ -3195,6 +3195,19 @@ object KyuubiConf {
       }
       .createWithDefault("hadoop")
 
+  val STATEMENT_INTERCEPTORS: OptionalConfigEntry[Seq[String]] =
+    buildConf("kyuubi.operation.statement.interceptors")
+      .doc("A comma-separated list of statement interceptor plugins for Kyuubi Server. Each " +
+        "value should be a subclass of `org.apache.kyuubi.plugin.StatementInterceptor` with a " +
+        "zero-arg constructor. They are invoked in the configured order on the server before " +
+        "each interactive statement is routed to the engine, and can inspect, reject, or " +
+        "rewrite the statement.")
+      .version("1.12.0")
+      .serverOnly
+      .stringConf
+      .toSequence()
+      .createOptional
+
   val SERVER_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.server.name")
       .doc("The name of Kyuubi Server.")

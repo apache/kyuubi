@@ -313,15 +313,38 @@ class KyuubiSessionImpl(
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
-    val kyuubiNode = parser.parsePlan(statement)
+    // Allocate the operation handle up front so the interceptor sees the same id the operation
+    // and its result set will carry, then reuse it instead of letting the operation self-generate.
+    val operationHandle = OperationHandle()
+    val interceptedStatement = sessionManager.interceptStatement(
+      handle.identifier.toString,
+      operationHandle.identifier.toString,
+      user,
+      realUser,
+      ipAddress,
+      statement,
+      confOverlay,
+      runAsync,
+      queryTimeout,
+      sessionConf.get(ENGINE_TYPE))
+    val kyuubiNode = parser.parsePlan(interceptedStatement)
     kyuubiNode match {
       case command: RunnableCommand =>
         val operation = sessionManager.operationManager.newExecuteOnServerOperation(
           this,
           runAsync,
-          command)
+          command,
+          operationHandle)
         runOperation(operation)
-      case _ => super.executeStatement(statement, confOverlay, runAsync, queryTimeout)
+      case _ =>
+        val operation = sessionManager.operationManager.newExecuteStatementOperation(
+          this,
+          interceptedStatement,
+          confOverlay,
+          runAsync,
+          queryTimeout,
+          operationHandle)
+        runOperation(operation)
     }
   }
 

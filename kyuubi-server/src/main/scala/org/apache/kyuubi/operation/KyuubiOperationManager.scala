@@ -58,17 +58,39 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       statement: String,
       confOverlay: Map[String, String],
       runAsync: Boolean,
-      queryTimeout: Long): Operation = {
+      queryTimeout: Long): Operation =
+    newExecuteStatementOperation(
+      session,
+      statement,
+      confOverlay,
+      runAsync,
+      queryTimeout,
+      OperationHandle())
+
+  def newExecuteStatementOperation(
+      session: Session,
+      statement: String,
+      confOverlay: Map[String, String],
+      runAsync: Boolean,
+      queryTimeout: Long,
+      operationHandle: OperationHandle): Operation = {
     val operation =
-      new ExecuteStatement(session, statement, confOverlay, runAsync, getQueryTimeout(queryTimeout))
+      new ExecuteStatement(
+        session,
+        statement,
+        confOverlay,
+        runAsync,
+        getQueryTimeout(queryTimeout),
+        operationHandle)
     addOperation(operation)
   }
 
   def newExecuteOnServerOperation(
       session: KyuubiSessionImpl,
       runAsync: Boolean,
-      command: RunnableCommand): Operation = {
-    val operation = new ExecutedCommandExec(session, runAsync, command)
+      command: RunnableCommand,
+      operationHandle: OperationHandle = OperationHandle()): Operation = {
+    val operation = new ExecutedCommandExec(session, runAsync, command, operationHandle)
     addOperation(operation)
   }
 

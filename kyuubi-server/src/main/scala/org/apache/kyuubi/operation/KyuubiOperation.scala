@@ -35,7 +35,15 @@ import org.apache.kyuubi.shaded.thrift.TException
 import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 import org.apache.kyuubi.util.ThriftUtils
 
-abstract class KyuubiOperation(session: Session) extends AbstractOperation(session) {
+// The handle is injected as a constructor paramaccessor `override protected val handle` (mirroring
+// the Spark engine operations) so the server can pass a pre-allocated handle whose id the statement
+// interceptor already observed. It must stay a constructor parameter, not a body `val`, so that
+// AbstractOperation's `statementId = handle.identifier.toString` reads the injected handle during
+// superclass initialization rather than a null field.
+abstract class KyuubiOperation(
+    session: Session,
+    override protected val handle: OperationHandle = OperationHandle())
+  extends AbstractOperation(session) {
 
   MetricsSystem.tracing { ms =>
     ms.incCount(MetricRegistry.name(OPERATION_OPEN, opType))
