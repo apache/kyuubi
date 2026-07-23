@@ -44,6 +44,12 @@ package object serde {
   def loadExtractorsToMap[T <: Extractor](implicit ct: ClassTag[T]): Map[String, T] =
     loadFromServiceLoader[T]()(ct).map { e: T => (e.key, e) }.toMap
 
+  final lazy val DENIED_PLAN_NODE_SPECS: Map[String, DeniedPlanNodeSpec] = {
+    val is = getClass.getClassLoader.getResourceAsStream("denied_plan_node_spec.json")
+    mapper.readValue(is, new TypeReference[Array[DeniedPlanNodeSpec]] {})
+      .map(e => (e.classname, e)).toMap
+  }
+
   final lazy val DB_COMMAND_SPECS: Map[String, DatabaseCommandSpec] = {
     val is = getClass.getClassLoader.getResourceAsStream("database_command_spec.json")
     mapper.readValue(is, new TypeReference[Array[DatabaseCommandSpec]] {})

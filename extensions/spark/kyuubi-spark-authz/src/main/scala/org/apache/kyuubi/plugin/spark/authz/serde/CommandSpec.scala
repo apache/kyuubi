@@ -99,6 +99,14 @@ case class TableCommandSpec(
   }
 }
 
+/**
+ * A specification for a plan node that should be unconditionally denied.
+ *
+ * @param classname the fully-qualified plan node classname
+ * @param message   the error message surfaced in the AccessControlException
+ */
+case class DeniedPlanNodeSpec(classname: String, message: String)
+
 case class ScanSpec(
     classname: String,
     scanDescs: Seq[ScanDesc],
