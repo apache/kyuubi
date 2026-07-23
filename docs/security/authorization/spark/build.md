@@ -78,27 +78,16 @@ By default, it is always built with the latest `ranger.version` defined in kyuub
 Sometimes, it may be incompatible with other Ranger Admins, then you may need to build the plugin on your own targeting the Ranger Admin version you connect with.
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.version=2.4.0
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.version=2.8.0
 ```
 
 The available `ranger.version`s are shown in the following table.
 
-| Ranger Version | Supported |                                          Remark                                           |
-|:--------------:|:---------:|:-----------------------------------------------------------------------------------------:|
-|     2.6.x      |     √     |                                             -                                             |
-|     2.5.x      |     √     |                                             -                                             |
-|     2.4.x      |     √     |                                             -                                             |
-|     2.3.x      |     √     |                                             -                                             |
-|     2.2.x      |     √     |                                             -                                             |
-|     2.1.x      |     √     |                                             -                                             |
-|     2.0.x      |     √     |                                             -                                             |
-|     1.2.x      |     √     |                                             -                                             |
-|     1.1.x      |     √     |                                             -                                             |
-|     1.0.x      |     √     |                                             -                                             |
-|     0.7.x      |     √     |                                             -                                             |
-|     0.6.x      |     X     | [KYUUBI-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
+| Ranger Version | Supported | Remark |
+|:--------------:|:---------:|:------:|
+|     2.8.x      |     √     |   -    |
 
-Currently, all ranger releases are supported.
+Please use branch-1.11 or prior to build against Ranger version prior to 2.8.0.
 
 ## Test with ScalaTest Maven plugin
 

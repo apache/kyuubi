@@ -49,8 +49,6 @@
                         <includes>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.apache.ranger:*</include>
-                            <!-- RANGER-4225 (2.5.0) upgrades Jackson from 1.x to 2.x -->
-                            <include>org.codehaus.jackson:*</include>
                             <include>com.fasterxml.jackson.core:*</include>
                             <include>com.fasterxml.jackson.module:*</include>
                             <include>com.fasterxml.jackson.jaxrs:*</include>
@@ -81,10 +79,6 @@
                         </filter>
                     </filters>
                     <relocations>
-                        <relocation>
-                            <pattern>org.codehaus.jackson</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.codehaus.jackson</shadedPattern>
-                        </relocation>
                         <relocation>
                             <pattern>com.fasterxml.jackson</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.fasterxml.jackson</shadedPattern>
