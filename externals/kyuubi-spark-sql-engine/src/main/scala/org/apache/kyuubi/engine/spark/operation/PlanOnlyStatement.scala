@@ -33,7 +33,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{LINEAGE_PARSER_PLUGIN_PROVIDER, OPERATION_PLAN_ONLY_EXCLUDES, OPERATION_PLAN_ONLY_OUT_STYLE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.getSessionConf
 import org.apache.kyuubi.engine.spark.operation.PlanOnlyStatement._
-import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
+import org.apache.kyuubi.operation.{AnalyzeMode, ArrayFetchIterator, ExecutionMode, IterableFetchIterator, JsonStyle, LineageMode, OperationHandle, OperationState, OptimizeMode, OptimizeWithStatsMode, ParseMode, PhysicalMode, PlainStyle, PlanOnlyMode, PlanOnlyStyle, UnknownMode, UnknownStyle}
 import org.apache.kyuubi.operation.PlanOnlyMode.{notSupportedModeError, unknownModeError}
 import org.apache.kyuubi.operation.PlanOnlyStyle.{notSupportedStyleError, unknownStyleError}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -47,6 +47,7 @@ class PlanOnlyStatement(
     session: Session,
     override val statement: String,
     mode: PlanOnlyMode,
+    queryTimeout: Long,
     override protected val handle: OperationHandle)
   extends SparkOperation(session) {
 
@@ -76,26 +77,37 @@ class PlanOnlyStatement(
 
   override protected def runInternal(): Unit =
     try {
-      withLocalProperties {
-        SQLConf.withExistingConf(spark.sessionState.conf) {
-          val parsed = spark.sessionState.sqlParser.parsePlan(statement)
-          parsed match {
-            case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
-              result = spark.sql(statement)
-              iter = new ArrayFetchIterator(result.collect())
-
-            case plan => style match {
-                case PlainStyle => explainWithPlainStyle(plan)
-                case JsonStyle => explainWithJsonStyle(plan)
-                case UnknownStyle => unknownStyleError(style)
-                case other => throw notSupportedStyleError(other, "Spark SQL")
-              }
-          }
-        }
+      if (queryTimeout > 0) {
+        session.sessionManager.operationManager.runWithTimeoutFallback(
+          () => doParsePlan(),
+          () => cleanup(OperationState.TIMEOUT),
+          queryTimeout)
+      } else {
+        doParsePlan()
       }
     } catch {
       onError()
     }
+
+  private def doParsePlan(): Unit = {
+    withLocalProperties {
+      SQLConf.withExistingConf(spark.sessionState.conf) {
+        val parsed = spark.sessionState.sqlParser.parsePlan(statement)
+        parsed match {
+          case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
+            result = spark.sql(statement)
+            iter = new ArrayFetchIterator(result.collect())
+
+          case plan => style match {
+              case PlainStyle => explainWithPlainStyle(plan)
+              case JsonStyle => explainWithJsonStyle(plan)
+              case UnknownStyle => unknownStyleError(style)
+              case other => throw notSupportedStyleError(other, "Spark SQL")
+            }
+        }
+      }
+    }
+  }
 
   private def explainWithPlainStyle(plan: LogicalPlan): Unit = {
     mode match {
