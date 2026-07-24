@@ -80,7 +80,7 @@ final class QueryFactory(conf: KyuubiConf) {
     .filter("(&(|<classes:{ class |(objectClass=<class>)}>)" +
       "(|(uid=<userName>)(sAMAccountName=<userName>)))")
     .map("classes", USER_OBJECT_CLASSES)
-    .map("userName", userName)
+    .mapEscaped("userName", userName) // user-supplied; escape to prevent filter injection
     .limit(2)
     .build
 
@@ -96,8 +96,8 @@ final class QueryFactory(conf: KyuubiConf) {
       "(|(<groupMembershipAttr>=<userDn>)(<groupMembershipAttr>=<userName>)))")
     .map("groupClassAttr", groupClassAttr)
     .map("groupMembershipAttr", groupMembershipAttr)
-    .map("userName", userName)
-    .map("userDn", userDn)
+    .mapEscaped("userName", userName) // user-derived; escape to prevent filter injection
+    .mapEscaped("userDn", userDn) // directory-resolved DN; escaping is harmless and defensive
     .build
 
   /**
@@ -122,8 +122,8 @@ final class QueryFactory(conf: KyuubiConf) {
       .map("classes", USER_OBJECT_CLASSES)
       .map("guidAttr", guidAttr)
       .map("userMembershipAttr", userMembershipAttrOpt.get)
-      .map("userId", userId)
-      .map("groupDn", groupDn)
+      .mapEscaped("userId", userId) // user-derived identifier; escape to prevent filter injection
+      .mapEscaped("groupDn", groupDn) // directory-resolved DN; escaping is harmless and defensive
       .limit(2)
       .build
   }
