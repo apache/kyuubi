@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql
 
 import scala.annotation.tailrec
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, BoundReference, Expression, ExtractValue, NamedExpression, OuterReference, UnaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, BoundReference, Cast, Expression, ExtractValue, NamedExpression, OuterReference, UnaryExpression}
 import org.apache.spark.sql.catalyst.planning.ExtractEquiJoinKeys
 import org.apache.spark.sql.catalyst.plans.{FullOuter, Inner, LeftAnti, LeftOuter, LeftSemi, RightOuter}
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Filter, Generate, LogicalPlan, Project, Sort, SubqueryAlias, View, Window}
@@ -38,14 +38,14 @@ object InferRebalanceAndSortOrders {
 
   type PartitioningAndOrdering = (Seq[Expression], Seq[Expression])
 
-  private def getAliasMap(named: Seq[NamedExpression]): Map[Expression, Attribute] = {
-    @tailrec
-    def throughUnary(e: Expression): Expression = e match {
-      case u: UnaryExpression if u.deterministic =>
-        throughUnary(u.child)
-      case _ => e
-    }
+  @tailrec
+  private def throughUnary(e: Expression): Expression = e match {
+    case u: UnaryExpression if u.deterministic =>
+      throughUnary(u.child)
+    case _ => e
+  }
 
+  private def getAliasMap(named: Seq[NamedExpression]): Map[Expression, Attribute] = {
     named.flatMap {
       case a @ Alias(child, _) =>
         Some((throughUnary(child).canonicalized, a.toAttribute))
@@ -53,16 +53,32 @@ object InferRebalanceAndSortOrders {
     }.toMap
   }
 
+  /**
+   * Map an expression to its output attribute via the alias map. Tries the full
+   * expression first, then retries with the unary-peeled key (mirroring how
+   * `getAliasMap` builds its keys), so that a cast-wrapped key such as
+   * `cast(genre_tag_id as bigint)` still maps to its aliased output attribute. Falls
+   * back to the original expression when neither matches.
+   */
+  private def mapThroughAlias(
+      e: Expression,
+      aliasMap: Map[Expression, Attribute]): Expression = {
+    aliasMap.getOrElse(
+      e.canonicalized,
+      aliasMap.getOrElse(throughUnary(e).canonicalized, e))
+  }
+
   def isCheap(e: Expression): Boolean = e match {
     case _: Attribute | _: OuterReference | _: BoundReference => true
     case _ if e.foldable => true
-    case _: Alias | _: ExtractValue => e.children.forall(isCheap)
+    case _: Alias | _: ExtractValue | _: Cast => e.children.forall(isCheap)
     case _ => false
   }
 
   def infer(
       plan: LogicalPlan,
-      onlyInferWithCheapColumns: Boolean): Option[PartitioningAndOrdering] = {
+      onlyInferWithCheapColumns: Boolean,
+      maxColumns: Int): Option[PartitioningAndOrdering] = {
     def candidateKeys(
         input: LogicalPlan,
         output: AttributeSet = AttributeSet.empty): Option[PartitioningAndOrdering] = {
@@ -92,15 +108,15 @@ object InferRebalanceAndSortOrders {
         case agg: Aggregate =>
           val aliasMap = getAliasMap(agg.aggregateExpressions)
           Some((
-            agg.groupingExpressions.map(p => aliasMap.getOrElse(p.canonicalized, p)),
-            agg.groupingExpressions.map(o => aliasMap.getOrElse(o.canonicalized, o))))
+            agg.groupingExpressions.map(p => mapThroughAlias(p, aliasMap)),
+            agg.groupingExpressions.map(o => mapThroughAlias(o, aliasMap))))
         case s: Sort => Some((s.order.map(_.child), s.order.map(_.child)))
         case p: Project =>
           val aliasMap = getAliasMap(p.projectList)
           candidateKeys(p.child, p.references).map { case (partitioning, ordering) =>
             (
-              partitioning.map(p => aliasMap.getOrElse(p.canonicalized, p)),
-              ordering.map(o => aliasMap.getOrElse(o.canonicalized, o)))
+              partitioning.map(p => mapThroughAlias(p, aliasMap)),
+              ordering.map(o => mapThroughAlias(o, aliasMap)))
           }
         case f: Filter => candidateKeys(f.child, output)
         case s: SubqueryAlias => candidateKeys(s.child, output)
@@ -109,8 +125,8 @@ object InferRebalanceAndSortOrders {
         case w: Window =>
           val aliasMap = getAliasMap(w.windowExpressions)
           Some((
-            w.partitionSpec.map(p => aliasMap.getOrElse(p.canonicalized, p)),
-            w.orderSpec.map(_.child).map(o => aliasMap.getOrElse(o.canonicalized, o))))
+            w.partitionSpec.map(p => mapThroughAlias(p, aliasMap)),
+            w.orderSpec.map(_.child).map(o => mapThroughAlias(o, aliasMap))))
 
         case _ => None
       }
@@ -118,8 +134,8 @@ object InferRebalanceAndSortOrders {
 
     val partitioningAndSort = candidateKeys(plan).map { case (partitioning, ordering) =>
       (
-        partitioning.filter(_.references.subsetOf(plan.outputSet)),
-        ordering.filter(_.references.subsetOf(plan.outputSet)))
+        partitioning.filter(_.references.subsetOf(plan.outputSet)).take(maxColumns),
+        ordering.filter(_.references.subsetOf(plan.outputSet)).take(maxColumns))
     }
     val allCheap = partitioningAndSort.exists {
       case (partitionings, sorts) =>
