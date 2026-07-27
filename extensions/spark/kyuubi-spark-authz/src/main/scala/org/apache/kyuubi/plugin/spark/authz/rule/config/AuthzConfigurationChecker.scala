@@ -19,7 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.rule.config
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.SetCommand
+import org.apache.spark.sql.execution.command.{ResetCommand, SetCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY
@@ -46,6 +46,10 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
       throw new AccessControlException("Excluding Authz security rules is not allowed")
     case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
       throw new AccessControlException(s"Modifying config $k is not allowed")
+    case ResetCommand(Some(k)) if restrictedConfList.contains(k) =>
+      throw new AccessControlException(s"Resetting config $k is not allowed")
+    case ResetCommand(None) =>
+      throw new AccessControlException("Resetting all configs is not allowed")
     case _ =>
   }
 }

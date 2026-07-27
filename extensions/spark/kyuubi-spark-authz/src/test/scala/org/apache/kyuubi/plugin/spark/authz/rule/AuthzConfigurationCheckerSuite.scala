@@ -54,4 +54,30 @@ class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionPro
       "set spark.kyuubi.authz.skipCataloglessV2Relation.enabled=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p9))
   }
+
+  test("apply spark configuration restriction rules for RESET") {
+    sql("set spark.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
+    val extension = AuthzConfigurationChecker(spark)
+
+    // RESET of hardcoded restricted keys must be blocked
+    val pReset1 = sql("reset spark.sql.runSQLOnFiles").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pReset1))
+    val pReset2 = sql(s"reset ${extension.RESTRICT_LIST_KEY}").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pReset2))
+    val pReset3 = sql(
+      "reset spark.kyuubi.authz.skipCataloglessV2Relation.enabled").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pReset3))
+
+    // RESET of admin-configured restricted keys must be blocked
+    val pReset4 = sql("reset spark.sql.abc").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pReset4))
+
+    // RESET of a non-restricted key must be allowed
+    val pReset5 = sql("reset spark.sql.efg").queryExecution.analyzed
+    extension.apply(pReset5)
+
+    // Bare RESET (no key) must be blocked - it would wipe all session configs at once
+    val pResetAll = sql("reset").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pResetAll))
+  }
 }
