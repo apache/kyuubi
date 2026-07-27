@@ -17,12 +17,41 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.kyuubi.KyuubiFunSuite
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 
 class SparkSQLEngineSuite extends KyuubiFunSuite {
 
   private val namespace = "n" * 63
   private val podUid = "u" * 36
+
+  test("[KYUUBI #7590] stop waiting when SparkContext is stopped") {
+    val latch = new CountDownLatch(1)
+
+    val error = intercept[KyuubiException] {
+      SparkSQLEngine.waitForEngineTermination(
+        latch,
+        () => true,
+        1,
+        TimeUnit.MILLISECONDS)
+    }
+
+    assert(error.getMessage.contains("SparkContext stopped"))
+  }
+
+  test("[KYUUBI #7590] complete normally when shutdown wins the race") {
+    val latch = new CountDownLatch(1)
+
+    SparkSQLEngine.waitForEngineTermination(
+      latch,
+      () => {
+        latch.countDown()
+        true
+      },
+      1,
+      TimeUnit.MILLISECONDS)
+  }
 
   test("[KYUUBI #3385] generate executor pod name prefix with user or UUID") {
     val userName1 = "/kyuubi_user+-*"

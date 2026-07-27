@@ -230,6 +230,8 @@ object SparkSQLEngine extends Logging {
 
   private val sparkSessionCreated = new AtomicBoolean(false)
 
+  private val ENGINE_TERMINATION_CHECK_INTERVAL_SECONDS = 1L
+
   final private val POD_NAME_MAX_LENGTH = 253
   final private val POD_UID_MAX_LENGTH = 36
   final private val POD_LOGS_DIRECTORY_SEPARATOR_LENGTH = 2
@@ -414,7 +416,11 @@ object SparkSQLEngine extends Logging {
         try {
           startEngine(spark)
           // blocking main thread
-          countDownLatch.await()
+          waitForEngineTermination(
+            countDownLatch,
+            () => spark.sparkContext.isStopped,
+            ENGINE_TERMINATION_CHECK_INTERVAL_SECONDS,
+            TimeUnit.SECONDS)
         } catch {
           case e: KyuubiException =>
             currentEngine match {
@@ -445,6 +451,21 @@ object SparkSQLEngine extends Logging {
         if (spark != null) {
           spark.stop()
         }
+      }
+    }
+  }
+
+  @VisibleForTesting
+  private[kyuubi] def waitForEngineTermination(
+      latch: CountDownLatch,
+      isSparkContextStopped: () => Boolean,
+      checkInterval: Long,
+      timeUnit: TimeUnit): Unit = {
+    while (!latch.await(checkInterval, timeUnit)) {
+      // Engine shutdown may stall before stopServer releases the latch.
+      if (isSparkContextStopped() && !latch.await(0, TimeUnit.NANOSECONDS)) {
+        throw new KyuubiException(
+          "SparkContext stopped while engine is running, exiting main thread")
       }
     }
   }
