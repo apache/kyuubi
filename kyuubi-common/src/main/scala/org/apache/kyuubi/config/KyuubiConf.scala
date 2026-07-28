@@ -3215,7 +3215,8 @@ object KyuubiConf {
         "each interactive statement is routed to the engine, and can inspect, reject, or " +
         "rewrite the statement.")
       .version("1.12.0")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .stringConf
       .toSequence()
       .createOptional
