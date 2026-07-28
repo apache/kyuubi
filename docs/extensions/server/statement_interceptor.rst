@@ -20,7 +20,7 @@ Intercept Statements with Custom Statement Interceptor
 
 .. caution:: unstable
 
-Kyuubi supports intercepting interactive statements on the server before they are routed to the engine, through custom statement interceptors. As a unified gateway, Kyuubi can host this governance once at the server layer instead of having every engine reimplement it, so administrators can inspect, reject, or rewrite each statement without forking Kyuubi or writing the same logic for Spark, Flink, Trino, and JDBC separately. Typical use cases include rule-based SQL guards, calling an external policy service, risky-statement interception, auditing, and SQL rewriting.
+Kyuubi supports intercepting interactive statements on the server before they are routed to the engine, through custom statement interceptors. As a unified gateway, Kyuubi can host this governance once at the server layer instead of having every engine reimplement it, so administrators can inspect, reject, rewrite, or tune each statement without forking Kyuubi or writing the same logic for Spark, Flink, Trino, and JDBC separately. Typical use cases include rule-based SQL guards, calling an external policy service, risky-statement interception, auditing, SQL rewriting, and per-statement execution tuning.
 
 The interceptor sees statement text and gateway-level context, not an engine's analyzed plan or resolved objects. It can enforce text- or external-policy-based authorization, but it is not a replacement for semantic authorization such as Spark AuthZ. It also complements the existing extension points such as custom authentication, ``SessionConfAdvisor``, and event handlers.
 
@@ -72,8 +72,11 @@ An interceptor returns one of three decisions:
      public enum Action { PROCEED, REWRITE, REJECT }
 
      public static StatementInterceptResult proceed();          // keep the current statement
+     public static StatementInterceptResult proceed(Map<String, String> conf);
      public static StatementInterceptResult rewrite(String s);  // replace it for the next interceptor and the engine
+     public static StatementInterceptResult rewrite(String s, Map<String, String> conf);
      public static StatementInterceptResult reject(String msg); // stop the chain and return an error to the client
+     public Map<String, String> confOverlay();                    // immutable config delta
    }
 
 Enable Statement Interceptors
@@ -92,6 +95,7 @@ Interceptors run in the configured order. The execution semantics are:
 - the chain starts from the original statement;
 - ``PROCEED`` keeps the current statement and passes it to the next interceptor;
 - ``REWRITE`` replaces the current statement and passes the new one to the next interceptor and ultimately to the engine;
+- ``PROCEED`` and ``REWRITE`` may also return per-statement config updates. Updates are accumulated in interceptor order, later values win, and each following interceptor sees the updated read-only overlay. The final overlay is passed to the engine operation and does not mutate the session configuration;
 - ``REJECT`` stops the chain immediately, no operation is created, and the client receives an error carrying SQLState ``42501`` (insufficient privilege), so clients can tell a policy rejection from a generic syntax error;
 - if an interceptor throws or returns ``null``, the statement fails (fail-closed).
 
@@ -141,6 +145,24 @@ Then deploy the jar and enable it:
 
    kyuubi.operation.statement.interceptors=com.example.SqlGuard
    example.sql.guard.blocked.keywords=drop,truncate,delete
+
+Config Tuning Example
+---------------------
+
+Config tuning is orthogonal to rewriting: an interceptor may tune the current statement without changing its SQL, or do both in one result. For example, this interceptor reduces Spark shuffle parallelism for an interactive query:
+
+.. code-block:: java
+
+   @Override
+   public StatementInterceptResult beforeExecuteStatement(StatementInterceptContext ctx) {
+     if (ctx.engineType().equals("SPARK_SQL") && isInteractive(ctx.statement())) {
+       return StatementInterceptResult.proceed(
+           Collections.singletonMap("spark.sql.shuffle.partitions", "32"));
+     }
+     return StatementInterceptResult.proceed();
+   }
+
+Only configuration entries that the selected engine consumes at statement planning or execution time can take effect. Engine-launch or session-initialization settings are outside this SPI's per-statement scope.
 
 Notes
 -----

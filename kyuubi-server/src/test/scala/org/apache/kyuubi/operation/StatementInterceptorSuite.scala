@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.sql.SQLException
+import java.util.Collections
 import java.util.Locale
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
@@ -62,6 +63,44 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
       assert(rs.next())
       assert(rs.getString("result") === "rewritten")
       assert(!rs.next())
+    }
+  }
+
+  test("TUNE - interceptor config overrides apply to this statement") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET spark.sql.shuffle.partitions=11")
+
+      val rs = statement.executeQuery("SELECT 'tune_conf' AS marker")
+      val tunedPlan =
+        Iterator.continually(rs).takeWhile(_.next()).map(_.getString(1)).mkString("\n")
+      assert(tunedPlan.contains("hashpartitioning"))
+      assert(tunedPlan.contains(", 7)"))
+
+      val nextRs = statement.executeQuery(
+        "EXPLAIN FORMATTED SELECT * FROM range(100) DISTRIBUTE BY id")
+      val nextPlan =
+        Iterator.continually(nextRs).takeWhile(_.next()).map(_.getString(1)).mkString("\n")
+      assert(nextPlan.contains("hashpartitioning"))
+      assert(nextPlan.contains(", 11)"))
+    }
+  }
+
+  test("interceptor config overlay applies in plan-only mode without leaking") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET spark.sql.shuffle.partitions=11")
+      statement.execute(s"SET ${KyuubiConf.OPERATION_PLAN_ONLY_MODE.key}=${PhysicalMode.name}")
+
+      val rs = statement.executeQuery("SELECT 'plan_only_conf' AS marker")
+      assert(rs.next())
+      val interceptedPlan = rs.getString(1).toLowerCase(Locale.ROOT)
+      assert(interceptedPlan.contains("hashpartitioning"))
+      assert(interceptedPlan.contains(", 7)"))
+
+      val nextRs = statement.executeQuery("SELECT * FROM range(100) DISTRIBUTE BY id")
+      assert(nextRs.next())
+      val nextPlan = nextRs.getString(1).toLowerCase(Locale.ROOT)
+      assert(nextPlan.contains("hashpartitioning"))
+      assert(nextPlan.contains(", 11)"))
     }
   }
 
@@ -129,6 +168,14 @@ class TestStatementInterceptor extends StatementInterceptor {
       StatementInterceptResult.reject("blocked: forbidden keyword")
     } else if (sql.contains("rewrite_me")) {
       StatementInterceptResult.rewrite("SELECT 'rewritten' AS result")
+    } else if (sql.contains("tune_conf")) {
+      StatementInterceptResult.rewrite(
+        "EXPLAIN FORMATTED SELECT * FROM range(100) DISTRIBUTE BY id",
+        Collections.singletonMap("spark.sql.shuffle.partitions", "7"))
+    } else if (sql.contains("plan_only_conf")) {
+      StatementInterceptResult.rewrite(
+        "SELECT * FROM range(100) DISTRIBUTE BY id",
+        Collections.singletonMap("spark.sql.shuffle.partitions", "7"))
     } else if (sql.contains("echo_stmt_id")) {
       StatementInterceptResult.rewrite(s"SELECT '${context.statementId()}' AS sid")
     } else if (sql.contains("echo_users")) {

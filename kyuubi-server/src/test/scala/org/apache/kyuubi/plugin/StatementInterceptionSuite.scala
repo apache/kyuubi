@@ -26,7 +26,9 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 
 class StatementInterceptionSuite extends KyuubiFunSuite {
 
-  private def contextFor(statement: String): StatementInterceptContext =
+  private def contextFor(
+      statement: String,
+      confOverlay: java.util.Map[String, String]): StatementInterceptContext =
     new StatementInterceptContextImpl(
       "session-1",
       "op-1",
@@ -34,13 +36,19 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
       "alice_real",
       "127.0.0.1",
       statement,
-      java.util.Collections.emptyMap[String, String](),
+      confOverlay,
       true,
       0L,
       "SPARK_SQL")
 
+  private def runResult(
+      interceptors: Seq[StatementInterceptor],
+      statement: String,
+      confOverlay: Map[String, String] = Map.empty): InterceptedStatement =
+    StatementInterception.run(interceptors, statement, confOverlay, contextFor)
+
   private def run(interceptors: Seq[StatementInterceptor], statement: String): String =
-    StatementInterception.run(interceptors, statement, contextFor)
+    runResult(interceptors, statement).statement
 
   private def interceptor(
       f: StatementInterceptContext => StatementInterceptResult): StatementInterceptor =
@@ -61,6 +69,60 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
   test("REWRITE replaces the statement") {
     val i = interceptor(_ => StatementInterceptResult.rewrite("SELECT 2"))
     assert(run(Seq(i), "SELECT 1") === "SELECT 2")
+  }
+
+  test("PROCEED can tune the per-statement config overlay") {
+    val tuning = Map("spark.sql.shuffle.partitions" -> "32").asJava
+    val i = interceptor(_ => StatementInterceptResult.proceed(tuning))
+    val result = runResult(Seq(i), "SELECT 1")
+    assert(result.statement === "SELECT 1")
+    assert(result.confOverlay === tuning.asScala)
+  }
+
+  test("REWRITE can also tune the per-statement config overlay") {
+    val i = interceptor(_ =>
+      StatementInterceptResult.rewrite(
+        "SELECT 2",
+        Map("spark.sql.adaptive.enabled" -> "true").asJava))
+    val result = runResult(Seq(i), "SELECT 1")
+    assert(result.statement === "SELECT 2")
+    assert(result.confOverlay === Map("spark.sql.adaptive.enabled" -> "true"))
+  }
+
+  test("config tuning chains in order and later values win") {
+    var seenBySecond: Map[String, String] = Map.empty
+    val first = interceptor(_ =>
+      StatementInterceptResult.proceed(
+        Map("shared" -> "first", "first-only" -> "1").asJava))
+    val second = interceptor { context =>
+      seenBySecond = context.confOverlay().asScala.toMap
+      StatementInterceptResult.proceed(
+        Map("shared" -> "second", "second-only" -> "2").asJava)
+    }
+    val result = runResult(
+      Seq(first, second),
+      "SELECT 1",
+      Map("shared" -> "client", "client-only" -> "0"))
+    assert(seenBySecond === Map(
+      "shared" -> "first",
+      "client-only" -> "0",
+      "first-only" -> "1"))
+    assert(result.confOverlay === Map(
+      "shared" -> "second",
+      "client-only" -> "0",
+      "first-only" -> "1",
+      "second-only" -> "2"))
+  }
+
+  test("result config overlay is a defensive immutable copy") {
+    val source = new java.util.HashMap[String, String]()
+    source.put("key", "value")
+    val result = StatementInterceptResult.proceed(source)
+    source.put("key", "changed")
+    assert(result.confOverlay().get("key") === "value")
+    intercept[UnsupportedOperationException] {
+      result.confOverlay().put("other", "value")
+    }
   }
 
   test("REJECT throws KyuubiSQLException carrying the message and a policy SQLState") {
@@ -134,6 +196,8 @@ class StatementInterceptionSuite extends KyuubiFunSuite {
     intercept[IllegalArgumentException](StatementInterceptResult.rewrite("  "))
     intercept[IllegalArgumentException](StatementInterceptResult.reject(null))
     intercept[IllegalArgumentException](StatementInterceptResult.reject(""))
+    intercept[IllegalArgumentException](StatementInterceptResult.proceed(null))
+    intercept[IllegalArgumentException](StatementInterceptResult.rewrite("SELECT 1", null))
   }
 
   test("initialize closes attempted interceptors in reverse order on failure") {
