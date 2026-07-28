@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin
 
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -33,6 +34,10 @@ private[kyuubi] class StatementInterceptContextImpl(
     override val runAsync: Boolean,
     override val queryTimeout: Long,
     override val engineType: String) extends StatementInterceptContext
+
+private[kyuubi] case class InterceptedStatement(
+    statement: String,
+    confOverlay: Map[String, String])
 
 private[kyuubi] object StatementInterception {
 
@@ -66,25 +71,31 @@ private[kyuubi] object StatementInterception {
   }
 
   /**
-   * Run the interceptor chain over a statement. Each interceptor sees the statement produced by the
-   * previous one (rewrite chaining); a reject, an exception, or a null result fails the statement.
+   * Run the interceptor chain over a statement. Each interceptor sees the statement and config
+   * overlay produced by the previous one; a reject, an exception, or a null result fails the
+   * statement.
    *
    * @param interceptors the interceptors in execution order
    * @param initialStatement the original statement
-   * @param contextFor builds a context for the given (possibly rewritten) statement
-   * @return the final statement to route to the engine
+   * @param initialConfOverlay the client-provided per-statement config overlay
+   * @param contextFor builds a context for the current statement and config overlay
+   * @return the final statement and config overlay to route to the engine
    */
   def run(
       interceptors: Seq[StatementInterceptor],
       initialStatement: String,
-      contextFor: String => StatementInterceptContext): String = {
-    if (interceptors.isEmpty) return initialStatement
-    var current = initialStatement
+      initialConfOverlay: Map[String, String],
+      contextFor: (
+          String,
+          java.util.Map[String, String]) => StatementInterceptContext): InterceptedStatement = {
+    var currentStatement = initialStatement
+    var currentConfOverlay = initialConfOverlay
     interceptors.foreach { interceptor =>
       val interceptorName = interceptor.getClass.getName
       val result =
         try {
-          interceptor.beforeExecuteStatement(contextFor(current))
+          interceptor.beforeExecuteStatement(
+            contextFor(currentStatement, currentConfOverlay.asJava))
         } catch {
           case e: KyuubiSQLException => throw e
           case NonFatal(e) =>
@@ -95,13 +106,14 @@ private[kyuubi] object StatementInterception {
       }
       result.action() match {
         case StatementInterceptResult.Action.PROCEED => // keep the current statement
-        case StatementInterceptResult.Action.REWRITE => current = result.statement()
+        case StatementInterceptResult.Action.REWRITE => currentStatement = result.statement()
         case StatementInterceptResult.Action.REJECT =>
           // SQLState 42501 = "Insufficient Privilege". Use the specific access-rule subclass so
           // clients can distinguish a policy rejection from the generic syntax-error class 42000.
           throw KyuubiSQLException(result.message(), sqlState = "42501")
       }
+      currentConfOverlay ++= result.confOverlay().asScala
     }
-    current
+    InterceptedStatement(currentStatement, currentConfOverlay)
   }
 }

@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.plugin;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * The decision returned by a {@link StatementInterceptor} for a single statement: proceed with the
  * current statement, rewrite it for the next interceptor and the engine, or reject it.
@@ -32,16 +36,27 @@ public final class StatementInterceptResult {
   private final Action action;
   private final String statement; // the rewritten statement when action is REWRITE
   private final String message; // the rejection reason when action is REJECT
+  private final Map<String, String> confOverlay;
 
-  private StatementInterceptResult(Action action, String statement, String message) {
+  private StatementInterceptResult(
+      Action action, String statement, String message, Map<String, String> confOverlay) {
     this.action = action;
     this.statement = statement;
     this.message = message;
+    this.confOverlay = immutableConfOverlay(confOverlay);
   }
 
   /** Keep the current statement and pass it to the next interceptor. */
   public static StatementInterceptResult proceed() {
-    return new StatementInterceptResult(Action.PROCEED, null, null);
+    return proceed(Collections.emptyMap());
+  }
+
+  /**
+   * Keep the current statement and apply {@code confOverlay} to this statement only. The entries
+   * are passed to subsequent interceptors and ultimately to the engine operation.
+   */
+  public static StatementInterceptResult proceed(Map<String, String> confOverlay) {
+    return new StatementInterceptResult(Action.PROCEED, null, null, confOverlay);
   }
 
   /**
@@ -49,8 +64,18 @@ public final class StatementInterceptResult {
    * ultimately to the engine. {@code statement} must not be null or blank.
    */
   public static StatementInterceptResult rewrite(String statement) {
+    return rewrite(statement, Collections.emptyMap());
+  }
+
+  /**
+   * Replace the current statement with {@code statement} and apply {@code confOverlay} to this
+   * statement only. Both are passed to subsequent interceptors and ultimately to the engine
+   * operation. {@code statement} must not be null or blank.
+   */
+  public static StatementInterceptResult rewrite(
+      String statement, Map<String, String> confOverlay) {
     return new StatementInterceptResult(
-        Action.REWRITE, requireNonBlank(statement, "statement"), null);
+        Action.REWRITE, requireNonBlank(statement, "statement"), null, confOverlay);
   }
 
   /**
@@ -58,7 +83,8 @@ public final class StatementInterceptResult {
    * message} must not be null or blank.
    */
   public static StatementInterceptResult reject(String message) {
-    return new StatementInterceptResult(Action.REJECT, null, requireNonBlank(message, "message"));
+    return new StatementInterceptResult(
+        Action.REJECT, null, requireNonBlank(message, "message"), Collections.emptyMap());
   }
 
   public Action action() {
@@ -73,10 +99,30 @@ public final class StatementInterceptResult {
     return message;
   }
 
+  /** The immutable per-statement configuration updates returned by this interceptor. */
+  public Map<String, String> confOverlay() {
+    return confOverlay;
+  }
+
   private static String requireNonBlank(String value, String name) {
     if (value == null || value.trim().isEmpty()) {
       throw new IllegalArgumentException(name + " must not be null or blank");
     }
     return value;
+  }
+
+  private static Map<String, String> immutableConfOverlay(Map<String, String> confOverlay) {
+    if (confOverlay == null) {
+      throw new IllegalArgumentException("confOverlay must not be null");
+    }
+    Map<String, String> copy = new HashMap<>();
+    confOverlay.forEach(
+        (key, value) -> {
+          if (key == null || value == null) {
+            throw new IllegalArgumentException("confOverlay must not contain null keys or values");
+          }
+          copy.put(key, value);
+        });
+    return Collections.unmodifiableMap(copy);
   }
 }

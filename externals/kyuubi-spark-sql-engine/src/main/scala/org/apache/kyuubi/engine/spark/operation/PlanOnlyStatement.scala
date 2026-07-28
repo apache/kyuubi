@@ -46,6 +46,7 @@ import org.apache.kyuubi.util.reflect.DynMethods
 class PlanOnlyStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     mode: PlanOnlyMode,
     override protected val handle: OperationHandle)
   extends SparkOperation(session) {
@@ -77,7 +78,11 @@ class PlanOnlyStatement(
   override protected def runInternal(): Unit =
     try {
       withLocalProperties {
-        SQLConf.withExistingConf(spark.sessionState.conf) {
+        val operationConf = spark.sessionState.conf.clone()
+        confOverlay.foreach { case (key, value) =>
+          operationConf.setConfString(key, value)
+        }
+        SQLConf.withExistingConf(operationConf) {
           val parsed = spark.sessionState.sqlParser.parsePlan(statement)
           parsed match {
             case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>

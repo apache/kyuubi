@@ -36,7 +36,7 @@ import org.apache.kyuubi.engine.KyuubiApplicationManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{KyuubiOperationManager, OperationState}
-import org.apache.kyuubi.plugin.{GroupProvider, PluginLoader, SessionConfAdvisor, StatementInterceptContextImpl, StatementInterception, StatementInterceptor}
+import org.apache.kyuubi.plugin.{GroupProvider, InterceptedStatement, PluginLoader, SessionConfAdvisor, StatementInterceptContextImpl, StatementInterception, StatementInterceptor}
 import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRequestsRetryRef}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.TempFileService
@@ -127,8 +127,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   /**
    * Run the configured statement interceptors before an interactive statement is routed to the
-   * engine. Returns the (possibly rewritten) statement, or throws if an interceptor rejects it,
-   * throws, or returns null. Returns the original statement unchanged when none are configured.
+   * engine. Returns the (possibly rewritten) statement and per-statement config overlay, or throws
+   * if an interceptor rejects it, throws, or returns null.
    */
   def interceptStatement(
       sessionId: String,
@@ -140,18 +140,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long,
-      engineType: String): String = {
+      engineType: String): InterceptedStatement = {
     if (statementInterceptors.isEmpty) {
-      statement
+      InterceptedStatement(statement, confOverlay)
     } else {
-      // An immutable Map's asJava view is already read-only, so no defensive copy is needed.
-      val confOverlayJava: java.util.Map[String, String] = confOverlay.asJava
       val safeIpAddress = Option(ipAddress).getOrElse("")
       val safeEngineType = Option(engineType).getOrElse("")
       StatementInterception.run(
         statementInterceptors,
         statement,
-        currentStatement =>
+        confOverlay,
+        (currentStatement, currentConfOverlay) =>
           new StatementInterceptContextImpl(
             sessionId,
             statementId,
@@ -159,7 +158,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
             realUser,
             safeIpAddress,
             currentStatement,
-            confOverlayJava,
+            currentConfOverlay,
             runAsync,
             queryTimeout,
             safeEngineType))
