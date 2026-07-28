@@ -21,7 +21,7 @@ import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.plugin.spark.authz.rule.{RuleEliminateMarker, RuleEliminatePermanentViewMarker, RuleEliminateTypeOf}
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.RuleClearAuthzTag
-import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
+import org.apache.kyuubi.plugin.spark.authz.rule.config.{AuthzConfigurationChecker, NodeDenyListChecker}
 import org.apache.kyuubi.plugin.spark.authz.rule.datamasking.{RuleApplyDataMaskingStage0, RuleApplyDataMaskingStage1}
 import org.apache.kyuubi.plugin.spark.authz.rule.expression.RuleApplyTypeOfMarker
 import org.apache.kyuubi.plugin.spark.authz.rule.permanentview.RuleApplyPermanentViewMarker
@@ -54,6 +54,7 @@ class RangerSparkExtension extends (SparkSessionExtensions => Unit) {
     // before the optimizer runs. The tag is only set by optimizer rules, so a single
     // post-hoc pass is sufficient - no need for fixed-point iteration.
     v1.injectPostHocResolutionRule(_ => RuleClearAuthzTag)
+    v1.injectCheckRule(NodeDenyListChecker)
     v1.injectResolutionRule(_ => RuleReplaceShowObjectCommands)
     v1.injectResolutionRule(_ => RuleApplyPermanentViewMarker)
     v1.injectResolutionRule(_ => RuleApplyTypeOfMarker)

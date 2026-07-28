@@ -1,0 +1,4 @@
+[ {
+  "classname" : "org.apache.spark.sql.catalyst.plans.logical.ScriptTransformation",
+  "message"   : "TRANSFORM ... USING scripts are not allowed"
+} ]
