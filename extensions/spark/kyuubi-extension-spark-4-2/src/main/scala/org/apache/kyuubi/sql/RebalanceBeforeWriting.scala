@@ -78,16 +78,19 @@ trait RebalanceBeforeWritingBase extends Rule[LogicalPlan] {
       val maxColumns = conf.getConf(KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_MAX_COLUMNS)
       val onlyInferWithCheapColumns = conf.getConf(
         KyuubiSQLConf.INFER_REBALANCE_AND_SORT_ORDERS_WITH_CHEAP_COLUMNS)
-      val inferred = InferRebalanceAndSortOrders.infer(query, onlyInferWithCheapColumns)
+      val inferred = InferRebalanceAndSortOrders.infer(
+        query,
+        onlyInferWithCheapColumns,
+        maxColumns)
       if (inferred.isDefined) {
         val (partitioning, ordering) = inferred.get
         val rebalance = RebalancePartitions(
-          partitioning.take(maxColumns),
+          partitioning,
           query,
           optAdvisoryPartitionSize = advisoryPartitionSize)
         val skipInferOrder = conf.getConf(KyuubiSQLConf.SKIP_INFER_SORT_ORDERS)
         if (!skipInferOrder && ordering.nonEmpty) {
-          val sortOrders = ordering.take(maxColumns).map(o => SortOrder(o, Ascending))
+          val sortOrders = ordering.map(o => SortOrder(o, Ascending))
           Sort(sortOrders, false, rebalance)
         } else {
           rebalance

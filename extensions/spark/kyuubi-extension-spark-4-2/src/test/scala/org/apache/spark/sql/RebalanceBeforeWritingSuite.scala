@@ -359,9 +359,9 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
            |""".stripMargin).queryExecution.analyzed
 
       // when only cheap columns are allowed, the expensive keys are not inferred
-      assert(InferRebalanceAndSortOrders.infer(expensivePlan, true).isEmpty)
+      assert(InferRebalanceAndSortOrders.infer(expensivePlan, true, 10).isEmpty)
       // when the cheap-column restriction is disabled, the expensive keys are inferred
-      InferRebalanceAndSortOrders.infer(expensivePlan, false) match {
+      InferRebalanceAndSortOrders.infer(expensivePlan, false, 10) match {
         case Some((partitioning, ordering)) =>
           assert(partitioning.nonEmpty)
           assert(ordering.nonEmpty)
@@ -379,13 +379,86 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
       // cheap columns are inferred regardless of the restriction
       Seq(true, false).foreach { onlyCheap =>
-        InferRebalanceAndSortOrders.infer(cheapPlan, onlyCheap) match {
+        InferRebalanceAndSortOrders.infer(cheapPlan, onlyCheap, 10) match {
           case Some((partitioning, ordering)) =>
             assert(partitioning.nonEmpty)
             assert(ordering.nonEmpty)
           case None => fail(s"expected inferred columns when onlyCheap=$onlyCheap")
         }
       }
+    }
+  }
+
+  test("Infer cast-wrapped join keys (aliased through a cast)") {
+    withTable("t1", "t2") {
+      // genre_tag_id types differ: int vs bigint. The analyzer inserts a cast on the
+      // left join key, and the outer projection aliases it to `medal_type`.
+      sql("CREATE TABLE t1 (user_id int, genre_tag_id int) USING PARQUET")
+      sql("CREATE TABLE t2 (user_id int, genre_tag_id bigint) USING PARQUET")
+      val plan = sql(
+        """
+          |SELECT a.user_id, a.genre_tag_id as medal_type
+          |FROM (SELECT user_id, genre_tag_id FROM t1) a
+          |LEFT JOIN (SELECT user_id, genre_tag_id FROM t2) b
+          |ON a.user_id = b.user_id and a.genre_tag_id = b.genre_tag_id
+          |""".stripMargin).queryExecution.analyzed
+
+      // The cast-wrapped key resolves to its aliased output attribute, so both join
+      // keys are inferred (before the fix only `user_id` survived).
+      InferRebalanceAndSortOrders.infer(plan, true, 10) match {
+        case Some((partitioning, ordering)) =>
+          assert(partitioning.map(_.asInstanceOf[Attribute].name) === Seq("user_id", "medal_type"))
+          assert(ordering.map(_.asInstanceOf[Attribute].name) === Seq("user_id", "medal_type"))
+        case None => fail("expected the cast-wrapped join key to be inferred")
+      }
+    }
+  }
+
+  test("isCheap treats a cast over a cheap column as cheap") {
+    withTable("t1", "t2") {
+      // int vs bigint forces a cast on the left join key; the column is selected
+      // directly (no alias), so the cast survives to the cheap check.
+      sql("CREATE TABLE t1 (col1 int) USING PARQUET")
+      sql("CREATE TABLE t2 (col1 bigint) USING PARQUET")
+      val plan = sql(
+        """
+          |SELECT t1.col1
+          |FROM t1
+          |LEFT JOIN t2
+          |ON t1.col1 = t2.col1
+          |""".stripMargin).queryExecution.analyzed
+
+      InferRebalanceAndSortOrders.infer(plan, true, 10) match {
+        case Some((partitioning, _)) => assert(partitioning.nonEmpty)
+        case None => fail("expected a cast over a cheap column to be inferred")
+      }
+    }
+  }
+
+  test("maxColumns gates the cheap-column check") {
+    withTable("t1", "t2") {
+      sql("CREATE TABLE t1 (a int, b int, c int) USING PARQUET")
+      sql("CREATE TABLE t2 (a int, b int, c int) USING PARQUET")
+      // Three join keys; the third (`c + 1`) is an expensive expression.
+      val plan = sql(
+        """
+          |SELECT t1.a, t1.b, t1.c
+          |FROM t1
+          |LEFT JOIN t2
+          |ON t1.a = t2.a and t1.b = t2.b and t1.c + 1 = t2.c + 1
+          |""".stripMargin).queryExecution.analyzed
+
+      // With maxColumns = 2, only the first two (cheap) keys are considered, so
+      // inference succeeds.
+      InferRebalanceAndSortOrders.infer(plan, true, 2) match {
+        case Some((partitioning, _)) =>
+          assert(partitioning.map(_.asInstanceOf[Attribute].name) === Seq("a", "b"))
+        case None => fail("expected inference to succeed when the expensive key is truncated")
+      }
+
+      // With maxColumns = 3, the expensive third key is included and the cheap-only
+      // restriction discards everything.
+      assert(InferRebalanceAndSortOrders.infer(plan, true, 3).isEmpty)
     }
   }
 
