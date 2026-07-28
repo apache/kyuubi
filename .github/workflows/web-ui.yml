@@ -34,7 +34,7 @@ jobs:
           echo "NODEJS_VERSION=${NODEJS_VERSION}" >> "$GITHUB_ENV"
           echo "PNPM_VERSION=${PNPM_VERSION}" >> "$GITHUB_ENV"
       - name: Setup Nodejs and NPM
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: ${{env.NODEJS_VERSION}}
           cache: npm
