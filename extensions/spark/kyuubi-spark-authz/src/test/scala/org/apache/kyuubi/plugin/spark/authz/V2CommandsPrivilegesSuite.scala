@@ -36,6 +36,14 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   protected val supportsDelete: Boolean
   protected val supportsPartitionGrammar: Boolean
   protected val supportsPartitionManagement: Boolean
+  // Some V2 catalogs (e.g. Paimon) translate TRUNCATE TABLE and dynamic
+  // partition overwrite into engine-specific logical plans whose
+  // operation type / target output differ from the generic Spark V2
+  // shape these tests assert against. Subclasses that need different
+  // coverage can flip these to false; the inherited tests are then
+  // assumed-skipped.
+  protected val supportsTruncateTable: Boolean = true
+  protected val supportsOverwritePartitionsDynamic: Boolean = true
 
   val catalogV2 = "local"
   val namespace = "catalog_ns"
@@ -288,6 +296,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
 
   test("OverwritePartitionsDynamic") {
     assume(supportsPartitionGrammar)
+    assume(supportsOverwritePartitionsDynamic)
 
     try {
       sql("SET spark.sql.sources.partitionOverwriteMode=dynamic")
@@ -500,6 +509,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
   }
 
   test("TruncateTable") {
+    assume(supportsTruncateTable)
 
     val plan = executePlan(s"TRUNCATE TABLE $catalogTable").analyzed
 
