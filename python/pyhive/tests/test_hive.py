@@ -30,13 +30,37 @@ from pyhive.tests.dbapi_test_case import DBAPITestCase
 from pyhive.tests.dbapi_test_case import with_cursor
 
 _HOST = 'localhost'
+_CONNECT_ATTEMPTS = 5
+_CONNECT_RETRY_DELAY_SECONDS = 2
 
 
 class TestHive(unittest.TestCase, DBAPITestCase):
     __test__ = True
 
     def connect(self):
-        return hive.connect(host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
+        for attempt in range(_CONNECT_ATTEMPTS):
+            try:
+                return hive.connect(
+                    host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
+            except TTransportException:
+                if attempt == _CONNECT_ATTEMPTS - 1:
+                    raise
+                time.sleep(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_retries_transient_transport_failure(self, connect, sleep):
+        connection = mock.sentinel.connection
+        connect.side_effect = [
+            TTransportException(
+                type=TTransportException.END_OF_FILE, message='TSocket read 0 bytes'),
+            connection,
+        ]
+
+        self.assertIs(self.connect(), connection)
+
+        self.assertEqual(connect.call_count, 2)
+        sleep.assert_called_once_with(_CONNECT_RETRY_DELAY_SECONDS)
 
     @with_cursor
     def test_description(self, cursor):
