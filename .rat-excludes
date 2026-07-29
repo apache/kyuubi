@@ -49,6 +49,7 @@ build/scala-*/**
 **/web-ui/dist/**
 **/web-ui/coverage/**
 **/pnpm-lock.yaml
+**/pnpm-workspace.yaml
 **/node_modules/**
 **/gen/*
 **/*.tokens
