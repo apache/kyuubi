@@ -18,12 +18,20 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger.datamasking
 
 import org.apache.spark.SparkConf
+import org.scalactic.source
+import org.scalatest.Tag
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.PaimonTest
 
 @PaimonTest
 class DataMaskingForPaimonSuite extends DataMaskingTestBase {
+  private def isSupportedVersion = isScalaV212 || isSparkV40OrGreater
+  override protected val sqlExtensions: String =
+    if (isSupportedVersion) "org.apache.paimon.spark.extensions.PaimonSparkSessionExtensions"
+    else ""
+
   override protected def extraSparkConf: SparkConf = {
     super.extraSparkConf
       .set("spark.sql.defaultCatalog", "testcat")
@@ -41,12 +49,22 @@ class DataMaskingForPaimonSuite extends DataMaskingTestBase {
 
   override protected def format: String = "USING paimon"
 
+  override protected def test(testName: String, testTags: Tag*)(
+      testFun: => Any)(implicit pos: source.Position): Unit = {
+    if (isSupportedVersion) {
+      super.test(testName, testTags: _*)(testFun)(pos)
+    }
+  }
+
   override def beforeAll(): Unit = {
-    super.beforeAll()
+    if (isSupportedVersion) {
+      super.beforeAll()
+    }
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
+    if (isSupportedVersion) {
+      super.afterAll()
+    }
   }
-
 }
