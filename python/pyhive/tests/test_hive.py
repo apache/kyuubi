@@ -34,6 +34,13 @@ _CONNECT_ATTEMPTS = 5
 _CONNECT_RETRY_DELAY_SECONDS = 2
 
 
+def _is_retryable_transport_exception(error):
+    return error.type in (
+        TTransportException.END_OF_FILE,
+        TTransportException.TIMED_OUT,
+    ) or 'TSocket read 0 bytes' in str(error)
+
+
 class TestHive(unittest.TestCase, DBAPITestCase):
     __test__ = True
 
@@ -42,8 +49,8 @@ class TestHive(unittest.TestCase, DBAPITestCase):
             try:
                 return hive.connect(
                     host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
-            except TTransportException:
-                if attempt == _CONNECT_ATTEMPTS - 1:
+            except TTransportException as e:
+                if not _is_retryable_transport_exception(e) or attempt == _CONNECT_ATTEMPTS - 1:
                     raise
                 time.sleep(_CONNECT_RETRY_DELAY_SECONDS)
 
@@ -61,6 +68,17 @@ class TestHive(unittest.TestCase, DBAPITestCase):
 
         self.assertEqual(connect.call_count, 2)
         sleep.assert_called_once_with(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_does_not_retry_non_transient_transport_failure(self, connect, sleep):
+        connect.side_effect = TTransportException(
+            type=TTransportException.UNKNOWN, message='Error validating the login')
+
+        self.assertRaises(TTransportException, self.connect)
+
+        connect.assert_called_once()
+        sleep.assert_not_called()
 
     @with_cursor
     def test_description(self, cursor):
