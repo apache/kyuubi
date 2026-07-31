@@ -127,7 +127,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Resolve engine archive download URLs
