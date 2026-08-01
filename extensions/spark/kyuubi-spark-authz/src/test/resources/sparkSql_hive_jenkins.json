@@ -198,7 +198,7 @@
         "isRecursive" : false
       },
       "database" : {
-        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1", "paimon_ns" ],
+        "values" : [ "default", "spark_catalog", "iceberg_ns", "ns1", "paimon_ns", "hudi_ns" ],
         "isExcludes" : false,
         "isRecursive" : false
       },

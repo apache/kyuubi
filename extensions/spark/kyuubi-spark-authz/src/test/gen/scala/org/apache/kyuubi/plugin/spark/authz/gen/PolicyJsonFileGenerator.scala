@@ -175,7 +175,13 @@ class PolicyJsonFileGenerator extends KyuubiFunSuite {
     name = "all - database, udf",
     description = "Policy for all - database, udf",
     resources = Map(
-      databaseRes(defaultDb, sparkCatalog, icebergNamespace, namespace1, paimonNamespace),
+      databaseRes(
+        defaultDb,
+        sparkCatalog,
+        icebergNamespace,
+        namespace1,
+        paimonNamespace,
+        hudiNamespace),
       allTableRes,
       allColumnRes),
     policyItems = List(
