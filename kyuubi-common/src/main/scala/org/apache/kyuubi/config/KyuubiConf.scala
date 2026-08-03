@@ -1086,42 +1086,6 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
-  val AUTHENTICATION_LDAP_SSL_ENABLE: ConfigEntry[Boolean] =
-    buildConf("kyuubi.authentication.ldap.ssl.enable")
-      .doc("Set this to true for using SSL encryption when connecting to LDAP servers.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .booleanConf
-      .createWithDefault(false)
-
-  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.ssl.truststore.path")
-      .doc("The truststore path used for SSL connections to LDAP servers.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .stringConf
-      .createOptional
-
-  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PASSWORD: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.ssl.truststore.password")
-      .doc("The truststore password used for SSL connections to LDAP servers.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .stringConf
-      .createOptional
-
-  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_TYPE: OptionalConfigEntry[String] =
-    buildConf("kyuubi.authentication.ldap.ssl.truststore.type")
-      .doc("The truststore type used for SSL connections to LDAP servers.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .stringConf
-      .createOptional
-
   val AUTHENTICATION_LDAP_BASE_DN: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.ldap.baseDN")
       .withAlternative("kyuubi.authentication.ldap.base.dn")
@@ -1261,6 +1225,42 @@ object KyuubiConf {
         "user being authenticated. If the username is specified, this parameter must also be " +
         "specified.")
       .version("1.7.0")
+      .audience(SERVER)
+      .immutable
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_SSL_ENABLE: ConfigEntry[Boolean] =
+    buildConf("kyuubi.authentication.ldap.ssl.enable")
+      .doc("Set this to true for using SSL encryption when connecting to LDAP servers.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
+  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.ssl.truststore.path")
+      .doc("The truststore path used for SSL connections to LDAP servers.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PASSWORD: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.ssl.truststore.password")
+      .doc("The truststore password used for SSL connections to LDAP servers.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .stringConf
+      .createOptional
+
+  val AUTHENTICATION_LDAP_SSL_TRUSTSTORE_TYPE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.authentication.ldap.ssl.truststore.type")
+      .doc("The truststore type used for SSL connections to LDAP servers.")
+      .version("1.13.0")
       .audience(SERVER)
       .immutable
       .stringConf

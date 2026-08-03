@@ -69,12 +69,7 @@ class LdapSearchFactorySuite extends KyuubiFunSuite {
         .set(AUTHENTICATION_LDAP_URL, ldapUrl)
         .set(AUTHENTICATION_LDAP_SSL_ENABLE, true)
         .set(AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PASSWORD, "password123") ->
-        AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH.key,
-      KyuubiConf(loadSysDefault = false)
-        .set(AUTHENTICATION_LDAP_URL, ldapUrl)
-        .set(AUTHENTICATION_LDAP_SSL_ENABLE, true)
-        .set(AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH, "/tmp/ldap.p12") ->
-        AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PASSWORD.key).foreach { case (conf, expectedKey) =>
+        AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH.key).foreach { case (conf, expectedKey) =>
       val e = intercept[IllegalArgumentException] {
         new LdapSearchFactory().createDirContextEnvironment(conf, "uid=user,ou=users", "password")
       }

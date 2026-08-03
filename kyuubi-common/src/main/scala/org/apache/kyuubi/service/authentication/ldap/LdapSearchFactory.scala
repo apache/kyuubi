@@ -89,15 +89,11 @@ class LdapSearchFactory extends DirSearchFactory with Logging {
       throw new IllegalArgumentException(
         s"${AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PATH.key} not configured for SSL connection")
     }
-    if (trustStorePassword.isEmpty) {
-      throw new IllegalArgumentException(
-        s"${AUTHENTICATION_LDAP_SSL_TRUSTSTORE_PASSWORD.key} not configured for SSL connection")
-    }
 
     try {
       val sslContext = getSSLContext(
         trustStorePath.get,
-        trustStorePassword.get,
+        trustStorePassword.orNull,
         trustStoreType.getOrElse(KeyStore.getDefaultType))
       LdapSSLSocketFactory.setSSLContextForCurrentThread(sslContext)
       env.put(LdapSearchFactory.LDAP_SOCKET_FACTORY, classOf[LdapSSLSocketFactory].getName)
