@@ -38,6 +38,7 @@ def _is_retryable_transport_exception(error):
     return error.type in (
         TTransportException.END_OF_FILE,
         TTransportException.TIMED_OUT,
+        TTransportException.NOT_OPEN,
     ) or 'TSocket read 0 bytes' in str(error)
 
 
@@ -61,6 +62,21 @@ class TestHive(unittest.TestCase, DBAPITestCase):
         connect.side_effect = [
             TTransportException(
                 type=TTransportException.END_OF_FILE, message='TSocket read 0 bytes'),
+            connection,
+        ]
+
+        self.assertIs(self.connect(), connection)
+
+        self.assertEqual(connect.call_count, 2)
+        sleep.assert_called_once_with(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_retries_connection_refused(self, connect, sleep):
+        connection = mock.sentinel.connection
+        connect.side_effect = [
+            TTransportException(
+                type=TTransportException.NOT_OPEN, message='Could not connect'),
             connection,
         ]
 
