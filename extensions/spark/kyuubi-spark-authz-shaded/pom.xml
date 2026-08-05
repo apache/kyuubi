@@ -56,6 +56,7 @@
                             <include>com.fasterxml.jackson.jaxrs:*</include>
                             <include>com.sun.jersey:*</include>
                             <include>javax.ws.rs:jsr311-api</include>
+                            <include>commons-collections:commons-collections</include>
                         </includes>
                     </artifactSet>
                     <filters>
