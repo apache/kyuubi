@@ -18,11 +18,13 @@ package org.apache.kyuubi.engine.dataagent.session
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SERVER_HA_NAMESPACE_KEY
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.engine.dataagent.DataAgentEngine
+import org.apache.kyuubi.engine.dataagent.{DataAgentEngine, DataAgentTBinaryFrontendService}
 import org.apache.kyuubi.engine.dataagent.operation.DataAgentOperationManager
 import org.apache.kyuubi.engine.dataagent.provider.DataAgentProvider
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
+import org.apache.kyuubi.ha.client.{DataAgentSessionRoute, EngineServiceDiscovery}
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
@@ -50,10 +52,34 @@ class DataAgentSessionManager(name: String)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
-      .flatMap(getSessionOption).getOrElse {
-        new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
-      }
+    new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
+  }
+
+  private def discoveryClient = DataAgentEngine.currentEngine
+    .flatMap(_.frontendServices.collectFirst {
+      case frontend: DataAgentTBinaryFrontendService => frontend
+    }).flatMap(_.discoveryService.collect {
+      case service: EngineServiceDiscovery => service.discoveryClient
+    })
+
+  private[dataagent] def registerRoute(sessionId: String, user: String): Unit = {
+    for {
+      serverSpace <- conf.getOption(KYUUBI_SERVER_HA_NAMESPACE_KEY)
+      engineRefId <- conf.get(HA_ENGINE_REF_ID)
+      discovery <- discoveryClient
+    } {
+      val route = DataAgentSessionRoute(conf.get(HA_NAMESPACE), engineRefId, user)
+      DataAgentSessionRoute.register(discovery, serverSpace, sessionId, route)
+    }
+  }
+
+  private[dataagent] def unregisterRoute(sessionId: String): Unit = {
+    for {
+      serverSpace <- conf.getOption(KYUUBI_SERVER_HA_NAMESPACE_KEY)
+      discovery <- discoveryClient
+    } {
+      DataAgentSessionRoute.unregister(discovery, serverSpace, sessionId)
+    }
   }
 
   override def stop(): Unit = {
