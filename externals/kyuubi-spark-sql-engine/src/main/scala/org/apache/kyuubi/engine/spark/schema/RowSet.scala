@@ -37,11 +37,7 @@ object RowSet {
       .buildChecked(HiveResult)
       .invokeChecked[BinaryFormatter]()
 
-  def toHiveString(
-      valueAndType: (Any, DataType),
-      nested: JBoolean = false,
-      timeFormatters: TimeFormatters,
-      binaryFormatter: BinaryFormatter): String =
+  private val toHiveStringMethod =
     DynMethods.builder("toHiveString")
       .impl( // for Spark 3.5 and before
         HiveResult.getClass,
@@ -55,5 +51,11 @@ object RowSet {
         classOf[TimeFormatters],
         classOf[BinaryFormatter])
       .buildChecked(HiveResult)
-      .invokeChecked[String](valueAndType, nested, timeFormatters, binaryFormatter)
+
+  def toHiveString(
+      valueAndType: (Any, DataType),
+      nested: JBoolean = false,
+      timeFormatters: TimeFormatters,
+      binaryFormatter: BinaryFormatter): String =
+    toHiveStringMethod.invokeChecked[String](valueAndType, nested, timeFormatters, binaryFormatter)
 }

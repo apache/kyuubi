@@ -18,8 +18,6 @@
 package org.apache.kyuubi.engine.result
 import java.util.{ArrayList => JArrayList}
 
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 trait TRowSetGenerator[SchemaT, RowT, ColumnT]
@@ -42,23 +40,24 @@ trait TRowSetGenerator[SchemaT, RowT, ColumnT]
   }
 
   def toRowBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
-    val tRows = rows.map { row =>
-      var i = 0
-      val columnSize = getColumnSizeFromSchemaType(schema)
+    val columnSize = getColumnSizeFromSchemaType(schema)
+    val tRows = new JArrayList[TRow](rows.size)
+    val rowIter = rows.iterator
+    while (rowIter.hasNext) {
+      val row = rowIter.next()
       val tColumnValues = new JArrayList[TColumnValue](columnSize)
+      var i = 0
       while (i < columnSize) {
-        val columnValue = toTColumnValue(row, i, schema)
-        tColumnValues.add(columnValue)
+        tColumnValues.add(toTColumnValue(row, i, schema))
         i += 1
       }
-      new TRow(tColumnValues)
-    }.asJava
+      tRows.add(new TRow(tColumnValues))
+    }
     new TRowSet(0, tRows)
   }
 
   def toColumnBasedSet(rows: Seq[RowT], schema: SchemaT): TRowSet = {
-    val rowSize = rows.length
-    val tRowSet = new TRowSet(0, new JArrayList[TRow](rowSize))
+    val tRowSet = new TRowSet(0, new JArrayList[TRow](0))
     var i = 0
     val columnSize = getColumnSizeFromSchemaType(schema)
     val tColumns = new JArrayList[TColumn](columnSize)
