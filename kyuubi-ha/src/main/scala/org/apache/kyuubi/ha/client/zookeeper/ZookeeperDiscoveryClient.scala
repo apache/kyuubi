@@ -19,10 +19,11 @@ package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ScheduledFuture, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
 
@@ -32,7 +33,6 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_ZK_NODE_TIMEOUT, HA_ZK_PUBLISH_CONFIGS}
 import org.apache.kyuubi.ha.client.{DiscoveryClient, ServiceDiscovery, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
-import org.apache.kyuubi.ha.client.zookeeper.ZookeeperDiscoveryClient.connectionChecker
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework
 import org.apache.kyuubi.shaded.curator.framework.recipes.atomic.{AtomicValue, DistributedAtomicInteger}
 import org.apache.kyuubi.shaded.curator.framework.recipes.locks.InterProcessSemaphoreMutex
@@ -50,7 +50,15 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 
   private val zkClient: CuratorFramework = buildZookeeperClient(conf)
   @volatile private var serviceNode: PersistentNode = _
-  private var watcher: DeRegisterWatcher = _
+  @volatile private var watcher: DeRegisterWatcher = _
+
+  // Monotonic generation that tags each RECONNECTED rewatch attempt. A retry scheduled for an
+  // older generation cancels itself when a newer RECONNECTED arrives, so repeated reconnects
+  // during ZK flapping never stack independent retry chains (single-flight).
+  private val rewatchGeneration = new java.util.concurrent.atomic.AtomicLong(0L)
+  // The currently pending scheduled retry, if any. Cancelled on deregister so a stale task cannot
+  // rearm a watcher on a node that is already torn down.
+  @volatile private var rewatchRetryTask: ScheduledFuture[_] = _
 
   override def createClient(): Unit = {
     zkClient.start()
@@ -99,32 +107,48 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def monitorState(serviceDiscovery: ServiceDiscovery): Unit = {
-    zkClient
-      .getConnectionStateListenable.addListener(new ConnectionStateListener {
-        private val isConnected = new AtomicBoolean(false)
+    registerConnectionStateListener(serviceDiscovery)
+  }
 
-        override def stateChanged(client: CuratorFramework, newState: ConnectionState): Unit = {
-          info(s"Zookeeper client connection state changed to: $newState")
-          newState match {
-            case CONNECTED | RECONNECTED => isConnected.set(true)
-            case LOST =>
-              isConnected.set(false)
-              val delay = getGracefulStopThreadDelay(conf)
-              connectionChecker.schedule(
-                new Runnable {
-                  override def run(): Unit = if (!isConnected.get()) {
-                    error(s"Zookeeper client connection state changed to: $newState," +
-                      s" but failed to reconnect in ${delay / 1000} seconds." +
-                      s" Give up retry and stop gracefully . ")
-                    serviceDiscovery.stopGracefully(true)
-                  }
-                },
-                delay,
-                TimeUnit.MILLISECONDS)
-            case _ =>
-          }
+  @VisibleForTesting
+  private[kyuubi] def registerConnectionStateListener(
+      serviceDiscovery: ServiceDiscovery): ConnectionStateListener = {
+    val listener = new ConnectionStateListener {
+      private val isConnected = new AtomicBoolean(false)
+
+      override def stateChanged(client: CuratorFramework, newState: ConnectionState): Unit = {
+        info(s"Zookeeper client connection state changed to: $newState")
+        newState match {
+          case CONNECTED => isConnected.set(true)
+          case RECONNECTED =>
+            isConnected.set(true)
+            // Rearm the DeRegisterWatcher off the connection-state dispatch thread. Curator 2.12
+            // dispatches ConnectionStateListener callbacks on a single-thread executor
+            // shared with PersistentNode's recovery listener; a foreground checkExists here could
+            // block that thread (and delay PersistentNode re-creating the znode and subsequent
+            // LOST handling) when the connection drops again mid-call. Schedule the rewatch on a
+            // dedicated executor so stateChanged returns immediately.
+            scheduleRewatch("Zookeeper client reconnected")
+          case LOST =>
+            isConnected.set(false)
+            val delay = getGracefulStopThreadDelay(conf)
+            ZookeeperDiscoveryClient.connectionChecker.schedule(
+              new Runnable {
+                override def run(): Unit = if (!isConnected.get()) {
+                  error(s"Zookeeper client connection state changed to: $newState," +
+                    s" but failed to reconnect in ${delay / 1000} seconds." +
+                    s" Give up retry and stop gracefully . ")
+                  serviceDiscovery.stopGracefully(true)
+                }
+              },
+              delay,
+              TimeUnit.MILLISECONDS)
+          case _ =>
         }
-      })
+      }
+    }
+    zkClient.getConnectionStateListenable.addListener(listener)
+    listener
   }
 
   override def tryWithLock[T](lockPath: String, timeout: Long)(f: => T): T = {
@@ -252,6 +276,9 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         serviceNode = null
       }
     }
+    // Cancel any pending rewatch retry so a stale task cannot rearm a watcher on a node that has
+    // just been torn down. Bump the generation first so an in-flight retry observes the change.
+    cancelRewatchRetry()
   }
 
   override def postDeregisterService(namespace: String): Boolean = {
@@ -400,11 +427,117 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   private def watchNode(): Unit = {
-    if (zkClient.checkExists
-        .usingWatcher(watcher.asInstanceOf[Watcher]).forPath(serviceNode.getActualPath) == null) {
+    if (!watchServiceNode("service registration")) {
       // No node exists, throw exception
       throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${watcher.instance}] on ZooKeeper.")
+        s"instance[${Option(watcher).map(_.instance).getOrElse("unknown")}] on ZooKeeper.")
+    }
+  }
+
+  private def watchServiceNode(reason: String): Boolean = {
+    val currentServiceNode = serviceNode
+    val currentWatcher = watcher
+    if (currentServiceNode == null || currentWatcher == null) {
+      debug(s"Skip setting DeRegisterWatcher for $reason because service node is not registered")
+      return false
+    }
+
+    val path = currentServiceNode.getActualPath
+    if (path == null) {
+      debug(s"Skip setting DeRegisterWatcher for $reason because service node path is not ready")
+      return false
+    }
+
+    val serviceNodeExists = zkClient.checkExists
+      .usingWatcher(currentWatcher.asInstanceOf[Watcher])
+      .forPath(path) != null
+    if (serviceNodeExists) {
+      info(s"Set DeRegisterWatcher on $path for $reason")
+    } else {
+      warn(s"Service node $path does not exist when setting DeRegisterWatcher for $reason")
+    }
+    serviceNodeExists
+  }
+
+  /**
+   * Attempt to rearm the DeRegisterWatcher off the connection-state dispatch thread. Runs on a
+   * dedicated rewatch executor (isolated from the shared connectionChecker that the LOST graceful
+   * stop task may block on). Retries are generation-gated: a newer RECONNECTED bumps the
+   * generation, so a retry scheduled for an older generation self-cancels instead of stacking
+   * another independent chain.
+   *
+   * The scheduled task only invokes private methods (not field reads) so that the private
+   * serviceNode/watcher fields are not accessed from an anonymous inner class, which would make
+   * scalac mangle their names and break reflection-based test setup.
+   */
+  private def scheduleRewatch(reason: String): Unit = {
+    scheduleRewatch(reason, attempt = 1, rewatchGeneration.incrementAndGet())
+  }
+
+  private def scheduleRewatch(reason: String, attempt: Int, generation: Long): Unit = {
+    rewatchRetryTask = ZookeeperDiscoveryClient.rewatchExecutor.schedule(
+      new Runnable {
+        override def run(): Unit = runRewatchAttempt(reason, attempt, generation)
+      },
+      0L,
+      TimeUnit.MILLISECONDS)
+  }
+
+  private def runRewatchAttempt(reason: String, attempt: Int, generation: Long): Unit = {
+    if (!rewatchStillActive(generation)) {
+      debug(s"Discard stale rewatch for $reason at attempt $attempt" +
+        s" (generation $generation vs ${rewatchGeneration.get()})")
+      return
+    }
+    try {
+      if (watchServiceNode(s"$reason (attempt $attempt)")) {
+        rewatchRetryTask = null
+      } else if (attempt < ZookeeperDiscoveryClient.RewatchNodeMaxRetries &&
+        rewatchStillActive(generation)) {
+        val nextAttempt = attempt + 1
+        warn(s"Failed to rewatch service node for $reason at attempt $attempt, " +
+          s"will retry at attempt $nextAttempt")
+        rewatchRetryTask = ZookeeperDiscoveryClient.rewatchExecutor.schedule(
+          new Runnable {
+            override def run(): Unit = runRewatchAttempt(reason, nextAttempt, generation)
+          },
+          ZookeeperDiscoveryClient.RewatchNodeRetryIntervalMs,
+          TimeUnit.MILLISECONDS)
+      } else {
+        warn(s"Failed to rewatch service node for $reason after $attempt attempt(s)")
+        rewatchRetryTask = null
+      }
+    } catch {
+      case NonFatal(e) =>
+        warn(s"Failed to set DeRegisterWatcher for $reason at attempt $attempt", e)
+        rewatchRetryTask = null
+    }
+  }
+
+  // A rewatch attempt is still active only if no newer RECONNECTED superseded it and the service
+  // node has not been torn down. Reads the volatile fields here (on the rewatch executor thread),
+  // never from an anonymous inner class.
+  private def rewatchStillActive(generation: Long): Boolean = {
+    generation == rewatchGeneration.get() && serviceNode != null && watcher != null
+  }
+
+  private def cancelRewatchRetry(): Unit = {
+    rewatchGeneration.incrementAndGet()
+    val task = rewatchRetryTask
+    rewatchRetryTask = null
+    if (task != null) {
+      task.cancel(false)
+    }
+  }
+
+  @VisibleForTesting
+  private[kyuubi] def rewatchServiceNodeOnce(reason: String): Boolean = {
+    try {
+      watchServiceNode(reason)
+    } catch {
+      case NonFatal(e) =>
+        warn(s"Failed to set DeRegisterWatcher for $reason", e)
+        false
     }
   }
 
@@ -416,6 +549,14 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
           " ZooKeeper. The server will be shut down after the last client session completes.")
         ZookeeperDiscoveryClient.this.deregisterService()
         serviceDiscovery.stopGracefully()
+      } else if (event.getType == Watcher.Event.EventType.NodeCreated) {
+        // When the service node was absent at rewatch time, exists(path, watcher) leaves a
+        // one-shot watch that PersistentNode's recovery createNode consumes via NodeCreated.
+        // The DeRegisterWatcher must rearm itself here, otherwise the next NodeDeleted would be
+        // missed until the following scheduled retry. Reuse the same non-throwing helper.
+        info(s"This Kyuubi instance $instance sees its service node recreated;" +
+          " rearming DeRegisterWatcher")
+        ZookeeperDiscoveryClient.this.rewatchServiceNodeOnce("service node recreated")
       } else if (event.getType == Watcher.Event.EventType.NodeDataChanged) {
         warn(s"This Kyuubi instance $instance now receives the NodeDataChanged event")
         ZookeeperDiscoveryClient.this.watchNode()
@@ -425,6 +566,14 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
 }
 
 object ZookeeperDiscoveryClient extends Logging {
+  final private val RewatchNodeMaxRetries = 5
+  final private val RewatchNodeRetryIntervalMs = 1000L
+  // Dedicated executor for RECONNECTED rewatch work, intentionally separate from the shared
+  // connectionChecker: a LOST graceful-stop task may block that single thread waiting for open
+  // sessions to drain, which would otherwise starve rewatch retries of binary/HTTP discovery
+  // clients sharing the static executor.
+  final private lazy val rewatchExecutor =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-rewatch")
   final private lazy val connectionChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-connection-checker")
 }
