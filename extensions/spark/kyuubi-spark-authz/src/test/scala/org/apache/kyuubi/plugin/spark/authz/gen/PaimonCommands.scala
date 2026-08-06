@@ -29,7 +29,8 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     val paimonFileStoreTableDesc = TableDesc(
       "relation",
       classOf[DataSourceV2RelationTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+      actionTypeDesc = Some(actionTypeDesc),
+      comment = "Paimon")
     TableCommandSpec(cmd, Seq(paimonFileStoreTableDesc))
   }
 
@@ -39,7 +40,8 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     val paimonFileStoreTableDesc = TableDesc(
       "relation",
       classOf[DataSourceV2RelationTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+      actionTypeDesc = Some(actionTypeDesc),
+      comment = "Paimon")
     TableCommandSpec(cmd, Seq(paimonFileStoreTableDesc))
   }
 
@@ -49,11 +51,13 @@ object PaimonCommands extends CommandSpecs[TableCommandSpec] {
     val targetTableDesc = TableDesc(
       "targetTable",
       classOf[DataSourceV2RelationTableExtractor],
-      actionTypeDesc = Some(actionTypeDesc))
+      actionTypeDesc = Some(actionTypeDesc),
+      comment = "Paimon")
     val sourceTableDesc = TableDesc(
       "sourceTable",
       classOf[DataSourceV2RelationTableExtractor],
-      isInput = true)
+      isInput = true,
+      comment = "Paimon")
     TableCommandSpec(cmd, Seq(targetTableDesc, sourceTableDesc))
   }
 
