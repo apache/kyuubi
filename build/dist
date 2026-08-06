@@ -186,6 +186,13 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
+BUILD_EXTRA_SPARK_ENGINE=false
+case "$SPARK_VERSION" in
+  3.3.*|3.4.*|3.5.*)
+    BUILD_EXTRA_SPARK_ENGINE=true
+    ;;
+esac
+
 # shellcheck disable=SC2068
 HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
@@ -249,29 +256,31 @@ echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
 "${BUILD_COMMAND[@]}"
 
-FILTERED_ARGS=()
-# shellcheck disable=SC2045
-for arg in "$@"; do
+if [[ "$BUILD_EXTRA_SPARK_ENGINE" == "true" ]]; then
+  FILTERED_ARGS=()
+  # shellcheck disable=SC2045
+  for arg in "$@"; do
     if [[ $arg == *scala-2.12* ]]; then
-        FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
+      FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
     elif [[ $arg == *scala-2.13* ]]; then
-        FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
+      FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
     else
-        FILTERED_ARGS+=("$arg")
+      FILTERED_ARGS+=("$arg")
     fi
-done
+  done
 
-# shellcheck disable=SC2050
-if [ "$SCALA_VERSION" = "2.12" ]; then
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
-else
-  EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
+  # shellcheck disable=SC2050
+  if [ "$SCALA_VERSION" = "2.12" ]; then
+    EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -Pscala-2.13 -pl :kyuubi-spark-sql-engine_2.13 -am)
+  else
+    EXTRA_SPARK_ENGINE_BUILD_COMMAND=("$MVN" install $MVN_DIST_OPT ${FILTERED_ARGS[@]} -pl :kyuubi-spark-sql-engine_2.12 -am)
+  fi
+
+  # shellcheck disable=SC2145
+  echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
+
+  "${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 fi
-
-# shellcheck disable=SC2145
-echo -e "\$ ${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}\n"
-
-"${EXTRA_SPARK_ENGINE_BUILD_COMMAND[@]}"
 
 # Make directories
 rm -rf "$DISTDIR"
@@ -320,7 +329,11 @@ cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engin
 
 # Copy spark engines
 # shellcheck disable=SC2045
-for scala_version in 2.12 2.13; do
+SPARK_ENGINE_SCALA_VERSIONS=("$SCALA_VERSION")
+if [[ "$BUILD_EXTRA_SPARK_ENGINE" == "true" ]]; then
+  SPARK_ENGINE_SCALA_VERSIONS=('2.12' '2.13')
+fi
+for scala_version in "${SPARK_ENGINE_SCALA_VERSIONS[@]}"; do
   cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${scala_version}-${VERSION}.jar" "$DISTDIR/externals/engines/spark/"
 done
 
