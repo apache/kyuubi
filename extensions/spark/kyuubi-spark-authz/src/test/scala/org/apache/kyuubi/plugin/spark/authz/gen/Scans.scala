@@ -50,6 +50,22 @@ object Scans extends CommandSpecs[ScanSpec] {
     ScanSpec(r, Seq(tableDesc))
   }
 
+  // Post-pushdown leaf produced by V2ScanRelationPushDown. Normally authorization runs
+  // before pushdown, but a connector's own rewrites can embed an already-planned scan
+  // (e.g. Iceberg MERGE INTO on Spark 3.5), and then this is the only node carrying the
+  // table. The wrapped v2 relation sits in the `relation` field, not a child, so the
+  // regular DataSourceV2Relation spec never sees it.
+  val DataSourceV2ScanRelation = {
+    val r = "org.apache.spark.sql.execution.datasources.v2.DataSourceV2ScanRelation"
+    val tableDesc =
+      ScanDesc(
+        "relation",
+        classOf[DataSourceV2RelationTableExtractor])
+    // Exercised by the Iceberg MERGE INTO tests, which run on the 3.5/4.0/4.1 profiles
+    // (Iceberg is tag-excluded on 4.2).
+    ScanSpec(r, Seq(tableDesc), verifiedSparkVersions = Seq("3.5", "4.0", "4.1"))
+  }
+
   val PermanentViewMarker = {
     val r = "org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker"
     val tableDesc =
@@ -84,6 +100,7 @@ object Scans extends CommandSpecs[ScanSpec] {
     HiveTableRelation,
     LogicalRelation,
     DataSourceV2Relation,
+    DataSourceV2ScanRelation,
     PermanentViewMarker,
     HiveSimpleUDF,
     HiveGenericUDF,

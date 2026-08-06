@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
+import org.apache.kyuubi.plugin.spark.authz.ParanoidMode.ViolationKind
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization._
 import org.apache.kyuubi.plugin.spark.authz.rule.rowfilter._
@@ -84,13 +85,23 @@ object PrivilegesBuilder {
       case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
 
       case scan if isKnownScan(scan) && scan.resolved =>
-        val tables = getScanSpec(scan).tables(scan, spark)
+        val spec = getScanSpec(scan)
+        val (tables, tableFailures) = spec.tablesWithFailures(scan, spark)
         // If the the scan is table-based, we check privileges on the table we found
         // otherwise, we check privileges on the uri we found
         if (tables.nonEmpty) {
           tables.foreach(mergeProjection(_, scan))
         } else {
-          getScanSpec(scan).uris(scan).foreach(privilegeObjects += PrivilegeObject(_))
+          val (uris, uriFailures) = spec.urisWithFailures(scan)
+          uris.foreach(privilegeObjects += PrivilegeObject(_))
+          if (uris.isEmpty && (tableFailures.nonEmpty || uriFailures.nonEmpty)) {
+            ParanoidMode.onViolation(
+              spark,
+              scan,
+              ViolationKind.EXTRACTION_FAILURE,
+              "scan spec matched but no table or uri could be extracted",
+              (tableFailures ++ uriFailures).headOption)
+          }
         }
 
       case u if u.nodeName == "UnresolvedRelation" =>
@@ -100,6 +111,7 @@ object PrivilegesBuilder {
         privilegeObjects += PrivilegeObject(table)
 
       case p =>
+        checkUnclassifiedQueryNode(p, spark)
         for (child <- p.children) {
           // If current plan's references don't have relation to it's input, have two cases
           //   1. `MapInPandas`, `ScriptTransformation`
@@ -113,6 +125,11 @@ object PrivilegesBuilder {
                 p.inputSet.map(_.toAttribute).toSeq,
                 Nil,
                 spark)
+            } else {
+              // The subtree is pruned for privilege building (a constant projection reads
+              // no columns), but it still executes, so classification must still see it:
+              // an unclassified node must not hide under `SELECT <literal> FROM ...`.
+              sweepClassificationOnly(child, spark)
             }
           } else {
             buildQuery(
@@ -133,6 +150,100 @@ object PrivilegesBuilder {
   }
 
   /**
+   * Classification checks for nodes on the query path. Ordinary non-leaf operators
+   * (Project, Filter, Join, ...) recurse freely (privileges are carried by leaves and
+   * commands) but a node matching any of the shapes below would otherwise be silently
+   * treated as not-authz-relevant, and [[ParanoidMode]] decides how loud that is.
+   *
+   * If the class has an allowlist entry that simply is not verified for the running Spark
+   * version, say so: "re-review the entry" is far more actionable than "unclassified".
+   */
+  private def unverifiedAllowlistDetail(classname: String): String = {
+    KNOWN_HARMLESS_NODES.get(classname).map { spec =>
+      s"""its known_harmless_spec.json entry is verified for
+         | Spark ${spec.verifiedSparkVersions.mkString(", ")}
+         | but not for $SPARK_RUNTIME_MAJOR_MINOR -
+         | re-review the entry for this version""".stripMargin
+    }.getOrElse("")
+  }
+
+  private def checkUnclassifiedQueryNode(p: LogicalPlan, spark: SparkSession): Unit = {
+    if (isKnownHarmless(p)) {
+      return
+    }
+    val detail = unverifiedAllowlistDetail(p.getClass.getName)
+    if (hasCommandSpec(p.getClass.getName)) {
+      // The spec exists but dispatch never consulted it — the class kept its name but
+      // changed supertype, like CALL between Spark 3 (Iceberg's Command) and Spark 4.
+      ParanoidMode.onViolation(spark, p, ViolationKind.UNREACHABLE_SPEC, detail)
+    } else if (executesDuringAnalysis(p)) {
+      ParanoidMode.onViolation(spark, p, ViolationKind.ANALYSIS_TIME_EXECUTION, detail)
+    } else if (isKnownScan(p)) {
+      // a known scan only reaches the generic arm when unresolved, contributing nothing
+      ParanoidMode.onViolation(spark, p, ViolationKind.UNRESOLVED_SCAN, detail)
+    } else if (p.children.isEmpty) {
+      ParanoidMode.onViolation(spark, p, ViolationKind.UNCLASSIFIED_LEAF, detail)
+    }
+  }
+
+  /**
+   * Walk a subtree that privilege building skips, applying only the classification checks.
+   * Contributes no privilege objects; nodes are classified and traversal pruned exactly as
+   * [[buildQuery]] would (no descent below checked, scan, or unresolved-relation nodes).
+   */
+  private def sweepClassificationOnly(plan: LogicalPlan, spark: SparkSession): Unit = {
+    plan match {
+      case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
+      case scan if isKnownScan(scan) && scan.resolved =>
+      case u if u.nodeName == "UnresolvedRelation" =>
+      case p =>
+        checkUnclassifiedQueryNode(p, spark)
+        p.children.foreach(sweepClassificationOnly(_, spark))
+    }
+  }
+
+  /**
+   * Tracks descriptor outcomes across all families (table/database/uri/query/function) of
+   * one matched command spec. Individual descriptors failing is expected version variance:
+   * specs are written so an object "wins at least once" across Spark versions and command
+   * shapes (e.g. table descs legitimately all fail for a path-based procedure whose uri
+   * descs succeed). What must not pass silently is the drift shape where *no* descriptor of
+   * the command completes at all: the spec matches by name but can no longer extract
+   * anything from this Spark's plan shape (fail-open layer 3).
+   */
+  private class DescOutcomes(plan: LogicalPlan, spark: SparkSession) {
+    private var succeeded = 0
+    private val failures = ArrayBuffer[Exception]()
+
+    def run[D <: Descriptor](descs: Seq[D])(run: D => Unit): Unit = {
+      descs.foreach { d =>
+        try {
+          run(d)
+          succeeded += 1
+        } catch {
+          // an authorization decision bubbling up from nested privilege building is a
+          // verdict, not an extraction failure — never swallow it
+          case e: AccessControlException => throw e
+          case e: Exception =>
+            LOG.debug(d.error(plan, e))
+            failures += e
+        }
+      }
+    }
+
+    def reportIfAllFailed(): Unit = {
+      if (succeeded == 0 && failures.nonEmpty) {
+        ParanoidMode.onViolation(
+          spark,
+          plan,
+          ViolationKind.EXTRACTION_FAILURE,
+          "no descriptor of the matched command spec completed extraction",
+          failures.headOption)
+      }
+    }
+  }
+
+  /**
    * Build PrivilegeObjects from Spark LogicalPlan
    * @param plan a Spark LogicalPlan used to generate Spark PrivilegeObjects
    * @param inputObjs input privilege object list
@@ -145,109 +256,104 @@ object PrivilegesBuilder {
       spark: SparkSession): OperationType = {
 
     def getTablePriv(tableDesc: TableDesc): Seq[PrivilegeObject] = {
-      try {
-        val maybeTable = tableDesc.extract(plan, spark)
-        maybeTable match {
-          case Some(table) =>
-            val newTable = if (tableDesc.setCurrentDatabaseIfMissing) {
-              setCurrentDBIfNecessary(table, spark)
-            } else {
-              table
-            }
-            if (tableDesc.tableTypeDesc.exists(_.skip(plan))) {
-              Nil
-            } else {
-              val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
-              val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
-              Seq(PrivilegeObject(newTable, columnNames, actionType))
-            }
-          case None => Nil
-        }
-      } catch {
-        case e: Exception =>
-          LOG.debug(tableDesc.error(plan, e))
-          Nil
+      val maybeTable = tableDesc.extract(plan, spark)
+      maybeTable match {
+        case Some(table) =>
+          val newTable = if (tableDesc.setCurrentDatabaseIfMissing) {
+            setCurrentDBIfNecessary(table, spark)
+          } else {
+            table
+          }
+          if (tableDesc.tableTypeDesc.exists(_.skip(plan))) {
+            Nil
+          } else {
+            val actionType = tableDesc.actionTypeDesc.map(_.extract(plan)).getOrElse(OTHER)
+            val columnNames = tableDesc.columnDesc.map(_.extract(plan)).getOrElse(Nil)
+            Seq(PrivilegeObject(newTable, columnNames, actionType))
+          }
+        case None => Nil
       }
     }
 
     plan.getClass.getName match {
       case classname if DB_COMMAND_SPECS.contains(classname) =>
         val desc = DB_COMMAND_SPECS(classname)
-        desc.databaseDescs.foreach { databaseDesc =>
-          try {
-            val database = databaseDesc.extract(plan)
-            if (databaseDesc.isInput) {
-              inputObjs += PrivilegeObject(database)
-            } else {
-              outputObjs += PrivilegeObject(database)
-            }
-          } catch {
-            case e: Exception =>
-              LOG.debug(databaseDesc.error(plan, e))
+        val outcomes = new DescOutcomes(plan, spark)
+        outcomes.run(desc.databaseDescs) { databaseDesc =>
+          val database = databaseDesc.extract(plan)
+          if (databaseDesc.isInput) {
+            inputObjs += PrivilegeObject(database)
+          } else {
+            outputObjs += PrivilegeObject(database)
           }
         }
-        desc.uriDescs.foreach { ud =>
-          try {
-            val uris = ud.extract(plan, spark)
-            if (ud.isInput) {
-              inputObjs ++= uris.map(PrivilegeObject(_))
-            } else {
-              outputObjs ++= uris.map(PrivilegeObject(_))
-            }
-          } catch {
-            case e: Exception =>
-              LOG.debug(ud.error(plan, e))
+        outcomes.run(desc.uriDescs) { ud =>
+          val uris = ud.extract(plan, spark)
+          if (ud.isInput) {
+            inputObjs ++= uris.map(PrivilegeObject(_))
+          } else {
+            outputObjs ++= uris.map(PrivilegeObject(_))
           }
         }
+        outcomes.reportIfAllFailed()
         desc.operationType
 
       case classname if TABLE_COMMAND_SPECS.contains(classname) =>
         val spec = TABLE_COMMAND_SPECS(classname)
-        spec.tableDescs.foreach { td =>
+        val outcomes = new DescOutcomes(plan, spark)
+        outcomes.run(spec.tableDescs) { td =>
           if (td.isInput) {
             inputObjs ++= getTablePriv(td)
           } else {
             outputObjs ++= getTablePriv(td)
           }
         }
-        spec.uriDescs.foreach { ud =>
-          try {
-            val uris = ud.extract(plan, spark)
-            if (ud.isInput) {
-              inputObjs ++= uris.map(PrivilegeObject(_))
-            } else {
-              outputObjs ++= uris.map(PrivilegeObject(_))
-            }
-          } catch {
-            case e: Exception =>
-              LOG.debug(ud.error(plan, e))
+        outcomes.run(spec.uriDescs) { ud =>
+          val uris = ud.extract(plan, spark)
+          if (ud.isInput) {
+            inputObjs ++= uris.map(PrivilegeObject(_))
+          } else {
+            outputObjs ++= uris.map(PrivilegeObject(_))
           }
         }
-        spec.queries(plan).foreach { p =>
+        // extract inside the tracked run (extraction failures are layer 3), but recurse
+        // into the extracted queries outside it, so their violations surface as themselves
+        val queries = ArrayBuffer[LogicalPlan]()
+        outcomes.run(spec.queryDescs) { qd =>
+          queries ++= qd.extract(plan)
+        }
+        outcomes.reportIfAllFailed()
+        queries.foreach { p =>
           buildQuery(Project(p.output, p), inputObjs, spark = spark)
         }
         spec.operationType
 
       case classname if FUNCTION_COMMAND_SPECS.contains(classname) =>
         val spec = FUNCTION_COMMAND_SPECS(classname)
-        spec.functionDescs.foreach { fd =>
-          try {
-            val function = fd.extract(plan)
-            if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
-              if (fd.isInput) {
-                inputObjs += PrivilegeObject(function)
-              } else {
-                outputObjs += PrivilegeObject(function)
-              }
+        val outcomes = new DescOutcomes(plan, spark)
+        outcomes.run(spec.functionDescs) { fd =>
+          val function = fd.extract(plan)
+          if (!fd.functionTypeDesc.exists(_.skip(plan, spark))) {
+            if (fd.isInput) {
+              inputObjs += PrivilegeObject(function)
+            } else {
+              outputObjs += PrivilegeObject(function)
             }
-          } catch {
-            case e: Exception =>
-              LOG.debug(fd.error(plan, e))
           }
         }
+        outcomes.reportIfAllFailed()
         spec.operationType
 
-      case _ => OperationType.QUERY
+      case classname =>
+        // fail-open layer 1: a command with no spec produces zero access requests
+        if (!isKnownHarmlessClassname(classname)) {
+          ParanoidMode.onViolation(
+            spark,
+            plan,
+            ViolationKind.UNCLASSIFIED_COMMAND,
+            unverifiedAllowlistDetail(classname))
+        }
+        OperationType.QUERY
     }
   }
 
@@ -316,11 +422,16 @@ object PrivilegesBuilder {
         OperationType.EXPLAIN
       case _ if isExplainCommandChild(spark) =>
         OperationType.EXPLAIN
+
       // RunnableCommand
       case cmd: Command => buildCommand(cmd, inputObjs, outputObjs, spark)
-      // Spark 4.0 made some v2 commands (e.g. `Call`) no longer extend `Command`; dispatch
-      // them via the spec table as long as the className is recognized.
-      case cmd if isKnownTableCommand(cmd) => buildCommand(cmd, inputObjs, outputObjs, spark)
+
+      // A node with a command spec that is not a Command on this Spark version: the class
+      // kept its name but changed supertype (e.g. CALL, a Command via Iceberg on Spark 3
+      // but an ExecutableDuringAnalysis UnaryNode on Spark 4). Route it to its spec instead
+      // of letting it fall through to the query path where the spec is unreachable.
+      case cmd if hasCommandSpec(cmd.getClass.getName) =>
+        buildCommand(cmd, inputObjs, outputObjs, spark)
       // Queries
       case _ =>
         buildQuery(Project(plan0.output, plan0), inputObjs, spark = spark)

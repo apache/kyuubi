@@ -1,0 +1,182 @@
+# Audited Spark-version provenance for command and scan specs that do not declare
+# `verifiedSparkVersions` at their definition site.
+#
+# Format: <classname> [<major.minor> ...]   -- `#` starts a comment.
+# A classname listed with no versions is a deliberate "no minor audited" record.
+#
+# Absence from this ledger is an error, not a default. A spec that neither declares
+# its own versions nor appears here fails the generator, so a newly added spec can
+# never silently inherit the pre-Spark-4-port baseline below.
+#
+# TODO(KYUUBI #7593): this ledger freezes an inherited claim rather than an audited
+# one. The 3.3/3.4/3.5 entries were never reviewed per minor -- they are what a
+# blanket back-fill stamped on every spec that predated the Spark 4 port, back when
+# "everything here is pre-Spark-4" made that a safe approximation. The merge of the
+# Spark 4.0/4.1/4.2 authz support falsified that premise, and rather than launder a
+# wholesale default into 160 individual per-minor claims, the baseline is recorded
+# here as-is and quarantined. Retiring this file means auditing each spec against
+# the minors it actually engages on and declaring the result at its definition site.
+# Until then, treat a 3.3/3.4/3.5 entry as "inherited, unreviewed", not as evidence.
+#
+# Note the field is advisory for command and scan specs -- they still engage on
+# unaudited versions -- unlike the allowlist, where it gates.
+
+io.delta.tables.execution.VacuumTableCommand 3.3 3.4 3.5
+org.apache.kyuubi.plugin.spark.authz.rule.permanentview.PermanentViewMarker 3.3 3.4 3.5
+org.apache.paimon.spark.catalyst.plans.logical.PaimonCallCommand 3.3 3.4 3.5
+org.apache.paimon.spark.commands.DeleteFromPaimonTableCommand 3.3 3.4 3.5
+org.apache.paimon.spark.commands.MergeIntoPaimonTable 3.3 3.4 3.5
+org.apache.paimon.spark.commands.UpdatePaimonTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.catalog.HiveTableRelation 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AddColumns 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AddPartitionField 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AddPartitions 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AlterColumn 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AlterTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.AppendData 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CacheTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CacheTableAsSelect 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.Call 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CommentOnNamespace 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CommentOnTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateNamespace 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceBranch 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceTag 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.CreateV2Table 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DescribeRelation 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropBranch 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropColumns 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropNamespace 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropPartitionField 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropPartitions 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.DropTag 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.OverwritePartitionsDynamic 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.RefreshTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.RenameColumn 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.RenamePartitions 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.RenameTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.RepairTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ReplaceData 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ReplaceTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetTableProperties 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.TruncatePartition 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.TruncateTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.UnsetTableProperties 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable 3.3 3.4 3.5
+org.apache.spark.sql.catalyst.plans.logical.UpdateTable 3.3 3.4 3.5
+org.apache.spark.sql.delta.commands.DeleteCommand 3.3 3.4 3.5
+org.apache.spark.sql.delta.commands.MergeIntoCommand 3.3 3.4 3.5
+org.apache.spark.sql.delta.commands.OptimizeTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.delta.commands.UpdateCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AddArchivesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AddFilesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AddJarCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AddJarsCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableDropPartitionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableRenameCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableRenamePartitionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableSerDePropertiesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableSetLocationCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterTableUnsetPropertiesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AlterViewAsCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AnalyzeColumnCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AnalyzePartitionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AnalyzeTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.AnalyzeTablesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CacheTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateDataSourceTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateDatabaseCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateFunctionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateTableLikeCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.CreateViewCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DescribeColumnCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DescribeDatabaseCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DescribeFunctionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DescribeTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DropDatabaseCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DropFunctionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.DropTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.LoadDataCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.RefreshFunctionCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.RefreshTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.RepairTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.SetDatabaseCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.SetNamespaceCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.ShowColumnsCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.ShowCreateTableAsSerdeCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.ShowCreateTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.ShowPartitionsCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.ShowTablePropertiesCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.command.TruncateTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.CreateTable 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.CreateTempViewUsing 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.InsertIntoDataSourceCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.LogicalRelation 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.RefreshTable 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand 3.3 3.4 3.5
+org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation 3.3 3.4 3.5
+org.apache.spark.sql.hive.HiveGenericUDF 3.3 3.4 3.5
+org.apache.spark.sql.hive.HiveGenericUDTF 3.3 3.4 3.5
+org.apache.spark.sql.hive.HiveSimpleUDF 3.3 3.4 3.5
+org.apache.spark.sql.hive.HiveUDAFFunction 3.3 3.4 3.5
+org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand 3.3 3.4 3.5
+org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand 3.3 3.4 3.5
+org.apache.spark.sql.hive.execution.InsertIntoHiveTable 3.3 3.4 3.5
+org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.AlterHoodieTableRenameCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.AlterTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CallProcedureHoodieCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CreateHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CreateHoodieTableLikeCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.CreateIndexCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.DropHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.DropIndexCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.RefreshIndexCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.RepairHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.ShowIndexesCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.Spark31AlterTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand 3.3 3.4 3.5
+org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand 3.3 3.4 3.5

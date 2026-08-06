@@ -31,7 +31,8 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "opType" : "CREATEFUNCTION"
+  "opType" : "CREATEFUNCTION",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeFunctionCommand",
   "functionDescs" : [ {
@@ -59,7 +60,8 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "opType" : "DESCFUNCTION"
+  "opType" : "DESCFUNCTION",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropFunctionCommand",
   "functionDescs" : [ {
@@ -93,7 +95,8 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "opType" : "DROPFUNCTION"
+  "opType" : "DROPFUNCTION",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshFunctionCommand",
   "functionDescs" : [ {
@@ -117,5 +120,6 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "opType" : "RELOADFUNCTION"
+  "opType" : "RELOADFUNCTION",
+  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
 } ]

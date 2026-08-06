@@ -91,7 +91,30 @@ private[authz] object AuthZUtils {
     }
   }
 
+  /**
+   * Whether the plan node executes during analysis (Spark 4's `ExecutableDuringAnalysis`,
+   * e.g. `CALL`), i.e. potentially before any authorization rule runs. Resolved reflectively:
+   * the trait does not exist on all supported Spark versions, and the set of such "dangerous"
+   * supertypes is open, so this must never be the only line of defense.
+   */
+  private lazy val executableDuringAnalysisClass: Option[Class[_]] = {
+    try {
+      Some(Class.forName("org.apache.spark.sql.catalyst.plans.logical.ExecutableDuringAnalysis"))
+    } catch {
+      case _: ClassNotFoundException => None
+    }
+  }
+
+  def executesDuringAnalysis(plan: LogicalPlan): Boolean = {
+    executableDuringAnalysisClass.exists(_.isInstance(plan))
+  }
+
   lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
+
+  /** The running Spark's exact `major.minor` pair, the granularity spec audits key on. */
+  lazy val SPARK_RUNTIME_MAJOR_MINOR: String =
+    s"${SPARK_RUNTIME_VERSION.majorVersion}.${SPARK_RUNTIME_VERSION.minorVersion}"
+
   lazy val isSparkV34OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.4"
   lazy val isSparkV35OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "3.5"
   lazy val isSparkV40OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "4.0"
