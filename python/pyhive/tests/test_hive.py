@@ -259,6 +259,37 @@ class TestHive(unittest.TestCase, DBAPITestCase):
                 cursor.execute('SELECT 1 FROM one_row')
                 self.assertEqual(cursor.fetchall(), [(1,)])
 
+    def test_connection_timeout_sasl(self):
+        """Test that a connection timeout is set without error."""
+        with contextlib.closing(hive.connect(
+            host=_HOST,
+            port=10000,
+            connection_timeout=2_000,
+        )) as connection:
+            # thrift converts milliseconds to seconds
+            assert connection._transport._trans._timeout == 2
+
+    def test_connection_timeout_nosasl(self):
+        """Test that a connection timeout is set without error."""
+        with contextlib.closing(hive.connect(
+            host=_HOST,
+            port=10000,
+            connection_timeout=2_000,
+            auth='NOSASL',
+        )) as connection:
+            # thrift converts milliseconds to seconds
+            assert connection._transport._TBufferedTransport__trans._timeout == 2
+
+    def test_connection_timeout_http(self):
+        """Test that a connection timeout is set without error."""
+        with contextlib.closing(hive.connect(
+            host=_HOST,
+            port=10000,
+            connection_timeout=2_000,
+            scheme='http',
+        )) as connection:
+            # thrift converts milliseconds to seconds
+            assert connection._transport._THttpClient__timeout == 2
 
 def _restart_hs2():
     subprocess.check_call(['sudo', 'service', 'hive-server2', 'restart'])
