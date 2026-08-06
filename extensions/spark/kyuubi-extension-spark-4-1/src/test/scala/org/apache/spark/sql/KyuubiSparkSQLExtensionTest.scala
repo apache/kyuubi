@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.classic.SparkSession
@@ -100,13 +102,17 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     withListener(sql(sqlString))(callback)
   }
 
-  def withListener(df: => DataFrame)(callback: DataWritingCommand => Unit): Unit = {
+  def withListener(df: => DataFrame, mustBeCalled: Boolean = true)(
+      callback: DataWritingCommand => Unit): Unit = {
+    val called = new AtomicBoolean(false)
     val listener = new QueryExecutionListener {
       override def onFailure(f: String, qe: QueryExecution, e: Exception): Unit = {}
 
       override def onSuccess(funcName: String, qe: QueryExecution, duration: Long): Unit = {
-        qe.executedPlan match {
-          case write: DataWritingCommandExec => callback(write.cmd)
+        collect(qe.executedPlan) {
+          case write: DataWritingCommandExec =>
+            called.set(true)
+            callback(write.cmd)
           case _ =>
         }
       }
@@ -115,6 +121,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     try {
       df.collect()
       sparkContext.listenerBus.waitUntilEmpty()
+      assert(!mustBeCalled || called.get(), "callback function should be executed.")
     } finally {
       spark.listenerManager.unregister(listener)
     }
