@@ -15,7 +15,7 @@
     "coverage": "vitest run --coverage"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": ">=24.0.0"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
@@ -54,13 +54,5 @@
     "vite": "^8.1.2",
     "vitest": "^4.1.9",
     "vue-tsc": "^3.3.6"
-  },
-  "pnpm": {
-    "overrides": {
-      "lodash": "^4.18.1",
-      "lodash-es": "^4.18.1",
-      "brace-expansion@1": "^1.1.15",
-      "picomatch@2": "^2.3.2"
-    }
   }
 }

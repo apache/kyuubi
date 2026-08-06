@@ -2,7 +2,7 @@
 
 ### Start Using
 
-Node.js 18 or higher is required.
+Node.js 24 or higher is required.
 You can learn how to install the corresponding version from its official website.
 
 - [node](https://nodejs.org/en/)
@@ -45,7 +45,7 @@ npm run prettier
 
 ### Recommend
 
-If you want to save disk space and boost installation speed, we recommend using `pnpm 8.x.x` to instead of npm.
+If you want to save disk space and boost installation speed, we recommend using `pnpm 11.x.x` to instead of npm.
 You can learn how to install the corresponding version from its official website.
 
 - [pnpm](https://pnpm.io/)
