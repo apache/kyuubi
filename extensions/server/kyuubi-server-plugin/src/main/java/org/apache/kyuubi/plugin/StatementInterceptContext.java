@@ -1,0 +1,73 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.kyuubi.plugin;
+
+import java.util.Map;
+
+/**
+ * Stable, gateway-level context passed to a {@link StatementInterceptor}. All fields are JDK types.
+ * It intentionally does not expose the session configuration (which carries connection parameters
+ * and engine credentials) nor any mutable internal session object.
+ */
+public interface StatementInterceptContext {
+
+  /** The session identifier the statement belongs to. */
+  String sessionId();
+
+  /**
+   * The unique identifier of this statement, equal to the operation handle the client receives. It
+   * is allocated before interception and stays stable through the operation's whole lifecycle, so
+   * it can correlate the intercepted statement with its later operation and result set.
+   */
+  String statementId();
+
+  /**
+   * The effective user the statement runs as. With impersonation enabled (for example {@code
+   * hive.server2.proxy.user}), this is the proxy user; otherwise it equals {@link #realUser()}. Use
+   * this as the identity for authorization and auditing.
+   */
+  String user();
+
+  /**
+   * The real user that authenticated the connection, before any impersonation. Equals {@link
+   * #user()} when impersonation is not in effect.
+   */
+  String realUser();
+
+  /** The client IP address; an empty string when unknown, never {@code null}. */
+  String ipAddress();
+
+  /** The statement to be executed. With a chain of interceptors, this is the current statement. */
+  String statement();
+
+  /** The per-statement configuration overlay (statement-level, read-only). */
+  Map<String, String> confOverlay();
+
+  /** Whether the statement is executed asynchronously. */
+  boolean runAsync();
+
+  /** The client-requested query timeout in seconds; {@code 0} means no timeout. */
+  long queryTimeout();
+
+  /**
+   * The engine type resolved from {@code kyuubi.engine.type}, upper-cased to the config's enum
+   * names such as {@code SPARK_SQL}, {@code FLINK_SQL}, {@code TRINO}, {@code HIVE_SQL}, {@code
+   * JDBC}. Match against these values, not lower-cased short names like {@code spark}.
+   */
+  String engineType();
+}

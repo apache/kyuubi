@@ -120,6 +120,28 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     assert(msg2.startsWith("Error while instantiating 'non.exists'"))
   }
 
+  test("StatementInterceptor - load, order and wrong class") {
+    val conf = new KyuubiConf(false)
+    assert(PluginLoader.loadStatementInterceptors(conf).isEmpty)
+
+    conf.set(
+      KyuubiConf.STATEMENT_INTERCEPTORS,
+      Seq(classOf[NoopStatementInterceptor].getName, classOf[NoopStatementInterceptor].getName))
+    assert(PluginLoader.loadStatementInterceptors(conf).size === 2)
+
+    conf.set(KyuubiConf.STATEMENT_INTERCEPTORS, Seq(classOf[InvalidStatementInterceptor].getName))
+    val msg1 = intercept[KyuubiException] {
+      PluginLoader.loadStatementInterceptors(conf)
+    }.getMessage
+    assert(msg1.contains(s"is not a child of '${classOf[StatementInterceptor].getName}'"))
+
+    conf.set(KyuubiConf.STATEMENT_INTERCEPTORS, Seq("non.exists"))
+    val msg2 = intercept[IllegalArgumentException] {
+      PluginLoader.loadStatementInterceptors(conf)
+    }.getMessage
+    assert(msg2.startsWith("Error while instantiating 'non.exists'"))
+  }
+
   test("HadoopGroupProvider") {
     val conf = new KyuubiConf(false)
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
@@ -133,6 +155,13 @@ class PluginLoaderSuite extends KyuubiFunSuite {
 
 class InvalidSessionConfAdvisor
 class InvalidGroupProvider
+class InvalidStatementInterceptor
+
+class NoopStatementInterceptor extends StatementInterceptor {
+  override def beforeExecuteStatement(
+      context: StatementInterceptContext): StatementInterceptResult =
+    StatementInterceptResult.proceed()
+}
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(

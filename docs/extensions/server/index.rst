@@ -25,5 +25,6 @@ ability of kyuubi servers.
 
     authentication
     configuration
+    statement_interceptor
     events
     applications
