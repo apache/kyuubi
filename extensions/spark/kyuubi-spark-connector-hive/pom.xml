@@ -31,6 +31,10 @@
     <description>A Kyuubi hive connector based on Spark V2 DataSource</description>
     <url>https://kyuubi.apache.org/</url>
 
+    <properties>
+        <kshc.columnar.source.dir>scala-spark-3.5-plus</kshc.columnar.source.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
@@ -141,6 +145,25 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-spark-version-source</id>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <sources>
+                                <source>src/main/${kshc.columnar.source.dir}</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
@@ -198,6 +221,20 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>spark-3.3</id>
+            <properties>
+                <kshc.columnar.source.dir>scala-spark-pre-3.5</kshc.columnar.source.dir>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-3.4</id>
+            <properties>
+                <kshc.columnar.source.dir>scala-spark-pre-3.5</kshc.columnar.source.dir>
+            </properties>
+        </profile>
+
         <profile>
             <id>cross-version-test</id>
             <dependencies>
