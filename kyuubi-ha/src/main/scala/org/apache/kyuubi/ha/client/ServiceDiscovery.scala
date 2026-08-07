@@ -41,8 +41,8 @@ abstract class ServiceDiscovery(
   /**
    * a pre-defined namespace used to publish the instance of the associate service
    */
-  private var _namespace: String = _
-  private var _discoveryClient: DiscoveryClient = _
+  protected var _namespace: String = _
+  protected var _discoveryClient: DiscoveryClient = _
 
   def namespace: String = _namespace
   def discoveryClient: DiscoveryClient = _discoveryClient
