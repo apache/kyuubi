@@ -234,7 +234,7 @@ if [[ "$HIVE_PROVIDED" == "true" ]]; then
 fi
 
 # clean up all versions of Spark extension, to avoid collecting outdated artifacts
-SPARK_EXTENSION_VERSIONS=('3-2' '3-3' '3-4' '3-5')
+SPARK_EXTENSION_VERSIONS=('3-3' '3-4' '3-5' '4-0' '4-1' '4-2')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   rm -f "$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar"
