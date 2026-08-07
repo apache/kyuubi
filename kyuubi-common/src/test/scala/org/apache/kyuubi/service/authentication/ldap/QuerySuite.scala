@@ -21,34 +21,43 @@ import org.apache.kyuubi.KyuubiFunSuite
 
 class QuerySuite extends KyuubiFunSuite {
 
-  test("QueryBuilderFilter") {
+  test("QueryBuilderFilter renders template into filterString and parses Filter") {
     val q = Query.builder
-      .filter("test <uid_attr>=<value> query")
-      .map("uid_attr", "uid")
-      .map("value", "Hello!")
+      .filter("(uid=<value>)")
+      .map("value", "alice")
       .build
-    assert("test uid=Hello! query" === q.filter)
-    assert(0 === q.controls.getCountLimit)
+    // filterString holds the rendered template; filter is the parsed UnboundID Filter object.
+    assert("(uid=alice)" === q.filterString)
+    assert(q.filter != null)
+    assert("(uid=alice)" === q.filter.toString)
+    assert(0 === q.sizeLimit)
   }
 
   test("QueryBuilderLimit") {
     val q = Query.builder
-      .filter("<key1>,<key2>")
-      .map("key1", "value1")
-      .map("key2", "value2")
+      .filter("(uid=<value>)")
+      .map("value", "alice")
       .limit(8)
       .build
-    assert("value1,value2" === q.filter)
-    assert(8 === q.controls.getCountLimit)
+    assert("(uid=alice)" === q.filterString)
+    assert(8 === q.sizeLimit)
   }
 
   test("QueryBuilderReturningAttributes") {
     val q = Query.builder
-      .filter("(query)")
+      .filter("(objectClass=*)")
       .returnAttribute("attr1")
       .returnAttribute("attr2")
       .build
-    assert("(query)" === q.filter)
-    assert(Array("attr1", "attr2") === q.controls.getReturningAttributes)
+    assert("(objectClass=*)" === q.filterString)
+    assert(Seq("attr1", "attr2") === q.attributes)
+  }
+
+  test("build throws IllegalStateException for non-LDAP filter string") {
+    intercept[IllegalStateException] {
+      Query.builder
+        .filter("not a valid ldap filter")
+        .build
+    }
   }
 }
