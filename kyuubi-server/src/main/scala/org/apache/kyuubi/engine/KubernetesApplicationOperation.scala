@@ -393,7 +393,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           pod,
           appStateSource,
           appStateContainer)
-        cleanupOrphanPodIfBatchTerminated(kubernetesInfo, pod)
+        cleanupOrphanPod(kubernetesInfo, pod)
       }
     }
 
@@ -414,7 +414,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           appStateSource,
           appStateContainer)
         if (firstUpdate) {
-          cleanupOrphanPodIfBatchTerminated(kubernetesInfo, newPod)
+          cleanupOrphanPod(kubernetesInfo, newPod)
         }
       }
     }
@@ -577,7 +577,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private def cleanupOrphanPodIfBatchTerminated(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+  private def cleanupOrphanPod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     if (kyuubiConf.isRESTEnabled) {
       cleanupCanceledAppPodExecutor.submit(new Runnable {
         override def run(): Unit = Utils.tryLogNonFatalError {
