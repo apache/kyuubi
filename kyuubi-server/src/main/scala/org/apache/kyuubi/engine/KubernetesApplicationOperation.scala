@@ -585,16 +585,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           val batch = metadataManager.flatMap(_.getBatchSessionMetadata(kyuubiUniqueKey))
           val batchState = batch.map(_.state).map(OperationState.withName)
           if (batchState.exists(_ == OperationState.CANCELED)) {
-            warn(s"[$kubernetesInfo] Found orphan pod ${pod.getMetadata.getName} for" +
-              s" canceled batch[$kyuubiUniqueKey], deleting it")
+            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is canceled, " +
+              s"try to delete the pod ${pod.getMetadata.getName}")
             deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
           } else if (batchState.exists(_ == OperationState.ERROR) &&
             batch.flatMap(_.appState).exists(_ == ApplicationState.NOT_FOUND)) {
-            // Batch failed because the submit timeout elapsed before the pod was observed;
-            // the pod arrived late and is now orphaned with no owning session.
-            warn(s"[$kubernetesInfo] Found orphan pod ${pod.getMetadata.getName} for" +
-              s" batch[$kyuubiUniqueKey] that failed due to submit timeout" +
-              s" (recorded app state: NOT_FOUND), deleting it")
+            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is in error state and" +
+              s" application not found, try to delete the pod ${pod.getMetadata.getName}")
             deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
           }
         }
