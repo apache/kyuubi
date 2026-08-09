@@ -590,8 +590,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
           } else if (batchState.exists(_ == OperationState.ERROR) &&
             batch.flatMap(_.appState).exists(_ == ApplicationState.NOT_FOUND)) {
-            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is in error state and" +
-              s" application not found, try to delete the pod ${pod.getMetadata.getName}")
+            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] failed due to submit timeout" +
+              s" (app state: NOT_FOUND), try to delete the orphan pod ${pod.getMetadata.getName}")
             deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
           }
         }
