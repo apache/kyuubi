@@ -398,7 +398,11 @@ class HiveTableCatalog(sparkSession: SparkSession)
         throw new TableAlreadyExistsException(ident)
     }
 
-    loadTable(ident)
+    // Preserve the requested schema order so the subsequent CTAS write resolves output columns
+    // against the original order. Override only the V2 Table.schema() rather than rebuilding the
+    // CatalogTable, which would break the trailing-partition invariant and drop fields
+    // newCatalogTable does not forward. See KYUUBI #6403.
+    loadTable(ident).asInstanceOf[HiveTable].copy(requestedSchema = Some(schema))
   }
 
   override def alterTable(ident: Identifier, changes: TableChange*): Table = {

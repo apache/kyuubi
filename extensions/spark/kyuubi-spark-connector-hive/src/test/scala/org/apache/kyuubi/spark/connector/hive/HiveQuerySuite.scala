@@ -18,6 +18,7 @@
 package org.apache.kyuubi.spark.connector.hive
 
 import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
+import org.apache.spark.sql.types.{DataTypes, StructField, StructType}
 
 class HiveQuerySuite extends KyuubiHiveTest {
 
@@ -306,6 +307,61 @@ class HiveQuerySuite extends KyuubiHiveTest {
            |""".stripMargin).collect()
 
       checkQueryResult(s"select * from $table", spark, Array(Row.apply("yi", "2022", "08")))
+    }
+  }
+
+  test("[KYUUBI #6403] Write into partitioned table with non-last partition column") {
+    val table = "hive.default.kyuubi_6403"
+    try {
+      spark.sql(s"DROP TABLE IF EXISTS $table")
+      val schema = StructType(Array(
+        StructField("name", DataTypes.StringType, nullable = false),
+        StructField("favorite_color", DataTypes.StringType, nullable = false),
+        StructField("favorite_number", DataTypes.IntegerType, nullable = false)))
+
+      val data = Seq(
+        Row("Alyssa", "blue", 1),
+        Row("Ben", "red", 2))
+
+      val usersDF = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+      // "favorite_color" is not the last column of the schema
+      usersDF.write.partitionBy("favorite_color").saveAsTable(table)
+
+      // Partition columns are moved to the end of the schema when reading back.
+      checkQueryResult(
+        s"select * from $table order by name",
+        spark,
+        Array(Row.apply("Alyssa", 1, "blue"), Row.apply("Ben", 2, "red")))
+    } finally {
+      spark.sql(s"DROP TABLE IF EXISTS $table")
+    }
+  }
+
+  test("[KYUUBI #6403] Write into partitioned table with upper-case partition column name") {
+    val table = "hive.default.kyuubi_6403_upper"
+    try {
+      spark.sql(s"DROP TABLE IF EXISTS $table")
+      val schema = StructType(Array(
+        StructField("name", DataTypes.StringType, nullable = false),
+        StructField("FavoriteColor", DataTypes.StringType, nullable = false),
+        StructField("favorite_number", DataTypes.IntegerType, nullable = false)))
+
+      val data = Seq(
+        Row("Alyssa", "blue", 1),
+        Row("Ben", "red", 2))
+
+      val usersDF = spark.createDataFrame(spark.sparkContext.parallelize(data), schema)
+      // The Hive metastore lower-cases partition column names while the write schema keeps the
+      // original case, so the data/partition split must match names case-insensitively.
+      usersDF.write.partitionBy("FavoriteColor").saveAsTable(table)
+
+      // Partition columns are moved to the end of the schema when reading back.
+      checkQueryResult(
+        s"select * from $table order by name",
+        spark,
+        Array(Row.apply("Alyssa", 1, "blue"), Row.apply("Ben", 2, "red")))
+    } finally {
+      spark.sql(s"DROP TABLE IF EXISTS $table")
     }
   }
 

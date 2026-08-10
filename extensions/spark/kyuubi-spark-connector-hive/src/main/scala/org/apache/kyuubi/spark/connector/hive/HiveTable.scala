@@ -46,7 +46,8 @@ import org.apache.kyuubi.spark.connector.hive.write.HiveWriteBuilder
 case class HiveTable(
     sparkSession: SparkSession,
     catalogTable: CatalogTable,
-    hiveTableCatalog: HiveTableCatalog)
+    hiveTableCatalog: HiveTableCatalog,
+    requestedSchema: Option[StructType] = None)
   extends Table with SupportsRead with SupportsWrite with Logging {
 
   lazy val dataSchema: StructType = catalogTable.dataSchema
@@ -86,7 +87,11 @@ case class HiveTable(
     }
   }
 
-  override def schema(): StructType = catalogTable.schema
+  // The metastore reorders partition columns to the end, but Spark's ResolveOutputRelation
+  // resolves output columns by position, so a CTAS with a non-last partition column mis-casts
+  // (CANNOT_SAFELY_CAST). Expose the requested order only via the V2 Table.schema() that feeds
+  // output resolution, keeping catalogTable (partition columns trailing) untouched. KYUUBI #6403.
+  override def schema(): StructType = requestedSchema.getOrElse(catalogTable.schema)
 
   override def properties(): util.Map[String, String] = catalogTable.properties.asJava
 
