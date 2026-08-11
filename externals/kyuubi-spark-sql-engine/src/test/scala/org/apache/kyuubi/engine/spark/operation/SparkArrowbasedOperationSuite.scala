@@ -133,8 +133,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("arrow-based query metrics") {
-    // TODO: the issue is being investigated by Fu Chen
-    assume(SPARK_ENGINE_RUNTIME_VERSION < "4.1")
     val listener = new SQLMetricsListener
     withJdbcStatement() { statement =>
       withSparkListener(listener) {
