@@ -36,6 +36,9 @@ object MetricsConstants {
   final private val THRIFT_HTTP_CONN = KYUUBI + "thrift.http.connection."
   final private val THRIFT_BINARY_CONN = KYUUBI + "thrift.binary.connection."
   final private val REST_CONN = KYUUBI + "rest.connection."
+  final private val FLIGHT_SQL_CONN = KYUUBI + "flight.sql.connection."
+  final private val FLIGHT_SQL_OPERATION = KYUUBI + "flight.sql.operation."
+  final private val FLIGHT_SQL_STREAM = KYUUBI + "flight.sql.stream."
 
   final val THRIFT_SSL_CERT_EXPIRATION = KYUUBI + "thrift.ssl.cert.expiration"
 
@@ -54,6 +57,19 @@ object MetricsConstants {
   final val REST_CONN_OPEN: String = REST_CONN + "opened"
   final val REST_CONN_FAIL: String = REST_CONN + "failed"
   final val REST_CONN_TOTAL: String = REST_CONN + "total"
+
+  final val FLIGHT_SQL_CONN_OPEN: String = FLIGHT_SQL_CONN + "opened"
+  final val FLIGHT_SQL_CONN_FAIL: String = FLIGHT_SQL_CONN + "failed"
+  final val FLIGHT_SQL_CONN_TOTAL: String = FLIGHT_SQL_CONN + "total"
+
+  final val FLIGHT_SQL_OPERATION_OPEN: String = FLIGHT_SQL_OPERATION + "opened"
+  final val FLIGHT_SQL_OPERATION_TOTAL: String = FLIGHT_SQL_OPERATION + "total"
+  final val FLIGHT_SQL_OPERATION_FAIL: String = FLIGHT_SQL_OPERATION + "failed"
+  final val FLIGHT_SQL_OPERATION_CANCELLED: String = FLIGHT_SQL_OPERATION + "cancelled"
+
+  final val FLIGHT_SQL_STREAM_BATCHES: String = FLIGHT_SQL_STREAM + "batches"
+  final val FLIGHT_SQL_STREAM_ROWS: String = FLIGHT_SQL_STREAM + "rows"
+  final val FLIGHT_SQL_STREAM_BYTES: String = FLIGHT_SQL_STREAM + "bytes"
 
   final private val ENGINE = KYUUBI + "engine."
   final val ENGINE_FAIL: String = ENGINE + "failed"

@@ -33,6 +33,29 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
   }
 
+  test("Flight SQL frontend configuration") {
+    val conf = KyuubiConf()
+    assert(conf.get(FRONTEND_FLIGHT_SQL_BIND_PORT) === 10299)
+    assert(conf.get(FRONTEND_FLIGHT_SQL_FETCH_MAX_ROWS) === 1000)
+    assert(conf.get(FRONTEND_FLIGHT_SQL_SSL_ENABLED) === false)
+    assert(conf.get(FRONTEND_FLIGHT_SQL_SSL_CERT_FILE).isEmpty)
+    assert(conf.get(FRONTEND_FLIGHT_SQL_SSL_KEY_FILE).isEmpty)
+    assert(conf.isFlightSqlEnabled === false)
+
+    conf.set(FRONTEND_PROTOCOLS, Seq(FrontendProtocols.FLIGHT_SQL.toString))
+    assert(conf.isFlightSqlEnabled)
+
+    conf.set(FRONTEND_FLIGHT_SQL_BIND_PORT, 0)
+    assert(conf.get(FRONTEND_FLIGHT_SQL_BIND_PORT) === 0)
+    conf.set(FRONTEND_FLIGHT_SQL_BIND_HOST.key, "localhost")
+    assert(conf.get(FRONTEND_FLIGHT_SQL_BIND_HOST).contains("localhost"))
+
+    assertThrows[IllegalArgumentException](
+      conf.set(FRONTEND_FLIGHT_SQL_BIND_PORT, 1024).get(FRONTEND_FLIGHT_SQL_BIND_PORT))
+    assertThrows[IllegalArgumentException](
+      conf.set(FRONTEND_FLIGHT_SQL_FETCH_MAX_ROWS, 0).get(FRONTEND_FLIGHT_SQL_FETCH_MAX_ROWS))
+  }
+
   test("kyuubi conf w/ w/o no sys defaults") {
     val key = "kyuubi.conf.abc"
     System.setProperty(key, "xyz")
