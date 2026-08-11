@@ -2790,7 +2790,7 @@
     "catalogDesc" : null,
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
+    "comment" : "Paimon"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],
@@ -2811,7 +2811,7 @@
     "catalogDesc" : null,
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
+    "comment" : "Paimon"
   }, {
     "fieldName" : "sourceTable",
     "fieldExtractor" : "DataSourceV2RelationTableExtractor",
@@ -2821,7 +2821,7 @@
     "catalogDesc" : null,
     "isInput" : true,
     "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
+    "comment" : "Paimon"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],
@@ -2842,7 +2842,7 @@
     "catalogDesc" : null,
     "isInput" : false,
     "setCurrentDatabaseIfMissing" : false,
-    "comment" : ""
+    "comment" : "Paimon"
   } ],
   "opType" : "QUERY",
   "queryDescs" : [ ],

@@ -577,7 +577,7 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("Producers") {
+  test("Procedures") {
     if (isSparkV34OrGreater) {
       withCleanTmpResources(Seq(
         (s"$catalogV2.$namespace1.$table1", "table"))) {
