@@ -123,8 +123,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       }
     } catch {
       case e: Throwable =>
-        error(s"Error cleaning engine result save path:" +
-          s" ${engineSavePath.map(_.toString).getOrElse("<Empty>")}", e)
+        error("Error cleaning engine result save path: " +
+          engineSavePath.map(_.toString).getOrElse("<Empty>"), e)
     }
   }
 
