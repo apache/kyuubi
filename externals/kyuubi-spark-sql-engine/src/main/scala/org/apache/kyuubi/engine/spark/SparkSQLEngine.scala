@@ -26,6 +26,7 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.hadoop.fs.Path
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -58,8 +59,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
-  private lazy val engineSavePath =
-    backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
+  @volatile private var engineSavePath: Option[Path] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -91,9 +91,13 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     }
 
     if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      fs.mkdirs(engineSavePath)
-      fs.deleteOnExit(engineSavePath)
+      engineSavePath = Some(backendService.sessionManager
+        .asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath())
+      engineSavePath.foreach { path =>
+        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+        fs.mkdirs(path)
+        fs.deleteOnExit(path)
+      }
     }
   }
 
@@ -111,12 +115,16 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         Duration(60, TimeUnit.SECONDS))
     })
     try {
-      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
-      if (fs.exists(engineSavePath)) {
-        fs.delete(engineSavePath, true)
+      engineSavePath.foreach { path =>
+        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
+        if (fs.exists(path)) {
+          fs.delete(path, true)
+        }
       }
     } catch {
-      case e: Throwable => error(s"Error cleaning engine result save path: $engineSavePath", e)
+      case e: Throwable =>
+        error(s"Error cleaning engine result save path:" +
+          s" ${engineSavePath.map(_.toString).getOrElse("<Empty>")}", e)
     }
   }
 
