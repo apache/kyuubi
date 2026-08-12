@@ -26,7 +26,6 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.hadoop.fs.Path
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
@@ -59,7 +58,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   @volatile private var lifetimeTerminatingChecker: Option[ScheduledExecutorService] = None
   @volatile private var stopEngineExec: Option[ThreadPoolExecutor] = None
-  @volatile private var engineSavePath: Option[Path] = None
+  private val engineSavePath =
+    backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -90,15 +90,11 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
       startFastFailChecker(maxInitTimeout)
     }
 
-    if (backendService.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE)) {
-      engineSavePath = Some(backendService.sessionManager
-        .asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath())
-      engineSavePath.foreach { path =>
-        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
-        fs.mkdirs(path)
-        fs.deleteOnExit(path)
-      }
-    }
+    // Due to the fact that session-level enabling of `kyuubi.operation.result.saveToFile.enabled`
+    // is allowed, we always create and clean up this directory
+    val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+    fs.mkdirs(engineSavePath)
+    fs.deleteOnExit(engineSavePath)
   }
 
   override def stop(): Unit = if (shutdown.compareAndSet(false, true)) {
@@ -115,16 +111,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
         Duration(60, TimeUnit.SECONDS))
     })
     try {
-      engineSavePath.foreach { path =>
-        val fs = path.getFileSystem(spark.sparkContext.hadoopConfiguration)
-        if (fs.exists(path)) {
-          fs.delete(path, true)
-        }
+      val fs = engineSavePath.getFileSystem(spark.sparkContext.hadoopConfiguration)
+      if (fs.exists(engineSavePath)) {
+        fs.delete(engineSavePath, true)
       }
     } catch {
-      case e: Throwable =>
-        error("Error cleaning engine result save path: " +
-          engineSavePath.map(_.toString).getOrElse("<Empty>"), e)
+      case e: Throwable => error(s"Error cleaning engine result save path: $engineSavePath", e)
     }
   }
 
