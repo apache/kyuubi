@@ -32,6 +32,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.connector.distributions.{Distribution, Distributions}
 import org.apache.spark.sql.connector.expressions.{Expressions, SortDirection, SortOrder}
 import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, RequiresDistributionAndOrdering}
@@ -66,8 +67,27 @@ case class HiveWrite(
   private val tableLocation = hiveTable.getDataLocation
 
   private val allColumns = info.schema().toAttributes
-  private val dataColumns = allColumns.take(allColumns.length - hiveTable.getPartCols.size())
-  private val partColumns = allColumns.takeRight(hiveTable.getPartCols.size())
+  // Split data and partition columns by name rather than by position. Users can create a
+  // partitioned table whose partition columns are not the trailing columns of the schema
+  // (e.g. df.write.partitionBy("mid_col")), so a positional take/takeRight would mis-classify
+  // columns and lead the metastore to reject the written partition spec. Match names with the
+  // session resolver because the Hive metastore lower-cases partition column names while the
+  // write schema preserves the user's original case. See KYUUBI #6403.
+  private val resolver = sparkSession.sessionState.conf.resolver
+  private def isPartitionColumn(name: String): Boolean =
+    table.partitionColumnNames.exists(resolver(_, name))
+  // partColumns keeps the query's original column case so requiredOrdering() resolves against the
+  // query.
+  private val (partColumns, dataColumns) =
+    allColumns.partition(col => isPartitionColumn(col.name))
+
+  // SPARK-28054: the Hive metastore keeps partition columns with lower-cased names, so the written
+  // partition directories must use lower-cased names; otherwise loadDynamicPartitions rejects the
+  // spec with "contains non-partition columns" when the schema preserves the user's original case.
+  // Rename via withName to keep the same exprId, so the value projection against allColumns is
+  // unaffected. See KYUUBI #6403.
+  private val outputPartColumns: Seq[AttributeReference] =
+    partColumns.map(col => col.withName(col.name.toLowerCase(Locale.ROOT)))
 
   lazy val tableDesc: TableDesc = new TableDesc(
     hiveTable.getInputFormatClass,
@@ -131,7 +151,8 @@ case class HiveWrite(
       customPartitionLocations: Map[TablePartitionSpec, String],
       options: Map[String, String]): WriteJobDescription = {
     val hiveFileFormat = getHiveFileFormat(fileSinkConf)
-    val dataSchema = StructType(info.schema().fields.take(dataColumns.length))
+    val dataSchema = StructType(
+      info.schema().filterNot(field => isPartitionColumn(field.name)))
     val outputWriterFactory = hiveFileFormat.prepareWrite(sparkSession, job, options, dataSchema)
     val metrics: Map[String, SQLMetric] = BasicWriteJobStatsTracker.metrics
     val serializableHadoopConf = new SerializableConfiguration(hadoopConf)
@@ -143,7 +164,7 @@ case class HiveWrite(
       outputWriterFactory = outputWriterFactory,
       allColumns = allColumns,
       dataColumns = dataColumns,
-      partitionColumns = partColumns,
+      partitionColumns = outputPartColumns,
       bucketSpec = None,
       path = pathName,
       customPartitionLocations = customPartitionLocations,
