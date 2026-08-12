@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.it.flink.operation
 
+import org.apache.flink.runtime.util.EnvironmentInformation
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.it.flink.WithKyuubiServerAndYarnMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType}
+import org.apache.kyuubi.util.SemanticVersion
 
 class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   with HiveJDBCTestHelper {
@@ -35,6 +38,11 @@ class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   }
 
   override def beforeAll(): Unit = {
+    // FLINK-38974 (2.3.0) rejects jobs that are not associated with an application registered in
+    // the dispatcher, so application mode does not work on Flink 2.3 and later
+    assume(
+      SemanticVersion(EnvironmentInformation.getVersion) < "2.3",
+      "Flink application mode is not supported since Flink 2.3, see FLINK-38974")
     conf
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "FLINK_SQL")
