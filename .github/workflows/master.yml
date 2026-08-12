@@ -74,7 +74,7 @@ jobs:
             spark-archive: '-Pscala-2.13'
             exclude-tags: ''
             comment: 'normal'
-          - java: 21
+          - java: 25
             python: '3.11'
             spark: '4.2'
             spark-archive: '-Pscala-2.13'
@@ -269,6 +269,11 @@ jobs:
             scala: "2.13"
             spark-compile: "3.5"
             spark-runtime: "4.1"
+            comment: "normal"
+          - java: 25
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.2"
             comment: "normal"
     env:
       SPARK_LOCAL_IP: localhost
