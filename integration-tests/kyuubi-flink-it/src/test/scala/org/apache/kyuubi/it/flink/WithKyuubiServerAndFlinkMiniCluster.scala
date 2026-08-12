@@ -47,7 +47,7 @@ trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
       .build
     miniCluster = new MiniCluster(cfg)
     miniCluster.start()
-    flinkConfig.setString(RestOptions.ADDRESS, miniCluster.getRestAddress.get().getHost)
-    flinkConfig.setInteger(RestOptions.PORT, miniCluster.getRestAddress.get().getPort)
+    flinkConfig.set(RestOptions.ADDRESS, miniCluster.getRestAddress.get().getHost)
+    flinkConfig.set(RestOptions.PORT, Int.box(miniCluster.getRestAddress.get().getPort))
   }
 }
