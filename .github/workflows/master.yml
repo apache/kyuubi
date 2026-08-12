@@ -334,6 +334,22 @@ jobs:
             flink: '1.20'
             flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.3 -Dflink.archive.name=flink-1.19.3-bin-scala_2.12.tgz'
             comment: 'verify-on-flink-1.19-binary'
+          - java: 17
+            flink: '1.20'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.0.2 -Dflink.archive.name=flink-2.0.2-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.0-binary'
+          - java: 17
+            flink: '1.20'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.1.3 -Dflink.archive.name=flink-2.1.3-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.1-binary'
+          - java: 17
+            flink: '1.20'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.2.1 -Dflink.archive.name=flink-2.2.1-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.2-binary'
+          - java: 17
+            flink: '1.20'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.3.0 -Dflink.archive.name=flink-2.3.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.3-binary'
     steps:
       - uses: actions/checkout@v7
       - name: Free up disk space

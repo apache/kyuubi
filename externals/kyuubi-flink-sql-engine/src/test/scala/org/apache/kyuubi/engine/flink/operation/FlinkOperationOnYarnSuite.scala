@@ -24,12 +24,21 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_TYPE}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.flink.{WithDiscoveryFlinkSQLEngine, WithFlinkSQLEngineOnYarn}
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
 
 class FlinkOperationOnYarnSuite extends FlinkOperationSuite
   with WithDiscoveryFlinkSQLEngine with WithFlinkSQLEngineOnYarn {
 
-  protected def jdbcUrl: String = getFlinkEngineServiceUrl
+  protected def jdbcUrl: String = {
+    // FLINK-38974 (2.3.0) rejects jobs that are not associated with an application registered in
+    // the dispatcher. The engine submits jobs through its own copy of EmbeddedExecutorFactory,
+    // which does not stamp an application id, so every query fails on Flink 2.3 and later.
+    assume(
+      FLINK_RUNTIME_VERSION < "2.3",
+      "Flink application mode is not supported since Flink 2.3, see FLINK-38974")
+    getFlinkEngineServiceUrl
+  }
 
   override def withKyuubiConf: Map[String, String] = {
     Map(

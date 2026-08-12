@@ -24,13 +24,14 @@ import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.util.matching.Regex
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, ENGINE_FLINK_EXTRA_CLASSPATH, ENGINE_FLINK_JAVA_OPTIONS, ENGINE_FLINK_MEMORY}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_APP_MGR_INFO_KEY, KYUUBI_ENGINE_CREDENTIALS_KEY}
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType}
 import org.apache.kyuubi.engine.ApplicationManagerInfo.serialize
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
+import org.apache.kyuubi.util.SemanticVersion
 
 class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def sessionModeConf = KyuubiConf()
@@ -56,6 +57,9 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "opt")).toFile
   Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-client-1.17.2.jar"))
   Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-gateway-1.17.2.jar"))
+  private val tempLib =
+    Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "lib")).toFile
+  Files.createFile(Paths.get(tempLib.toPath.toString, "flink-dist-1.17.2.jar"))
   private val tempUsrLib =
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "usrlib")).toFile
   private val tempUdfJar =
@@ -200,5 +204,31 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
     val regex = new Regex(expectedCommands)
     val matcher = regex.pattern.matcher(actualCommands)
     assert(matcher.matches())
+  }
+
+  test("extract flink version from flink-dist jar") {
+    Seq(
+      "flink-dist-1.20.5.jar" -> "1.20",
+      "flink-dist-1.20.0-rc1.jar" -> "1.20",
+      "flink-dist-2.0.2.jar" -> "2.0",
+      "flink-dist-2.3.0-SNAPSHOT.jar" -> "2.3").foreach { case (jar, expected) =>
+      assertResult(SemanticVersion(expected))(extractFlinkVersion(Seq(jar)))
+    }
+
+    Seq(
+      "flink-dist_2.12-1.14.6.jar",
+      "flink-dist-1.20.5.zip",
+      "flink-table-runtime-2.0.2.jar").foreach { jar =>
+      assertThrows[KyuubiException](extractFlinkVersion(Seq(jar)))
+    }
+  }
+
+  test("application mode uses run-application only before flink 2.0") {
+    Seq("1.17", "1.19", "1.20").foreach { version =>
+      assertResult("run-application")(runApplicationCommand(SemanticVersion(version)))
+    }
+    Seq("2.0", "2.1", "2.2", "2.3").foreach { version =>
+      assertResult("run")(runApplicationCommand(SemanticVersion(version)))
+    }
   }
 }

@@ -35,7 +35,7 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KE
 import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager, ProcBuilder}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder._
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.KyuubiHadoopUtils
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, SemanticVersion}
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 /**
@@ -62,6 +62,16 @@ class FlinkProcessBuilder(
 
   // flink.execution.target are required in Kyuubi conf currently
   val executionTarget: Option[String] = conf.getOption("flink.execution.target")
+
+  private[kyuubi] lazy val flinkVersion: SemanticVersion = {
+    val libDir = Paths.get(flinkHome, "lib").toFile
+    val fileNames = Option(libDir.list()).getOrElse {
+      throw new KyuubiException(
+        s"Failed to list jars under $flinkHome, please check if FLINK_HOME is configured " +
+          "correctly and the lib directory exists")
+    }
+    extractFlinkVersion(fileNames)
+  }
 
   private lazy val proxyUserEnable: Boolean = {
     var flinkDoAsEnabled = conf.get(ENGINE_FLINK_DOAS_ENABLED)
@@ -107,7 +117,7 @@ class FlinkProcessBuilder(
       case Some("yarn-application") =>
         val buffer = new mutable.ListBuffer[String]()
         buffer += flinkExecutable
-        buffer += "run-application"
+        buffer += runApplicationCommand(flinkVersion)
 
         val flinkExtraJars = new mutable.ListBuffer[String]
         // locate flink sql jars
@@ -323,4 +333,20 @@ object FlinkProcessBuilder {
   final val FLINK_PROXY_USER_KEY = "HADOOP_PROXY_USER"
   final val FLINK_SECURITY_KEYTAB_KEY = "security.kerberos.login.keytab"
   final val FLINK_SECURITY_PRINCIPAL_KEY = "security.kerberos.login.principal"
+
+  final private[kyuubi] val FLINK_DIST_VERSION_REGEX =
+    """^flink-dist-(\d+\.\d+)[.-].*\.jar$""".r
+
+  /**
+   * Flink 2.0 merged `run-application` into `run` (FLINK-35625) and removed the former
+   * (FLINK-36310).
+   */
+  final private[kyuubi] def runApplicationCommand(flinkVersion: SemanticVersion): String =
+    if (flinkVersion < "2.0") "run-application" else "run"
+
+  final private[kyuubi] def extractFlinkVersion(fileNames: Iterable[String]): SemanticVersion = {
+    Option(fileNames).getOrElse(Iterable.empty)
+      .collectFirst { case FLINK_DIST_VERSION_REGEX(version) => SemanticVersion(version) }
+      .getOrElse(throw new KyuubiException("Failed to extract Flink version from flink-dist jar"))
+  }
 }
