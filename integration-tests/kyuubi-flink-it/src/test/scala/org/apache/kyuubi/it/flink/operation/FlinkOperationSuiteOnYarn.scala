@@ -31,6 +31,11 @@ class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = {
+    // FLINK-38974 (2.3.0) rejects jobs that are not associated with an application registered in
+    // the dispatcher, so application mode does not work on Flink 2.3 and later
+    assume(
+      SemanticVersion(EnvironmentInformation.getVersion) < "2.3",
+      "Flink application mode is not supported since Flink 2.3, see FLINK-38974")
     // delay the access to thrift service because the thrift service
     // may not be ready although it's registered
     Thread.sleep(3000L)
@@ -38,11 +43,6 @@ class FlinkOperationSuiteOnYarn extends WithKyuubiServerAndYarnMiniCluster
   }
 
   override def beforeAll(): Unit = {
-    // FLINK-38974 (2.3.0) rejects jobs that are not associated with an application registered in
-    // the dispatcher, so application mode does not work on Flink 2.3 and later
-    assume(
-      SemanticVersion(EnvironmentInformation.getVersion) < "2.3",
-      "Flink application mode is not supported since Flink 2.3, see FLINK-38974")
     conf
       .set(s"$KYUUBI_ENGINE_ENV_PREFIX.$KYUUBI_HOME_ENV_VAR_NAME", kyuubiHome)
       .set(ENGINE_TYPE, "FLINK_SQL")
