@@ -47,7 +47,7 @@ object FlinkEngineUtils extends Logging {
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
   private def SUPPORTED_FLINK_VERSIONS =
-    Set("1.17", "1.18", "1.19", "1.20").map(SemanticVersion.apply)
+    Set("1.17", "1.18", "1.19", "1.20", "2.0", "2.1", "2.2", "2.3").map(SemanticVersion.apply)
 
   val FLINK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
@@ -170,6 +170,17 @@ object FlinkEngineUtils extends Logging {
         }
       }).toList
     } else null
+  }
+
+  /**
+   * Copied from [[org.apache.flink.table.client.cli.CliOptionsParser]], which dropped the method
+   * in Flink 2.0.
+   */
+  private def checkFilePath(filePath: String): Unit = {
+    val scheme = new Path(filePath).toUri.getScheme
+    if (scheme != null && scheme != "file") {
+      throw new SqlClientException("SQL Client only supports to load files in local.")
+    }
   }
 
   def renewDelegationToken(delegationToken: String): Unit = {

@@ -866,8 +866,10 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
       assert(resultSet.next())
-      // TODO: validate table results after FLINK-28882 is resolved
-      assert(resultSet.getString(1) == "k")
+      // FLINK-38062 (2.2.0) corrected the return type of ENCODE from BINARY to VARBINARY, before
+      // that the result was silently truncated to the first byte
+      val expected = if (FLINK_RUNTIME_VERSION < "2.2") "k" else "kyuubi"
+      assert(resultSet.getString(1) === expected)
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
     }
@@ -1269,16 +1271,19 @@ abstract class FlinkOperationSuite extends HiveJDBCTestHelper with WithFlinkTest
   }
 
   test("test result fetch timeout") {
-    val exception = intercept[KyuubiSQLException](
-      withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT60S"))() {
-        withJdbcStatement("tbl_a") { stmt =>
-          stmt.executeQuery("create table tbl_a (a int) " +
-            "with ('connector' = 'datagen', 'rows-per-second'='0')")
+    withSessionConf()(Map(ENGINE_FLINK_FETCH_TIMEOUT.key -> "PT60S"))() {
+      withJdbcStatement("tbl_a") { stmt =>
+        stmt.executeQuery("create table tbl_a (a int) " +
+          "with ('connector' = 'datagen', 'rows-per-second'='0')")
+        // only the fetch is expected to time out, keep the session setup out of the intercept so
+        // that it does not swallow the assumptions of the inheriting suites
+        val exception = intercept[KyuubiSQLException] {
           val resultSet = stmt.executeQuery("select * from tbl_a")
           while (resultSet.next()) {}
         }
-      })
-    assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
+        assert(exception.getMessage === "Futures timed out after [60000 milliseconds]")
+      }
+    }
   }
 
   test("execute statement - help") {

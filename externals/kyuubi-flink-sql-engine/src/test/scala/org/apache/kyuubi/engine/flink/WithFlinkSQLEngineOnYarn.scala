@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.server.MiniYARNCluster
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, KYUUBI_HOME_ENV_VAR_NAME}
+import org.apache.kyuubi.engine.flink.FlinkEngineUtils.FLINK_RUNTIME_VERSION
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
 import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
@@ -167,7 +168,9 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
     val command = new ArrayBuffer[String]()
 
     command += s"${envs("FLINK_HOME")}${File.separator}bin/flink"
-    command += "run-application"
+    // Flink 2.0 merged `run-application` into `run` (FLINK-35625) and removed the former
+    // (FLINK-36310)
+    command += (if (FLINK_RUNTIME_VERSION < "2.0") "run-application" else "run")
     command += "-t"
     command += "yarn-application"
     command += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
