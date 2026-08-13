@@ -22,6 +22,7 @@ import static org.apache.flink.util.Preconditions.checkState;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.JobID;
@@ -33,6 +34,7 @@ import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.core.execution.PipelineExecutor;
 import org.apache.flink.core.execution.PipelineExecutorFactory;
 import org.apache.flink.runtime.dispatcher.DispatcherGateway;
+import org.apache.flink.streaming.api.graph.StreamGraph;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
 import org.apache.kyuubi.util.reflect.DynClasses;
 import org.apache.kyuubi.util.reflect.DynConstructors;
@@ -40,13 +42,20 @@ import org.apache.kyuubi.util.reflect.DynMethods;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Copied from Apache Flink to exposed the DispatcherGateway for Kyuubi statements. */
+/**
+ * Copied from Apache Flink to expose the DispatcherGateway for Kyuubi statements and stamp the
+ * application id on submitted StreamGraphs, which is required since FLINK-38974 (2.3.0).
+ */
 @Internal
 public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
 
   /** FLINK-14068 (2.0.0) removed {@code Time} in favor of {@link Duration}. */
   private static final Class<?> LEGACY_TIME_CLASS =
       DynClasses.builder().impl("org.apache.flink.api.common.time.Time").orNull().build();
+
+  /** FLINK-38974 (2.3.0) introduced {@code ApplicationID}, absent in older Flink versions. */
+  private static final Class<?> APPLICATION_ID_CLASS =
+      DynClasses.builder().impl("org.apache.flink.api.common.ApplicationID").orNull().build();
 
   private static final boolean IS_FLINK_1 = LEGACY_TIME_CLASS != null;
 
@@ -113,6 +122,17 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
   private static Collection<JobID> suspendedJobIds;
 
   private static Collection<JobID> terminalJobIds;
+
+  /**
+   * FLINK-38974 (2.3.0): the dispatcher rejects jobs that carry no application registered in it.
+   * Kyuubi statements run through the SQL gateway, which builds plain StreamExecutionEnvironments,
+   * so capture the id from the first StreamGraph that carries it and stamp it on the rest.
+   */
+  private static volatile Object applicationId;
+
+  private static volatile DynMethods.UnboundMethod streamGraphGetApplicationId;
+
+  private static volatile DynMethods.UnboundMethod streamGraphSetApplicationId;
 
   private static DispatcherGateway dispatcherGateway;
 
@@ -239,7 +259,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
         (jobId, userCodeClassloader) ->
             newEmbeddedJobClient(
                 jobId, configuration.get(ClientOptions.CLIENT_TIMEOUT), userCodeClassloader);
-    return newEmbeddedExecutor(executorJobIDs, configuration, jobClientCreator);
+    return stampApplicationId(newEmbeddedExecutor(executorJobIDs, configuration, jobClientCreator));
   }
 
   private static PipelineExecutor newEmbeddedExecutor(
@@ -259,6 +279,63 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
         ? EMBEDDED_EXECUTOR_CTOR.newInstance(jobIds, dispatcherGateway, jobClientCreator)
         : EMBEDDED_EXECUTOR_CTOR.newInstance(
             jobIds, dispatcherGateway, configuration, jobClientCreator);
+  }
+
+  /**
+   * FLINK-38974 (2.3.0) requires submitted jobs to carry the id of the application registered in
+   * the dispatcher. The bootstrap SQL goes through StreamContextEnvironment which stamps the id,
+   * while Kyuubi statements go through plain environments, so cache the id and stamp it on every
+   * StreamGraph before delegating to the {@link EmbeddedExecutor}.
+   */
+  private static PipelineExecutor stampApplicationId(final PipelineExecutor executor) {
+    if (suspendedJobIds == null) {
+      return executor;
+    }
+    return (pipeline, configuration, userCodeClassloader) -> {
+      if (pipeline instanceof StreamGraph) {
+        final StreamGraph streamGraph = (StreamGraph) pipeline;
+        final Object appId = captureApplicationId(streamGraph);
+        if (appId != null) {
+          streamGraphSetApplicationId(streamGraph, appId);
+        }
+      }
+      return executor.execute(pipeline, configuration, userCodeClassloader);
+    };
+  }
+
+  private static Object captureApplicationId(final StreamGraph streamGraph) {
+    Object appId = applicationId;
+    if (appId == null) {
+      synchronized (bootstrapLock) {
+        appId = applicationId;
+        if (appId == null) {
+          initStreamGraphApplicationIdMethods();
+          applicationId = appId = streamGraphGetApplicationId(streamGraph);
+        }
+      }
+    }
+    return appId;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static Object streamGraphGetApplicationId(final StreamGraph streamGraph) {
+    return ((Optional<Object>) streamGraphGetApplicationId.invoke(streamGraph)).orElse(null);
+  }
+
+  private static void streamGraphSetApplicationId(
+      final StreamGraph streamGraph, final Object applicationId) {
+    streamGraphSetApplicationId.invoke(streamGraph, applicationId);
+  }
+
+  private static void initStreamGraphApplicationIdMethods() {
+    if (streamGraphGetApplicationId == null) {
+      streamGraphGetApplicationId =
+          DynMethods.builder("getApplicationId").impl(StreamGraph.class).build();
+      streamGraphSetApplicationId =
+          DynMethods.builder("setApplicationId")
+              .impl(StreamGraph.class, APPLICATION_ID_CLASS)
+              .build();
+    }
   }
 
   private static JobClient newEmbeddedJobClient(
