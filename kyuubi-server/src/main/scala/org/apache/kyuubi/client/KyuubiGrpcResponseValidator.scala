@@ -49,7 +49,7 @@ trait KyuubiGrpcResponseValidator extends Logging {
    */
   protected def isSessionValid: Boolean = {
     // An active session is considered valid.
-    isSessionActive.getAcquire
+    isSessionActive.get
   }
 
   def verifyResponse[RespT <: GeneratedMessageV3](fn: => RespT): RespT = {
@@ -60,7 +60,7 @@ trait KyuubiGrpcResponseValidator extends Logging {
         case e: StatusRuntimeException
             if e.getStatus.getCode == Status.Code.INTERNAL &&
               e.getMessage.contains("[INVALID_HANDLE.SESSION_CHANGED]") =>
-          isSessionActive.setRelease(false)
+          isSessionActive.set(false)
           throw e
       }
     val field = response.getDescriptorForType.findFieldByName("server_side_session_id")
@@ -73,7 +73,7 @@ trait KyuubiGrpcResponseValidator extends Logging {
         serverSideSessionId match {
           case Some(id) =>
             if (value != id) {
-              isSessionActive.setRelease(false)
+              isSessionActive.set(false)
               throw new IllegalStateException(
                 s"Server side session ID changed from $id to $value")
             }

@@ -26,7 +26,7 @@ import org.apache.kyuubi.operation.KyuubiGrpcOperationManager
 
 class KyuubiGrpcSessionManager extends GrpcSessionManager("KyuubiGrpcSessionManager") {
 
-  val applicationManager = new KyuubiApplicationManager()
+  val applicationManager = new KyuubiApplicationManager(None)
 
   override protected def isServer: Boolean = true
 
@@ -67,5 +67,10 @@ class KyuubiGrpcSessionManager extends GrpcSessionManager("KyuubiGrpcSessionMana
       handleToSession.put(sessionKey, session)
       session
     }
+  }
+
+  override def closeSession(handle: SessionHandle): Unit = {
+    super.closeSession(handle)
+    handleToSession.remove(handle)
   }
 }

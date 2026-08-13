@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractGrpcFrontendService, Serverable, Service}
 import org.apache.kyuubi.shaded.spark.connect.proto
 
@@ -27,6 +28,23 @@ class KyuubiGrpcFrontendService(override val serverable: Serverable)
 
   override val discoveryService: Option[Service] = None
 
+  private val grpcBackendService = new KyuubiGrpcBackendService()
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    grpcBackendService.initialize(conf)
+    super.initialize(conf)
+  }
+
+  override def start(): Unit = {
+    grpcBackendService.start()
+    super.start()
+  }
+
+  override def stop(): Unit = {
+    super.stop()
+    grpcBackendService.stop()
+  }
+
   override def sparkConnectAsyncService: proto.SparkConnectServiceGrpc.AsyncService =
-    serverable.backendService.asInstanceOf[KyuubiGrpcBackendService]
+    grpcBackendService
 }

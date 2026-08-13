@@ -31,6 +31,7 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shaded.spark.connect.proto
 
 class KyuubiGrpcSession(
     sessionKey: GrpcSessionHandle,
@@ -166,4 +167,20 @@ class KyuubiGrpcSession(
   override def getSessionEvent: Option[KyuubiSessionEvent] = None
 
   override def checkSessionAccessPathURIs(): Unit = {}
+
+  override def close(): Unit = {
+    super.close()
+    try {
+      if (_client != null) {
+        val req = proto.ReleaseSessionRequest.newBuilder()
+          .setUserContext(proto.UserContext.newBuilder().setUserId(user).setUserName(user).build())
+          .setSessionId(_client.sessionId)
+          .build()
+        _client.bstub.releaseSession(req)
+        _client.channel.shutdownNow()
+      }
+    } finally {
+      if (engine != null) engine.close()
+    }
+  }
 }

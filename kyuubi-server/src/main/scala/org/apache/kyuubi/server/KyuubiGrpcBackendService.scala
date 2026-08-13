@@ -91,8 +91,10 @@ class KyuubiGrpcBackendService extends AbstractBackendService("KyuubiGrpcBackend
 
       override def onCompleted(): Unit = {
         val builder = proto.AddArtifactsResponse.newBuilder()
-        builder.setSessionId(grcpSession.handle.sessionId)
-        builder.setServerSideSessionId(grcpSession.handle.sessionId)
+        if (grcpSession != null) {
+          builder.setSessionId(grcpSession.handle.sessionId)
+          builder.setServerSideSessionId(grcpSession.handle.sessionId)
+        }
         respObserver.onNext(builder.build())
         respObserver.onCompleted()
       }
@@ -158,7 +160,16 @@ class KyuubiGrpcBackendService extends AbstractBackendService("KyuubiGrpcBackend
     val session = sessionManager.getOrCreateSession(
       new GrpcSessionHandle(req.getUserContext.getUserId, req.getSessionId),
       None)
-    session.client.astub.releaseSession(req, respObserver)
+    session.client.astub.releaseSession(
+      req,
+      new StreamObserver[proto.ReleaseSessionResponse] {
+        override def onNext(resp: proto.ReleaseSessionResponse): Unit = respObserver.onNext(resp)
+        override def onError(t: Throwable): Unit = respObserver.onError(t)
+        override def onCompleted(): Unit = {
+          sessionManager.closeSession(session.handle)
+          respObserver.onCompleted()
+        }
+      })
   }
 
   override def fetchErrorDetails(

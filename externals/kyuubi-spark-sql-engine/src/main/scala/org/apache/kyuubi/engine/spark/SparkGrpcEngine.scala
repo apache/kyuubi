@@ -213,6 +213,7 @@ object SparkGrpcEngine extends Logging {
     _sparkConf = new SparkConf()
     _kyuubiConf = KyuubiConf()
     _sparkConf.setIfMissing("spark.master", "local")
+    _sparkConf.setIfMissing("spark.connect.grpc.binding.port", "0")
 
     val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
     _sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
