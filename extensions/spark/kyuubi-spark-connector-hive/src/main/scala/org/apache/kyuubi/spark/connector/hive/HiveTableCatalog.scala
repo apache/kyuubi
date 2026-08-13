@@ -423,14 +423,14 @@ class HiveTableCatalog(sparkSession: SparkSession)
     val location = properties.get(TableCatalog.PROP_LOCATION).map(CatalogUtils.stringToURI)
     val storage =
       if (location.isDefined) {
-        catalogTable.storage.copy(locationUri = location)
+        HiveConnectorUtils.copyStorageFormat(catalogTable.storage)(locationUri = location)
       } else {
         catalogTable.storage
       }
 
     try {
       catalog.alterTable(
-        catalogTable.copy(
+        HiveConnectorUtils.copyCatalogTable(catalogTable)(
           properties = properties,
           schema = schema,
           owner = owner,
@@ -709,14 +709,15 @@ private object HiveTableCatalog extends Logging {
       allProps: Map[String, String],
       optionsProps: Map[String, String],
       serdeProps: Map[String, String]): (CatalogStorageFormat, String) = {
-    val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
+    val nonHiveStorageFormat = HiveConnectorUtils.newStorageFormat(
       locationUri = location.map(CatalogUtils.stringToURI),
       properties = optionsProps)
 
     val conf = SQLConf.get
-    val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
-      locationUri = location.map(CatalogUtils.stringToURI),
-      properties = optionsProps)
+    val defaultHiveStorage =
+      HiveConnectorUtils.copyStorageFormat(HiveSerDe.getDefaultStorage(conf))(
+        locationUri = location.map(CatalogUtils.stringToURI),
+        properties = optionsProps)
 
     if (provider.isDefined) {
       (nonHiveStorageFormat, provider.get)
@@ -729,7 +730,7 @@ private object HiveTableCatalog extends Logging {
         // If `STORED AS fileFormat` is used, infer inputFormat, outputFormat and serde from it.
         HiveSerDe.sourceToSerDe(maybeStoredAs.get) match {
           case Some(hiveSerde) =>
-            defaultHiveStorage.copy(
+            HiveConnectorUtils.copyStorageFormat(defaultHiveStorage)(
               inputFormat = hiveSerde.inputFormat.orElse(defaultHiveStorage.inputFormat),
               outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
               // User specified serde takes precedence over the one inferred from file format.
@@ -738,7 +739,7 @@ private object HiveTableCatalog extends Logging {
           case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
         }
       } else {
-        defaultHiveStorage.copy(
+        HiveConnectorUtils.copyStorageFormat(defaultHiveStorage)(
           inputFormat =
             maybeInputFormat.orElse(defaultHiveStorage.inputFormat),
           outputFormat =

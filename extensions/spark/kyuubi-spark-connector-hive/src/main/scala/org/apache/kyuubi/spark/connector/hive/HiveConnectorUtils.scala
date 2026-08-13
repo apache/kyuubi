@@ -27,7 +27,7 @@ import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, CatalogTablePartition}
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStatistics, CatalogStorageFormat, CatalogTable, CatalogTablePartition, CatalogTableType}
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange._
 import org.apache.spark.sql.execution.command.CommandUtils
@@ -67,6 +67,196 @@ object HiveConnectorUtils extends Logging {
         .build[HiveFileFormat]()
         .newInstance(shimFileSinkDesc)
     }.get
+
+  // `serdeName` widened the case-class `apply` from 6 to 7 args. `DynMethods.invoke`
+  // truncates trailing args to the matched arity, so the trailing `serdeName` is
+  // silently dropped on the 6-arg impl.
+  private lazy val storageFormatApply: DynMethods.StaticMethod =
+    DynMethods.builder("apply")
+      .impl( // SPARK-55645 (4.2.0): 7-arg apply with serdeName
+        classOf[CatalogStorageFormat],
+        classOf[Option[URI]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Boolean],
+        classOf[Map[String, String]],
+        classOf[Option[String]])
+      .impl( // Spark < 4.2.0: 6-arg apply without serdeName
+        classOf[CatalogStorageFormat],
+        classOf[Option[URI]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Option[String]],
+        classOf[Boolean],
+        classOf[Map[String, String]])
+      .build()
+      .asStatic()
+
+  // SPARK-55645 (4.2.0): serdeName getter
+  private def storageFormatSerdeName(base: CatalogStorageFormat): Option[String] =
+    Try {
+      DynMethods.builder("serdeName")
+        .impl(classOf[CatalogStorageFormat])
+        .build()
+        .invoke[Option[String]](base)
+    }.getOrElse(None)
+
+  def newStorageFormat(
+      locationUri: Option[URI] = None,
+      inputFormat: Option[String] = None,
+      outputFormat: Option[String] = None,
+      serde: Option[String] = None,
+      compressed: Boolean = false,
+      properties: Map[String, String] = Map.empty): CatalogStorageFormat =
+    storageFormatApply.invoke[CatalogStorageFormat](
+      locationUri,
+      inputFormat,
+      outputFormat,
+      serde,
+      compressed.asInstanceOf[JBoolean],
+      properties,
+      None
+    ) // serdeName defaults to None; ignored on Spark < 4.2
+
+  def copyStorageFormat(
+      base: CatalogStorageFormat)(
+      locationUri: Option[URI] = base.locationUri,
+      inputFormat: Option[String] = base.inputFormat,
+      outputFormat: Option[String] = base.outputFormat,
+      serde: Option[String] = base.serde,
+      compressed: Boolean = base.compressed,
+      properties: Map[String, String] = base.properties): CatalogStorageFormat =
+    storageFormatApply.invoke[CatalogStorageFormat](
+      locationUri,
+      inputFormat,
+      outputFormat,
+      serde,
+      compressed.asInstanceOf[JBoolean],
+      properties,
+      storageFormatSerdeName(base))
+
+  // `collation` was inserted in the middle of `CatalogTable`'s parameter list, so
+  // `DynMethods`' trailing-arg truncation cannot be relied on. Resolve the `apply`
+  // arity and argument list from the presence of the two getters.
+
+  // SPARK-50675 (4.0.0): collation getter presence
+  private lazy val catalogTableHasCollation: Boolean =
+    Try(DynMethods.builder("collation").impl(classOf[CatalogTable]).build()).isSuccess
+
+  // SPARK-52729 (4.2.0): multipartIdentifier getter presence
+  private lazy val catalogTableHasMultipartIdentifier: Boolean =
+    Try(DynMethods.builder("multipartIdentifier").impl(classOf[CatalogTable]).build()).isSuccess
+
+  // SPARK-50675 (4.0.0): collation getter
+  private def catalogTableCollation(base: CatalogTable): Option[String] =
+    Try {
+      DynMethods.builder("collation")
+        .impl(classOf[CatalogTable])
+        .build()
+        .invoke[Option[String]](base)
+    }.getOrElse(None)
+
+  // SPARK-52729 (4.2.0): multipartIdentifier getter
+  private def catalogTableMultipartIdentifier(base: CatalogTable): Option[Seq[String]] =
+    Try {
+      DynMethods.builder("multipartIdentifier")
+        .impl(classOf[CatalogTable])
+        .build()
+        .invoke[Option[Seq[String]]](base)
+    }.getOrElse(None)
+
+  private lazy val catalogTableApply: DynMethods.StaticMethod = {
+    val baseParams: Seq[Class[_]] = Seq[Class[_]](
+      classOf[TableIdentifier],
+      classOf[CatalogTableType],
+      classOf[CatalogStorageFormat],
+      classOf[StructType],
+      classOf[Option[String]],
+      classOf[Seq[String]],
+      classOf[Option[BucketSpec]],
+      classOf[String],
+      classOf[Long],
+      classOf[Long],
+      classOf[String],
+      classOf[Map[String, String]],
+      classOf[Option[CatalogStatistics]],
+      classOf[Option[String]],
+      classOf[Option[String]])
+    // SPARK-50675 (4.0.0): collation inserted between comment and unsupportedFeatures
+    val collationParam: Seq[Class[_]] =
+      if (catalogTableHasCollation) Seq[Class[_]](classOf[Option[String]]) else Nil
+    val trailingParams: Seq[Class[_]] = Seq[Class[_]](
+      classOf[Seq[String]],
+      classOf[Boolean],
+      classOf[Boolean],
+      classOf[Map[String, String]],
+      classOf[Option[String]])
+    // SPARK-52729 (4.2.0): multipartIdentifier appended after viewOriginalText
+    val multipartParam: Seq[Class[_]] =
+      if (catalogTableHasMultipartIdentifier) Seq[Class[_]](classOf[Option[Seq[String]]]) else Nil
+    DynMethods.builder("apply")
+      .impl(
+        classOf[CatalogTable],
+        (baseParams ++ collationParam ++ trailingParams ++ multipartParam): _*)
+      .build()
+      .asStatic()
+  }
+
+  // scalastyle:off parameter.number
+  def copyCatalogTable(
+      base: CatalogTable)(
+      identifier: TableIdentifier = base.identifier,
+      tableType: CatalogTableType = base.tableType,
+      storage: CatalogStorageFormat = base.storage,
+      schema: StructType = base.schema,
+      provider: Option[String] = base.provider,
+      partitionColumnNames: Seq[String] = base.partitionColumnNames,
+      bucketSpec: Option[BucketSpec] = base.bucketSpec,
+      owner: String = base.owner,
+      createTime: Long = base.createTime,
+      lastAccessTime: Long = base.lastAccessTime,
+      createVersion: String = base.createVersion,
+      properties: Map[String, String] = base.properties,
+      stats: Option[CatalogStatistics] = base.stats,
+      viewText: Option[String] = base.viewText,
+      comment: Option[String] = base.comment,
+      unsupportedFeatures: Seq[String] = base.unsupportedFeatures,
+      tracksPartitionsInCatalog: Boolean = base.tracksPartitionsInCatalog,
+      schemaPreservesCase: Boolean = base.schemaPreservesCase,
+      ignoredProperties: Map[String, String] = base.ignoredProperties,
+      viewOriginalText: Option[String] = base.viewOriginalText): CatalogTable = {
+    val baseArgs: Seq[AnyRef] = Seq[AnyRef](
+      identifier,
+      tableType,
+      storage,
+      schema,
+      provider,
+      partitionColumnNames,
+      bucketSpec,
+      owner,
+      createTime.asInstanceOf[JLong],
+      lastAccessTime.asInstanceOf[JLong],
+      createVersion,
+      properties,
+      stats,
+      viewText,
+      comment)
+    val collationArg: Seq[AnyRef] =
+      if (catalogTableHasCollation) Seq[AnyRef](catalogTableCollation(base)) else Nil
+    val trailingArgs: Seq[AnyRef] = Seq[AnyRef](
+      unsupportedFeatures,
+      tracksPartitionsInCatalog.asInstanceOf[JBoolean],
+      schemaPreservesCase.asInstanceOf[JBoolean],
+      ignoredProperties,
+      viewOriginalText)
+    val multipartArg: Seq[AnyRef] =
+      if (catalogTableHasMultipartIdentifier) Seq[AnyRef](catalogTableMultipartIdentifier(base))
+      else Nil
+    catalogTableApply.invoke[CatalogTable](
+      (baseArgs ++ collationArg ++ trailingArgs ++ multipartArg): _*)
+  }
+  // scalastyle:on parameter.number
 
   def partitionedFilePath(file: PartitionedFile): String =
     Try { // SPARK-41970: 3.4.0
