@@ -44,6 +44,8 @@ abstract class AbstractGrpcFrontendService(name: String)
 
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
 
+  protected def sparkConnectService: BindableService
+
   protected def fallbackHandler: ServerCallHandler[Array[Byte], Array[Byte]]
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -54,6 +56,8 @@ abstract class AbstractGrpcFrontendService(name: String)
         .forAddress(socketAddress)
         .maxInboundMessageSize(maxInboundMessageSize)
         .addService(ProtoReflectionService.newInstance)
+        .addService(sparkConnectService)
+        .intercept(GrpcRemoteAddressInterceptor.INSTANCE)
         .fallbackHandlerRegistry(
           new GrpcProxyServerCallHandler.PassthroughHandlerRegistry(fallbackHandler))
       server = nettyServerBuilder.build()

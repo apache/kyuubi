@@ -66,7 +66,7 @@ class KyuubiGrpcSession(
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
-  @volatile private var _client: KyuubiGrpcClient = _
+  @volatile private[kyuubi] var _client: KyuubiGrpcClient = _
   def client: KyuubiGrpcClient = _client
 
   @volatile private var _engineSessionHandle: GrpcSessionHandle = _

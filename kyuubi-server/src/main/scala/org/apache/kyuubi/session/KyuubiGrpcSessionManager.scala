@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.net.SocketAddress
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -33,6 +34,8 @@ class KyuubiGrpcSessionManager extends GrpcSessionManager("KyuubiGrpcSessionMana
   override def operationManager: KyuubiGrpcOperationManager = new KyuubiGrpcOperationManager
 
   private val handleToSession = new ConcurrentHashMap[GrpcSessionHandle, KyuubiGrpcSession]
+
+  private val connectionToSession = new ConcurrentHashMap[SocketAddress, KyuubiGrpcSession]()
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -72,5 +75,26 @@ class KyuubiGrpcSessionManager extends GrpcSessionManager("KyuubiGrpcSessionMana
   override def closeSession(handle: SessionHandle): Unit = {
     super.closeSession(handle)
     handleToSession.remove(handle)
+  }
+
+  private[kyuubi] def registerConnectionSession(
+      remoteAddress: SocketAddress,
+      session: KyuubiGrpcSession): Unit = {
+    if (remoteAddress != null) {
+      connectionToSession.put(remoteAddress, session)
+    }
+  }
+
+  private[kyuubi] def getConnectionSession(remoteAddress: SocketAddress): KyuubiGrpcSession = {
+    if (remoteAddress == null) null else connectionToSession.get(remoteAddress)
+  }
+
+  private[kyuubi] def unregisterConnectionSession(session: KyuubiGrpcSession): Unit = {
+    val iterator = connectionToSession.entrySet().iterator()
+    while (iterator.hasNext) {
+      if (iterator.next().getValue eq session) {
+        iterator.remove()
+      }
+    }
   }
 }

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server
 
-import io.grpc.ServerCallHandler
+import io.grpc.{BindableService, ServerCallHandler}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractGrpcFrontendService, Serverable, Service}
@@ -46,4 +46,6 @@ class KyuubiGrpcFrontendService(override val serverable: Serverable)
 
   override def fallbackHandler: ServerCallHandler[Array[Byte], Array[Byte]] =
     new KyuubiGrpcProxyHandler(grpcBackendService.sessionManager)
+
+  override def sparkConnectService: BindableService = grpcBackendService
 }
