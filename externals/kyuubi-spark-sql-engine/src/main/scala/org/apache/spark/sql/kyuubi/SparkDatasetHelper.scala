@@ -48,7 +48,7 @@ object SparkDatasetHelper extends Logging {
     case adaptiveSparkPlan: AdaptiveSparkPlanExec =>
       executeArrowBatchCollect(adaptiveSparkPlan.finalPhysicalPlan)
     // TODO: avoid extra shuffle if `offset` > 0
-    case collectLimit: CollectLimitExec if offset(collectLimit) > 0 =>
+    case collectLimit: CollectLimitExec if collectLimit.offset > 0 =>
       logWarning("unsupported offset > 0, an extra shuffle will be introduced.")
       toArrowBatchRdd(collectLimit).collect()
     case collectLimit: CollectLimitExec if collectLimit.limit >= 0 =>
@@ -225,20 +225,6 @@ object SparkDatasetHelper extends Logging {
       maxBatchSize,
       -1,
       spark.sessionState.conf.sessionLocalTimeZone).toArray
-  }
-
-  /**
-   * offset support was add in SPARK-28330(3.4.0), to ensure backward compatibility with
-   * earlier versions of Spark, this function uses reflective calls to the "offset".
-   */
-  private def offset(collectLimitExec: CollectLimitExec): Int = {
-    Option(
-      DynMethods.builder("offset")
-        .impl(collectLimitExec.getClass)
-        .orNoop()
-        .build()
-        .invoke[Int](collectLimitExec))
-      .getOrElse(0)
   }
 
   /**

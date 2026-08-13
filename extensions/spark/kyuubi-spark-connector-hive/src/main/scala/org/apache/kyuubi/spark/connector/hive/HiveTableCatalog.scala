@@ -658,36 +658,6 @@ private object HiveTableCatalog extends Logging {
     HIVE_OUTPUT_FORMAT,
     HIVE_INPUT_FORMAT)
 
-  /**
-   * Attaches the KSHC catalog name to a V1 [[TableIdentifier]].
-   *
-   * Since Spark 3.4 (SPARK-46283), [[TableIdentifier]] carries a `catalog` field. Spark 4.1's
-   * `SessionCatalog.requireTableExists` reads it via `name.catalog.get`, which throws
-   * `NoSuchElementException` when it is `None`. KSHC deliberately avoids the wrong default
-   * catalog name (`spark_catalog`) by attaching its *own* catalog name here instead of relying
-   * on the `spark.sql.legacy.v1IdentifierNoCatalog` workaround, so `TableIdentifier.catalog` is
-   * never `None` on Spark 3.4+. On Spark 3.3 (no `catalog` field) the 3-arg constructor is
-   * absent and the identifier is returned unchanged.
-   */
-  private def attachCatalogName(
-      identifier: TableIdentifier,
-      catalogName: String): TableIdentifier = {
-    Try { // Spark 3.4+ (SPARK-46283): TableIdentifier(table, database, catalog)
-      DynConstructors.builder()
-        .impl(
-          classOf[TableIdentifier],
-          classOf[String],
-          classOf[Option[String]],
-          classOf[Option[String]])
-        .buildChecked()
-        .invokeChecked[TableIdentifier](
-          null,
-          identifier.table,
-          identifier.database,
-          Some(catalogName))
-    }.recover { case _: Exception => identifier }.get
-  }
-
   private def toCatalogDatabase(
       db: String,
       metadata: util.Map[String, String],
@@ -785,15 +755,12 @@ private object HiveTableCatalog extends Logging {
 
     def asMultipartIdentifier: Seq[String] = ident.namespace :+ ident.name
 
-    def asTableIdentifier(catalogName: String): TableIdentifier = {
-      val base = ident.namespace match {
-        case ns if ns.isEmpty => TableIdentifier(ident.name)
-        case Array(dbName) => TableIdentifier(ident.name, Some(dbName))
-        case _ =>
-          throw KyuubiHiveConnectorException(
-            s"$quoted is not a valid TableIdentifier as it has more than 2 name parts.")
-      }
-      attachCatalogName(base, catalogName)
+    def asTableIdentifier(catalogName: String): TableIdentifier = ident.namespace match {
+      case ns if ns.isEmpty => TableIdentifier(ident.name, None, Some(catalogName))
+      case Array(dbName) => TableIdentifier(ident.name, Some(dbName), Some(catalogName))
+      case _ =>
+        throw KyuubiHiveConnectorException(
+          s"$quoted is not a valid TableIdentifier as it has more than 2 name parts.")
     }
   }
 

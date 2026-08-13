@@ -25,7 +25,7 @@ from pyspark.serializers import read_int, UTF8Deserializer
 from pyspark.sql import SparkSession
 
 
-def connect_to_exist_gateway() -> "JavaGateway":
+def connect_to_exist_gateway() -> JavaGateway:
     conn_info_file = os.environ.get("PYTHON_GATEWAY_CONNECTION_INFO")
     if conn_info_file is None:
         raise SystemExit("the python gateway connection information file not found!")
@@ -45,8 +45,6 @@ def connect_to_exist_gateway() -> "JavaGateway":
                 port=gateway_port, auth_token=gateway_secret, auto_convert=True
             )
         )
-    # gateway.proc = proc
-
     # Import the classes used by PySpark
     java_import(gateway.jvm, "org.apache.spark.SparkConf")
     java_import(gateway.jvm, "org.apache.spark.api.java.*")
@@ -62,7 +60,7 @@ def connect_to_exist_gateway() -> "JavaGateway":
     return gateway
 
 
-def get_spark_session(uuid=None) -> "SparkSession":
+def get_spark_session(uuid=None) -> SparkSession:
     gateway = connect_to_exist_gateway()
     jjsc = gateway.jvm.JavaSparkContext(
         gateway.jvm.org.apache.spark.SparkContext.getOrCreate()

@@ -39,12 +39,11 @@ import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfo, Requi
 import org.apache.spark.sql.execution.datasources.{BasicWriteJobStatsTracker, WriteJobDescription}
 import org.apache.spark.sql.execution.datasources.v2.FileBatchWrite
 import org.apache.spark.sql.execution.metric.SQLMetric
-import org.apache.spark.sql.hive.execution.HiveOptions
+import org.apache.spark.sql.hive.execution.{HiveFileFormat, HiveOptions}
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.{HiveClientImpl, StructTypeHelper}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils.getHiveFileFormat
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog
 
 case class HiveWrite(
@@ -150,7 +149,7 @@ case class HiveWrite(
       pathName: String,
       customPartitionLocations: Map[TablePartitionSpec, String],
       options: Map[String, String]): WriteJobDescription = {
-    val hiveFileFormat = getHiveFileFormat(fileSinkConf)
+    val hiveFileFormat = new HiveFileFormat(fileSinkConf)
     val dataSchema = StructType(
       info.schema().filterNot(field => isPartitionColumn(field.name)))
     val outputWriterFactory = hiveFileFormat.prepareWrite(sparkSession, job, options, dataSchema)

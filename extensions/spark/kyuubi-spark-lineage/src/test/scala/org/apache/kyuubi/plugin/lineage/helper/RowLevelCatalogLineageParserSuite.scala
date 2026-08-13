@@ -18,7 +18,6 @@
 package org.apache.kyuubi.plugin.lineage.helper
 
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 
 class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite {
 
@@ -26,9 +25,6 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
     "org.apache.spark.sql.connector.catalog.InMemoryRowLevelOperationTableCatalog"
 
   test("columns lineage extract - WriteDelta") {
-    assume(
-      SPARK_RUNTIME_VERSION >= "3.5",
-      "WriteDelta is only supported in SPARK_RUNTIME_VERSION >= 3.5")
     val ddls =
       """
         |create table v2_catalog.db.target_t(pk int not null, name string, price float)
@@ -110,9 +106,6 @@ class RowLevelCatalogLineageParserSuite extends SparkSQLLineageParserHelperSuite
   }
 
   test("columns lineage extract - ReplaceData") {
-    assume(
-      SPARK_RUNTIME_VERSION >= "3.5",
-      "ReplaceData[SPARK-43963] for merge into is supported in SPARK_RUNTIME_VERSION >= 3.5")
     val ddls =
       """
         |create table v2_catalog.db.target_t(id int, name string, price float)

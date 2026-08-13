@@ -30,7 +30,6 @@ jobs:
       max-parallel: 15
       matrix:
         branch:
-          - master
           - branch-1.8
           - branch-1.9
         profiles:
@@ -38,7 +37,7 @@ jobs:
           - -Pflink-provided,spark-provided,hive-provided,spark-3.4,tpcds
         include:
           - branch: master
-            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
+            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5,tpcds
           - branch: branch-1.9
             profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
     steps:

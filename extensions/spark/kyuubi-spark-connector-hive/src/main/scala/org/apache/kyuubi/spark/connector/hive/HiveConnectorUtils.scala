@@ -22,8 +22,7 @@ import java.net.URI
 
 import scala.util.Try
 
-import org.apache.hadoop.fs.{FileStatus, Path}
-import org.apache.hadoop.hive.ql.plan.{FileSinkDesc, TableDesc}
+import org.apache.hadoop.fs.Path
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -31,42 +30,13 @@ import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStatistics, Cat
 import org.apache.spark.sql.connector.catalog.TableChange
 import org.apache.spark.sql.connector.catalog.TableChange._
 import org.apache.spark.sql.execution.command.CommandUtils
-import org.apache.spark.sql.execution.datasources.{PartitionDirectory, PartitionedFile}
-import org.apache.spark.sql.hive.execution.HiveFileFormat
+import org.apache.spark.sql.execution.datasources.PartitionedFile
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
-import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors, DynMethods}
-import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
+import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 object HiveConnectorUtils extends Logging {
-
-  def getHiveFileFormat(fileSinkConf: FileSinkDesc): HiveFileFormat =
-    Try { // SPARK-43186: 3.5.0
-      DynConstructors.builder()
-        .impl(classOf[HiveFileFormat], classOf[FileSinkDesc])
-        .build[HiveFileFormat]()
-        .newInstance(fileSinkConf)
-    }.recover { case _: Exception =>
-      val shimFileSinkDescClz = DynClasses.builder()
-        .impl("org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc")
-        .build()
-      val shimFileSinkDesc = DynConstructors.builder()
-        .impl(
-          "org.apache.spark.sql.hive.HiveShim$ShimFileSinkDesc",
-          classOf[String],
-          classOf[TableDesc],
-          classOf[Boolean])
-        .build[AnyRef]()
-        .newInstance(
-          fileSinkConf.getDirName.toString,
-          fileSinkConf.getTableInfo,
-          fileSinkConf.getCompressed.asInstanceOf[JBoolean])
-      DynConstructors.builder()
-        .impl(classOf[HiveFileFormat], shimFileSinkDescClz)
-        .build[HiveFileFormat]()
-        .newInstance(shimFileSinkDesc)
-    }.get
 
   // `serdeName` widened the case-class `apply` from 6 to 7 args. `DynMethods.invoke`
   // truncates trailing args to the matched arity, so the trailing `serdeName` is
@@ -258,13 +228,6 @@ object HiveConnectorUtils extends Logging {
   }
   // scalastyle:on parameter.number
 
-  def partitionedFilePath(file: PartitionedFile): String =
-    Try { // SPARK-41970: 3.4.0
-      invokeAs[String](file, "urlEncodedPath")
-    }.recover { case _: Exception =>
-      invokeAs[String](file, "filePath")
-    }.get
-
   def splitFiles(
       sparkSession: SparkSession,
       file: AnyRef,
@@ -356,51 +319,6 @@ object HiveConnectorUtils extends Logging {
           isSplitable,
           maxSplitBytes,
           partitionValues)
-    }.recover { case _: Exception =>
-      DynMethods
-        .builder("splitFiles")
-        .impl(
-          "org.apache.spark.sql.execution.PartitionedFileUtil",
-          classOf[SparkSession],
-          classOf[FileStatus],
-          classOf[Path],
-          classOf[Boolean],
-          classOf[Long],
-          classOf[InternalRow])
-        .buildChecked()
-        .invokeChecked[Seq[PartitionedFile]](
-          null,
-          sparkSession,
-          file,
-          filePath,
-          isSplitable,
-          maxSplitBytes,
-          partitionValues)
-    }.get
-
-  def createPartitionDirectory(values: InternalRow, files: Seq[FileStatus]): PartitionDirectory =
-    Try { // SPARK-43039: 3.5.0
-      new DynMethods.Builder("apply")
-        .impl(classOf[PartitionDirectory], classOf[InternalRow], classOf[Array[FileStatus]])
-        .buildChecked()
-        .asStatic()
-        .invoke[PartitionDirectory](values, files.toArray)
-    }.recover { case _: Exception =>
-      new DynMethods.Builder("apply")
-        .impl(classOf[PartitionDirectory], classOf[InternalRow], classOf[Seq[FileStatus]])
-        .buildChecked()
-        .asStatic()
-        .invoke[PartitionDirectory](values, files)
-    }.get
-
-  def getPartitionFilePath(file: AnyRef): Path =
-    Try { // SPARK-43039: 3.5.0
-      new DynMethods.Builder("getPath")
-        .impl("org.apache.spark.sql.execution.datasources.FileStatusWithMetadata")
-        .build()
-        .invoke[Path](file)
-    }.recover { case _: Exception =>
-      file.asInstanceOf[FileStatus].getPath
     }.get
 
   private def calculateMultipleLocationSizes(

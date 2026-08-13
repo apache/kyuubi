@@ -37,12 +37,8 @@ build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.ver
 - [x] 4.1.x
 - [x] 4.0.x
 - [x] 3.5.x (default)
-- [x] 3.4.x
-- [x] 3.3.x
-- [ ] 3.2.x
-- [ ] 3.1.x
-- [ ] 3.0.x
-- [ ] 2.4.x and earlier
+- [ ] 3.4.x
+- [ ] 3.3.x
 
 ### Supported Apache Ranger Versions
 
@@ -55,10 +51,4 @@ build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.ver
 - [x] 2.3.x
 - [x] 2.2.x
 - [x] 2.1.x
-- [x] 2.0.x
-- [x] 1.2.x
-- [x] 1.1.x
-- [x] 1.0.x
-- [x] 0.7.x
-- [ ] 0.6.x
-
+- [ ] 2.0.x

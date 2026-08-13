@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
 import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, KyuubiHiveConnectorException}
+import org.apache.kyuubi.util.reflect.ReflectUtils.invokeAs
 
 case class HiveScan(
     sparkSession: SparkSession,
@@ -122,7 +123,7 @@ case class HiveScan(
           partition.values
         }
       partition.files.asInstanceOf[Seq[AnyRef]].flatMap { file =>
-        val filePath = HiveConnectorUtils.getPartitionFilePath(file)
+        val filePath = invokeAs[Path](file, "getPath")
         val partFiles = HiveConnectorUtils.splitFiles(
           sparkSession = sparkSession,
           file = file,
@@ -141,7 +142,7 @@ case class HiveScan(
     }
 
     if (splitFiles.length == 1) {
-      val path = new Path(HiveConnectorUtils.partitionedFilePath(splitFiles(0)))
+      val path = new Path(splitFiles(0).urlEncodedPath)
       if (!isSplitable(path) && splitFiles(0).length >
           sparkSession.sparkContext.getConf.getOption("spark.io.warning.largeFileThreshold")
             .getOrElse("1024000000").toLong) {

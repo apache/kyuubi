@@ -28,7 +28,6 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.tags.IcebergTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -113,14 +112,8 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
 
       withSingleCallEnabled {
         interceptEndsWith[AccessControlException](doAs(someone, sql(mergeIntoSql)))(
-          if (isSparkV35OrGreater) {
-            s"does not have [select] privilege on [$namespace1/table1/city" +
-              s",$namespace1/$table1/id,$namespace1/$table1/name]"
-          } else {
-            "does not have " +
-              s"[select] privilege on [$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name]," +
-              s" [update] privilege on [$bobNamespace/$bobSelectTable]"
-          })
+          s"does not have [select] privilege on [$namespace1/table1/city" +
+            s",$namespace1/$table1/id,$namespace1/$table1/name]")
 
         interceptEndsWith[AccessControlException] {
           doAs(bob, sql(mergeIntoSql))
@@ -138,14 +131,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
         doAs(
           someone,
           sql(s"UPDATE $catalogV2.$namespace1.$table1 SET city='Guangzhou'  WHERE id=1"))
-      }(if (isSparkV35OrGreater) {
-        s"does not have [select] privilege on " +
-          s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
-          s"$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city], " +
-          s"[update] privilege on [$namespace1/$table1]"
-      } else {
-        s"does not have [update] privilege on [$namespace1/$table1]"
-      })
+      }(s"does not have [select] privilege on " +
+        s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
+        s"$namespace1/$table1/id,$namespace1/$table1/name,$namespace1/$table1/city], " +
+        s"[update] privilege on [$namespace1/$table1]")
 
       doAs(
         admin,
@@ -159,14 +148,10 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       // DeleteFromTable
       interceptEndsWith[AccessControlException] {
         doAs(someone, sql(s"DELETE FROM $catalogV2.$namespace1.$table1 WHERE id=2"))
-      }(if (isSparkV34OrGreater) {
-        s"does not have [select] privilege on " +
-          s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
-          s"$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name], " +
-          s"[update] privilege on [$namespace1/$table1]"
-      } else {
-        s"does not have [update] privilege on [$namespace1/$table1]"
-      })
+      }(s"does not have [select] privilege on " +
+        s"[$namespace1/$table1/_file,$namespace1/$table1/_pos," +
+        s"$namespace1/$table1/city,$namespace1/$table1/id,$namespace1/$table1/name], " +
+        s"[update] privilege on [$namespace1/$table1]")
 
       interceptEndsWith[AccessControlException] {
         doAs(bob, sql(s"DELETE FROM $catalogV2.$bobNamespace.$bobSelectTable WHERE id=2"))

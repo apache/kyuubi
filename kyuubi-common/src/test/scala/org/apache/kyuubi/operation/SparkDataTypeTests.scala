@@ -215,7 +215,6 @@ trait SparkDataTypeTests extends HiveJDBCTestHelper with SparkVersionUtil {
   }
 
   test("execute statement - select timestamp_ntz") {
-    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.4")
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT make_timestamp_ntz(2022, 03, 24, 18, 08, 31.8888) AS col")

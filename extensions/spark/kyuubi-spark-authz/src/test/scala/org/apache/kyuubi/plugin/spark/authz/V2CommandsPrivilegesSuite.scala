@@ -26,7 +26,6 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
 import org.apache.kyuubi.plugin.spark.authz.serde.{Database, DB_COMMAND_SPECS}
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 
 abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
@@ -161,11 +160,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      if (isSparkV34OrGreater) {
-        checkV2TableOwner(po)
-      } else {
-        assert(po.owner.isEmpty)
-      }
+      checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }
@@ -197,11 +192,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
-      if (isSparkV34OrGreater) {
-        checkV2TableOwner(po)
-      } else {
-        assert(po.owner.isEmpty)
-      }
+      checkV2TableOwner(po)
       val accessType = AccessType(po, operationType, isInput = false)
       assert(accessType === AccessType.CREATE)
     }

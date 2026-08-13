@@ -35,10 +35,6 @@ import org.apache.spark.sql.types.StructType
  * runtime filter, so translation here handles `In` only. Any filter whose
  * attribute does not match a known partition column is dropped; drops are
  * logged at DEBUG.
- *
- * We deliberately use the V1 `SupportsRuntimeFiltering` instead of the newer
- * `SupportsRuntimeV2Filtering` to keep this connector compilable against
- * Spark 3.3, where `SupportsRuntimeV2Filtering` was introduced in Spark 3.4.
  */
 object HiveRuntimeFilterSupport extends Logging {
 
