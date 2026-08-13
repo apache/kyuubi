@@ -21,23 +21,17 @@ import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-import scala.collection.JavaConverters._
-
-import com.google.protobuf.Message
 import io.grpc._
-import io.grpc.MethodDescriptor.PrototypeMarshaller
 import io.grpc.netty.NettyServerBuilder
-import io.grpc.protobuf.ProtoUtils
 import io.grpc.protobuf.services.ProtoReflectionService
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.shaded.spark.connect.proto
 import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
 
 abstract class AbstractGrpcFrontendService(name: String)
-  extends AbstractFrontendService(name) with Runnable with BindableService with Logging {
+  extends AbstractFrontendService(name) with Runnable with Logging {
 
   private val started = new AtomicBoolean(false)
   protected var server: Server = _
@@ -50,7 +44,7 @@ abstract class AbstractGrpcFrontendService(name: String)
 
   private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
 
-  def sparkConnectAsyncService: proto.SparkConnectServiceGrpc.AsyncService
+  protected def fallbackHandler: ServerCallHandler[Array[Byte], Array[Byte]]
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -60,7 +54,8 @@ abstract class AbstractGrpcFrontendService(name: String)
         .forAddress(socketAddress)
         .maxInboundMessageSize(maxInboundMessageSize)
         .addService(ProtoReflectionService.newInstance)
-        .addService(this)
+        .fallbackHandlerRegistry(
+          new GrpcProxyServerCallHandler.PassthroughHandlerRegistry(fallbackHandler))
       server = nettyServerBuilder.build()
       info(s"gRPC frontend service has started at sc://${serverAddr.getHostName}:$portNum")
     } catch {
@@ -131,50 +126,4 @@ abstract class AbstractGrpcFrontendService(name: String)
     s"sc://$host:$portNum"
   }
 
-  protected def isServer: Boolean
-
-  override def bindService(): ServerServiceDefinition = {
-    // First, get the SparkConnectService ServerServiceDefinition.
-    val serviceDef = proto.SparkConnectServiceGrpc.bindService(sparkConnectAsyncService)
-
-    // Create a new ServerServiceDefinition builder
-    // using the name of the original service definition.
-    val builder = ServerServiceDefinition.builder(serviceDef.getServiceDescriptor.getName)
-
-    // Iterate through all the methods of the original service definition.
-    // For each method, add a customized method descriptor (with updated marshallers)
-    // and the original server call handler to the builder.
-    serviceDef.getMethods.asScala
-      .asInstanceOf[Iterable[ServerMethodDefinition[Message, Message]]]
-      .foreach { method =>
-        builder.addMethod(
-          methodWithCustomMarshallers(method.getMethodDescriptor),
-          method.getServerCallHandler)
-      }
-
-    // Build the final ServerServiceDefinition and return it.
-    builder.build()
-  }
-
-  private def methodWithCustomMarshallers(methodDesc: MethodDescriptor[Message, Message])
-      : MethodDescriptor[Message, Message] = {
-    val recursionLimit = 1024
-    val requestMarshaller = {
-      ProtoUtils.marshallerWithRecursionLimit(
-        methodDesc.getRequestMarshaller
-          .asInstanceOf[PrototypeMarshaller[Message]]
-          .getMessagePrototype,
-        recursionLimit)
-    }
-    val responseMarshaller =
-      ProtoUtils.marshallerWithRecursionLimit(
-        methodDesc.getResponseMarshaller
-          .asInstanceOf[PrototypeMarshaller[Message]]
-          .getMessagePrototype,
-        recursionLimit)
-    methodDesc.toBuilder
-      .setRequestMarshaller(requestMarshaller)
-      .setResponseMarshaller(responseMarshaller)
-      .build()
-  }
 }

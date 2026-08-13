@@ -17,14 +17,13 @@
 
 package org.apache.kyuubi.server
 
+import io.grpc.ServerCallHandler
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractGrpcFrontendService, Serverable, Service}
-import org.apache.kyuubi.shaded.spark.connect.proto
 
 class KyuubiGrpcFrontendService(override val serverable: Serverable)
   extends AbstractGrpcFrontendService("KyuubiGrpcFrontend") {
-
-  override protected def isServer: Boolean = true
 
   override val discoveryService: Option[Service] = None
 
@@ -45,6 +44,6 @@ class KyuubiGrpcFrontendService(override val serverable: Serverable)
     grpcBackendService.stop()
   }
 
-  override def sparkConnectAsyncService: proto.SparkConnectServiceGrpc.AsyncService =
-    grpcBackendService
+  override def fallbackHandler: ServerCallHandler[Array[Byte], Array[Byte]] =
+    new KyuubiGrpcProxyHandler(grpcBackendService.sessionManager)
 }
