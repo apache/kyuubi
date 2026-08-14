@@ -17,13 +17,62 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
+import com.google.common.cache.Cache
+import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting, Pod, PodBuilder}
+import io.fabric8.kubernetes.client.informers.ResourceEventHandler
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
+import org.apache.kyuubi.engine.ApplicationState.{ApplicationState, FAILED, FINISHED, PENDING}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
+
+  private def podEventHandler(
+      operation: KubernetesApplicationOperation,
+      kubernetesInfo: KubernetesInfo): ResourceEventHandler[Pod] = {
+    val handlerClass = classOf[KubernetesApplicationOperation].getDeclaredClasses
+      .find(_.getSimpleName == "SparkEnginePodEventHandler")
+      .getOrElse(fail("SparkEnginePodEventHandler not found"))
+    val constructor = handlerClass.getDeclaredConstructors.head
+    constructor.setAccessible(true)
+    constructor
+      .newInstance(operation, kubernetesInfo)
+      .asInstanceOf[ResourceEventHandler[Pod]]
+  }
+
+  private def cleanupTrigger(
+      operation: KubernetesApplicationOperation): Cache[String, ApplicationState] = {
+    val field = classOf[KubernetesApplicationOperation].getDeclaredFields
+      .find(_.getName.endsWith("cleanupTerminatedAppInfoTrigger"))
+      .getOrElse(fail("cleanupTerminatedAppInfoTrigger not found"))
+    field.setAccessible(true)
+    field.get(operation).asInstanceOf[Cache[String, ApplicationState]]
+  }
+
+  test("mark terminated application received from pod add event") {
+    val operation = new KubernetesApplicationOperation()
+    operation.initialize(KyuubiConf(), None)
+    val tag = "terminated-app"
+    val pod = new PodBuilder()
+      .withNewMetadata()
+      .withName("terminated-driver")
+      .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, tag)
+      .addToLabels("spark-app-selector", "spark-application")
+      .endMetadata()
+      .withNewStatus()
+      .withPhase("Succeeded")
+      .withContainerStatuses()
+      .endStatus()
+      .build()
+
+    try {
+      podEventHandler(operation, KubernetesInfo()).onAdd(pod)
+      assert(cleanupTrigger(operation).getIfPresent(tag) === FINISHED)
+    } finally {
+      operation.stop()
+    }
+  }
 
   test("test check kubernetes info") {
     val kyuubiConf = KyuubiConf()
