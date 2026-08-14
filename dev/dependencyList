@@ -22,6 +22,7 @@ annotations/4.1.1.4//annotations-4.1.1.4.jar
 antlr-runtime/3.5.3//antlr-runtime-3.5.3.jar
 antlr4-runtime/4.9.3//antlr4-runtime-4.9.3.jar
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
+arrow-compression/16.0.0//arrow-compression-16.0.0.jar
 arrow-format/16.0.0//arrow-format-16.0.0.jar
 arrow-memory-core/16.0.0//arrow-memory-core-16.0.0.jar
 arrow-memory-netty-buffer-patch/16.0.0//arrow-memory-netty-buffer-patch-16.0.0.jar
@@ -30,6 +31,8 @@ arrow-vector/16.0.0//arrow-vector-16.0.0.jar
 checker-qual/3.42.0//checker-qual-3.42.0.jar
 classgraph/4.8.138//classgraph-4.8.138.jar
 commons-codec/1.17.1//commons-codec-1.17.1.jar
+commons-compress/1.26.0//commons-compress-1.26.0.jar
+commons-io/2.16.1//commons-io-2.16.1.jar
 commons-lang3/3.18.0//commons-lang3-3.18.0.jar
 error_prone_annotations/2.36.0//error_prone_annotations-2.36.0.jar
 failsafe/3.3.2//failsafe-3.3.2.jar
@@ -188,3 +191,4 @@ units/1.7//units-1.7.jar
 vertx-core/4.5.3//vertx-core-4.5.3.jar
 vertx-grpc/4.5.3//vertx-grpc-4.5.3.jar
 zjsonpatch/0.3.0//zjsonpatch-0.3.0.jar
+zstd-jni/1.5.5-11//zstd-jni-1.5.5-11.jar

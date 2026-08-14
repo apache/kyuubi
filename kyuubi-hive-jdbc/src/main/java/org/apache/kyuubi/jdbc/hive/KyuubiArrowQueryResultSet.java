@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import org.apache.arrow.compression.CommonsCompressionFactory;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorLoader;
 import org.apache.arrow.vector.ipc.ReadChannel;
@@ -368,7 +369,10 @@ public class KyuubiArrowQueryResultSet extends KyuubiArrowBasedResultSet {
         TColumn arrowColumn = results.getColumns().get(0);
         byte[] batchBytes = arrowColumn.getBinaryVal().getValues().get(0).array();
         ArrowRecordBatch recordBatch = loadArrowBatch(batchBytes, allocator);
-        VectorLoader vectorLoader = new VectorLoader(root);
+        // The compression codec is detected from the batch body compression metadata carried by
+        // the Arrow IPC message itself, so a single decompression factory works for both
+        // uncompressed and compressed batches -- no server hint about the codec is needed.
+        VectorLoader vectorLoader = new VectorLoader(root, CommonsCompressionFactory.INSTANCE);
         vectorLoader.load(recordBatch);
         recordBatch.close();
         java.util.List<ArrowColumnVector> columns =

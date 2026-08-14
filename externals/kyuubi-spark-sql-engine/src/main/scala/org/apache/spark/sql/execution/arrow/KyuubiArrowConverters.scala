@@ -23,7 +23,9 @@ import java.nio.channels.Channels
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.arrow.compression.{CommonsCompressionFactory, ZstdCompressionCodec}
 import org.apache.arrow.vector._
+import org.apache.arrow.vector.compression.{CompressionCodec, NoCompressionCodec}
 import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
 import org.apache.spark.TaskContext
@@ -40,6 +42,28 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
   type Batch = (Array[Byte], Long)
 
   /**
+   * Create the Arrow compression codec for the given codec name. Returns the no-compression codec
+   * when the codec name is "none" or null.
+   *
+   * The zstd codec is constructed directly with the configured compression level rather than
+   * through a [[CompressionCodec.Factory]]: the factory overloads built from the codec type enum
+   * cannot carry a compression level and silently fall back to the default one, losing the
+   * user-configured level. This follows the latest Spark upstream behavior
+   * (ArrowCompressionUtils).
+   */
+  private def createCodec(codecName: String, zstdLevel: Int): CompressionCodec = {
+    if (codecName == null || codecName == "none") {
+      NoCompressionCodec.INSTANCE
+    } else {
+      codecName match {
+        case "zstd" => new ZstdCompressionCodec(zstdLevel)
+        case other =>
+          throw new IllegalArgumentException(s"Unsupported arrow compression codec: $other")
+      }
+    }
+  }
+
+  /**
    * this method is to slice the input Arrow record batch byte array `bytes`, starting from `start`
    * and taking `length` number of elements.
    */
@@ -48,7 +72,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       timeZoneId: String,
       bytes: Array[Byte],
       start: Int,
-      length: Int): Array[Byte] = {
+      length: Int,
+      codecName: String = null,
+      zstdLevel: Int = 3): Array[Byte] = {
     val in = new ByteArrayInputStream(bytes)
     val out = new ByteArrayOutputStream(bytes.length)
 
@@ -65,12 +91,21 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)),
         sliceAllocator)
-      val vectorLoader = new VectorLoader(vectorSchemaRoot)
+      // The decompression factory must always be provided: the codec type is read from the batch
+      // body compression metadata carried by the Arrow IPC message itself, so no extra hint is
+      // needed. Uncompressed batches do not invoke the factory at all.
+      val vectorLoader = new VectorLoader(vectorSchemaRoot, CommonsCompressionFactory.INSTANCE)
       vectorLoader.load(recordBatch)
       recordBatch.close()
       slicedVectorSchemaRoot = vectorSchemaRoot.slice(start, length)
 
-      val unloader = new VectorUnloader(slicedVectorSchemaRoot)
+      // The unloader and the loader above must be kept in sync: compressed batches sliced and
+      // re-serialized here would fail to load on the client if the compression codec was dropped.
+      val unloader = new VectorUnloader(
+        slicedVectorSchemaRoot,
+        true,
+        createCodec(codecName, zstdLevel),
+        true)
       val writeChannel = new WriteChannel(Channels.newChannel(out))
       val batch = unloader.getRecordBatch()
       MessageSerializer.serialize(writeChannel, batch)
@@ -119,7 +154,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       collectLimitExec: CollectLimitExec,
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
-      timeZoneId: String): Array[Batch] = {
+      timeZoneId: String,
+      codecName: String = null,
+      zstdLevel: Int = 3): Array[Batch] = {
     val n = collectLimitExec.limit
     val schema = collectLimitExec.schema
     if (n == 0) {
@@ -165,7 +202,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
               maxRecordsPerBatch,
               maxEstimatedBatchSize,
               n,
-              timeZoneId)
+              timeZoneId,
+              codecName,
+              zstdLevel)
             batches.map(b => b -> batches.rowCountInLastBatch).toArray
           },
           partsToScan)
@@ -200,7 +239,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
       limit: Long,
-      timeZoneId: String): ArrowBatchIterator = {
+      timeZoneId: String,
+      codecName: String = null,
+      zstdLevel: Int = 3): ArrowBatchIterator = {
     new ArrowBatchIterator(
       rowIter,
       schema,
@@ -208,7 +249,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxEstimatedBatchSize,
       limit,
       timeZoneId,
-      TaskContext.get)
+      TaskContext.get,
+      codecName,
+      zstdLevel)
   }
 
   /**
@@ -226,7 +269,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxEstimatedBatchSize: Long,
       limit: Long,
       timeZoneId: String,
-      context: TaskContext)
+      context: TaskContext,
+      codecName: String,
+      zstdLevel: Int)
     extends Iterator[Array[Byte]] {
 
     protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
@@ -237,7 +282,10 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         Long.MaxValue)
 
     private val root = VectorSchemaRoot.create(arrowSchema, allocator)
-    protected val unloader = new VectorUnloader(root)
+    // Always use the compression-aware 4-arg constructor, matching the latest Spark upstream
+    // ArrowConverters. includeNullCount=true keeps the null count in the batch header, the same
+    // as the original 1-arg constructor used by the no-compression path.
+    protected val unloader = new VectorUnloader(root, true, createCodec(codecName, zstdLevel), true)
     protected val arrowWriter = ArrowWriter.create(root)
 
     Option(context).foreach {

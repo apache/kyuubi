@@ -17,13 +17,15 @@
 
 package org.apache.spark.sql.kyuubi
 
+import java.util.Locale
+
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkPlanHelper, SQLExecution}
@@ -78,6 +80,28 @@ object SparkDatasetHelper extends Logging {
   }
 
   /**
+   * Read the arrow compression codec config from the session conf, reusing the Spark upstream
+   * configuration keys (`spark.sql.execution.arrow.compression.codec` and
+   * `spark.sql.execution.arrow.compression.zstd.level`, introduced in Spark 4.1). On Spark < 4.1
+   * these keys are not registered as typed SQLConf entries, so they are read as raw strings: a
+   * session-level SET lands in the SQLConf settings map and takes precedence, otherwise the
+   * engine-level kyuubi-defaults.conf value applies, otherwise the default.
+   * Returns (codecName, zstdLevel).
+   */
+  private def arrowCompressionConf(spark: SparkSession): (String, Int) = {
+    // Lower-case the codec name to match Spark upstream, whose typed entry applies
+    // `.transform(_.toLowerCase(Locale.ROOT))`; reading the key as a raw string here would
+    // otherwise make `ZSTD`/`Zstd` reject on Spark < 4.1 while accepted natively on 4.1+.
+    val codecName = spark.sessionState.conf.getConfString(
+      "spark.sql.execution.arrow.compression.codec",
+      "none").toLowerCase(Locale.ROOT)
+    val zstdLevel = spark.sessionState.conf.getConfString(
+      "spark.sql.execution.arrow.compression.zstd.level",
+      "3").toInt
+    (codecName, zstdLevel)
+  }
+
+  /**
    * Forked from [[Dataset.toArrowBatchRdd(plan: SparkPlan)]].
    * Convert to an RDD of serialized ArrowRecordBatches.
    */
@@ -89,6 +113,7 @@ object SparkDatasetHelper extends Logging {
     // note that, we can't pass the lazy variable `maxBatchSize` directly, this is because input
     // arguments are serialized and sent to the executor side for execution.
     val maxBatchSizePerBatch = maxBatchSize
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     plan.execute().mapPartitionsInternal { iter =>
       KyuubiArrowConverters.toBatchIterator(
         iter,
@@ -96,13 +121,18 @@ object SparkDatasetHelper extends Logging {
         maxRecordsPerBatch,
         maxBatchSizePerBatch,
         -1,
-        timeZoneId)
+        timeZoneId,
+        codecName,
+        zstdLevel)
     }
   }
 
   def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
     withNewExecutionId(df) {
-      toArrowBatchRdd(df).toLocalIterator
+      // use the plan-based toArrowBatchRdd so that the arrow compression codec takes effect;
+      // the Dataset#toArrowBatchRdd (reflective) path uses the vanilla Spark ArrowConverters
+      // which does not apply the Kyuubi compression codec.
+      toArrowBatchRdd(df.queryExecution.executedPlan).toLocalIterator
     }
   }
 
@@ -174,12 +204,15 @@ object SparkDatasetHelper extends Logging {
     val spark = SparkPlanHelper.sparkSession(collectLimit)
     val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
     val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
 
     val batches = KyuubiArrowConverters.takeAsArrowBatches(
       collectLimit,
       maxRecordsPerBatch,
       maxBatchSize,
-      timeZoneId)
+      timeZoneId,
+      codecName,
+      zstdLevel)
 
     // note that the number of rows in the returned arrow batches may be >= `limit`, perform
     // the slicing operation of result
@@ -193,7 +226,14 @@ object SparkDatasetHelper extends Logging {
         // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
         rest -= size.toInt
       } else { // size > rest
-        result += KyuubiArrowConverters.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
+        result += KyuubiArrowConverters.slice(
+          collectLimit.schema,
+          timeZoneId,
+          batch,
+          0,
+          rest,
+          codecName,
+          zstdLevel)
         rest = 0
       }
       i += 1
@@ -205,26 +245,32 @@ object SparkDatasetHelper extends Logging {
     val spark = SparkPlanHelper.sparkSession(commandResult)
     commandResult.longMetric("numOutputRows").add(commandResult.rows.size)
     sendDriverMetrics(spark.sparkContext, commandResult.metrics)
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     KyuubiArrowConverters.toBatchIterator(
       commandResult.rows.iterator,
       commandResult.schema,
       spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      spark.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone,
+      codecName,
+      zstdLevel).toArray
   }
 
   private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
     val spark = SparkPlanHelper.sparkSession(localTableScan)
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     KyuubiArrowConverters.toBatchIterator(
       localTableScan.rows.iterator,
       localTableScan.schema,
       spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      spark.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone,
+      codecName,
+      zstdLevel).toArray
   }
 
   /**

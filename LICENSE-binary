@@ -320,6 +320,7 @@ com.thoughtworks.paranamer:paranamer
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
 org.postgresql:postgresql
+com.github.luben:zstd-jni
 
 Eclipse Distribution License - v 1.0
 ------------------------------------

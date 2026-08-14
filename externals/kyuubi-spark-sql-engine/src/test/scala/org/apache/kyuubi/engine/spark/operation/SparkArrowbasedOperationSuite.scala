@@ -380,6 +380,46 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
+  test("arrow zstd compression round-trips through the JDBC client") {
+    // End-to-end coverage of the compressed Arrow IPC path: the engine compresses batches with
+    // the upstream-named codec config, and the JDBC client transparently decompresses them from
+    // the batch body compression metadata (no server-side codec hint on the wire).
+    withJdbcStatement() { statement =>
+      statement.executeQuery(
+        "set spark.sql.execution.arrow.compression.codec=zstd")
+      val resultSet = statement.executeQuery(
+        "select id, cast(id as string) as name from range(0, 1000)")
+      var count = 0
+      while (resultSet.next()) {
+        // per-row invariant, independent of the row order the client receives
+        assert(resultSet.getString(2) == resultSet.getLong(1).toString)
+        count += 1
+      }
+      assert(count == 1000)
+    }
+  }
+
+  test("arrow zstd compression round-trips when LIMIT cuts across a batch boundary") {
+    // The slice() path re-serializes the tail batch produced by doCollectLimit. With a batch size
+    // of 100 and LIMIT 150, the second batch is sliced from 100 down to 50 rows, exercising the
+    // compression-aware VectorLoader/VectorUnloader pairing on a compressed, sliced batch.
+    withJdbcStatement() { statement =>
+      statement.executeQuery(
+        "set spark.sql.execution.arrow.compression.codec=zstd")
+      statement.executeQuery(
+        s"set ${SQLConf.ARROW_EXECUTION_MAX_RECORDS_PER_BATCH.key}=100")
+      val resultSet = statement.executeQuery(
+        "select id, cast(id as string) as name from range(0, 10000) limit 150")
+      var count = 0
+      while (resultSet.next()) {
+        // per-row invariant survives compression + slicing, independent of row order
+        assert(resultSet.getString(2) == resultSet.getLong(1).toString)
+        count += 1
+      }
+      assert(count == 150)
+    }
+  }
+
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
     val query =
       s"""
