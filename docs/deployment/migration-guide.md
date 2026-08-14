@@ -20,6 +20,8 @@
 ## Upgrading from Kyuubi 1.12 to 1.13
 
 * Since Kyuubi 1.13, the support of Spark engine for Spark 3.3 and 3.4 is removed.
+* Since Kyuubi 1.13, the support of Flink engine for Flink 1.17, 1.18 and 1.19 is removed.
+* Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 
 ## Upgrading from Kyuubi 1.11 to 1.12
 

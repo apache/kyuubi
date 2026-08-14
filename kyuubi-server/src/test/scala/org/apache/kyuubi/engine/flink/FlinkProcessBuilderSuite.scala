@@ -55,11 +55,11 @@ class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private val tempFlinkHome = Files.createTempDirectory("flink-home").toFile
   private val tempOpt =
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "opt")).toFile
-  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-client-1.17.2.jar"))
-  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-gateway-1.17.2.jar"))
+  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-client-1.20.5.jar"))
+  Files.createFile(Paths.get(tempOpt.toPath.toString, "flink-sql-gateway-1.20.5.jar"))
   private val tempLib =
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "lib")).toFile
-  Files.createFile(Paths.get(tempLib.toPath.toString, "flink-dist-1.17.2.jar"))
+  Files.createFile(Paths.get(tempLib.toPath.toString, "flink-dist-1.20.5.jar"))
   private val tempUsrLib =
     Files.createDirectories(Paths.get(tempFlinkHome.toPath.toString, "usrlib")).toFile
   private val tempUdfJar =

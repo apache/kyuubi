@@ -38,7 +38,7 @@ import org.apache.flink.table.gateway.service.session.Session
 import org.apache.flink.util.JarUtils
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SemanticVersion}
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
@@ -47,7 +47,7 @@ object FlinkEngineUtils extends Logging {
   val EMBEDDED_MODE_CLIENT_OPTIONS: Options = getEmbeddedModeClientOptions(new Options)
 
   private def SUPPORTED_FLINK_VERSIONS =
-    Set("1.17", "1.18", "1.19", "1.20", "2.0", "2.1", "2.2", "2.3").map(SemanticVersion.apply)
+    Set("1.20", "2.0", "2.1", "2.2", "2.3").map(SemanticVersion.apply)
 
   val FLINK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(EnvironmentInformation.getVersion)
 
@@ -55,8 +55,9 @@ object FlinkEngineUtils extends Logging {
     val flinkVersion = EnvironmentInformation.getVersion
     if (SUPPORTED_FLINK_VERSIONS.contains(FLINK_RUNTIME_VERSION)) {
       info(s"The current Flink version is $flinkVersion")
-      if (FlinkEngineUtils.FLINK_RUNTIME_VERSION <= "1.19") {
-        warn("The support for Flink 1.17, 1.18 and 1.19 is deprecated, and will be removed " +
+      if (FlinkEngineUtils.FLINK_RUNTIME_VERSION.majorVersion == 2 &&
+        FlinkEngineUtils.FLINK_RUNTIME_VERSION.minorVersion == 0) {
+        warn("The support for Flink 2.0 is deprecated, and will be removed " +
           "in a future version.")
       }
     } else {
@@ -111,25 +112,14 @@ object FlinkEngineUtils extends Logging {
     val libDirs: JList[URL] = Option(checkUrls(line, CliOptionsParser.OPTION_LIBRARY))
       .getOrElse(JCollections.emptyList())
     val dependencies: JList[URL] = discoverDependencies(jars, libDirs)
-    if (FLINK_RUNTIME_VERSION >= "1.19") {
-      invokeAs[DefaultContext](
-        classOf[DefaultContext],
-        "load",
-        (classOf[Configuration], flinkConf),
-        (classOf[JList[URL]], dependencies),
-        (classOf[Boolean], JBoolean.TRUE))
-    } else if (FLINK_RUNTIME_VERSION >= "1.17") {
-      invokeAs[DefaultContext](
-        classOf[DefaultContext],
-        "load",
-        (classOf[Configuration], flinkConf),
-        (classOf[JList[URL]], dependencies),
-        (classOf[Boolean], JBoolean.TRUE),
-        (classOf[Boolean], JBoolean.FALSE))
-    } else {
-      throw new KyuubiException(
-        s"Flink version ${EnvironmentInformation.getVersion} are not supported currently.")
-    }
+    // FLINK-36760 (2.0.0) changed the second parameter from List<URL> to List<URI>, use
+    // reflection to bridge Flink 1.20 and 2.x
+    invokeAs[DefaultContext](
+      classOf[DefaultContext],
+      "load",
+      (classOf[Configuration], flinkConf),
+      (classOf[JList[URL]], dependencies),
+      (classOf[Boolean], JBoolean.TRUE))
   }
 
   def getSessionContext(session: Session): SessionContext = getField(session, "sessionContext")
