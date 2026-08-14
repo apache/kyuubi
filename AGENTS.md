@@ -49,6 +49,10 @@ Get reviewer attention before changing:
 - `kyuubi-common/.../config/KyuubiConf` — config registry; changes require regenerating `settings.md`.
 - `kyuubi-server/.../api/v1/` — public REST surface; add auth checks before exposing.
 
+### Security Reviews
+
+Before classifying a security finding, read `SECURITY.md` and `docs/security/threat-model.md`. Apply the documented scope, deployment profiles, and trust boundaries.
+
 ## Build and Test
 
 Use the bundled Maven wrapper (`build/mvn`).
