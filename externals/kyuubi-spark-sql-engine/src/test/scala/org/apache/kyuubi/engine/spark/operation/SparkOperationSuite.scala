@@ -32,7 +32,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.schema.SchemaHelper.{TIMESTAMP_NTZ, VARIANT}
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper.VARIANT
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
@@ -94,9 +94,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c18", "interval day", nullable = true, "18")
       .add("c19", "interval year", nullable = true, "19")
     // since spark3.4.0
-    if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
-      schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
-    }
+    schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
     if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       schema = schema.add("c21", "variant", nullable = true, "21")
     }
@@ -169,7 +167,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
             case FloatType => assert(decimalDigits === 7)
             case DoubleType => assert(decimalDigits === 15)
             case TimestampType => assert(decimalDigits === 6)
-            case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) =>
+            case _: TimestampNTZType =>
               assert(decimalDigits === 6)
             case _ => assert(decimalDigits === 0) // nulls
           }
@@ -569,11 +567,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       val status = tOpenSessionResp.getStatus
       val errorMessage = status.getErrorMessage
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
-        assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
-      } else {
-        assert(errorMessage.contains(s"Database '$dbName' not found"))
-      }
+      assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
     }
   }
 

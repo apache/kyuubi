@@ -2017,41 +2017,6 @@
         </profile>
 
         <profile>
-            <id>spark-3.3</id>
-            <modules>
-                <module>extensions/spark/kyuubi-extension-spark-3-3</module>
-                <module>extensions/spark/kyuubi-spark-connector-hive</module>
-            </modules>
-            <properties>
-                <spark.version>3.3.4</spark.version>
-                <spark.binary.version>3.3</spark.binary.version>
-                <delta.version>2.3.0</delta.version>
-                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
-                <!--
-                  Iceberg drops support for Java 8 since 1.7.0, and drops support for Spark 3.3 since 1.8.0,
-                  here we choose 1.6.1 to ensure that tests happy when activate both -Pjava-8 and -Pspark-3.3.
-                  -->
-                <iceberg.version>1.6.1</iceberg.version>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>spark-3.4</id>
-            <modules>
-                <module>extensions/spark/kyuubi-extension-spark-3-4</module>
-                <module>extensions/spark/kyuubi-spark-connector-hive</module>
-            </modules>
-            <properties>
-                <spark.version>3.4.4</spark.version>
-                <spark.binary.version>3.4</spark.binary.version>
-                <delta.version>2.4.0</delta.version>
-                <delta.artifact>delta-core_${scala.binary.version}</delta.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
             <id>spark-3.5</id>
             <modules>
                 <module>extensions/spark/kyuubi-extension-spark-3-5</module>

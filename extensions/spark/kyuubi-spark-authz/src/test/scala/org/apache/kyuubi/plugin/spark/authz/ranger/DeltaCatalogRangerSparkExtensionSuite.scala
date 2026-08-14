@@ -23,7 +23,6 @@ import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.DeltaCatalogRangerSparkExtensionSuite._
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.isSparkV35OrGreater
 import org.apache.kyuubi.tags.DeltaTest
 import org.apache.kyuubi.util.AssertionUtils._
 
@@ -543,9 +542,7 @@ class DeltaCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       // "Cannot drop column from a struct type with a single field:
       // StructType(StructField(birthDate,TimestampType,true))".
       // For details, see https://github.com/delta-io/delta/pull/1822
-      if (isSparkV35OrGreater) {
-        doAs(admin, sql(replaceColumnsSql))
-      }
+      doAs(admin, sql(replaceColumnsSql))
     }
   }
 }

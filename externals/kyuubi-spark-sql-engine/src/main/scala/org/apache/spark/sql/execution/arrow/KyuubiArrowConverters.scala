@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.arrow
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
-import java.lang.{Boolean => JBoolean}
 import java.nio.channels.Channels
 
 import scala.collection.JavaConverters._
@@ -27,7 +26,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.arrow.vector._
 import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
-import org.apache.arrow.vector.types.pojo.{Schema => ArrowSchema}
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
@@ -36,8 +34,6 @@ import org.apache.spark.sql.execution.{CollectLimitExec, SparkPlanHelper}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
 import org.apache.spark.util.Utils
-
-import org.apache.kyuubi.util.reflect.DynMethods
 
 object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
@@ -63,7 +59,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       "slice",
       0,
       Long.MaxValue)
-    val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
+    val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
     vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, sliceAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
@@ -139,7 +135,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       while (bufferedRowSize < n && partsScanned < totalParts) {
         // The number of partitions to try in this iteration. It is ok for this number to be
         // greater than totalParts because we actually cap it at totalParts in runJob.
-        var numPartsToTry = limitInitialNumPartitions
+        // SPARK-40211 (3.4.0) introduced spark.sql.limit.initialNumPartitions
+        var numPartsToTry =
+          conf.getConfString("spark.sql.limit.initialNumPartitions", "1").toInt
         if (partsScanned > 0) {
           // If we didn't find any rows after the previous iteration, multiply by
           // limitScaleUpFactor and retry. Otherwise, interpolate the number of partitions we need
@@ -193,14 +191,6 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
   }
 
   /**
-   * Spark introduced the config `spark.sql.limit.initialNumPartitions` since 3.4.0. see SPARK-40211
-   */
-  private def limitInitialNumPartitions: Int = {
-    conf.getConfString("spark.sql.limit.initialNumPartitions", "1")
-      .toInt
-  }
-
-  /**
    * Different from [[org.apache.spark.sql.execution.arrow.ArrowConverters.toBatchIterator]],
    * each output arrow batch contains this batch row count.
    */
@@ -239,7 +229,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       context: TaskContext)
     extends Iterator[Array[Byte]] {
 
-    protected val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
+    protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
     private val allocator =
       ArrowUtils.rootAllocator.newChildAllocator(
         s"to${this.getClass.getSimpleName}",
@@ -322,34 +312,4 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     }
   }
 
-  // the signature of function [[ArrowUtils.toArrowSchema]] is changed in SPARK-41971 (since Spark
-  // 3.5)
-  private lazy val toArrowSchemaMethod = DynMethods.builder("toArrowSchema")
-    .impl( // for Spark 3.4 or previous
-      "org.apache.spark.sql.util.ArrowUtils",
-      classOf[StructType],
-      classOf[String])
-    .impl( // for Spark 3.5 or later
-      "org.apache.spark.sql.util.ArrowUtils",
-      classOf[StructType],
-      classOf[String],
-      classOf[Boolean],
-      classOf[Boolean])
-    .build()
-
-  /**
-   * this function uses reflective calls to the [[ArrowUtils.toArrowSchema]].
-   */
-  private def toArrowSchema(
-      schema: StructType,
-      timeZone: String,
-      errorOnDuplicatedFieldNames: JBoolean,
-      largeVarTypes: JBoolean): ArrowSchema = {
-    toArrowSchemaMethod.invoke[ArrowSchema](
-      ArrowUtils,
-      schema,
-      timeZone,
-      errorOnDuplicatedFieldNames,
-      largeVarTypes)
-  }
 }

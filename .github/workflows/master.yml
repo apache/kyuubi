@@ -55,8 +55,6 @@ jobs:
         python:
           - '3.9'
         spark:
-          - '3.3'
-          - '3.4'
           - '3.5'
         spark-archive: [""]
         exclude-tags: [""]
@@ -80,18 +78,6 @@ jobs:
             spark-archive: '-Pscala-2.13'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest'
             comment: 'normal'
-          - java: 8
-            python: '3.9'
-            spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.3-binary'
-          - java: 8
-            python: '3.9'
-            spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.4.4 -Dspark.archive.name=spark-3.4.4-bin-hadoop3.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.4-binary'
           - java: 17
             python: '3.11'
             spark: '3.5'
@@ -248,17 +234,6 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        java:
-          - 17
-        scala:
-          - '2.12'
-          - '2.13'
-        spark-compile:
-            - '3.5'
-        spark-runtime:
-            - '3.4'
-            - '3.3'
-        comment: [ "normal" ]
         include:
           - java: 17
             scala: "2.13"

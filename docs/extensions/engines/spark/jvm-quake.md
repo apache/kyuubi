@@ -23,7 +23,7 @@ So introducing JVMQuake provides more granular monitoring of GC behavior, enabli
 
 ## Usage
 
-JVM Quake is implemented through Spark plugins, This plugin technically supports Spark 3.0 onwards, but was only verified with Spark 3.3 to 4.0 in CI.
+JVM Quake is implemented through Spark plugins, This plugin technically supports Spark 3.0 onwards, but was only verified with Spark 3.5 to 4.2 in CI.
 
 ### Build with Apache Maven
 

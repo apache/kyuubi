@@ -38,7 +38,6 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 
 import org.apache.kyuubi.plugin.lineage.Lineage
-import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 trait LineageParser {
@@ -211,12 +210,7 @@ trait LineageParser {
         val commandPlan = getField[LogicalPlan](plan, "commandLogicalPlan")
         extractColumnsLineage(commandPlan, parentColumnsLineage, inputTablesByPlan)
       case p if p.nodeName == "AlterViewAsCommand" =>
-        val query =
-          if (SPARK_RUNTIME_VERSION <= "3.1") {
-            sparkSession.sessionState.analyzer.execute(getQuery(plan))
-          } else {
-            getQuery(plan)
-          }
+        val query = getQuery(plan)
         val view = getV1TableName(getField[TableIdentifier](plan, "name").unquotedString)
         extractColumnsLineage(query, parentColumnsLineage, inputTablesByPlan).map { case (k, v) =>
           k.withName(s"$view.${k.name}") -> v
@@ -228,12 +222,7 @@ trait LineageParser {
         val view = getV1TableName(getField[TableIdentifier](plan, "name").unquotedString)
         val outputCols =
           getField[Seq[(String, Option[String])]](plan, "userSpecifiedColumns").map(_._1)
-        val query =
-          if (SPARK_RUNTIME_VERSION <= "3.1") {
-            sparkSession.sessionState.analyzer.execute(getField[LogicalPlan](plan, "child"))
-          } else {
-            getField[LogicalPlan](plan, "plan")
-          }
+        val query = getField[LogicalPlan](plan, "plan")
 
         val lineages = extractColumnsLineage(
           query,

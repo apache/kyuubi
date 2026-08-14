@@ -31,27 +31,23 @@ jobs:
       matrix:
         branch:
           - master
-          - branch-1.8
-          - branch-1.9
+          - branch-1.12
         profiles:
-          - -Pflink-provided,spark-provided,hive-provided,spark-3.3
-          - -Pflink-provided,spark-provided,hive-provided,spark-3.4,tpcds
-        include:
-          - branch: master
-            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
-          - branch: branch-1.9
-            profiles: -Pflink-provided,spark-provided,hive-provided,spark-3.5
+          - -Pflink-provided,spark-provided,hive-provided,spark-3.5,tpcds
+          - -Pflink-provided,spark-provided,hive-provided,scala-2.13,spark-4.0
+          - -Pflink-provided,spark-provided,hive-provided,scala-2.13,spark-4.1
+          - -Pflink-provided,spark-provided,hive-provided,scala-2.13,spark-4.2,tpcds
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ matrix.branch }}
       - name: Free up disk space
         run: ./.github/scripts/free_disk_space.sh
-      - name: Setup JDK 8
+      - name: Setup JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 8
+          java-version: 17
           cache: 'maven'
       - name: Publish Snapshot Jar to Nexus - ${{ matrix.branch }}
         env:

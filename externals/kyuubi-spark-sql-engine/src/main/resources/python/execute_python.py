@@ -28,9 +28,6 @@ import traceback
 import base64
 from glob import glob
 
-if sys.version_info[0] < 3:
-    sys.exit("Python < 3 is unsupported.")
-
 os.environ["PYSPARK_PYTHON"] = os.environ.get("PYSPARK_PYTHON", sys.executable)
 
 # add pyspark to sys.path
@@ -59,15 +56,7 @@ else:
 # import kyuubi_util after preparing sys.path
 import kyuubi_util
 
-# ast api is changed after python 3.8, see https://github.com/ipython/ipython/pull/11593
-if sys.version_info >= (3, 8):
-    from ast import Module
-else:
-    # mock the new API, ignore second argument
-    # see https://github.com/ipython/ipython/issues/11590
-    from ast import Module as OriginalModule
-
-    Module = lambda nodelist, type_ignores: OriginalModule(nodelist)
+from ast import Module
 
 TOP_FRAME_REGEX = re.compile(r'\s*File "<stdin>".*in <module>')
 
@@ -136,9 +125,7 @@ class ExecutionError(Exception):
 
 class UnicodeDecodingStringIO(io.StringIO):
     def write(self, s):
-        if isinstance(s, bytes):
-            s = s.decode("utf-8")
-        super(UnicodeDecodingStringIO, self).write(s)
+        super().write(s)
 
 
 def clearOutputs():
@@ -428,9 +415,7 @@ def magic_matplot(name):
         imgdata = io.BytesIO()
         fig.savefig(imgdata, format="png")
         imgdata.seek(0)
-        encode = base64.b64encode(imgdata.getvalue())
-        if sys.version >= "3":
-            encode = encode.decode()
+        encode = base64.b64encode(imgdata.getvalue()).decode()
 
     except:
         exc_type, exc_value, tb = sys.exc_info()
