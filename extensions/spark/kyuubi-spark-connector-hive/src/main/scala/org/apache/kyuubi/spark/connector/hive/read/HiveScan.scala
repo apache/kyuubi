@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.GenerateUnsafeProjection
 import org.apache.spark.sql.connector.expressions.NamedReference
-import org.apache.spark.sql.connector.read.{PartitionReaderFactory, SupportsRuntimeFiltering}
+import org.apache.spark.sql.connector.read.{PartitionReaderFactory, Scan, SupportsRuntimeFiltering}
 import org.apache.spark.sql.execution.datasources.{FilePartition, PartitionedFile}
 import org.apache.spark.sql.execution.datasources.v2.FileScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper.HiveClientImpl
@@ -180,6 +180,27 @@ case class HiveScan(
   // -------------------------------------------------------------------------------
   // SupportsRuntimeFiltering implementation
   // -------------------------------------------------------------------------------
+
+  /**
+   * The default [[Scan.ColumnarSupportMode.PARTITION_DEFINED]] (SPARK-44505)
+   * would drive `DataSourceV2ScanExecBase.supportsColumnar` to materialise
+   * `inputPartitions` during planning (via `HiveScan.partitions` ->
+   * `HiveCatalogFileIndex.listHiveFiles`), triggering a full-table HDFS
+   * listing before runtime filters arrive via
+   * [[SupportsRuntimeFiltering.filter]] and cancelling DPP's end-to-end win.
+   *
+   * [[HivePartitionReaderFactory]] only implements the row-based
+   * `createReader` path (no `supportColumnarReads` / `createColumnarReader`),
+   * so `HiveScan` is always row-based. Returning `UNSUPPORTED`
+   * is semantically equivalent to the default behaviour but short-circuits
+   * `supportsColumnar` without touching `inputPartitions`.
+   *
+   * NOTE: If [[HivePartitionReaderFactory]] ever gains columnar support,
+   * remove this override so `supportsColumnar` reflects reality, otherwise
+   * columnar-capable partitions would be silently reported as row-based.
+   */
+  override def columnarSupportMode(): Scan.ColumnarSupportMode =
+    Scan.ColumnarSupportMode.UNSUPPORTED
 
   override def filterAttributes(): Array[NamedReference] = {
     HiveRuntimeFilterSupport.filterAttributes(readPartitionSchema.fieldNames.toSeq)
