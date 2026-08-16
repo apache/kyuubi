@@ -257,6 +257,7 @@
                             <include>io.netty:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
+                            <include>org.apache.arrow:arrow-compression</include>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
@@ -269,6 +270,23 @@
                             <exclude>io.netty:netty-transport-*-kqueue</exclude>
                             <exclude>io.netty:netty-transport-*-io_uring</exclude>
                             <exclude>io.netty:netty-transport-native-epoll:*:linux-riscv64</exclude>
+                            <!--
+                              The Arrow vector/memory/format modules and the zstd/commons libraries
+                              used by arrow-compression are all provided by the Spark runtime on
+                              every supported Spark version, so they are excluded from the engine
+                              jar to avoid classpath conflicts and native library relocation issues.
+                            -->
+                            <exclude>org.apache.arrow:arrow-format</exclude>
+                            <exclude>org.apache.arrow:arrow-memory-core</exclude>
+                            <exclude>org.apache.arrow:arrow-memory-netty</exclude>
+                            <exclude>org.apache.arrow:arrow-memory-netty-buffer-patch</exclude>
+                            <exclude>org.apache.arrow:arrow-vector</exclude>
+                            <exclude>com.github.luben:zstd-jni</exclude>
+                            <exclude>commons-codec:commons-codec</exclude>
+                            <exclude>commons-io:commons-io</exclude>
+                            <exclude>org.apache.commons:commons-compress</exclude>
+                            <exclude>org.apache.commons:commons-lang3</exclude>
+                            <exclude>org.immutables:value</exclude>
                         </excludes>
                     </artifactSet>
                     <filters>
@@ -289,6 +307,7 @@
                                 <exclude>NOTICE.txt</exclude>
                                 <exclude>mozilla/**</exclude>
                                 <exclude>**/module-info.class</exclude>
+                                <exclude>arrow-git.properties</exclude>
                             </excludes>
                         </filter>
                     </filters>
@@ -410,6 +429,17 @@
                         <relocation>
                             <pattern>net.bytebuddy</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.net.bytebuddy</shadedPattern>
+                        </relocation>
+                        <!--
+                          Relocate the bundled arrow-compression classes so that Kyuubi's copy
+                          never conflicts with the arrow-compression jar shipped by Spark 4.1+.
+                          The relocated codec classes still resolve the unrelocated
+                          org.apache.arrow.vector.* and com.github.luben.zstd.* types, which are
+                          provided by the Spark runtime on all supported Spark versions.
+                        -->
+                        <relocation>
+                            <pattern>org.apache.arrow.compression</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow.compression</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>

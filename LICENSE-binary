@@ -304,6 +304,7 @@ io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 io.vertx:vertx-core
 io.vertx:vertx-grpc
+org.apache.arrow:arrow-compression
 org.apache.kafka:kafka-clients
 org.xerial:sqlite-jdbc
 com.openai:openai-java
