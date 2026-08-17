@@ -180,23 +180,10 @@ object KyuubiParquetScan {
     if (variantExtractionCls == null) null
     else java.lang.reflect.Array.newInstance(variantExtractionCls, 0).asInstanceOf[AnyRef]
 
-  // scalastyle:off parameter.number
-  private[hive] def newParquetScan(
-      sparkSession: SparkSession,
-      hadoopConf: Configuration,
-      fileIndex: PartitioningAwareFileIndex,
-      dataSchema: StructType,
-      readDataSchema: StructType,
-      readPartitionSchema: StructType,
-      pushedFilters: Array[Filter],
-      options: CaseInsensitiveStringMap,
-      pushedAggregate: Option[Aggregation],
-      partitionFilters: Seq[Expression],
-      dataFilters: Seq[Expression]): ParquetScan = {
+  private lazy val parquetScanCtor: DynConstructors.Ctor[ParquetScan] =
     if (variantExtractionCls != null) {
-      // Spark 4.1+
       DynConstructors.builder()
-        .impl(
+        .impl( // SPARK-53880 / SPARK-54656 (4.1.0): adds trailing Array[VariantExtraction]
           classOf[ParquetScan],
           classOf[SparkSession],
           classOf[Configuration],
@@ -210,25 +197,10 @@ object KyuubiParquetScan {
           classOf[Seq[Expression]],
           classOf[Seq[Expression]],
           emptyVariantExtractions.getClass)
-        .buildChecked()
-        .invokeChecked[ParquetScan](
-          null,
-          sparkSession,
-          hadoopConf,
-          fileIndex,
-          dataSchema,
-          readDataSchema,
-          readPartitionSchema,
-          pushedFilters,
-          options,
-          pushedAggregate,
-          partitionFilters,
-          dataFilters,
-          emptyVariantExtractions)
+        .buildChecked[ParquetScan]()
     } else {
-      // Spark 4.0 and previous
       DynConstructors.builder()
-        .impl(
+        .impl( // Spark 4.0 and previous
           classOf[ParquetScan],
           classOf[SparkSession],
           classOf[Configuration],
@@ -241,21 +213,37 @@ object KyuubiParquetScan {
           classOf[Option[Aggregation]],
           classOf[Seq[Expression]],
           classOf[Seq[Expression]])
-        .buildChecked()
-        .invokeChecked[ParquetScan](
-          null,
-          sparkSession,
-          hadoopConf,
-          fileIndex,
-          dataSchema,
-          readDataSchema,
-          readPartitionSchema,
-          pushedFilters,
-          options,
-          pushedAggregate,
-          partitionFilters,
-          dataFilters)
+        .buildChecked[ParquetScan]()
     }
+
+  // scalastyle:off parameter.number
+  private[hive] def newParquetScan(
+      sparkSession: SparkSession,
+      hadoopConf: Configuration,
+      fileIndex: PartitioningAwareFileIndex,
+      dataSchema: StructType,
+      readDataSchema: StructType,
+      readPartitionSchema: StructType,
+      pushedFilters: Array[Filter],
+      options: CaseInsensitiveStringMap,
+      pushedAggregate: Option[Aggregation],
+      partitionFilters: Seq[Expression],
+      dataFilters: Seq[Expression]): ParquetScan = {
+    // `DynConstructors` truncates trailing args to match the resolved ctor arity,
+    // so always passing `emptyVariantExtractions` is safe on pre-4.1 Spark too.
+    parquetScanCtor.newInstance(
+      sparkSession,
+      hadoopConf,
+      fileIndex,
+      dataSchema,
+      readDataSchema,
+      readPartitionSchema,
+      pushedFilters,
+      options,
+      pushedAggregate,
+      partitionFilters,
+      dataFilters,
+      emptyVariantExtractions)
   }
   // scalastyle:on parameter.number
 }
