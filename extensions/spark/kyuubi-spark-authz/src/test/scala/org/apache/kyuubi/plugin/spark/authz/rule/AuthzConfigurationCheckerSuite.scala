@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz.rule
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
+import org.apache.kyuubi.plugin.spark.authz.ParanoidMode.UNCLASSIFIED_NODE_BEHAVIOR_KEY
 import org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization
 import org.apache.kyuubi.plugin.spark.authz.rule.config.AuthzConfigurationChecker
 
@@ -53,6 +54,9 @@ class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionPro
     val p9 = sql(
       "set spark.kyuubi.authz.skipCataloglessV2Relation.enabled=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p9))
+    val p10 = sql(
+      s"set $UNCLASSIFIED_NODE_BEHAVIOR_KEY=allow").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(p10))
   }
 
   test("apply spark configuration restriction rules for RESET") {
@@ -67,6 +71,8 @@ class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionPro
     val pReset3 = sql(
       "reset spark.kyuubi.authz.skipCataloglessV2Relation.enabled").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(pReset3))
+    val pReset6 = sql(s"reset $UNCLASSIFIED_NODE_BEHAVIOR_KEY").queryExecution.analyzed
+    intercept[AccessControlException](extension.apply(pReset6))
 
     // RESET of admin-configured restricted keys must be blocked
     val pReset4 = sql("reset spark.sql.abc").queryExecution.analyzed

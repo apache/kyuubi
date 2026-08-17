@@ -22,6 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{ResetCommand, SetCommand}
 
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
+import org.apache.kyuubi.plugin.spark.authz.ParanoidMode.UNCLASSIFIED_NODE_BEHAVIOR_KEY
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY
 
 /**
@@ -36,7 +37,10 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
       RESTRICT_LIST_KEY,
       "spark.sql.runSQLOnFiles",
       "spark.sql.extensions",
-      SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY) ++
+      SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY,
+      // Paranoid mode already reads this from SparkConf, so a session-level SET cannot
+      // weaken it. Rejecting the SET outright turns a silent no-op into a clear error.
+      UNCLASSIFIED_NODE_BEHAVIOR_KEY) ++
       spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toSet).getOrElse(Set.empty)
 
   override def apply(plan: LogicalPlan): Unit = plan match {

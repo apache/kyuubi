@@ -18,7 +18,7 @@
 # Auxiliary SQL Functions
 
 Kyuubi provides several auxiliary SQL functions as supplement to
-Flink's [Built-in Functions](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/dev/table/functions/systemfunctions/)
+Flink's [Built-in Functions](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/dev/table/functions/systemfunctions/)
 
 |        Name         |                         Description                         | Return Type | Since |
 |---------------------|-------------------------------------------------------------|-------------|-------|

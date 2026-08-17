@@ -9,7 +9,7 @@
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateNamespace",
   "databaseDescs" : [ {
@@ -42,7 +42,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeNamespace",
   "databaseDescs" : [ {
@@ -54,7 +54,7 @@
   } ],
   "opType" : "DESCDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropNamespace",
   "databaseDescs" : [ {
@@ -66,7 +66,7 @@
   } ],
   "opType" : "DROPDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetCatalogAndNamespace",
   "databaseDescs" : [ {
@@ -94,7 +94,7 @@
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceLocation",
   "databaseDescs" : [ {
@@ -111,7 +111,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetNamespaceProperties",
   "databaseDescs" : [ {
@@ -123,7 +123,7 @@
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand",
   "databaseDescs" : [ {
@@ -135,7 +135,7 @@
   } ],
   "opType" : "ALTERDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand",
   "databaseDescs" : [ {
@@ -152,7 +152,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTablesCommand",
   "databaseDescs" : [ {
@@ -164,7 +164,7 @@
   } ],
   "opType" : "ANALYZE_TABLE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDatabaseCommand",
   "databaseDescs" : [ {
@@ -181,7 +181,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeDatabaseCommand",
   "databaseDescs" : [ {
@@ -193,7 +193,7 @@
   } ],
   "opType" : "DESCDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropDatabaseCommand",
   "databaseDescs" : [ {
@@ -205,7 +205,7 @@
   } ],
   "opType" : "DROPDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetDatabaseCommand",
   "databaseDescs" : [ {
@@ -217,7 +217,7 @@
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SetNamespaceCommand",
   "databaseDescs" : [ {
@@ -229,5 +229,5 @@
   } ],
   "opType" : "SWITCHDATABASE",
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 } ]

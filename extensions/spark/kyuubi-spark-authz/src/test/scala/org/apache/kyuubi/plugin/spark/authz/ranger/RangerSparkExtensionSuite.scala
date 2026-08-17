@@ -25,15 +25,12 @@ import scala.util.Try
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.logging.log4j.Level
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
+import org.apache.spark.sql.{Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
-import org.apache.spark.sql.catalyst.expressions.PythonUDF
 import org.apache.spark.sql.catalyst.plans.logical.Statistics
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.functions.col
-import org.apache.spark.sql.types.{IntegerType, StructField, StructType}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
@@ -230,6 +227,30 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite
           // auth once only.
           assert(plan3.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty)
         })
+    }
+  }
+
+  test("[KYUUBI #7593] a cached relation authorizes the query it caches, per reader") {
+    // The CacheManager lives in SharedState and answers every session in the engine, so a
+    // second user's identical query is served from an InMemoryRelation that mentions none
+    // of the tables the cached query read. Whoever populated the cache is irrelevant to
+    // whether this user may read it.
+    val testTable = "cached_table"
+    val select = s"SELECT * FROM $testTable"
+
+    withCleanTmpResources(Seq((testTable, "table"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $testTable (id string) USING parquet"))
+      doAs(admin, sql(select).cache().collect())
+
+      // the fixture is only meaningful if this query really is answered from the cache
+      val cachedPlan =
+        doAs(admin, spark.newSession().sql(select).queryExecution.optimizedPlan)
+      assert(cachedPlan.isInstanceOf[InMemoryRelation])
+
+      val e = intercept[AccessControlException](
+        doAs(someone, spark.newSession().sql(select).collect()))
+      assert(e.getMessage.contains(
+        s"does not have [select] privilege on [default/$testTable/id]"))
     }
   }
 
@@ -946,15 +967,9 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           doAs(
             someone,
             sql(s"SELECT id as new_id, name, max_scope FROM $db1.$view1".stripMargin).show()))
-        if (isSparkV35OrGreater) {
-          assert(e2.getMessage.contains(
-            s"does not have [select] privilege on " +
-              s"[$db1/$view1/id,$db1/$view1/max_scope,$db1/$view1/name]"))
-        } else {
-          assert(e2.getMessage.contains(
-            s"does not have [select] privilege on " +
-              s"[$db1/$view1/name,$db1/$view1/id,$db1/$view1/max_scope]"))
-        }
+        assert(e2.getMessage.contains(
+          s"does not have [select] privilege on " +
+            s"[$db1/$view1/id,$db1/$view1/max_scope,$db1/$view1/name]"))
       }
     }
   }
@@ -1311,13 +1326,8 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
               s"""
                  |CREATE TABLE IF NOT EXISTS $db1.$table1(id int, scope int)
                  |LOCATION '$path'""".stripMargin)))(
-            if (!isSparkV35OrGreater) {
-              s"does not have [create] privilege on [$db1/$table1], " +
-                s"[write] privilege on [[$path, $path/]]"
-            } else {
-              s"does not have [create] privilege on [$db1/$table1], " +
-                s"[write] privilege on [[file://$path, file://$path/]]"
-            })
+            s"does not have [create] privilege on [$db1/$table1], " +
+              s"[write] privilege on [[file://$path, file://$path/]]")
           doAs(
             admin,
             sql(
@@ -1346,11 +1356,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                    |AS
                    |SELECT * FROM $db1.$table1
                    |""".stripMargin)))(
-            if (!isSparkV35OrGreater) {
-              s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
-                s"[create] privilege on [$db1/$table2/id,$db1/$table2/scope], " +
-                s"[write] privilege on [[$path, $path/]]"
-            } else if (isSparkV40OrGreater) {
+            if (isSparkV40OrGreater) {
               // Spark 4.0 no longer propagates CTAS output columns into the create privilege
               s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope], " +
                 s"[create] privilege on [$db1/$table2], " +
@@ -1525,55 +1531,6 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
                |""".stripMargin))
 
         checkAnswer(permViewOnlyUser, s"SELECT * FROM $db1.$view1", Array.empty[Row])
-      }
-    }
-  }
-
-  test("[KYUUBI #5594][AUTHZ] BuildQuery should respect normal node's input ") {
-    assume(!isSparkV35OrGreater, "mapInPandas not supported after spark 3.5")
-    val db1 = defaultDb
-    val table1 = "table1"
-    val view1 = "view1"
-    withSingleCallEnabled {
-      withCleanTmpResources(Seq((s"$db1.$table1", "table"), (s"$db1.$view1", "view"))) {
-        doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$table1 (id int, scope int)"))
-        doAs(admin, sql(s"CREATE VIEW $db1.$view1 AS SELECT * FROM $db1.$table1"))
-
-        val table = spark.read.table(s"$db1.$table1")
-        val mapTableInPandasUDF = PythonUDF(
-          "mapInPandasUDF",
-          null,
-          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
-          table.queryExecution.analyzed.output,
-          205,
-          true)
-        interceptContains[AccessControlException](
-          doAs(
-            someone,
-            invokeAs(
-              table,
-              "mapInPandas",
-              (classOf[PythonUDF], mapTableInPandasUDF))
-              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
-          s"does not have [select] privilege on [$db1/$table1/id,$db1/$table1/scope]")
-
-        val view = spark.read.table(s"$db1.$view1")
-        val mapViewInPandasUDF = PythonUDF(
-          "mapInPandasUDF",
-          null,
-          StructType(Seq(StructField("id", IntegerType), StructField("scope", IntegerType))),
-          view.queryExecution.analyzed.output,
-          205,
-          true)
-        interceptContains[AccessControlException](
-          doAs(
-            someone,
-            invokeAs(
-              view,
-              "mapInPandas",
-              (classOf[PythonUDF], mapViewInPandasUDF))
-              .asInstanceOf[DataFrame].select(col("id"), col("scope")).limit(1).show(true)))(
-          s"does not have [select] privilege on [$db1/$view1/id,$db1/$view1/scope]")
       }
     }
   }

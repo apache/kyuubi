@@ -35,7 +35,7 @@ jobs:
       max-parallel: 15
       matrix:
         profiles:
-          - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,spark-3.4,spark-3.3,tpcds,kubernetes-it'
+          - '-Pflink-provided,hive-provided,spark-provided,spark-3.5,tpcds,kubernetes-it'
 
     steps:
       - uses: actions/checkout@v7
@@ -50,7 +50,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python 3
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: '3.9'
           cache: 'pip'
@@ -66,8 +66,6 @@ jobs:
         run: |
           export MAVEN_ARGS="-DskipTests -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -Drat.skip=true -Dmaven.scalastyle.skip=true -Dspotless.check.skip=true -Pflink-provided,hive-provided,spark-provided"
           build/mvn clean install -Ptpcds
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-3 -am -Pspark-3.3
-          build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-4 -am -Pspark-3.4
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-3-5,extensions/spark/kyuubi-spark-connector-hive -am -Pspark-3.5
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-0 -am -Pspark-4.0 -Pscala-2.13
           build/mvn clean install -pl extensions/spark/kyuubi-extension-spark-4-1 -am -Pspark-4.1 -Pscala-2.13

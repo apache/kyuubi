@@ -186,12 +186,8 @@ trait SparkQueryTests extends SparkDataTypeTests with HiveJDBCTestHelper {
     withJdbcStatement("t") { statement =>
       try {
         val assertTableOrViewNotfound: (Exception, String) => Unit = (e, tableName) => {
-          if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
-            assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
-            assert(e.getMessage.contains(s"The table or view `$tableName` cannot be found."))
-          } else {
-            assert(e.getMessage.contains("Table or view not found"))
-          }
+          assert(e.getMessage.contains("[TABLE_OR_VIEW_NOT_FOUND]"))
+          assert(e.getMessage.contains(s"The table or view `$tableName` cannot be found."))
         }
         statement.execute("SET kyuubi.operation.plan.only.mode=optimize")
         val set = statement.executeQuery(ddl)

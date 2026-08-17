@@ -38,6 +38,7 @@ build/scala-*/**
 **/**/engine_operation_logs/**/**
 **/*.output.schema
 **/classification_backlog_spark_*.txt
+**/spec_verified_spark_versions.txt
 **/apache-kyuubi-*-bin*/**
 **/benchmarks/**
 **/org.apache.spark.status.AppHistoryServerPlugin
@@ -50,6 +51,7 @@ build/scala-*/**
 **/web-ui/dist/**
 **/web-ui/coverage/**
 **/pnpm-lock.yaml
+**/pnpm-workspace.yaml
 **/node_modules/**
 **/gen/*
 **/*.tokens

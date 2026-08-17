@@ -133,8 +133,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("arrow-based query metrics") {
-    // TODO: the issue is being investigated by Fu Chen
-    assume(SPARK_ENGINE_RUNTIME_VERSION < "4.1")
     val listener = new SQLMetricsListener
     withJdbcStatement() { statement =>
       withSparkListener(listener) {
@@ -263,7 +261,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("result offset support") {
-    assume(SPARK_ENGINE_RUNTIME_VERSION >= "3.4")
     var numStages = 0
     val listener = new SparkListener {
       override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
@@ -530,12 +527,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
       classOf[String],
       classOf[Boolean],
       classOf[TaskContext])
-    .hiddenImpl( // for Spark 3.4 or previous
-      "org.apache.spark.sql.execution.arrow.ArrowConverters$",
-      classOf[Iterator[Array[Byte]]],
-      classOf[StructType],
-      classOf[String],
-      classOf[TaskContext])
     .buildChecked()
 
   private lazy val arrowConvertersObject = DynFields.builder()
@@ -566,13 +557,6 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
         schema,
         timeZoneId,
         errorOnDuplicatedFieldNames,
-        context)
-    }.recover { case _: Exception => // for Spark 3.4 or previous
-      fromBatchIteratorMethod.invokeChecked[Iterator[InternalRow]](
-        arrowConvertersObject,
-        arrowBatchIter,
-        schema,
-        timeZoneId,
         context)
     }.get
 

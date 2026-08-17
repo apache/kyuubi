@@ -95,6 +95,14 @@ front; the fourth was discovered during implementation.
    columns). But the subtree still *executes* — `SELECT 'x' FROM t` — so an unclassified
    node under a constant projection was invisible to privilege building entirely.
 
+   The sweep added here (§4.2) closes the *classification* half of this: a node under a
+   constant projection is now seen and reported. It does not close the *privilege* half.
+   `SELECT 1 FROM protected_table` still produces no privilege object for the table, so no
+   table-level authorization request is made for it, exactly as before this change. That is
+   a pre-existing gap in privilege building, not in classification, and closing it means
+   emitting a table-level (columnless) privilege object for the pruned subtree — a change
+   to what queries are allowed, which belongs in its own PR.
+
 ### Case study: CALL on Spark 4
 
 The sharpest real example, verified against the Spark 4.1 classpath. On Spark 3.x with
@@ -178,14 +186,33 @@ membership, not by supertype. (For `CALL` specifically it is still too late at o
 time, per §2; the arm exists so the *next* drift of this shape degrades to an ordinary
 spec-driven check instead of silence.)
 
-### 4.3 The allowlist
+### 4.3 Cached relations
+
+`InMemoryRelation` was an allowlist candidate on the reading that "the originating plan was
+authorized when the cache was populated". It is not: `CacheManager` lives in `SharedState`
+and answers every session in the engine, so who populated an entry says nothing about who
+may read it. Cache substitution happens in `CacheManager.useCachedData`, which runs *before*
+the optimizer, and `RuleAuthorization` is an optimizer rule — so a second user's identical
+query arrives at privilege building as a bare cached leaf, with every relation the query
+read already collapsed away. Allowlisting it would have made "user A cached it" a working
+grant to user B.
+
+`buildQuery` therefore has a dedicated arm: it recovers the analyzed plan the entry was
+built from out of the CacheManager and authorizes *that*, so the reader is asked for
+exactly the privileges the cached query itself required. Entries are matched on the cache
+builder, not the relation, because `useCachedData` hands the optimizer a copy with its
+output re-mapped onto the fragment it replaced. If the lookup finds nothing, the node is
+reported as an extraction failure and paranoid mode applies — a cached read whose origin
+cannot be established fails closed under `deny`.
+
+### 4.4 The allowlist
 
 `known_harmless_spec.json` lives alongside the command spec files, is loaded the same way,
 and is maintained by the same generator (`KnownHarmlessNodes` in the test tree, written by
 `JsonSpecFileGenerator`). Entries are exact class names with a **required `reason` field**
 — enforced by a `require` in `HarmlessNodeSpec` — so each entry is a reviewed decision an
 auditor can read, not a reflexive silencing. Each entry also names the exact Spark minor
-versions its review applies to (§4.5); on any other version the entry is inert.
+versions its review applies to (§4.6); on any other version the entry is inert.
 
 Three patterns emerged during triage that future entries should be checked against:
 
@@ -213,7 +240,7 @@ addition to touch the coverage suite where the reviewer sees the policy.
 class names only. The existing `nodeName == "UnresolvedRelation"` match stays and counts
 as classified.
 
-### 4.4 Extraction-failure semantics (layer 3)
+### 4.5 Extraction-failure semantics (layer 3)
 
 Specs are written so an object "wins at least once" across Spark versions and command
 shapes: a command may carry several descriptors for the same object, of which only one is
@@ -241,7 +268,7 @@ The same per-command logic applies to scan specs in `buildQuery` via
 `ScanSpec.tablesWithFailures` / `urisWithFailures`: a matched scan that yields no table, no
 URI, and at least one exception is a violation.
 
-### 4.5 Version-scoped audits (`verifiedSparkVersions`)
+### 4.6 Version-scoped audits (`verifiedSparkVersions`)
 
 The CALL case (§2) shows that "known" and "harmless" are assertions about a class *on a
 specific Spark version*: the class under the same fully qualified name is free to become
@@ -255,19 +282,19 @@ has no boundary to misread. The format is validated at construction (`SparkVersi
 and the enumeration gives the right default for free: a new Spark minor is unverified until
 a human adds it — which is exactly when the re-review should happen. A version joins an
 entry's list by being tested or reviewed, never by interpolation (this is why an entry can
-legitimately list `3.3, 3.4, 3.5, 4.1` without `4.0`).
+legitimately list `3.5, 4.1` without `4.0`).
 
 The field's force differs by spec kind, deliberately:
 
 - **Allowlist entries gate.** An entry not verified for the running Spark's `major.minor`
   is inert: the node counts as unclassified and paranoid mode applies (fail closed,
-  per node). The violation message says so explicitly — "verified for 3.3, 3.4, 3.5 but
+  per node). The violation message says so explicitly — "verified for 3.5, 4.0, 4.1 but
   not for 4.2; re-review the entry" is far more actionable than "unclassified". An
   allowlist entry *grants silence*, so its scope must be exactly as wide as its review.
 - **Command and scan spec entries are advisory.** A spec still engages on an unverified
   version. A spec *imposes checks*, so staying active on an unaudited version is the safe
   direction — going inert there would fail everything closed and make new Spark versions
-  unusable, while actual drift is caught by the extraction-failure tracking (§4.4) and the
+  unusable, while actual drift is caught by the extraction-failure tracking (§4.5) and the
   build-time checks (§6). The metadata records what was audited when, and gives the
   build-time tooling a place to grow (e.g. flagging specs engaged far outside their
   audited range).
@@ -275,7 +302,7 @@ The field's force differs by spec kind, deliberately:
 Where the values come from differs as well. A new spec declares `verifiedSparkVersions` at
 its definition site, naming the minors it was actually reviewed against. The command and
 scan specs that predate the Spark 4 port instead take theirs from a frozen ledger,
-`src/test/resources/spec_verified_spark_versions.txt`, which records the `3.3, 3.4, 3.5`
+`src/test/resources/spec_verified_spark_versions.txt`, which records the `3.5`
 baseline those entries inherited wholesale rather than earned per minor; the ledger's header
 explains why that distinction is preserved rather than laundered into as many individual
 per-minor claims. The ledger is deliberately closed rather than a default: a spec that
@@ -310,7 +337,7 @@ time instead of in production:
    **acknowledged vulnerability on that Spark version, not a pass**. Currently:
    `logical.Call` on Spark 4.
 2. **Allowlist re-review.** Allowlisted classes that are (or became) `Command`s on this
-   classpath fail unless explicitly exempted in the suite (§4.3), and no class may have
+   classpath fail unless explicitly exempted in the suite (§4.4), and no class may have
    both a spec and an allowlist entry.
 3. **Enumeration (total accounting).** Scan every code source that can contribute plan
    nodes — the Spark jars, whichever catalog plugins are on this profile's classpath, and
@@ -319,7 +346,7 @@ time instead of in production:
    lands in exactly one bucket:
    - *spec'd* — a command/scan spec (or nodeName match) builds privileges for it:
      definitively authz-relevant;
-   - *allowlisted* — reviewed as harmless for this profile's Spark minor (§4.5);
+   - *allowlisted* — reviewed as harmless for this profile's Spark minor (§4.6);
    - *pass-through* — neither `Command`, `LeafNode`, nor analysis-time-executable:
      `buildQuery` recurses through it, and whatever carries relevance beneath it is
      itself in the enumeration;
@@ -349,16 +376,19 @@ provably complete.
 
 ## 7. Known Limitations and Follow-Ups
 
-- **Analysis-time execution is unreachable at runtime.** `CALL` on Spark 4 runs before the
-  optimizer; only check §6.1 names it. Closing the gap needs an analysis-time rule or a
-  hard block on Spark 4 — tracked via the `acknowledgedGaps` entry.
+- **`CALL` on Spark 4 is outside the fail-closed guarantee.** The procedure runs during
+  analysis, before any authorization rule; by the time paranoid mode sees the plan the side
+  effect has already happened, and no amount of unwrapping at optimizer time can undo it.
+  `deny` therefore does *not* make `CALL` fail closed on Spark 4 — it reports after the
+  fact. Only build-time check §6.1 names the gap. Closing it needs an analysis-time rule or
+  a hard block on Spark 4; tracked via the `acknowledgedGaps` entry.
 - **A startup Spark-major-version assertion** (refuse to initialize on an unsupported
   Spark major) is a cheap, orthogonal hardening recommended for released branch lines: the
   released jar today loads on Spark 4 and *visibly enforces* policies on ordinary
   statements while silently allowing `CALL` — apparent enforcement plus a silent gap, in
   exactly the deployment the docs disclaim.
 - **Partial extractor drift** with a surviving sibling descriptor is not reported at
-  runtime (§4.4).
+  runtime (§4.5).
 - **Row-filter and data-masking rule paths** (`RuleApplyRowFilter`,
   `RuleApplyDataMaskingStage0/1`) share the recognition machinery but have their own
   traversals; they are not covered by this change and should get the same treatment as a

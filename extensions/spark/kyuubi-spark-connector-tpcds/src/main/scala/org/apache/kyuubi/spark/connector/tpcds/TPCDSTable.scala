@@ -32,6 +32,8 @@ import org.apache.spark.sql.connector.read.ScanBuilder
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
+import org.apache.kyuubi.util.reflect.DynConstructors
+
 class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
   extends SparkTable with SupportsRead {
 
@@ -79,9 +81,9 @@ class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
       case (DATE, None, None) => DateType
       case (DECIMAL, Some(precision), Some(scale)) => DecimalType(precision, scale)
       case (VARCHAR, Some(precision), None) =>
-        if (tpcdsConf.useAnsiStringType) VarcharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) TPCDSTable.varcharType(precision) else StringType
       case (CHAR, Some(precision), None) =>
-        if (tpcdsConf.useAnsiStringType) CharType(precision) else StringType
+        if (tpcdsConf.useAnsiStringType) TPCDSTable.charType(precision) else StringType
       case (t, po, so) =>
         throw new IllegalArgumentException(s"Unsupported TPC-DS type: ($t, $po, $so)")
     }
@@ -93,4 +95,30 @@ class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
       case _ => if (optional.isPresent) Option(optional.get) else None
     }
   }
+}
+
+object TPCDSTable {
+  // Only the default UTF-8 binary collation is needed, so always pass an empty
+  // `Option[Int]`; `DynConstructors` drops the trailing arg on the single-arg ctor.
+  private lazy val charTypeCtor: DynConstructors.Ctor[CharType] =
+    DynConstructors.builder()
+      // SPARK-54870 (4.2.0): (Int, Option[Int]) ctor with collation
+      .impl(classOf[CharType], classOf[Int], classOf[Option[Int]])
+      // Spark < 4.2.0: (Int) ctor
+      .impl(classOf[CharType], classOf[Int])
+      .build[CharType]()
+
+  private lazy val varcharTypeCtor: DynConstructors.Ctor[VarcharType] =
+    DynConstructors.builder()
+      // SPARK-54870 (4.2.0): (Int, Option[Int]) ctor with collation
+      .impl(classOf[VarcharType], classOf[Int], classOf[Option[Int]])
+      // Spark < 4.2.0: (Int) ctor
+      .impl(classOf[VarcharType], classOf[Int])
+      .build[VarcharType]()
+
+  def charType(length: Int): CharType =
+    charTypeCtor.newInstance(Integer.valueOf(length), Option.empty[Int])
+
+  def varcharType(length: Int): VarcharType =
+    varcharTypeCtor.newInstance(Integer.valueOf(length), Option.empty[Int])
 }

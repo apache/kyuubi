@@ -34,8 +34,11 @@ object KnownHarmlessNodes {
   // below was reviewed against the 3.x baseline when the allowlist was introduced and
   // re-reviewed (and the exercised ones re-run in deny mode, full module suite per
   // profile) for the 4.x port. A version joins an entry's list by being tested or
-  // reviewed, never by interpolation.
-  private val spark3xAnd4x = Seq("3.3", "3.4", "3.5", "4.0", "4.1", "4.2")
+  // reviewed, never by interpolation - which is why 3.3 and 3.4 are absent: KYUUBI #7631
+  // dropped their profiles, so nothing here can be built or exercised against them. A
+  // downstream branch that keeps those profiles alive has to re-add them here (and
+  // regenerate known_harmless_spec.json) or every entry below goes inert on that build.
+  private val spark3xAnd4x = Seq("3.5", "4.0", "4.1", "4.2")
 
   // Nodes that only exist on Spark 4.
   private val spark4x = Seq("4.0", "4.1", "4.2")
@@ -121,11 +124,10 @@ object KnownHarmlessNodes {
       "Wraps a pre-existing RDD; RDD-level access is outside the plugin's scope and is an" +
         " existing, separate concern",
       spark3xAnd4x),
-    HarmlessNodeSpec(
-      "org.apache.spark.sql.execution.columnar.InMemoryRelation",
-      "Cached query results; the originating plan was authorized when the cache was" +
-        " populated",
-      spark3xAnd4x),
+    // InMemoryRelation is deliberately NOT here. The cache lives in SharedState and is
+    // reused across sessions, so "the originating plan was authorized when the cache was
+    // populated" says nothing about the user reading it now; PrivilegesBuilder authorizes
+    // the cached query instead.
     HarmlessNodeSpec(
       "org.apache.spark.sql.execution.command.DropTempViewCommand",
       "Operates only on session-local temporary views, which are deliberately not authz" +

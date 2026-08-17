@@ -39,6 +39,12 @@ import org.slf4j.LoggerFactory
  *
  * configured via `spark.kyuubi.authz.unclassifiedNode.behavior`.
  *
+ * The behavior is read from the application's [[org.apache.spark.SparkConf]], never from
+ * the session configuration: `deny` is an authorization boundary, so the subject of the
+ * authorization decision must not be able to move it. `SparkConf` is fixed when the engine
+ * starts and is shared by every session in the application, so a client can reach it
+ * through neither SQL `SET` nor the Spark Connect config API.
+ *
  * Nodes that are genuinely not authz-relevant are declared in
  * `known_harmless_spec.json`, each with a human-reviewed reason.
  */
@@ -91,7 +97,8 @@ object ParanoidMode {
   import ViolationKind.ViolationKind
 
   def behavior(spark: SparkSession): Behavior = {
-    val raw = spark.conf.getOption(UNCLASSIFIED_NODE_BEHAVIOR_KEY).getOrElse(WARN.toString)
+    // SparkConf, not SparkSession.conf: see the note on session-level overrides above.
+    val raw = spark.sparkContext.getConf.get(UNCLASSIFIED_NODE_BEHAVIOR_KEY, WARN.toString)
     Behavior.values.find(_.toString.equalsIgnoreCase(raw.trim)).getOrElse {
       throw new IllegalArgumentException(
         s"Invalid value '$raw' for $UNCLASSIFIED_NODE_BEHAVIOR_KEY," +

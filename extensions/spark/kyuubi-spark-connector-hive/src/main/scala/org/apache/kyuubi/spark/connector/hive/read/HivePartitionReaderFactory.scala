@@ -41,8 +41,6 @@ import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types._
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.kyuubi.spark.connector.hive.HiveConnectorUtils
-
 case class HivePartitionReaderFactory(
     sqlConf: SQLConf,
     broadcastHiveConf: Broadcast[SerializableConfiguration],
@@ -112,7 +110,7 @@ case class HivePartitionReaderFactory(
 
     val jobConf = new JobConf(broadcastHiveConf.value.value)
 
-    val filePath = new Path(new URI(HiveConnectorUtils.partitionedFilePath(file)))
+    val filePath = new Path(new URI(file.urlEncodedPath))
 
     if (tableDesc != null) {
       configureJobPropertiesForStorageHandler(tableDesc, jobConf, true)

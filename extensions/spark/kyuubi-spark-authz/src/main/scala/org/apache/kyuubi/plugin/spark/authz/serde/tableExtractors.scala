@@ -72,6 +72,19 @@ object TableExtractor {
       case _: Exception => None
     }
   }
+
+  /**
+   * Get owner from a `org.apache.spark.sql.execution.datasources.LogicalRelation`
+   * that wraps a Spark `CatalogTable`.
+   */
+  def getLogicalRelationOwner(v: AnyRef): Option[String] = {
+    try {
+      val maybeCatalogTable = invokeAs[Option[CatalogTable]](v, "catalogTable")
+      maybeCatalogTable.flatMap(ct => Option(ct.owner).filter(_.nonEmpty))
+    } catch {
+      case _: Exception => None
+    }
+  }
 }
 
 /**
@@ -352,11 +365,13 @@ class HudiDataSourceV2RelationTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
     invokeAs[LogicalPlan](v1, "table") match {
       // Match multipartIdentifier with tableAlias
-      case SubqueryAlias(_, SubqueryAlias(identifier, _)) =>
+      case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map(_.copy(owner = TableExtractor.getLogicalRelationOwner(relation)))
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(identifier, _) =>
+      case SubqueryAlias(identifier, relation) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map(_.copy(owner = TableExtractor.getLogicalRelationOwner(relation)))
       case _ => None
     }
   }
@@ -381,9 +396,11 @@ class HudiMergeIntoTargetTableExtractor extends TableExtractor {
       // Match multipartIdentifier with tableAlias
       case SubqueryAlias(_, SubqueryAlias(identifier, relation)) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map(_.copy(owner = TableExtractor.getLogicalRelationOwner(relation)))
       // Match multipartIdentifier without tableAlias
-      case SubqueryAlias(identifier, _) =>
+      case SubqueryAlias(identifier, relation) =>
         lookupExtractor[StringTableExtractor].apply(spark, identifier.toString())
+          .map(_.copy(owner = TableExtractor.getLogicalRelationOwner(relation)))
       case _ => None
     }
   }

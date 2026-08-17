@@ -234,7 +234,7 @@ if [[ "$HIVE_PROVIDED" == "true" ]]; then
 fi
 
 # clean up all versions of Spark extension, to avoid collecting outdated artifacts
-SPARK_EXTENSION_VERSIONS=('3-2' '3-3' '3-4' '3-5')
+SPARK_EXTENSION_VERSIONS=('3-3' '3-4' '3-5' '4-0' '4-1' '4-2')
 # shellcheck disable=SC2068
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   rm -f "$KYUUBI_HOME/extensions/spark/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar"
@@ -250,15 +250,24 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 "${BUILD_COMMAND[@]}"
 
 FILTERED_ARGS=()
+EXTRA_SCALA_212_SPARK_PROFILE='spark-3.5'
 # shellcheck disable=SC2045
 for arg in "$@"; do
-    if [[ $arg == *scala-2.12* ]]; then
-        FILTERED_ARGS+=("${arg//scala-2.12/scala-2.13}")
-    elif [[ $arg == *scala-2.13* ]]; then
-        FILTERED_ARGS+=("${arg//scala-2.13/scala-2.12}")
-    else
-        FILTERED_ARGS+=("$arg")
-    fi
+  FILTERED_ARG="$arg"
+  if [[ $arg == *scala-2.12* ]]; then
+    FILTERED_ARG="${FILTERED_ARG//scala-2.12/scala-2.13}"
+  elif [[ $arg == *scala-2.13* ]]; then
+    FILTERED_ARG="${FILTERED_ARG//scala-2.13/scala-2.12}"
+  fi
+
+  # Keep the Scala 2.12 engine compatible with Spark 3.5 when building against Spark 4.
+  if [[ "$SCALA_VERSION" == "2.13" && "$SPARK_VERSION" == 4.* ]]; then
+    while [[ $FILTERED_ARG =~ spark-4\.[0-9]+ ]]; do
+      FILTERED_ARG="${FILTERED_ARG/${BASH_REMATCH[0]}/$EXTRA_SCALA_212_SPARK_PROFILE}"
+    done
+    FILTERED_ARG="${FILTERED_ARG//spark-master/$EXTRA_SCALA_212_SPARK_PROFILE}"
+  fi
+  FILTERED_ARGS+=("$FILTERED_ARG")
 done
 
 # shellcheck disable=SC2050

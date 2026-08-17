@@ -28,11 +28,6 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 object SchemaHelper {
 
   /**
-   * Spark 3.4.0 DataType TimestampNTZType's class name.
-   */
-  final val TIMESTAMP_NTZ = "TimestampNTZType$"
-
-  /**
    * Spark 4.0.0 DataType VariantType's class name.
    */
   final val VARIANT = "VariantType$"
@@ -50,7 +45,7 @@ object SchemaHelper {
     case _: DecimalType => TTypeId.DECIMAL_TYPE
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
-    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => TTypeId.TIMESTAMP_TYPE
+    case _: TimestampNTZType => TTypeId.TIMESTAMP_TYPE
     case variant if variant.getClass.getSimpleName.equals(VARIANT) => TTypeId.STRING_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
     case CalendarIntervalType => TTypeId.STRING_TYPE
@@ -117,7 +112,7 @@ object SchemaHelper {
     case _: DecimalType => java.sql.Types.DECIMAL
     case DateType => java.sql.Types.DATE
     case TimestampType => java.sql.Types.TIMESTAMP
-    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => java.sql.Types.TIMESTAMP
+    case _: TimestampNTZType => java.sql.Types.TIMESTAMP
     case variant if variant.getClass.getSimpleName.equals(VARIANT) => java.sql.Types.OTHER
     case BinaryType => java.sql.Types.BINARY
     case _: ArrayType => java.sql.Types.ARRAY
@@ -133,7 +128,7 @@ object SchemaHelper {
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
-    case dt if dt.getClass.getSimpleName == TIMESTAMP_NTZ =>
+    case dt: TimestampNTZType =>
       Some(dt.defaultSize)
     case dt: DecimalType =>
       Some(dt.precision)
@@ -164,7 +159,7 @@ object SchemaHelper {
     case DoubleType => Some(15)
     case d: DecimalType => Some(d.scale)
     case TimestampType => Some(6)
-    case ntz if ntz.getClass.getSimpleName.equals(TIMESTAMP_NTZ) => Some(6)
+    case _: TimestampNTZType => Some(6)
     case _ => None
   }
 

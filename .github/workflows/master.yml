@@ -55,8 +55,6 @@ jobs:
         python:
           - '3.9'
         spark:
-          - '3.3'
-          - '3.4'
           - '3.5'
         spark-archive: [""]
         exclude-tags: [""]
@@ -80,18 +78,6 @@ jobs:
             spark-archive: '-Pscala-2.13'
             exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest'
             comment: 'normal'
-          - java: 8
-            python: '3.9'
-            spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.3.3 -Dspark.archive.name=spark-3.3.3-bin-hadoop3.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.3-binary'
-          - java: 8
-            python: '3.9'
-            spark: '3.5'
-            spark-archive: '-Dspark.archive.mirror=https://www.apache.org/dyn/closer.lua/spark/spark-3.4.4 -Dspark.archive.name=spark-3.4.4-bin-hadoop3.tgz -Pzookeeper-3.6'
-            exclude-tags: '-Dmaven.plugin.scalatest.exclude.tags=org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.SparkLocalClusterTest'
-            comment: 'verify-on-spark-3.4-binary'
           - java: 17
             python: '3.11'
             spark: '3.5'
@@ -127,7 +113,7 @@ jobs:
       - name: Setup Maven
         uses: ./.github/actions/setup-maven
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Resolve engine archive download URLs
@@ -248,17 +234,6 @@ jobs:
       fail-fast: false
       max-parallel: 1
       matrix:
-        java:
-          - 17
-        scala:
-          - '2.12'
-          - '2.13'
-        spark-compile:
-            - '3.5'
-        spark-runtime:
-            - '3.4'
-            - '3.3'
-        comment: [ "normal" ]
         include:
           - java: 17
             scala: "2.13"
@@ -269,6 +244,11 @@ jobs:
             scala: "2.13"
             spark-compile: "3.5"
             spark-runtime: "4.1"
+            comment: "normal"
+          - java: 21
+            scala: "2.13"
+            spark-compile: "3.5"
+            spark-runtime: "4.2"
             comment: "normal"
     env:
       SPARK_LOCAL_IP: localhost
@@ -317,23 +297,26 @@ jobs:
         java:
           - 8
         flink:
-          - '1.19'
           - '1.20'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
-          - java: 8
+          - java: 17
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.17.2 -Dflink.archive.name=flink-1.17.2-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.17-binary'
-          - java: 8
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.0.2 -Dflink.archive.name=flink-2.0.2-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.0-binary'
+          - java: 17
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.18.1 -Dflink.archive.name=flink-1.18.1-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.18-binary'
-          - java: 8
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.1.3 -Dflink.archive.name=flink-2.1.3-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.1-binary'
+          - java: 17
             flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.3 -Dflink.archive.name=flink-1.19.3-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.19-binary'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.2.1 -Dflink.archive.name=flink-2.2.1-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.2-binary'
+          - java: 17
+            flink: '1.20'
+            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.3.0 -Dflink.archive.name=flink-2.3.0-bin-scala_2.12.tgz'
+            comment: 'verify-on-flink-2.3-binary'
     steps:
       - uses: actions/checkout@v7
       - name: Free up disk space

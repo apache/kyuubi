@@ -30,13 +30,71 @@ from pyhive.tests.dbapi_test_case import DBAPITestCase
 from pyhive.tests.dbapi_test_case import with_cursor
 
 _HOST = 'localhost'
+_CONNECT_ATTEMPTS = 5
+_CONNECT_RETRY_DELAY_SECONDS = 2
+
+
+def _is_retryable_transport_exception(error):
+    return error.type in (
+        TTransportException.END_OF_FILE,
+        TTransportException.TIMED_OUT,
+        TTransportException.NOT_OPEN,
+    ) or 'TSocket read 0 bytes' in str(error)
 
 
 class TestHive(unittest.TestCase, DBAPITestCase):
     __test__ = True
 
     def connect(self):
-        return hive.connect(host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
+        for attempt in range(_CONNECT_ATTEMPTS):
+            try:
+                return hive.connect(
+                    host=_HOST, port=10000, configuration={'mapred.job.tracker': 'local'})
+            except TTransportException as e:
+                if not _is_retryable_transport_exception(e) or attempt == _CONNECT_ATTEMPTS - 1:
+                    raise
+                time.sleep(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_retries_transient_transport_failure(self, connect, sleep):
+        connection = mock.sentinel.connection
+        connect.side_effect = [
+            TTransportException(
+                type=TTransportException.END_OF_FILE, message='TSocket read 0 bytes'),
+            connection,
+        ]
+
+        self.assertIs(self.connect(), connection)
+
+        self.assertEqual(connect.call_count, 2)
+        sleep.assert_called_once_with(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_retries_connection_refused(self, connect, sleep):
+        connection = mock.sentinel.connection
+        connect.side_effect = [
+            TTransportException(
+                type=TTransportException.NOT_OPEN, message='Could not connect'),
+            connection,
+        ]
+
+        self.assertIs(self.connect(), connection)
+
+        self.assertEqual(connect.call_count, 2)
+        sleep.assert_called_once_with(_CONNECT_RETRY_DELAY_SECONDS)
+
+    @mock.patch('pyhive.tests.test_hive.time.sleep')
+    @mock.patch('pyhive.tests.test_hive.hive.connect')
+    def test_connect_does_not_retry_non_transient_transport_failure(self, connect, sleep):
+        connect.side_effect = TTransportException(
+            type=TTransportException.UNKNOWN, message='Error validating the login')
+
+        self.assertRaises(TTransportException, self.connect)
+
+        connect.assert_called_once()
+        sleep.assert_not_called()
 
     @with_cursor
     def test_description(self, cursor):

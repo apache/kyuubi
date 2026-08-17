@@ -35,7 +35,6 @@ import org.apache.flink.table.types.DataType
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.flink.shim.FlinkResultSet
 import org.apache.kyuubi.operation.FetchIterator
 import org.apache.kyuubi.util.reflect.DynFields
 
@@ -88,8 +87,7 @@ class IncrementalResultFetchIterator(
       debug(s"Fetching from result store with timeout $resultFetchTimeout ms")
       while (!fetched && !Thread.interrupted()) {
         val rs = resultFetcher.fetchResults(token, effectiveMaxRows - bufferedRows.length)
-        val flinkRs = new FlinkResultSet(rs)
-        flinkRs.getResultType match {
+        rs.getResultType match {
           case ResultType.EOS =>
             debug("EOS received, no more data to fetch.")
             fetched = true
@@ -98,7 +96,7 @@ class IncrementalResultFetchIterator(
             // if flink jobs are not ready, continue to retry
             debug("Result not ready, retrying...")
           case ResultType.PAYLOAD =>
-            val fetchedData = flinkRs.getData
+            val fetchedData = rs.getData
             // if no data fetched, continue to retry
             if (!fetchedData.isEmpty) {
               debug(s"Fetched ${fetchedData.length} rows from result store.")
@@ -109,10 +107,10 @@ class IncrementalResultFetchIterator(
               debug("No data fetched, retrying...")
             }
           case _ =>
-            throw new RuntimeException(s"Unexpected result type: ${flinkRs.getResultType}")
+            throw new RuntimeException(s"Unexpected result type: ${rs.getResultType}")
         }
         if (hasNext) {
-          val nextToken = flinkRs.getNextToken
+          val nextToken = rs.getNextToken
           if (nextToken == null) {
             hasNext = false
           } else {

@@ -94,7 +94,7 @@ object FlinkSQLEngine extends Logging {
           .toMap
       flinkConf.addAll(Configuration.fromMap(flinkConfFromArgs.asJava))
 
-      val executionTarget = flinkConf.getString(DeploymentOptions.TARGET)
+      val executionTarget = flinkConf.get(DeploymentOptions.TARGET)
       setDeploymentConf(executionTarget, flinkConf)
 
       kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)

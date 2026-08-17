@@ -166,6 +166,11 @@ configuration controls what happens when such a node is encountered:
 spark.kyuubi.authz.unclassifiedNode.behavior=deny
 ```
 
+This must be set on the engine application itself (`spark-defaults.conf`, `--conf`, or the
+Kyuubi engine configuration), because it is read from the application's `SparkConf`. A
+session-level override — SQL `SET`, the Spark Connect configuration API, `spark.conf.set` —
+does not change it, so an end user cannot relax `deny` for their own queries.
+
 - `allow`: legacy behavior; the node is silently treated as not authorization-relevant.
 - `warn` (default): the query proceeds, but a warning naming the unclassified plan node
   class is logged once per class per JVM.

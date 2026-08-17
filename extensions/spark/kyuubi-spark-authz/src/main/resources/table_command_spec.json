@@ -19,7 +19,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitions",
   "tableDescs" : [ {
@@ -36,7 +36,7 @@
   "opType" : "ALTERTABLE_ADDPARTS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumn",
   "tableDescs" : [ {
@@ -58,7 +58,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AlterColumns",
   "tableDescs" : [ {
@@ -102,7 +102,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AppendData",
   "tableDescs" : [ {
@@ -133,7 +133,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTable",
   "tableDescs" : [ ],
@@ -144,7 +144,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CacheTableAsSelect",
   "tableDescs" : [ ],
@@ -155,7 +155,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CommentOnTable",
   "tableDescs" : [ {
@@ -172,7 +172,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTable",
   "tableDescs" : [ {
@@ -228,7 +228,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateTableAsSelect",
   "tableDescs" : [ {
@@ -283,7 +283,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateV2Table",
   "tableDescs" : [ {
@@ -314,7 +314,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromTable",
   "tableDescs" : [ {
@@ -336,7 +336,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DescribeRelation",
   "tableDescs" : [ {
@@ -353,7 +353,7 @@
   "opType" : "DESCTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropColumns",
   "tableDescs" : [ {
@@ -375,7 +375,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitions",
   "tableDescs" : [ {
@@ -392,7 +392,7 @@
   "opType" : "ALTERTABLE_DROPPARTS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropTable",
   "tableDescs" : [ {
@@ -419,7 +419,7 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoTable",
   "tableDescs" : [ {
@@ -445,7 +445,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression",
   "tableDescs" : [ {
@@ -476,7 +476,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.OverwritePartitionsDynamic",
   "tableDescs" : [ {
@@ -507,7 +507,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RefreshTable",
   "tableDescs" : [ {
@@ -524,7 +524,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenameColumn",
   "tableDescs" : [ {
@@ -546,7 +546,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenamePartitions",
   "tableDescs" : [ {
@@ -563,7 +563,7 @@
   "opType" : "ALTERTABLE_RENAMEPART",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RenameTable",
   "tableDescs" : [ {
@@ -580,7 +580,7 @@
   "opType" : "ALTERTABLE_RENAME",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.RepairTable",
   "tableDescs" : [ {
@@ -597,7 +597,7 @@
   "opType" : "MSCK",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceColumns",
   "tableDescs" : [ {
@@ -619,7 +619,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceData",
   "tableDescs" : [ {
@@ -645,7 +645,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
   "tableDescs" : [ {
@@ -701,7 +701,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
   "tableDescs" : [ {
@@ -756,7 +756,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetTableProperties",
   "tableDescs" : [ {
@@ -778,7 +778,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowCreateTable",
   "tableDescs" : [ {
@@ -795,7 +795,7 @@
   "opType" : "SHOW_CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ShowTableProperties",
   "tableDescs" : [ {
@@ -812,7 +812,7 @@
   "opType" : "SHOW_TBLPROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncatePartition",
   "tableDescs" : [ {
@@ -829,7 +829,7 @@
   "opType" : "ALTERTABLE_DROPPARTS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.TruncateTable",
   "tableDescs" : [ {
@@ -846,7 +846,7 @@
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnsetTableProperties",
   "tableDescs" : [ {
@@ -863,7 +863,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateTable",
   "tableDescs" : [ {
@@ -885,7 +885,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddArchivesCommand",
   "tableDescs" : [ ],
@@ -897,7 +897,7 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddFilesCommand",
   "tableDescs" : [ ],
@@ -909,7 +909,7 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddJarCommand",
   "tableDescs" : [ ],
@@ -921,7 +921,7 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AddJarsCommand",
   "tableDescs" : [ ],
@@ -933,7 +933,7 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddColumnsCommand",
   "tableDescs" : [ {
@@ -954,7 +954,7 @@
   "opType" : "ALTERTABLE_ADDCOLS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableAddPartitionCommand",
   "tableDescs" : [ {
@@ -980,7 +980,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableChangeColumnCommand",
   "tableDescs" : [ {
@@ -1001,7 +1001,7 @@
   "opType" : "ALTERTABLE_REPLACECOLS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableDropPartitionCommand",
   "tableDescs" : [ {
@@ -1022,7 +1022,7 @@
   "opType" : "ALTERTABLE_DROPPARTS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRenameCommand",
   "tableDescs" : [ {
@@ -1044,7 +1044,7 @@
   "opType" : "ALTERTABLE_RENAME",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableRenamePartitionCommand",
   "tableDescs" : [ {
@@ -1065,7 +1065,7 @@
   "opType" : "ALTERTABLE_RENAMEPART",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSerDePropertiesCommand",
   "tableDescs" : [ {
@@ -1086,7 +1086,7 @@
   "opType" : "ALTERTABLE_SERDEPROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSetLocationCommand",
   "tableDescs" : [ {
@@ -1112,7 +1112,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableSetPropertiesCommand",
   "tableDescs" : [ {
@@ -1129,7 +1129,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterTableUnsetPropertiesCommand",
   "tableDescs" : [ {
@@ -1146,7 +1146,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AlterViewAsCommand",
   "tableDescs" : [ {
@@ -1172,7 +1172,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeColumnCommand",
   "tableDescs" : [ {
@@ -1217,7 +1217,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzePartitionCommand",
   "tableDescs" : [ {
@@ -1248,7 +1248,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.AnalyzeTableCommand",
   "tableDescs" : [ {
@@ -1275,7 +1275,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CacheTableCommand",
   "tableDescs" : [ ],
@@ -1286,7 +1286,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1312,7 +1312,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateDataSourceTableCommand",
   "tableDescs" : [ {
@@ -1334,7 +1334,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateTableCommand",
   "tableDescs" : [ {
@@ -1356,7 +1356,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateTableLikeCommand",
   "tableDescs" : [ {
@@ -1388,7 +1388,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.CreateViewCommand",
   "tableDescs" : [ {
@@ -1418,7 +1418,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeColumnCommand",
   "tableDescs" : [ {
@@ -1439,7 +1439,7 @@
   "opType" : "DESCTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DescribeTableCommand",
   "tableDescs" : [ {
@@ -1460,7 +1460,7 @@
   "opType" : "DESCTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.DropTableCommand",
   "tableDescs" : [ {
@@ -1482,7 +1482,7 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand",
   "tableDescs" : [ ],
@@ -1494,7 +1494,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.LoadDataCommand",
   "tableDescs" : [ {
@@ -1525,7 +1525,7 @@
     "isInput" : true,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RefreshTableCommand",
   "tableDescs" : [ {
@@ -1542,7 +1542,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.RepairTableCommand",
   "tableDescs" : [ {
@@ -1559,7 +1559,7 @@
   "opType" : "MSCK",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.SaveAsV1TableCommand",
   "tableDescs" : [ {
@@ -1602,7 +1602,7 @@
   "opType" : "SHOWCOLUMNS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableAsSerdeCommand",
   "tableDescs" : [ {
@@ -1619,7 +1619,7 @@
   "opType" : "SHOW_CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowCreateTableCommand",
   "tableDescs" : [ {
@@ -1636,7 +1636,7 @@
   "opType" : "SHOW_CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowPartitionsCommand",
   "tableDescs" : [ {
@@ -1657,7 +1657,7 @@
   "opType" : "SHOWPARTITIONS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.ShowTablePropertiesCommand",
   "tableDescs" : [ {
@@ -1674,7 +1674,7 @@
   "opType" : "SHOW_TBLPROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.command.TruncateTableCommand",
   "tableDescs" : [ {
@@ -1695,7 +1695,7 @@
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTable",
   "tableDescs" : [ {
@@ -1721,14 +1721,14 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.CreateTempViewUsing",
   "tableDescs" : [ ],
   "opType" : "CREATEVIEW",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoDataSourceCommand",
   "tableDescs" : [ {
@@ -1750,7 +1750,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand",
   "tableDescs" : [ {
@@ -1776,7 +1776,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.RefreshTable",
   "tableDescs" : [ {
@@ -1793,7 +1793,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand",
   "tableDescs" : [ ],
@@ -1809,7 +1809,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.CreateHiveTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1839,7 +1839,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveDirCommand",
   "tableDescs" : [ ],
@@ -1855,7 +1855,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.InsertIntoHiveTable",
   "tableDescs" : [ {
@@ -1881,7 +1881,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand",
   "tableDescs" : [ {
@@ -1911,7 +1911,7 @@
     "isInput" : false,
     "comment" : ""
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.AddPartitionField",
   "tableDescs" : [ {
@@ -1928,7 +1928,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.Call",
   "tableDescs" : [ {
@@ -1945,7 +1945,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceBranch",
   "tableDescs" : [ {
@@ -1962,7 +1962,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.CreateOrReplaceTag",
   "tableDescs" : [ {
@@ -1979,7 +1979,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DeleteFromIcebergTable",
   "tableDescs" : [ {
@@ -2001,7 +2001,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropBranch",
   "tableDescs" : [ {
@@ -2018,7 +2018,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropIdentifierFields",
   "tableDescs" : [ {
@@ -2035,7 +2035,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropPartitionField",
   "tableDescs" : [ {
@@ -2052,7 +2052,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.DropTag",
   "tableDescs" : [ {
@@ -2069,7 +2069,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.MergeIntoIcebergTable",
   "tableDescs" : [ {
@@ -2095,7 +2095,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.ReplacePartitionField",
   "tableDescs" : [ {
@@ -2112,7 +2112,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetIdentifierFields",
   "tableDescs" : [ {
@@ -2129,7 +2129,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.SetWriteDistributionAndOrdering",
   "tableDescs" : [ {
@@ -2146,7 +2146,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable",
   "tableDescs" : [ {
@@ -2172,7 +2172,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.catalyst.plans.logical.UpdateIcebergTable",
   "tableDescs" : [ {
@@ -2194,7 +2194,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableAddColumnsCommand",
   "tableDescs" : [ {
@@ -2215,7 +2215,7 @@
   "opType" : "ALTERTABLE_ADDCOLS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableChangeColumnCommand",
   "tableDescs" : [ {
@@ -2236,7 +2236,7 @@
   "opType" : "ALTERTABLE_REPLACECOLS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableDropPartitionCommand",
   "tableDescs" : [ {
@@ -2257,7 +2257,7 @@
   "opType" : "ALTERTABLE_DROPPARTS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterHoodieTableRenameCommand",
   "tableDescs" : [ {
@@ -2279,7 +2279,7 @@
   "opType" : "ALTERTABLE_RENAME",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.AlterTableCommand",
   "tableDescs" : [ {
@@ -2296,7 +2296,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CallProcedureHoodieCommand",
   "tableDescs" : [ {
@@ -2343,7 +2343,7 @@
     "isInput" : false,
     "comment" : "Hudi"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodiePathCommand",
   "tableDescs" : [ ],
@@ -2355,7 +2355,7 @@
     "isInput" : false,
     "comment" : "Hudi"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionHoodieTableCommand",
   "tableDescs" : [ {
@@ -2372,7 +2372,7 @@
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodiePathCommand",
   "tableDescs" : [ ],
@@ -2384,7 +2384,7 @@
     "isInput" : true,
     "comment" : "Hudi"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CompactionShowHoodieTableCommand",
   "tableDescs" : [ {
@@ -2401,7 +2401,7 @@
   "opType" : "SHOW_TBLPROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableAsSelectCommand",
   "tableDescs" : [ {
@@ -2422,7 +2422,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableCommand",
   "tableDescs" : [ {
@@ -2439,7 +2439,7 @@
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateHoodieTableLikeCommand",
   "tableDescs" : [ {
@@ -2466,7 +2466,7 @@
   "opType" : "CREATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.CreateIndexCommand",
   "tableDescs" : [ {
@@ -2483,7 +2483,7 @@
   "opType" : "CREATEINDEX",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DeleteHoodieTableCommand",
   "tableDescs" : [ {
@@ -2520,7 +2520,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropHoodieTableCommand",
   "tableDescs" : [ {
@@ -2542,7 +2542,7 @@
   "opType" : "DROPTABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.DropIndexCommand",
   "tableDescs" : [ {
@@ -2559,7 +2559,7 @@
   "opType" : "DROPINDEX",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.InsertIntoHoodieTableCommand",
   "tableDescs" : [ {
@@ -2585,7 +2585,7 @@
     "comment" : ""
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.MergeIntoHoodieTableCommand",
   "tableDescs" : [ {
@@ -2611,7 +2611,7 @@
     "comment" : "Hudi"
   } ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RefreshIndexCommand",
   "tableDescs" : [ {
@@ -2628,7 +2628,7 @@
   "opType" : "ALTERINDEX_REBUILD",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.RepairHoodieTableCommand",
   "tableDescs" : [ {
@@ -2645,7 +2645,7 @@
   "opType" : "MSCK",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.ShowHoodieTablePartitionsCommand",
   "tableDescs" : [ {
@@ -2666,7 +2666,7 @@
   "opType" : "SHOWPARTITIONS",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.ShowIndexesCommand",
   "tableDescs" : [ {
@@ -2683,7 +2683,7 @@
   "opType" : "SHOWINDEXES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.Spark31AlterTableCommand",
   "tableDescs" : [ {
@@ -2700,7 +2700,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.TruncateHoodieTableCommand",
   "tableDescs" : [ {
@@ -2721,7 +2721,7 @@
   "opType" : "TRUNCATETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.hudi.command.UpdateHoodieTableCommand",
   "tableDescs" : [ {
@@ -2743,7 +2743,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "io.delta.tables.execution.VacuumTableCommand",
   "tableDescs" : [ {
@@ -2785,7 +2785,7 @@
     "isInput" : false,
     "comment" : "Delta"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.DeleteCommand",
   "tableDescs" : [ {
@@ -2812,7 +2812,7 @@
     "isInput" : false,
     "comment" : "Delta"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.MergeIntoCommand",
   "tableDescs" : [ {
@@ -2843,7 +2843,7 @@
     "isInput" : false,
     "comment" : "Delta"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.OptimizeTableCommand",
   "tableDescs" : [ {
@@ -2885,7 +2885,7 @@
     "isInput" : false,
     "comment" : "Delta"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.spark.sql.delta.commands.UpdateCommand",
   "tableDescs" : [ {
@@ -2912,7 +2912,7 @@
     "isInput" : false,
     "comment" : "Delta"
   } ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.paimon.spark.catalyst.plans.logical.PaimonCallCommand",
   "tableDescs" : [ {
@@ -2929,7 +2929,7 @@
   "opType" : "ALTERTABLE_PROPERTIES",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.paimon.spark.commands.DeleteFromPaimonTableCommand",
   "tableDescs" : [ {
@@ -2951,7 +2951,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.paimon.spark.commands.MergeIntoPaimonTable",
   "tableDescs" : [ {
@@ -2983,7 +2983,7 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 }, {
   "classname" : "org.apache.paimon.spark.commands.UpdatePaimonTableCommand",
   "tableDescs" : [ {
@@ -3005,5 +3005,5 @@
   "opType" : "QUERY",
   "queryDescs" : [ ],
   "uriDescs" : [ ],
-  "verifiedSparkVersions" : [ "3.3", "3.4", "3.5" ]
+  "verifiedSparkVersions" : [ "3.5" ]
 } ]

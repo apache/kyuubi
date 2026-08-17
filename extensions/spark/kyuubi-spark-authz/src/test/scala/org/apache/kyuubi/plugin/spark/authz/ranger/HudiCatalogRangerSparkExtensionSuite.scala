@@ -17,6 +17,7 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -490,6 +491,90 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           s"[$namespace1/$table2/city,$namespace1/$table2/id,$namespace1/$table2/name], " +
           s"[update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSQL))
+      }
+    }
+  }
+
+  test("Support {OWNER} variable for Hudi update/delete/merge") {
+    withSingleCallEnabled {
+      withCleanTmpResources(Seq(
+        (s"$namespace1.$table1", "table"),
+        (s"$namespace1.$table2", "table"),
+        (namespace1, "database"))) {
+        doAs(admin, sql(s"CREATE DATABASE IF NOT EXISTS $namespace1"))
+
+        // createOnlyUser creates and owns table1
+        doAs(
+          createOnlyUser,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table1(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        // createOnlyUser creates and owns table2 as merge source
+        doAs(
+          createOnlyUser,
+          sql(
+            s"""
+               |CREATE TABLE IF NOT EXISTS $namespace1.$table2(id int, name string, city string)
+               |USING HUDI
+               |OPTIONS (
+               | type = 'cow',
+               | primaryKey = 'id',
+               | 'hoodie.datasource.hive_sync.enable' = 'false'
+               |)
+               |PARTITIONED BY(city)
+               |""".stripMargin))
+
+        // The in-memory catalog does not automatically populate `CatalogTable.owner`
+        // (unlike Hive Metastore). Manually set it to simulate the production case
+        // where the creator becomes the owner, which is required by Ranger {OWNER}.
+        Seq(table1, table2).foreach { t =>
+          val ident = TableIdentifier(t, Some(namespace1))
+          val ct = spark.sessionState.catalog.getTableMetadata(ident)
+          spark.sessionState.catalog.alterTable(ct.copy(owner = createOnlyUser))
+        }
+
+        val deleteSql = s"DELETE FROM $namespace1.$table1 WHERE id = 10"
+        // owner should be allowed
+        doAs(createOnlyUser, sql(deleteSql))
+        // non-owner should still be denied
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(deleteSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+        val updateSql = s"UPDATE $namespace1.$table1 SET name = 'test' WHERE id > 10"
+        // owner should be allowed
+        doAs(createOnlyUser, sql(updateSql))
+        // non-owner should still be denied
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(updateSql))
+        }(s"does not have [update] privilege on [$namespace1/$table1]")
+
+        val mergeIntoSql =
+          s"""
+             |MERGE INTO $namespace1.$table1 target
+             |USING $namespace1.$table2 source
+             |ON target.id = source.id
+             |WHEN MATCHED
+             |AND target.name == 'test'
+             | THEN UPDATE SET id = source.id, name = source.name, city = source.city
+             |""".stripMargin
+        // owner (of both target and source) should be allowed
+        doAs(createOnlyUser, sql(mergeIntoSql))
+        // non-owner should still be denied
+        interceptEndsWith[AccessControlException] {
+          doAs(someone, sql(mergeIntoSql))
+        }(s"does not have [select] privilege on " +
+          s"[$namespace1/$table2/city,$namespace1/$table2/id,$namespace1/$table2/name], " +
+          s"[update] privilege on [$namespace1/$table1]")
       }
     }
   }

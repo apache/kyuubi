@@ -67,14 +67,14 @@ Use `-am` (also-make) when building or testing a single module — without it, M
 
 ### Engine profile matrix
 
-| Profile | Notes |
-|---|---|
-| `-Pspark-3.5` (default), `-Pspark-{3.3,3.4,4.0,4.1,master}` | Spark version |
-| `-Pflink-1.20` (default), `-Pflink-{1.17,1.18,1.19}` | Flink version |
-| `-Pscala-2.13` | Scala 2.13 (default is 2.12) |
-| `-P{spark,flink,hive}-provided` | skip bundled engine downloads |
-| `-Pmirror-cdn` | use Apache mirror CDN for engine archives |
-| `-Pfast` | skip tests/style/docs/enforcer/RAT/downloads |
+| Profile                                                 | Notes                                        |
+|---------------------------------------------------------|----------------------------------------------|
+| `-Pspark-3.5` (default), `-Pspark-{4.0,4.1,4.2,master}` | Spark version                                |
+| `-Pflink-1.20` (default), `-Pflink-{2.0,2.1,2.2,2.3}`   | Flink version                                |
+| `-Pscala-2.12` (default), `-Pscala-2.13`                | Scala version                                |
+| `-P{spark,flink,hive}-provided`                         | skip bundled engine downloads                |
+| `-Pmirror-cdn`                                          | use Apache mirror CDN for engine archives    |
+| `-Pfast`                                                | skip tests/style/docs/enforcer/RAT/downloads |
 
 When engine code varies across versions, gate source/binary differences by Maven profile and runtime capability differences by feature detection — not by parsing version strings.
 

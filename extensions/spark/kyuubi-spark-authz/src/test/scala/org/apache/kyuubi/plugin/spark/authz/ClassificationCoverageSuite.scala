@@ -43,6 +43,9 @@ import org.apache.kyuubi.util.GoldenFileUtils._
 class ClassificationCoverageSuite extends AnyFunSuite {
   // scalastyle:on
 
+  private val SCALA_BINARY_VERSION: String =
+    scala.util.Properties.versionNumberString.split('.').take(2).mkString(".")
+
   private def loadable(classname: String): Option[Class[_]] = {
     try {
       Some(Class.forName(classname, false, getClass.getClassLoader))
@@ -251,18 +254,31 @@ class ClassificationCoverageSuite extends AnyFunSuite {
     //                          buildQuery recurses through it, and whatever carries
     //                          relevance beneath it is itself in this enumeration;
     //   4. dirty laundry     — relevant by shape but neither spec'd nor allowlisted,
-    //                          pinned in the golden backlog file for this Spark minor.
+    //                          pinned in the golden backlog file for this build profile.
     // The contract on bucket 4: a class NEW to it fails the build — classify it, allowlist
     // it with a reason, or consciously regenerate the backlog. A class that leaves the
     // diff must also leave the backlog, so it only ever shrinks by being triaged.
-    val backlogFilename = s"classification_backlog_spark_$SPARK_RUNTIME_MAJOR_MINOR.txt"
+    //
+    // The golden file is keyed by Spark minor AND Scala binary version, because the two
+    // together determine the classpath this enumeration can see: the connectors Kyuubi
+    // tests against do not all publish both Scala builds of every release, so the same
+    // Spark minor yields different plan node populations under 2.12 and 2.13. Concretely,
+    // Spark 3.5 enumerates five Paimon classes under 2.12 that are simply absent under
+    // 2.13. One file per Spark minor would make the two profiles overwrite each other's
+    // golden content and fail whichever ran second.
+    val backlogFilename =
+      s"classification_backlog_spark_${SPARK_RUNTIME_MAJOR_MINOR}_scala_$SCALA_BINARY_VERSION.txt"
     val backlogPath = Paths.get(
       s"${getCurrentModuleHome(this)}/src/test/resources/$backlogFilename")
 
     val classified: Set[String] = allCommandSpecClassnames ++
       KNOWN_HARMLESS_NODES.filter(_._2.appliesTo(SPARK_RUNTIME_MAJOR_MINOR)).keySet ++
-      // matched by nodeName rather than classname in buildQuery
-      Set("org.apache.spark.sql.catalyst.analysis.UnresolvedRelation") ++
+      // handled by a dedicated arm in buildQuery rather than by a spec file
+      Set(
+        // matched by nodeName rather than classname
+        "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation",
+        // resolved back to the cached query through the CacheManager
+        "org.apache.spark.sql.execution.columnar.InMemoryRelation") ++
       SCAN_SPEC_CLASSNAMES
 
     val allPlanNodes = enumeratePlanNodeClasses()
@@ -286,6 +302,15 @@ class ClassificationCoverageSuite extends AnyFunSuite {
         StandardOpenOption.CREATE,
         StandardOpenOption.TRUNCATE_EXISTING)
     } else {
+      // A profile with no golden file has never been triaged, which is a different problem
+      // from a drifted one - say so, rather than letting Source.fromFile report a bare
+      // FileNotFoundException.
+      assert(
+        Files.exists(backlogPath),
+        s"\nNo classification backlog recorded for Spark $SPARK_RUNTIME_MAJOR_MINOR /" +
+          s" Scala $SCALA_BINARY_VERSION ($backlogFilename). Every build profile carries its" +
+          s" own golden file because its classpath, and so the plan node population, differs." +
+          s" Generate one with KYUUBI_UPDATE=1 under this profile and triage its contents.")
       withClue(
         s"The set of unclassified authz-relevant plan classes on this classpath changed." +
           s" For every NEW class: add a command/scan spec, or an entry in" +

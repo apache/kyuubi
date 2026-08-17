@@ -3462,17 +3462,6 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val ENGINE_FLINK_DOAS_GENERATE_TOKEN_FILE: ConfigEntry[Boolean] =
-    buildConf("kyuubi.engine.flink.doAs.generateTokenFile")
-      .internal
-      .doc(s"When ${ENGINE_FLINK_DOAS_ENABLED.key}=true and neither FLINK-35525 (Flink 1.20.0)" +
-        " nor YARN-10333 (Hadoop 3.4.0) is available, enable this configuration to generate a" +
-        " temporary HADOOP_TOKEN_FILE that will be picked up by the Flink engine bootstrap" +
-        " process.")
-      .version("1.10.0")
-      .booleanConf
-      .createWithDefault(false)
-
   val SERVER_LIMIT_CONNECTIONS_PER_USER: OptionalConfigEntry[Int] =
     buildConf("kyuubi.server.limit.connections.per.user")
       .doc("Maximum kyuubi server connections per user." +

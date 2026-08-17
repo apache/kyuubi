@@ -22,6 +22,8 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.execution.CachedData
+import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.command.ExplainCommand
 import org.slf4j.LoggerFactory
 
@@ -110,6 +112,22 @@ object PrivilegesBuilder {
         val table = Table(None, Some(db), parts.last, None)
         privilegeObjects += PrivilegeObject(table)
 
+      case cached: InMemoryRelation =>
+        cachedQueryPlan(cached, spark) match {
+          case Some(originalPlan) =>
+            // Authorize the query the cache was built from, not the cache. Its own
+            // projection and filters drive the column pruning, so the caller is asked for
+            // exactly the columns that were materialized into this cache entry.
+            buildQuery(originalPlan, privilegeObjects, spark = spark)
+          case None =>
+            ParanoidMode.onViolation(
+              spark,
+              cached,
+              ViolationKind.EXTRACTION_FAILURE,
+              "a cached relation was reached but the query it caches could not be" +
+                " recovered from the CacheManager, so nothing constrains reading it")
+        }
+
       case p =>
         checkUnclassifiedQueryNode(p, spark)
         for (child <- p.children) {
@@ -146,6 +164,40 @@ object PrivilegesBuilder {
               spark)
           }
         }
+    }
+  }
+
+  /**
+   * Recover the query a cached relation stands for.
+   *
+   * `CacheManager.useCachedData` substitutes cached fragments before the optimizer runs,
+   * and [[org.apache.kyuubi.plugin.spark.authz.ranger.RuleAuthorization]] is an optimizer
+   * rule: by the time privileges are built, the relations the cached query read have
+   * already collapsed into an opaque leaf. The CacheManager lives in `SharedState` and is
+   * shared by every session in the engine, so treating that leaf as carrying no privileges
+   * would let any user read any table that any other user had cached.
+   *
+   * The CacheManager still holds the analyzed plan each entry was built from. Entries are
+   * matched on the cache builder rather than on the relation, because the relation handed
+   * to the optimizer is a copy with its output re-mapped onto the fragment it replaced
+   * (`InMemoryRelation.withOutput`), while the builder is carried over untouched.
+   */
+  private def cachedQueryPlan(
+      cached: InMemoryRelation,
+      spark: SparkSession): Option[LogicalPlan] = {
+    val entries =
+      try {
+        // CacheManager exposes lookup only by plan, and the plan is what we are missing
+        getField[Seq[CachedData]](spark.sharedState.cacheManager, "cachedData")
+      } catch {
+        // ReflectUtils reports every reflective failure as RuntimeException; on a Spark
+        // whose CacheManager no longer holds this field the caller fails closed instead
+        case e: RuntimeException =>
+          LOG.debug("Could not read CacheManager.cachedData", e)
+          return None
+      }
+    entries.collectFirst {
+      case entry if entry.cachedRepresentation.cacheBuilder eq cached.cacheBuilder => entry.plan
     }
   }
 
@@ -196,6 +248,9 @@ object PrivilegesBuilder {
       case p if p.getTagValue(KYUUBI_AUTHZ_TAG).nonEmpty =>
       case scan if isKnownScan(scan) && scan.resolved =>
       case u if u.nodeName == "UnresolvedRelation" =>
+      // buildQuery has a dedicated arm for cached relations; under a constant projection
+      // no column of the cache is read, exactly as for a scan
+      case _: InMemoryRelation =>
       case p =>
         checkUnclassifiedQueryNode(p, spark)
         p.children.foreach(sweepClassificationOnly(_, spark))

@@ -31,7 +31,6 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType
-import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.util.AssertionUtils._
 
 abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionProvider {
@@ -111,24 +110,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     super.beforeEach()
   }
 
-  test("AlterDatabasePropertiesCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
-    val plan = sql("ALTER DATABASE default SET DBPROPERTIES (abc = '123')").queryExecution.analyzed
-    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assertResult(plan.getClass.getName)(
-      "org.apache.spark.sql.execution.command.AlterDatabasePropertiesCommand")
-    assert(operationType === ALTERDATABASE)
-    assert(in.isEmpty)
-    assert(out.size === 1)
-    val po = out.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(defaultDb)(po.dbname)
-    assertEqualsIgnoreCase(defaultDb)(po.objectName)
-    assert(po.columns.isEmpty)
-  }
-
   test("AlterTableRenameCommand") {
     withTable(s"$reusedDb.efg") { t =>
       withTable(s"${reusedTable}_old") { oldTable =>
@@ -156,51 +137,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
           assert(accessType == AccessType.ALTER)
         }
       }
-    }
-  }
-
-  test("CreateDatabaseCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
-    withDatabase("CreateDatabaseCommand") { db =>
-      val plan = sql(s"CREATE DATABASE $db").queryExecution.analyzed
-      val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-      assertResult(plan.getClass.getName)(
-        "org.apache.spark.sql.execution.command.CreateDatabaseCommand")
-      assert(operationType === CREATEDATABASE)
-      assert(in.isEmpty)
-      assert(out.size === 1)
-      val po = out.head
-      assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      assert(po.catalog.isEmpty)
-      assertEqualsIgnoreCase(db)(po.dbname)
-      assertEqualsIgnoreCase(db)(po.objectName)
-      assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
-    }
-  }
-
-  test("DropDatabaseCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
-    withDatabase("DropDatabaseCommand") { db =>
-      sql(s"CREATE DATABASE $db")
-      val plan = sql(s"DROP DATABASE DropDatabaseCommand").queryExecution.analyzed
-      val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-      assertResult(plan.getClass.getName)(
-        "org.apache.spark.sql.execution.command.DropDatabaseCommand")
-      assert(operationType === DROPDATABASE)
-      assert(in.isEmpty)
-      assert(out.size === 1)
-      val po = out.head
-      assert(po.actionType === PrivilegeObjectActionType.OTHER)
-      assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-      assert(po.catalog.isEmpty)
-      assertEqualsIgnoreCase(db)(po.dbname)
-      assertEqualsIgnoreCase(db)(po.objectName)
-      assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.DROP)
     }
   }
 
@@ -750,25 +686,6 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(out.size === 0)
   }
 
-  test("DescribeDatabaseCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
-    val plan = sql(s"DESC DATABASE $reusedDb").queryExecution.analyzed
-    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assert(operationType === DESCDATABASE)
-    assert(in.size === 1)
-    val po = in.head
-    assert(po.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po.catalog.isEmpty)
-    assertEqualsIgnoreCase(reusedDb)(po.dbname)
-    assertEqualsIgnoreCase(reusedDb)(po.objectName)
-    assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.USE)
-
-    assert(out.size === 0)
-  }
-
   test("SetDatabaseCommand") {
     try {
       val plan = sql(s"USE $reusedDb").queryExecution.analyzed
@@ -1242,37 +1159,6 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
   override protected val catalogImpl: String = "in-memory"
 
   // some hive version does not support set database location
-  test("AlterDatabaseSetLocationCommand") {
-    assume(SPARK_RUNTIME_VERSION <= "3.2")
-    val newLoc = spark.conf.get("spark.sql.warehouse.dir") + "/new_db_location"
-    val plan = sql(s"ALTER DATABASE default SET LOCATION '$newLoc'")
-      .queryExecution.analyzed
-    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
-    assertResult(plan.getClass.getName)(
-      "org.apache.spark.sql.execution.command.AlterDatabaseSetLocationCommand")
-    assert(operationType === ALTERDATABASE_LOCATION)
-    assert(in.isEmpty)
-    assert(out.size === 2)
-    val po0 = out.head
-    assert(po0.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po0.privilegeObjectType === PrivilegeObjectType.DATABASE)
-    assert(po0.catalog.isEmpty)
-    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
-    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
-    assert(po0.columns.isEmpty)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
-    assert(accessType0 === AccessType.ALTER)
-
-    val po1 = out.last
-    assert(po1.actionType === PrivilegeObjectActionType.OTHER)
-    assert(po1.catalog.isEmpty)
-    assertEqualsIgnoreCase(defaultDb)(po0.dbname)
-    assertEqualsIgnoreCase(defaultDb)(po0.objectName)
-    assert(po1.columns.isEmpty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 === AccessType.WRITE)
-  }
-
   test("CreateDataSourceTableAsSelectCommand") {
     val plan = sql(s"CREATE TABLE CreateDataSourceTableAsSelectCommand USING parquet" +
       s" AS SELECT key, value FROM $reusedTable")

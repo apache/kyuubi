@@ -398,7 +398,11 @@ class HiveTableCatalog(sparkSession: SparkSession)
         throw new TableAlreadyExistsException(ident)
     }
 
-    loadTable(ident)
+    // Preserve the requested schema order so the subsequent CTAS write resolves output columns
+    // against the original order. Override only the V2 Table.schema() rather than rebuilding the
+    // CatalogTable, which would break the trailing-partition invariant and drop fields
+    // newCatalogTable does not forward. See KYUUBI #6403.
+    loadTable(ident).asInstanceOf[HiveTable].copy(requestedSchema = Some(schema))
   }
 
   override def alterTable(ident: Identifier, changes: TableChange*): Table = {
@@ -419,14 +423,14 @@ class HiveTableCatalog(sparkSession: SparkSession)
     val location = properties.get(TableCatalog.PROP_LOCATION).map(CatalogUtils.stringToURI)
     val storage =
       if (location.isDefined) {
-        catalogTable.storage.copy(locationUri = location)
+        HiveConnectorUtils.copyStorageFormat(catalogTable.storage)(locationUri = location)
       } else {
         catalogTable.storage
       }
 
     try {
       catalog.alterTable(
-        catalogTable.copy(
+        HiveConnectorUtils.copyCatalogTable(catalogTable)(
           properties = properties,
           schema = schema,
           owner = owner,
@@ -654,36 +658,6 @@ private object HiveTableCatalog extends Logging {
     HIVE_OUTPUT_FORMAT,
     HIVE_INPUT_FORMAT)
 
-  /**
-   * Attaches the KSHC catalog name to a V1 [[TableIdentifier]].
-   *
-   * Since Spark 3.4 (SPARK-46283), [[TableIdentifier]] carries a `catalog` field. Spark 4.1's
-   * `SessionCatalog.requireTableExists` reads it via `name.catalog.get`, which throws
-   * `NoSuchElementException` when it is `None`. KSHC deliberately avoids the wrong default
-   * catalog name (`spark_catalog`) by attaching its *own* catalog name here instead of relying
-   * on the `spark.sql.legacy.v1IdentifierNoCatalog` workaround, so `TableIdentifier.catalog` is
-   * never `None` on Spark 3.4+. On Spark 3.3 (no `catalog` field) the 3-arg constructor is
-   * absent and the identifier is returned unchanged.
-   */
-  private def attachCatalogName(
-      identifier: TableIdentifier,
-      catalogName: String): TableIdentifier = {
-    Try { // Spark 3.4+ (SPARK-46283): TableIdentifier(table, database, catalog)
-      DynConstructors.builder()
-        .impl(
-          classOf[TableIdentifier],
-          classOf[String],
-          classOf[Option[String]],
-          classOf[Option[String]])
-        .buildChecked()
-        .invokeChecked[TableIdentifier](
-          null,
-          identifier.table,
-          identifier.database,
-          Some(catalogName))
-    }.recover { case _: Exception => identifier }.get
-  }
-
   private def toCatalogDatabase(
       db: String,
       metadata: util.Map[String, String],
@@ -705,14 +679,15 @@ private object HiveTableCatalog extends Logging {
       allProps: Map[String, String],
       optionsProps: Map[String, String],
       serdeProps: Map[String, String]): (CatalogStorageFormat, String) = {
-    val nonHiveStorageFormat = CatalogStorageFormat.empty.copy(
+    val nonHiveStorageFormat = HiveConnectorUtils.newStorageFormat(
       locationUri = location.map(CatalogUtils.stringToURI),
       properties = optionsProps)
 
     val conf = SQLConf.get
-    val defaultHiveStorage = HiveSerDe.getDefaultStorage(conf).copy(
-      locationUri = location.map(CatalogUtils.stringToURI),
-      properties = optionsProps)
+    val defaultHiveStorage =
+      HiveConnectorUtils.copyStorageFormat(HiveSerDe.getDefaultStorage(conf))(
+        locationUri = location.map(CatalogUtils.stringToURI),
+        properties = optionsProps)
 
     if (provider.isDefined) {
       (nonHiveStorageFormat, provider.get)
@@ -725,7 +700,7 @@ private object HiveTableCatalog extends Logging {
         // If `STORED AS fileFormat` is used, infer inputFormat, outputFormat and serde from it.
         HiveSerDe.sourceToSerDe(maybeStoredAs.get) match {
           case Some(hiveSerde) =>
-            defaultHiveStorage.copy(
+            HiveConnectorUtils.copyStorageFormat(defaultHiveStorage)(
               inputFormat = hiveSerde.inputFormat.orElse(defaultHiveStorage.inputFormat),
               outputFormat = hiveSerde.outputFormat.orElse(defaultHiveStorage.outputFormat),
               // User specified serde takes precedence over the one inferred from file format.
@@ -734,7 +709,7 @@ private object HiveTableCatalog extends Logging {
           case _ => throw KyuubiHiveConnectorException(s"Unsupported serde ${maybeSerde.get}.")
         }
       } else {
-        defaultHiveStorage.copy(
+        HiveConnectorUtils.copyStorageFormat(defaultHiveStorage)(
           inputFormat =
             maybeInputFormat.orElse(defaultHiveStorage.inputFormat),
           outputFormat =
@@ -780,15 +755,12 @@ private object HiveTableCatalog extends Logging {
 
     def asMultipartIdentifier: Seq[String] = ident.namespace :+ ident.name
 
-    def asTableIdentifier(catalogName: String): TableIdentifier = {
-      val base = ident.namespace match {
-        case ns if ns.isEmpty => TableIdentifier(ident.name)
-        case Array(dbName) => TableIdentifier(ident.name, Some(dbName))
-        case _ =>
-          throw KyuubiHiveConnectorException(
-            s"$quoted is not a valid TableIdentifier as it has more than 2 name parts.")
-      }
-      attachCatalogName(base, catalogName)
+    def asTableIdentifier(catalogName: String): TableIdentifier = ident.namespace match {
+      case ns if ns.isEmpty => TableIdentifier(ident.name, None, Some(catalogName))
+      case Array(dbName) => TableIdentifier(ident.name, Some(dbName), Some(catalogName))
+      case _ =>
+        throw KyuubiHiveConnectorException(
+          s"$quoted is not a valid TableIdentifier as it has more than 2 name parts.")
     }
   }
 

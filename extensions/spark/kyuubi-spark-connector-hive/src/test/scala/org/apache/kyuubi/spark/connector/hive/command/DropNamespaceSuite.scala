@@ -20,7 +20,6 @@ package org.apache.kyuubi.spark.connector.hive.command
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.apache.spark.sql.types.{StringType, StructType}
 
-import org.apache.kyuubi.spark.connector.common.SparkUtils.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.spark.connector.hive.command.DDLCommandTestUtils.{V1_COMMAND_VERSION, V2_COMMAND_VERSION}
 import org.apache.kyuubi.util.AssertionUtils.interceptContains
 
@@ -75,11 +74,7 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
     // $catalog.ns.table is present, thus $catalog.ns cannot be dropped.
     interceptContains[AnalysisException] {
       sql(s"DROP NAMESPACE $catalogName.$namespace")
-    }(if (SPARK_RUNTIME_VERSION >= "3.4") {
-      s"[SCHEMA_NOT_EMPTY] Cannot drop a schema `$namespace` because it contains objects"
-    } else {
-      "Use CASCADE option to drop a non-empty database"
-    })
+    }(s"[SCHEMA_NOT_EMPTY] Cannot drop a schema `$namespace` because it contains objects")
 
     sql(s"DROP TABLE $catalogName.$namespace.table")
 

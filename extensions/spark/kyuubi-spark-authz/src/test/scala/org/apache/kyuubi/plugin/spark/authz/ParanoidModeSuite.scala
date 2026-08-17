@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.plugin.spark.authz
 
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{LeafCommand, LeafNode, LogicalPlan, Project}
@@ -27,6 +28,7 @@ import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.plugin.spark.authz.ParanoidMode.{Behavior, UNCLASSIFIED_NODE_BEHAVIOR_KEY, ViolationKind}
 import org.apache.kyuubi.plugin.spark.authz.serde.{HarmlessNodeSpec, KNOWN_HARMLESS_NODES, ScanDesc, ScanSpec}
+import org.apache.kyuubi.util.reflect.ReflectUtils.getField
 
 /** A leaf relation the plugin has no classification for. */
 case class UnclassifiedTestRelation() extends LeafNode {
@@ -54,16 +56,22 @@ class ParanoidModeSuite extends AnyFunSuite with BeforeAndAfterEach with BeforeA
     super.afterAll()
   }
 
+  // Paranoid mode reads its behavior from SparkConf, deliberately out of a client's reach.
+  // `SparkContext.getConf` hands back a clone, so tests reach the live instance the way the
+  // engine's `--conf` would have populated it.
+  private lazy val appConf: SparkConf = getField[SparkConf](spark.sparkContext, "_conf")
+
   override def afterEach(): Unit = {
+    appConf.remove(UNCLASSIFIED_NODE_BEHAVIOR_KEY)
     spark.conf.unset(UNCLASSIFIED_NODE_BEHAVIOR_KEY)
     ParanoidMode.resetForTesting()
     super.afterEach()
   }
 
   private def withBehavior(behavior: String)(f: => Unit): Unit = {
-    spark.conf.set(UNCLASSIFIED_NODE_BEHAVIOR_KEY, behavior)
+    appConf.set(UNCLASSIFIED_NODE_BEHAVIOR_KEY, behavior)
     try f
-    finally spark.conf.unset(UNCLASSIFIED_NODE_BEHAVIOR_KEY)
+    finally appConf.remove(UNCLASSIFIED_NODE_BEHAVIOR_KEY)
   }
 
   private def build(plan: LogicalPlan): Unit = {
@@ -88,6 +96,35 @@ class ParanoidModeSuite extends AnyFunSuite with BeforeAndAfterEach with BeforeA
       val e = intercept[IllegalArgumentException](ParanoidMode.behavior(spark))
       assert(e.getMessage.contains(UNCLASSIFIED_NODE_BEHAVIOR_KEY))
       assert(e.getMessage.contains("yolo"))
+    }
+  }
+
+  test("session configuration cannot weaken the configured behavior") {
+    // `deny` is an authorization boundary, so the subject of the decision must not be able
+    // to move it. Every client-reachable path to session configuration lands in
+    // SQLConf - SQL `SET`, the Spark Connect config RPC, DataFrame `spark.conf.set` -
+    // so it is enough to show that SQLConf does not participate in the lookup.
+    withBehavior("deny") {
+      spark.conf.set(UNCLASSIFIED_NODE_BEHAVIOR_KEY, "allow")
+      assert(ParanoidMode.behavior(spark) === Behavior.DENY)
+      intercept[AccessControlException](build(UnclassifiedTestRelation()))
+    }
+  }
+
+  test("a session override cannot strengthen the behavior either") {
+    // The same lookup in the other direction: an operator who left the default in place
+    // does not get `deny` because some session asked for it.
+    spark.conf.set(UNCLASSIFIED_NODE_BEHAVIOR_KEY, "deny")
+    assert(ParanoidMode.behavior(spark) === Behavior.WARN)
+    build(UnclassifiedTestRelation())
+  }
+
+  test("a session override cannot smuggle in an unparseable behavior") {
+    // A rejected value throws, and throwing from behavior() would fail every query; the
+    // session value must not be able to reach the parser at all.
+    withBehavior("deny") {
+      spark.conf.set(UNCLASSIFIED_NODE_BEHAVIOR_KEY, "yolo")
+      assert(ParanoidMode.behavior(spark) === Behavior.DENY)
     }
   }
 

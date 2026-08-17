@@ -53,23 +53,22 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Pspark-3.4 -Dspark.version=3.4.1
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Pspark-3.5 -Dspark.version=3.5.8
 ```
 
 The available `spark.version`s are shown in the following table.
 
-|   Spark Version   | Supported |                                                         Remark                                                         |
-|:-----------------:|:---------:|:----------------------------------------------------------------------------------------------------------------------:|
-|      master       |     √     |                                                           -                                                            |
-|       3.5.x       |     √     |                                                           -                                                            |
-|       3.4.x       |     √     |                                                           -                                                            |
-|       3.3.x       |     √     |                                                           -                                                            |
-|       3.2.x       |     x     |                                                   EOL since v1.11.0                                                    |
-|       3.1.x       |     x     |                                                   EOL since v1.10.0                                                    |
-|       3.0.x       |     x     |                                                    EOL since v1.9.0                                                    |
-| 2.4.x and earlier |     ×     | [PR 2367](https://github.com/apache/kyuubi/pull/2367) is used to track how we work with older releases with scala 2.11 |
-
-Currently, Spark released with Scala 2.12 are supported.
+| Spark Version | Supported | Removed |
+|:-------------:|:---------:|:-------:|
+|     4.2.x     |     √     |    -    |
+|     4.1.x     |     √     |    -    |
+|     4.0.x     |     √     |    -    |
+|     3.5.x     |     √     |    -    |
+|     3.4.x     |     x     | 1.13.0  |
+|     3.3.x     |     x     | 1.13.0  |
+|     3.2.x     |     x     | 1.11.0  |
+|     3.1.x     |     x     | 1.10.0  |
+|     3.0.x     |     x     |  1.9.0  |
 
 ### Build against Different Apache Ranger Versions
 
@@ -83,20 +82,14 @@ build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.ve
 
 The available `ranger.version`s are shown in the following table.
 
-| Ranger Version | Supported |                                          Remark                                           |
-|:--------------:|:---------:|:-----------------------------------------------------------------------------------------:|
-|     2.6.x      |     √     |                                             -                                             |
-|     2.5.x      |     √     |                                             -                                             |
-|     2.4.x      |     √     |                                             -                                             |
-|     2.3.x      |     √     |                                             -                                             |
-|     2.2.x      |     √     |                                             -                                             |
-|     2.1.x      |     √     |                                             -                                             |
-|     2.0.x      |     √     |                                             -                                             |
-|     1.2.x      |     √     |                                             -                                             |
-|     1.1.x      |     √     |                                             -                                             |
-|     1.0.x      |     √     |                                             -                                             |
-|     0.7.x      |     √     |                                             -                                             |
-|     0.6.x      |     X     | [KYUUBI-4672](https://github.com/apache/kyuubi/issues/4672) reported unresolved failures. |
+| Ranger Version | Supported | Remark |
+|:--------------:|:---------:|:------:|
+|     2.6.x      |     √     |   -    |
+|     2.5.x      |     √     |   -    |
+|     2.4.x      |     √     |   -    |
+|     2.3.x      |     √     |   -    |
+|     2.2.x      |     √     |   -    |
+|     2.1.x      |     √     |   -    |
 
 Currently, all ranger releases are supported.
 

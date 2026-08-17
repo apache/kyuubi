@@ -56,6 +56,7 @@
                             <include>com.fasterxml.jackson.jaxrs:*</include>
                             <include>com.sun.jersey:*</include>
                             <include>javax.ws.rs:jsr311-api</include>
+                            <include>commons-collections:commons-collections</include>
                         </includes>
                     </artifactSet>
                     <filters>
@@ -104,6 +105,10 @@
                         <relocation>
                             <pattern>com.kstruct.gethostname4j</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.com.kstruct.gethostname4j</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.collections</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
