@@ -19,7 +19,7 @@ package org.apache.kyuubi.jdbc.hive;
 
 import static java.sql.Types.*;
 
-import java.math.BigInteger;
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -126,7 +126,7 @@ public class JdbcColumn {
       case TIMESTAMP_WITH_TIMEZONE:
         return TimestampTZ.class.getName();
       case DECIMAL:
-        return BigInteger.class.getName();
+        return BigDecimal.class.getName();
       case BINARY:
         return byte[].class.getName();
       case OTHER:
