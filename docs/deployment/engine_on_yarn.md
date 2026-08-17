@@ -129,7 +129,7 @@ To deploy Kyuubi's Flink SQL engines on YARN, you'd better have cognition upon t
 
 ### Flink Deployment Modes
 
-Currently, Flink supports two deployment modes on YARN: [YARN Application Mode](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/deployment/resource-providers/yarn/#application-mode) and [YARN Session Mode](https://nightlies.apache.org/flink/flink-docs-release-1.17/docs/deployment/resource-providers/yarn/#application-mode).
+Currently, Flink supports two deployment modes on YARN: [YARN Application Mode](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/resource-providers/yarn/#application-mode) and [YARN Session Mode](https://nightlies.apache.org/flink/flink-docs-release-1.20/docs/deployment/resource-providers/yarn/#application-mode).
 
 - YARN Application Mode: In this mode, Kyuubi starts a dedicated Flink application cluster and runs the SQL engine on it.
 - YARN Session Mode: In this mode, Kyuubi starts the Flink SQL engine locally and connects to a running Flink YARN session cluster.

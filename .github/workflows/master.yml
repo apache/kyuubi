@@ -297,23 +297,10 @@ jobs:
         java:
           - 8
         flink:
-          - '1.19'
           - '1.20'
         flink-archive: [ "" ]
         comment: [ "normal" ]
         include:
-          - java: 8
-            flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.17.2 -Dflink.archive.name=flink-1.17.2-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.17-binary'
-          - java: 8
-            flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.18.1 -Dflink.archive.name=flink-1.18.1-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.18-binary'
-          - java: 8
-            flink: '1.20'
-            flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-1.19.3 -Dflink.archive.name=flink-1.19.3-bin-scala_2.12.tgz'
-            comment: 'verify-on-flink-1.19-binary'
           - java: 17
             flink: '1.20'
             flink-archive: '-Dflink.archive.mirror=https://www.apache.org/dyn/closer.lua/flink/flink-2.0.2 -Dflink.archive.name=flink-2.0.2-bin-scala_2.12.tgz'
