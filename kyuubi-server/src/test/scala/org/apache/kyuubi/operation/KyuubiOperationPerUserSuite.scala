@@ -202,6 +202,35 @@ class KyuubiOperationPerUserSuite
     }
   }
 
+  test("arrow zstd compression round-trips through the Kyuubi server") {
+    // Full-chain coverage: JDBC client <-> Kyuubi server <-> Spark engine. The engine compresses
+    // Arrow IPC batches with zstd, the server forwards the payload untouched, and the JDBC client
+    // transparently decompresses it from the Arrow IPC body compression metadata. LIMIT 150 cuts
+    // through the second 100-row batch, so the tail batch is sliced and re-serialized on the
+    // engine side, exercising the compression-aware slice path.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.sql.execution.arrow.compression.codec" -> "zstd",
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100")) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          "select id, cast(id as string) as name from range(0, 10000) limit 150")
+        val ids = scala.collection.mutable.Set.empty[Long]
+        var count = 0
+        while (resultSet.next()) {
+          // per-row invariant survives compression, transfer and slicing, independent of the row
+          // order the client receives
+          val id = resultSet.getLong(1)
+          assert(resultSet.getString(2) === id.toString)
+          ids += id
+          count += 1
+        }
+        assert(count === 150)
+        assert(ids === (0L until 150L).toSet)
+      }
+    }
+  }
+
   test("scala NPE issue with hdfs jar") {
     val jarDir = Utils.createTempDir().toFile
     val udfCode =

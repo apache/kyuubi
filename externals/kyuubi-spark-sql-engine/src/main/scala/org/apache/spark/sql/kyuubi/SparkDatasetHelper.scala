@@ -25,7 +25,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkPlanHelper, SQLExecution}
@@ -38,7 +38,6 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
-import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 object SparkDatasetHelper extends Logging {
 
@@ -65,33 +64,12 @@ object SparkDatasetHelper extends Logging {
       toArrowBatchRdd(plan).collect()
   }
 
-  private val datasetClz = DynClasses.builder()
-    .impl("org.apache.spark.sql.classic.Dataset") // SPARK-49700 (4.0.0)
-    .impl("org.apache.spark.sql.Dataset")
-    .build()
-
-  private val toArrowBatchRddMethod =
-    DynMethods.builder("toArrowBatchRdd")
-      .impl(datasetClz)
-      .buildChecked()
-
-  def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
-    toArrowBatchRddMethod.bind(ds).invoke()
-  }
-
   /**
-   * Read the arrow compression codec config from the session conf, reusing the Spark upstream
-   * configuration keys (`spark.sql.execution.arrow.compression.codec` and
-   * `spark.sql.execution.arrow.compression.zstd.level`, introduced in Spark 4.1). On Spark < 4.1
-   * these keys are not registered as typed SQLConf entries, so they are read as raw strings: a
-   * session-level SET lands in the SQLConf settings map and takes precedence, otherwise the
-   * engine-level kyuubi-defaults.conf value applies, otherwise the default.
-   * Returns (codecName, zstdLevel).
+   * Read session-level Arrow compression configs introduced by SPARK-54134 (4.1.0),
+   * with key names finalized by the SPARK-54226 follow-up.
    */
   private def arrowCompressionConf(spark: SparkSession): (String, Int) = {
-    // Lower-case the codec name to match Spark upstream, whose typed entry applies
-    // `.transform(_.toLowerCase(Locale.ROOT))`; reading the key as a raw string here would
-    // otherwise make `ZSTD`/`Zstd` reject on Spark < 4.1 while accepted natively on 4.1+.
+    // Lowercase the codec name to match Spark upstream.
     val codecName = spark.sessionState.conf.getConfString(
       "spark.sql.execution.arrow.compression.codec",
       "none").toLowerCase(Locale.ROOT)
@@ -102,7 +80,7 @@ object SparkDatasetHelper extends Logging {
   }
 
   /**
-   * Forked from [[Dataset.toArrowBatchRdd(plan: SparkPlan)]].
+   * Forked from [[org.apache.spark.sql.Dataset.toArrowBatchRdd(plan: SparkPlan)]].
    * Convert to an RDD of serialized ArrowRecordBatches.
    */
   def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
@@ -130,8 +108,8 @@ object SparkDatasetHelper extends Logging {
   def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
     withNewExecutionId(df) {
       // use the plan-based toArrowBatchRdd so that the arrow compression codec takes effect;
-      // the Dataset#toArrowBatchRdd (reflective) path uses the vanilla Spark ArrowConverters
-      // which does not apply the Kyuubi compression codec.
+      // the vanilla Spark Dataset#toArrowBatchRdd uses the upstream ArrowConverters, which does
+      // not apply the Kyuubi compression codec.
       toArrowBatchRdd(df.queryExecution.executedPlan).toLocalIterator
     }
   }

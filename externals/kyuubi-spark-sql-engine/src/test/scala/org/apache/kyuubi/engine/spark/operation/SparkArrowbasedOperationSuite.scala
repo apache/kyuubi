@@ -381,7 +381,7 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("arrow zstd compression round-trips through the JDBC client") {
-    // End-to-end coverage of the compressed Arrow IPC path: the engine compresses batches with
+    // Engine-side coverage of the compressed Arrow IPC path: the engine compresses batches with
     // the upstream-named codec config, and the JDBC client transparently decompresses them from
     // the batch body compression metadata (no server-side codec hint on the wire).
     withJdbcStatement() { statement =>

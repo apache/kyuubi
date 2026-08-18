@@ -42,8 +42,10 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
   type Batch = (Array[Byte], Long)
 
   /**
-   * Create the Arrow compression codec for the given codec name. Returns the no-compression codec
-   * when the codec name is "none" or null.
+   * Create the Arrow compression codec for the given codec name. Only "none" (or null, the
+   * no-compression codec) and "zstd" are supported; "lz4" is accepted by Spark upstream
+   * (SPARK-54134, 4.1.0) but not yet by Kyuubi, so it is rejected explicitly instead of
+   * silently falling back to no compression.
    *
    * The zstd codec is constructed directly with the configured compression level rather than
    * through a [[CompressionCodec.Factory]]: the factory overloads built from the codec type enum
@@ -52,14 +54,18 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
    * (ArrowCompressionUtils).
    */
   private def createCodec(codecName: String, zstdLevel: Int): CompressionCodec = {
-    if (codecName == null || codecName == "none") {
-      NoCompressionCodec.INSTANCE
-    } else {
-      codecName match {
-        case "zstd" => new ZstdCompressionCodec(zstdLevel)
-        case other =>
-          throw new IllegalArgumentException(s"Unsupported arrow compression codec: $other")
-      }
+    codecName match {
+      case null | "none" =>
+        NoCompressionCodec.INSTANCE
+      case "zstd" =>
+        new ZstdCompressionCodec(zstdLevel)
+      case "lz4" =>
+        throw new IllegalArgumentException(
+          "Arrow compression codec lz4 is not supported by Kyuubi; " +
+            "supported codecs: none, zstd")
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unsupported Arrow compression codec: $other; supported codecs: none, zstd")
     }
   }
 
