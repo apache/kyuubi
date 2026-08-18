@@ -352,6 +352,13 @@
                 <groupId>org.apache.arrow</groupId>
                 <artifactId>arrow-compression</artifactId>
                 <version>${arrow.version}</version>
+                <!-- Kyuubi rejects lz4, so the commons-compress-backed LZ4 codec is not needed. -->
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-compress</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.arrow</groupId>

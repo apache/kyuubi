@@ -271,10 +271,10 @@
                             <exclude>io.netty:netty-transport-*-io_uring</exclude>
                             <exclude>io.netty:netty-transport-native-epoll:*:linux-riscv64</exclude>
                             <!--
-                              The Arrow vector/memory/format modules and the zstd/commons libraries
-                              used by arrow-compression are all provided by the Spark runtime on
-                              every supported Spark version, so they are excluded from the engine
-                              jar to avoid classpath conflicts and native library relocation issues.
+                              The Arrow vector/memory/format modules and the zstd library used by
+                              arrow-compression are all provided by the Spark runtime on every
+                              supported Spark version, so they are excluded from the engine jar
+                              to avoid classpath conflicts and native library relocation issues.
                             -->
                             <exclude>org.apache.arrow:arrow-format</exclude>
                             <exclude>org.apache.arrow:arrow-memory-core</exclude>
@@ -284,7 +284,6 @@
                             <exclude>com.github.luben:zstd-jni</exclude>
                             <exclude>commons-codec:commons-codec</exclude>
                             <exclude>commons-io:commons-io</exclude>
-                            <exclude>org.apache.commons:commons-compress</exclude>
                             <exclude>org.apache.commons:commons-lang3</exclude>
                             <exclude>org.immutables:value</exclude>
                         </excludes>
