@@ -153,6 +153,8 @@ object HiveBridgeHelper {
       pushDownStringPredicate,
       pushDownInFilterThreshold,
       isCaseSensitive,
+      // The rebase mode doesn't matter here because the filters are used to determine
+      // whether they is convertible.
       rebaseSpec)
     parquetFilters.convertibleFilters(dataFilters)
   }
