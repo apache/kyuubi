@@ -400,16 +400,24 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
   }
 
   test("arrow zstd compression round-trips when LIMIT cuts across a batch boundary") {
-    // The slice() path re-serializes the tail batch produced by doCollectLimit. With a batch size
-    // of 100 and LIMIT 150, the second batch is sliced from 100 down to 50 rows, exercising the
-    // compression-aware VectorLoader/VectorUnloader pairing on a compressed, sliced batch.
+    // Two input partitions and initialNumPartitions=1 make the LIMIT deterministic: the first
+    // partition yields a full 100-row batch, and the second partition yields another full 100-row
+    // batch with only 50 rows left, so doCollectLimit must slice() the second batch down to 50.
     withJdbcStatement() { statement =>
       statement.executeQuery(
         "set spark.sql.execution.arrow.compression.codec=zstd")
       statement.executeQuery(
         s"set ${SQLConf.ARROW_EXECUTION_MAX_RECORDS_PER_BATCH.key}=100")
+      statement.executeQuery(
+        "set spark.sql.limit.initialNumPartitions=1")
       val resultSet = statement.executeQuery(
-        "select id, cast(id as string) as name from range(0, 10000) limit 150")
+        """
+          |select id, cast(id as string) as name from (
+          |  select id from range(0, 100, 1, 1)
+          |  union all
+          |  select id from range(100, 10000, 1, 1)
+          |) t limit 150
+          |""".stripMargin)
       var count = 0
       while (resultSet.next()) {
         // per-row invariant survives compression + slicing, independent of row order

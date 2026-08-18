@@ -41,18 +41,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   type Batch = (Array[Byte], Long)
 
-  /**
-   * Create the Arrow compression codec for the given codec name. Only "none" (or null, the
-   * no-compression codec) and "zstd" are supported; "lz4" is accepted by Spark upstream
-   * (SPARK-54134, 4.1.0) but not yet by Kyuubi, so it is rejected explicitly instead of
-   * silently falling back to no compression.
-   *
-   * The zstd codec is constructed directly with the configured compression level rather than
-   * through a [[CompressionCodec.Factory]]: the factory overloads built from the codec type enum
-   * cannot carry a compression level and silently fall back to the default one, losing the
-   * user-configured level. This follows the latest Spark upstream behavior
-   * (ArrowCompressionUtils).
-   */
+  // Only "none" (no compression) and "zstd" codecs are supported.
   private def createCodec(codecName: String, zstdLevel: Int): CompressionCodec = {
     codecName match {
       case null | "none" =>
@@ -281,6 +270,8 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     extends Iterator[Array[Byte]] {
 
     protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
+    // Validate the codec before allocating Arrow buffers, so an unsupported codec fails fast.
+    private val compressionCodec = createCodec(codecName, zstdLevel)
     private val allocator =
       ArrowUtils.rootAllocator.newChildAllocator(
         s"to${this.getClass.getSimpleName}",
@@ -291,7 +282,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     // Always use the compression-aware 4-arg constructor, matching the latest Spark upstream
     // ArrowConverters. includeNullCount=true keeps the null count in the batch header, the same
     // as the original 1-arg constructor used by the no-compression path.
-    protected val unloader = new VectorUnloader(root, true, createCodec(codecName, zstdLevel), true)
+    protected val unloader = new VectorUnloader(root, true, compressionCodec, true)
     protected val arrowWriter = ArrowWriter.create(root)
 
     Option(context).foreach {

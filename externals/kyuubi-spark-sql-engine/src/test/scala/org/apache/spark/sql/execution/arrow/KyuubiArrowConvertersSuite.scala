@@ -139,4 +139,11 @@ class KyuubiArrowConvertersSuite extends KyuubiFunSuite {
     batches.next()
     assert(!batches.hasNext)
   }
+
+  test("reject unsupported lz4 compression codec") {
+    val error = intercept[IllegalArgumentException] {
+      KyuubiArrowConverters.toBatchIterator(rows(1), schema, 100, -1, -1, timeZoneId, "lz4", 3)
+    }
+    assert(error.getMessage.contains("Arrow compression codec lz4 is not supported by Kyuubi"))
+  }
 }

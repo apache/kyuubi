@@ -26,7 +26,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFS
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
+import org.apache.kyuubi.jdbc.hive.{KyuubiArrowQueryResultSet, KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
@@ -203,18 +203,29 @@ class KyuubiOperationPerUserSuite
   }
 
   test("arrow zstd compression round-trips through the Kyuubi server") {
-    // Full-chain coverage: JDBC client <-> Kyuubi server <-> Spark engine. The engine compresses
-    // Arrow IPC batches with zstd, the server forwards the payload untouched, and the JDBC client
-    // transparently decompresses it from the Arrow IPC body compression metadata. LIMIT 150 cuts
-    // through the second 100-row batch, so the tail batch is sliced and re-serialized on the
-    // engine side, exercising the compression-aware slice path.
+    // Verify that compressed Arrow IPC passes through Kyuubi Server unchanged. The two input
+    // partitions force LIMIT to slice the second 100-row batch down to 50 rows.
     withSessionConf()(Map.empty)(Map(
       KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
       "spark.sql.execution.arrow.compression.codec" -> "zstd",
-      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100")) {
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
       withJdbcStatement() { statement =>
+        // prove the codec config reached the engine through the server
+        val codecResult =
+          statement.executeQuery("set spark.sql.execution.arrow.compression.codec")
+        assert(codecResult.next())
+        assert(codecResult.getString("value") === "zstd")
         val resultSet = statement.executeQuery(
-          "select id, cast(id as string) as name from range(0, 10000) limit 150")
+          """
+            |select id, cast(id as string) as name from (
+            |  select id from range(0, 100, 1, 1)
+            |  union all
+            |  select id from range(100, 10000, 1, 1)
+            |) t limit 150
+            |""".stripMargin)
+        // prove the results come back as Arrow, not silently falling back to Thrift
+        assert(resultSet.isInstanceOf[KyuubiArrowQueryResultSet])
         val ids = scala.collection.mutable.Set.empty[Long]
         var count = 0
         while (resultSet.next()) {
