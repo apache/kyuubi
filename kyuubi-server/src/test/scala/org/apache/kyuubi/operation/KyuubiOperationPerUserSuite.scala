@@ -38,6 +38,13 @@ class KyuubiOperationPerUserSuite
 
   override protected def jdbcUrl: String = getJdbcUrl
 
+  // The engine jar no longer bundles arrow-compression; the zstd test supplies it via spark.jars,
+  // while the other tests cover the none path without it.
+  private lazy val arrowCompressionJar: String =
+    java.nio.file.Paths.get(
+      Class.forName("org.apache.arrow.compression.CommonsCompressionFactory")
+        .getProtectionDomain.getCodeSource.getLocation.toURI).toString
+
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
   }
@@ -203,10 +210,12 @@ class KyuubiOperationPerUserSuite
   }
 
   test("arrow zstd compression round-trips through the Kyuubi server") {
-    // Verify that compressed Arrow IPC passes through Kyuubi Server unchanged. The two input
-    // partitions force LIMIT to slice the second 100-row batch down to 50 rows.
+    // Compressed Arrow IPC must pass through the server unchanged; the two partitions force
+    // slice(), and the dedicated subdomain engine gets arrow-compression via spark.jars.
     withSessionConf()(Map.empty)(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "arrow-zstd",
       KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.jars" -> arrowCompressionJar,
       "spark.sql.execution.arrow.compression.codec" -> "zstd",
       "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
       "spark.sql.limit.initialNumPartitions" -> "1")) {
@@ -237,6 +246,34 @@ class KyuubiOperationPerUserSuite
           count += 1
         }
         assert(count === 150)
+        assert(ids === (0L until 150L).toSet)
+      }
+    }
+  }
+
+  test("arrow results work without arrow-compression on the engine classpath") {
+    // This engine has no arrow-compression on its classpath; the default none path, including
+    // the slice() path, must still work.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          """
+            |select id, cast(id as string) as name from (
+            |  select id from range(0, 100, 1, 1)
+            |  union all
+            |  select id from range(100, 10000, 1, 1)
+            |) t limit 150
+            |""".stripMargin)
+        assert(resultSet.isInstanceOf[KyuubiArrowQueryResultSet])
+        val ids = scala.collection.mutable.Set.empty[Long]
+        while (resultSet.next()) {
+          val id = resultSet.getLong(1)
+          assert(resultSet.getString(2) === id.toString)
+          ids += id
+        }
         assert(ids === (0L until 150L).toSet)
       }
     }

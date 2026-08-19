@@ -26,6 +26,7 @@ import org.apache.arrow.compression.CommonsCompressionFactory
 import org.apache.arrow.flatbuf.CompressionType
 import org.apache.arrow.memory.BufferAllocator
 import org.apache.arrow.vector.{IntVector, VectorLoader, VectorSchemaRoot}
+import org.apache.arrow.vector.compression.NoCompressionCodec
 import org.apache.arrow.vector.ipc.ReadChannel
 import org.apache.arrow.vector.ipc.message.{ArrowRecordBatch, MessageSerializer}
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, FieldType, Schema}
@@ -145,5 +146,28 @@ class KyuubiArrowConvertersSuite extends KyuubiFunSuite {
       KyuubiArrowConverters.toBatchIterator(rows(1), schema, 100, -1, -1, timeZoneId, "lz4", 3)
     }
     assert(error.getMessage.contains("Arrow compression codec lz4 is not supported by Kyuubi"))
+  }
+
+  test("none codec keeps the original uncompressed path") {
+    val bytes = KyuubiArrowConverters
+      .toBatchIterator(rows(100), schema, 1000, -1, -1, timeZoneId, null, 3)
+      .toArray
+      .head
+    val allocator =
+      ArrowUtils.rootAllocator.newChildAllocator("none-codec", 0, Long.MaxValue)
+    try {
+      val batch = MessageSerializer.deserializeRecordBatch(
+        new ReadChannel(Channels.newChannel(new ByteArrayInputStream(bytes))),
+        allocator)
+      try {
+        // the none path must produce plain IPC batches marked with NO_COMPRESSION
+        assert(batch.getBodyCompression.getCodec === NoCompressionCodec.COMPRESSION_TYPE)
+      } finally {
+        batch.close()
+      }
+    } finally {
+      allocator.close()
+    }
+    assertRoundTrip(bytes, 100)
   }
 }

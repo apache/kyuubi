@@ -37,10 +37,12 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Compile-time only: not bundled into the engine jar; provided by Spark 4.1+ or the user. -->
         <dependency>
             <groupId>org.apache.arrow</groupId>
             <artifactId>arrow-compression</artifactId>
             <version>${arrow.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
@@ -257,7 +259,6 @@
                             <include>io.netty:*</include>
                             <include>io.perfmark:perfmark-api</include>
                             <include>io.vertx:*</include>
-                            <include>org.apache.arrow:arrow-compression</include>
                             <include>org.apache.kyuubi:*</include>
                             <include>org.checkerframework:checker-qual</include>
                             <include>org.codehaus.mojo:animal-sniffer-annotations</include>
@@ -427,17 +428,6 @@
                         <relocation>
                             <pattern>net.bytebuddy</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.net.bytebuddy</shadedPattern>
-                        </relocation>
-                        <!--
-                          Relocate the bundled arrow-compression classes so that Kyuubi's copy
-                          never conflicts with the arrow-compression jar shipped by Spark 4.1+.
-                          The relocated codec classes still resolve the unrelocated
-                          org.apache.arrow.vector.* and com.github.luben.zstd.* types, which are
-                          provided by the Spark runtime on all supported Spark versions.
-                        -->
-                        <relocation>
-                            <pattern>org.apache.arrow.compression</pattern>
-                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow.compression</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
