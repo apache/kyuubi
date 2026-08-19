@@ -10,7 +10,7 @@ Here are some tips for you:
 ### Why are the changes needed?
 <!--
 Please clarify why the changes are needed. For instance,
-  1. If you propose a new API, clarify the use case for a new API.
+  1. If you propose a new feature, clarify the use cases.
   2. If you fix a bug, you can clarify why it is a bug, and what versions are affected.
 -->
 
@@ -23,11 +23,11 @@ If tests were not added, please describe why they were not added and/or why it w
 -->
 
 
-### Was this patch authored or co-authored using generative AI tooling?
+### Was this patch assisted by generative AI tooling?
 <!--
 If generative AI tooling has assisted in authoring or reviewing this patch, please include
-an 'Assisted-by: ' trailer that identifies the agent and model.
-For example: 'Assisted-by: Claude:claude-opus-4-7' or 'Assisted-by: Claude Opus 4.7'.
+an 'Assisted-by: ' trailer that identifies the agent and/or model.
+For example: 'Assisted-by: Claude Opus 4.7' or 'Assisted-by: Claude:claude-opus-4-7'.
 If no, write 'No'.
 Please refer to the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html) for details.
 -->
