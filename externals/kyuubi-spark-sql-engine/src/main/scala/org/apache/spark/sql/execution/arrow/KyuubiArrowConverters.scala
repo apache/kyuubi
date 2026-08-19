@@ -99,7 +99,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       val vectorLoader =
         if (compressed) {
           requireArrowCompression()
-          ArrowCompressionSupport.createLoader(vectorSchemaRoot)
+          KyuubiArrowCompressionSupport.createLoader(vectorSchemaRoot)
         } else {
           new VectorLoader(vectorSchemaRoot)
         }
@@ -113,7 +113,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
           new VectorUnloader(slicedVectorSchemaRoot)
         case "zstd" =>
           requireArrowCompression()
-          ArrowCompressionSupport.createZstdUnloader(slicedVectorSchemaRoot, zstdLevel)
+          KyuubiArrowCompressionSupport.createZstdUnloader(slicedVectorSchemaRoot, zstdLevel)
         case "lz4" =>
           throw new IllegalArgumentException(
             "Arrow compression codec lz4 is not supported by Kyuubi; " +
@@ -316,7 +316,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     // The none path keeps the original 1-arg constructor and stays free of arrow-compression.
     protected val unloader =
       if (compressionEnabled) {
-        ArrowCompressionSupport.createZstdUnloader(root, zstdLevel)
+        KyuubiArrowCompressionSupport.createZstdUnloader(root, zstdLevel)
       } else {
         new VectorUnloader(root)
       }

@@ -21,7 +21,7 @@ import org.apache.arrow.compression.{CommonsCompressionFactory, ZstdCompressionC
 import org.apache.arrow.vector.{VectorLoader, VectorSchemaRoot, VectorUnloader}
 
 /** Isolates the optional arrow-compression dependency so the uncompressed path never loads it. */
-private[sql] object ArrowCompressionSupport {
+private[sql] object KyuubiArrowCompressionSupport {
 
   def createLoader(root: VectorSchemaRoot): VectorLoader = {
     new VectorLoader(root, CommonsCompressionFactory.INSTANCE)
