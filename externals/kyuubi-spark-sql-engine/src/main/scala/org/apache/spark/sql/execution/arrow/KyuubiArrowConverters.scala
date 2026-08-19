@@ -40,6 +40,31 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   type Batch = (Array[Byte], Long)
 
+  private val CommonsCompressionFactoryClassName =
+    "org.apache.arrow.compression.CommonsCompressionFactory"
+  private val ZstdCompressionCodecClassName =
+    "org.apache.arrow.compression.ZstdCompressionCodec"
+
+  // Mirror Spark's SparkSession#enableHiveSupport: check the capability on each request instead
+  // of caching, because the codec is a session-level config that can change at runtime.
+  private def arrowCompressionAvailable: Boolean = {
+    try {
+      Utils.classForName(CommonsCompressionFactoryClassName)
+      Utils.classForName(ZstdCompressionCodecClassName).getConstructor(Integer.TYPE)
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError | _: NoSuchMethodException =>
+        false
+    }
+  }
+
+  private def requireArrowCompression(): Unit = {
+    if (!arrowCompressionAvailable) {
+      throw new IllegalArgumentException(
+        "Arrow ZSTD compression requires arrow-compression on the Spark classpath")
+    }
+  }
+
   /**
    * this method is to slice the input Arrow record batch byte array `bytes`, starting from `start`
    * and taking `length` number of elements.
@@ -73,6 +98,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         recordBatch.getBodyCompression.getCodec != NoCompressionCodec.COMPRESSION_TYPE
       val vectorLoader =
         if (compressed) {
+          requireArrowCompression()
           ArrowCompressionSupport.createLoader(vectorSchemaRoot)
         } else {
           new VectorLoader(vectorSchemaRoot)
@@ -86,6 +112,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         case null | "none" =>
           new VectorUnloader(slicedVectorSchemaRoot)
         case "zstd" =>
+          requireArrowCompression()
           ArrowCompressionSupport.createZstdUnloader(slicedVectorSchemaRoot, zstdLevel)
         case "lz4" =>
           throw new IllegalArgumentException(
@@ -269,6 +296,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       case null | "none" =>
         false
       case "zstd" =>
+        requireArrowCompression()
         true
       case "lz4" =>
         throw new IllegalArgumentException(

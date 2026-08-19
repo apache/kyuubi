@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation
 
+import java.sql.SQLException
 import java.util.{Properties, UUID}
 
 import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
@@ -247,6 +248,53 @@ class KyuubiOperationPerUserSuite
         }
         assert(count === 150)
         assert(ids === (0L until 150L).toSet)
+      }
+    }
+  }
+
+  test("session-level codec switches within one engine when arrow-compression is present") {
+    // The codec is a session-level config; each switch within one long-lived engine must apply.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "arrow-zstd",
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.jars" -> arrowCompressionJar,
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
+      withJdbcStatement() { statement =>
+        def checkQuery(): Unit = {
+          val resultSet = statement.executeQuery(
+            "select id, cast(id as string) as name from range(0, 1000)")
+          var count = 0
+          while (resultSet.next()) {
+            assert(resultSet.getString(2) === resultSet.getLong(1).toString)
+            count += 1
+          }
+          assert(count === 1000)
+        }
+        checkQuery() // none
+        statement.executeQuery("set spark.sql.execution.arrow.compression.codec=zstd")
+        checkQuery() // zstd
+        statement.executeQuery("set spark.sql.execution.arrow.compression.codec=none")
+        checkQuery() // back to none
+      }
+    }
+  }
+
+  test("session-level zstd without arrow-compression fails with a clear error") {
+    // Enabling zstd on an engine whose classpath has no arrow-compression must fail with a clear
+    // dependency error, not NoClassDefFoundError.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow")) {
+      withJdbcStatement() { statement =>
+        val ok = statement.executeQuery("select id from range(0, 10)")
+        var count = 0
+        while (ok.next()) count += 1
+        assert(count === 10)
+        // the SET result itself is serialized as Arrow, so the failure surfaces at the SET
+        val e = intercept[SQLException] {
+          statement.executeQuery("set spark.sql.execution.arrow.compression.codec=zstd")
+        }
+        assert(e.getMessage.contains("arrow-compression"))
       }
     }
   }
