@@ -58,17 +58,13 @@ class KyuubiParquetScanBuilder(
   with SupportsPushDownAggregates {
 
   /**
-   * Starts from `hiveTableCatalog.hadoopConfiguration()` so per-catalog Hadoop
-   * settings are honored. Cloned so per-scan `options` do not pollute the
-   * shared catalog instance.
-   *
-   * Note: the catalog's `hadoopConfiguration()` is a `lazy val` snapshot of
-   * `sessionState.newHadoopConf()` taken at first use. Session confs changed
-   * after that snapshot may not reach reader code that reads straight from
-   * the Hadoop `Configuration`.
+   * Cloned from a freshly-built per-catalog Hadoop [[Configuration]] so
+   * per-catalog settings and mid-session confs are both honored, matching
+   * Spark's built-in `ParquetScanBuilder.hadoopConf`. Cloned so per-scan
+   * `options` do not pollute the source instance.
    */
   lazy val hadoopConf: Configuration = {
-    val conf = new Configuration(hiveTableCatalog.hadoopConfiguration())
+    val conf = new Configuration(hiveTableCatalog.newScanHadoopConf())
     // Hadoop Configurations are case sensitive.
     options.asCaseSensitiveMap.asScala.foreach { case (k, v) => conf.set(k, v) }
     conf

@@ -554,24 +554,21 @@ class HiveCatalogSuite extends KyuubiHiveTest {
     }
   }
 
-  test("KyuubiParquetScan and KyuubiOrcScan hadoopConf snapshots at catalog first use") {
-    // Unlike Spark's built-in ScanBuilders rebuilt per query planning from
-    // the current sqlConf, KSHC clones a `lazy val` snapshot taken at the
-    // catalog's first use, so confs SET after that snapshot cannot reach
-    // readers that consult the Hadoop `Configuration` directly.
+  test("KyuubiParquetScan and KyuubiOrcScan pick up mid-session confs and catalog overlay") {
+    // Confs set in the session must take effect for the reader.
     val fieldIdRead = SQLConf.PARQUET_FIELD_ID_READ_ENABLED.key
     val fieldIdIgnoreMissing = SQLConf.IGNORE_MISSING_PARQUET_FIELD_ID.key
+    // Injected in `newCatalog` as camelCase, overlay writes it as lowercase.
+    val overlayKey = "javax.jdo.option.connectionurl"
 
     Seq("orc", "parquet").foreach { provider =>
       withSparkSession() { spark =>
-        // `catalog` is built in `beforeEach`, its `hadoopConf` snapshot is
-        // already frozen by the time this test runs, so any conf we SET below
-        // is "mid-session" from its perspective.
         val props = new util.HashMap[String, String]()
         props.put(TableCatalog.PROP_PROVIDER, provider)
+        val ident = Identifier.of(testNs, s"scan_conf_$provider")
 
         try {
-          val table = catalog.createTable(testIdent, schema, Array.empty[Transform], props)
+          val table = catalog.createTable(ident, schema, Array.empty[Transform], props)
           spark.sessionState.conf.setConfString(fieldIdRead, "true")
           spark.sessionState.conf.setConfString(fieldIdIgnoreMissing, "true")
 
@@ -581,10 +578,13 @@ class HiveCatalogSuite extends KyuubiHiveTest {
             case s: KyuubiOrcScan => s.hadoopConf
             case other => fail(s"unexpected scan type: ${other.getClass.getName}")
           }
-          assert(hadoopConf.get(fieldIdRead) != "true")
-          assert(hadoopConf.get(fieldIdIgnoreMissing) != "true")
+          // Mid-session confs reach the reader (no snapshot freeze).
+          assert(hadoopConf.get(fieldIdRead) == "true")
+          assert(hadoopConf.get(fieldIdIgnoreMissing) == "true")
+          // Per-catalog overlay applied (lowercase key).
+          assert(hadoopConf.get(overlayKey) != null)
         } finally {
-          catalog.dropTable(testIdent)
+          catalog.dropTable(ident)
         }
       }
     }

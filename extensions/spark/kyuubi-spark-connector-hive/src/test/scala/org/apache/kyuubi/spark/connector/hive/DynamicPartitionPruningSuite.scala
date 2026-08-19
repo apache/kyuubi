@@ -25,6 +25,7 @@ import org.apache.spark.sql.connector.read.Scan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanExec
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
+import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.spark.connector.hive.read.{HiveScan, KyuubiOrcScan, KyuubiParquetScan}
 
@@ -61,7 +62,7 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
     Seq(true, false).foreach { enabled =>
       withSparkSession(Map(
         "hive.exec.dynamic.partition.mode" -> "nonstrict",
-        "spark.sql.optimizer.dynamicPartitionPruning.enabled" -> enabled.toString)) { spark =>
+        SQLConf.DYNAMIC_PARTITION_PRUNING_ENABLED.key -> enabled.toString)) { spark =>
         val suffix = s"${storedAs.toLowerCase}_${if (enabled) "on" else "off"}"
         val fact = s"hive.default.dpp_fact_$suffix"
         val dim = s"hive.default.dpp_dim_$suffix"
@@ -83,14 +84,12 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
                |""".stripMargin)
           spark.sql(s"INSERT INTO $dim VALUES ('2026-05-01', 'target')")
 
-          val sql =
+          val df = spark.sql(
             s"""
                | SELECT f.id, f.v, f.dt
                | FROM $fact f JOIN $dim d ON f.dt = d.dt
                | WHERE d.tag = 'target'
-               |""".stripMargin
-
-          val df = spark.sql(sql)
+               |""".stripMargin)
           checkAnswer(
             df,
             Seq(
@@ -122,8 +121,7 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
     val planOff = plannedPartitions(false)
     assert(
       planOn < planOff,
-      s"DPP ($storedAs) should plan fewer partitions when enabled," +
-        s" got on=$planOn off=$planOff")
+      s"DPP ($storedAs) should plan fewer partitions when enabled")
   }
 
   test("HiveScan supports DPP runtime filtering on partition columns") {
@@ -136,5 +134,106 @@ class DynamicPartitionPruningSuite extends KyuubiHiveTest {
 
   test("KyuubiParquetScan supports DPP runtime filtering on partition columns") {
     runDppCase(storedAs = "PARQUET")
+  }
+
+  /**
+   * Build a fact table and assert `columnarSupportMode()` matches
+   * `expectedColumnarMode` under the given `extraConf`.
+   */
+  private def runColumnarModeCase(
+      storedAs: String,
+      extraConf: Map[String, String],
+      expectedColumnarMode: Scan.ColumnarSupportMode): Unit = {
+    withSparkSession(extraConf ++ Map(
+      "hive.exec.dynamic.partition.mode" -> "nonstrict")) { spark =>
+      val fact = s"hive.default.mode_fact_${storedAs.toLowerCase}"
+      dropTableAfter(fact) {
+        spark.sql(
+          s"""
+             | CREATE TABLE $fact (id INT, v STRING) PARTITIONED BY (dt STRING)
+             | STORED AS $storedAs
+             |""".stripMargin)
+        spark.sql(s"INSERT INTO $fact PARTITION (dt='2026-05-01') VALUES (1, 'a')")
+
+        val df = spark.sql(s"SELECT id, v, dt FROM $fact")
+        val exec = findBatchScanExec(df.queryExecution.executedPlan, fact.split('.').last)
+        exec.scan match {
+          case _: KyuubiOrcScan | _: KyuubiParquetScan =>
+            assert(exec.scan.columnarSupportMode() == expectedColumnarMode)
+          case other =>
+            fail(s"unexpected scan type: ${other.getClass.getName}")
+        }
+      }
+    }
+  }
+
+  test("KyuubiOrcScan returns UNSUPPORTED when orc vectorized reader is disabled") {
+    runColumnarModeCase(
+      storedAs = "ORC",
+      extraConf = Map(SQLConf.ORC_VECTORIZED_READER_ENABLED.key -> "false"),
+      expectedColumnarMode = Scan.ColumnarSupportMode.UNSUPPORTED)
+  }
+
+  test("KyuubiParquetScan returns UNSUPPORTED when parquet vectorized reader is disabled") {
+    runColumnarModeCase(
+      storedAs = "PARQUET",
+      extraConf = Map(SQLConf.PARQUET_VECTORIZED_READER_ENABLED.key -> "false"),
+      expectedColumnarMode = Scan.ColumnarSupportMode.UNSUPPORTED)
+  }
+
+  private def runAllPrunedCase(storedAs: String): Unit = {
+    withSparkSession(Map(
+      "hive.exec.dynamic.partition.mode" -> "nonstrict",
+      SQLConf.DYNAMIC_PARTITION_PRUNING_ENABLED.key -> "true")) { spark =>
+      val suffix = storedAs.toLowerCase
+      val fact = s"hive.default.pruned_fact_$suffix"
+      val dim = s"hive.default.pruned_dim_$suffix"
+
+      dropTableAfter(fact, dim) {
+        spark.sql(
+          s"""
+             | CREATE TABLE $fact (id INT, v STRING) PARTITIONED BY (dt STRING)
+             | STORED AS $storedAs
+             |""".stripMargin)
+        spark.sql(s"INSERT INTO $fact PARTITION (dt='2026-01-01') VALUES (1, 'a')")
+        spark.sql(s"INSERT INTO $fact PARTITION (dt='2026-05-01') VALUES (2, 'b')")
+
+        spark.sql(
+          s"""
+             | CREATE TABLE $dim (dt STRING, tag STRING)
+             | STORED AS $storedAs
+             |""".stripMargin)
+        // Dim key matches no fact partition, so DPP prunes every fact partition.
+        spark.sql(s"INSERT INTO $dim VALUES ('1999-12-31', 'target')")
+
+        val df = spark.sql(
+          s"""
+             | SELECT f.id, f.v, f.dt
+             | FROM $fact f JOIN $dim d ON f.dt = d.dt
+             | WHERE d.tag = 'target'
+             |""".stripMargin)
+        // Trigger full execution so `BatchScanExec.filteredPartitions` pushes
+        // runtime filters into the wrapped scan (via `SupportsRuntimeFiltering`)
+        // and `planInputPartitions()` below reflects DPP-pruned partitions.
+        assert(df.collect().isEmpty)
+
+        val exec = findBatchScanExec(df.queryExecution.executedPlan, fact.split('.').last)
+        exec.scan match {
+          case _: KyuubiOrcScan | _: KyuubiParquetScan =>
+            assert(exec.scan.toBatch.planInputPartitions().isEmpty)
+            assert(exec.scan.columnarSupportMode() == Scan.ColumnarSupportMode.SUPPORTED)
+          case other =>
+            fail(s"unexpected scan type: ${other.getClass.getName}")
+        }
+      }
+    }
+  }
+
+  test("KyuubiOrcScan returns SUPPORTED when DPP prunes every partition") {
+    runAllPrunedCase(storedAs = "ORC")
+  }
+
+  test("KyuubiParquetScan returns SUPPORTED when DPP prunes every partition") {
+    runAllPrunedCase(storedAs = "PARQUET")
   }
 }
