@@ -327,16 +327,13 @@ object Utils extends Logging {
   }
 
   def redactCommandLineArgs(conf: KyuubiConf, commands: Iterable[String]): Iterable[String] = {
-    conf.get(SERVER_SECRET_REDACTION_PATTERN) match {
-      case Some(redactionPattern) =>
-        commands.map {
-          case PATTERN_FOR_KEY_VALUE_ARG(key, value) =>
-            val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
-            genKeyValuePair(key, newValue)
-          case cmd =>
-            cmd
-        }
-      case _ => commands
+    val redactionPattern = conf.get(SERVER_SECRET_REDACTION_PATTERN)
+    commands.map {
+      case PATTERN_FOR_KEY_VALUE_ARG(key, value) =>
+        val (_, newValue) = redact(redactionPattern, Seq((key, value))).head
+        genKeyValuePair(key, newValue)
+      case cmd =>
+        cmd
     }
   }
 

@@ -42,7 +42,7 @@ object ApiUtils extends Logging {
       case ConfRetrieveMode.ORIGINAL => rawConf.asJava
       case ConfRetrieveMode.REDACTED =>
         val pattern = session.sessionManager.getConf.get(SERVER_SECRET_REDACTION_PATTERN)
-        Utils.redact(pattern, rawConf.toSeq).toMap.asJava
+        Utils.redact(Some(pattern), rawConf.toSeq).toMap.asJava
     }
   }
 

@@ -3572,15 +3572,17 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+  val SERVER_SECRET_REDACTION_PATTERN: ConfigEntry[Regex] =
     buildConf("kyuubi.server.redaction.regex")
       .audience(SERVER)
       .immutable
       .doc("Regex to decide which Kyuubi contain sensitive information. When this regex matches " +
-        "a property key or value, the value is redacted from the various logs.")
+        "a property key or value, the value is redacted from the various logs. Defaults to " +
+        "the same pattern Spark uses for spark.redaction.regex, so common secret-bearing keys " +
+        "are redacted out of the box.")
       .version("1.6.0")
       .regexConf
-      .createOptional
+      .createWithDefault("(?i)secret|password|token|access[.]key".r)
 
   val SERVER_CONF_RETRIEVE_MODE: ConfigEntry[String] =
     buildConf("kyuubi.server.conf.retrieveMode")
@@ -3589,7 +3591,8 @@ object KyuubiConf {
       .doc("Controls how session configurations are returned in REST API responses. " +
         "Supported values: " +
         "<ul>" +
-        "<li>REDACTED: Mask values that match kyuubi.server.redaction.regex (default).</li>" +
+        "<li>REDACTED: Mask values that match kyuubi.server.redaction.regex, which has a " +
+        "default pattern (default).</li>" +
         "<li>ORIGINAL: Return the raw config values as-is.</li>" +
         "<li>NONE: Omit the conf map from responses entirely.</li>" +
         "</ul>")
