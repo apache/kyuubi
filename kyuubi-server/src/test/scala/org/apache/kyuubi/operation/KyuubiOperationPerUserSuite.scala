@@ -280,9 +280,11 @@ class KyuubiOperationPerUserSuite
     }
   }
 
-  test("session-level zstd without arrow-compression fails with a clear error") {
-    // Enabling zstd on an engine whose classpath has no arrow-compression must fail with a clear
-    // dependency error, not NoClassDefFoundError.
+  test("session-level zstd either round-trips or fails with a clear arrow-compression error") {
+    // Spark 4.1+ bundles arrow-compression in the Spark distribution, so this suite cannot
+    // control whether the engine classpath contains it. Enabling zstd must either fail with a
+    // clear dependency error (not NoClassDefFoundError) or, when the dependency is present,
+    // keep Arrow results working end-to-end.
     withSessionConf()(Map.empty)(Map(
       KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow")) {
       withJdbcStatement() { statement =>
@@ -290,11 +292,20 @@ class KyuubiOperationPerUserSuite
         var count = 0
         while (ok.next()) count += 1
         assert(count === 10)
-        // the SET result itself is serialized as Arrow, so the failure surfaces at the SET
-        val e = intercept[SQLException] {
+        // the SET result itself is serialized as Arrow, so a missing dependency surfaces at the
+        // SET, while a present dependency is proven by the follow-up query below
+        try {
           statement.executeQuery("set spark.sql.execution.arrow.compression.codec=zstd")
+          val resultSet = statement.executeQuery("select id from range(0, 10)")
+          val ids = scala.collection.mutable.Set.empty[Long]
+          while (resultSet.next()) ids += resultSet.getLong(1)
+          assert(ids === (0L until 10L).toSet)
+        } catch {
+          case e: SQLException =>
+            assert(
+              e.getMessage.contains("arrow-compression"),
+              s"Unexpected error when enabling zstd: ${e.getMessage}")
         }
-        assert(e.getMessage.contains("arrow-compression"))
       }
     }
   }
