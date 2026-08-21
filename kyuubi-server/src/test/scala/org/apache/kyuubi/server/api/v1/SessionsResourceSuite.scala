@@ -439,6 +439,29 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
   }
 
+  test("get /sessions redacts spark confs by default with no explicit redaction regex") {
+    withNoExplicitRedactionPattern {
+      val sensitiveKey = "spark.password"
+      val sensitiveValue = "shouldNeverLeak"
+      val requestObj = new SessionOpenRequest(Map(sensitiveKey -> sensitiveValue).asJava)
+
+      val r = webTarget.path("api/v1/sessions")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == r.getStatus)
+      val sessionHandle = r.readEntity(classOf[SessionHandle]).getIdentifier
+
+      val r2 = webTarget.path("api/v1/sessions").request().get()
+      assert(200 == r2.getStatus)
+      val sessions = r2.readEntity(new GenericType[Seq[SessionData]]() {})
+      val sessionConf = sessions.find(_.getIdentifier == sessionHandle.toString).get.getConf
+      assert(sessionConf.get(sensitiveKey) != sensitiveValue)
+      assert(sessionConf.get(sensitiveKey) == "*********(redacted)")
+
+      webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
+    }
+  }
+
   test("get /sessions returns raw conf when mode is ORIGINAL") {
     withSessionConfDisplayMode("ORIGINAL") {
       val sensitiveKey = "spark.password"
@@ -464,5 +487,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.SERVER_CONF_RETRIEVE_MODE, mode)
     try f
     finally conf.set(KyuubiConf.SERVER_CONF_RETRIEVE_MODE, "REDACTED")
+  }
+
+  private def withNoExplicitRedactionPattern(f: => Unit): Unit = {
+    conf.unset(KyuubiConf.SERVER_SECRET_REDACTION_PATTERN)
+    try f
+    finally conf.set(KyuubiConf.SERVER_SECRET_REDACTION_PATTERN, "(?i)password".r)
   }
 }

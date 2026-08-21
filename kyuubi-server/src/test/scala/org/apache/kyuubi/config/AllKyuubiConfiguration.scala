@@ -103,6 +103,11 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
         entries.sortBy(_.key).foreach { c =>
           val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
+            // Escape literal `|` (e.g. a regex default like "a|b|c") so it
+            // isn't mistaken for a markdown table delimiter. `doc` isn't
+            // escaped here since existing docs already rely on backticked
+            // code spans to protect any `|` they contain.
+            .replace("|", "\\|")
           builder += Seq(
             s"${c.key}",
             s"$dft",

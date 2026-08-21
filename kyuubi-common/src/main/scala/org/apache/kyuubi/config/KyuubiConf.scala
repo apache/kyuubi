@@ -3572,7 +3572,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val SERVER_SECRET_REDACTION_PATTERN: OptionalConfigEntry[Regex] =
+  val SERVER_SECRET_REDACTION_PATTERN: ConfigEntry[Regex] =
     buildConf("kyuubi.server.redaction.regex")
       .audience(SERVER)
       .immutable
@@ -3580,7 +3580,7 @@ object KyuubiConf {
         "a property key or value, the value is redacted from the various logs.")
       .version("1.6.0")
       .regexConf
-      .createOptional
+      .createWithDefault("(?i)secret|password|token|access[.]key".r)
 
   val SERVER_CONF_RETRIEVE_MODE: ConfigEntry[String] =
     buildConf("kyuubi.server.conf.retrieveMode")

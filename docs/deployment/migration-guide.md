@@ -22,6 +22,7 @@
 * Since Kyuubi 1.13, the support of Spark engine for Spark 3.3 and 3.4 is removed.
 * Since Kyuubi 1.13, the support of Flink engine for Flink 1.17, 1.18 and 1.19 is removed.
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
+* Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
 
 ## Upgrading from Kyuubi 1.11 to 1.12
 
