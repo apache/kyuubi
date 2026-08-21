@@ -77,7 +77,18 @@ class HiveTableCatalog(sparkSession: SparkSession)
       SupportsNamespaces.PROP_LOCATION,
       SupportsNamespaces.PROP_OWNER)
 
-  private lazy val hadoopConf: Configuration = {
+  /**
+   * Cached Hadoop [[Configuration]] snapshot taken at first catalog use.
+   */
+  private lazy val hadoopConf: Configuration = buildHadoopConf()
+
+  /**
+   * Non-cached Hadoop [[Configuration]] for scan builders. Re-evaluated on
+   * every call so mid-session confs reach readers.
+   */
+  def newScanHadoopConf(): Configuration = buildHadoopConf()
+
+  private def buildHadoopConf(): Configuration = {
     val conf = sparkSession.sessionState.newHadoopConf()
     catalogOptions.asScala.foreach { case (k, v) => conf.set(k, v) }
     if (catalogOptions.containsKey("hive.metastore.uris")) {
