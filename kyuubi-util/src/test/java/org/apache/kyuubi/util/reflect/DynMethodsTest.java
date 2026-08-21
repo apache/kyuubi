@@ -29,7 +29,6 @@ public class DynMethodsTest {
 
   public static class ReflectionTarget {
 
-    /** Kept as a field so a test can assert the very same instance came back out of invoke. */
     final IllegalStateException causelessFailure = new IllegalStateException();
 
     public Object throwCheckedWithoutCause() throws IOException {
@@ -86,10 +85,6 @@ public class DynMethodsTest {
     RuntimeException thrown =
         assertThrows(RuntimeException.class, () -> method.invoke(new ReflectionTarget()));
 
-    // Before the fix, invoke unwrapped a second time and threw the IllegalArgumentException
-    // bare, dropping the target's IOException: a plausible-looking wrong type in place of the
-    // real failure. The IOException must now arrive as the wrapper's cause, with its own cause
-    // still attached.
     assertEquals(RuntimeException.class, thrown.getClass());
     assertTrue(thrown.getCause() instanceof IOException);
     assertEquals("checked failure", thrown.getCause().getMessage());
