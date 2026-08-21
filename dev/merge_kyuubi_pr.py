@@ -82,9 +82,22 @@ def run_cmd(cmd):
         return subprocess.check_output(cmd.split(" ")).decode("utf-8")
 
 
+def get_input(prompt, options):
+    while True:
+        answer = input(prompt).strip()
+        if isinstance(options, str):
+            if re.fullmatch(options, answer):
+                return answer
+        else:
+            normalized_answer = answer.lower()
+            if normalized_answer in options:
+                return normalized_answer
+        print("Invalid input. Please try again.")
+
+
 def continue_maybe(prompt):
-    result = input("\n%s (y/N): " % prompt)
-    if result.lower() != "y":
+    result = get_input("\n%s (y/N): " % prompt, ["y", "n", ""]).lower()
+    if result != "y":
         fail("Okay, exiting")
 
 
@@ -330,10 +343,17 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     return merge_hash
 
 
-def cherry_pick(pr_num, merge_hash, default_branch):
-    pick_ref = input("Enter a branch name [%s]: " % default_branch)
-    if pick_ref == "":
-        pick_ref = default_branch
+def cherry_pick(pr_num, merge_hash, default_branch, branch_names):
+    while True:
+        pick_ref = input("Enter a branch name [%s]: " % default_branch)
+        if pick_ref == "":
+            pick_ref = default_branch
+        if pick_ref in branch_names:
+            break
+        print(
+            "'%s' is not a known release branch. Valid branches: %s. Please try again."
+            % (pick_ref, ", ".join(branch_names))
+        )
 
     pick_branch_name = "%s_PICK_PR_%s_%s" % (BRANCH_PREFIX, pr_num, pick_ref.upper())
 
@@ -395,7 +415,9 @@ def main():
 
     branch_names = sorted(branch_names, key=sort_by_version, reverse=True)
 
-    pr_num = input("Which pull request would you like to merge? (e.g. 34): ")
+    pr_num = get_input(
+        "Which pull request would you like to merge? (e.g. 34): ", r"\d+"
+    )
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
     pr_events = get_json("%s/issues/%s/events" % (GITHUB_API_BASE, pr_num))
 
@@ -444,11 +466,11 @@ def main():
                         % pr_num
                     )
                     break
-                picked = cherry_pick(pr_num, merge_hash, default_branch)
+                picked = cherry_pick(pr_num, merge_hash, default_branch, branch_names)
                 picked_refs = picked_refs + [picked[0]]
                 picked_commits = picked_commits + [picked]
                 prompt = "Would you like to pick %s into another branch?" % merge_hash
-                if input("\n%s (y/N): " % prompt).lower() != "y":
+                if get_input("\n%s (y/N): " % prompt, ["y", "n", ""]) != "y":
                     break
         finally:
             post_merge_comment(pr_num, picked_commits)
@@ -486,7 +508,7 @@ def main():
 
     pick_prompt = "Would you like to pick %s into another branch?" % merge_hash
     try:
-        while input("\n%s (y/N): " % pick_prompt).lower() == "y":
+        while get_input("\n%s (y/N): " % pick_prompt, ["y", "n", ""]) == "y":
             default_branch = default_pick_branch(branch_names, tuple(merged_refs))
             if default_branch is None:
                 print(
@@ -494,7 +516,7 @@ def main():
                     % pr_num
                 )
                 break
-            picked = cherry_pick(pr_num, merge_hash, default_branch)
+            picked = cherry_pick(pr_num, merge_hash, default_branch, branch_names)
             merged_refs = merged_refs + [picked[0]]
             merged_commits = merged_commits + [picked]
     finally:
