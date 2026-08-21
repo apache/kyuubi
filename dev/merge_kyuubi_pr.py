@@ -67,19 +67,19 @@ def fail(msg):
 def run_cmd(cmd):
     print(cmd)
     if isinstance(cmd, list):
-        return subprocess.check_output(cmd).decode('utf-8')
+        return subprocess.check_output(cmd).decode("utf-8")
     else:
-        return subprocess.check_output(cmd.split(" ")).decode('utf-8')
+        return subprocess.check_output(cmd.split(" ")).decode("utf-8")
 
 
 def continue_maybe(prompt):
-    result = input("\n%s (y/n): " % prompt)
+    result = input("\n%s (y/N): " % prompt)
     if result.lower() != "y":
         fail("Okay, exiting")
 
 
 def clean_up():
-    if 'original_head' in globals():
+    if "original_head" in globals():
         print("Restoring head pointer to %s" % original_head)
         run_cmd("git checkout %s" % original_head)
 
