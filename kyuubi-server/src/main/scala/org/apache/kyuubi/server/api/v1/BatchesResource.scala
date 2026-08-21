@@ -247,9 +247,12 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
-    val userName = fe.getSessionUser(request.getConf.asScala.toMap)
+    val requestConf = Metadata.sanitizeRequestConf(request.getConf.asScala.toMap)
+    request.setConf(requestConf.asJava)
+
+    val userName = fe.getSessionUser(requestConf)
     val ipAddress = fe.getIpAddress
-    val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
+    val userProvidedBatchId = requestConf.get(KYUUBI_BATCH_ID_KEY)
     userProvidedBatchId.foreach { batchId =>
       try UUID.fromString(batchId)
       catch {
