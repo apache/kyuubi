@@ -39,6 +39,7 @@ PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache")
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 GITHUB_API_BASE = "https://api.github.com/repos/apache/kyuubi"
+GITHUB_COMMIT_BASE = "https://github.com/apache/kyuubi/commit"
 BRANCH_PREFIX = "PR_TOOL"
 
 
@@ -90,29 +91,78 @@ def clean_up():
             run_cmd("git branch -D %s" % branch)
 
 
+def comment_pr(pr_num, body):
+    url = "%s/issues/%s/comments" % (GITHUB_API_BASE, pr_num)
+    data = json.dumps({"body": body}).encode("utf-8")
+    request = Request(url, data=data, method="POST")
+    request.add_header("Content-Type", "application/json")
+    request.add_header("Accept", "application/vnd.github+json")
+    if GITHUB_OAUTH_KEY:
+        request.add_header("Authorization", "token %s" % GITHUB_OAUTH_KEY)
+    try:
+        return json.load(urlopen(request))
+    except HTTPError as e:
+        print("Failed to comment on PR #%s: HTTP %s %s" % (pr_num, e.code, e.reason))
+        return None
+
+
+def post_merge_comment(pr_num, merged_commits):
+    """Post a comment recording every branch the change landed on."""
+    if not merged_commits:
+        return
+
+    lines = [
+        "- merged into %s %s/%s" % (ref, GITHUB_COMMIT_BASE, commit_hash)
+        for ref, commit_hash in merged_commits
+    ]
+    summary = "**Merge Summary:**\n" + "\n".join(lines)
+    attribution = "*Posted by `merge_kyuubi_pr.py`*"
+    body = "%s\n\n%s" % (summary, attribution)
+    print(
+        "\nPosting merge comment on PR #%s:\n\n%s\n%s" % (pr_num, summary, attribution)
+    )
+    if not GITHUB_OAUTH_KEY:
+        print("GITHUB_OAUTH_KEY is not set; skipping the merge comment.")
+        return
+    comment_pr(pr_num, body)
+
+
 def default_pick_branch(branch_names, already_picked):
-    """Return the newest release branch that has not received the change."""
+    """Return the newest release branch that has not received the change.
+
+    >>> default_pick_branch(["branch-1.12", "branch-1.11"], ("master",))
+    'branch-1.12'
+    >>> default_pick_branch(["branch-1.12", "branch-1.11"], ("master", "branch-1.12"))
+    'branch-1.11'
+    >>> default_pick_branch(["branch-1.12"], ("master", "branch-1.12")) is None
+    True
+    """
     remaining = [branch for branch in branch_names if branch not in already_picked]
     return remaining[0] if remaining else None
 
 
 def fix_title(text, num):
-    if (re.search(r'^\[KYUUBI\s#[0-9]{3,6}\].*', text)):
+    if re.search(r"^\[KYUUBI\s#[0-9]{3,6}\].*", text):
         return text
 
-    return '[KYUUBI #%s] %s' % (num, text)
+    return "[KYUUBI #%s] %s" % (num, text)
+
 
 # merge the requested PR and return the merge hash
 def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     pr_branch_name = "%s_MERGE_PR_%s" % (BRANCH_PREFIX, pr_num)
-    target_branch_name = "%s_MERGE_PR_%s_%s" % (BRANCH_PREFIX, pr_num, target_ref.upper())
+    target_branch_name = "%s_MERGE_PR_%s_%s" % (
+        BRANCH_PREFIX,
+        pr_num,
+        target_ref.upper(),
+    )
     run_cmd("git fetch %s pull/%s/head:%s" % (PR_REMOTE_NAME, pr_num, pr_branch_name))
     run_cmd("git fetch %s %s:%s" % (PUSH_REMOTE_NAME, target_ref, target_branch_name))
     run_cmd("git checkout %s" % target_branch_name)
 
     had_conflicts = False
     try:
-        run_cmd(['git', 'merge', pr_branch_name, '--squash'])
+        run_cmd(["git", "merge", pr_branch_name, "--squash"])
     except Exception as e:
         msg = "Error merging: %s\nWould you like to manually fix-up this merge?" % e
         continue_maybe(msg)
@@ -166,23 +216,29 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     authors = "Authored-by:" if len(distinct_authors) == 1 else "Lead-authored-by:"
     authors += " %s" % (distinct_authors.pop(0))
     if len(distinct_authors) > 0:
-        authors += "\n" + "\n".join(["Co-authored-by: %s" % a for a in distinct_authors])
+        authors += "\n" + "\n".join(
+            ["Co-authored-by: %s" % a for a in distinct_authors]
+        )
     authors += "\n" + "Signed-off-by: %s <%s>" % (committer_name, committer_email)
 
     merge_message_flags += ["-m", authors]
 
-    run_cmd(['git', 'commit', '--author="%s"' % primary_author] + merge_message_flags)
+    run_cmd(["git", "commit", '--author="%s"' % primary_author] + merge_message_flags)
 
-    continue_maybe("Merge complete (local ref %s). Push to %s?" % (
-        target_branch_name, PUSH_REMOTE_NAME))
+    continue_maybe(
+        "Merge complete (local ref %s). Push to %s?"
+        % (target_branch_name, PUSH_REMOTE_NAME)
+    )
 
     try:
-        run_cmd('git push %s %s:%s' % (PUSH_REMOTE_NAME, target_branch_name, target_ref))
+        run_cmd(
+            "git push %s %s:%s" % (PUSH_REMOTE_NAME, target_branch_name, target_ref)
+        )
     except Exception as e:
         clean_up()
         fail("Exception while pushing: %s" % e)
 
-    merge_hash = run_cmd("git rev-parse %s" % target_branch_name)[:8]
+    merge_hash = run_cmd("git rev-parse %s" % target_branch_name).strip()
     clean_up()
     print("Pull request #%s merged!" % pr_num)
     print("Merge hash: %s" % merge_hash)
@@ -202,30 +258,36 @@ def cherry_pick(pr_num, merge_hash, default_branch):
     try:
         run_cmd("git cherry-pick -sx %s" % merge_hash)
     except Exception as e:
-        msg = "Error cherry-picking: %s\nWould you like to manually fix-up this merge?" % e
+        msg = (
+            "Error cherry-picking: %s\nWould you like to manually fix-up this merge?"
+            % e
+        )
         continue_maybe(msg)
         msg = "Okay, please fix any conflicts and finish the cherry-pick. Finished?"
         continue_maybe(msg)
 
-    continue_maybe("Pick complete (local ref %s). Push to %s?" % (
-        pick_branch_name, PUSH_REMOTE_NAME))
+    continue_maybe(
+        "Pick complete (local ref %s). Push to %s?"
+        % (pick_branch_name, PUSH_REMOTE_NAME)
+    )
 
     try:
-        run_cmd('git push %s %s:%s' % (PUSH_REMOTE_NAME, pick_branch_name, pick_ref))
+        run_cmd("git push %s %s:%s" % (PUSH_REMOTE_NAME, pick_branch_name, pick_ref))
     except Exception as e:
         clean_up()
         fail("Exception while pushing: %s" % e)
 
-    pick_hash = run_cmd("git rev-parse %s" % pick_branch_name)[:8]
+    pick_hash = run_cmd("git rev-parse %s" % pick_branch_name).strip()
     clean_up()
 
     print("Pull request #%s picked into %s!" % (pr_num, pick_ref))
     print("Pick hash: %s" % pick_hash)
     return pick_ref, pick_hash
 
+
 def get_current_ref():
     ref = run_cmd("git rev-parse --abbrev-ref HEAD").strip()
-    if ref == 'HEAD':
+    if ref == "HEAD":
         # The current ref is a detached HEAD, so grab its SHA.
         return run_cmd("git rev-parse HEAD").strip()
     else:
@@ -239,10 +301,13 @@ def main():
     original_head = get_current_ref()
 
     branches = get_json("%s/branches" % GITHUB_API_BASE)
-    branch_names = list(filter(lambda x: x.startswith("branch-"), [x['name'] for x in branches]))
-    # Assumes branch names can be sorted lexicographically
+    branch_names = list(
+        filter(lambda x: x.startswith("branch-"), [x["name"] for x in branches])
+    )
+    # Sort release branches numerically, newest first.
     def sort_by_version(branch_name):
-        return tuple(map(int, branch_name.split('-')[1].split('.')))
+        return tuple(map(int, branch_name.split("-")[1].split(".")))
+
     branch_names = sorted(branch_names, key=sort_by_version, reverse=True)
 
     pr_num = input("Which pull request would you like to merge? (e.g. 34): ")
@@ -262,42 +327,66 @@ def main():
 
     # Merged pull requests don't appear as merged in the GitHub API;
     # Instead, they're closed by asfgit.
-    merge_commits = \
-        [e for e in pr_events if e["event"] == "closed" and e["commit_id"]]
+    merge_commits = [e for e in pr_events if e["event"] == "closed" and e["commit_id"]]
 
     if merge_commits:
         merge_hash = merge_commits[0]["commit_id"]
-        message = get_json("%s/commits/%s" % (GITHUB_API_BASE, merge_hash))["commit"]["message"]
+        message = get_json("%s/commits/%s" % (GITHUB_API_BASE, merge_hash))["commit"][
+            "message"
+        ]
 
-        print("Pull request %s has already been merged, assuming you want to backport" % pr_num)
-        commit_is_downloaded = run_cmd(['git', 'rev-parse', '--quiet', '--verify',
-                                        "%s^{commit}" % merge_hash]).strip() != ""
+        print(
+            "Pull request %s has already been merged, assuming you want to backport"
+            % pr_num
+        )
+        commit_is_downloaded = (
+            run_cmd(
+                ["git", "rev-parse", "--quiet", "--verify", "%s^{commit}" % merge_hash]
+            ).strip()
+            != ""
+        )
         if not commit_is_downloaded:
-            fail("Couldn't find any merge commit for #%s, you may need to update HEAD." % pr_num)
+            fail(
+                "Couldn't find any merge commit for #%s, you may need to update HEAD."
+                % pr_num
+            )
 
         print("Found commit %s:\n%s" % (merge_hash, message))
         picked_refs = [target_ref]
-        while True:
-            default_branch = default_pick_branch(branch_names, tuple(picked_refs))
-            if default_branch is None:
-                print("Every known release branch already contains #%s; nothing to pick." % pr_num)
-                break
-            picked_refs = picked_refs + [cherry_pick(pr_num, merge_hash, default_branch)[0]]
-            prompt = "Would you like to pick %s into another branch?" % merge_hash
-            if input("\n%s (y/N): " % prompt).lower() != "y":
-                break
+        picked_commits = []
+        try:
+            while True:
+                default_branch = default_pick_branch(branch_names, tuple(picked_refs))
+                if default_branch is None:
+                    print(
+                        "Every known release branch already contains #%s; nothing to pick."
+                        % pr_num
+                    )
+                    break
+                picked = cherry_pick(pr_num, merge_hash, default_branch)
+                picked_refs = picked_refs + [picked[0]]
+                picked_commits = picked_commits + [picked]
+                prompt = "Would you like to pick %s into another branch?" % merge_hash
+                if input("\n%s (y/N): " % prompt).lower() != "y":
+                    break
+        finally:
+            post_merge_comment(pr_num, picked_commits)
         sys.exit(0)
 
     if not bool(pr["mergeable"]):
-        msg = "Pull request %s is not mergeable in its current form.\n" % pr_num + \
-            "Continue? (experts only!)"
+        msg = (
+            "Pull request %s is not mergeable in its current form.\n" % pr_num
+            + "Continue? (experts only!)"
+        )
         continue_maybe(msg)
 
     print("\n=== Pull Request #%s ===" % pr_num)
-    print("title:\t%s\nsource:\t%s\ntarget:\t%s\nurl:\t%s\nbody:\n\n%s" %
-          (title, pr_repo_desc, target_ref, url, body))
+    print(
+        "title:\t%s\nsource:\t%s\ntarget:\t%s\nurl:\t%s\nbody:\n\n%s"
+        % (title, pr_repo_desc, target_ref, url, body)
+    )
 
-    if assignees is None or len(assignees)==0:
+    if assignees is None or len(assignees) == 0:
         continue_maybe("Assignees have NOT been set. Continue?")
     else:
         print("assignees: %s" % [assignee["login"] for assignee in assignees])
@@ -312,17 +401,28 @@ def main():
     merged_refs = [target_ref]
 
     merge_hash = merge_pr(pr_num, target_ref, title, body, pr_repo_desc)
+    merged_commits = [(target_ref, merge_hash)]
 
     pick_prompt = "Would you like to pick %s into another branch?" % merge_hash
-    while input("\n%s (y/N): " % pick_prompt).lower() == "y":
-        default_branch = default_pick_branch(branch_names, tuple(merged_refs))
-        if default_branch is None:
-            print("Every known release branch already contains #%s; nothing to pick." % pr_num)
-            break
-        merged_refs = merged_refs + [cherry_pick(pr_num, merge_hash, default_branch)[0]]
+    try:
+        while input("\n%s (y/N): " % pick_prompt).lower() == "y":
+            default_branch = default_pick_branch(branch_names, tuple(merged_refs))
+            if default_branch is None:
+                print(
+                    "Every known release branch already contains #%s; nothing to pick."
+                    % pr_num
+                )
+                break
+            picked = cherry_pick(pr_num, merge_hash, default_branch)
+            merged_refs = merged_refs + [picked[0]]
+            merged_commits = merged_commits + [picked]
+    finally:
+        post_merge_comment(pr_num, merged_commits)
+
 
 if __name__ == "__main__":
     import doctest
+
     (failure_count, test_count) = doctest.testmod()
     if failure_count:
         sys.exit(-1)
