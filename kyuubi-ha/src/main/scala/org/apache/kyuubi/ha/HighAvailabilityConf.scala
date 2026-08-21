@@ -53,6 +53,15 @@ object HighAvailabilityConf {
       .version("1.6.0")
       .fallbackConf(HA_ZK_NAMESPACE)
 
+  val HA_FLIGHT_SQL_NAMESPACE: ConfigEntry[String] =
+    buildConf("kyuubi.ha.flight.sql.namespace")
+      .doc("The root directory for the Arrow Flight SQL frontend service to deploy its " +
+        "instance uri. Must be different from kyuubi.ha.namespace so Thrift/JDBC clients " +
+        "do not discover Flight gRPC endpoints.")
+      .version("1.13.0")
+      .stringConf
+      .createWithDefault("kyuubi_flight")
+
   val HA_CLIENT_CLASS: ConfigEntry[String] =
     buildConf("kyuubi.ha.client.class")
       .doc("Class name for service discovery client.<ul>" +

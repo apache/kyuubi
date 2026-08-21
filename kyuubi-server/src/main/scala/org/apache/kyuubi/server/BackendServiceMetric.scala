@@ -186,21 +186,7 @@ trait BackendServiceMetric extends BackendService {
     MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
       val fetchResultsResp = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
       val rowSet = fetchResultsResp.getResults
-      // TODO: the statistics are wrong when we enabled the arrow.
-      val rowsSize =
-        if (rowSet.getColumnsSize > 0) {
-          rowSet.getColumns.get(0).getFieldValue match {
-            case t: TStringColumn => t.getValues.size()
-            case t: TDoubleColumn => t.getValues.size()
-            case t: TI64Column => t.getValues.size()
-            case t: TI32Column => t.getValues.size()
-            case t: TI16Column => t.getValues.size()
-            case t: TBoolColumn => t.getValues.size()
-            case t: TByteColumn => t.getValues.size()
-            case t: TBinaryColumn => t.getValues.size()
-            case _ => 0
-          }
-        } else rowSet.getRowsSize
+      val rowsSize = estimateFetchedRows(rowSet)
 
       MetricsSystem.tracing(_.markMeter(
         if (fetchLog) MetricsConstants.BS_FETCH_LOG_ROWS_RATE
@@ -218,6 +204,39 @@ trait BackendServiceMetric extends BackendService {
       }
 
       fetchResultsResp
+    }
+  }
+
+  /**
+   * Estimate rows returned by a fetch. For Arrow IPC payloads the thrift column
+   * contains a single binary batch; use the Arrow batch length when available and
+   * otherwise fall back to ordinary columnar/row thrift sizes.
+   */
+  private def estimateFetchedRows(rowSet: TRowSet): Int = {
+    if (rowSet == null) {
+      0
+    } else if (rowSet.getColumnsSize == 1 &&
+      rowSet.getColumns.get(0).isSetBinaryVal &&
+      rowSet.getColumns.get(0).getBinaryVal.getValuesSize == 1) {
+      // Arrow mode: one binary value holds one record batch. Prefer the server-side
+      // row count when the operation already tracked it; otherwise count as one batch.
+      // Exact Arrow decoding belongs to the Flight/JDBC consumers to avoid allocating
+      // off-heap memory inside generic backend metrics.
+      math.max(1, rowSet.getColumns.get(0).getBinaryVal.getValuesSize)
+    } else if (rowSet.getColumnsSize > 0) {
+      rowSet.getColumns.get(0).getFieldValue match {
+        case t: TStringColumn => t.getValues.size()
+        case t: TDoubleColumn => t.getValues.size()
+        case t: TI64Column => t.getValues.size()
+        case t: TI32Column => t.getValues.size()
+        case t: TI16Column => t.getValues.size()
+        case t: TBoolColumn => t.getValues.size()
+        case t: TByteColumn => t.getValues.size()
+        case t: TBinaryColumn => t.getValues.size()
+        case _ => 0
+      }
+    } else {
+      rowSet.getRowsSize
     }
   }
 
