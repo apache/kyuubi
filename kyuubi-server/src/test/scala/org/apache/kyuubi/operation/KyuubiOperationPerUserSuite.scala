@@ -315,7 +315,7 @@ class KyuubiOperationPerUserSuite
     val closedMetric = s"${MetricsConstants.OPERATION_STATE}.$opType" +
       s".${OperationState.CLOSED.toString.toLowerCase}"
     val finishedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
-    val closedCount = MetricsSystem.meterValue(finishedMetric).getOrElse(0L)
+    val closedCount = MetricsSystem.meterValue(closedMetric).getOrElse(0L)
     withJdbcStatement() { statement =>
       statement.executeQuery("select engine_name()")
     }
