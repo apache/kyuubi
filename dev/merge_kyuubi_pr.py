@@ -149,6 +149,21 @@ def post_merge_comment(pr_num, merged_commits):
     comment_pr(pr_num, body)
 
 
+def close_pr(pr_num):
+    url = "%s/pulls/%s" % (GITHUB_API_BASE, pr_num)
+    data = json.dumps({"state": "closed"}).encode("utf-8")
+    request = Request(url, data=data, method="PATCH")
+    request.add_header("Content-Type", "application/json")
+    request.add_header("Accept", "application/vnd.github+json")
+    if GITHUB_OAUTH_KEY:
+        request.add_header("Authorization", "token %s" % GITHUB_OAUTH_KEY)
+    try:
+        return json.load(urlopen(request))
+    except HTTPError as e:
+        print("Failed to close PR #%s: HTTP %s %s" % (pr_num, e.code, e.reason))
+        return None
+
+
 def default_pick_branch(branch_names, already_picked):
     """Return the newest release branch that has not received the change.
 
@@ -520,6 +535,10 @@ def main():
             merged_refs = merged_refs + [picked[0]]
             merged_commits = merged_commits + [picked]
     finally:
+        pr_state = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num)).get("state")
+        if pr_state != "closed":
+            print("PR #%s is still open after push; closing it explicitly." % pr_num)
+            close_pr(pr_num)
         post_merge_comment(pr_num, merged_commits)
 
 
