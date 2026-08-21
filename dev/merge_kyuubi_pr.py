@@ -89,6 +89,13 @@ def clean_up():
             print("Deleting local branch %s" % branch)
             run_cmd("git branch -D %s" % branch)
 
+
+def default_pick_branch(branch_names, already_picked):
+    """Return the newest release branch that has not received the change."""
+    remaining = [branch for branch in branch_names if branch not in already_picked]
+    return remaining[0] if remaining else None
+
+
 def fix_title(text, num):
     if (re.search(r'^\[KYUUBI\s#[0-9]{3,6}\].*', text)):
         return text
@@ -214,7 +221,7 @@ def cherry_pick(pr_num, merge_hash, default_branch):
 
     print("Pull request #%s picked into %s!" % (pr_num, pick_ref))
     print("Pick hash: %s" % pick_hash)
-    return pick_ref
+    return pick_ref, pick_hash
 
 def get_current_ref():
     ref = run_cmd("git rev-parse --abbrev-ref HEAD").strip()
@@ -236,7 +243,7 @@ def main():
     # Assumes branch names can be sorted lexicographically
     def sort_by_version(branch_name):
         return tuple(map(int, branch_name.split('-')[1].split('.')))
-    latest_branch = sorted(branch_names, key=sort_by_version, reverse=True)[0]
+    branch_names = sorted(branch_names, key=sort_by_version, reverse=True)
 
     pr_num = input("Which pull request would you like to merge? (e.g. 34): ")
     pr = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num))
@@ -269,7 +276,16 @@ def main():
             fail("Couldn't find any merge commit for #%s, you may need to update HEAD." % pr_num)
 
         print("Found commit %s:\n%s" % (merge_hash, message))
-        cherry_pick(pr_num, merge_hash, latest_branch)
+        picked_refs = [target_ref]
+        while True:
+            default_branch = default_pick_branch(branch_names, tuple(picked_refs))
+            if default_branch is None:
+                print("Every known release branch already contains #%s; nothing to pick." % pr_num)
+                break
+            picked_refs = picked_refs + [cherry_pick(pr_num, merge_hash, default_branch)[0]]
+            prompt = "Would you like to pick %s into another branch?" % merge_hash
+            if input("\n%s (y/N): " % prompt).lower() != "y":
+                break
         sys.exit(0)
 
     if not bool(pr["mergeable"]):
@@ -298,8 +314,12 @@ def main():
     merge_hash = merge_pr(pr_num, target_ref, title, body, pr_repo_desc)
 
     pick_prompt = "Would you like to pick %s into another branch?" % merge_hash
-    while input("\n%s (y/n): " % pick_prompt).lower() == "y":
-        merged_refs = merged_refs + [cherry_pick(pr_num, merge_hash, latest_branch)]
+    while input("\n%s (y/N): " % pick_prompt).lower() == "y":
+        default_branch = default_pick_branch(branch_names, tuple(merged_refs))
+        if default_branch is None:
+            print("Every known release branch already contains #%s; nothing to pick." % pr_num)
+            break
+        merged_refs = merged_refs + [cherry_pick(pr_num, merge_hash, default_branch)[0]]
 
 if __name__ == "__main__":
     import doctest
