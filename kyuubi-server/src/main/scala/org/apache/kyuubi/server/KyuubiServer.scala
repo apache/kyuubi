@@ -197,6 +197,9 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case TRINO =>
         warn("Trino frontend protocol is experimental.")
         new KyuubiTrinoFrontendService(this)
+      case GRPC =>
+        warn("gRPC frontend protocol is experimental.")
+        new KyuubiGrpcFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
