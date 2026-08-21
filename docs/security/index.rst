@@ -21,9 +21,9 @@ Securing Kyuubi involves enabling authentication(authn), authorization(authz) an
 .. toctree::
     :maxdepth: 2
 
+    Threat model <threat-model>
     Authentication <authentication>
     Authorization <authorization/index>
     kinit
     hadoop_credentials_manager
     internal_secure_access
-
