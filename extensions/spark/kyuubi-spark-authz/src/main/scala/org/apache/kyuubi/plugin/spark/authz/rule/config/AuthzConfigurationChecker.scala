@@ -30,6 +30,9 @@ import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SKIP_CATALOGLESS_V2_
 case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan => Unit) {
 
   final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
+  final val EXCLUDED_RULES_KEY = "spark.sql.optimizer.excludedRules"
+
+  final private val AUTHZ_RANGER_RULE_PACKAGE = "org.apache.kyuubi.plugin.spark.authz.ranger"
 
   private val restrictedConfList: Set[String] =
     Set(
@@ -39,17 +42,27 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
       SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY) ++
       spark.conf.getOption(RESTRICT_LIST_KEY).map(_.split(',').toSet).getOrElse(Set.empty)
 
-  override def apply(plan: LogicalPlan): Unit = plan match {
-    case SetCommand(Some((
-          "spark.sql.optimizer.excludedRules",
-          Some(v)))) if v.contains("org.apache.kyuubi.plugin.spark.authz.ranger") =>
+  override def apply(plan: LogicalPlan): Unit = {
+    // SET is not the only way the exclusion can be set: spark.conf.set and the Spark
+    // Connect Config RPC write the value with no logical plan at all, so the SetCommand
+    // case below never sees them. Check the value that is actually in effect on every
+    // plan instead - check rules are not affected by spark.sql.optimizer.excludedRules,
+    // which only filters optimizer batches, so this check cannot be turned off the same way.
+    if (spark.conf.getOption(EXCLUDED_RULES_KEY).exists(_.contains(AUTHZ_RANGER_RULE_PACKAGE))) {
       throw new AccessControlException("Excluding Authz security rules is not allowed")
-    case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
-      throw new AccessControlException(s"Modifying config $k is not allowed")
-    case ResetCommand(Some(k)) if restrictedConfList.contains(k) =>
-      throw new AccessControlException(s"Resetting config $k is not allowed")
-    case ResetCommand(None) =>
-      throw new AccessControlException("Resetting all configs is not allowed")
-    case _ =>
+    }
+    plan match {
+      case SetCommand(Some((
+            EXCLUDED_RULES_KEY,
+            Some(v)))) if v.contains(AUTHZ_RANGER_RULE_PACKAGE) =>
+        throw new AccessControlException("Excluding Authz security rules is not allowed")
+      case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
+        throw new AccessControlException(s"Modifying config $k is not allowed")
+      case ResetCommand(Some(k)) if restrictedConfList.contains(k) =>
+        throw new AccessControlException(s"Resetting config $k is not allowed")
+      case ResetCommand(None) =>
+        throw new AccessControlException("Resetting all configs is not allowed")
+      case _ =>
+    }
   }
 }
