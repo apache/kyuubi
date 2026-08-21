@@ -41,6 +41,10 @@ GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 GITHUB_API_BASE = "https://api.github.com/repos/apache/kyuubi"
 GITHUB_COMMIT_BASE = "https://github.com/apache/kyuubi/commit"
 BRANCH_PREFIX = "PR_TOOL"
+_MERGE_FOOTER_RE = re.compile(
+    r"^Closes #(\d+) from \S+\s*$\n\n(?:Lead-authored-by|Authored-by):",
+    re.MULTILINE,
+)
 
 
 def get_json(url):
@@ -144,6 +148,76 @@ def default_pick_branch(branch_names, already_picked):
     """
     remaining = [branch for branch in branch_names if branch not in already_picked]
     return remaining[0] if remaining else None
+
+
+def merge_footer_pr(message):
+    """Return the PR number in the final generated merge footer.
+
+    >>> footer = "Closes #1 from a/b.\\n\\nAuthored-by: A <a@example.org>"
+    >>> merge_footer_pr("Title\\n\\n" + footer)
+    1
+    >>> merge_footer_pr("Title\\n\\nNo footer") is None
+    True
+    """
+    matches = _MERGE_FOOTER_RE.findall(message)
+    return int(matches[-1]) if matches else None
+
+
+def has_merge_footer(message, pr_num):
+    """Whether the final generated merge footer closes pr_num.
+
+    >>> footer = "Closes #1 from a/b.\\n\\nAuthored-by: A <a@example.org>"
+    >>> has_merge_footer("Title\\n\\n" + footer, 1)
+    True
+    >>> has_merge_footer("Title\\n\\n" + footer, 2)
+    False
+    """
+    return merge_footer_pr(message) == int(pr_num)
+
+
+def merge_commit_candidates(pr_events):
+    """Split merge events into closed and referenced commits, oldest first.
+
+    >>> merge_commit_candidates([
+    ...     {"event": "closed", "commit_id": "a", "created_at": "2"},
+    ...     {"event": "referenced", "commit_id": "b", "created_at": "1"},
+    ... ])
+    (['a'], ['b'])
+    >>> merge_commit_candidates([{"event": "closed", "commit_id": None}])
+    ([], [])
+    """
+
+    def commits_of(event_name):
+        matched = [
+            event
+            for event in pr_events
+            if event["event"] == event_name and event["commit_id"] is not None
+        ]
+        return [
+            event["commit_id"]
+            for event in sorted(matched, key=lambda event: event["created_at"])
+        ]
+
+    return commits_of("closed"), commits_of("referenced")
+
+
+def find_merge_commit(pr_num, pr_events):
+    """Return the latest commit that merged pr_num, or None."""
+
+    def message_of(commit_hash):
+        return get_json("%s/commits/%s" % (GITHUB_API_BASE, commit_hash))["commit"][
+            "message"
+        ]
+
+    closed_commits, referenced_commits = merge_commit_candidates(pr_events)
+    if closed_commits:
+        return closed_commits[-1], message_of(closed_commits[-1])
+
+    for commit_hash in reversed(referenced_commits):
+        message = message_of(commit_hash)
+        if has_merge_footer(message, pr_num):
+            return commit_hash, message
+    return None, None
 
 
 def fix_title(text, num):
@@ -336,15 +410,11 @@ def main():
     assignees = pr["assignees"]
     milestone = pr["milestone"]
 
-    # Merged pull requests don't appear as merged in the GitHub API;
-    # Instead, they're closed by asfgit.
-    merge_commits = [e for e in pr_events if e["event"] == "closed" and e["commit_id"]]
+    merge_hash, message = (None, None)
+    if pr["state"] == "closed":
+        merge_hash, message = find_merge_commit(pr_num, pr_events)
 
-    if merge_commits:
-        merge_hash = merge_commits[0]["commit_id"]
-        message = get_json("%s/commits/%s" % (GITHUB_API_BASE, merge_hash))["commit"][
-            "message"
-        ]
+    if merge_hash is not None:
 
         print(
             "Pull request %s has already been merged, assuming you want to backport"
