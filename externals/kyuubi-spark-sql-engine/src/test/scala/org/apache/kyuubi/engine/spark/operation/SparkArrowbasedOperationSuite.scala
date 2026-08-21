@@ -380,6 +380,54 @@ class SparkArrowbasedOperationSuite extends WithSparkSQLEngine with SparkDataTyp
     }
   }
 
+  test("arrow zstd compression round-trips through the JDBC client") {
+    // Engine-side coverage of the compressed Arrow IPC path: the engine compresses batches with
+    // the upstream-named codec config, and the JDBC client transparently decompresses them from
+    // the batch body compression metadata (no server-side codec hint on the wire).
+    withJdbcStatement() { statement =>
+      statement.executeQuery(
+        "set spark.sql.execution.arrow.compression.codec=zstd")
+      val resultSet = statement.executeQuery(
+        "select id, cast(id as string) as name from range(0, 1000)")
+      var count = 0
+      while (resultSet.next()) {
+        // per-row invariant, independent of the row order the client receives
+        assert(resultSet.getString(2) == resultSet.getLong(1).toString)
+        count += 1
+      }
+      assert(count == 1000)
+    }
+  }
+
+  test("arrow zstd compression round-trips when LIMIT cuts across a batch boundary") {
+    // Two input partitions and initialNumPartitions=1 make the LIMIT deterministic: the first
+    // partition yields a full 100-row batch, and the second partition yields another full 100-row
+    // batch with only 50 rows left, so doCollectLimit must slice() the second batch down to 50.
+    withJdbcStatement() { statement =>
+      statement.executeQuery(
+        "set spark.sql.execution.arrow.compression.codec=zstd")
+      statement.executeQuery(
+        s"set ${SQLConf.ARROW_EXECUTION_MAX_RECORDS_PER_BATCH.key}=100")
+      statement.executeQuery(
+        "set spark.sql.limit.initialNumPartitions=1")
+      val resultSet = statement.executeQuery(
+        """
+          |select id, cast(id as string) as name from (
+          |  select id from range(0, 100, 1, 1)
+          |  union all
+          |  select id from range(100, 10000, 1, 1)
+          |) t limit 150
+          |""".stripMargin)
+      var count = 0
+      while (resultSet.next()) {
+        // per-row invariant survives compression + slicing, independent of row order
+        assert(resultSet.getString(2) == resultSet.getLong(1).toString)
+        count += 1
+      }
+      assert(count == 150)
+    }
+  }
+
   private def checkResultSetFormat(statement: Statement, expectFormat: String): Unit = {
     val query =
       s"""

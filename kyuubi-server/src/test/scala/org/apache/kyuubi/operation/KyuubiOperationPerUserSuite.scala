@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation
 
+import java.sql.SQLException
 import java.util.{Properties, UUID}
 
 import org.apache.hadoop.fs.{FileSystem, FileUtil, Path}
@@ -26,7 +27,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer, WithSimpleDFS
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
-import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiStatement}
+import org.apache.kyuubi.jdbc.hive.{KyuubiArrowQueryResultSet, KyuubiConnection, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, TGetInfoReq, TGetInfoType, TStatusCode}
@@ -37,6 +38,13 @@ class KyuubiOperationPerUserSuite
   extends WithKyuubiServer with SparkQueryTests with WithSimpleDFSService {
 
   override protected def jdbcUrl: String = getJdbcUrl
+
+  // The engine jar no longer bundles arrow-compression; the zstd test supplies it via spark.jars,
+  // while the other tests cover the none path without it.
+  private lazy val arrowCompressionJar: String =
+    java.nio.file.Paths.get(
+      Class.forName("org.apache.arrow.compression.CommonsCompressionFactory")
+        .getProtectionDomain.getCodeSource.getLocation.toURI).toString
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
@@ -198,6 +206,134 @@ class KyuubiOperationPerUserSuite
             }
           }
         }
+      }
+    }
+  }
+
+  test("arrow zstd compression round-trips through the Kyuubi server") {
+    // Compressed Arrow IPC must pass through the server unchanged; the two partitions force
+    // slice(), and the dedicated subdomain engine gets arrow-compression via spark.jars.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "arrow-zstd",
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.jars" -> arrowCompressionJar,
+      "spark.sql.execution.arrow.compression.codec" -> "zstd",
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
+      withJdbcStatement() { statement =>
+        // prove the codec config reached the engine through the server
+        val codecResult =
+          statement.executeQuery("set spark.sql.execution.arrow.compression.codec")
+        assert(codecResult.next())
+        assert(codecResult.getString("value") === "zstd")
+        val resultSet = statement.executeQuery(
+          """
+            |select id, cast(id as string) as name from (
+            |  select id from range(0, 100, 1, 1)
+            |  union all
+            |  select id from range(100, 10000, 1, 1)
+            |) t limit 150
+            |""".stripMargin)
+        // prove the results come back as Arrow, not silently falling back to Thrift
+        assert(resultSet.isInstanceOf[KyuubiArrowQueryResultSet])
+        val ids = scala.collection.mutable.Set.empty[Long]
+        var count = 0
+        while (resultSet.next()) {
+          // per-row invariant survives compression, transfer and slicing, independent of the row
+          // order the client receives
+          val id = resultSet.getLong(1)
+          assert(resultSet.getString(2) === id.toString)
+          ids += id
+          count += 1
+        }
+        assert(count === 150)
+        assert(ids === (0L until 150L).toSet)
+      }
+    }
+  }
+
+  test("session-level codec switches within one engine when arrow-compression is present") {
+    // The codec is a session-level config; each switch within one long-lived engine must apply.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "arrow-zstd",
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.jars" -> arrowCompressionJar,
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
+      withJdbcStatement() { statement =>
+        def checkQuery(): Unit = {
+          val resultSet = statement.executeQuery(
+            "select id, cast(id as string) as name from range(0, 1000)")
+          var count = 0
+          while (resultSet.next()) {
+            assert(resultSet.getString(2) === resultSet.getLong(1).toString)
+            count += 1
+          }
+          assert(count === 1000)
+        }
+        checkQuery() // none
+        statement.executeQuery("set spark.sql.execution.arrow.compression.codec=zstd")
+        checkQuery() // zstd
+        statement.executeQuery("set spark.sql.execution.arrow.compression.codec=none")
+        checkQuery() // back to none
+      }
+    }
+  }
+
+  test("session-level zstd either round-trips or fails with a clear arrow-compression error") {
+    // Spark 4.1+ bundles arrow-compression in the Spark distribution, so this suite cannot
+    // control whether the engine classpath contains it. Enabling zstd must either fail with a
+    // clear dependency error (not NoClassDefFoundError) or, when the dependency is present,
+    // keep Arrow results working end-to-end.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow")) {
+      withJdbcStatement() { statement =>
+        val ok = statement.executeQuery("select id from range(0, 10)")
+        var count = 0
+        while (ok.next()) count += 1
+        assert(count === 10)
+        // the SET result itself is serialized as Arrow, so a missing dependency surfaces at the
+        // SET, while a present dependency is proven by the follow-up query below
+        try {
+          statement.executeQuery("set spark.sql.execution.arrow.compression.codec=zstd")
+          val resultSet = statement.executeQuery("select id from range(0, 10)")
+          val ids = scala.collection.mutable.Set.empty[Long]
+          while (resultSet.next()) ids += resultSet.getLong(1)
+          assert(ids === (0L until 10L).toSet)
+        } catch {
+          case e: SQLException =>
+            assert(
+              e.getMessage.contains("arrow-compression"),
+              s"Unexpected error when enabling zstd: ${e.getMessage}")
+        }
+      }
+    }
+  }
+
+  test("arrow results work without arrow-compression on the engine classpath") {
+    // This engine has no arrow-compression on its classpath; the default none path, including
+    // the slice() path, must still work.
+    withSessionConf()(Map.empty)(Map(
+      KyuubiConf.OPERATION_RESULT_FORMAT.key -> "arrow",
+      "spark.sql.execution.arrow.maxRecordsPerBatch" -> "100",
+      "spark.sql.limit.initialNumPartitions" -> "1")) {
+      withJdbcStatement() { statement =>
+        val resultSet = statement.executeQuery(
+          """
+            |select id, cast(id as string) as name from (
+            |  select id from range(0, 100, 1, 1)
+            |  union all
+            |  select id from range(100, 10000, 1, 1)
+            |) t limit 150
+            |""".stripMargin)
+        assert(resultSet.isInstanceOf[KyuubiArrowQueryResultSet])
+        val ids = scala.collection.mutable.Set.empty[Long]
+        while (resultSet.next()) {
+          val id = resultSet.getLong(1)
+          assert(resultSet.getString(2) === id.toString)
+          ids += id
+        }
+        assert(ids === (0L until 150L).toSet)
       }
     }
   }

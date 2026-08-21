@@ -42,6 +42,13 @@
             <artifactId>jsr305</artifactId>
             <optional>true</optional>
         </dependency>
+
+        <!-- zstd-jni is excluded from the shaded jar and optional: zstd consumers provide it. -->
+        <dependency>
+            <groupId>com.github.luben</groupId>
+            <artifactId>zstd-jni</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 
     <build>
@@ -58,6 +65,7 @@
                     <artifactSet>
                         <excludes>
                             <exclude>com.google.code.findbugs:jsr305</exclude>
+                            <exclude>com.github.luben:zstd-jni</exclude>
                         </excludes>
                     </artifactSet>
                     <filters>
@@ -97,6 +105,7 @@
                             <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
                         </relocation>
                         <relocation>
+                            <!-- arrow-compression is bundled and relocated; zstd-jni is not. -->
                             <pattern>org.apache.arrow</pattern>
                             <shadedPattern>${kyuubi.shade.packageName}.org.apache.arrow</shadedPattern>
                         </relocation>

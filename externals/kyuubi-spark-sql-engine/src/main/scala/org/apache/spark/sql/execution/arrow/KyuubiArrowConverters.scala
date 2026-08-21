@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.arrow.vector._
+import org.apache.arrow.vector.compression.NoCompressionCodec
 import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
 import org.apache.spark.TaskContext
@@ -39,6 +40,31 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   type Batch = (Array[Byte], Long)
 
+  private val CommonsCompressionFactoryClassName =
+    "org.apache.arrow.compression.CommonsCompressionFactory"
+  private val ZstdCompressionCodecClassName =
+    "org.apache.arrow.compression.ZstdCompressionCodec"
+
+  // Mirror Spark's SparkSession#enableHiveSupport: check the capability on each request instead
+  // of caching, because the codec is a session-level config that can change at runtime.
+  private def arrowCompressionAvailable: Boolean = {
+    try {
+      Utils.classForName(CommonsCompressionFactoryClassName)
+      Utils.classForName(ZstdCompressionCodecClassName).getConstructor(Integer.TYPE)
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError | _: NoSuchMethodException =>
+        false
+    }
+  }
+
+  private def requireArrowCompression(): Unit = {
+    if (!arrowCompressionAvailable) {
+      throw new IllegalArgumentException(
+        "Arrow ZSTD compression requires arrow-compression on the Spark classpath")
+    }
+  }
+
   /**
    * this method is to slice the input Arrow record batch byte array `bytes`, starting from `start`
    * and taking `length` number of elements.
@@ -48,7 +74,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       timeZoneId: String,
       bytes: Array[Byte],
       start: Int,
-      length: Int): Array[Byte] = {
+      length: Int,
+      codecName: String = null,
+      zstdLevel: Int = 3): Array[Byte] = {
     val in = new ByteArrayInputStream(bytes)
     val out = new ByteArrayOutputStream(bytes.length)
 
@@ -65,12 +93,35 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
         new ReadChannel(Channels.newChannel(in)),
         sliceAllocator)
-      val vectorLoader = new VectorLoader(vectorSchemaRoot)
+      // Only compressed batches need the factory; the none path stays free of arrow-compression.
+      val compressed =
+        recordBatch.getBodyCompression.getCodec != NoCompressionCodec.COMPRESSION_TYPE
+      val vectorLoader =
+        if (compressed) {
+          requireArrowCompression()
+          KyuubiArrowCompressionSupport.createLoader(vectorSchemaRoot)
+        } else {
+          new VectorLoader(vectorSchemaRoot)
+        }
       vectorLoader.load(recordBatch)
       recordBatch.close()
       slicedVectorSchemaRoot = vectorSchemaRoot.slice(start, length)
 
-      val unloader = new VectorUnloader(slicedVectorSchemaRoot)
+      // Keep the compression codec on re-serialization, or the client cannot load the batch.
+      val unloader = codecName match {
+        case null | "none" =>
+          new VectorUnloader(slicedVectorSchemaRoot)
+        case "zstd" =>
+          requireArrowCompression()
+          KyuubiArrowCompressionSupport.createZstdUnloader(slicedVectorSchemaRoot, zstdLevel)
+        case "lz4" =>
+          throw new IllegalArgumentException(
+            "Arrow compression codec lz4 is not supported by Kyuubi; " +
+              "supported codecs: none, zstd")
+        case other =>
+          throw new IllegalArgumentException(
+            s"Unsupported Arrow compression codec: $other; supported codecs: none, zstd")
+      }
       val writeChannel = new WriteChannel(Channels.newChannel(out))
       val batch = unloader.getRecordBatch()
       MessageSerializer.serialize(writeChannel, batch)
@@ -119,7 +170,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       collectLimitExec: CollectLimitExec,
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
-      timeZoneId: String): Array[Batch] = {
+      timeZoneId: String,
+      codecName: String = null,
+      zstdLevel: Int = 3): Array[Batch] = {
     val n = collectLimitExec.limit
     val schema = collectLimitExec.schema
     if (n == 0) {
@@ -165,7 +218,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
               maxRecordsPerBatch,
               maxEstimatedBatchSize,
               n,
-              timeZoneId)
+              timeZoneId,
+              codecName,
+              zstdLevel)
             batches.map(b => b -> batches.rowCountInLastBatch).toArray
           },
           partsToScan)
@@ -200,7 +255,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxRecordsPerBatch: Long,
       maxEstimatedBatchSize: Long,
       limit: Long,
-      timeZoneId: String): ArrowBatchIterator = {
+      timeZoneId: String,
+      codecName: String = null,
+      zstdLevel: Int = 3): ArrowBatchIterator = {
     new ArrowBatchIterator(
       rowIter,
       schema,
@@ -208,7 +265,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxEstimatedBatchSize,
       limit,
       timeZoneId,
-      TaskContext.get)
+      TaskContext.get,
+      codecName,
+      zstdLevel)
   }
 
   /**
@@ -226,10 +285,27 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       maxEstimatedBatchSize: Long,
       limit: Long,
       timeZoneId: String,
-      context: TaskContext)
+      context: TaskContext,
+      codecName: String,
+      zstdLevel: Int)
     extends Iterator[Array[Byte]] {
 
     protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
+    // Validate the codec before allocating Arrow buffers, so an unsupported codec fails fast.
+    private val compressionEnabled = codecName match {
+      case null | "none" =>
+        false
+      case "zstd" =>
+        requireArrowCompression()
+        true
+      case "lz4" =>
+        throw new IllegalArgumentException(
+          "Arrow compression codec lz4 is not supported by Kyuubi; " +
+            "supported codecs: none, zstd")
+      case other =>
+        throw new IllegalArgumentException(
+          s"Unsupported Arrow compression codec: $other; supported codecs: none, zstd")
+    }
     private val allocator =
       ArrowUtils.rootAllocator.newChildAllocator(
         s"to${this.getClass.getSimpleName}",
@@ -237,7 +313,13 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
         Long.MaxValue)
 
     private val root = VectorSchemaRoot.create(arrowSchema, allocator)
-    protected val unloader = new VectorUnloader(root)
+    // The none path keeps the original 1-arg constructor and stays free of arrow-compression.
+    protected val unloader =
+      if (compressionEnabled) {
+        KyuubiArrowCompressionSupport.createZstdUnloader(root, zstdLevel)
+      } else {
+        new VectorUnloader(root)
+      }
     protected val arrowWriter = ArrowWriter.create(root)
 
     Option(context).foreach {

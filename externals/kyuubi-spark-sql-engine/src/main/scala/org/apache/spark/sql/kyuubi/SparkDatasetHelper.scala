@@ -17,13 +17,15 @@
 
 package org.apache.spark.sql.kyuubi
 
+import java.util.Locale
+
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SparkContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.network.util.{ByteUnit, JavaUtils}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Dataset, Row}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.spark.sql.catalyst.plans.logical.statsEstimation.EstimationUtils
 import org.apache.spark.sql.execution.{CollectLimitExec, CommandResultExec, HiveResult, LocalTableScanExec, QueryExecution, SparkPlan, SparkPlanHelper, SQLExecution}
@@ -36,7 +38,6 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.schema.RowSet
 import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils.quoteIfNeeded
-import org.apache.kyuubi.util.reflect.{DynClasses, DynMethods}
 
 object SparkDatasetHelper extends Logging {
 
@@ -63,22 +64,23 @@ object SparkDatasetHelper extends Logging {
       toArrowBatchRdd(plan).collect()
   }
 
-  private val datasetClz = DynClasses.builder()
-    .impl("org.apache.spark.sql.classic.Dataset") // SPARK-49700 (4.0.0)
-    .impl("org.apache.spark.sql.Dataset")
-    .build()
-
-  private val toArrowBatchRddMethod =
-    DynMethods.builder("toArrowBatchRdd")
-      .impl(datasetClz)
-      .buildChecked()
-
-  def toArrowBatchRdd[T](ds: Dataset[T]): RDD[Array[Byte]] = {
-    toArrowBatchRddMethod.bind(ds).invoke()
+  /**
+   * Read session-level Arrow compression configs introduced by SPARK-54134 (4.1.0),
+   * with key names finalized by the SPARK-54226 follow-up.
+   */
+  private def arrowCompressionConf(spark: SparkSession): (String, Int) = {
+    // Lowercase the codec name to match Spark upstream.
+    val codecName = spark.sessionState.conf.getConfString(
+      "spark.sql.execution.arrow.compression.codec",
+      "none").toLowerCase(Locale.ROOT)
+    val zstdLevel = spark.sessionState.conf.getConfString(
+      "spark.sql.execution.arrow.compression.zstd.level",
+      "3").toInt
+    (codecName, zstdLevel)
   }
 
   /**
-   * Forked from [[Dataset.toArrowBatchRdd(plan: SparkPlan)]].
+   * Forked from [[org.apache.spark.sql.Dataset.toArrowBatchRdd(plan: SparkPlan)]].
    * Convert to an RDD of serialized ArrowRecordBatches.
    */
   def toArrowBatchRdd(plan: SparkPlan): RDD[Array[Byte]] = {
@@ -89,6 +91,7 @@ object SparkDatasetHelper extends Logging {
     // note that, we can't pass the lazy variable `maxBatchSize` directly, this is because input
     // arguments are serialized and sent to the executor side for execution.
     val maxBatchSizePerBatch = maxBatchSize
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     plan.execute().mapPartitionsInternal { iter =>
       KyuubiArrowConverters.toBatchIterator(
         iter,
@@ -96,13 +99,18 @@ object SparkDatasetHelper extends Logging {
         maxRecordsPerBatch,
         maxBatchSizePerBatch,
         -1,
-        timeZoneId)
+        timeZoneId,
+        codecName,
+        zstdLevel)
     }
   }
 
   def toArrowBatchLocalIterator(df: DataFrame): Iterator[Array[Byte]] = {
     withNewExecutionId(df) {
-      toArrowBatchRdd(df).toLocalIterator
+      // use the plan-based toArrowBatchRdd so that the arrow compression codec takes effect;
+      // the vanilla Spark Dataset#toArrowBatchRdd uses the upstream ArrowConverters, which does
+      // not apply the Kyuubi compression codec.
+      toArrowBatchRdd(df.queryExecution.executedPlan).toLocalIterator
     }
   }
 
@@ -174,12 +182,15 @@ object SparkDatasetHelper extends Logging {
     val spark = SparkPlanHelper.sparkSession(collectLimit)
     val timeZoneId = spark.sessionState.conf.sessionLocalTimeZone
     val maxRecordsPerBatch = spark.sessionState.conf.arrowMaxRecordsPerBatch
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
 
     val batches = KyuubiArrowConverters.takeAsArrowBatches(
       collectLimit,
       maxRecordsPerBatch,
       maxBatchSize,
-      timeZoneId)
+      timeZoneId,
+      codecName,
+      zstdLevel)
 
     // note that the number of rows in the returned arrow batches may be >= `limit`, perform
     // the slicing operation of result
@@ -193,7 +204,14 @@ object SparkDatasetHelper extends Logging {
         // returned ArrowRecordBatch has less than `limit` row count, safety to do conversion
         rest -= size.toInt
       } else { // size > rest
-        result += KyuubiArrowConverters.slice(collectLimit.schema, timeZoneId, batch, 0, rest)
+        result += KyuubiArrowConverters.slice(
+          collectLimit.schema,
+          timeZoneId,
+          batch,
+          0,
+          rest,
+          codecName,
+          zstdLevel)
         rest = 0
       }
       i += 1
@@ -205,26 +223,32 @@ object SparkDatasetHelper extends Logging {
     val spark = SparkPlanHelper.sparkSession(commandResult)
     commandResult.longMetric("numOutputRows").add(commandResult.rows.size)
     sendDriverMetrics(spark.sparkContext, commandResult.metrics)
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     KyuubiArrowConverters.toBatchIterator(
       commandResult.rows.iterator,
       commandResult.schema,
       spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      spark.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone,
+      codecName,
+      zstdLevel).toArray
   }
 
   private def doLocalTableScan(localTableScan: LocalTableScanExec): Array[Array[Byte]] = {
     val spark = SparkPlanHelper.sparkSession(localTableScan)
     localTableScan.longMetric("numOutputRows").add(localTableScan.rows.size)
     sendDriverMetrics(spark.sparkContext, localTableScan.metrics)
+    val (codecName, zstdLevel) = arrowCompressionConf(spark)
     KyuubiArrowConverters.toBatchIterator(
       localTableScan.rows.iterator,
       localTableScan.schema,
       spark.sessionState.conf.arrowMaxRecordsPerBatch,
       maxBatchSize,
       -1,
-      spark.sessionState.conf.sessionLocalTimeZone).toArray
+      spark.sessionState.conf.sessionLocalTimeZone,
+      codecName,
+      zstdLevel).toArray
   }
 
   /**

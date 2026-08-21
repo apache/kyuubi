@@ -304,6 +304,7 @@ io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
 io.vertx:vertx-core
 io.vertx:vertx-grpc
+org.apache.arrow:arrow-compression
 org.apache.kafka:kafka-clients
 org.xerial:sqlite-jdbc
 com.openai:openai-java
@@ -320,6 +321,7 @@ com.thoughtworks.paranamer:paranamer
 com.google.protobuf:protobuf-java-util
 com.google.protobuf:protobuf-java
 org.postgresql:postgresql
+com.github.luben:zstd-jni
 
 Eclipse Distribution License - v 1.0
 ------------------------------------
