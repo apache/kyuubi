@@ -34,8 +34,9 @@ public class DynMethods {
   /**
    * Convenience wrapper class around {@link Method}.
    *
-   * <p>Allows callers to invoke the wrapped method with all Exceptions wrapped by RuntimeException,
-   * or with a single Exception catch block.
+   * <p>Allows callers to invoke the wrapped method with any checked Exception wrapped by
+   * RuntimeException (RuntimeExceptions are rethrown as-is), or with a single Exception catch
+   * block.
    */
   public static class UnboundMethod {
 
@@ -73,11 +74,10 @@ public class DynMethods {
     public <R> R invoke(Object target, Object... args) {
       try {
         return this.invokeChecked(target, args);
+      } catch (RuntimeException e) {
+        throw e;
       } catch (Exception e) {
-        if (e.getCause() instanceof RuntimeException) {
-          throw (RuntimeException) e.getCause();
-        }
-        throw new RuntimeException(e.getCause());
+        throw new RuntimeException(e);
       }
     }
 
