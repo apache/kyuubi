@@ -47,13 +47,18 @@ def get_json(url):
     try:
         request = Request(url)
         if GITHUB_OAUTH_KEY:
-            request.add_header('Authorization', 'token %s' % GITHUB_OAUTH_KEY)
+            request.add_header("Authorization", "token %s" % GITHUB_OAUTH_KEY)
         return json.load(urlopen(request))
     except HTTPError as e:
-        if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
-            print("Exceeded the GitHub API rate limit; see the instructions in " +
-                  "dev/merge_kyuubi_pr.py to configure an OAuth token for making authenticated " +
-                  "GitHub requests.")
+        if (
+            "X-RateLimit-Remaining" in e.headers
+            and e.headers["X-RateLimit-Remaining"] == "0"
+        ):
+            print(
+                "Exceeded the GitHub API rate limit; see the instructions in "
+                + "dev/merge_kyuubi_pr.py to configure an OAuth token for making authenticated "
+                + "GitHub requests."
+            )
         else:
             print("Unable to fetch URL, exiting: %s" % url, e)
         sys.exit(-1)
@@ -170,13 +175,16 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
         continue_maybe(msg)
         had_conflicts = True
 
-    commit_authors = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
-                             '--pretty=format:%an <%ae>']).split("\n")
-    distinct_authors = sorted(set(commit_authors),
-                              key=lambda x: commit_authors.count(x), reverse=True)
+    commit_authors = run_cmd(
+        ["git", "log", "HEAD..%s" % pr_branch_name, "--pretty=format:%an <%ae>"]
+    ).split("\n")
+    distinct_authors = sorted(
+        set(commit_authors), key=lambda x: commit_authors.count(x), reverse=True
+    )
     primary_author = input(
-        "Enter primary author in the format of \"name <email>\" [%s]: " %
-        distinct_authors[0])
+        'Enter primary author in the format of "name <email>" [%s]: '
+        % distinct_authors[0]
+    )
     if primary_author == "":
         primary_author = distinct_authors[0]
     else:
@@ -185,8 +193,9 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
         distinct_authors = list(filter(lambda x: x != primary_author, distinct_authors))
         distinct_authors.insert(0, primary_author)
 
-    commits = run_cmd(['git', 'log', 'HEAD..%s' % pr_branch_name,
-                       '--pretty=format:%h [%an] %s']).split("\n\n")
+    commits = run_cmd(
+        ["git", "log", "HEAD..%s" % pr_branch_name, "--pretty=format:%h [%an] %s"]
+    ).split("\n\n")
 
     merge_message_flags = []
 
@@ -200,8 +209,10 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     committer_email = run_cmd("git config --get user.email").strip()
 
     if had_conflicts:
-        message = "This patch had conflicts when merged, resolved by\nCommitter: %s <%s>" % (
-            committer_name, committer_email)
+        message = (
+            "This patch had conflicts when merged, resolved by\nCommitter: %s <%s>"
+            % (committer_name, committer_email)
+        )
         merge_message_flags += ["-m", message]
 
     # The string "Closes #%s" string is required for GitHub to correctly close the PR
