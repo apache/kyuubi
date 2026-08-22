@@ -27,7 +27,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Copied from parquet-common */
+/**
+ * Adapted from iceberg-common, which is itself derived from parquet-common.
+ *
+ * <p>Diverges from both upstreams: extra arguments are truncated only for non-varargs constructors;
+ * varargs constructors' arguments are passed through to {@link Constructor#newInstance} unchanged.
+ */
 public class DynConstructors {
 
   private DynConstructors() {}
@@ -48,7 +53,7 @@ public class DynConstructors {
 
     public C newInstanceChecked(Object... args) throws Exception {
       try {
-        if (args.length > ctor.getParameterCount()) {
+        if (!ctor.isVarArgs() && args.length > ctor.getParameterCount()) {
           return ctor.newInstance(Arrays.copyOfRange(args, 0, ctor.getParameterCount()));
         } else {
           return ctor.newInstance(args);
