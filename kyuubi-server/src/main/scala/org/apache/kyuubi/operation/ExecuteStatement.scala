@@ -36,8 +36,9 @@ class ExecuteStatement(
     override val statement: String,
     confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
-  extends KyuubiOperation(session) {
+    queryTimeout: Long,
+    operationHandle: OperationHandle = OperationHandle())
+  extends KyuubiOperation(session, operationHandle) {
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {
