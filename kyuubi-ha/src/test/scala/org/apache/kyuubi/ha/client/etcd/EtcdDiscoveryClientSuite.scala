@@ -110,4 +110,8 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       assert(!discoveryClient.pathExists(path))
     }
   }
+
+  test("etcd data agent session route lifecycle") {
+    testDataAgentSessionRouteLifecycle()
+  }
 }
