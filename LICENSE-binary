@@ -213,6 +213,7 @@ org.apache.commons:commons-lang3
 com.google.errorprone:error_prone_annotations
 dev.failsafe:failsafe
 com.jakewharton.fliptables:fliptables
+com.unboundid:unboundid-ldapsdk
 io.grpc:grpc-api
 io.grpc:grpc-context
 io.grpc:grpc-core

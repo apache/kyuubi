@@ -1230,6 +1230,136 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val AUTHENTICATION_LDAP_POOL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.authentication.ldap.pool.enabled")
+      .doc("Whether to use a persistent UnboundID LDAP connection pool for LDAP authentication. " +
+        "When enabled, the server maintains warm pre-authenticated connections to LDAP, " +
+        "eliminating per-request TCP/TLS/BIND overhead. Requires bind user credentials to be " +
+        "configured. If the bind user is not set the pool is silently skipped and ephemeral " +
+        "connections are used. " +
+        "Setting this to false falls back to the legacy JNDI implementation; that path is " +
+        "scheduled for removal in a future release. Both paths derive SSL purely from the URL " +
+        "scheme (ldap:// vs ldaps://) -- StartTLS and LDAP referrals are not supported on " +
+        "either path, matching the behaviour of the legacy JNDI implementation. " +
+        "All kyuubi.authentication.ldap.* settings are read once on the first authentication " +
+        "request after server start and cached for the JVM lifetime; changes require a Kyuubi " +
+        "restart to take effect.")
+      .version("1.12.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(false)
+
+  val AUTHENTICATION_LDAP_POOL_MIN_CONNECTIONS: ConfigEntry[Int] =
+    buildConf("kyuubi.authentication.ldap.pool.minConnections")
+      .doc("Minimum number of connections to keep open in the LDAP connection pool.")
+      .version("1.12.0")
+      .serverOnly
+      .intConf
+      .createWithDefault(3)
+
+  val AUTHENTICATION_LDAP_POOL_MAX_CONNECTIONS: ConfigEntry[Int] =
+    buildConf("kyuubi.authentication.ldap.pool.maxConnections")
+      .doc("Maximum number of connections in the LDAP connection pool.")
+      .version("1.12.0")
+      .serverOnly
+      .intConf
+      .createWithDefault(10)
+
+  val AUTHENTICATION_LDAP_POOL_CONNECT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.authentication.ldap.pool.connectTimeout")
+      .doc("Timeout for establishing a TCP connection to an LDAP server.")
+      .version("1.12.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT5S")
+
+  val AUTHENTICATION_LDAP_POOL_RESPONSE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.authentication.ldap.pool.responseTimeout")
+      .doc("Timeout for an LDAP operation response after the connection is established.")
+      .version("1.12.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT10S")
+
+  val AUTHENTICATION_LDAP_POOL_HEALTH_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("kyuubi.authentication.ldap.pool.healthCheck.interval")
+      .doc("Interval between background health checks on idle LDAP pool connections. " +
+        "Each check fetches the root DSE; connections that fail are discarded and replaced.")
+      .version("1.12.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT30S")
+
+  val AUTHENTICATION_LDAP_POOL_CHECKOUT_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.authentication.ldap.pool.checkoutTimeout")
+      .doc("Maximum time a request thread will wait for a connection to become available " +
+        "when the LDAP pool is fully utilised. The UnboundID SDK default is to skip waiting " +
+        "and immediately try to grow the pool: if a new connection can be created the " +
+        "request succeeds, otherwise it fails fast (typically with CONNECT_ERROR, or with " +
+        "the result code from the underlying connection attempt if creation was tried). " +
+        "A positive value here adds a grace window so brief contention spikes do not " +
+        "surface as authentication failures. Set to 0 to revert to the SDK default no-wait " +
+        "behaviour. The default is intentionally short -- long waits pile up front-end " +
+        "Thrift/HTTP handler threads under a degraded LDAP. Operators who raise this should " +
+        s"also raise ${"kyuubi.authentication.ldap.pool.maxConnections"}.")
+      .version("1.12.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT5S")
+
+  val AUTHENTICATION_LDAP_POOL_SEARCH_MAX_RETRIES: ConfigEntry[Int] =
+    buildConf("kyuubi.authentication.ldap.pool.search.maxRetries")
+      .doc("Maximum number of times a pooled LDAP search is retried against a freshly " +
+        "checked-out connection when the original connection fails mid-request with a " +
+        "connection-level error (server down, dropped socket, idle connection reset). " +
+        "Bounded retry covers the common case where one LDAP server in the failover list " +
+        "rotates or briefly disconnects, without amplifying load during a real outage. " +
+        "Set to 0 to disable retry and propagate the first failure. Only applies to the " +
+        "pooled (bind-user) path; the ephemeral end-user bind path does not retry because " +
+        "its connection is tied to specific credentials that cannot be re-established " +
+        "transparently.")
+      .version("1.12.0")
+      .serverOnly
+      .intConf
+      .checkValue(_ >= 0, "must be non-negative")
+      .createWithDefault(1)
+
+  val AUTHENTICATION_LDAP_CACHE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.authentication.ldap.cache.enabled")
+      .doc("Whether to cache successful LDAP authentications within a short TTL to reduce " +
+        "LDAP round-trips for repeated requests from the same user. " +
+        "Only successful authentications are cached; failed attempts always reach LDAP.")
+      .version("1.12.0")
+      .serverOnly
+      .booleanConf
+      .createWithDefault(true)
+
+  val AUTHENTICATION_LDAP_CACHE_TTL: ConfigEntry[Long] =
+    buildConf("kyuubi.authentication.ldap.cache.ttl")
+      .doc("Time-to-live for a cached successful LDAP authentication result. " +
+        "After this period the entry is evicted and the next request re-authenticates " +
+        "against LDAP. Time-based eviction applies in addition to the size cap configured " +
+        "by kyuubi.authentication.ldap.cache.maxSize. " +
+        "Operational note: after an LDAP-side password rotation, account lockout, or user " +
+        "disable, the cached (user, password) pair continues to be accepted by Kyuubi until " +
+        "this TTL expires. Lower this value in environments with strict revocation SLAs; " +
+        "raise it to reduce LDAP load.")
+      .version("1.12.0")
+      .serverOnly
+      .timeConf
+      .createWithDefaultString("PT30S")
+
+  val AUTHENTICATION_LDAP_CACHE_MAX_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.authentication.ldap.cache.maxSize")
+      .doc("Maximum number of entries in the LDAP authentication cache. " +
+        "When the limit is reached, least-recently-used entries are evicted. " +
+        "Size-based eviction applies in addition to the TTL configured by " +
+        "kyuubi.authentication.ldap.cache.ttl.")
+      .version("1.12.0")
+      .serverOnly
+      .intConf
+      .createWithDefault(1000)
+
   val AUTHENTICATION_JDBC_DRIVER: OptionalConfigEntry[String] =
     buildConf("kyuubi.authentication.jdbc.driver.class")
       .doc("Driver class name for JDBC Authentication Provider.")

@@ -50,7 +50,20 @@ class LdapAuthenticationProviderImpl(
    * @throws AuthenticationException When a user is found to be invalid by the implementation
    */
   override def authenticate(user: String, password: String): Unit = {
+    // The actual auth flow is delegated to doAuthenticate; this wrapper is the single
+    // place where the kyuubi.authentication.success / failure metric counters are
+    // updated, classified by [[LdapAuthFailureClassifier]] for failures.
+    try {
+      doAuthenticate(user, password)
+      AuthenticationProviderFactory.recordLdapAuthSuccess()
+    } catch {
+      case e: AuthenticationException =>
+        AuthenticationProviderFactory.recordLdapAuthFailure(LdapAuthFailureClassifier.classify(e))
+        throw e
+    }
+  }
 
+  private def doAuthenticate(user: String, password: String): Unit = {
     val (usedBind, bindUser, bindPassword) = (
       conf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_USER),
       conf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_PASSWORD)) match {
@@ -65,6 +78,10 @@ class LdapAuthenticationProviderImpl(
     }
 
     var search: DirSearch = null
+    // The end-user credential-verification DirSearch (bind-user flow only) wraps an
+    // ephemeral LDAPConnection -- its close() is the only path that frees the underlying
+    // socket. Tracked separately so the finally block can close both.
+    var userSearch: DirSearch = null
     try {
       search = createDirSearch(bindUser, bindPassword)
       applyFilter(search, user)
@@ -72,14 +89,30 @@ class LdapAuthenticationProviderImpl(
         // If we used the bind user, then we need to authenticate again,
         // this time using the full user name we got during the bind process.
         val username = getUserName(user)
-        createDirSearch(search.findUserDn(username), password)
+        userSearch = createDirSearch(search.findUserDn(username), password)
       }
     } catch {
       case e: NamingException =>
+        // Chain the cause so the original LDAPException (result code, server address) is
+        // visible in audit logs and stack traces. Classification is unaffected: the message
+        // prefix falls through to classifyByMessage -> INFRASTRUCTURE regardless, but
+        // preserving the cause allows classifyByCause to also reach that result via the
+        // NamingException branch, and keeps the full diagnostic chain intact for operators.
         throw new AuthenticationException(
-          s"Unable to find the user in the LDAP tree. ${e.getMessage}")
+          s"Unable to find the user in the LDAP tree. ${e.getMessage}",
+          e)
+      case e: IllegalStateException =>
+        // Query.QueryBuilder.build wraps an unparseable rendered filter as
+        // IllegalStateException. The most common trigger is a username containing
+        // LDAP filter metacharacters ("*", "(", ")", "\") that break RFC 4515 after
+        // template substitution. Surface this as an AuthenticationException so the
+        // metric recorder/classifier sees it (invalid_input bucket) instead of letting
+        // an unclassified RuntimeException escape the auth contract.
+        throw new AuthenticationException(
+          s"Error validating LDAP user, invalid filter for $user: ${e.getMessage}",
+          e)
     } finally {
-      ServiceUtils.cleanup(logger, search)
+      ServiceUtils.cleanup(logger, search, userSearch)
     }
   }
 
