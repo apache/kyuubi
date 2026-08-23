@@ -46,8 +46,8 @@ public class DynFieldsTest {
             .build(new OtherTarget());
 
     assertNull(bound.get());
-    // AlwaysNull is an UnboundField<Void>: the compiler-generated bridge for its set(Object, Void)
-    // override checkcasts the erased argument to Void, so null is the only writable value.
+    // AlwaysNull is an UnboundField<Void>, so the bridge generated for its set(Object, Void)
+    // override casts the erased argument to Void: a side effect of the signature, not a contract.
     assertThrows(ClassCastException.class, () -> bound.set("any-value"));
     bound.set(null);
     assertNull(bound.get());
@@ -98,6 +98,14 @@ public class DynFieldsTest {
             .defaultAlwaysNull()
             .buildStaticChecked();
     assertNull(viaBuildStaticChecked.get());
+  }
+
+  @Test
+  public void testAlwaysNullToStringReportsSentinelName() {
+    DynFields.UnboundField<String> alwaysNull =
+        DynFields.builder().impl(ReflectionTarget.class, "noSuchField").defaultAlwaysNull().build();
+
+    assertEquals("Field(AlwaysNull)", alwaysNull.toString());
   }
 
   @Test
