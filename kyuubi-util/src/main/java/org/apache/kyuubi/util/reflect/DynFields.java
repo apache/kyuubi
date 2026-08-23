@@ -26,7 +26,12 @@ import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Set;
 
-/** Copied from iceberg-common */
+/**
+ * Copied from iceberg-common.
+ *
+ * <p>Diverges from iceberg-common: the {@code AlwaysNull} sentinel overrides {@link
+ * UnboundField#bind} to return a bound field instead of dereferencing its null backing field.
+ */
 public class DynFields {
 
   private DynFields() {}
@@ -131,6 +136,16 @@ public class DynFields {
     @Override
     public String toString() {
       return "Field(AlwaysNull)";
+    }
+
+    /**
+     * Binds to any target without validation: the sentinel has no backing field, so reads return
+     * null and writes of null are no-ops. Any other value fails with {@link ClassCastException}
+     * because the sentinel is typed {@code UnboundField<Void>}.
+     */
+    @Override
+    public BoundField<Void> bind(Object target) {
+      return new BoundField<>(this, target);
     }
 
     @Override
