@@ -161,6 +161,8 @@ class ExecuteStatement(
               n.put("kept", c.keptCount())
               n.put("triggerTokens", c.triggerTokens())
               n.put("observedTokens", c.observedTokens())
+              n.put("summarizerPromptTokens", c.summarizerPromptTokens())
+              n.put("summarizerCompletionTokens", c.summarizerCompletionTokens())
             }))
           case EventType.AGENT_FINISH =>
             val finish = event.asInstanceOf[AgentFinish]
