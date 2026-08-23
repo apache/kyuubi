@@ -21,10 +21,17 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 public class DynConstructorsTest {
+
+  // Prefix of the IllegalArgumentException that Constructor.newInstance throws when the argument
+  // count does not fit the constructor. Matched as a prefix because the JDK 18+ accessor appends
+  // ": 3 expected: 2"; the legacy accessor stops at the prefix, and this build requests it with
+  // -Djdk.reflect.useDirectMethodHandle=false.
+  private static final String WRONG_NUMBER_OF_ARGUMENTS = "wrong number of arguments";
 
   public static class VarargsHolder {
     final String first;
@@ -49,17 +56,23 @@ public class DynConstructorsTest {
     DynConstructors.Ctor<VarargsHolder> ctor =
         DynConstructors.builder().impl(VarargsHolder.class, String.class, Object[].class).build();
 
+    // Truncating this call would construct successfully and drop "three", so this case pins the
+    // pass-through without depending on the JDK message.
     IllegalArgumentException thrown =
         assertThrows(
             IllegalArgumentException.class,
             () -> ctor.newInstance("one", new Object[] {"2a", "2b"}, "three"));
 
-    assertEquals("wrong number of arguments", thrown.getMessage());
+    assertTrue(
+        thrown.getMessage().startsWith(WRONG_NUMBER_OF_ARGUMENTS),
+        () -> "unexpected message: " + thrown.getMessage());
 
     IllegalArgumentException allLoose =
         assertThrows(IllegalArgumentException.class, () -> ctor.newInstance("one", "2a", "2b"));
 
-    assertEquals("wrong number of arguments", allLoose.getMessage());
+    assertTrue(
+        allLoose.getMessage().startsWith(WRONG_NUMBER_OF_ARGUMENTS),
+        () -> "unexpected message: " + allLoose.getMessage());
 
     assertThrows(IllegalArgumentException.class, () -> ctor.newInstance("one"));
   }
