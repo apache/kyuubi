@@ -78,7 +78,8 @@ public class DynFields {
      * @throws IllegalArgumentException if the receiver's class is incompatible
      */
     public BoundField<T> bind(Object target) {
-      if (isStatic() && this != AlwaysNull.INSTANCE) {
+      // AlwaysNull overrides bind, so this check needs no sentinel exemption.
+      if (isStatic()) {
         throw new IllegalStateException("Cannot bind static field " + name);
       }
       if (!field.getDeclaringClass().isAssignableFrom(target.getClass())) {
@@ -125,12 +126,30 @@ public class DynFields {
       return null;
     }
 
+    /**
+     * Ignores the write. In practice only null gets this far: the bridge generated for this
+     * override casts the value to {@link Void} first, so a real value fails with {@link
+     * ClassCastException}.
+     */
     @Override
     public void set(Object target, Void value) {}
 
     @Override
     public String toString() {
       return "Field(AlwaysNull)";
+    }
+
+    /**
+     * Binds to any target, skipping both checks in {@link UnboundField#bind}. The sentinel wraps no
+     * field, so there is nothing to validate, and its {@code isStatic()} is a sentinel flag rather
+     * than a real modifier. {@code DynMethods.UnboundMethod.NOOP} binds the same way.
+     *
+     * <p>iceberg-common has no such override, so there the sentinel reaches {@link
+     * UnboundField#bind} and throws {@link NullPointerException} on its null field.
+     */
+    @Override
+    public BoundField<Void> bind(Object target) {
+      return new BoundField<>(this, target);
     }
 
     @Override
@@ -204,7 +223,8 @@ public class DynFields {
     }
 
     /**
-     * Instructs this builder to return AlwaysNull if no implementation is found.
+     * Instructs this builder to return AlwaysNull if no implementation is found. That sentinel
+     * reads as null and binds to any target.
      *
      * @return this Builder for method chaining
      */
