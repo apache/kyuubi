@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Copied from parquet-common */
+/** Adapted from iceberg-common, which is itself derived from parquet-common. */
 public class DynConstructors {
 
   private DynConstructors() {}
@@ -46,9 +46,20 @@ public class DynConstructors {
       return constructed;
     }
 
+    /**
+     * Creates an instance, truncating extra arguments only for a non-varargs constructor.
+     *
+     * <p>{@link Constructor#newInstance} never packs loose varargs arguments into the trailing
+     * array, so truncating such a call could only drop arguments or fail with a misleading message.
+     * {@link DynMethods.UnboundMethod} skips the same truncation for varargs methods, by keeping
+     * {@code argLength} at -1.
+     *
+     * <p>Both upstream copies of this class differ here: iceberg-common truncates unconditionally,
+     * parquet-common does not truncate at all.
+     */
     public C newInstanceChecked(Object... args) throws Exception {
       try {
-        if (args.length > ctor.getParameterCount()) {
+        if (!ctor.isVarArgs() && args.length > ctor.getParameterCount()) {
           return ctor.newInstance(Arrays.copyOfRange(args, 0, ctor.getParameterCount()));
         } else {
           return ctor.newInstance(args);
