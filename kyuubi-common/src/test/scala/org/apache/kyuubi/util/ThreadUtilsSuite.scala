@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, RejectedExecutionException, TimeUnit}
 
 import org.apache.kyuubi.KyuubiFunSuite
 
@@ -75,5 +75,63 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
     assert(pool.getCorePoolSize == 2)
     ThreadUtils.shutdown(pool)
     assert(pool.isShutdown)
+  }
+
+  test("New bounded virtual thread per task executor") {
+    val virtualThreadsSupported =
+      try {
+        classOf[Thread].getMethod("isVirtual")
+        true
+      } catch {
+        case _: NoSuchMethodException => false
+      }
+
+    if (!virtualThreadsSupported) {
+      val error = intercept[IllegalStateException] {
+        ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(2, "ThreadUtilsVirtualTest")
+      }
+      assert(error.getMessage.contains("Java 21"))
+    } else {
+      val executor =
+        ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(2, "ThreadUtilsVirtualTest")
+      val ready = new CountDownLatch(2)
+      val release = new CountDownLatch(1)
+      val threadNames = new ConcurrentLinkedQueue[String]()
+      val tasksAreVirtual = new ConcurrentLinkedQueue[Boolean]()
+      val isVirtual = classOf[Thread].getMethod("isVirtual")
+
+      def blockingTask: Runnable = new Runnable {
+        override def run(): Unit = {
+          threadNames.add(Thread.currentThread().getName)
+          tasksAreVirtual.add(isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean])
+          ready.countDown()
+          release.await()
+        }
+      }
+
+      try {
+        val first = executor.submit(blockingTask)
+        val second = executor.submit(blockingTask)
+        assert(ready.await(10, TimeUnit.SECONDS))
+        intercept[RejectedExecutionException](executor.submit(blockingTask))
+        release.countDown()
+        first.get(10, TimeUnit.SECONDS)
+        second.get(10, TimeUnit.SECONDS)
+
+        val last = executor.submit(new Runnable {
+          override def run(): Unit = {
+            threadNames.add(Thread.currentThread().getName)
+            tasksAreVirtual.add(isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean])
+          }
+        })
+        last.get(10, TimeUnit.SECONDS)
+        assert(threadNames.size() === 3)
+        assert(threadNames.toArray.forall(_.toString.startsWith("ThreadUtilsVirtualTest-")))
+        assert(tasksAreVirtual.toArray.forall(_.asInstanceOf[Boolean]))
+      } finally {
+        release.countDown()
+        ThreadUtils.shutdown(executor)
+      }
+    }
   }
 }

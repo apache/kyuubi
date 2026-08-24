@@ -352,6 +352,16 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     }
   }
 
+  test("getEngineConf excludes the server thrift binary virtual thread config") {
+    val kyuubiConf = KyuubiConf(false)
+    kyuubiConf.set(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED, true)
+
+    EngineType.values.foreach { engineType =>
+      assert(!kyuubiConf.getEngineConf(engineType)
+        .contains(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED.key))
+    }
+  }
+
   test("getEngineConf passes through reserved keys") {
     val kyuubiConf = KyuubiConf(false)
     kyuubiConf.set(KyuubiReservedKeys.KYUUBI_SERVER_IP_KEY, "10.0.0.1")
