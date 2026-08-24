@@ -32,15 +32,14 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.connector.catalog.{Identifier, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.connector.expressions.Transform
-import org.apache.spark.sql.execution.datasources.v2.orc.OrcScan
-import org.apache.spark.sql.execution.datasources.v2.parquet.ParquetScan
 import org.apache.spark.sql.hive.kyuubi.connector.HiveBridgeHelper._
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.spark.connector.hive.HiveTableCatalog.IdentifierHelper
 import org.apache.kyuubi.spark.connector.hive.KyuubiHiveConnectorConf.{READ_CONVERT_METASTORE_ORC, READ_CONVERT_METASTORE_PARQUET}
-import org.apache.kyuubi.spark.connector.hive.read.HiveScan
+import org.apache.kyuubi.spark.connector.hive.read.{HiveScan, KyuubiOrcScan, KyuubiParquetScan}
 
 class HiveCatalogSuite extends KyuubiHiveTest {
 
@@ -509,9 +508,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
         val parScan = value match {
           case "true" =>
             assert(
-              scan.isInstanceOf[ParquetScan],
-              s"Expected ParquetScan, got ${scan.getClass.getSimpleName}")
-            scan.asInstanceOf[ParquetScan]
+              scan.isInstanceOf[KyuubiParquetScan],
+              s"Expected KyuubiParquetScan, got ${scan.getClass.getSimpleName}")
+            scan.asInstanceOf[KyuubiParquetScan]
           case "false" =>
             assert(
               scan.isInstanceOf[HiveScan],
@@ -538,9 +537,9 @@ class HiveCatalogSuite extends KyuubiHiveTest {
         val orcScan = value match {
           case "true" =>
             assert(
-              scan.isInstanceOf[OrcScan],
-              s"Expected OrcScan, got ${scan.getClass.getSimpleName}")
-            scan.asInstanceOf[OrcScan]
+              scan.isInstanceOf[KyuubiOrcScan],
+              s"Expected KyuubiOrcScan, got ${scan.getClass.getSimpleName}")
+            scan.asInstanceOf[KyuubiOrcScan]
           case "false" =>
             assert(
               scan.isInstanceOf[HiveScan],
@@ -551,6 +550,42 @@ class HiveCatalogSuite extends KyuubiHiveTest {
               s"Unexpected value: '$value'. Only 'true' or 'false' are allowed.")
         }
         assert(orcScan.isSplitable(new Path("empty")))
+      }
+    }
+  }
+
+  test("KyuubiParquetScan and KyuubiOrcScan pick up mid-session confs and catalog overlay") {
+    // Confs set in the session must take effect for the reader.
+    val fieldIdRead = SQLConf.PARQUET_FIELD_ID_READ_ENABLED.key
+    val fieldIdIgnoreMissing = SQLConf.IGNORE_MISSING_PARQUET_FIELD_ID.key
+    // Injected in `newCatalog` as camelCase, overlay writes it as lowercase.
+    val overlayKey = "javax.jdo.option.connectionurl"
+
+    Seq("orc", "parquet").foreach { provider =>
+      withSparkSession() { spark =>
+        val props = new util.HashMap[String, String]()
+        props.put(TableCatalog.PROP_PROVIDER, provider)
+        val ident = Identifier.of(testNs, s"scan_conf_$provider")
+
+        try {
+          val table = catalog.createTable(ident, schema, Array.empty[Transform], props)
+          spark.sessionState.conf.setConfString(fieldIdRead, "true")
+          spark.sessionState.conf.setConfString(fieldIdIgnoreMissing, "true")
+
+          val hadoopConf = table.asInstanceOf[HiveTable]
+            .newScanBuilder(CaseInsensitiveStringMap.empty()).build() match {
+            case s: KyuubiParquetScan => s.hadoopConf
+            case s: KyuubiOrcScan => s.hadoopConf
+            case other => fail(s"unexpected scan type: ${other.getClass.getName}")
+          }
+          // Mid-session confs reach the reader (no snapshot freeze).
+          assert(hadoopConf.get(fieldIdRead) == "true")
+          assert(hadoopConf.get(fieldIdIgnoreMissing) == "true")
+          // Per-catalog overlay applied (lowercase key).
+          assert(hadoopConf.get(overlayKey) != null)
+        } finally {
+          catalog.dropTable(ident)
+        }
       }
     }
   }

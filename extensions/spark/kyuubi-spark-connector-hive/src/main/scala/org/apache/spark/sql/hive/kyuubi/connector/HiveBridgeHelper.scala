@@ -22,9 +22,14 @@ import scala.collection.mutable
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.catalog.{BucketSpec, ExternalCatalogEvent}
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, Literal}
+import org.apache.spark.sql.catalyst.util.RebaseDateTime.RebaseSpec
 import org.apache.spark.sql.catalyst.util.quoteIfNeeded
 import org.apache.spark.sql.connector.expressions.{BucketTransform, FieldReference, IdentityTransform, Transform}
 import org.apache.spark.sql.connector.expressions.LogicalExpressions.{bucket, reference}
+import org.apache.spark.sql.execution.datasources.orc.OrcFilters
+import org.apache.spark.sql.execution.datasources.parquet.{ParquetFilters, SparkToParquetSchemaConverter}
+import org.apache.spark.sql.internal.{LegacyBehaviorPolicy, SQLConf}
+import org.apache.spark.sql.sources.Filter
 import org.apache.spark.sql.types.{DataType, DoubleType, FloatType, StructType}
 
 object HiveBridgeHelper {
@@ -118,5 +123,39 @@ object HiveBridgeHelper {
 
   implicit class NamespaceHelper(namespace: Array[String]) {
     def quoted: String = namespace.map(quoteIfNeeded).mkString(".")
+  }
+
+  def orcConvertibleFilters(
+      schema: StructType,
+      caseSensitive: Boolean,
+      dataFilters: Seq[Filter]): Seq[Filter] = {
+    val dataTypeMap = OrcFilters.getSearchableTypeMap(schema, caseSensitive)
+    OrcFilters.convertibleFilters(dataTypeMap, dataFilters)
+  }
+
+  def parquetConvertibleFilters(
+      readDataSchema: StructType,
+      dataFilters: Seq[Filter]): Seq[Filter] = {
+    val sqlConf = SQLConf.get
+    val pushDownDate = sqlConf.parquetFilterPushDownDate
+    val pushDownTimestamp = sqlConf.parquetFilterPushDownTimestamp
+    val pushDownDecimal = sqlConf.parquetFilterPushDownDecimal
+    val pushDownStringPredicate = sqlConf.parquetFilterPushDownStringPredicate
+    val pushDownInFilterThreshold = sqlConf.parquetFilterPushDownInFilterThreshold
+    val isCaseSensitive = sqlConf.caseSensitiveAnalysis
+    val parquetSchema = new SparkToParquetSchemaConverter(sqlConf).convert(readDataSchema)
+    val rebaseSpec = RebaseSpec(LegacyBehaviorPolicy.CORRECTED)
+    val parquetFilters = new ParquetFilters(
+      parquetSchema,
+      pushDownDate,
+      pushDownTimestamp,
+      pushDownDecimal,
+      pushDownStringPredicate,
+      pushDownInFilterThreshold,
+      isCaseSensitive,
+      // The rebase mode doesn't matter here because the filters are used to determine
+      // whether they is convertible.
+      rebaseSpec)
+    parquetFilters.convertibleFilters(dataFilters)
   }
 }
