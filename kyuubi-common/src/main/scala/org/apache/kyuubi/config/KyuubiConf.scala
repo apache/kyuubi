@@ -636,7 +636,7 @@ object KyuubiConf {
       .fallbackConf(FRONTEND_BIND_PORT)
 
   val FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.thrift.binary.virtual.threads.enabled")
+    buildConf("kyuubi.frontend.thrift.binary.virtualThreads.enabled")
       .doc("Whether to use virtual threads for the Kyuubi server thrift binary frontend " +
         "workers. This requires Java 21 or later. The maximum number of concurrent workers " +
         "remains limited by kyuubi.frontend.thrift.max.worker.threads. The minimum worker " +
