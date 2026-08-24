@@ -78,6 +78,9 @@ public class CompactionMiddlewareLiveTest {
     // Simulate the previous LLM call having reported a large prompt_tokens so the next
     // beforeLlmCall trips the threshold.
     ctx.addTokenUsage(60_000, 0, 60_000);
+    long cumulativeBeforeCompaction = memory.getCumulativeTotalTokens();
+    long accumulatedPromptBeforeCompaction = ctx.getAccumulatedPromptTokens();
+    long accumulatedCompletionBeforeCompaction = ctx.getAccumulatedCompletionTokens();
 
     CompactionMiddleware mw = new CompactionMiddleware(client, MODEL_NAME, /* trigger */ 50_000L);
 
@@ -99,5 +102,14 @@ public class CompactionMiddlewareLiveTest {
     assertTrue(
         first.contains("## User Intent") || first.contains("User Intent"),
         "summary should contain '## User Intent' section");
+    assertTrue(
+        memory.getCumulativeTotalTokens() > cumulativeBeforeCompaction,
+        "summarizer's own usage must be added to session cumulative total");
+    assertTrue(
+        ctx.getAccumulatedPromptTokens() > accumulatedPromptBeforeCompaction,
+        "summarizer's prompt tokens must be added to accumulated prompt tokens");
+    assertTrue(
+        ctx.getAccumulatedCompletionTokens() > accumulatedCompletionBeforeCompaction,
+        "summarizer's completion tokens must be added to accumulated completion tokens");
   }
 }

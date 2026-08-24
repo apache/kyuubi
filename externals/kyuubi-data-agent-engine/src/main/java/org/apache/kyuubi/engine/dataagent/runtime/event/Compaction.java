@@ -29,13 +29,23 @@ public final class Compaction extends AgentEvent {
   private final int keptCount;
   private final long triggerTokens;
   private final long observedTokens;
+  private final long summarizerPromptTokens;
+  private final long summarizerCompletionTokens;
 
-  public Compaction(int summarizedCount, int keptCount, long triggerTokens, long observedTokens) {
+  public Compaction(
+      int summarizedCount,
+      int keptCount,
+      long triggerTokens,
+      long observedTokens,
+      long summarizerPromptTokens,
+      long summarizerCompletionTokens) {
     super(EventType.COMPACTION);
     this.summarizedCount = summarizedCount;
     this.keptCount = keptCount;
     this.triggerTokens = triggerTokens;
     this.observedTokens = observedTokens;
+    this.summarizerPromptTokens = summarizerPromptTokens;
+    this.summarizerCompletionTokens = summarizerCompletionTokens;
   }
 
   public int summarizedCount() {
@@ -54,6 +64,14 @@ public final class Compaction extends AgentEvent {
     return observedTokens;
   }
 
+  public long summarizerPromptTokens() {
+    return summarizerPromptTokens;
+  }
+
+  public long summarizerCompletionTokens() {
+    return summarizerCompletionTokens;
+  }
+
   @Override
   public String toString() {
     return "Compaction{summarized="
@@ -64,6 +82,10 @@ public final class Compaction extends AgentEvent {
         + triggerTokens
         + ", observedTokens="
         + observedTokens
+        + ", summarizerPromptTokens="
+        + summarizerPromptTokens
+        + ", summarizerCompletionTokens="
+        + summarizerCompletionTokens
         + "}";
   }
 }

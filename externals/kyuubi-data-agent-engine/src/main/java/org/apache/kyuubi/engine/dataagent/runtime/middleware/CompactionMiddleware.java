@@ -18,12 +18,8 @@
 package org.apache.kyuubi.engine.dataagent.runtime.middleware;
 
 import com.openai.client.OpenAIClient;
-import com.openai.models.chat.completions.ChatCompletion;
-import com.openai.models.chat.completions.ChatCompletionCreateParams;
-import com.openai.models.chat.completions.ChatCompletionMessageParam;
-import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
-import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
-import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
+import com.openai.models.chat.completions.*;
+import com.openai.models.completions.CompletionUsage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -168,30 +164,39 @@ public class CompactionMiddleware implements AgentMiddleware {
       return Decision.proceed();
     }
 
-    String summary = summarize(mem.getSystemPrompt(), split.old);
+    SummarizeResult summarized = summarize(ctx, mem.getSystemPrompt(), split.old);
 
     // 4) Build the compacted history and persist into ConversationMemory.
     List<ChatCompletionMessageParam> compacted = new ArrayList<>(1 + split.kept.size());
-    compacted.add(wrapSummaryAsUserMessage(summary));
+    compacted.add(wrapSummaryAsUserMessage(summarized.summary));
     compacted.addAll(split.kept);
     mem.replaceHistory(compacted);
 
     LOG.info(
-        "Compacted {} old msgs into 1 summary; kept {} tail msgs (lastTotal={}, newTail~={})",
+        "Compacted {} old msgs into 1 summary; kept {} tail msgs "
+            + "(lastTotal={}, newTail~={}, summarizerPromptTokens={}, summarizerCompletionTokens={})",
         split.old.size(),
         split.kept.size(),
         lastTotal,
-        newTailEstimate);
+        newTailEstimate,
+        summarized.promptTokens,
+        summarized.completionTokens);
 
     ctx.emit(
         new Compaction(
-            split.old.size(), split.kept.size(), triggerPromptTokens, lastTotal + newTailEstimate));
+            split.old.size(),
+            split.kept.size(),
+            triggerPromptTokens,
+            lastTotal + newTailEstimate,
+            summarized.promptTokens,
+            summarized.completionTokens));
 
     return Decision.replace(mem.buildLlmMessages());
   }
 
   /** Call the LLM to produce a summary of {@code oldMessages}. Failures propagate. */
-  private String summarize(String agentSystemPrompt, List<ChatCompletionMessageParam> oldMessages) {
+  private SummarizeResult summarize(
+      AgentRunContext ctx, String agentSystemPrompt, List<ChatCompletionMessageParam> oldMessages) {
     String systemPrompt = COMPACTION_SYSTEM_PROMPT;
     if (agentSystemPrompt != null && !agentSystemPrompt.isEmpty()) {
       systemPrompt =
@@ -215,7 +220,15 @@ public class CompactionMiddleware implements AgentMiddleware {
             .build();
 
     ChatCompletion response = client.chat().completions().create(params);
-    return response.choices().get(0).message().content().get();
+    String summary = response.choices().get(0).message().content().get();
+
+    CompletionUsage usage = response.usage().orElse(null);
+    long promptTokens = usage != null ? usage.promptTokens() : 0L;
+    long completionTokens = usage != null ? usage.completionTokens() : 0L;
+    if (usage != null) {
+      ctx.addTokenUsage(promptTokens, completionTokens, usage.totalTokens());
+    }
+    return new SummarizeResult(summary, promptTokens, completionTokens);
   }
 
   // ----- helpers -----
@@ -405,5 +418,17 @@ public class CompactionMiddleware implements AgentMiddleware {
     String body = "<conversation_summary>\n" + summary + "\n</conversation_summary>";
     return ChatCompletionMessageParam.ofUser(
         ChatCompletionUserMessageParam.builder().content(body).build());
+  }
+
+  private static final class SummarizeResult {
+    final String summary;
+    final long promptTokens;
+    final long completionTokens;
+
+    SummarizeResult(String summary, long promptTokens, long completionTokens) {
+      this.summary = summary;
+      this.promptTokens = promptTokens;
+      this.completionTokens = completionTokens;
+    }
   }
 }

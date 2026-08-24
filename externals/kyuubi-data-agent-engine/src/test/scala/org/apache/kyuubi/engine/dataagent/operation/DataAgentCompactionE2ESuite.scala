@@ -182,6 +182,12 @@ class DataAgentCompactionE2ESuite extends HiveJDBCTestHelper with WithDataAgentE
       assert(
         c.has("triggerTokens") && c.get("triggerTokens").asLong() == 500L,
         s"compaction event should echo configured trigger: $c")
+      assert(
+        c.has("summarizerPromptTokens") && c.get("summarizerPromptTokens").asLong() > 0L,
+        s"compaction event must expose summarizerPromptTokens > 0: $c")
+      assert(
+        c.has("summarizerCompletionTokens") && c.get("summarizerCompletionTokens").asLong() >= 0L,
+        s"compaction event must expose summarizerCompletionTokens >= 0: $c")
 
       // Turn 5 was told to SELECT fresh; Frank (35000) is unambiguously the top earner.
       // If we don't get "Frank", either the agent failed to re-query after compaction
