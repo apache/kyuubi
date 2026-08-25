@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.session.KyuubiSession
@@ -68,6 +68,9 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
   }
 
   test("kyuubi defined function - system_user/session_user") {
+    // TODO: re-enable this test on JDK 25 after upgrading Hadoop that includes
+    //       HADOOP-19906 (3.4.4, 3.5.1, 3.6.0)
+    assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_22))
     withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery("select system_user() as c1, session_user() as c2")
