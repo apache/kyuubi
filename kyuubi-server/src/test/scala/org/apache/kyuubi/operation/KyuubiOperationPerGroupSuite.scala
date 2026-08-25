@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import org.apache.commons.lang3.{JavaVersion, SystemUtils}
 import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.session.KyuubiSession
