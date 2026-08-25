@@ -289,6 +289,10 @@
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
 
+        <!-- Both test plugins default their argLine to ${argLine}; jacoco:prepare-agent
+             prepends the agent to it under -Pcodecov. Overriding argLine in plugin config
+             instead breaks that, since plugin config is interpolated before the agent runs. -->
+        <argLine>${extraJavaTestArgs}</argLine>
         <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
             --add-opens=java.base/java.lang=ALL-UNNAMED
             --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
@@ -1503,7 +1507,6 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1530,7 +1533,6 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
