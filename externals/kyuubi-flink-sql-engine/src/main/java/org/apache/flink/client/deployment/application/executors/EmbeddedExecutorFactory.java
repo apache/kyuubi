@@ -115,7 +115,7 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
 
   private static Collection<JobID> bootstrapJobIds;
 
-  private static boolean bootstrapJobIdsClaimed;
+  private static volatile boolean bootstrapJobIdsClaimed;
 
   private static Collection<JobID> submittedJobIds;
 
