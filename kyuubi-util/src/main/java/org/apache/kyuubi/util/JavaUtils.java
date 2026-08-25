@@ -67,13 +67,15 @@ public class JavaUtils {
                   .findFirst()
                   .orElse(addresses.get(0));
 
+          // Rebuild from the raw bytes to drop the IPv6 zone suffix that getHostAddress would
+          // otherwise append.
           InetAddress strippedAddress = InetAddress.getByAddress(addr.getAddress());
 
           // We've found an address that looks reasonable!
           LOG.warn(
               "{} was resolved to a loopback address: {}, using {}",
-              addr.getHostName(),
-              addr.getHostAddress(),
+              address.getHostName(),
+              address.getHostAddress(),
               strippedAddress.getHostAddress());
           return strippedAddress;
         }
