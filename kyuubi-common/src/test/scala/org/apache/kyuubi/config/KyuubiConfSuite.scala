@@ -370,7 +370,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
   test("getEngineConf excludes server virtual thread configs") {
     val kyuubiConf = KyuubiConf(false)
-    val serverConfigs = SERVER_ALL_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs
+    val serverConfigs = SERVER_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs
     serverConfigs.foreach(kyuubiConf.set(_, true))
 
     EngineType.values.foreach { engineType =>
@@ -381,13 +381,13 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     }
   }
 
-  test("server virtual thread all switch and component overrides") {
+  test("server virtual thread switch and component overrides") {
     val kyuubiConf = KyuubiConf(false)
 
-    assert(!kyuubiConf.get(SERVER_ALL_VIRTUAL_THREADS_ENABLED))
+    assert(!kyuubiConf.get(SERVER_VIRTUAL_THREADS_ENABLED))
     serverVirtualThreadConfigs.foreach(config => assert(!kyuubiConf.get(config)))
 
-    kyuubiConf.set(SERVER_ALL_VIRTUAL_THREADS_ENABLED, true)
+    kyuubiConf.set(SERVER_VIRTUAL_THREADS_ENABLED, true)
     serverVirtualThreadConfigs.foreach(config => assert(kyuubiConf.get(config)))
 
     kyuubiConf.set(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED, false)

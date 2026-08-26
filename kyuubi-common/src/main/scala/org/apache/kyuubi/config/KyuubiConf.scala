@@ -635,8 +635,8 @@ object KyuubiConf {
       .immutable
       .fallbackConf(FRONTEND_BIND_PORT)
 
-  val SERVER_ALL_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.server.virtualThreads.all.enabled")
+  val SERVER_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.server.virtualThreads.enabled")
       .doc("Whether to use virtual threads by default for all supported executors in the " +
         "Kyuubi server. This requires Java 21 or later. Enabling this option is recommended for " +
         "I/O-bound Kyuubi Server deployments on Java 25 or later. On Java 21, enable virtual " +
@@ -657,7 +657,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")
@@ -686,7 +686,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.min.worker.threads")
@@ -737,7 +737,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val FRONTEND_REST_PROXY_JETTY_CLIENT_IDLE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.idleTimeout")
@@ -1416,7 +1416,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val FRONTEND_TRINO_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.trino.jetty.stopTimeout")
@@ -1490,7 +1490,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.application.cleanup.virtualThreads.enabled")
@@ -1499,7 +1499,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val KUBERNETES_MASTER: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.master.address")
@@ -1668,7 +1668,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.engine.spark.main.resource")
@@ -1882,7 +1882,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val ENGINE_ALIVE_MAX_FAILURES: ConfigEntry[Int] =
     buildConf("kyuubi.session.engine.alive.max.failures")
@@ -1907,7 +1907,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val ENGINE_ALIVE_PROBE_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.session.engine.alive.probe.interval")
@@ -2254,7 +2254,7 @@ object KyuubiConf {
       .immutable
       .doc("Whether batch submitter workers use virtual threads. This requires Java 21 or later.")
       .version("1.13.0")
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val BATCH_IMPL_VERSION: ConfigEntry[String] =
     buildConf("kyuubi.batch.impl.version")
@@ -2296,7 +2296,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val ENGINE_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.backend.engine.exec.pool.size")
@@ -2381,7 +2381,7 @@ object KyuubiConf {
       .doc("Whether metadata recovery workers use virtual threads. This requires Java 21 or " +
         "later. The configured concurrency limit remains enforced.")
       .version("1.13.0")
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION: ConfigEntry[Boolean] =
     buildConf("kyuubi.metadata.recovery.waitEngineSubmission")
@@ -2436,7 +2436,7 @@ object KyuubiConf {
       .doc("Whether metadata asynchronous retry workers use virtual threads. This requires " +
         "Java 21 or later. The configured concurrency limit remains enforced.")
       .version("1.13.0")
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val METADATA_REQUEST_ASYNC_RETRY_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("kyuubi.metadata.request.async.retry.queue.size")
@@ -4202,7 +4202,7 @@ object KyuubiConf {
       .version("1.13.0")
       .audience(SERVER)
       .immutable
-      .fallbackConf(SERVER_ALL_VIRTUAL_THREADS_ENABLED)
+      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val ENGINE_JDBC_MEMORY: ConfigEntry[String] =
     buildConf("kyuubi.engine.jdbc.memory")
