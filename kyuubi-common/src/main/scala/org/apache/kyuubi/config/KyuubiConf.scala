@@ -635,6 +635,18 @@ object KyuubiConf {
       .immutable
       .fallbackConf(FRONTEND_BIND_PORT)
 
+  val FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.thrift.binary.virtualThreads.enabled")
+      .doc("Whether to use virtual threads for the Kyuubi server thrift binary frontend " +
+        "workers. This requires Java 21 or later. The maximum number of concurrent workers " +
+        "remains limited by kyuubi.frontend.thrift.max.worker.threads. The minimum worker " +
+        "threads and worker keepalive configurations do not apply in this mode.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
   val FRONTEND_THRIFT_HTTP_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("kyuubi.frontend.thrift.http.bind.host")
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +

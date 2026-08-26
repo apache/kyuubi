@@ -29,7 +29,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.protocol.TBinaryProtocol
 import org.apache.kyuubi.shaded.thrift.server.{TServer, TThreadPoolServer}
 import org.apache.kyuubi.shaded.thrift.transport.{TServerSocket, TSSLTransportFactory}
-import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.util.{NamedThreadFactory, ThreadUtils}
 
 /**
  * Apache Thrift based hive service rpc
@@ -65,13 +65,19 @@ abstract class TBinaryFrontendService(name: String)
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val executor = new ThreadPoolExecutor(
-        minThreads,
-        maxThreads,
-        keepAliveTime,
-        TimeUnit.MILLISECONDS,
-        new SynchronousQueue[Runnable](),
-        new NamedThreadFactory(name + "Handler-Pool", false))
+      val useVirtualThreads = isServer() &&
+        conf.get(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED)
+      val executor = if (useVirtualThreads) {
+        ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(maxThreads, name + "Handler")
+      } else {
+        new ThreadPoolExecutor(
+          minThreads,
+          maxThreads,
+          keepAliveTime,
+          TimeUnit.MILLISECONDS,
+          new SynchronousQueue[Runnable](),
+          new NamedThreadFactory(name + "Handler-Pool", false))
+      }
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
       val tServerSocket =
@@ -116,8 +122,13 @@ abstract class TBinaryFrontendService(name: String)
       // TCP Server
       server = Some(new TThreadPoolServer(args))
       server.foreach(_.setServerEventHandler(new FeTServerEventHandler))
+      val workerThreadDescription = if (useVirtualThreads) {
+        s"at most $maxThreads virtual worker threads"
+      } else {
+        s"[$minThreads, $maxThreads] platform worker threads"
+      }
       info(s"Initializing $name on ${serverAddr.getHostName}:${_actualPort} with" +
-        s" [$minThreads, $maxThreads] worker threads")
+        s" $workerThreadDescription")
     } catch {
       case e: Throwable =>
         error(e)

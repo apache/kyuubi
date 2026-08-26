@@ -26,6 +26,35 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 
 object ThreadUtils extends Logging {
 
+  def newBoundedVirtualThreadPerTaskExecutor(
+      maxConcurrentTasks: Int,
+      threadNamePrefix: String): ExecutorService = {
+    require(maxConcurrentTasks > 0, "maxConcurrentTasks must be positive")
+    new BoundedExecutorService(
+      newVirtualThreadPerTaskExecutor(threadNamePrefix),
+      maxConcurrentTasks)
+  }
+
+  private def newVirtualThreadPerTaskExecutor(threadNamePrefix: String): ExecutorService =
+    try {
+      val builder = classOf[Thread].getMethod("ofVirtual").invoke(null)
+      val builderClass = Class.forName("java.lang.Thread$Builder")
+      val namedBuilder = builderClass
+        .getMethod("name", classOf[String], java.lang.Long.TYPE)
+        .invoke(builder, s"$threadNamePrefix-", Long.box(0L))
+      val threadFactory = builderClass
+        .getMethod("factory")
+        .invoke(namedBuilder)
+        .asInstanceOf[ThreadFactory]
+      classOf[Executors]
+        .getMethod("newThreadPerTaskExecutor", classOf[ThreadFactory])
+        .invoke(null, threadFactory)
+        .asInstanceOf[ExecutorService]
+    } catch {
+      case e: ReflectiveOperationException =>
+        throw new IllegalStateException("Virtual threads require Java 21 or later", e)
+    }
+
   def newDaemonSingleThreadScheduledExecutor(
       threadName: String,
       executeExistingDelayedTasksAfterShutdown: Boolean = true): ScheduledExecutorService = {
@@ -149,5 +178,46 @@ object ThreadUtils extends Logging {
       initialDelay,
       delay,
       timeUnit)
+  }
+
+  private class BoundedExecutorService(
+      delegate: ExecutorService,
+      maxConcurrentTasks: Int) extends AbstractExecutorService {
+
+    private val permits = new Semaphore(maxConcurrentTasks)
+
+    override def shutdown(): Unit = delegate.shutdown()
+
+    override def shutdownNow(): java.util.List[Runnable] = delegate.shutdownNow()
+
+    override def isShutdown: Boolean = delegate.isShutdown
+
+    override def isTerminated: Boolean = delegate.isTerminated
+
+    override def awaitTermination(timeout: Long, unit: TimeUnit): Boolean =
+      delegate.awaitTermination(timeout, unit)
+
+    override def execute(command: Runnable): Unit = {
+      if (!permits.tryAcquire()) {
+        throw new RejectedExecutionException(
+          s"Maximum concurrent task limit $maxConcurrentTasks reached")
+      }
+
+      try {
+        delegate.execute(new Runnable {
+          override def run(): Unit = {
+            try {
+              command.run()
+            } finally {
+              permits.release()
+            }
+          }
+        })
+      } catch {
+        case t: Throwable =>
+          permits.release()
+          throw t
+      }
+    }
   }
 }
