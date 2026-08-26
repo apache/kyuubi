@@ -76,6 +76,17 @@ extensions = [
     "sphinxemoji.sphinxemoji",
 ]
 
+myst_enable_extensions = [
+    "colon_fence",
+    "substitution"
+]
+
+myst_substitutions = {
+    "release": release
+}
+
+myst_heading_anchors = 3
+
 master_doc = "index"
 
 # Add any paths that contain templates here, relative to this directory.
