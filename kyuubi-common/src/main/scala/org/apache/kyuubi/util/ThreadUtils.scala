@@ -18,6 +18,7 @@
 package org.apache.kyuubi.util
 
 import java.util.concurrent._
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.concurrent.Awaitable
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -25,6 +26,38 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import org.apache.kyuubi.{KyuubiException, Logging}
 
 object ThreadUtils extends Logging {
+
+  trait ExecutorServiceWithMetrics extends ExecutorService {
+    def getPoolSize: Int
+    def getActiveCount: Int
+    def getQueueSize: Int
+  }
+
+  def isVirtualThreadSupported: Boolean = {
+    try {
+      classOf[Thread].getMethod("ofVirtual")
+      classOf[Executors].getMethod("newThreadPerTaskExecutor", classOf[ThreadFactory])
+      true
+    } catch {
+      case _: ReflectiveOperationException => false
+    }
+  }
+
+  def newVirtualThreadFactory(threadNamePrefix: String): ThreadFactory =
+    try {
+      val builder = classOf[Thread].getMethod("ofVirtual").invoke(null)
+      val builderClass = Class.forName("java.lang.Thread$Builder")
+      val namedBuilder = builderClass
+        .getMethod("name", classOf[String], java.lang.Long.TYPE)
+        .invoke(builder, s"$threadNamePrefix-", Long.box(0L))
+      builderClass
+        .getMethod("factory")
+        .invoke(namedBuilder)
+        .asInstanceOf[ThreadFactory]
+    } catch {
+      case e: ReflectiveOperationException =>
+        throw new IllegalStateException("Virtual threads require Java 21 or later", e)
+    }
 
   def newBoundedVirtualThreadPerTaskExecutor(
       maxConcurrentTasks: Int,
@@ -35,20 +68,26 @@ object ThreadUtils extends Logging {
       maxConcurrentTasks)
   }
 
-  private def newVirtualThreadPerTaskExecutor(threadNamePrefix: String): ExecutorService =
+  def newBoundedQueuedVirtualThreadPerTaskExecutor(
+      maxConcurrentTasks: Int,
+      maxQueuedTasks: Int,
+      threadNamePrefix: String): ExecutorServiceWithMetrics = {
+    require(maxConcurrentTasks > 0, "maxConcurrentTasks must be positive")
+    require(maxQueuedTasks >= 0, "maxQueuedTasks must not be negative")
+    require(
+      maxQueuedTasks <= Int.MaxValue - maxConcurrentTasks,
+      "maxConcurrentTasks plus maxQueuedTasks must not exceed Int.MaxValue")
+    new BoundedQueuedExecutorService(
+      newVirtualThreadPerTaskExecutor(threadNamePrefix),
+      maxConcurrentTasks,
+      maxQueuedTasks)
+  }
+
+  def newVirtualThreadPerTaskExecutor(threadNamePrefix: String): ExecutorService =
     try {
-      val builder = classOf[Thread].getMethod("ofVirtual").invoke(null)
-      val builderClass = Class.forName("java.lang.Thread$Builder")
-      val namedBuilder = builderClass
-        .getMethod("name", classOf[String], java.lang.Long.TYPE)
-        .invoke(builder, s"$threadNamePrefix-", Long.box(0L))
-      val threadFactory = builderClass
-        .getMethod("factory")
-        .invoke(namedBuilder)
-        .asInstanceOf[ThreadFactory]
       classOf[Executors]
         .getMethod("newThreadPerTaskExecutor", classOf[ThreadFactory])
-        .invoke(null, threadFactory)
+        .invoke(null, newVirtualThreadFactory(threadNamePrefix))
         .asInstanceOf[ExecutorService]
     } catch {
       case e: ReflectiveOperationException =>
@@ -60,6 +99,16 @@ object ThreadUtils extends Logging {
       executeExistingDelayedTasksAfterShutdown: Boolean = true): ScheduledExecutorService = {
     val threadFactory = new NamedThreadFactory(threadName, daemon = true)
     val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
+    executor.setRemoveOnCancelPolicy(true)
+    executor
+      .setExecuteExistingDelayedTasksAfterShutdownPolicy(executeExistingDelayedTasksAfterShutdown)
+    executor
+  }
+
+  def newVirtualThreadSingleThreadScheduledExecutor(
+      threadName: String,
+      executeExistingDelayedTasksAfterShutdown: Boolean = true): ScheduledExecutorService = {
+    val executor = new ScheduledThreadPoolExecutor(1, newVirtualThreadFactory(threadName))
     executor.setRemoveOnCancelPolicy(true)
     executor
       .setExecuteExistingDelayedTasksAfterShutdownPolicy(executeExistingDelayedTasksAfterShutdown)
@@ -216,6 +265,79 @@ object ThreadUtils extends Logging {
       } catch {
         case t: Throwable =>
           permits.release()
+          throw t
+      }
+    }
+  }
+
+  private class BoundedQueuedExecutorService(
+      delegate: ExecutorService,
+      maxConcurrentTasks: Int,
+      maxQueuedTasks: Int)
+    extends AbstractExecutorService with ExecutorServiceWithMetrics {
+
+    private val admittedTasks = new Semaphore(maxConcurrentTasks + maxQueuedTasks)
+    private val runningTasks = new Semaphore(maxConcurrentTasks, true)
+    private val activeCount = new AtomicInteger()
+    private val queueSize = new AtomicInteger()
+
+    override def getPoolSize: Int = activeCount.get()
+
+    override def getActiveCount: Int = activeCount.get()
+
+    override def getQueueSize: Int = queueSize.get()
+
+    override def shutdown(): Unit = delegate.shutdown()
+
+    override def shutdownNow(): java.util.List[Runnable] = delegate.shutdownNow()
+
+    override def isShutdown: Boolean = delegate.isShutdown
+
+    override def isTerminated: Boolean = delegate.isTerminated
+
+    override def awaitTermination(timeout: Long, unit: TimeUnit): Boolean =
+      delegate.awaitTermination(timeout, unit)
+
+    override def execute(command: Runnable): Unit = {
+      if (!admittedTasks.tryAcquire()) {
+        throw new RejectedExecutionException(
+          s"Maximum running task limit $maxConcurrentTasks and queue limit " +
+            s"$maxQueuedTasks reached")
+      }
+      queueSize.incrementAndGet()
+
+      try {
+        delegate.execute(new Runnable {
+          override def run(): Unit = {
+            var active = false
+            try {
+              runningTasks.acquire()
+              queueSize.decrementAndGet()
+              activeCount.incrementAndGet()
+              active = true
+              command.run()
+            } catch {
+              case _: InterruptedException =>
+                command match {
+                  case future: java.util.concurrent.Future[_] => future.cancel(true)
+                  case _ =>
+                }
+                Thread.currentThread().interrupt()
+            } finally {
+              if (active) {
+                activeCount.decrementAndGet()
+                runningTasks.release()
+              } else {
+                queueSize.decrementAndGet()
+              }
+              admittedTasks.release()
+            }
+          }
+        })
+      } catch {
+        case t: Throwable =>
+          queueSize.decrementAndGet()
+          admittedTasks.release()
           throw t
       }
     }

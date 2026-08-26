@@ -62,6 +62,23 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
     assert(threadName startsWith "")
   }
 
+  test("New virtual thread single thread scheduled executor") {
+    if (ThreadUtils.isVirtualThreadSupported) {
+      val service = ThreadUtils.newVirtualThreadSingleThreadScheduledExecutor(
+        "ThreadUtilsVirtualScheduledTest")
+      val isVirtual = classOf[Thread].getMethod("isVirtual")
+      try {
+        val task = service.schedule(
+          () => isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean],
+          10,
+          TimeUnit.MILLISECONDS)
+        assert(task.get(10, TimeUnit.SECONDS))
+      } finally {
+        ThreadUtils.shutdown(service)
+      }
+    }
+  }
+
   test("New daemon scheduled thread pool") {
     val pool = ThreadUtils.newDaemonScheduledThreadPool(2, 10, "ThreadUtilsSchedTest")
     // submit a task to ensure pool operational
@@ -78,15 +95,7 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
   }
 
   test("New bounded virtual thread per task executor") {
-    val virtualThreadsSupported =
-      try {
-        classOf[Thread].getMethod("isVirtual")
-        true
-      } catch {
-        case _: NoSuchMethodException => false
-      }
-
-    if (!virtualThreadsSupported) {
+    if (!ThreadUtils.isVirtualThreadSupported) {
       val error = intercept[IllegalStateException] {
         ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(2, "ThreadUtilsVirtualTest")
       }
@@ -128,6 +137,51 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
         assert(threadNames.size() === 3)
         assert(threadNames.toArray.forall(_.toString.startsWith("ThreadUtilsVirtualTest-")))
         assert(tasksAreVirtual.toArray.forall(_.asInstanceOf[Boolean]))
+      } finally {
+        release.countDown()
+        ThreadUtils.shutdown(executor)
+      }
+    }
+  }
+
+  test("New bounded queued virtual thread per task executor") {
+    if (ThreadUtils.isVirtualThreadSupported) {
+      val executor =
+        ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+          2,
+          1,
+          "ThreadUtilsQueuedTest")
+      val ready = new CountDownLatch(2)
+      val release = new CountDownLatch(1)
+      val isVirtual = classOf[Thread].getMethod("isVirtual")
+
+      def blockingTask: Runnable = new Runnable {
+        override def run(): Unit = {
+          assert(isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean])
+          ready.countDown()
+          release.await()
+        }
+      }
+
+      try {
+        val first = executor.submit(blockingTask)
+        val second = executor.submit(blockingTask)
+        assert(ready.await(10, TimeUnit.SECONDS))
+        val third = executor.submit(new Runnable {
+          override def run(): Unit = ()
+        })
+
+        assert(executor.getPoolSize === 2)
+        assert(executor.getActiveCount === 2)
+        assert(executor.getQueueSize === 1)
+        intercept[RejectedExecutionException](executor.submit(blockingTask))
+
+        release.countDown()
+        first.get(10, TimeUnit.SECONDS)
+        second.get(10, TimeUnit.SECONDS)
+        third.get(10, TimeUnit.SECONDS)
+        assert(executor.getActiveCount === 0)
+        assert(executor.getQueueSize === 0)
       } finally {
         release.countDown()
         ThreadUtils.shutdown(executor)

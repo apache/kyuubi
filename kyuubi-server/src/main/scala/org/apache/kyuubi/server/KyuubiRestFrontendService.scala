@@ -101,6 +101,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       host,
       port,
       conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
+      conf.get(FRONTEND_REST_VIRTUAL_THREADS_ENABLED),
       conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT),
       conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
     batchService.foreach(addService)
@@ -179,12 +180,23 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     }
   }
 
+  private def newBatchRecoveryExecutor(poolSize: Int, name: String) = {
+    if (conf.get(METADATA_RECOVERY_VIRTUAL_THREADS_ENABLED)) {
+      ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+        poolSize,
+        Int.MaxValue - poolSize,
+        name)
+    } else {
+      ThreadUtils.newDaemonFixedThreadPool(poolSize, name)
+    }
+  }
+
   @VisibleForTesting
   private[kyuubi] def recoverBatchSessions(): Unit = withBatchRecoveryLockRequired {
     val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
     val recoveryWaitEngineSubmission = conf.get(METADATA_RECOVERY_WAIT_ENGINE_SUBMISSION)
     val batchRecoveryExecutor =
-      ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-recovery-executor")
+      newBatchRecoveryExecutor(recoveryNumThreads, "batch-recovery-executor")
     try {
       val batchSessionsToRecover = sessionManager.getBatchSessionsToRecover(connectionUrl)
       val pendingRecoveryTasksCount = new AtomicInteger(0)
@@ -234,7 +246,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     withBatchRecoveryLockRequired {
       val recoveryNumThreads = conf.get(METADATA_RECOVERY_THREADS)
       val batchRecoveryExecutor =
-        ThreadUtils.newDaemonFixedThreadPool(recoveryNumThreads, "batch-reassign-recovery-executor")
+        newBatchRecoveryExecutor(recoveryNumThreads, "batch-reassign-recovery-executor")
       try {
         val batchSessionsToRecover =
           sessionManager.getSpecificBatchSessionsToRecover(batchIds, connectionUrl)

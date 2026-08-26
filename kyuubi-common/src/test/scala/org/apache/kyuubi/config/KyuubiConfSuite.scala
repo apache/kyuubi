@@ -26,6 +26,22 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
   import KyuubiConf._
 
+  private val serverVirtualThreadConfigs = Seq(
+    FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED,
+    FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED,
+    FRONTEND_REST_VIRTUAL_THREADS_ENABLED,
+    FRONTEND_TRINO_VIRTUAL_THREADS_ENABLED,
+    KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED,
+    KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED,
+    SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED,
+    ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED,
+    ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED,
+    BATCH_SUBMITTER_VIRTUAL_THREADS_ENABLED,
+    SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED,
+    METADATA_RECOVERY_VIRTUAL_THREADS_ENABLED,
+    METADATA_REQUEST_ASYNC_RETRY_VIRTUAL_THREADS_ENABLED,
+    FRONTEND_DATA_AGENT_OPERATION_SUBMIT_VIRTUAL_THREADS_ENABLED)
+
   test("kyuubi conf defaults") {
     val conf = new KyuubiConf()
     assert(conf.get(SERVER_PRINCIPAL) === None)
@@ -352,13 +368,33 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     }
   }
 
-  test("getEngineConf excludes the server thrift binary virtual thread config") {
+  test("getEngineConf excludes server virtual thread configs") {
     val kyuubiConf = KyuubiConf(false)
-    kyuubiConf.set(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED, true)
+    val serverConfigs = SERVER_ALL_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs
+    serverConfigs.foreach(kyuubiConf.set(_, true))
 
     EngineType.values.foreach { engineType =>
-      assert(!kyuubiConf.getEngineConf(engineType)
-        .contains(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED.key))
+      val engineConf = kyuubiConf.getEngineConf(engineType)
+      serverConfigs.foreach { config =>
+        assert(!engineConf.contains(config.key), s"$engineType should not receive ${config.key}")
+      }
+    }
+  }
+
+  test("server virtual thread all switch and component overrides") {
+    val kyuubiConf = KyuubiConf(false)
+
+    assert(!kyuubiConf.get(SERVER_ALL_VIRTUAL_THREADS_ENABLED))
+    serverVirtualThreadConfigs.foreach(config => assert(!kyuubiConf.get(config)))
+
+    kyuubiConf.set(SERVER_ALL_VIRTUAL_THREADS_ENABLED, true)
+    serverVirtualThreadConfigs.foreach(config => assert(kyuubiConf.get(config)))
+
+    kyuubiConf.set(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED, false)
+    assert(!kyuubiConf.get(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED))
+    serverVirtualThreadConfigs.filterNot(
+      _ == FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED).foreach {
+      config => assert(kyuubiConf.get(config))
     }
   }
 

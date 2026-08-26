@@ -96,8 +96,13 @@ object KubernetesUtils extends Logging {
       }.build()
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
-    val dispatcher = new Dispatcher(
-      ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher"))
+    val dispatcherExecutor =
+      if (conf.get(KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED)) {
+        ThreadUtils.newVirtualThreadPerTaskExecutor("kubernetes-dispatcher")
+      } else {
+        ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher")
+      }
+    val dispatcher = new Dispatcher(dispatcherExecutor)
     val factoryWithCustomDispatcher = new OkHttpClientFactory() {
       override protected def additionalConfig(builder: OkHttpClient.Builder): Unit = {
         builder.dispatcher(dispatcher)

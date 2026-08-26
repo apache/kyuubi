@@ -29,7 +29,7 @@ import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOGIN_TIMEOUT
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED, ENGINE_LOGIN_TIMEOUT, ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys._
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -47,7 +47,9 @@ class KyuubiSyncThriftClient private (
     protocol: TProtocol,
     engineAliveProbeProtocol: Option[TProtocol],
     engineAliveProbeInterval: Long,
-    engineAliveTimeout: Long)
+    engineAliveTimeout: Long,
+    useVirtualThreadsForAliveProbe: Boolean,
+    useVirtualThreadsForAsyncRequests: Boolean)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -73,8 +75,12 @@ class KyuubiSyncThriftClient private (
   @volatile private var asyncRequestExecutorInitialized: Boolean = false
   private lazy val asyncRequestExecutor: ExecutorService = {
     asyncRequestExecutorInitialized = true
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor(
-      "async-request-executor-" + SessionHandle(_remoteSessionHandle))
+    val threadName = "async-request-executor-" + SessionHandle(_remoteSessionHandle)
+    if (useVirtualThreadsForAsyncRequests) {
+      ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(1, Int.MaxValue - 1, threadName)
+    } else {
+      ThreadUtils.newDaemonSingleThreadScheduledExecutor(threadName)
+    }
   }
 
   @VisibleForTesting
@@ -91,8 +97,12 @@ class KyuubiSyncThriftClient private (
   }
 
   private def startEngineAliveProbe(): Unit = {
-    engineAliveThreadPool = ThreadUtils.newDaemonSingleThreadScheduledExecutor(
-      "engine-alive-probe-" + _aliveProbeSessionHandle)
+    val threadName = "engine-alive-probe-" + _aliveProbeSessionHandle
+    engineAliveThreadPool = if (useVirtualThreadsForAliveProbe) {
+      ThreadUtils.newVirtualThreadSingleThreadScheduledExecutor(threadName)
+    } else {
+      ThreadUtils.newDaemonSingleThreadScheduledExecutor(threadName)
+    }
 
     def closeClient(): Unit = {
       warn(s"Removing Clients for ${_remoteSessionHandle}")
@@ -491,6 +501,8 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
     val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
     val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
     val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
+    val useVirtualThreadsForAliveProbe = conf.get(ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED)
+    val useVirtualThreadsForAsyncRequests = conf.get(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED)
 
     val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout, maxMessageSize)
 
@@ -512,6 +524,8 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       tProtocol,
       aliveProbeProtocol,
       aliveProbeInterval,
-      aliveTimeout)
+      aliveTimeout,
+      useVirtualThreadsForAliveProbe,
+      useVirtualThreadsForAsyncRequests)
   }
 }

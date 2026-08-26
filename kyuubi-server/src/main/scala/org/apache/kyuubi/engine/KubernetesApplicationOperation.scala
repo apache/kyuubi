@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.util.Locale
-import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ExecutorService, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
@@ -82,8 +82,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
-  private var cleanupCanceledAppPodExecutor: ThreadPoolExecutor = _
-
+  private var cleanupCanceledAppPodExecutor: ExecutorService = _
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
@@ -173,8 +172,13 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupDriverPodCheckInterval,
       cleanupDriverPodCheckInterval,
       TimeUnit.MILLISECONDS)
-    cleanupCanceledAppPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
-      "cleanup-canceled-app-pod-thread")
+    val useVirtualThreads =
+      conf.get(KyuubiConf.KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED)
+    cleanupCanceledAppPodExecutor = if (useVirtualThreads) {
+      ThreadUtils.newVirtualThreadPerTaskExecutor("cleanup-canceled-app-pod-thread")
+    } else {
+      ThreadUtils.newDaemonCachedThreadPool("cleanup-canceled-app-pod-thread")
+    }
     initializeKubernetesClient(kyuubiConf)
   }
 

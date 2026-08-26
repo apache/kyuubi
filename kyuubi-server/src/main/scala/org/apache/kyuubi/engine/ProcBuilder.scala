@@ -32,7 +32,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory, ThreadUtils}
 
 trait ProcBuilder {
 
@@ -254,7 +254,12 @@ trait ProcBuilder {
     }
 
     logCaptureThreadReleased = false
-    logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
+    logCaptureThread =
+      if (conf.get(KyuubiConf.SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED)) {
+        ThreadUtils.newVirtualThreadFactory("process-logger-capture").newThread(redirect)
+      } else {
+        PROC_BUILD_LOGGER.newThread(redirect)
+      }
     logCaptureThread.start()
     process
   }

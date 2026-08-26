@@ -19,6 +19,7 @@ package org.apache.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.operation.OperationState
@@ -40,8 +41,17 @@ class KyuubiBatchService(
 
   private lazy val metadataManager: MetadataManager = sessionManager.metadataManager.get
   private val running: AtomicBoolean = new AtomicBoolean(false)
-  private lazy val batchExecutor = ThreadUtils
-    .newDaemonFixedThreadPool(conf.get(BATCH_SUBMITTER_THREADS), "kyuubi-batch-submitter")
+  private lazy val batchExecutor = {
+    val poolSize = conf.get(BATCH_SUBMITTER_THREADS)
+    if (conf.get(KyuubiConf.BATCH_SUBMITTER_VIRTUAL_THREADS_ENABLED)) {
+      ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+        poolSize,
+        Int.MaxValue - poolSize,
+        "kyuubi-batch-submitter")
+    } else {
+      ThreadUtils.newDaemonFixedThreadPool(poolSize, "kyuubi-batch-submitter")
+    }
+  }
 
   def cancelUnscheduledBatch(batchId: String): Boolean = {
     metadataManager.cancelUnscheduledBatch(batchId)
@@ -114,7 +124,7 @@ class KyuubiBatchService(
         }
       }
     }
-    (0 until batchExecutor.getCorePoolSize).foreach(_ => batchExecutor.submit(submitTask))
+    (0 until conf.get(BATCH_SUBMITTER_THREADS)).foreach(_ => batchExecutor.submit(submitTask))
     super.start()
   }
 

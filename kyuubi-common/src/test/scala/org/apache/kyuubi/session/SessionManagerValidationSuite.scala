@@ -17,9 +17,13 @@
 
 package org.apache.kyuubi.session
 
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.util.ThreadUtils
 
 class SessionManagerValidationSuite extends KyuubiFunSuite {
 
@@ -104,6 +108,36 @@ class SessionManagerValidationSuite extends KyuubiFunSuite {
     val result = sessionManager.validateBatchConf(conf)
     assert(!result.contains(AUTHENTICATION_LDAP_BASE_DN.alternatives.head))
     assert(result("spark.executor.memory") === "4g")
+  }
+
+  test("server operation pool uses virtual threads when enabled") {
+    val conf = KyuubiConf(false)
+      .set(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED, true)
+    val manager = new NoopSessionManager() {
+      override protected def isServer: Boolean = true
+    }
+
+    if (!ThreadUtils.isVirtualThreadSupported) {
+      val error = intercept[IllegalStateException](manager.initialize(conf))
+      assert(error.getMessage.contains("Java 21"))
+    } else {
+      val isVirtual = classOf[Thread].getMethod("isVirtual")
+      val taskWasVirtual = new AtomicBoolean()
+
+      manager.initialize(conf)
+      manager.start()
+      try {
+        val task = manager.submitBackgroundOperation(new Runnable {
+          override def run(): Unit = {
+            taskWasVirtual.set(isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean])
+          }
+        })
+        task.get(10, TimeUnit.SECONDS)
+        assert(taskWasVirtual.get())
+      } finally {
+        manager.stop()
+      }
+    }
   }
 
 }
