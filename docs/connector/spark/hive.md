@@ -64,14 +64,14 @@ spark.sql.catalog.hive_catalog.<other.hadoop.conf>  <value>
 
 Besides the catalog-level configurations above, the Kyuubi Spark Hive connector provides the following configurations:
 
-| Key | Default | Meaning | Type | Since |
-|---|---|---|---|---|
-| `spark.sql.kyuubi.hive.connector.externalCatalog.share.policy` | `ONE_FOR_ALL` | The share policy for the external catalog. `ONE_FOR_ONE` means an external catalog is used by only one `HiveTableCatalog`, while `ONE_FOR_ALL` shares an external catalog globally across the catalogs with the same name. | string | 1.7.0 |
-| `spark.sql.catalog.<catalog>.delegation.token.renewal.enabled` | `true` | Whether to enable delegation token renewal for the Kerberized Hive Metastore of this catalog. | boolean | 1.8.0 |
-| `spark.sql.kyuubi.hive.connector.read.convertMetastoreParquet` | `true` | When enabled, the data source Parquet reader is used to process Parquet tables created by HiveQL syntax, instead of the Hive SerDe. | boolean | 1.11.0 |
-| `spark.sql.kyuubi.hive.connector.read.convertMetastoreOrc` | `true` | When enabled, the data source ORC reader is used to process ORC tables created by HiveQL syntax, instead of the Hive SerDe. | boolean | 1.11.0 |
-| `spark.sql.kyuubi.hive.connector.dropTableAsPurgeTable` | `false` | When enabled, `DROP TABLE` completely removes its data by skipping HDFS trash, equivalent to the `PURGE TABLE` command. | boolean | 1.12.0 |
-| `spark.sql.catalog.<catalog>.hive.metastore.warehouse.dir` | &lt;undefined&gt; | The default warehouse directory for the catalog, taking precedence over the global `spark.sql.warehouse.dir` when creating a database. | string | 1.12.0 |
+|                              Key                               |      Default      |                                                                                                          Meaning                                                                                                           |  Type   | Since  |
+|----------------------------------------------------------------|-------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|--------|
+| `spark.sql.kyuubi.hive.connector.externalCatalog.share.policy` | `ONE_FOR_ALL`     | The share policy for the external catalog. `ONE_FOR_ONE` means an external catalog is used by only one `HiveTableCatalog`, while `ONE_FOR_ALL` shares an external catalog globally across the catalogs with the same name. | string  | 1.7.0  |
+| `spark.sql.catalog.<catalog>.delegation.token.renewal.enabled` | `true`            | Whether to enable delegation token renewal for the Kerberized Hive Metastore of this catalog.                                                                                                                              | boolean | 1.8.0  |
+| `spark.sql.kyuubi.hive.connector.read.convertMetastoreParquet` | `true`            | When enabled, the data source Parquet reader is used to process Parquet tables created by HiveQL syntax, instead of the Hive SerDe.                                                                                        | boolean | 1.11.0 |
+| `spark.sql.kyuubi.hive.connector.read.convertMetastoreOrc`     | `true`            | When enabled, the data source ORC reader is used to process ORC tables created by HiveQL syntax, instead of the Hive SerDe.                                                                                                | boolean | 1.11.0 |
+| `spark.sql.kyuubi.hive.connector.dropTableAsPurgeTable`        | `false`           | When enabled, `DROP TABLE` completely removes its data by skipping HDFS trash, equivalent to the `PURGE TABLE` command.                                                                                                    | boolean | 1.12.0 |
+| `spark.sql.catalog.<catalog>.hive.metastore.warehouse.dir`     | &lt;undefined&gt; | The default warehouse directory for the catalog, taking precedence over the global `spark.sql.warehouse.dir` when creating a database.                                                                                     | string  | 1.12.0 |
 
 ```{note}
 Catalog-level configurations (`spark.sql.catalog.<catalog>.*`) are captured when the catalog is
@@ -163,3 +163,4 @@ Currently, KSHC has the following limitations:
 - KSHC does not support Hive functions / UDFs.
 - KSHC does not support views.
 - KSHC does not support bucket tables, they are handled as regular Hive tables.
+
