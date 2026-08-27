@@ -58,7 +58,7 @@ spark.sql.catalog.hive_catalog.<other.hive.conf>    <value>
 spark.sql.catalog.hive_catalog.<other.hadoop.conf>  <value>
 ```
 
-Besides the catalog-level configurations above, the Kyuubi Spark Hive connector provides several connector-specific configurations:
+Besides the catalog-level configurations above, the Kyuubi Spark Hive connector provides the following configurations:
 
 | Key | Default | Meaning | Type | Since |
 |---|---|---|---|---|
