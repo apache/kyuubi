@@ -26,8 +26,10 @@ on Spark DataSource V2 API, supports accessing multiple Hive Metastore in a sing
 To enable the integration of Kyuubi Spark SQL engine and Hive connector through
 Spark DataSource V2 API, you need to:
 
-- Referencing the Hive connector [dependencies](#kyuubi-hive-deps)
-- Setting the Spark catalog [configurations](#kyuubi-hive-conf)
+- Referencing the Hive connector [dependencies](#kshc-dependencies)
+- Setting the Spark catalog [configurations](#kshc-configurations)
+
+(kshc-dependencies)=
 
 ### Dependencies
 
@@ -46,6 +48,8 @@ In order to make the Hive connector packages visible for the runtime classpath o
 Starting from v1.9.2 and v1.10.0, KSHC jars available in the [Maven Central](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-connector-hive) guarantee binary compatibility across
 multiple Spark versions, so a single jar works across them without rebuilding.
 ```
+
+(kshc-configurations)=
 
 ### Configurations
 
