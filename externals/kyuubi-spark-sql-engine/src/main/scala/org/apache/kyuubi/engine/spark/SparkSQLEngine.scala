@@ -38,6 +38,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_ENGINE_URL}
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
+import org.apache.kyuubi.engine.spark.connect.SparkConnectLauncher
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, SparkEventHandlerRegister}
 import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.events.EventBus
@@ -326,6 +327,10 @@ object SparkSQLEngine extends Logging {
   }
 
   def createSpark(): SparkSession = {
+    if (SparkConnectLauncher.isEnabled(kyuubiConf)) {
+      SparkConnectLauncher.setup(kyuubiConf, _sparkConf)
+    }
+
     val engineCredentials = kyuubiConf.getOption(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     kyuubiConf.unset(KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY)
     _sparkConf.set(s"spark.${KyuubiReservedKeys.KYUUBI_ENGINE_CREDENTIALS_KEY}", "")
@@ -407,6 +412,12 @@ object SparkSQLEngine extends Logging {
         startInitTimeoutChecker(submitTime, initTimeout)
         spark = createSpark()
         sparkSessionCreated.set(true)
+        if (SparkConnectLauncher.isEnabled(kyuubiConf)) {
+          SparkConnectLauncher.boundEndpoint(spark.sparkContext.getConf).foreach {
+            case (host, port) =>
+              info(s"Spark Connect service is listening on sc://$host:$port")
+          }
+        }
         try {
           startEngine(spark)
           // blocking main thread
