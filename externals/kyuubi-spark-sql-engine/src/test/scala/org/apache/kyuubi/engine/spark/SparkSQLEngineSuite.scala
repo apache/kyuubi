@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, Executors, TimeUnit}
+
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.KyuubiFunSuite
 
 class SparkSQLEngineSuite extends KyuubiFunSuite {
@@ -43,6 +47,39 @@ class SparkSQLEngineSuite extends KyuubiFunSuite {
     val executorPodName3 = s"$executorPodNamePrefix3-exec-${Int.MaxValue}"
     assert(!executorPodNamePrefix3.contains(userName3))
     assert(podLogsDirectoryNameLength(namespace, executorPodName3) <= 253)
+  }
+
+  test("generate executor pod name prefix should be unique for concurrent calls " +
+    "with the same user") {
+    // The previous epoch-millis suffix caused podNamePrefix collisions when two
+    // engines for the same user started within the same millisecond. Fan out
+    // concurrent calls and assert every generated prefix is still unique.
+    val userName = "same_user"
+    val count = 1000
+    val pool = Executors.newFixedThreadPool(10)
+    val latch = new CountDownLatch(count)
+    val prefixes = new ConcurrentLinkedQueue[String]()
+    try {
+      for (_ <- 0 until count) {
+        pool.execute(() => {
+          try {
+            prefixes.add(SparkSQLEngine.generateExecutorPodNamePrefixForK8s(userName))
+          } finally {
+            latch.countDown()
+          }
+        })
+      }
+      assert(latch.await(10, TimeUnit.SECONDS), "concurrent prefix generation timed out")
+    } finally {
+      pool.shutdown()
+    }
+
+    val all = prefixes.asScala.toSeq
+    assert(all.size == count)
+    assert(all.forall(_.startsWith("kyuubi-same-user-")))
+    // Under the old epoch-millis implementation, calls colliding on the same
+    // millisecond would produce duplicate prefixes and this would fail.
+    assert(all.distinct.size == all.size)
   }
 
   private def podLogsDirectoryNameLength(namespace: String, podName: String): Int = {
