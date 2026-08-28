@@ -50,9 +50,38 @@ class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionPro
     val p8 = sql(s"set spark.sql.optimizer.excludedRules=${classOf[RuleAuthorization].getName}")
       .queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p8))
+    // sql() has already applied the SET before the rule is invoked here, and the value it
+    // leaves behind is what the effective-value check rejects on every plan of this session
+    spark.conf.unset(extension.EXCLUDED_RULES_KEY)
     val p9 = sql(
       "set spark.kyuubi.authz.skipCataloglessV2Relation.enabled=true").queryExecution.analyzed
     intercept[AccessControlException](extension.apply(p9))
+  }
+
+  test("check the effective value of spark.sql.optimizer.excludedRules") {
+    val extension = AuthzConfigurationChecker(spark)
+    val plan = sql("select 1").queryExecution.analyzed
+    extension.apply(plan)
+
+    // spark.conf.set writes the config without producing a plan, the same way the
+    // Spark Connect Config RPC does, so the SetCommand case never sees it
+    spark.conf.set(extension.EXCLUDED_RULES_KEY, classOf[RuleAuthorization].getName)
+    try {
+      intercept[AccessControlException](extension.apply(plan))
+    } finally {
+      spark.conf.unset(extension.EXCLUDED_RULES_KEY)
+    }
+    extension.apply(plan)
+
+    // excluding rules that do not belong to authz stays allowed
+    spark.conf.set(
+      extension.EXCLUDED_RULES_KEY,
+      "org.apache.spark.sql.catalyst.optimizer.ConstantFolding")
+    try {
+      extension.apply(plan)
+    } finally {
+      spark.conf.unset(extension.EXCLUDED_RULES_KEY)
+    }
   }
 
   test("apply spark configuration restriction rules for RESET") {
