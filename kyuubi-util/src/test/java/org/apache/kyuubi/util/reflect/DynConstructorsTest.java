@@ -127,4 +127,37 @@ public class DynConstructorsTest {
 
     assertEquals("value", fixedArity.value);
   }
+
+  @Test
+  public void testNullArgumentTypeIsAnOrdinaryMiss() {
+    // DynClasses.orNull() hands back null for a class the running dependency does not provide, and
+    // callers pass that straight into impl, so the chain has to fall through to the next candidate
+    DynConstructors.Ctor<FixedArity> ctor =
+        DynConstructors.builder()
+            .impl(FixedArity.class, (Class<?>) null)
+            .impl(FixedArity.class, String.class)
+            .build();
+
+    assertEquals("value", ctor.newInstance("value").value);
+
+    RuntimeException thrown =
+        assertThrows(
+            RuntimeException.class,
+            () -> DynConstructors.builder().impl(FixedArity.class, (Class<?>) null).build());
+
+    assertTrue(
+        thrown.getMessage().contains("Missing " + FixedArity.class.getName() + "(null)"),
+        () -> "unexpected message: " + thrown.getMessage());
+
+    // getConstructor reads a null array as no arguments at all, so the candidate name has to as
+    // well
+    RuntimeException noArgs =
+        assertThrows(
+            RuntimeException.class,
+            () -> DynConstructors.builder().impl(FixedArity.class, (Class<?>[]) null).build());
+
+    assertTrue(
+        noArgs.getMessage().contains("Missing " + FixedArity.class.getName() + "()"),
+        () -> "unexpected message: " + noArgs.getMessage());
+  }
 }
