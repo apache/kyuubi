@@ -18,7 +18,7 @@
 # Hive
 
 You may know that the Apache Spark has built-in support for accessing Hive tables, it works well in most cases,
-but is limited to one Hive Metastore. The Kyuubi Spark Hive connector(KSHC) implemented a Hive connector based
+but is limited to one Hive Metastore. The Kyuubi Spark Hive connector (KSHC) implements a Hive connector based
 on Spark DataSource V2 API, supports accessing multiple Hive Metastore in a single Spark application.
 
 ## Hive Integration
@@ -74,10 +74,16 @@ Besides the catalog-level configurations above, the Kyuubi Spark Hive connector 
 | `spark.sql.catalog.<catalog>.hive.metastore.warehouse.dir`     | &lt;undefined&gt; | The default warehouse directory for the catalog, taking precedence over the global `spark.sql.warehouse.dir` when creating a database.                                                                                     | string  | 1.12.0 |
 
 ```{note}
-Catalog-level configurations (`spark.sql.catalog.<catalog>.*`) are captured when the catalog is
-initialized, so they must be present at the Spark application bootstrap (in `spark-defaults.conf`
-or via `--conf`). Setting them through `SET` after the catalog has been created does not take
-effect, e.g. `SET spark.sql.catalog.<catalog>.<key>=<value>`.
+Catalog-level configurations (`spark.sql.catalog.<catalog>.*`) are captured when the catalog
+is lazily initialized on first access, so they take effect as long as they are set before that.
+Once the catalog is initialized, subsequent `SET` on these keys no longer affects it. Note that
+under the default `ONE_FOR_ALL` share policy, configurations only apply to the first initialized
+Hive client instance shared across catalogs with the same name.
+
+In Spark cluster deploy mode with Kerberos and no keytab configured, all catalogs that
+need HMS access must be declared with their `hive.metastore.uris` at the Spark application
+bootstrap (e.g. in `spark-defaults.conf` or via `--conf`), so that Spark can fetch HMS delegation
+tokens ahead of time during submission and distribute them to executors.
 ```
 
 ## Hive Connector Operations
@@ -135,9 +141,6 @@ make `DROP TABLE` skip the HDFS trash and completely remove its data, behaving l
 
 Since v1.13.0, KSHC supports Dynamic Partition Pruning (DPP) for partitioned Hive tables, which
 significantly reduces the amount of data scanned when joining against large partitioned tables.
-DPP is implemented by wrapping Spark's built-in `ParquetScan` / `OrcScan`. As a result, native
-engines such as Gluten and Comet cannot recognize these scans by class name, so KSHC-converted
-Parquet/ORC tables silently fall back to the JVM read path and can no longer be offloaded.
 
 ## Advanced Usages
 
@@ -150,8 +153,8 @@ KSHC supports accessing Kerberized Hive Metastore and HDFS, by using keytab, or 
 It's not expected to work properly with multiple KDC instances, the limitation comes from JDK Krb5LoginModule,
 for such cases, consider setting up Cross-Realm Kerberos trusts, then you just need to talk with one KDC.
 
-For HMS Thrift API used by Spark, it's known that Hive 2.3.9 client is compatible with HMS from 2.1 to 4.0, and
-Hive 2.3.10 client is compatible with HMS from 1.1 to 4.0, such version combinations should cover the most cases.
+For HMS Thrift API used by Spark, it's known that Hive 2.3.9 client is compatible with HMS from 2.1 to 3.1, and
+Hive 2.3.10 client is compatible with HMS from 1.1 to 3.1, such version combinations should cover the most cases.
 For other corner cases, KSHC also supports `spark.sql.catalog.<catalog_name>.spark.sql.hive.metastore.jars` and
 `spark.sql.catalog.<catalog_name>.spark.sql.hive.metastore.version` as well as the Spark built-in Hive datasource
 does, you can refer to the Spark documentation for details.
@@ -160,7 +163,10 @@ does, you can refer to the Spark documentation for details.
 
 Currently, KSHC has the following limitations:
 
-- KSHC does not support Hive functions / UDFs.
-- KSHC does not support views.
-- KSHC does not support bucket tables, they are handled as regular Hive tables.
+- Persistent Hive views and UDFs are not supported through a KSHC catalog, so `CREATE VIEW`,
+  `SHOW VIEWS`, `CREATE FUNCTION`, and `SHOW FUNCTIONS` all fail when the target or current
+  catalog is a KSHC catalog. Temporary views and temporary functions are not affected. As a
+  workaround, persistent views and UDFs can be created and accessed through the Spark built-in
+  `spark_catalog`.
+- Bucket tables are not supported and are handled as regular Hive tables.
 
