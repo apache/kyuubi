@@ -63,6 +63,10 @@ public class DynMethodsTest {
     public String concat(String... parts) {
       return String.join("", parts);
     }
+
+    public String join(String first, String second) {
+      return first + "/" + second;
+    }
   }
 
   @Test
@@ -174,5 +178,25 @@ public class DynMethodsTest {
         assertThrows(IOException.class, () -> method.invokeChecked(new ReflectionTarget()));
 
     assertEquals("checked failure", thrown.getMessage());
+  }
+
+  @Test
+  public void testInvokeDropsExtraArgumentsForFixedArity() {
+    DynMethods.UnboundMethod join =
+        DynMethods.builder("join").impl(ReflectionTarget.class, String.class, String.class).build();
+
+    // HiveConnectorUtils depends on this: it invokes the 6-arg CatalogStorageFormat.apply with
+    // 7 arguments on Spark below 4.2 and lets the trailing serdeName be dropped.
+    assertEquals("a/b", join.invoke(new ReflectionTarget(), "a", "b", "dropped"));
+  }
+
+  @Test
+  public void testInvokePadsMissingArgumentsWithNull() {
+    DynMethods.UnboundMethod join =
+        DynMethods.builder("join").impl(ReflectionTarget.class, String.class, String.class).build();
+
+    // A short argument list reaches the target with nulls rather than being rejected, which is
+    // why invokeChecked skips the copy only at equal arity.
+    assertEquals("a/null", join.invoke(new ReflectionTarget(), "a"));
   }
 }
