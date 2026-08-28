@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.apache.flink.annotation.Internal;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.cli.ClientOptions;
 import org.apache.flink.client.deployment.application.EmbeddedJobClient;
@@ -114,6 +115,8 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
 
   private static Collection<JobID> bootstrapJobIds;
 
+  private static volatile boolean bootstrapJobIdsClaimed;
+
   private static Collection<JobID> submittedJobIds;
 
   /**
@@ -198,12 +201,13 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
     checkState(EmbeddedExecutorFactory.dispatcherGateway == null);
     checkState(EmbeddedExecutorFactory.retryExecutor == null);
     synchronized (bootstrapLock) {
-      // submittedJobIds would be always 1, because we create a new list to avoid concurrent access
-      // issues
+      // Keep Flink's collection for the application bootstrap job. Later Kyuubi jobs use the
+      // thread-safe copy to avoid concurrent access to Flink's ArrayList.
       LOGGER.debug("Bootstrapping EmbeddedExecutorFactory.");
       EmbeddedExecutorFactory.submittedJobIds =
           new ConcurrentLinkedQueue<>(checkNotNull(applicationJobIds));
       EmbeddedExecutorFactory.bootstrapJobIds = applicationJobIds;
+      EmbeddedExecutorFactory.bootstrapJobIdsClaimed = !applicationJobIds.isEmpty();
       EmbeddedExecutorFactory.suspendedJobIds = suspendedJobIds;
       EmbeddedExecutorFactory.terminalJobIds = terminalJobIds;
       EmbeddedExecutorFactory.dispatcherGateway = checkNotNull(dispatcherGateway);
@@ -228,7 +232,20 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
   @Override
   public PipelineExecutor getExecutor(final Configuration configuration) {
     checkNotNull(configuration);
-    Collection<JobID> executorJobIDs;
+    final Collection<JobID> executorJobIDs = claimJobIdsForExecutor();
+    final EmbeddedJobClientCreator jobClientCreator =
+        (jobId, userCodeClassloader) ->
+            newEmbeddedJobClient(
+                jobId, configuration.get(ClientOptions.CLIENT_TIMEOUT), userCodeClassloader);
+    return stampApplicationId(newEmbeddedExecutor(executorJobIDs, configuration, jobClientCreator));
+  }
+
+  @VisibleForTesting
+  static Collection<JobID> claimJobIdsForExecutor() {
+    if (bootstrapJobIdsClaimed) {
+      LOGGER.info("Submitting new Kyuubi job. Job submitted: {}.", submittedJobIds.size());
+      return submittedJobIds;
+    }
     synchronized (bootstrapLock) {
       // wait in a loop to avoid spurious wakeups
       int retry = 0;
@@ -247,19 +264,17 @@ public class EmbeddedExecutorFactory implements PipelineExecutorFactory {
                 + BOOTSTRAP_WAIT_INTERVAL * BOOTSTRAP_WAIT_RETRIES
                 + " ms. Please check the engine log for more details.");
       }
-    }
-    if (bootstrapJobIds.size() > 0) {
+      if (!bootstrapJobIdsClaimed) {
+        // Flink owns this collection and expects the application bootstrap job in it. Claim it
+        // before returning the executor so another submission cannot observe the list as empty and
+        // concurrently add to Flink's non-thread-safe ArrayList.
+        bootstrapJobIdsClaimed = true;
+        LOGGER.info("Bootstrapping Flink SQL engine with the initial SQL.");
+        return bootstrapJobIds;
+      }
       LOGGER.info("Submitting new Kyuubi job. Job submitted: {}.", submittedJobIds.size());
-      executorJobIDs = submittedJobIds;
-    } else {
-      LOGGER.info("Bootstrapping Flink SQL engine with the initial SQL.");
-      executorJobIDs = bootstrapJobIds;
+      return submittedJobIds;
     }
-    final EmbeddedJobClientCreator jobClientCreator =
-        (jobId, userCodeClassloader) ->
-            newEmbeddedJobClient(
-                jobId, configuration.get(ClientOptions.CLIENT_TIMEOUT), userCodeClassloader);
-    return stampApplicationId(newEmbeddedExecutor(executorJobIDs, configuration, jobClientCreator));
   }
 
   private static PipelineExecutor newEmbeddedExecutor(

@@ -106,10 +106,12 @@ object FlinkSQLEngine extends Logging {
       }
 
       val engineContext = FlinkEngineUtils.getDefaultContext(args, flinkConf, flinkConfDir)
+      // Finish engine-level initialization before exposing the frontend so client jobs cannot race
+      // with the application bootstrap job.
+      bootstrap(executionTarget)
+
       startEngine(engineContext)
       info("Flink engine started")
-
-      bootstrap(executionTarget)
 
       // blocking main thread
       countDownLatch.await()
