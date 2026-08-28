@@ -84,6 +84,14 @@ documentation [Spark Configurations](../../../configuration/settings.md#spark-co
 
 #### Restrict Session Level Config
 
+:::{note}
+For a multi-tenant Kyuubi deployment, administrators should configure at least
+one of these lists: `kyuubi.session.conf.ignore.list` or
+`kyuubi.session.conf.restrict.list`.
+Both lists are empty by default, so clients can otherwise override sensitive
+session-level configurations during engine bootstrap and connection setup.
+:::
+
 You can specify config `kyuubi.session.conf.ignore.list` values and config
 `kyuubi.session.conf.restrict.list` values to disable changing session+ level
 configuration on the server side. For example:
