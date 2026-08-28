@@ -127,4 +127,24 @@ public class DynConstructorsTest {
 
     assertEquals("value", fixedArity.value);
   }
+
+  @Test
+  public void testHiddenImplWithoutBaseClassFailsFast() {
+    IllegalStateException thrown =
+        assertThrows(IllegalStateException.class, () -> DynConstructors.builder().hiddenImpl());
+
+    assertTrue(
+        thrown.getMessage().contains("without a base class"),
+        () -> "unexpected message: " + thrown.getMessage());
+  }
+
+  @Test
+  public void testHiddenImplWithoutBaseClassIsSkippedOnceFound() throws NoSuchMethodException {
+    // every other impl overload short-circuits once a constructor is found, so a class-less
+    // builder that already matched keeps working rather than failing on the base-class lookup
+    DynConstructors.Ctor<String> ctor =
+        DynConstructors.builder().impl("java.lang.String").hiddenImpl().buildChecked();
+
+    assertEquals(String.class, ctor.getConstructedClass());
+  }
 }
