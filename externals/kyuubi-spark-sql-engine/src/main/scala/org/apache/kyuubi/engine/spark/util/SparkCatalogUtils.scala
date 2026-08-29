@@ -214,21 +214,40 @@ object SparkCatalogUtils extends Logging {
                 null)
             }
           } else {
-            sessionCatalog.getTablesByName(identifiers)
-              .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
-                val typ = if (t.tableType.name == VIEW) VIEW else TABLE
-                Row(
-                  catalogName,
-                  t.database,
-                  t.identifier.table,
-                  typ,
-                  t.comment.getOrElse(""),
-                  null,
-                  null,
-                  null,
-                  null,
-                  null)
-              }
+            try {
+              sessionCatalog.getTablesByName(identifiers)
+                .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
+                  val typ = if (t.tableType.name == VIEW) VIEW else TABLE
+                  Row(
+                    catalogName,
+                    t.database,
+                    t.identifier.table,
+                    typ,
+                    t.comment.getOrElse(""),
+                    null,
+                    null,
+                    null,
+                    null,
+                    null)
+                }
+            } catch {
+              case e: Exception =>
+                warn(s"Failed to resolve tables in database $db, " +
+                  s"falling back to identifier-based listing: ${e.getMessage}", e)
+                identifiers.map { ti: TableIdentifier =>
+                  Row(
+                    catalogName,
+                    ti.database.getOrElse("default"),
+                    ti.table,
+                    TABLE,
+                    "",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null)
+                }
+            }
           }
         }
       case tc: TableCatalog =>
