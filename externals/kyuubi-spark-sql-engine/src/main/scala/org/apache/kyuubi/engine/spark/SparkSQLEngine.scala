@@ -409,8 +409,17 @@ object SparkSQLEngine extends Logging {
         sparkSessionCreated.set(true)
         try {
           startEngine(spark)
-          // blocking main thread
-          countDownLatch.await()
+          // blocking main thread, but also observe SparkContext state.
+          // If the SparkContext is stopped unexpectedly (e.g., OutOfMemoryError),
+          // the terminating checker may call stop() but the shutdown could stall
+          // before reaching stopServer(), leaving the main thread waiting forever.
+          // See: https://github.com/apache/kyuubi/issues/7590
+          while (!countDownLatch.await(1, TimeUnit.SECONDS)) {
+            if (spark.sparkContext.isStopped) {
+              warn("SparkContext has been stopped, breaking main thread wait")
+              currentEngine.foreach(e => Utils.tryLogNonFatalError(e.stop()))
+            }
+          }
         } catch {
           case e: KyuubiException =>
             currentEngine match {
