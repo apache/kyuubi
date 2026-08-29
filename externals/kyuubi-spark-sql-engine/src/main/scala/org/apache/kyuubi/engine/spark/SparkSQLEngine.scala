@@ -475,7 +475,8 @@ object SparkSQLEngine extends Logging {
         .replaceAll("[^a-z0-9\\-]", "-")
         .replaceAll("-+", "-")
         .replaceAll("^-", "")
-    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
+    val podNamePrefixWithUser =
+      s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}-${UUID.randomUUID().toString.take(4)}"
     if (podNamePrefixWithUser.length <= executorPodNamePrefixMaxLength(namespace)) {
       podNamePrefixWithUser
     } else {
