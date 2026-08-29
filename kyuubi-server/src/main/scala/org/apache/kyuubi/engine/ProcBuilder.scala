@@ -256,7 +256,7 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread =
       if (conf.get(KyuubiConf.SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED)) {
-        ThreadUtils.newVirtualThreadFactory("process-logger-capture").newThread(redirect)
+        PROC_BUILD_VIRTUAL_LOGGER.newThread(redirect)
       } else {
         PROC_BUILD_LOGGER.newThread(redirect)
       }
@@ -368,6 +368,8 @@ trait ProcBuilder {
 
 object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
+  private lazy val PROC_BUILD_VIRTUAL_LOGGER =
+    ThreadUtils.newVirtualThreadFactory("process-logger-capture")
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
 

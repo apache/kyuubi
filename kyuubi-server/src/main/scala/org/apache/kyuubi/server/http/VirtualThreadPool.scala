@@ -31,21 +31,25 @@ import org.apache.kyuubi.util.ThreadUtils
  * Despite the name, virtual threads are never pooled or reused. Each task runs on a new virtual
  * thread, while `maxThreads` only limits concurrent tasks to preserve frontend backpressure.
  *
- * TODO: When Kyuubi upgrades to Jetty 12, replace this adapter with Jetty's native
- * `org.eclipse.jetty.util.thread.VirtualThreadPool`.
+ * Jetty 12 provides a native `org.eclipse.jetty.util.thread.VirtualThreadPool`, which can replace
+ * this adapter after Kyuubi upgrades to that version.
  */
 private[server] class VirtualThreadPool(maxThreads: Int, name: String)
   extends AbstractLifeCycle with ThreadPool.SizedThreadPool {
 
   private val activeThreads = new AtomicInteger()
-  private val executor: ExecutorService =
-    ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(maxThreads, name)
+  @volatile private var executor: ExecutorService = _
+
+  override protected def doStart(): Unit = {
+    executor = ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(maxThreads, name)
+  }
 
   override def execute(command: Runnable): Unit = {
-    if (!isRunning) {
+    val currentExecutor = executor
+    if (!isRunning || currentExecutor == null) {
       throw new RejectedExecutionException(s"$name is not running")
     }
-    executor.execute(() => {
+    currentExecutor.execute(() => {
       activeThreads.incrementAndGet()
       try {
         command.run()
@@ -55,7 +59,12 @@ private[server] class VirtualThreadPool(maxThreads: Int, name: String)
     })
   }
 
-  override def join(): Unit = executor.awaitTermination(Long.MaxValue, TimeUnit.NANOSECONDS)
+  override def join(): Unit = {
+    val currentExecutor = executor
+    if (currentExecutor != null) {
+      currentExecutor.awaitTermination(Long.MaxValue, TimeUnit.NANOSECONDS)
+    }
+  }
 
   override def getThreads: Int = activeThreads.get()
 
@@ -76,7 +85,11 @@ private[server] class VirtualThreadPool(maxThreads: Int, name: String)
   }
 
   override protected def doStop(): Unit = {
-    executor.shutdownNow()
-    executor.awaitTermination(30, TimeUnit.SECONDS)
+    val currentExecutor = executor
+    if (currentExecutor != null) {
+      currentExecutor.shutdownNow()
+      currentExecutor.awaitTermination(30, TimeUnit.SECONDS)
+      executor = null
+    }
   }
 }

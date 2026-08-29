@@ -281,7 +281,7 @@ object ThreadUtils extends Logging {
     private val activeCount = new AtomicInteger()
     private val queueSize = new AtomicInteger()
 
-    override def getPoolSize: Int = activeCount.get()
+    override def getPoolSize: Int = activeCount.get() + queueSize.get()
 
     override def getActiveCount: Int = activeCount.get()
 

@@ -52,6 +52,15 @@ class VirtualThreadPoolSuite extends KyuubiFunSuite {
         pool.stop()
       }
       intercept[RejectedExecutionException](pool.execute(() => ()))
+
+      pool.start()
+      try {
+        val restarted = new CountDownLatch(1)
+        pool.execute(() => restarted.countDown())
+        assert(restarted.await(10, TimeUnit.SECONDS))
+      } finally {
+        pool.stop()
+      }
     }
   }
 }

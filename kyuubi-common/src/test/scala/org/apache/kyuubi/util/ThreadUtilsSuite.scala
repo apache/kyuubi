@@ -171,7 +171,7 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
           override def run(): Unit = ()
         })
 
-        assert(executor.getPoolSize === 2)
+        assert(executor.getPoolSize === 3)
         assert(executor.getActiveCount === 2)
         assert(executor.getQueueSize === 1)
         intercept[RejectedExecutionException](executor.submit(blockingTask))

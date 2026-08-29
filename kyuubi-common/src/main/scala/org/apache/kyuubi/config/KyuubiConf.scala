@@ -2368,7 +2368,7 @@ object KyuubiConf {
     buildConf("kyuubi.metadata.recovery.threads")
       .audience(SERVER)
       .immutable
-      .doc("The number of threads for recovery from the metadata store " +
+      .doc("The maximum number of concurrent tasks for recovery from the metadata store " +
         "when the Kyuubi server restarts.")
       .version("1.6.0")
       .intConf
@@ -2388,8 +2388,9 @@ object KyuubiConf {
       .audience(SERVER)
       .immutable
       .doc("Whether a metadata recovery task should wait for its corresponding engine " +
-        "submission to complete before finishing. All recovery tasks are submitted to a fixed " +
-        s"thread pool controlled by ${METADATA_RECOVERY_THREADS.key}. If true, a task blocks " +
+        "submission to complete before finishing. All recovery tasks are submitted to a " +
+        s"concurrency-limited executor controlled by ${METADATA_RECOVERY_THREADS.key}. If true, " +
+        "a task blocks " +
         "until the engine submission is done, helping throttle the load on the system " +
         s"if ${SESSION_ENGINE_STARTUP_WAIT_COMPLETION.key} is false. " +
         "If false, the task returns immediately after opening the session without waiting.")
