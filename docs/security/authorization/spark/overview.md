@@ -94,15 +94,19 @@ session-level configurations during engine bootstrap and connection setup.
 
 You can specify config `kyuubi.session.conf.ignore.list` values and config
 `kyuubi.session.conf.restrict.list` values to disable changing session+ level
-configuration on the server side. For example:
+configuration on the server side. One conservative starting point is to keep
+server-defined resource sizing while rejecting changes to deployment and
+authorization settings:
 
 ```text
-kyuubi.session.conf.ignore.list    spark.driver.memory,spark.sql.optimizer.excludedRules
+kyuubi.session.conf.ignore.list      spark.driver.memory,spark.executor.memory
+kyuubi.session.conf.restrict.list    spark.master,spark.submit.deployMode,spark.sql.extensions,spark.sql.optimizer.excludedRules
 ```
 
-```text
-kyuubi.session.conf.restrict.list    spark.driver.memory,spark.sql.optimizer.excludedRules
-```
+Tailor this baseline to the deployment. The ignore list silently drops client
+values, while the restrict list rejects the connection. These lists protect
+engine bootstrap and connection setup only; use the operation-level restriction
+below to prevent later changes through `SET` statements.
 
 #### Restrict Operation Level Config
 
