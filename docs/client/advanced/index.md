@@ -20,8 +20,7 @@
 ```{toctree}
 :maxdepth: 2
 
-configurations
-logging
 kerberos
-features/index
+plan_only
 ```
+

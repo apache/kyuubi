@@ -31,7 +31,7 @@ JDBC URLs have the following format:
 jdbc:kyuubi://<host>:<port>/<dbName>;<sessionVars>?kyuubi.operation.plan.only.mode=parse/analyze/optimize/optimize_with_stats/physical/execution/none;<kyuubiConfs>#<[spark|hive]Vars>
 ```
 
-Refer to [hive_jdbc doc](../../jdbc/hive_jdbc.md) for details of others parameters
+Refer to [hive_jdbc doc](../jdbc/hive_jdbc.md) for details of others parameters
 
 ### Example:
 

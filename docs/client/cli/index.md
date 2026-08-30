@@ -24,3 +24,4 @@ kyuubi_beeline
 hive_beeline
 trino_cli
 ```
+
