@@ -34,7 +34,7 @@ import org.eclipse.jetty.server.handler.gzip.GzipHandler
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.ssl.SslContextFactory
-import org.eclipse.jetty.util.thread.{ExecutorThreadPool, ThreadPool}
+import org.eclipse.jetty.util.thread.ExecutorThreadPool
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException}
 import org.apache.kyuubi.cli.Handle
@@ -43,7 +43,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_GUID, KYUUBI_SESSION_ENGINE_LAUNCH_HANDLE_SECRET, KYUUBI_SESSION_ENGINE_LAUNCH_SUPPORT_RESULT}
 import org.apache.kyuubi.metrics.MetricsConstants.{THRIFT_HTTP_CONN_FAIL, THRIFT_HTTP_CONN_OPEN, THRIFT_HTTP_CONN_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.server.http.{ThriftHttpServlet, VirtualThreadPool}
+import org.apache.kyuubi.server.http.ThriftHttpServlet
 import org.apache.kyuubi.server.http.authentication.AuthenticationFilter
 import org.apache.kyuubi.service.{Serverable, Service, ServiceUtils, TFrontendService}
 import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
@@ -98,19 +98,14 @@ final class KyuubiTHttpFrontendService(
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val useVirtualThreads = conf.get(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED)
-      val threadPool: ThreadPool = if (useVirtualThreads) {
-        new VirtualThreadPool(maxThreads, getName + "HttpHandler")
-      } else {
-        val executor = new ThreadPoolExecutor(
-          minThreads,
-          maxThreads,
-          keepAliveTime,
-          TimeUnit.MILLISECONDS,
-          new SynchronousQueue[Runnable](),
-          new NamedThreadFactory(getName + "HttpHandler-Pool", false))
-        new ExecutorThreadPool(executor)
-      }
+      val executor = new ThreadPoolExecutor(
+        minThreads,
+        maxThreads,
+        keepAliveTime,
+        TimeUnit.MILLISECONDS,
+        new SynchronousQueue[Runnable](),
+        new NamedThreadFactory(getName + "HttpHandler-Pool", false))
+      val threadPool = new ExecutorThreadPool(executor)
 
       // HTTP Server
       server = Some(new Server(threadPool))
@@ -224,13 +219,8 @@ final class KyuubiTHttpFrontendService(
       context.addServlet(new ServletHolder(servlet), httpPath)
       constrainHttpMethods(context)
 
-      val workerThreadDescription = if (useVirtualThreads) {
-        s"at most $maxThreads virtual worker threads"
-      } else {
-        s"$minThreads ... $maxThreads platform worker threads"
-      }
       info(s"Started ${getClass.getSimpleName} in $schemeName mode on port $portNum " +
-        s"path=$httpPath with $workerThreadDescription")
+        s"path=$httpPath with $minThreads ... $maxThreads threads")
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing(_.incCount(THRIFT_HTTP_CONN_FAIL))

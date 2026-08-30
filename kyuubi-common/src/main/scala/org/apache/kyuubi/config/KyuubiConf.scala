@@ -678,16 +678,6 @@ object KyuubiConf {
       .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
       .createWithDefault(10010)
 
-  val FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.thrift.http.virtualThreads.enabled")
-      .doc("Whether to use virtual threads for the Kyuubi server thrift HTTP frontend " +
-        "workers. This requires Java 21 or later. The maximum number of concurrent workers " +
-        "remains limited by kyuubi.frontend.thrift.max.worker.threads.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
-
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("kyuubi.frontend.min.worker.threads")
       .doc("(deprecated) Minimum number of threads in the frontend worker thread pool for " +

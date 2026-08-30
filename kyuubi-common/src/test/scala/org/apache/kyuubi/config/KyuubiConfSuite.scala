@@ -28,7 +28,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
   private val serverVirtualThreadConfigs = Seq(
     FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED,
-    FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED,
     KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED,
     KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED,
     SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED,
@@ -388,10 +387,10 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     kyuubiConf.set(SERVER_VIRTUAL_THREADS_ENABLED, true)
     serverVirtualThreadConfigs.foreach(config => assert(kyuubiConf.get(config)))
 
-    kyuubiConf.set(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED, false)
-    assert(!kyuubiConf.get(FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED))
+    kyuubiConf.set(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED, false)
+    assert(!kyuubiConf.get(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED))
     serverVirtualThreadConfigs.filterNot(
-      _ == FRONTEND_THRIFT_HTTP_VIRTUAL_THREADS_ENABLED).foreach {
+      _ == ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED).foreach {
       config => assert(kyuubiConf.get(config))
     }
   }

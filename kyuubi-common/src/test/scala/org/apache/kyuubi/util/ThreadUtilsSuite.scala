@@ -19,6 +19,8 @@ package org.apache.kyuubi.util
 
 import java.util.concurrent.{ConcurrentLinkedQueue, CountDownLatch, RejectedExecutionException, TimeUnit}
 
+import scala.concurrent.duration._
+
 import org.apache.kyuubi.KyuubiFunSuite
 
 class ThreadUtilsSuite extends KyuubiFunSuite {
@@ -180,8 +182,10 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
         first.get(10, TimeUnit.SECONDS)
         second.get(10, TimeUnit.SECONDS)
         third.get(10, TimeUnit.SECONDS)
-        assert(executor.getActiveCount === 0)
-        assert(executor.getQueueSize === 0)
+        eventually(timeout(10.seconds), interval(10.millis)) {
+          assert(executor.getActiveCount === 0)
+          assert(executor.getQueueSize === 0)
+        }
       } finally {
         release.countDown()
         ThreadUtils.shutdown(executor)
