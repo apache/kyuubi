@@ -20,10 +20,9 @@ package org.apache.kyuubi.server.ui
 import org.eclipse.jetty.server.{Handler, HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
 import org.eclipse.jetty.server.handler.{ContextHandlerCollection, ErrorHandler}
 import org.eclipse.jetty.util.component.LifeCycle
-import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler, ThreadPool}
+import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.server.http.VirtualThreadPool
 import org.apache.kyuubi.util.JavaUtils
 
 private[kyuubi] class JettyServer(
@@ -89,17 +88,11 @@ object JettyServer {
       host: String,
       port: Int,
       poolSize: Int,
-      useVirtualThreads: Boolean,
       stopTimeout: Long,
       sendServerVersion: Boolean): JettyServer = {
-    val pool: ThreadPool = if (useVirtualThreads) {
-      new VirtualThreadPool(poolSize, name)
-    } else {
-      val platformThreadPool = new QueuedThreadPool(poolSize)
-      platformThreadPool.setName(name)
-      platformThreadPool.setDaemon(true)
-      platformThreadPool
-    }
+    val pool = new QueuedThreadPool(poolSize)
+    pool.setName(name)
+    pool.setDaemon(true)
     val server = new Server(pool)
     server.setStopTimeout(stopTimeout)
 

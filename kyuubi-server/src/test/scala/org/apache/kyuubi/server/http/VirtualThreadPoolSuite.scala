@@ -41,6 +41,7 @@ class VirtualThreadPoolSuite extends KyuubiFunSuite {
 
       pool.start()
       try {
+        assert(pool.getIdleThreads === 0)
         pool.execute(blockingTask)
         pool.execute(blockingTask)
         assert(ready.await(10, TimeUnit.SECONDS))

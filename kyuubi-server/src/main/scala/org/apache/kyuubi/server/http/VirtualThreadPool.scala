@@ -68,7 +68,7 @@ private[server] class VirtualThreadPool(maxThreads: Int, name: String)
 
   override def getThreads: Int = activeThreads.get()
 
-  override def getIdleThreads: Int = Math.max(maxThreads - activeThreads.get(), 0)
+  override def getIdleThreads: Int = 0
 
   override def isLowOnThreads: Boolean = activeThreads.get() >= maxThreads
 

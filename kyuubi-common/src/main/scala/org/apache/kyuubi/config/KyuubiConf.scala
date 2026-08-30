@@ -729,16 +729,6 @@ object KyuubiConf {
       .version("1.6.2")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
-  val FRONTEND_REST_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.rest.virtualThreads.enabled")
-      .doc("Whether to use virtual threads for the Kyuubi server REST frontend workers. " +
-        "This requires Java 21 or later. The maximum number of concurrent workers remains " +
-        "limited by kyuubi.frontend.rest.max.worker.threads.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
-
   val FRONTEND_REST_PROXY_JETTY_CLIENT_IDLE_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.rest.proxy.jetty.client.idleTimeout")
       .audience(SERVER)
@@ -1407,16 +1397,6 @@ object KyuubiConf {
         "frontend service")
       .version("1.7.0")
       .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
-
-  val FRONTEND_TRINO_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("kyuubi.frontend.trino.virtualThreads.enabled")
-      .doc("Whether to use virtual threads for the Kyuubi server Trino frontend workers. " +
-        "This requires Java 21 or later. The maximum number of concurrent workers remains " +
-        "limited by kyuubi.frontend.trino.max.worker.threads.")
-      .version("1.13.0")
-      .audience(SERVER)
-      .immutable
-      .fallbackConf(SERVER_VIRTUAL_THREADS_ENABLED)
 
   val FRONTEND_TRINO_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.trino.jetty.stopTimeout")
