@@ -112,7 +112,7 @@ private[kyuubi] object StatementInterception {
           // clients can distinguish a policy rejection from the generic syntax-error class 42000.
           throw KyuubiSQLException(result.message(), sqlState = "42501")
       }
-      currentConfOverlay ++= result.confOverlay().asScala
+      currentConfOverlay = currentConfOverlay ++ result.confOverlay().asScala
     }
     InterceptedStatement(currentStatement, currentConfOverlay)
   }

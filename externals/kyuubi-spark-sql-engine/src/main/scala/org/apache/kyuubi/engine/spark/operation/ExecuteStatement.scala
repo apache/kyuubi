@@ -85,9 +85,14 @@ class ExecuteStatement(
   protected def executeStatement(): Unit =
     try {
       withLocalProperties {
-        val operationConf = spark.sessionState.conf.clone()
-        confOverlay.foreach { case (key, value) =>
-          operationConf.setConfString(key, value)
+        val operationConf = if (confOverlay.isEmpty) {
+          spark.sessionState.conf
+        } else {
+          val clonedConf = spark.sessionState.conf.clone()
+          confOverlay.foreach { case (key, value) =>
+            clonedConf.setConfString(key, value)
+          }
+          clonedConf
         }
         SQLConf.withExistingConf(operationConf) {
           setState(OperationState.RUNNING)
