@@ -170,9 +170,11 @@ class ExecutePython(
 
         f
       } finally {
-        // Clear with null, not the empty string. AuthZUtils.getAuthzUgi only skips the property
-        // when it is null, so an empty user reaches UserGroupInformation.createRemoteUser and
-        // fails with `Null user`, and fails session user signing as a blank identifier.
+        // Clear with null, like SparkOperation does. AuthZUtils.getAuthzUgi skips the property
+        // only when it is null, so an empty user reaches UserGroupInformation.createRemoteUser
+        // and fails with `Null user`. With session user signing enabled, verifyKyuubiSessionUser
+        // rejects a blank user either way, so there the worker lock is what keeps a concurrent
+        // operation from seeing the cleared context.
         setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, null)
         setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
         setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)

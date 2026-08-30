@@ -17,11 +17,16 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+import scala.util.Try
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
@@ -48,7 +53,28 @@ class ExecutePythonSuite extends WithSparkSQLEngine {
     content.data.getOrElse("text/plain", "").toString.trim
   }
 
+  /**
+   * The version of the PySpark that the worker imports, resolved the way
+   * `createSessionPythonWorker` resolves `SPARK_HOME` and `execute_python.py` extends `sys.path`.
+   * `None` when it cannot be read, so that only a known mismatch cancels a test.
+   */
+  private lazy val workerPySparkVersion: Option[String] =
+    Try(sys.env.getOrElse("SPARK_HOME", ExecutePython.defaultSparkHome)).toOption
+      .map(Paths.get(_, "python", "pyspark", "version.py"))
+      .filter(Files.exists(_))
+      .flatMap { path =>
+        """__version__[^'"]*["']([^'"]+)["']""".r
+          .findFirstMatchIn(new String(Files.readAllBytes(path), UTF_8)).map(_.group(1))
+      }
+
   private def withSessionAndWorker(f: (Session, SessionPythonWorker) => Unit): Unit = {
+    // The worker's PySpark talks to this JVM's Spark classes over Py4J, so it cannot attach to a
+    // different Spark, as in the CI jobs that run a Spark 3.5 engine on a Spark 4.x binary.
+    assume(
+      workerPySparkVersion.forall(SPARK_ENGINE_RUNTIME_VERSION === _),
+      s"pyspark ${workerPySparkVersion.getOrElse("")} under SPARK_HOME cannot attach to" +
+        s" Spark $SPARK_ENGINE_RUNTIME_VERSION")
+
     val sessionManager = engine.backendService.sessionManager
     val handle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
