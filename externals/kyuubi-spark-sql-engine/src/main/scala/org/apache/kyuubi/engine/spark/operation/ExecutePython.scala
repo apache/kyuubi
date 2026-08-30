@@ -143,35 +143,44 @@ class ExecutePython(
     }
 
   override protected def withLocalProperties[T](f: => T): T = {
-    try {
-      // to prevent the transferred set job group python code broken
-      val jobDesc = s"Python statement: $statementId"
-      // for python, the boolean value is capitalized
-      val pythonForceCancel = if (forceCancel) "True" else "False"
-      worker.runCode(
-        "spark.sparkContext.setJobGroup" +
-          s"('$statementId', '$jobDesc', $pythonForceCancel)",
-        internal = true)
-      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
-      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
-      schedulerPool match {
-        case Some(pool) =>
-          setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
-        case None =>
-      }
-      if (isSessionUserSignEnabled) {
-        setSessionUserSign()
-      }
+    // Spark local properties are thread local, and every python operation of a session shares
+    // one worker thread, so the context below is not private to this operation the way it is for
+    // SQL. Holding the worker lock across apply, run and clear keeps a concurrent operation of
+    // the same session from setting or clearing these properties in between our round-trips.
+    worker.withLockRequired {
+      try {
+        // to prevent the transferred set job group python code broken
+        val jobDesc = s"Python statement: $statementId"
+        // for python, the boolean value is capitalized
+        val pythonForceCancel = if (forceCancel) "True" else "False"
+        worker.runCode(
+          "spark.sparkContext.setJobGroup" +
+            s"('$statementId', '$jobDesc', $pythonForceCancel)",
+          internal = true)
+        setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+        setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+        schedulerPool match {
+          case Some(pool) =>
+            setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+          case None =>
+        }
+        if (isSessionUserSignEnabled) {
+          setSessionUserSign()
+        }
 
-      f
-    } finally {
-      setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, "")
-      setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, "")
-      setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, "")
-      // using cancelJobGroup for pyspark, see details in pyspark/context.py
-      worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')", internal = true)
-      if (isSessionUserSignEnabled) {
-        clearSessionUserSign()
+        f
+      } finally {
+        // Clear with null, not the empty string. AuthZUtils.getAuthzUgi only skips the property
+        // when it is null, so an empty user reaches UserGroupInformation.createRemoteUser and
+        // fails with `Null user`, and fails session user signing as a blank identifier.
+        setSparkLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+        setSparkLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+        setSparkLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+        // using cancelJobGroup for pyspark, see details in pyspark/context.py
+        worker.runCode(s"spark.sparkContext.cancelJobGroup('$statementId')", internal = true)
+        if (isSessionUserSignEnabled) {
+          clearSessionUserSign()
+        }
       }
     }
   }
@@ -194,7 +203,7 @@ case class SessionPythonWorker(
     new BufferedReader(new InputStreamReader(workerProcess.getInputStream), 1)
   private val lock = new ReentrantLock()
 
-  private def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
+  def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 
   /**
    * Run the python code and return the response. This method maybe invoked internally,
@@ -202,6 +211,10 @@ case class SessionPythonWorker(
    * it might impact the correctness and even cause result out of sequence. To prevent that,
    * please make sure the internal python code simple and set internal flag, to be aware of the
    * internal python code failure.
+   *
+   * The lock is held for one call only. A sequence of calls that must not be seen half applied,
+   * such as the operation context in `ExecutePython.withLocalProperties`, has to be wrapped in
+   * [[withLockRequired]] by the caller.
    *
    * @param code the python code
    * @param internal whether is internal python code
