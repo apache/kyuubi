@@ -20,8 +20,6 @@ import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float =
 import java.nio.ByteBuffer
 import java.util.{ArrayList => JArrayList, BitSet => JBitSet, List => JList}
 
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 
 trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
@@ -32,19 +30,19 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
       convertFunc: (RowT, Int) => T = null): (JList[T], ByteBuffer) = {
     val rowSize = rows.length
     val ret = new JArrayList[T](rowSize)
-    val nulls = new JBitSet()
+    val nulls = new JBitSet(rowSize)
+    val valueOf: (RowT, Int) => T =
+      if (convertFunc == null) (row, ord) => getColumnAs[T](row, ord) else convertFunc
+    val iter = rows.iterator
     var idx = 0
-    val isConvertFuncNull = convertFunc == null
-    rows.foreach { row =>
-      val value = if (isColumnNullAt(row, ordinal)) {
-        nulls.set(idx, true)
-        defaultVal
-      } else if (isConvertFuncNull) {
-        getColumnAs[T](row, ordinal)
+    while (iter.hasNext) {
+      val row = iter.next()
+      if (isColumnNullAt(row, ordinal)) {
+        nulls.set(idx)
+        ret.add(defaultVal)
       } else {
-        convertFunc(row, ordinal)
+        ret.add(valueOf(row, ordinal))
       }
-      ret.add(value)
       idx += 1
     }
     (ret, ByteBuffer.wrap(nulls.toByteArray))
@@ -85,9 +83,12 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
   }
 
   def asFloatTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[JFloat](rows, ordinal, 0.toFloat)
-    val doubleValues = values.asScala.map(f => JDouble.valueOf(f.toString)).asJava
-    TColumn.doubleVal(new TDoubleColumn(doubleValues, nulls))
+    val (values, nulls) = getColumnToList[JDouble](
+      rows,
+      ordinal,
+      0.toDouble,
+      (row, ord) => JDouble.valueOf(getColumnAs[JFloat](row, ord).toString))
+    TColumn.doubleVal(new TDoubleColumn(values, nulls))
   }
 
   def asDoubleTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
@@ -105,8 +106,11 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
   }
 
   def asByteArrayTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[Array[Byte]](rows, ordinal, defaultVal = Array[Byte]())
-    val byteBufferValues = values.asScala.map(ByteBuffer.wrap).asJava
-    TColumn.binaryVal(new TBinaryColumn(byteBufferValues, nulls))
+    val (values, nulls) = getColumnToList[ByteBuffer](
+      rows,
+      ordinal,
+      defaultVal = ByteBuffer.wrap(Array[Byte]()),
+      (row, ord) => ByteBuffer.wrap(getColumnAs[Array[Byte]](row, ord)))
+    TColumn.binaryVal(new TBinaryColumn(values, nulls))
   }
 }
