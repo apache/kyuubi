@@ -54,7 +54,12 @@ public class DynMethods {
     @SuppressWarnings("unchecked")
     public <R> R invokeChecked(Object target, Object... args) throws Exception {
       try {
-        if (argLength < 0) {
+        // The copy exists only to change arity: it drops extra arguments and null-pads a
+        // short list. At equal arity it changes nothing, so hand Method.invoke the caller's
+        // array as the varargs branch always has. The guard has to stay ==: passing through
+        // when longer would stop truncating, and copying only when longer, the way
+        // DynConstructors.newInstanceChecked does, would stop padding.
+        if (argLength < 0 || args.length == argLength) {
           return (R) method.invoke(target, args);
         } else {
           return (R) method.invoke(target, Arrays.copyOfRange(args, 0, argLength));
