@@ -27,6 +27,7 @@ import org.apache.arrow.vector._
 import org.apache.arrow.vector.compression.NoCompressionCodec
 import org.apache.arrow.vector.ipc.{ArrowStreamWriter, ReadChannel, WriteChannel}
 import org.apache.arrow.vector.ipc.message.{IpcOption, MessageSerializer}
+import org.apache.arrow.vector.types.pojo.Schema
 import org.apache.spark.TaskContext
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
@@ -36,6 +37,8 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.ArrowUtils
 import org.apache.spark.util.Utils
 
+import org.apache.kyuubi.util.reflect.DynMethods
+
 object KyuubiArrowConverters extends SQLConfHelper with Logging {
 
   type Batch = (Array[Byte], Long)
@@ -44,6 +47,37 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     "org.apache.arrow.compression.CommonsCompressionFactory"
   private val ZstdCompressionCodecClassName =
     "org.apache.arrow.compression.ZstdCompressionCodec"
+
+  private lazy val toArrowSchemaMethod: DynMethods.BoundMethod =
+    DynMethods.builder("toArrowSchema")
+      .impl( // SPARK-58005 (4.3.0): added losslessInternalTypes to toArrowSchema
+        ArrowUtils.getClass,
+        classOf[StructType],
+        classOf[String],
+        java.lang.Boolean.TYPE,
+        java.lang.Boolean.TYPE,
+        java.lang.Boolean.TYPE)
+      .impl( // Spark < 4.3.0
+        ArrowUtils.getClass,
+        classOf[StructType],
+        classOf[String],
+        java.lang.Boolean.TYPE,
+        java.lang.Boolean.TYPE)
+      .build()
+      .bind(ArrowUtils)
+
+  private def toArrowSchema(
+      schema: StructType,
+      timeZoneId: String,
+      errorOnDuplicatedFieldNames: Boolean,
+      largeVarTypes: Boolean): Schema = {
+    toArrowSchemaMethod.invoke[Schema](
+      schema,
+      timeZoneId,
+      errorOnDuplicatedFieldNames,
+      largeVarTypes,
+      false)
+  }
 
   // Mirror Spark's SparkSession#enableHiveSupport: check the capability on each request instead
   // of caching, because the codec is a session-level config that can change at runtime.
@@ -87,7 +121,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       "slice",
       0,
       Long.MaxValue)
-    val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
+    val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     vectorSchemaRoot = VectorSchemaRoot.create(arrowSchema, sliceAllocator)
     try {
       val recordBatch = MessageSerializer.deserializeRecordBatch(
@@ -290,7 +324,7 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
       zstdLevel: Int)
     extends Iterator[Array[Byte]] {
 
-    protected val arrowSchema = ArrowUtils.toArrowSchema(schema, timeZoneId, true, false)
+    protected val arrowSchema = toArrowSchema(schema, timeZoneId, true, false)
     // Validate the codec before allocating Arrow buffers, so an unsupported codec fails fast.
     private val compressionEnabled = codecName match {
       case null | "none" =>
