@@ -68,7 +68,6 @@ if [[ -z ${JAVA_HOME} ]]; then
 fi
 
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions"
-KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS -Dio.netty.tryReflectionSetAccessible=true"
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED"
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
@@ -85,10 +84,12 @@ KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.action=AL
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED"
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.security.x509=ALL-UNNAMED"
 KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS -Djdk.reflect.useDirectMethodHandle=false"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --enable-native-access=ALL-UNNAMED"
+KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS --sun-misc-unsafe-memory-access=allow"
 export KYUUBI_JAVA_OPTS="$KYUUBI_JAVA_OPTS"
 
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS -XX:+IgnoreUnrecognizedVMOptions"
-KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS -Dio.netty.tryReflectionSetAccessible=true"
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang=ALL-UNNAMED"
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/java.lang.reflect=ALL-UNNAMED"
@@ -105,6 +106,9 @@ KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.a
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.tools.keytool=ALL-UNNAMED"
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.security.x509=ALL-UNNAMED"
 KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --add-opens=java.base/sun.util.calendar=ALL-UNNAMED"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS -Djdk.reflect.useDirectMethodHandle=false"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --sun-misc-unsafe-memory-access=allow"
+KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS --enable-native-access=ALL-UNNAMED"
 export KYUUBI_CTL_JAVA_OPTS="$KYUUBI_CTL_JAVA_OPTS"
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
