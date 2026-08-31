@@ -85,7 +85,7 @@ myst_substitutions = {
     "release": release
 }
 
-myst_heading_anchors = 3
+myst_heading_anchors = 4
 
 master_doc = "index"
 
