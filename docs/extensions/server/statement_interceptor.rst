@@ -16,7 +16,7 @@
 Intercept Statements with Custom Statement Interceptor
 ======================================================
 
-.. versionadded:: 1.12.0
+.. versionadded:: 1.13.0
 
 .. caution:: unstable
 
@@ -53,7 +53,7 @@ The context exposes a stable, gateway-level view of the statement using JDK type
 
    public interface StatementInterceptContext {
      String sessionId();
-     String statementId();            // unique id, equal to the operation handle the client receives
+     String statementId();            // equals the client operation handle if execution proceeds
      String user();                   // effective user the statement runs as (proxy user if impersonating)
      String realUser();               // authenticated user before impersonation; equals user() if none
      String ipAddress();              // empty string when unknown, never null
@@ -162,7 +162,7 @@ Config tuning is orthogonal to rewriting: an interceptor may tune the current st
      return StatementInterceptResult.proceed();
    }
 
-Only configuration entries that the selected engine consumes at statement planning or execution time can take effect. Engine-launch or session-initialization settings are outside this SPI's per-statement scope.
+Configuration tuning is engine-dependent: only entries that the selected engine consumes at statement planning or execution time can take effect. The example above is covered for Spark SQL execution and plan-only modes; other engines may consume a different subset of the overlay. Engine-launch or session-initialization settings are outside this SPI's per-statement scope.
 
 Notes
 -----

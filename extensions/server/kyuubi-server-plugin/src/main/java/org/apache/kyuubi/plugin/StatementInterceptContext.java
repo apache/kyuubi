@@ -30,9 +30,10 @@ public interface StatementInterceptContext {
   String sessionId();
 
   /**
-   * The unique identifier of this statement, equal to the operation handle the client receives. It
-   * is allocated before interception and stays stable through the operation's whole lifecycle, so
-   * it can correlate the intercepted statement with its later operation and result set.
+   * The unique identifier of this statement. If execution proceeds, it equals the operation handle
+   * the client receives. It is allocated before interception and stays stable through the
+   * operation's whole lifecycle, so it can correlate the intercepted statement with its later
+   * operation and result set.
    */
   String statementId();
 
