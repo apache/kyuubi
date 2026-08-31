@@ -35,9 +35,9 @@ Spark DataSource V2 API, you need to:
 
 The **classpath** of Kyuubi Spark SQL engine with Hive connector supported consists of
 
-1. kyuubi-spark-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-spark-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. a copy of Spark distribution
-3. kyuubi-spark-connector-hive_2.12-{{ release }}, which can be found in the [Maven Central](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-connector-hive)
+3. kyuubi-spark-connector-hive_2.12-{{ release }}.jar, which can be found in the [Maven Central](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-connector-hive)
 
 In order to make the Hive connector packages visible for the runtime classpath of engines, we can use one of these methods:
 
