@@ -115,13 +115,15 @@ public final class StatementInterceptResult {
     if (confOverlay == null) {
       throw new IllegalArgumentException("confOverlay must not be null");
     }
-    Map<String, String> copy = new HashMap<>();
-    confOverlay.forEach(
+    if (confOverlay.isEmpty()) {
+      return Collections.emptyMap();
+    }
+    Map<String, String> copy = new HashMap<>(confOverlay);
+    copy.forEach(
         (key, value) -> {
           if (key == null || value == null) {
             throw new IllegalArgumentException("confOverlay must not contain null keys or values");
           }
-          copy.put(key, value);
         });
     return Collections.unmodifiableMap(copy);
   }
