@@ -106,7 +106,14 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         override def stateChanged(client: CuratorFramework, newState: ConnectionState): Unit = {
           info(s"Zookeeper client connection state changed to: $newState")
           newState match {
-            case CONNECTED | RECONNECTED => isConnected.set(true)
+            case CONNECTED => isConnected.set(true)
+            case RECONNECTED =>
+              isConnected.set(true)
+              // Re-arm the de-registration watcher after ZK session reconnects,
+              // as watches are cleared when the session expires.
+              if (serviceNode != null && watcher != null) {
+                watchNode()
+              }
             case LOST =>
               isConnected.set(false)
               val delay = getGracefulStopThreadDelay(conf)
