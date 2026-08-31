@@ -15,7 +15,7 @@
 - limitations under the License.
 -->
 
-# Configure Kerberos for clients to Access Kerberized Kyuubi
+# Kerberos Configuration
 
 ## Instructions
 
