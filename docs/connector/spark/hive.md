@@ -42,7 +42,7 @@ The **classpath** of Kyuubi Spark SQL engine with Hive connector supported consi
 In order to make the Hive connector packages visible for the runtime classpath of engines, we can use one of these methods:
 
 1. Put the Kyuubi Hive connector packages into `$SPARK_HOME/jars` directly
-2. Set `spark.jars=/path/to/kyuubi-hive-connector`
+2. Set `spark.jars=/path/to/kyuubi-spark-connector-hive_2.12-<version>.jar`
 
 ```{note}
 Starting from v1.9.2 and v1.10.0, KSHC jars available in the [Maven Central](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-connector-hive) guarantee binary compatibility across
