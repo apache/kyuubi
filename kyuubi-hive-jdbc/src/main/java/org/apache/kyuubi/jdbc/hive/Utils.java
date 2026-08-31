@@ -373,6 +373,38 @@ public class Utils {
       connParams.getSessionVars().put(AUTH_TYPE, info.getProperty(AUTH_TYPE));
     }
 
+    // Extract kyuubiClientPrincipal/kyuubiClientKeytab from JDBC connection properties
+    // if not supplied in the connection URL
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_CLIENT_PRINCIPAL)) {
+      if (info.containsKey(AUTH_KYUUBI_CLIENT_PRINCIPAL)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_CLIENT_PRINCIPAL, info.getProperty(AUTH_KYUUBI_CLIENT_PRINCIPAL));
+      }
+    }
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_CLIENT_KEYTAB)) {
+      if (info.containsKey(AUTH_KYUUBI_CLIENT_KEYTAB)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_CLIENT_KEYTAB, info.getProperty(AUTH_KYUUBI_CLIENT_KEYTAB));
+      }
+    }
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_CLIENT_TICKET_CACHE)) {
+      if (info.containsKey(AUTH_KYUUBI_CLIENT_TICKET_CACHE)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_CLIENT_TICKET_CACHE,
+                info.getProperty(AUTH_KYUUBI_CLIENT_TICKET_CACHE));
+      }
+    }
+    if (!connParams.getSessionVars().containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+      if (info.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+        connParams
+            .getSessionVars()
+            .put(AUTH_KYUUBI_SERVER_PRINCIPAL, info.getProperty(AUTH_KYUUBI_SERVER_PRINCIPAL));
+      }
+    }
+
     String authorityStr = connParams.getSuppliedURLAuthority();
     // If we're using ZooKeeper, the final host, port will be read from ZooKeeper
     // (in a different method call). Therefore, we put back the original authority string
