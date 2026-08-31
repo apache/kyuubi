@@ -306,7 +306,8 @@
             --add-opens=java.base/sun.security.x509=ALL-UNNAMED
             --add-opens=java.base/sun.util.calendar=ALL-UNNAMED
             -Djdk.reflect.useDirectMethodHandle=false
-            -Dio.netty.tryReflectionSetAccessible=true</extraJavaTestArgs>
+            --enable-native-access=ALL-UNNAMED
+            --sun-misc-unsafe-memory-access=allow</extraJavaTestArgs>
 
         <debugArgLine>-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005</debugArgLine>
     </properties>
@@ -1992,6 +1993,21 @@
             <properties>
                 <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
                            does not support Java 21, but new version produces different outputs.
+                           Re-evaluate once we dropped support for Java 8. -->
+                <maven.plugin.spotless.version>2.43.0</maven.plugin.spotless.version>
+                <spotless.check.skip>true</spotless.check.skip>
+                <spotless.java.googlejavaformat.version>1.22.0</spotless.java.googlejavaformat.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>java-25</id>
+            <activation>
+                <jdk>25</jdk>
+            </activation>
+            <properties>
+                <!-- TODO: The current version of spotless(2.30.0) and google-java-format(1.7)
+                           does not support Java 25, but new version produces different outputs.
                            Re-evaluate once we dropped support for Java 8. -->
                 <maven.plugin.spotless.version>2.43.0</maven.plugin.spotless.version>
                 <spotless.check.skip>true</spotless.check.skip>
