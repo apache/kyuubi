@@ -32,34 +32,34 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
     if (commandVersion == V1_COMMAND_VERSION) "Database" else "Namespace"
 
   protected def checkNamespace(expected: Seq[String]) = {
-    val df = sql(s"SHOW NAMESPACES IN $catalogName")
+    val df = executeSql(s"SHOW NAMESPACES IN $catalogName")
     assert(df.schema === new StructType().add("namespace", StringType, false))
     checkAnswer(df, expected.map(Row(_)))
   }
 
   override def afterEach(): Unit = {
-    sql(s"DROP NAMESPACE IF EXISTS $catalogName.$namespace CASCADE")
+    executeSql(s"DROP NAMESPACE IF EXISTS $catalogName.$namespace CASCADE")
     super.afterEach()
   }
 
   test("basic tests") {
-    sql(s"CREATE NAMESPACE $catalogName.$namespace")
+    executeSql(s"CREATE NAMESPACE $catalogName.$namespace")
     checkNamespace(Seq(namespace) ++ builtinNamespace)
 
-    sql(s"DROP NAMESPACE $catalogName.$namespace")
+    executeSql(s"DROP NAMESPACE $catalogName.$namespace")
     checkNamespace(builtinNamespace)
   }
 
   test("test handling of 'IF EXISTS'") {
     // It must not throw any exceptions
-    sql(s"DROP NAMESPACE IF EXISTS $catalogName.unknown")
+    executeSql(s"DROP NAMESPACE IF EXISTS $catalogName.unknown")
     checkNamespace(builtinNamespace)
   }
 
   test("namespace does not exist") {
     // Namespace $catalog.unknown does not exist.
     val message = intercept[AnalysisException] {
-      sql(s"DROP NAMESPACE $catalogName.unknown")
+      executeSql(s"DROP NAMESPACE $catalogName.unknown")
     }.getMessage
     assert(message.contains(s"'unknown' not found") ||
       message.contains(s"The schema `unknown` cannot be found") ||
@@ -67,35 +67,35 @@ trait DropNamespaceSuiteBase extends DDLCommandTestUtils {
   }
 
   test("drop non-empty namespace with a non-cascading mode") {
-    sql(s"CREATE NAMESPACE $catalogName.$namespace")
-    sql(s"CREATE TABLE $catalogName.$namespace.table (id bigint) USING parquet")
+    executeSql(s"CREATE NAMESPACE $catalogName.$namespace")
+    executeSql(s"CREATE TABLE $catalogName.$namespace.table (id bigint) USING parquet")
     checkNamespace(Seq(namespace) ++ builtinNamespace)
 
     // $catalog.ns.table is present, thus $catalog.ns cannot be dropped.
     interceptContains[AnalysisException] {
-      sql(s"DROP NAMESPACE $catalogName.$namespace")
+      executeSql(s"DROP NAMESPACE $catalogName.$namespace")
     }(s"[SCHEMA_NOT_EMPTY] Cannot drop a schema `$namespace` because it contains objects")
 
-    sql(s"DROP TABLE $catalogName.$namespace.table")
+    executeSql(s"DROP TABLE $catalogName.$namespace.table")
 
     // Now that $catalog.ns is empty, it can be dropped.
-    sql(s"DROP NAMESPACE $catalogName.$namespace")
+    executeSql(s"DROP NAMESPACE $catalogName.$namespace")
     checkNamespace(builtinNamespace)
   }
 
   test("drop non-empty namespace with a cascade mode") {
-    sql(s"CREATE NAMESPACE $catalogName.$namespace")
-    sql(s"CREATE TABLE $catalogName.$namespace.table (id bigint) USING parquet")
+    executeSql(s"CREATE NAMESPACE $catalogName.$namespace")
+    executeSql(s"CREATE TABLE $catalogName.$namespace.table (id bigint) USING parquet")
     checkNamespace(Seq(namespace) ++ builtinNamespace)
 
-    sql(s"DROP NAMESPACE $catalogName.$namespace CASCADE")
+    executeSql(s"DROP NAMESPACE $catalogName.$namespace CASCADE")
     checkNamespace(builtinNamespace)
   }
 
   test("drop current namespace") {
-    sql(s"CREATE NAMESPACE $catalogName.$namespace")
-    sql(s"USE $catalogName.$namespace")
-    sql(s"DROP NAMESPACE $catalogName.$namespace")
+    executeSql(s"CREATE NAMESPACE $catalogName.$namespace")
+    executeSql(s"USE $catalogName.$namespace")
+    executeSql(s"DROP NAMESPACE $catalogName.$namespace")
     checkNamespace(builtinNamespace)
   }
 }
