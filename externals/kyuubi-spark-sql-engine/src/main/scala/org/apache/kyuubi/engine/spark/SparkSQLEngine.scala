@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.{Locale, UUID}
+import java.util.Locale
 import java.util.concurrent.{CountDownLatch, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -45,7 +45,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.{JavaUtils, SignalRegister, ThreadUtils, UuidUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
@@ -475,11 +475,16 @@ object SparkSQLEngine extends Logging {
         .replaceAll("[^a-z0-9\\-]", "-")
         .replaceAll("-+", "-")
         .replaceAll("^-", "")
-    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-${Instant.now().toEpochMilli}"
+    // Use UUIDv7 (RFC 9562) instead of an epoch-millis suffix to avoid podNamePrefix
+    // collisions when multiple engines for the same user start within the same millisecond
+    // in the same namespace. UUIDv7 keeps the leading 48-bit timestamp so pod names remain
+    // roughly time-ordered when listed by name.
+    val uuidV7 = UuidUtils.generateUUIDv7()
+    val podNamePrefixWithUser = s"kyuubi-$resolvedUserName-$uuidV7"
     if (podNamePrefixWithUser.length <= executorPodNamePrefixMaxLength(namespace)) {
       podNamePrefixWithUser
     } else {
-      s"kyuubi-${UUID.randomUUID()}"
+      s"kyuubi-$uuidV7"
     }
   }
 
