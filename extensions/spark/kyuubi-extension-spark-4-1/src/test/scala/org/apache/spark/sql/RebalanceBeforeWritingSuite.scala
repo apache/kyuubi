@@ -109,7 +109,7 @@ class RebalanceBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
 
   test("check rebalance does not exists") {
     def check(df: DataFrame): Unit = {
-      withListener(df) { write =>
+      withListener(df, false) { write =>
         assert(write.collect {
           case r: RebalancePartitions => r
         }.isEmpty)
