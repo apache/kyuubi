@@ -210,7 +210,7 @@ class TestSqlAlchemyHive(unittest.TestCase, SqlAlchemyTestCase):
     @with_engine_connection
     def test_insert_select(self, engine, connection):
         one_row = Table('one_row', MetaData(), autoload_with=engine)
-        table = Table('insert_test', MetaData(schema='pyhive_test_database'),
+        table = Table('insert_select_test', MetaData(schema='pyhive_test_database'),
                       Column('a', sqlalchemy.types.Integer))
         table.drop(checkfirst=True, bind=connection)
         table.create(bind=connection)
@@ -224,7 +224,7 @@ class TestSqlAlchemyHive(unittest.TestCase, SqlAlchemyTestCase):
 
     @with_engine_connection
     def test_insert_values(self, engine, connection):
-        table = Table('insert_test', MetaData(schema='pyhive_test_database'),
+        table = Table('insert_values_test', MetaData(schema='pyhive_test_database'),
                       Column('a', sqlalchemy.types.Integer),)
         table.drop(checkfirst=True, bind=connection)
         table.create(bind=connection)
