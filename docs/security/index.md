@@ -20,6 +20,29 @@
 Securing Kyuubi involves enabling authentication(authn), authorization(authz)
 and encryption, etc.
 
+## Protect Session Configurations
+
+For a multi-tenant deployment, configure at least one of
+`kyuubi.session.conf.ignore.list` or `kyuubi.session.conf.restrict.list`. Both
+lists are empty by default, so clients can otherwise override sensitive
+session-level configurations during engine bootstrap and connection setup.
+
+One conservative starting point is to keep server-defined resource sizing while
+rejecting client changes to deployment and authorization settings:
+
+```properties
+kyuubi.session.conf.ignore.list=spark.driver.memory,spark.executor.memory
+kyuubi.session.conf.restrict.list=spark.master,spark.submit.deployMode,spark.sql.extensions,spark.sql.optimizer.excludedRules
+```
+
+Tailor these lists to the deployment. The ignore list silently drops matching
+client values, while the restrict list rejects the connection. They do not
+prevent later changes through `SET` statements; configure the engine's
+operation-level restrictions separately when that protection is required.
+
+See the [session configuration settings](../configuration/settings.md#session)
+for details.
+
 ```{toctree}
 :maxdepth: 2
 
@@ -29,4 +52,3 @@ kinit
 hadoop_credentials_manager
 internal_secure_access
 ```
-
