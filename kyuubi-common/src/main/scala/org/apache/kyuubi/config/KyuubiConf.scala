@@ -261,6 +261,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   def isRESTEnabled: Boolean = get(FRONTEND_PROTOCOLS).contains(FrontendProtocols.REST.toString)
+
+  def isFlightSqlEnabled: Boolean =
+    get(FRONTEND_PROTOCOLS).contains(FrontendProtocols.FLIGHT_SQL.toString)
 }
 
 /**
@@ -499,7 +502,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, TRINO = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, TRINO, FLIGHT_SQL = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -512,6 +515,7 @@ object KyuubiConf {
         " <li>THRIFT_HTTP - HiveServer2 compatible thrift http protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
+        " <li>FLIGHT_SQL - Arrow Flight SQL compatible gRPC protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
@@ -1384,6 +1388,75 @@ object KyuubiConf {
       .version("1.8.1")
       .timeConf
       .createWithDefaultString("PT5S")
+
+  val FRONTEND_FLIGHT_SQL_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.flight.sql.bind.host")
+      .doc("Hostname or IP on which to run the Arrow Flight SQL gRPC frontend service.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_FLIGHT_SQL_BIND_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.flight.sql.bind.port")
+      .doc("Port on which to run the Arrow Flight SQL gRPC frontend service.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .intConf
+      .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .createWithDefault(10299)
+
+  val FRONTEND_FLIGHT_SQL_SSL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.flight.sql.ssl.enabled")
+      .doc("Set this to true to enable TLS/SSL encryption on the Arrow Flight SQL gRPC frontend. " +
+        "Arrow Flight 16 requires PEM certificate and private key files, configured by " +
+        "kyuubi.frontend.flight.sql.ssl.cert.file and kyuubi.frontend.flight.sql.ssl.key.file. " +
+        "When those are unset, Kyuubi can materialize temporary PEM files from the shared " +
+        "kyuubi.frontend.ssl.keystore.* settings.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_FLIGHT_SQL_SSL_CERT_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.flight.sql.ssl.cert.file")
+      .doc("PEM certificate chain file used by the Arrow Flight SQL frontend when TLS is enabled.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .stringConf
+      .createOptional
+
+  val FRONTEND_FLIGHT_SQL_SSL_KEY_FILE: OptionalConfigEntry[String] =
+    buildConf("kyuubi.frontend.flight.sql.ssl.key.file")
+      .doc("PEM private key file used by the Arrow Flight SQL frontend when TLS is enabled.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .stringConf
+      .createOptional
+
+  val FRONTEND_FLIGHT_SQL_FETCH_MAX_ROWS: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.flight.sql.fetch.max.rows")
+      .doc("Maximum number of rows requested from Kyuubi for each Arrow Flight SQL result page.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .intConf
+      .checkValue(_ > 0, "must be positive")
+      .createWithDefault(1000)
+
+  val FRONTEND_FLIGHT_SQL_TOKEN_TTL: ConfigEntry[Long] =
+    buildConf("kyuubi.frontend.flight.sql.token.ttl")
+      .doc("Lifetime of Arrow Flight SQL bearer tokens issued after Basic or " +
+        "SPNEGO authentication.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .timeConf
+      .createWithDefaultString("PT2H")
 
   val KUBERNETES_CONTEXT: OptionalConfigEntry[String] =
     buildConf("kyuubi.kubernetes.context")

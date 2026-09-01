@@ -376,6 +376,16 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>flight-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.arrow</groupId>
+            <artifactId>flight-sql</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.scalatestplus</groupId>
             <artifactId>mockito-4-11_${scala.binary.version}</artifactId>
             <scope>test</scope>
@@ -401,6 +411,7 @@
     </dependencies>
 
     <build>
+
         <resources>
             <resource>
                 <directory>${project.basedir}/src/main/resources</directory>

@@ -17,24 +17,21 @@
 
 package org.apache.kyuubi.ha.client
 
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_FLIGHT_SQL_NAMESPACE, HA_NAMESPACE}
+import org.apache.kyuubi.service.FrontendService
 
-class HighAvailabilityConfSuite extends KyuubiFunSuite {
-  test(HA_ZK_NODE_TIMEOUT.key) {
-    val conf = new KyuubiConf()
-    assert(conf.get(HA_ZK_NODE_TIMEOUT) == HA_ZK_NODE_TIMEOUT.defaultVal.get)
-    conf.set(HA_ZK_NODE_TIMEOUT.key, "60000")
-    assert(conf.get(HA_ZK_NODE_TIMEOUT) == 60000)
-    conf.set(HA_ZK_NODE_TIMEOUT.key, "PT1M")
-    assert(conf.get(HA_ZK_NODE_TIMEOUT) == 60000)
-  }
+/**
+ * Service discovery for the Arrow Flight SQL frontend.
+ * Registers under [[HA_FLIGHT_SQL_NAMESPACE]] so Flight gRPC endpoints remain
+ * separate from Thrift/JDBC discovery trees.
+ */
+class FlightSqlServiceDiscovery(fe: FrontendService)
+  extends KyuubiServiceDiscovery(fe) {
 
-  test(HA_FLIGHT_SQL_NAMESPACE.key) {
-    val conf = new KyuubiConf()
-    assert(conf.get(HA_FLIGHT_SQL_NAMESPACE) === "kyuubi_flight")
-    conf.set(HA_FLIGHT_SQL_NAMESPACE, "custom_flight")
-    assert(conf.get(HA_FLIGHT_SQL_NAMESPACE) === "custom_flight")
+  override def initialize(conf: KyuubiConf): Unit = {
+    val discoveryConf = conf.clone
+    discoveryConf.set(HA_NAMESPACE, conf.get(HA_FLIGHT_SQL_NAMESPACE))
+    super.initialize(discoveryConf)
   }
 }
