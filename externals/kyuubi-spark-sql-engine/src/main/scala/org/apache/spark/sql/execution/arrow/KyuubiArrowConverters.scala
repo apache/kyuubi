@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.arrow
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.lang.{Boolean => JBoolean}
 import java.nio.channels.Channels
 
 import scala.collection.JavaConverters._
@@ -74,9 +75,9 @@ object KyuubiArrowConverters extends SQLConfHelper with Logging {
     toArrowSchemaMethod.invoke[Schema](
       schema,
       timeZoneId,
-      errorOnDuplicatedFieldNames,
-      largeVarTypes,
-      false)
+      errorOnDuplicatedFieldNames.asInstanceOf[JBoolean],
+      largeVarTypes.asInstanceOf[JBoolean],
+      false.asInstanceOf[JBoolean])
   }
 
   // Mirror Spark's SparkSession#enableHiveSupport: check the capability on each request instead
