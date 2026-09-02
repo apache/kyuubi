@@ -41,10 +41,8 @@ GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 GITHUB_API_BASE = "https://api.github.com/repos/apache/kyuubi"
 GITHUB_COMMIT_BASE = "https://github.com/apache/kyuubi/commit"
 BRANCH_PREFIX = "PR_TOOL"
-_MERGE_FOOTER_RE = re.compile(
-    r"^Closes #(\d+) from \S+\s*$\n\n(?:Lead-authored-by|Authored-by):",
-    re.MULTILINE,
-)
+_MERGE_CLOSING_RE = re.compile(r"^Closes #(\d+) from \S+\s*$", re.MULTILINE)
+_MERGE_AUTHORS_RE = re.compile(r"^(?:Lead-authored-by|Authored-by):", re.MULTILINE)
 
 
 def get_json(url):
@@ -184,11 +182,20 @@ def merge_footer_pr(message):
     >>> footer = "Closes #1 from a/b.\\n\\nAuthored-by: A <a@example.org>"
     >>> merge_footer_pr("Title\\n\\n" + footer)
     1
+    >>> footer = (
+    ...     "Closes #1 from a/b.\\n\\nCloses #2\\n\\n"
+    ...     "abcdef [Author] Title\\n\\nAuthored-by: A <a@example.org>"
+    ... )
+    >>> merge_footer_pr("Title\\n\\n" + footer)
+    1
     >>> merge_footer_pr("Title\\n\\nNo footer") is None
     True
     """
-    matches = _MERGE_FOOTER_RE.findall(message)
-    return int(matches[-1]) if matches else None
+    authors = list(_MERGE_AUTHORS_RE.finditer(message))
+    if not authors:
+        return None
+    closings = list(_MERGE_CLOSING_RE.finditer(message, 0, authors[-1].start()))
+    return int(closings[-1].group(1)) if closings else None
 
 
 def has_merge_footer(message, pr_num):
