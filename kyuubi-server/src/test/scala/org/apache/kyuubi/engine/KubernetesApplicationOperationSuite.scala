@@ -116,12 +116,22 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
   test("get kubernetes client initialization info") {
     val kyuubiConf = KyuubiConf()
+    val kubernetesEnv = Map(
+      KubernetesApplicationOperation.KUBERNETES_SERVICE_HOST -> "kubernetes.default.svc",
+      KubernetesApplicationOperation.KUBERNETES_SERVICE_PORT -> "443")
+    val operation = new KubernetesApplicationOperation()
+
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, Map.empty) === Nil)
+
+    kyuubiConf.set(KyuubiConf.KUBERNETES_NAMESPACE, "kyuubi")
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, kubernetesEnv) ===
+      Seq(KubernetesInfo(None, Some("kyuubi"))))
+
     kyuubiConf.set(
       KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST.key,
       "c1:ns1,c1:ns2,c2:ns1,c2:ns2,c1:,:ns1")
 
-    val operation = new KubernetesApplicationOperation()
-    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf) ===
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, kubernetesEnv) ===
       Array(
         KubernetesInfo(Some("c1"), Some("ns1")),
         KubernetesInfo(Some("c1"), Some("ns2")),

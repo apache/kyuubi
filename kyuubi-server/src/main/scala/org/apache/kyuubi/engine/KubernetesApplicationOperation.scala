@@ -217,14 +217,26 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private[kyuubi] def getKubernetesClientInitializeInfo(
-      kyuubiConf: KyuubiConf): Seq[KubernetesInfo] = {
-    kyuubiConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
-      val (context, namespace) = init.split(":") match {
-        case Array(ctx, ns) => (Some(ctx).filterNot(_.isEmpty), Some(ns).filterNot(_.isEmpty))
-        case Array(ctx) => (Some(ctx).filterNot(_.isEmpty), None)
-        case _ => (None, None)
+      kyuubiConf: KyuubiConf,
+      environment: Map[String, String] = sys.env): Seq[KubernetesInfo] = {
+    val configuredInitializeInfo =
+      kyuubiConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
+        val (context, namespace) = init.split(":") match {
+          case Array(ctx, ns) => (Some(ctx).filterNot(_.isEmpty), Some(ns).filterNot(_.isEmpty))
+          case Array(ctx) => (Some(ctx).filterNot(_.isEmpty), None)
+          case _ => (None, None)
+        }
+        KubernetesInfo(context, namespace)
       }
-      KubernetesInfo(context, namespace)
+    if (configuredInitializeInfo.nonEmpty) {
+      configuredInitializeInfo
+    } else if (environment.contains(KUBERNETES_SERVICE_HOST) &&
+      environment.contains(KUBERNETES_SERVICE_PORT)) {
+      Seq(KubernetesInfo(
+        None,
+        Some(kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE))))
+    } else {
+      Nil
     }
   }
 
