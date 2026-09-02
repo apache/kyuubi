@@ -23,9 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
+import java.util.Arrays;
 import org.junit.jupiter.api.Test;
 
 public class DynConstructorsTest {
+
+  // "1.8" -> 8, "9" -> 9, "17" -> 17, etc.
+  private static final int JAVA_SPEC_VER =
+      Math.max(
+          8, Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[0]));
 
   // Prefix of the IllegalArgumentException that Constructor.newInstance throws when the argument
   // count does not fit the constructor. Matched as a prefix because the JDK 18+ accessor appends
@@ -126,5 +133,46 @@ public class DynConstructorsTest {
     FixedArity fixedArity = ctor.newInstance("value", "ignored");
 
     assertEquals("value", fixedArity.value);
+  }
+
+  @Test
+  public void testHiddenImplHandlesStronglyEncapsulatedConstructors() throws Exception {
+    // The test JVM opens java.base/java.lang to the unnamed module, so the encapsulated
+    // path needs a package the surefire configuration leaves closed; java.math is one.
+    if (JAVA_SPEC_VER >= 16) {
+      // setAccessible on the private BigInteger(int[]) constructor reports
+      // java.lang.reflect.InaccessibleObjectException; the builder must count it as a
+      // candidate miss instead of letting it escape the fallback chain.
+      NoSuchMethodException thrown =
+          assertThrows(
+              NoSuchMethodException.class,
+              () ->
+                  DynConstructors.builder()
+                      .hiddenImpl("java.math.BigInteger", int[].class)
+                      .buildChecked());
+      assertTrue(thrown.getMessage().contains("Cannot find constructor"));
+      // a plain NoSuchMethodException would take the same branch if the JDK ever drops
+      // this constructor; the suppressed problem pins the InaccessibleObjectException path
+      assertTrue(
+          Arrays.stream(thrown.getSuppressed())
+              .anyMatch(
+                  problem ->
+                      "java.lang.reflect.InaccessibleObjectException"
+                          .equals(problem.getClass().getName())));
+    } else {
+      // before strong encapsulation the same hidden lookup succeeds
+      DynConstructors.Ctor<?> ctor =
+          DynConstructors.builder().hiddenImpl("java.math.BigInteger", int[].class).buildChecked();
+      assertEquals(BigInteger.class, ctor.getConstructedClass());
+    }
+  }
+
+  @Test
+  public void testHiddenImplPropagatesUnrelatedFailures() {
+    // a RuntimeException that is not InaccessibleObjectException must still escape the
+    // builder instead of being counted as a candidate miss
+    // a builder with no class set dereferences the null base class inside the try block
+    assertThrows(
+        NullPointerException.class, () -> DynConstructors.builder().hiddenImpl((Class<?>[]) null));
   }
 }

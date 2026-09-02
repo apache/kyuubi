@@ -18,14 +18,21 @@
 package org.apache.kyuubi.util.reflect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 public class DynMethodsTest {
+
+  // "1.8" -> 8, "9" -> 9, "17" -> 17, etc.
+  private static final int JAVA_SPEC_VER =
+      Math.max(
+          8, Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[0]));
 
   public static class ReflectionTarget {
 
@@ -198,5 +205,45 @@ public class DynMethodsTest {
     // A short argument list reaches the target with nulls rather than being rejected, which is
     // why invokeChecked skips the copy only at equal arity.
     assertEquals("a/null", join.invoke(new ReflectionTarget(), "a"));
+  }
+
+  @Test
+  public void testHiddenImplHandlesStronglyEncapsulatedMethods() throws Exception {
+    // Pin the probe: if a future JDK drops this member the lookup would miss for an unrelated
+    // reason and the assertions below would pass while covering nothing.
+    assertNotNull(BigDecimal.class.getDeclaredMethod("checkScale", long.class));
+
+    // The test JVM opens java.base/java.lang to the unnamed module, so the encapsulated
+    // path needs a package the surefire configuration leaves closed; java.math is one.
+    if (JAVA_SPEC_VER >= 16) {
+      // setAccessible on BigDecimal.checkScale reports InaccessibleObjectException; the
+      // builder must count it as a candidate miss instead of letting it escape the fallback
+      // chain.
+      RuntimeException thrown =
+          assertThrows(
+              RuntimeException.class,
+              () ->
+                  DynMethods.builder("checkScale")
+                      .hiddenImpl("java.math.BigDecimal", long.class)
+                      .build());
+      assertEquals(RuntimeException.class, thrown.getClass());
+      assertTrue(thrown.getMessage().contains("Cannot find method"));
+      // this builder records no detail for a miss, so a plain NoSuchMethodException from a
+      // removed method would take the same branch; the IOE path itself is not
+      // distinguishable here the way DynFields and DynConstructors distinguish it
+    } else {
+      // before strong encapsulation the same hidden lookup succeeds
+      assertNotNull(
+          DynMethods.builder("checkScale").hiddenImpl("java.math.BigDecimal", long.class).build());
+    }
+  }
+
+  @Test
+  public void testHiddenImplPropagatesUnrelatedFailures() {
+    // a RuntimeException that is not InaccessibleObjectException must still escape the
+    // builder instead of being counted as a candidate miss
+    assertThrows(
+        NullPointerException.class,
+        () -> DynMethods.builder("checkScale").hiddenImpl((Class<?>) null, "checkScale"));
   }
 }
