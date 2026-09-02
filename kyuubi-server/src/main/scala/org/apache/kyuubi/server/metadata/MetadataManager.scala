@@ -337,16 +337,22 @@ class MetadataManager extends AbstractService("MetadataManager") {
                     info(s"Retrying metadata requests for $id")
                     var request = ref.metadataRequests.peek()
                     while (request != null) {
-                      request match {
-                        case insert: InsertMetadata =>
-                          insertMetadata(insert.metadata, asyncRetryOnError = false)
-                        case update: UpdateMetadata =>
-                          updateMetadata(update.metadata, asyncRetryOnError = false)
+                      try {
+                        request match {
+                          case insert: InsertMetadata =>
+                            insertMetadata(insert.metadata, asyncRetryOnError = false)
+                          case update: UpdateMetadata =>
+                            updateMetadata(update.metadata, asyncRetryOnError = false)
+                        }
+                        removeRetryRequest(ref, request)
+                      } catch {
+                        case e: MetadataUpdatePostconditionException =>
+                          error(
+                            s"Discarding metadata update retry for $id after " +
+                              "its postcondition check failed",
+                            e)
+                          removeRetryRequest(ref, request)
                       }
-                      ref.metadataRequests.remove(request)
-                      MetricsSystem.tracing(_.markMeter(
-                        MetricsConstants.METADATA_REQUEST_RETRYING,
-                        -1L))
                       request = ref.metadataRequests.peek()
                     }
                   } catch {
@@ -378,6 +384,13 @@ class MetadataManager extends AbstractService("MetadataManager") {
       requestsRetryInterval,
       requestsRetryInterval,
       TimeUnit.MILLISECONDS)
+  }
+
+  private def removeRetryRequest(
+      ref: MetadataRequestsRetryRef,
+      request: MetadataRequest): Unit = {
+    ref.metadataRequests.remove(request)
+    MetricsSystem.tracing(_.markMeter(MetricsConstants.METADATA_REQUEST_RETRYING, -1L))
   }
 }
 
