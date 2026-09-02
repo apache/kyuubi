@@ -30,19 +30,8 @@ import org.apache.kyuubi.util.reflect.DynMethods
  */
 object SparkUIUtils {
 
-  def formatDuration(ms: Long): String = {
-    UIUtils.formatDuration(ms)
-  }
-
-  def headerSparkPage(
-      request: HttpServletRequestLike,
-      title: String,
-      content: Seq[Node],
-      activeTab: SparkUITab,
-      helpText: Option[String] = None,
-      showVisualization: JBoolean = false,
-      useDataTables: JBoolean = false): Seq[Node] = {
-    val headerSparkPageMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+  private val headerSparkPageMethod: DynMethods.BoundMethod =
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("headerSparkPage")
         .impl(
           UIUtils.getClass,
@@ -67,6 +56,38 @@ object SparkUIUtils {
           classOf[Boolean])
         .buildChecked(UIUtils)
     }
+
+  private val prependBaseUriMethod: DynMethods.BoundMethod =
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+      DynMethods.builder("prependBaseUri")
+        .impl(
+          UIUtils.getClass,
+          classOf[jakarta.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[String])
+        .buildChecked(UIUtils)
+    } else {
+      DynMethods.builder("prependBaseUri")
+        .impl(
+          UIUtils.getClass,
+          classOf[javax.servlet.http.HttpServletRequest],
+          classOf[String],
+          classOf[String])
+        .buildChecked(UIUtils)
+    }
+
+  def formatDuration(ms: Long): String = {
+    UIUtils.formatDuration(ms)
+  }
+
+  def headerSparkPage(
+      request: HttpServletRequestLike,
+      title: String,
+      content: Seq[Node],
+      activeTab: SparkUITab,
+      helpText: Option[String] = None,
+      showVisualization: JBoolean = false,
+      useDataTables: JBoolean = false): Seq[Node] = {
     headerSparkPageMethod.invoke[Seq[Node]](
       request,
       title,
@@ -81,23 +102,6 @@ object SparkUIUtils {
       request: HttpServletRequestLike,
       basePath: String = "",
       resource: String = ""): String = {
-    val prependBaseUriMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-      DynMethods.builder("prependBaseUri")
-        .impl(
-          UIUtils.getClass,
-          classOf[jakarta.servlet.http.HttpServletRequest],
-          classOf[String],
-          classOf[String])
-        .buildChecked(UIUtils)
-    } else {
-      DynMethods.builder("prependBaseUri")
-        .impl(
-          UIUtils.getClass,
-          classOf[javax.servlet.http.HttpServletRequest],
-          classOf[String],
-          classOf[String])
-        .buildChecked(UIUtils)
-    }
     prependBaseUriMethod.invoke[String](request, basePath, resource)
   }
 }
