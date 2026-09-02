@@ -1425,8 +1425,8 @@ object KyuubiConf {
   val KUBERNETES_CLIENT_INITIALIZE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.kubernetes.client.initialize.list")
       .doc("The kubernetes client initialize list to register kubernetes resource informers" +
-        " during Kyuubi server startup. This ensure the Kyuubi server is promptly informed for" +
-        " any Kubernetes resource changes after startup. It is highly recommend to set it for" +
+        " during Kyuubi server startup. This ensures the Kyuubi server is promptly informed for" +
+        " any Kubernetes resource changes after startup. It is highly recommended to set it for" +
         " multiple Kyuubi instances mode. The format is" +
         " `context1:namespace1,context2:namespace2`." +
         " When the list is empty and Kyuubi runs in Kubernetes, the client for the configured" +

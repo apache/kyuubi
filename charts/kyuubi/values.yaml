@@ -77,7 +77,10 @@ rbac:
   rules:
     - apiGroups: [""]
       resources: ["pods"]
-      verbs: ["create", "list", "delete"]
+      verbs: ["create", "list", "watch", "delete"]
+    - apiGroups: [""]
+      resources: ["services"]
+      verbs: ["list", "watch"]
 
 service:
   # configuration of the headless service

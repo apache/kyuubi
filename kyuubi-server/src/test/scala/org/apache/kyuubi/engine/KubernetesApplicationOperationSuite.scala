@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.engine
 
+import java.nio.file.Files
+
 import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
 
@@ -120,12 +122,31 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
       KubernetesApplicationOperation.KUBERNETES_SERVICE_HOST -> "kubernetes.default.svc",
       KubernetesApplicationOperation.KUBERNETES_SERVICE_PORT -> "443")
     val operation = new KubernetesApplicationOperation()
+    val serviceAccountDir = Utils.createTempDir()
+    val serviceAccountTokenPath = Files.createFile(serviceAccountDir.resolve("token"))
+    val serviceAccountCaCertPath = Files.createFile(serviceAccountDir.resolve("ca.crt"))
 
     assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, Map.empty) === Nil)
+    assert(operation.getKubernetesClientInitializeInfo(
+      kyuubiConf,
+      kubernetesEnv,
+      serviceAccountTokenPath,
+      serviceAccountDir.resolve("missing-ca.crt")) === Nil)
 
     kyuubiConf.set(KyuubiConf.KUBERNETES_NAMESPACE, "kyuubi")
-    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, kubernetesEnv) ===
+    assert(operation.getKubernetesClientInitializeInfo(
+      kyuubiConf,
+      kubernetesEnv,
+      serviceAccountTokenPath,
+      serviceAccountCaCertPath) ===
       Seq(KubernetesInfo(None, Some("kyuubi"))))
+
+    kyuubiConf.set(KyuubiConf.KUBERNETES_NAMESPACE, "")
+    assert(operation.getKubernetesClientInitializeInfo(
+      kyuubiConf,
+      kubernetesEnv,
+      serviceAccountTokenPath,
+      serviceAccountCaCertPath) === Seq(KubernetesInfo(None, None)))
 
     kyuubiConf.set(
       KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST.key,
