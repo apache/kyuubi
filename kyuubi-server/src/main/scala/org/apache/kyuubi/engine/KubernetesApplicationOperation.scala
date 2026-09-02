@@ -233,6 +233,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     } else if (environment.get(KUBERNETES_SERVICE_HOST).exists(_.nonEmpty) &&
       environment.get(KUBERNETES_SERVICE_PORT).exists(_.nonEmpty)) {
       Seq(KubernetesInfo(
+        // Kube context is not applicable to in-cluster configuration.
         None,
         Some(kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE))))
     } else {

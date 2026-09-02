@@ -1406,7 +1406,10 @@ object KyuubiConf {
 
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
-      .doc("The namespace that will be used for running the kyuubi pods and find engines.")
+      .doc("The default namespace used by the Kyuubi server's Kubernetes client to discover" +
+        " and manage engine pods, when the engine submission does not specify one (e.g." +
+        " `spark.kubernetes.namespace`). It does not control the namespace where the Kyuubi" +
+        " server itself runs.")
       .version("1.7.0")
       .stringConf
       .createWithDefault("default")
