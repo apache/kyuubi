@@ -230,8 +230,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       }
     if (configuredInitializeInfo.nonEmpty) {
       configuredInitializeInfo
-    } else if (environment.get(KUBERNETES_SERVICE_HOST).exists(_.nonEmpty) &&
-      environment.get(KUBERNETES_SERVICE_PORT).exists(_.nonEmpty)) {
+    } else if (Utils.isOnK8s(environment)) {
       Seq(KubernetesInfo(
         // Kube context is not applicable to in-cluster configuration.
         None,
