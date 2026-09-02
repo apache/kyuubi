@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine
 
-import java.nio.file.{Files, Path, Paths}
 import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, ScheduledExecutorService, ThreadPoolExecutor, TimeUnit}
 
@@ -26,7 +25,7 @@ import scala.util.control.NonFatal
 
 import com.google.common.cache.{Cache, CacheBuilder, RemovalNotification}
 import io.fabric8.kubernetes.api.model.{ContainerState, Pod, Service}
-import io.fabric8.kubernetes.client.{Config, KubernetesClient}
+import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.informers.{ResourceEventHandler, SharedIndexInformer}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
@@ -219,10 +218,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private[kyuubi] def getKubernetesClientInitializeInfo(
       kyuubiConf: KyuubiConf,
-      environment: Map[String, String] = sys.env,
-      serviceAccountTokenPath: Path = Paths.get(Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH),
-      serviceAccountCaCertPath: Path = Paths.get(
-        Config.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH)): Seq[KubernetesInfo] = {
+      environment: Map[String, String] = sys.env): Seq[KubernetesInfo] = {
     val configuredInitializeInfo =
       kyuubiConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
         val (context, namespace) = init.split(":") match {
@@ -235,12 +231,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     if (configuredInitializeInfo.nonEmpty) {
       configuredInitializeInfo
     } else if (environment.get(KUBERNETES_SERVICE_HOST).exists(_.nonEmpty) &&
-      environment.get(KUBERNETES_SERVICE_PORT).exists(_.nonEmpty) &&
-      Files.isReadable(serviceAccountTokenPath) &&
-      Files.isReadable(serviceAccountCaCertPath)) {
+      environment.get(KUBERNETES_SERVICE_PORT).exists(_.nonEmpty)) {
       Seq(KubernetesInfo(
         None,
-        Some(kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE)).filterNot(_.isEmpty)))
+        Some(kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE))))
     } else {
       Nil
     }
