@@ -24,6 +24,7 @@
 # apache	git@github.com:apache/kyuubi.git (push)
 # origin	git@github.com:[ YOUR GITHUB USER NAME ]/kyuubi.git (fetch)
 # origin	git@github.com:[ YOUR GITHUB USER NAME ]/kyuubi.git (push)
+# Set GITHUB_OAUTH_KEY to post merge summary comments and close branch-target PRs.
 
 import json
 import os
@@ -40,6 +41,7 @@ PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 GITHUB_API_BASE = "https://api.github.com/repos/apache/kyuubi"
 GITHUB_COMMIT_BASE = "https://github.com/apache/kyuubi/commit"
+DEFAULT_BRANCH = "master"
 BRANCH_PREFIX = "PR_TOOL"
 _MERGE_CLOSING_RE = re.compile(r"^Closes #(\d+) from \S+\s*$", re.MULTILINE)
 _MERGE_AUTHORS_RE = re.compile(r"^(?:Lead-authored-by|Authored-by):", re.MULTILINE)
@@ -121,8 +123,8 @@ def comment_pr(pr_num, body):
         request.add_header("Authorization", "token %s" % GITHUB_OAUTH_KEY)
     try:
         return json.load(urlopen(request))
-    except HTTPError as e:
-        print("Failed to comment on PR #%s: HTTP %s %s" % (pr_num, e.code, e.reason))
+    except Exception as e:
+        print("Failed to comment on PR #%s: %s" % (pr_num, e))
         return None
 
 
@@ -148,6 +150,10 @@ def post_merge_comment(pr_num, merged_commits):
 
 
 def close_pr(pr_num):
+    if not GITHUB_OAUTH_KEY:
+        print("GITHUB_OAUTH_KEY is not set; skipping closing PR #%s." % pr_num)
+        return None
+
     url = "%s/pulls/%s" % (GITHUB_API_BASE, pr_num)
     data = json.dumps({"state": "closed"}).encode("utf-8")
     request = Request(url, data=data, method="PATCH")
@@ -157,8 +163,8 @@ def close_pr(pr_num):
         request.add_header("Authorization", "token %s" % GITHUB_OAUTH_KEY)
     try:
         return json.load(urlopen(request))
-    except HTTPError as e:
-        print("Failed to close PR #%s: HTTP %s %s" % (pr_num, e.code, e.reason))
+    except Exception as e:
+        print("Failed to close PR #%s: %s" % (pr_num, e))
         return None
 
 
@@ -563,11 +569,12 @@ def main():
             merged_refs = merged_refs + [picked[0]]
             merged_commits = merged_commits + [picked]
     finally:
-        pr_state = get_json("%s/pulls/%s" % (GITHUB_API_BASE, pr_num)).get("state")
-        if pr_state != "closed":
-            print("PR #%s is still open after push; closing it explicitly." % pr_num)
-            close_pr(pr_num)
         post_merge_comment(pr_num, merged_commits)
+        if target_ref != DEFAULT_BRANCH:
+            print(
+                "GitHub does not auto-close PRs targeting %s; closing it." % target_ref
+            )
+            close_pr(pr_num)
 
 
 if __name__ == "__main__":
