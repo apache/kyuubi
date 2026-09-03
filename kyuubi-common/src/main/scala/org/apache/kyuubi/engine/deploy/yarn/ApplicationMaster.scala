@@ -32,7 +32,7 @@ import org.apache.hadoop.yarn.security.AMRMTokenIdentifier
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.util.KyuubiHadoopUtils
+import org.apache.kyuubi.util.{IPStackUtils, KyuubiHadoopUtils}
 import org.apache.kyuubi.util.command.CommandLineUtils.confKeyValues
 import org.apache.kyuubi.util.reflect.{DynFields, DynMethods}
 
@@ -184,8 +184,8 @@ object ApplicationMaster extends Logging {
   }
 
   private def resolveHostAndPort(connectionUrl: String): (String, Int) = {
-    val strings = connectionUrl.split(":")
-    (strings(0), strings(1).toInt)
+    val hostPort = IPStackUtils.getHostAndPort(connectionUrl)
+    (hostPort.getHostname, hostPort.getPort)
   }
 
   private def cleanupStagingDir(): Unit = {

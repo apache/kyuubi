@@ -30,6 +30,7 @@ import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFramework;
 import org.apache.kyuubi.shaded.curator.framework.CuratorFrameworkFactory;
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry;
+import org.apache.kyuubi.util.IPStackUtils;
 
 class ZooKeeperHiveClientHelper {
   // Pattern for key1=value1;key2=value2
@@ -96,13 +97,14 @@ class ZooKeeperHiveClientHelper {
     // it must be the server uri added by an older version HS2
     Matcher matcher = kvPattern.matcher(dataStr);
     if (!matcher.find()) {
-      String[] split = dataStr.split(":");
-      if (split.length != 2) {
+      try {
+        IPStackUtils.HostPort hostPort = IPStackUtils.getHostAndPort(dataStr);
+        connParams.setHost(hostPort.getHostname());
+        connParams.setPort(hostPort.getPort());
+      } catch (Exception e) {
         throw new ZooKeeperHiveClientException(
-            "Unable to read HiveServer2 uri from ZooKeeper: " + dataStr);
+            "Unable to parse HiveServer2 uri from ZooKeeper: " + dataStr, e);
       }
-      connParams.setHost(split[0]);
-      connParams.setPort(Integer.parseInt(split[1]));
     } else {
       applyConfs(dataStr, connParams);
     }

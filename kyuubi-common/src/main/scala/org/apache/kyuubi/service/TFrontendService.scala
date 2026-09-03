@@ -36,7 +36,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
 import org.apache.kyuubi.shaded.thrift.protocol.TProtocol
 import org.apache.kyuubi.shaded.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.kyuubi.shaded.thrift.transport.TTransport
-import org.apache.kyuubi.util.{JavaUtils, KyuubiHadoopUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{IPStackUtils, JavaUtils, KyuubiHadoopUtils, NamedThreadFactory}
 
 /**
  * Apache Thrift based hive-service-rpc base class
@@ -120,7 +120,7 @@ abstract class TFrontendService(name: String)
       case (None, None) => serverAddr.getHostAddress
     }
 
-    host + ":" + actualPort
+    IPStackUtils.formatIPAddressForURL(host) + ":" + actualPort
   }
 
   protected def getProxyUser(
