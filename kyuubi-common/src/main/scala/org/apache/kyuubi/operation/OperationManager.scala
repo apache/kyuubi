@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture, TimeUnit}
+import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture, TimeoutException, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -68,6 +68,22 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       timeoutScheduler = null
     }
     super.stop()
+  }
+
+  /**
+   * Submit a task to the internal timeout scheduler and run it with a timeout.
+   * If the task execution exceeds the specified timeout, the task will be cancelled
+   * and the provided onTimeout callback will be executed.
+   */
+  def runWithTimeoutFallback(task: Runnable, onTimeout: Runnable, timeoutSeconds: Long): Unit = {
+    val future = timeoutScheduler.submit(task)
+    try {
+      future.get(timeoutSeconds, TimeUnit.SECONDS)
+    } catch {
+      case _: TimeoutException =>
+        future.cancel(true)
+        onTimeout.run()
+    }
   }
 
   /** Schedule a timeout task using the internal scheduler */
