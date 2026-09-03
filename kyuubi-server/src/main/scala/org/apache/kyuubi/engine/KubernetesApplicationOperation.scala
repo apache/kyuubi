@@ -81,7 +81,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
-  private var cleanupCanceledAppPodExecutor: ThreadPoolExecutor = _
+  private var cleanupOrphanPodExecutor: ThreadPoolExecutor = _
 
   private var kubernetesClientInitializeCleanupTerminatedPodExecutor: ThreadPoolExecutor = _
 
@@ -208,8 +208,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupDriverPodCheckInterval,
       cleanupDriverPodCheckInterval,
       TimeUnit.MILLISECONDS)
-    cleanupCanceledAppPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
-      "cleanup-canceled-app-pod-thread")
+    cleanupOrphanPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
+      "cleanup-orphan-pod-thread")
     kubernetesClientInitializeCleanupTerminatedPodExecutor =
       ThreadUtils.newDaemonCachedThreadPool(
         "kubernetes-client-initialize-cleanup-terminated-pod-thread")
@@ -381,9 +381,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       expireCleanUpTriggerCacheExecutor = null
     }
 
-    if (cleanupCanceledAppPodExecutor != null) {
-      ThreadUtils.shutdown(cleanupCanceledAppPodExecutor)
-      cleanupCanceledAppPodExecutor = null
+    if (cleanupOrphanPodExecutor != null) {
+      ThreadUtils.shutdown(cleanupOrphanPodExecutor)
+      cleanupOrphanPodExecutor = null
     }
 
     if (kubernetesClientInitializeCleanupTerminatedPodExecutor != null) {
@@ -405,7 +405,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           pod,
           appStateSource,
           appStateContainer)
-        checkPodAppCanceled(kubernetesInfo, pod)
+        cleanupOrphanPod(kubernetesInfo, pod)
       }
     }
 
@@ -426,7 +426,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           appStateSource,
           appStateContainer)
         if (firstUpdate) {
-          checkPodAppCanceled(kubernetesInfo, newPod)
+          cleanupOrphanPod(kubernetesInfo, newPod)
         }
       }
     }
@@ -589,16 +589,21 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private def checkPodAppCanceled(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
+  private def cleanupOrphanPod(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
     if (kyuubiConf.isRESTEnabled) {
-      cleanupCanceledAppPodExecutor.submit(new Runnable {
+      cleanupOrphanPodExecutor.submit(new Runnable {
         override def run(): Unit = Utils.tryLogNonFatalError {
           val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
           val batch = metadataManager.flatMap(_.getBatchSessionMetadata(kyuubiUniqueKey))
-          if (batch.map(_.state).map(OperationState.withName)
-              .exists(_ == OperationState.CANCELED)) {
+          val batchState = batch.map(_.state).map(OperationState.withName)
+          if (batchState.exists(_ == OperationState.CANCELED)) {
             warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] is canceled, " +
               s"try to delete the pod ${pod.getMetadata.getName}")
+            deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
+          } else if (batchState.exists(_ == OperationState.ERROR) &&
+            batch.flatMap(_.appState).exists(_ == ApplicationState.NOT_FOUND)) {
+            warn(s"[$kubernetesInfo] Batch[$kyuubiUniqueKey] failed due to submit timeout" +
+              s" (app state: NOT_FOUND), try to delete the orphan pod ${pod.getMetadata.getName}")
             deletePod(kubernetesInfo, pod.getMetadata.getName, kyuubiUniqueKey)
           }
         }
