@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -37,6 +38,7 @@ import org.apache.kyuubi.session.Session
 class ExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
@@ -83,14 +85,25 @@ class ExecuteStatement(
   protected def executeStatement(): Unit =
     try {
       withLocalProperties {
-        setState(OperationState.RUNNING)
-        info(diagnostics)
-        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-        addOperationListener()
-        result = spark.sql(statement)
-        iter = collectAsIterator(result)
-        setCompiledStateIfNeeded()
-        setState(OperationState.FINISHED)
+        val operationConf = if (confOverlay.isEmpty) {
+          spark.sessionState.conf
+        } else {
+          val clonedConf = spark.sessionState.conf.clone()
+          confOverlay.foreach { case (key, value) =>
+            clonedConf.setConfString(key, value)
+          }
+          clonedConf
+        }
+        SQLConf.withExistingConf(operationConf) {
+          setState(OperationState.RUNNING)
+          info(diagnostics)
+          Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+          addOperationListener()
+          result = spark.sql(statement)
+          iter = collectAsIterator(result)
+          setCompiledStateIfNeeded()
+          setState(OperationState.FINISHED)
+        }
       }
     } catch {
       onError(cancel = true)
@@ -212,6 +225,7 @@ class ExecuteStatement(
 class ArrowBasedExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
@@ -219,6 +233,7 @@ class ArrowBasedExecuteStatement(
   extends ExecuteStatement(
     session,
     statement,
+    confOverlay,
     shouldRunAsync,
     queryTimeout,
     incrementalCollect,
