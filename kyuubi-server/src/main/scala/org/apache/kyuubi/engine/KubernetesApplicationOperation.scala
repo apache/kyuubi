@@ -77,7 +77,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private val appInfoStore: ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)] =
     new ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)]
   // key is kyuubi_unique_key
-  private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
+  // Visible for testing
+  private[engine] var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
@@ -336,7 +337,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
+  // Visible for testing
+  private[engine] class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
     extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
