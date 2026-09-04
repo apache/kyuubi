@@ -191,6 +191,17 @@ class UtilsSuite extends KyuubiFunSuite {
     assertResult(false)(Utils.isCommandAvailable("un_exist_cmd"))
   }
 
+  test("is on Kubernetes") {
+    val kubernetesEnv = Map(
+      "KUBERNETES_SERVICE_HOST" -> "kubernetes.default.svc",
+      "KUBERNETES_SERVICE_PORT" -> "443")
+
+    assert(Utils.isOnK8s(kubernetesEnv))
+    assert(!Utils.isOnK8s(Map.empty))
+    assert(!Utils.isOnK8s(kubernetesEnv.updated("KUBERNETES_SERVICE_HOST", "")))
+    assert(!Utils.isOnK8s(kubernetesEnv.updated("KUBERNETES_SERVICE_PORT", "")))
+  }
+
   test("writeToTempFile rejects illegal filenames") {
     val dir = Utils.createTempDir()
     def stream: ByteArrayInputStream = new ByteArrayInputStream("data".getBytes)

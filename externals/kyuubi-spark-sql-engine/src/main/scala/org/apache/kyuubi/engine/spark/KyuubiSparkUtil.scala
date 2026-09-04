@@ -131,37 +131,31 @@ object KyuubiSparkUtil extends Logging {
   // jakarta.ws.rs, this is an equivalent implementation using reflection of the following
   // plain invocation:
   //   {javax|jakarta}.ws.rs.core.UriBuilder.fromUri(uri).fragment(fragment).build()
-  def buildURI(uri: URI, fragment: String): URI = {
+  private lazy val uriBuilderClassName: String =
     if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-      var uriBuilder = DynMethods.builder("fromUri")
-        .impl("jakarta.ws.rs.core.UriBuilder", classOf[URI])
-        .buildStatic()
-        .invoke[AnyRef](uri)
-
-      uriBuilder = DynMethods.builder("fragment")
-        .impl("jakarta.ws.rs.core.UriBuilder", classOf[String])
-        .build(uriBuilder)
-        .invoke[AnyRef](fragment)
-
-      DynMethods.builder("build")
-        .impl("jakarta.ws.rs.core.UriBuilder", classOf[Array[AnyRef]])
-        .build(uriBuilder)
-        .invoke[URI](Array.empty[AnyRef])
+      "jakarta.ws.rs.core.UriBuilder"
     } else {
-      var uriBuilder = DynMethods.builder("fromUri")
-        .impl("javax.ws.rs.core.UriBuilder", classOf[URI])
-        .buildStatic()
-        .invoke[AnyRef](uri)
-
-      uriBuilder = DynMethods.builder("fragment")
-        .impl("javax.ws.rs.core.UriBuilder", classOf[String])
-        .build(uriBuilder)
-        .invoke[AnyRef](fragment)
-
-      DynMethods.builder("build")
-        .impl("javax.ws.rs.core.UriBuilder", classOf[Array[AnyRef]])
-        .build(uriBuilder)
-        .invoke[URI](Array.empty[AnyRef])
+      "javax.ws.rs.core.UriBuilder"
     }
+
+  private lazy val fromUriMethod: DynMethods.StaticMethod =
+    DynMethods.builder("fromUri")
+      .impl(uriBuilderClassName, classOf[URI])
+      .buildStaticChecked()
+
+  private lazy val fragmentMethod: DynMethods.UnboundMethod =
+    DynMethods.builder("fragment")
+      .impl(uriBuilderClassName, classOf[String])
+      .buildChecked()
+
+  private lazy val buildMethod: DynMethods.UnboundMethod =
+    DynMethods.builder("build")
+      .impl(uriBuilderClassName, classOf[Array[AnyRef]])
+      .buildChecked()
+
+  def buildURI(uri: URI, fragment: String): URI = {
+    val uriBuilder = fromUriMethod.invoke[AnyRef](uri)
+    val fragmentedUriBuilder = fragmentMethod.invoke[AnyRef](uriBuilder, fragment)
+    buildMethod.invoke[URI](fragmentedUriBuilder, Array.empty[AnyRef])
   }
 }

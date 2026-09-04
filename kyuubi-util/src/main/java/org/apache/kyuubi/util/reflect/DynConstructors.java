@@ -32,6 +32,11 @@ public class DynConstructors {
 
   private DynConstructors() {}
 
+  // The type is absent from Java 8, which this module compiles against, so it is matched
+  // by name where it is caught.
+  private static final String INACCESSIBLE_OBJECT_EXCEPTION =
+      "java.lang.reflect.InaccessibleObjectException";
+
   public static class Ctor<C> extends DynMethods.UnboundMethod {
     private final Constructor<C> ctor;
     private final Class<? extends C> constructed;
@@ -190,6 +195,20 @@ public class DynConstructors {
     }
 
     public Builder hiddenImpl(Class<?>... types) {
+      // don't do any work if an implementation has been found
+      if (ctor != null) {
+        return this;
+      }
+      // A builder made by builder() has no base class, and forwarding that null would reach
+      // getDeclaredConstructor. Reaching this overload at all takes either no arguments or an
+      // explicit Class<?>[], which is also what a Scala `: _*` splat passes; a loose Class
+      // argument binds to hiddenImpl(Class, Class...) with that class as the target instead.
+      // iceberg-common deprecated this overload in 1.6.0 and removed it in 1.7.0
+      // (apache/iceberg#10818) over that ambiguity.
+      if (baseClass == null) {
+        throw new IllegalStateException(
+            "Cannot look up a hidden constructor without a base class, use builder(Class) instead");
+      }
       hiddenImpl(baseClass, types);
       return this;
     }
@@ -211,6 +230,18 @@ public class DynConstructors {
       return this;
     }
 
+    /**
+     * Checks for a hidden implementation.
+     *
+     * <p>Neither upstream copy catches InaccessibleObjectException from {@code setAccessible}, so
+     * under strong encapsulation one inaccessible constructor aborts the whole fallback chain,
+     * while this copy counts it as a miss like the other lookup failures.
+     *
+     * @param targetClass a class instance
+     * @param types argument classes for the constructor
+     * @return this Builder for method chaining
+     * @see Class#getDeclaredConstructor(Class[])
+     */
     public <T> Builder hiddenImpl(Class<T> targetClass, Class<?>... types) {
       // don't do any work if an implementation has been found
       if (ctor != null) {
@@ -226,6 +257,15 @@ public class DynConstructors {
         problems.put(methodName(targetClass, types), e);
       } catch (NoSuchMethodException e) {
         // not the right implementation
+        problems.put(methodName(targetClass, types), e);
+      } catch (RuntimeException e) {
+        // setAccessible on a member of a package that is not open reports
+        // InaccessibleObjectException: since JDK 9 for named modules, since JDK 16 by
+        // default from the unnamed module; count it as a candidate miss like the
+        // failures above instead of letting it escape the fallback chain.
+        if (!INACCESSIBLE_OBJECT_EXCEPTION.equals(e.getClass().getName())) {
+          throw e;
+        }
         problems.put(methodName(targetClass, types), e);
       }
       return this;
