@@ -17,13 +17,38 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
+import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting, PodBuilder}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
+import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, PENDING}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
+
+  test("mark terminated application received from pod add event") {
+    val operation = new KubernetesApplicationOperation()
+    operation.initialize(KyuubiConf(), None)
+    val tag = "terminated-app"
+    val pod = new PodBuilder()
+      .withNewMetadata()
+      .withName("terminated-driver")
+      .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, tag)
+      .addToLabels("spark-app-selector", "spark-application")
+      .endMetadata()
+      .withNewStatus()
+      .withPhase("Succeeded")
+      .withContainerStatuses()
+      .endStatus()
+      .build()
+
+    try {
+      new operation.SparkEnginePodEventHandler(KubernetesInfo()).onAdd(pod)
+      assert(operation.cleanupTerminatedAppInfoTrigger.getIfPresent(tag) === FINISHED)
+    } finally {
+      operation.stop()
+    }
+  }
 
   test("test check kubernetes info") {
     val kyuubiConf = KyuubiConf()
@@ -116,12 +141,25 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
   test("get kubernetes client initialization info") {
     val kyuubiConf = KyuubiConf()
+    val kubernetesEnv = Map(
+      KubernetesApplicationOperation.KUBERNETES_SERVICE_HOST -> "kubernetes.default.svc",
+      KubernetesApplicationOperation.KUBERNETES_SERVICE_PORT -> "443")
+    val operation = new KubernetesApplicationOperation()
+
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, Map.empty) === Nil)
+    assert(operation.getKubernetesClientInitializeInfo(
+      kyuubiConf,
+      kubernetesEnv.updated(KubernetesApplicationOperation.KUBERNETES_SERVICE_HOST, "")) === Nil)
+
+    kyuubiConf.set(KyuubiConf.KUBERNETES_NAMESPACE, "kyuubi")
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, kubernetesEnv) ===
+      Seq(KubernetesInfo(None, Some("kyuubi"))))
+
     kyuubiConf.set(
       KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST.key,
       "c1:ns1,c1:ns2,c2:ns1,c2:ns2,c1:,:ns1")
 
-    val operation = new KubernetesApplicationOperation()
-    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf) ===
+    assert(operation.getKubernetesClientInitializeInfo(kyuubiConf, kubernetesEnv) ===
       Array(
         KubernetesInfo(Some("c1"), Some("ns1")),
         KubernetesInfo(Some("c1"), Some("ns2")),

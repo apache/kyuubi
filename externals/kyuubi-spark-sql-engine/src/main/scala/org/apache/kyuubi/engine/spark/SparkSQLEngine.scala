@@ -289,7 +289,7 @@ object SparkSQLEngine extends Logging {
     kyuubiConf.setIfMissing(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    if (Utils.isOnK8s) {
+    if (Utils.isOnK8s()) {
       kyuubiConf.setIfMissing(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
 
       // https://github.com/apache/kyuubi/issues/3385
@@ -463,7 +463,7 @@ object SparkSQLEngine extends Logging {
 
   private def isOnK8sClusterMode: Boolean = {
     // only spark driver pod will build with `SPARK_APPLICATION_ID` env.
-    Utils.isOnK8s && sys.env.contains("SPARK_APPLICATION_ID")
+    Utils.isOnK8s() && sys.env.contains("SPARK_APPLICATION_ID")
   }
 
   @VisibleForTesting

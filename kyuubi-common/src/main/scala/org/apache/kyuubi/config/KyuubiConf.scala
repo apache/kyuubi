@@ -1406,7 +1406,10 @@ object KyuubiConf {
 
   val KUBERNETES_NAMESPACE: ConfigEntry[String] =
     buildConf("kyuubi.kubernetes.namespace")
-      .doc("The namespace that will be used for running the kyuubi pods and find engines.")
+      .doc("The default namespace used by the Kyuubi server's Kubernetes client to discover" +
+        " and manage engine pods, when the engine submission does not specify one (e.g." +
+        " `spark.kubernetes.namespace`). It does not control the namespace where the Kyuubi" +
+        " server itself runs.")
       .version("1.7.0")
       .stringConf
       .createWithDefault("default")
@@ -1425,9 +1428,12 @@ object KyuubiConf {
   val KUBERNETES_CLIENT_INITIALIZE_LIST: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.kubernetes.client.initialize.list")
       .doc("The kubernetes client initialize list to register kubernetes resource informers" +
-        " during Kyuubi server startup. This ensure the Kyuubi server is promptly informed for" +
-        " any Kubernetes resource changes after startup. It is highly recommend to set it for" +
-        " multiple Kyuubi instances mode. The format is `context1:namespace1,context2:namespace2`.")
+        " during Kyuubi server startup. This ensures the Kyuubi server is promptly informed for" +
+        " any Kubernetes resource changes after startup. It is highly recommended to set it for" +
+        " multiple Kyuubi instances mode. The format is" +
+        " `context1:namespace1,context2:namespace2`." +
+        " When the list is empty and Kyuubi runs in Kubernetes, the client for the configured" +
+        " namespace is initialized automatically with the in-cluster configuration.")
       .version("1.11.0")
       .audience(SERVER)
       .immutable

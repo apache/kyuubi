@@ -36,6 +36,11 @@ public class DynMethods {
 
   private DynMethods() {}
 
+  // The type is absent from Java 8, which this module compiles against, so it is matched
+  // by name where it is caught.
+  private static final String INACCESSIBLE_OBJECT_EXCEPTION =
+      "java.lang.reflect.InaccessibleObjectException";
+
   /**
    * Convenience wrapper class around {@link Method}.
    *
@@ -429,6 +434,11 @@ public class DynMethods {
     /**
      * Checks for a method implementation.
      *
+     * <p>Neither upstream copy catches InaccessibleObjectException from {@code setAccessible}, so
+     * under strong encapsulation one inaccessible method aborts the whole fallback chain. This copy
+     * counts it as a miss like the other lookup failures, and records the exception with the
+     * candidate so its "does not opens" text survives into the build failure.
+     *
      * @param targetClass a class instance
      * @param methodName name of a method (different from constructor)
      * @param argClasses argument classes for the method
@@ -448,6 +458,17 @@ public class DynMethods {
         this.method = new UnboundMethod(hidden, name);
       } catch (SecurityException | NoSuchMethodException e) {
         // unusable or not the right implementation
+        misses.add(
+            new Miss(
+                "declared " + candidateName(targetClass.getName(), methodName, argClasses), e));
+      } catch (RuntimeException e) {
+        // setAccessible on a member of a package that is not open reports
+        // InaccessibleObjectException: since JDK 9 for named modules, since JDK 16 by
+        // default from the unnamed module; record it as a candidate miss like the
+        // failures above instead of letting it escape the fallback chain.
+        if (!INACCESSIBLE_OBJECT_EXCEPTION.equals(e.getClass().getName())) {
+          throw e;
+        }
         misses.add(
             new Miss(
                 "declared " + candidateName(targetClass.getName(), methodName, argClasses), e));

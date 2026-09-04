@@ -30,20 +30,8 @@ import org.apache.kyuubi.util.reflect.DynMethods
  */
 object SparkUIUtils {
 
-  def formatDuration(ms: Long): String = {
-    UIUtils.formatDuration(ms)
-  }
-
-  def headerSparkPage(
-      request: HttpServletRequestLike,
-      title: String,
-      content: Seq[Node],
-      activeTab: SparkUITab,
-      helpText: Option[String] = None,
-      showVisualization: JBoolean = false,
-      useDataTables: JBoolean = false,
-      useTimeline: JBoolean = false): Seq[Node] = {
-    val headerSparkPageMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+  private val headerSparkPageMethod: DynMethods.BoundMethod =
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("headerSparkPage")
         // SPARK-56354 (4.2.0) added the useTimeline flag as an 8th parameter
         .impl(
@@ -79,22 +67,9 @@ object SparkUIUtils {
           classOf[Boolean])
         .buildChecked(UIUtils)
     }
-    headerSparkPageMethod.invoke[Seq[Node]](
-      request.underlying,
-      title,
-      () => content,
-      activeTab,
-      helpText,
-      showVisualization,
-      useDataTables,
-      useTimeline)
-  }
 
-  def prependBaseUri(
-      request: HttpServletRequestLike,
-      basePath: String = "",
-      resource: String = ""): String = {
-    val prependBaseUriMethod = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
+  private val prependBaseUriMethod: DynMethods.BoundMethod =
+    if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
       DynMethods.builder("prependBaseUri")
         .impl(
           UIUtils.getClass,
@@ -111,6 +86,35 @@ object SparkUIUtils {
           classOf[String])
         .buildChecked(UIUtils)
     }
+
+  def formatDuration(ms: Long): String = {
+    UIUtils.formatDuration(ms)
+  }
+
+  def headerSparkPage(
+      request: HttpServletRequestLike,
+      title: String,
+      content: Seq[Node],
+      activeTab: SparkUITab,
+      helpText: Option[String] = None,
+      showVisualization: JBoolean = false,
+      useDataTables: JBoolean = false,
+      useTimeline: JBoolean = false): Seq[Node] = {
+    headerSparkPageMethod.invoke[Seq[Node]](
+      request.underlying,
+      title,
+      () => content,
+      activeTab,
+      helpText,
+      showVisualization,
+      useDataTables,
+      useTimeline)
+  }
+
+  def prependBaseUri(
+      request: HttpServletRequestLike,
+      basePath: String = "",
+      resource: String = ""): String = {
     prependBaseUriMethod.invoke[String](request.underlying, basePath, resource)
   }
 }
