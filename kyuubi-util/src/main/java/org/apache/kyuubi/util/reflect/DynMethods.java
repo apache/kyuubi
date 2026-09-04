@@ -349,8 +349,7 @@ public class DynMethods {
      *
      * <p>Neither upstream copy forwarded the loader to the inner constructor builder, so the name
      * resolved through the thread context loader regardless of what the caller configured.
-     * parquet-common still resolves it that way; iceberg removed {@code ctorImpl} altogether in
-     * 1.7.0 (apache/iceberg#10818).
+     * iceberg-common removed {@code ctorImpl} altogether in 1.7.0 (apache/iceberg#10818).
      *
      * @param className name of a class
      * @param argClasses argument classes for the constructor
