@@ -32,7 +32,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{JavaUtils, NamedThreadFactory, ThreadUtils}
 
 trait ProcBuilder {
 
@@ -254,7 +254,12 @@ trait ProcBuilder {
     }
 
     logCaptureThreadReleased = false
-    logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
+    logCaptureThread =
+      if (conf.get(KyuubiConf.SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED)) {
+        PROC_BUILD_VIRTUAL_LOGGER.newThread(redirect)
+      } else {
+        PROC_BUILD_LOGGER.newThread(redirect)
+      }
     logCaptureThread.start()
     process
   }
@@ -363,6 +368,8 @@ trait ProcBuilder {
 
 object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
+  private lazy val PROC_BUILD_VIRTUAL_LOGGER =
+    ThreadUtils.newVirtualThreadFactory("process-logger-capture")
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
 

@@ -21,6 +21,7 @@ import java.time.Duration
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.EngineType
+import org.apache.kyuubi.util.ThreadUtils
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
@@ -352,14 +353,59 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     }
   }
 
-  test("getEngineConf excludes the server thrift binary virtual thread config") {
+  test("getEngineConf excludes server virtual thread configs") {
     val kyuubiConf = KyuubiConf(false)
-    kyuubiConf.set(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED, true)
+    val serverConfigs = SERVER_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs
+    serverConfigs.foreach(kyuubiConf.set(_, true))
 
     EngineType.values.foreach { engineType =>
-      assert(!kyuubiConf.getEngineConf(engineType)
-        .contains(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED.key))
+      val engineConf = kyuubiConf.getEngineConf(engineType)
+      serverConfigs.foreach { config =>
+        assert(!engineConf.contains(config.key), s"$engineType should not receive ${config.key}")
+      }
     }
+  }
+
+  test("server virtual thread switch and component overrides") {
+    val kyuubiConf = KyuubiConf(false)
+
+    assert(!kyuubiConf.get(SERVER_VIRTUAL_THREADS_ENABLED))
+    serverVirtualThreadConfigs.foreach(config => assert(!kyuubiConf.get(config)))
+
+    kyuubiConf.set(SERVER_VIRTUAL_THREADS_ENABLED, true)
+    serverVirtualThreadConfigs.foreach(config => assert(kyuubiConf.get(config)))
+
+    kyuubiConf.set(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED, false)
+    assert(!kyuubiConf.get(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED))
+    serverVirtualThreadConfigs.filterNot(
+      _ == ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED).foreach {
+      config => assert(kyuubiConf.get(config))
+    }
+  }
+
+  test("validate server virtual thread configs") {
+    KyuubiConf(false).validateServerVirtualThreadConfigs()
+
+    (SERVER_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs).foreach { config =>
+      val conf = KyuubiConf(false).set(config, true)
+      if (ThreadUtils.isVirtualThreadSupported) {
+        conf.validateServerVirtualThreadConfigs()
+      } else {
+        val error = intercept[IllegalArgumentException] {
+          conf.validateServerVirtualThreadConfigs()
+        }
+        val resolvedConfig = if (config == SERVER_VIRTUAL_THREADS_ENABLED) {
+          serverVirtualThreadConfigs.head
+        } else {
+          config
+        }
+        assert(error.getMessage.contains(s"${resolvedConfig.key}=true requires Java 21"))
+      }
+    }
+
+    val conf = KyuubiConf(false).set(SERVER_VIRTUAL_THREADS_ENABLED, true)
+    serverVirtualThreadConfigs.foreach(config => conf.set(config, false))
+    conf.validateServerVirtualThreadConfigs()
   }
 
   test("getEngineConf passes through reserved keys") {
