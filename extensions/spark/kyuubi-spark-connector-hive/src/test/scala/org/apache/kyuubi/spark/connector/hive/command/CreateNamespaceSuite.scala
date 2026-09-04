@@ -39,14 +39,14 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
   private def namespace: String = "fakens"
 
   override def afterEach(): Unit = {
-    sql(s"DROP NAMESPACE IF EXISTS $catalogName.$namespace")
+    executeSql(s"DROP NAMESPACE IF EXISTS $catalogName.$namespace")
     super.afterEach()
   }
 
   test("basic test") {
     val ns = s"$catalogName.$namespace"
     dropNamespaceAfter(ns) {
-      sql(s"CREATE NAMESPACE $ns")
+      executeSql(s"CREATE NAMESPACE $ns")
       assert(getCatalog(catalogName).asNamespaceCatalog.namespaceExists(namespaceArray))
     }
   }
@@ -60,13 +60,13 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
         assert(!path.startsWith("file:/"))
 
         val e = intercept[IllegalArgumentException] {
-          sql(s"CREATE NAMESPACE $ns LOCATION ''")
+          executeSql(s"CREATE NAMESPACE $ns LOCATION ''")
         }
         assert(e.getMessage.contains("Can not create a Path from an empty string") ||
           e.getMessage.contains("The location name cannot be empty string"))
 
         val uri = new Path(path).toUri
-        sql(s"CREATE NAMESPACE $ns LOCATION '$uri'")
+        executeSql(s"CREATE NAMESPACE $ns LOCATION '$uri'")
 
         // Make sure the location is qualified.
         val expected = qualifyPath(tmpDir.toString)
@@ -79,16 +79,16 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
   test("Namespace already exists") {
     val ns = s"$catalogName.$namespace"
     dropNamespaceAfter(ns) {
-      sql(s"CREATE NAMESPACE $ns")
+      executeSql(s"CREATE NAMESPACE $ns")
 
       val e = intercept[NamespaceAlreadyExistsException] {
-        sql(s"CREATE NAMESPACE $ns")
+        executeSql(s"CREATE NAMESPACE $ns")
       }
       assert(e.getMessage.contains(s"Namespace '$namespace' already exists") ||
         e.getMessage.contains(s"Cannot create schema `fakens` because it already exists"))
 
       // The following will be no-op since the namespace already exists.
-      Try { sql(s"CREATE NAMESPACE IF NOT EXISTS $ns") }.isSuccess
+      Try { executeSql(s"CREATE NAMESPACE IF NOT EXISTS $ns") }.isSuccess
     }
   }
 
@@ -98,7 +98,7 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
     withSQLConf((SQLConf.LEGACY_PROPERTY_NON_RESERVED.key, "false")) {
       NAMESPACE_RESERVED_PROPERTIES.filterNot(_ == PROP_COMMENT).foreach { key =>
         val exception = intercept[ParseException] {
-          sql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='dummyVal')")
+          executeSql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='dummyVal')")
         }
         assert(exception.getMessage.contains(s"$key is a reserved namespace property"))
       }
@@ -106,9 +106,9 @@ trait CreateNamespaceSuiteBase extends DDLCommandTestUtils {
     withSQLConf((SQLConf.LEGACY_PROPERTY_NON_RESERVED.key, "true")) {
       NAMESPACE_RESERVED_PROPERTIES.filterNot(_ == PROP_COMMENT).foreach { key =>
         dropNamespaceAfter(ns) {
-          sql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='foo')")
+          executeSql(s"CREATE NAMESPACE $ns WITH DBPROPERTIES('$key'='foo')")
           assert(
-            sql(s"DESC NAMESPACE EXTENDED $ns")
+            executeSql(s"DESC NAMESPACE EXTENDED $ns")
               .toDF("k", "v")
               .where("k='Properties'")
               .where("v=''")
