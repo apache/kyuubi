@@ -33,7 +33,7 @@ object ThreadUtils extends Logging {
     def getQueueSize: Int
   }
 
-  def isVirtualThreadSupported: Boolean = {
+  lazy val isVirtualThreadSupported: Boolean = {
     try {
       classOf[Thread].getMethod("ofVirtual")
       classOf[Executors].getMethod("newThreadPerTaskExecutor", classOf[ThreadFactory])
