@@ -77,51 +77,16 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private val appInfoStore: ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)] =
     new ConcurrentHashMap[String, (KubernetesInfo, ApplicationInfo)]
   // key is kyuubi_unique_key
-  private var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
+  // Visible for testing
+  private[engine] var cleanupTerminatedAppInfoTrigger: Cache[String, ApplicationState] = _
 
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
   private var cleanupCanceledAppPodExecutor: ThreadPoolExecutor = _
 
-  private var kubernetesClientInitializeCleanupTerminatedPodExecutor: ThreadPoolExecutor = _
-
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
-    kubernetesClients.computeIfAbsent(
-      kubernetesInfo,
-      kInfo => {
-        val kubernetesClient = buildKubernetesClient(kInfo)
-        cleanTerminatedAppPodsOnKubernetesClientInitialize(kInfo, kubernetesClient)
-        kubernetesClient
-      })
-  }
-
-  private def cleanTerminatedAppPodsOnKubernetesClientInitialize(
-      kubernetesInfo: KubernetesInfo,
-      kubernetesClient: KubernetesClient): Unit = {
-    if (kubernetesClientInitializeCleanupTerminatedPodExecutor != null) {
-      kubernetesClientInitializeCleanupTerminatedPodExecutor.submit(new Runnable {
-        override def run(): Unit = {
-          val existingPods =
-            kubernetesClient.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY).list().getItems
-          info(s"[$kubernetesInfo] Found ${existingPods.size()} existing pods with label " +
-            s"$LABEL_KYUUBI_UNIQUE_KEY")
-          val eventType = KubernetesResourceEventTypes.UPDATE
-          existingPods.asScala.filter(isSparkEnginePod).foreach { pod =>
-            val appState = toApplicationState(pod, appStateSource, appStateContainer, eventType)
-            if (isTerminated(appState)) {
-              val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)
-              info(s"[$kubernetesInfo] Found existing pod ${pod.getMetadata.getName} with " +
-                s"${toLabel(kyuubiUniqueKey)} in app state $appState, marking it as terminated")
-              if (appInfoStore.get(kyuubiUniqueKey) == null) {
-                updateApplicationState(kubernetesInfo, pod, eventType)
-              }
-              markApplicationTerminated(kubernetesInfo, pod, eventType)
-            }
-          }
-        }
-      })
-    }
+    kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
   }
 
   private var metadataManager: Option[MetadataManager] = _
@@ -210,9 +175,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       TimeUnit.MILLISECONDS)
     cleanupCanceledAppPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
       "cleanup-canceled-app-pod-thread")
-    kubernetesClientInitializeCleanupTerminatedPodExecutor =
-      ThreadUtils.newDaemonCachedThreadPool(
-        "kubernetes-client-initialize-cleanup-terminated-pod-thread")
     initializeKubernetesClient(kyuubiConf)
   }
 
@@ -373,20 +335,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       ThreadUtils.shutdown(cleanupCanceledAppPodExecutor)
       cleanupCanceledAppPodExecutor = null
     }
-
-    if (kubernetesClientInitializeCleanupTerminatedPodExecutor != null) {
-      ThreadUtils.shutdown(kubernetesClientInitializeCleanupTerminatedPodExecutor)
-      kubernetesClientInitializeCleanupTerminatedPodExecutor = null
-    }
   }
 
-  private class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
+  // Visible for testing
+  private[engine] class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
     extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
       if (isSparkEnginePod(pod)) {
         val eventType = KubernetesResourceEventTypes.ADD
         updateApplicationState(kubernetesInfo, pod, eventType)
+        val appState = toApplicationState(pod, appStateSource, appStateContainer, eventType)
+        if (isTerminated(appState)) {
+          markApplicationTerminated(kubernetesInfo, pod, eventType)
+        }
         KubernetesApplicationAuditLogger.audit(
           eventType,
           kubernetesInfo,
