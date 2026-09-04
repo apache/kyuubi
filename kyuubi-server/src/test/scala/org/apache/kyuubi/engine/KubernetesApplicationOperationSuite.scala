@@ -17,13 +17,38 @@
 
 package org.apache.kyuubi.engine
 
-import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting}
+import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting, PodBuilder}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.ApplicationState.{FAILED, PENDING}
+import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, PENDING}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
+
+  test("mark terminated application received from pod add event") {
+    val operation = new KubernetesApplicationOperation()
+    operation.initialize(KyuubiConf(), None)
+    val tag = "terminated-app"
+    val pod = new PodBuilder()
+      .withNewMetadata()
+      .withName("terminated-driver")
+      .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, tag)
+      .addToLabels("spark-app-selector", "spark-application")
+      .endMetadata()
+      .withNewStatus()
+      .withPhase("Succeeded")
+      .withContainerStatuses()
+      .endStatus()
+      .build()
+
+    try {
+      new operation.SparkEnginePodEventHandler(KubernetesInfo()).onAdd(pod)
+      assert(operation.cleanupTerminatedAppInfoTrigger.getIfPresent(tag) === FINISHED)
+    } finally {
+      operation.stop()
+    }
+  }
 
   test("test check kubernetes info") {
     val kyuubiConf = KyuubiConf()
