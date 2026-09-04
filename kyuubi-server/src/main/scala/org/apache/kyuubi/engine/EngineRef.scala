@@ -47,7 +47,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.plugin.GroupProvider
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
-import org.apache.kyuubi.util.JavaUtils
+import org.apache.kyuubi.util.{IPStackUtils, JavaUtils}
 
 /**
  * The description and functionality of an engine at server side
@@ -464,7 +464,7 @@ private[kyuubi] object EngineRef {
       val host = conf.get(FRONTEND_ADVERTISED_HOST)
         .orElse(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
         .getOrElse(JavaUtils.findLocalInetAddress.getHostAddress)
-      s"jdbc:kyuubi://$host:$port/default"
+      s"jdbc:kyuubi://${IPStackUtils.concatHostPort(host, port)}/default"
     }
   }
 }

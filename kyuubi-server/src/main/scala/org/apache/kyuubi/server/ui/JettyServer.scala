@@ -23,6 +23,7 @@ import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.IPStackUtils
 import org.apache.kyuubi.util.JavaUtils
 
 private[kyuubi] class JettyServer(
@@ -37,7 +38,7 @@ private[kyuubi] class JettyServer(
       server.addConnector(connector)
       val localPort = connector.getLocalPort
       require(localPort > 0, "Jetty server port should be positive, but got " + localPort)
-      _serverUri = connector.getHost + ":" + localPort
+      _serverUri = IPStackUtils.concatHostPort(connector.getHost, localPort)
     } catch {
       case e: Exception =>
         stop()
@@ -56,7 +57,7 @@ private[kyuubi] class JettyServer(
 
   @volatile private var _serverUri: String = _
   def getServerUri: String = Option(_serverUri).getOrElse {
-    val uri = connector.getHost + ":" + connector.getLocalPort
+    val uri = IPStackUtils.concatHostPort(connector.getHost, connector.getLocalPort)
     warn("Jetty server is not started yet, returning " + uri)
     uri
   }

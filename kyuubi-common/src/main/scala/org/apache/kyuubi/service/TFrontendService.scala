@@ -120,7 +120,7 @@ abstract class TFrontendService(name: String)
       case (None, None) => serverAddr.getHostAddress
     }
 
-    IPStackUtils.formatIPAddressForURL(host) + ":" + actualPort
+    IPStackUtils.concatHostPort(host, actualPort)
   }
 
   protected def getProxyUser(

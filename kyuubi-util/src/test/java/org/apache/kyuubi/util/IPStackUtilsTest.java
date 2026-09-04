@@ -25,6 +25,16 @@ import org.junit.jupiter.api.Test;
 
 public class IPStackUtilsTest {
 
+  // Test cases for concatHostPort method
+
+  @Test
+  public void testConcatHostPort() {
+    assertEquals("192.168.1.1:8080", IPStackUtils.concatHostPort("192.168.1.1", 8080));
+    assertEquals("[2001:db8::1]:8080", IPStackUtils.concatHostPort("2001:db8::1", 8080));
+    assertEquals("[::1]:9090", IPStackUtils.concatHostPort("::1", 9090));
+    assertEquals("example.com:443", IPStackUtils.concatHostPort("example.com", 443));
+  }
+
   // Test cases for getHostAndPort method
 
   @Test

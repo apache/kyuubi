@@ -101,7 +101,7 @@ class ZooKeeperHiveClientHelper {
         IPStackUtils.HostPort hostPort = IPStackUtils.getHostAndPort(dataStr);
         connParams.setHost(hostPort.getHostname());
         connParams.setPort(hostPort.getPort());
-      } catch (Exception e) {
+      } catch (IllegalArgumentException e) {
         throw new ZooKeeperHiveClientException(
             "Unable to parse HiveServer2 uri from ZooKeeper: " + dataStr, e);
       }

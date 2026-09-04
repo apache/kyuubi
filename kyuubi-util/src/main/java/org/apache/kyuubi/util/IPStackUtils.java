@@ -19,7 +19,7 @@ package org.apache.kyuubi.util;
 
 /**
  * Utility methods for handling IPv4/IPv6 host:port strings. The logic mirrors Hive's {@code
- * org.apache.hadoop.hive.common.IPStackUtils} (Hive 4.2.1).
+ * org.apache.hadoop.hive.common.IPStackUtils}, introduced in HIVE-28782 (Hive 4.1.0).
  */
 public final class IPStackUtils {
 
@@ -99,6 +99,22 @@ public final class IPStackUtils {
 
   private static boolean isEmpty(String s) {
     return s == null || s.isEmpty();
+  }
+
+  /**
+   * Concatenates the host and port with a colon. If the host is an IPv6 address, it is enclosed in
+   * square brackets.
+   *
+   * @param host the host
+   * @param port the port
+   * @return the concatenated host and port
+   * @throws IllegalArgumentException if the host is null/empty or the port number is out of the
+   *     valid range (0-65535).
+   */
+  public static String concatHostPort(String host, int port) {
+    validateHostNotEmpty(host);
+    validatePort(port);
+    return formatIPAddressForURL(host) + ":" + port;
   }
 
   /**

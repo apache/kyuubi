@@ -25,7 +25,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.trino.api.v1.ApiRootResource
 import org.apache.kyuubi.server.ui.JettyServer
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
-import org.apache.kyuubi.util.JavaUtils
+import org.apache.kyuubi.util.{IPStackUtils, JavaUtils}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
@@ -64,7 +64,7 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
   override def connectionUrl: String = {
     checkInitialized()
     conf.get(FRONTEND_ADVERTISED_HOST) match {
-      case Some(advertisedHost) => s"$advertisedHost:$port"
+      case Some(advertisedHost) => IPStackUtils.concatHostPort(advertisedHost, port)
       case None => server.getServerUri
     }
   }

@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatus;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatusCode;
+import org.apache.kyuubi.util.IPStackUtils;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 import org.apache.kyuubi.util.reflect.DynMethods;
 import org.slf4j.Logger;
@@ -406,7 +407,7 @@ public class Utils {
         connParams.setPort(port);
       }
       // We check for invalid host, port while configuring connParams with configureConnParams()
-      authorityStr = connParams.getHost() + ":" + connParams.getPort();
+      authorityStr = IPStackUtils.concatHostPort(connParams.getHost(), connParams.getPort());
       LOG.debug("Resolved authority: " + authorityStr);
       uri = uri.replace(dummyAuthorityString, authorityStr);
     }
@@ -419,7 +420,7 @@ public class Utils {
   static void configureConnParamsFromZooKeeper(JdbcConnectionParams connParams)
       throws ZooKeeperHiveClientException, JdbcUriParseException {
     ZooKeeperHiveClientHelper.configureConnParams(connParams);
-    String authorityStr = connParams.getHost() + ":" + connParams.getPort();
+    String authorityStr = IPStackUtils.concatHostPort(connParams.getHost(), connParams.getPort());
     LOG.debug("Resolved authority: " + authorityStr);
     String jdbcUriString = connParams.getJdbcUriString();
     // Replace ZooKeeper ensemble from the authority component of the JDBC Uri provided by the
@@ -532,8 +533,8 @@ public class Utils {
           connParams
               .getJdbcUriString()
               .replace(
-                  oldServerHost + ":" + oldServerPort,
-                  connParams.getHost() + ":" + connParams.getPort()));
+                  IPStackUtils.concatHostPort(oldServerHost, oldServerPort),
+                  IPStackUtils.concatHostPort(connParams.getHost(), connParams.getPort())));
       LOG.info("Selected HiveServer2 instance with uri: " + connParams.getJdbcUriString());
     } catch (ZooKeeperHiveClientException e) {
       LOG.error(e.getMessage());
