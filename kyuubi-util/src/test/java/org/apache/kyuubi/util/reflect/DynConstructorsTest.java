@@ -170,9 +170,30 @@ public class DynConstructorsTest {
   @Test
   public void testHiddenImplPropagatesUnrelatedFailures() {
     // a RuntimeException that is not InaccessibleObjectException must still escape the
-    // builder instead of being counted as a candidate miss
-    // a builder with no class set dereferences the null base class inside the try block
+    // builder instead of being counted as a candidate miss.
+    // a null target class dereferences null inside the try block
     assertThrows(
-        NullPointerException.class, () -> DynConstructors.builder().hiddenImpl((Class<?>[]) null));
+        NullPointerException.class,
+        () -> DynConstructors.builder().hiddenImpl((Class<Object>) null, new Class<?>[0]));
+  }
+
+  @Test
+  public void testHiddenImplWithoutBaseClassFailsFast() {
+    IllegalStateException thrown =
+        assertThrows(IllegalStateException.class, () -> DynConstructors.builder().hiddenImpl());
+
+    assertTrue(
+        thrown.getMessage().contains("without a base class"),
+        () -> "unexpected message: " + thrown.getMessage());
+  }
+
+  @Test
+  public void testHiddenImplWithoutBaseClassIsSkippedOnceFound() throws NoSuchMethodException {
+    // every other impl overload short-circuits once a constructor is found, so a class-less
+    // builder that already matched keeps working rather than failing on the base-class lookup
+    DynConstructors.Ctor<String> ctor =
+        DynConstructors.builder().impl("java.lang.String").hiddenImpl().buildChecked();
+
+    assertEquals(String.class, ctor.getConstructedClass());
   }
 }
