@@ -19,7 +19,7 @@ package org.apache.kyuubi.util;
 
 /**
  * Utility methods for handling IPv4/IPv6 host:port strings. The logic mirrors Hive's {@code
- * org.apache.hadoop.hive.common.IPStackUtils}.
+ * org.apache.hadoop.hive.common.IPStackUtils} (Hive 4.2.1).
  */
 public final class IPStackUtils {
 
@@ -71,6 +71,9 @@ public final class IPStackUtils {
    *
    * @param portString The string representing the port number.
    * @return {@code int} the port number.
+   * @throws IllegalArgumentException if the port string is null/empty or the port number is out of
+   *     the valid range (0-65535).
+   * @throws NumberFormatException if the port string is not a valid integer.
    */
   public static int getPort(String portString) {
     if (isEmpty(portString)) {
