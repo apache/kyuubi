@@ -4157,6 +4157,18 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Seq("spark.driver.memory", "spark.executor.memory"))
 
+  val ENGINE_SPARK_CONNECT_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.engine.spark.connect.enabled")
+      .doc("When true, the Spark SQL engine starts a Spark Connect service next to its Thrift" +
+        " frontend, so that Spark Connect clients can use the same engine. It requires a Spark" +
+        " distribution whose Spark Connect supports authentication, which is Spark 4.0 and" +
+        " later, a pre-shared `spark.connect.authenticate.token`, and the USER share level;" +
+        " the engine fails to start otherwise.")
+      .version("1.13.0")
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
   val ENGINE_SPARK_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("kyuubi.engine.spark.initialize.sql")
       .doc("The initialize sql for Spark engine. It fallback to `kyuubi.engine.initialize.sql`.")
