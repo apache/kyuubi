@@ -29,8 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Adapted from iceberg-common, which is itself derived from parquet-common. Unlike both, a lookup
- * that finds no implementation here reports the candidates it tried; see {@link Builder#build()}.
+ * Adapted from iceberg-common, which is itself derived from parquet-common. A lookup that finds no
+ * implementation here reports the candidates it tried; see {@link Builder#build()}.
  */
 public class DynMethods {
 
