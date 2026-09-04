@@ -32,7 +32,11 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
   final val RESTRICT_LIST_KEY = "spark.kyuubi.conf.restricted.list"
   final val EXCLUDED_RULES_KEY = "spark.sql.optimizer.excludedRules"
 
-  final private val AUTHZ_RANGER_RULE_PACKAGE = "org.apache.kyuubi.plugin.spark.authz.ranger"
+  // Every rule the extension injects lives under this package, not only the ranger ones:
+  // the marker-eliminating rules sit in org.apache.kyuubi.plugin.spark.authz.rule, and new
+  // rules land there too. Excluding one of those breaks the query at planning today rather
+  // than lifting a check, but the denylist should not depend on that staying true.
+  final private val AUTHZ_RULE_PACKAGE = "org.apache.kyuubi.plugin.spark.authz"
 
   private val restrictedConfList: Set[String] =
     Set(
@@ -48,13 +52,13 @@ case class AuthzConfigurationChecker(spark: SparkSession) extends (LogicalPlan =
     // case below never sees them. Check the value that is actually in effect on every
     // plan instead - check rules are not affected by spark.sql.optimizer.excludedRules,
     // which only filters optimizer batches, so this check cannot be turned off the same way.
-    if (spark.conf.getOption(EXCLUDED_RULES_KEY).exists(_.contains(AUTHZ_RANGER_RULE_PACKAGE))) {
+    if (spark.conf.getOption(EXCLUDED_RULES_KEY).exists(_.contains(AUTHZ_RULE_PACKAGE))) {
       throw new AccessControlException("Excluding Authz security rules is not allowed")
     }
     plan match {
       case SetCommand(Some((
             EXCLUDED_RULES_KEY,
-            Some(v)))) if v.contains(AUTHZ_RANGER_RULE_PACKAGE) =>
+            Some(v)))) if v.contains(AUTHZ_RULE_PACKAGE) =>
         throw new AccessControlException("Excluding Authz security rules is not allowed")
       case SetCommand(Some((k, Some(_)))) if restrictedConfList.contains(k) =>
         throw new AccessControlException(s"Modifying config $k is not allowed")
