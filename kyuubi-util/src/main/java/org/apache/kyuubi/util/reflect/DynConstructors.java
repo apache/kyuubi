@@ -344,13 +344,16 @@ public class DynConstructors {
     StringBuilder sb = new StringBuilder();
     sb.append(targetClass.getName()).append("(");
     boolean first = true;
-    for (Class<?> type : types) {
+    // A caller probing an optional dependency passes down the null DynClasses.orNull() handed it,
+    // and getConstructor reads a null array as no arguments at all. Both are ordinary misses there,
+    // so naming the candidate must not turn either into a throw.
+    for (Class<?> type : types == null ? new Class<?>[0] : types) {
       if (first) {
         first = false;
       } else {
         sb.append(",");
       }
-      sb.append(type.getName());
+      sb.append(type == null ? "null" : type.getName());
     }
     sb.append(")");
     return sb.toString();
