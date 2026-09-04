@@ -131,6 +131,8 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
 
         val last = executor.submit(new Runnable {
           override def run(): Unit = {
+            assert(Thread.currentThread().getUncaughtExceptionHandler eq
+              NamedThreadFactory.kyuubiUncaughtExceptionHandler)
             threadNames.add(Thread.currentThread().getName)
             tasksAreVirtual.add(isVirtual.invoke(Thread.currentThread()).asInstanceOf[Boolean])
           }
@@ -173,7 +175,7 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
           override def run(): Unit = ()
         })
 
-        assert(executor.getPoolSize === 3)
+        assert(executor.getPoolSize === 2)
         assert(executor.getActiveCount === 2)
         assert(executor.getQueueSize === 1)
         intercept[RejectedExecutionException](executor.submit(blockingTask))
@@ -183,6 +185,7 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
         second.get(10, TimeUnit.SECONDS)
         third.get(10, TimeUnit.SECONDS)
         eventually(timeout(10.seconds), interval(10.millis)) {
+          assert(executor.getPoolSize === 0)
           assert(executor.getActiveCount === 0)
           assert(executor.getQueueSize === 0)
         }

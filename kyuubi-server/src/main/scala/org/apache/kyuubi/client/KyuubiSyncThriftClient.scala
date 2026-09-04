@@ -77,6 +77,9 @@ class KyuubiSyncThriftClient private (
     asyncRequestExecutorInitialized = true
     val threadName = "async-request-executor-" + SessionHandle(_remoteSessionHandle)
     if (useVirtualThreadsForAsyncRequests) {
+      // The session lock serializes submissions, so this is not a normal request backlog.
+      // Retain the platform executor's effectively unbounded queue: a completed or cancelled
+      // Future does not imply that the previous task has released its execution permit.
       ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(1, Int.MaxValue - 1, threadName)
     } else {
       ThreadUtils.newDaemonSingleThreadScheduledExecutor(threadName)

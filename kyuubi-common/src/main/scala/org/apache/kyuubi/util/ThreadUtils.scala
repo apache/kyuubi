@@ -50,9 +50,12 @@ object ThreadUtils extends Logging {
       val namedBuilder = builderClass
         .getMethod("name", classOf[String], java.lang.Long.TYPE)
         .invoke(builder, s"$threadNamePrefix-", Long.box(0L))
+      val configuredBuilder = builderClass
+        .getMethod("uncaughtExceptionHandler", classOf[Thread.UncaughtExceptionHandler])
+        .invoke(namedBuilder, NamedThreadFactory.kyuubiUncaughtExceptionHandler)
       builderClass
         .getMethod("factory")
-        .invoke(namedBuilder)
+        .invoke(configuredBuilder)
         .asInstanceOf[ThreadFactory]
     } catch {
       case e: ReflectiveOperationException =>
@@ -270,6 +273,8 @@ object ThreadUtils extends Logging {
     }
   }
 
+  // The fair semaphore does not guarantee FIFO execution: virtual threads may reach it
+  // out of submission order.
   private class BoundedQueuedExecutorService(
       delegate: ExecutorService,
       maxConcurrentTasks: Int,
@@ -281,7 +286,7 @@ object ThreadUtils extends Logging {
     private val activeCount = new AtomicInteger()
     private val queueSize = new AtomicInteger()
 
-    override def getPoolSize: Int = activeCount.get() + queueSize.get()
+    override def getPoolSize: Int = getActiveCount
 
     override def getActiveCount: Int = activeCount.get()
 

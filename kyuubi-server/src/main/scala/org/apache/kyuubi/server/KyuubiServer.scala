@@ -43,6 +43,7 @@ object KyuubiServer extends Logging {
   private var commandArgs: Array[String] = Array.empty[String]
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
+    conf.validateServerVirtualThreadConfigs()
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
     var embeddedZkServer: Option[EmbeddedZookeeper] = None
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {

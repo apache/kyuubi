@@ -21,23 +21,11 @@ import java.time.Duration
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.engine.EngineType
+import org.apache.kyuubi.util.ThreadUtils
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
   import KyuubiConf._
-
-  private val serverVirtualThreadConfigs = Seq(
-    FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED,
-    KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED,
-    KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED,
-    SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED,
-    ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED,
-    ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED,
-    BATCH_SUBMITTER_VIRTUAL_THREADS_ENABLED,
-    SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED,
-    METADATA_RECOVERY_VIRTUAL_THREADS_ENABLED,
-    METADATA_REQUEST_ASYNC_RETRY_VIRTUAL_THREADS_ENABLED,
-    FRONTEND_DATA_AGENT_OPERATION_SUBMIT_VIRTUAL_THREADS_ENABLED)
 
   test("kyuubi conf defaults") {
     val conf = new KyuubiConf()
@@ -393,6 +381,31 @@ class KyuubiConfSuite extends KyuubiFunSuite {
       _ == ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED).foreach {
       config => assert(kyuubiConf.get(config))
     }
+  }
+
+  test("validate server virtual thread configs") {
+    KyuubiConf(false).validateServerVirtualThreadConfigs()
+
+    (SERVER_VIRTUAL_THREADS_ENABLED +: serverVirtualThreadConfigs).foreach { config =>
+      val conf = KyuubiConf(false).set(config, true)
+      if (ThreadUtils.isVirtualThreadSupported) {
+        conf.validateServerVirtualThreadConfigs()
+      } else {
+        val error = intercept[IllegalArgumentException] {
+          conf.validateServerVirtualThreadConfigs()
+        }
+        val resolvedConfig = if (config == SERVER_VIRTUAL_THREADS_ENABLED) {
+          serverVirtualThreadConfigs.head
+        } else {
+          config
+        }
+        assert(error.getMessage.contains(s"${resolvedConfig.key}=true requires Java 21"))
+      }
+    }
+
+    val conf = KyuubiConf(false).set(SERVER_VIRTUAL_THREADS_ENABLED, true)
+    serverVirtualThreadConfigs.foreach(config => conf.set(config, false))
+    conf.validateServerVirtualThreadConfigs()
   }
 
   test("getEngineConf passes through reserved keys") {

@@ -83,6 +83,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private var expireCleanUpTriggerCacheExecutor: ScheduledExecutorService = _
 
   private var cleanupCanceledAppPodExecutor: ExecutorService = _
+
   private def getOrCreateKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     checkKubernetesInfo(kubernetesInfo)
     kubernetesClients.computeIfAbsent(kubernetesInfo, kInfo => buildKubernetesClient(kInfo))
