@@ -24,9 +24,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-/** Copied from parquet-common */
+/**
+ * Adapted from iceberg-common, which is itself derived from parquet-common. A lookup that finds no
+ * implementation here reports the candidates it tried; see {@link Builder#build()}.
+ */
 public class DynMethods {
 
   private DynMethods() {}
@@ -216,6 +221,10 @@ public class DynMethods {
     private final String name;
     private ClassLoader loader = Thread.currentThread().getContextClassLoader();
     private UnboundMethod method = null;
+    // One entry per lookup that missed, in the order the lookups ran. A list rather than the map
+    // DynConstructors keys by candidate name: two lookups can render the same name and still miss
+    // for unrelated reasons, and dropping either of them is what this is here to avoid.
+    private final List<Miss> misses = new ArrayList<>();
 
     public Builder(String methodName) {
       this.name = methodName;
@@ -269,6 +278,7 @@ public class DynMethods {
         impl(targetClass, methodName, argClasses);
       } catch (ClassNotFoundException e) {
         // not the right implementation
+        misses.add(new Miss(candidateName(className, methodName, argClasses), e));
       }
       return this;
     }
@@ -309,6 +319,7 @@ public class DynMethods {
         this.method = new UnboundMethod(targetClass.getMethod(methodName, argClasses), name);
       } catch (NoSuchMethodException e) {
         // not the right implementation
+        misses.add(new Miss(candidateName(targetClass.getName(), methodName, argClasses), e));
       }
       return this;
     }
@@ -336,9 +347,14 @@ public class DynMethods {
       }
 
       try {
-        this.method = new DynConstructors.Builder().impl(targetClass, argClasses).buildChecked();
+        // The delegated lookup aggregates a message of its own, which names its base class; give
+        // it the one we have so the entry recorded below does not report the constructor as absent
+        // from null. The overload below has no loaded class to hand over.
+        this.method =
+            new DynConstructors.Builder(targetClass).impl(targetClass, argClasses).buildChecked();
       } catch (NoSuchMethodException e) {
         // not the right implementation
+        misses.add(new Miss(candidateName(targetClass.getName(), "<init>", argClasses), e));
       }
       return this;
     }
@@ -367,6 +383,7 @@ public class DynMethods {
             new DynConstructors.Builder().loader(loader).impl(className, argClasses).buildChecked();
       } catch (NoSuchMethodException e) {
         // not the right implementation
+        misses.add(new Miss(candidateName(className, "<init>", argClasses), e));
       }
       return this;
     }
@@ -392,6 +409,7 @@ public class DynMethods {
         hiddenImpl(targetClass, methodName, argClasses);
       } catch (ClassNotFoundException e) {
         // not the right implementation
+        misses.add(new Miss("declared " + candidateName(className, methodName, argClasses), e));
       }
       return this;
     }
@@ -417,8 +435,8 @@ public class DynMethods {
      *
      * <p>Neither upstream copy catches InaccessibleObjectException from {@code setAccessible}, so
      * under strong encapsulation one inaccessible method aborts the whole fallback chain. This copy
-     * skips it like the other lookup failures instead of letting it escape. The builder keeps no
-     * per-candidate detail, so the exception's "does not opens" text is discarded with it.
+     * counts it as a miss like the other lookup failures, and records the exception with the
+     * candidate so its "does not opens" text survives into the build failure.
      *
      * @param targetClass a class instance
      * @param methodName name of a method (different from constructor)
@@ -439,14 +457,20 @@ public class DynMethods {
         this.method = new UnboundMethod(hidden, name);
       } catch (SecurityException | NoSuchMethodException e) {
         // unusable or not the right implementation
+        misses.add(
+            new Miss(
+                "declared " + candidateName(targetClass.getName(), methodName, argClasses), e));
       } catch (RuntimeException e) {
         // setAccessible on a member of a package that is not open reports
         // InaccessibleObjectException: since JDK 9 for named modules, since JDK 16 by
-        // default from the unnamed module; discard it as a candidate miss like the
+        // default from the unnamed module; record it as a candidate miss like the
         // failures above instead of letting it escape the fallback chain.
         if (!INACCESSIBLE_OBJECT_EXCEPTION.equals(e.getClass().getName())) {
           throw e;
         }
+        misses.add(
+            new Miss(
+                "declared " + candidateName(targetClass.getName(), methodName, argClasses), e));
       }
       return this;
     }
@@ -468,8 +492,9 @@ public class DynMethods {
     }
 
     /**
-     * Returns the first valid implementation as a UnboundMethod or throws a RuntimeError if there
-     * is none.
+     * Returns the first valid implementation as a UnboundMethod or throws a RuntimeException if
+     * there is none, with every recorded lookup failure listed in the message and attached as a
+     * suppressed throwable.
      *
      * @return a {@link UnboundMethod} with a valid implementation
      * @throws RuntimeException if no implementation was found
@@ -478,13 +503,13 @@ public class DynMethods {
       if (method != null) {
         return method;
       } else {
-        throw new RuntimeException("Cannot find method: " + name);
+        throw buildRuntimeException(name, misses);
       }
     }
 
     /**
-     * Returns the first valid implementation as a BoundMethod or throws a RuntimeError if there is
-     * none.
+     * Returns the first valid implementation as a BoundMethod or throws a RuntimeException if there
+     * is none.
      *
      * @param receiver an Object to receive the method invocation
      * @return a {@link BoundMethod} with a valid implementation and receiver
@@ -498,7 +523,7 @@ public class DynMethods {
 
     /**
      * Returns the first valid implementation as a UnboundMethod or throws a NoSuchMethodException
-     * if there is none.
+     * if there is none, reporting the recorded lookup failures the way {@link #build()} does.
      *
      * @return a {@link UnboundMethod} with a valid implementation
      * @throws NoSuchMethodException if no implementation was found
@@ -507,7 +532,7 @@ public class DynMethods {
       if (method != null) {
         return method;
       } else {
-        throw new NoSuchMethodException("Cannot find method: " + name);
+        throw buildCheckedException(name, misses);
       }
     }
 
@@ -548,6 +573,75 @@ public class DynMethods {
     public StaticMethod buildStatic() {
       return build().asStatic();
     }
+  }
+
+  /** A lookup that missed: what was looked for, and what came back. */
+  private static final class Miss {
+    private final String candidate;
+    private final Throwable cause;
+
+    Miss(String candidate, Throwable cause) {
+      this.candidate = candidate;
+      this.cause = cause;
+    }
+  }
+
+  private static NoSuchMethodException buildCheckedException(String name, List<Miss> misses) {
+    NoSuchMethodException exc =
+        new NoSuchMethodException("Cannot find method: " + name + formatMisses(misses));
+    misses.forEach(miss -> exc.addSuppressed(miss.cause));
+    return exc;
+  }
+
+  private static RuntimeException buildRuntimeException(String name, List<Miss> misses) {
+    RuntimeException exc =
+        new RuntimeException("Cannot find method: " + name + formatMisses(misses));
+    misses.forEach(miss -> exc.addSuppressed(miss.cause));
+    return exc;
+  }
+
+  /**
+   * Appends one entry per miss. Each entry carries its own leading newline, unlike the equivalent
+   * in {@link DynConstructors}, so a builder that recorded nothing adds nothing.
+   */
+  private static String formatMisses(List<Miss> misses) {
+    StringBuilder sb = new StringBuilder();
+    for (Miss miss : misses) {
+      sb.append("\n\tMissing ")
+          .append(miss.candidate)
+          .append(" [")
+          .append(miss.cause.getClass().getName())
+          .append(": ")
+          .append(indented(miss.cause.getMessage()))
+          .append("]");
+    }
+    return sb.toString();
+  }
+
+  /**
+   * Pushes the continuation lines of a nested message in one level, so that the entries a delegated
+   * lookup aggregated do not read as candidates of this builder.
+   */
+  private static String indented(String message) {
+    return message == null ? null : message.replace("\n", "\n\t");
+  }
+
+  private static String candidateName(String className, String methodName, Class<?>... argClasses) {
+    StringBuilder sb = new StringBuilder();
+    sb.append(className).append("#").append(methodName).append("(");
+    boolean first = true;
+    // A caller probing an optional dependency passes down the null DynClasses.orNull() handed it,
+    // and getMethod reads a null array as no arguments at all. Both are ordinary misses there, so
+    // naming the candidate must not turn either into a throw.
+    for (Class<?> argClass : argClasses == null ? new Class<?>[0] : argClasses) {
+      if (first) {
+        first = false;
+      } else {
+        sb.append(",");
+      }
+      sb.append(argClass == null ? "null" : argClass.getName());
+    }
+    return sb.append(")").toString();
   }
 
   private static class MakeAccessible implements PrivilegedAction<Void> {
