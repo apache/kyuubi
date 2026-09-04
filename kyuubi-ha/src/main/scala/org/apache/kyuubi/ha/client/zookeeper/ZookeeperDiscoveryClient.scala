@@ -44,6 +44,7 @@ import org.apache.kyuubi.shaded.curator.utils.ZKPaths
 import org.apache.kyuubi.shaded.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.kyuubi.shaded.zookeeper.CreateMode.PERSISTENT
 import org.apache.kyuubi.shaded.zookeeper.KeeperException.NodeExistsException
+import org.apache.kyuubi.util.IPStackUtils
 import org.apache.kyuubi.util.ThreadUtils
 
 class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
@@ -316,15 +317,15 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     if (!instance.contains(":")) {
       return instance
     }
-    val hostPort = instance.split(":", 2)
+    val hostPort = IPStackUtils.getHostAndPort(instance)
     val confsToPublish = collection.mutable.Map[String, String]()
 
     // Hostname
-    confsToPublish += ("hive.server2.thrift.bind.host" -> hostPort(0))
+    confsToPublish += ("hive.server2.thrift.bind.host" -> hostPort.getHostname)
     // Transport mode
     confsToPublish += ("hive.server2.transport.mode" -> "binary")
     // Transport specific confs
-    confsToPublish += ("hive.server2.thrift.port" -> hostPort(1))
+    confsToPublish += ("hive.server2.thrift.port" -> hostPort.getPort.toString)
     confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
     // Auth specific confs
     val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")

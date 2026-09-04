@@ -41,7 +41,7 @@ import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
 import org.apache.kyuubi.session.{KyuubiBatchSession, KyuubiSessionManager, SessionHandle}
-import org.apache.kyuubi.util.{JavaUtils, ThreadUtils}
+import org.apache.kyuubi.util.{IPStackUtils, JavaUtils, ThreadUtils}
 import org.apache.kyuubi.util.ThreadUtils.scheduleTolerableRunnableWithFixedDelay
 
 /**
@@ -110,7 +110,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   override def connectionUrl: String = {
     checkInitialized()
     conf.get(FRONTEND_ADVERTISED_HOST) match {
-      case Some(advertisedHost) => s"$advertisedHost:$port"
+      case Some(advertisedHost) => IPStackUtils.concatHostPort(advertisedHost, port)
       case None => server.getServerUri
     }
   }

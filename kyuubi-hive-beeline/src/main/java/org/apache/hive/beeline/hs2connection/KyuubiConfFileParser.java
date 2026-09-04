@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import org.apache.kyuubi.util.IPStackUtils;
 import org.apache.kyuubi.util.JavaUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,7 +151,7 @@ public class KyuubiConfFileParser implements HS2ConnectionFileParser {
     }
 
     int portNum = getPortNum(thriftMode);
-    props.setProperty("hosts", host + ":" + portNum);
+    props.setProperty("hosts", IPStackUtils.concatHostPort(host, portNum));
   }
 
   private int getPortNum(THRIFT_MODE thriftMode) {

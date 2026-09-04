@@ -19,7 +19,7 @@ package org.apache.kyuubi.ha.client
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-trait DiscoveryClientSuite extends KyuubiFunSuite {
+class DiscoveryClientSuite extends KyuubiFunSuite {
 
   test("parse host and port from instance string") {
     val host = "127.0.0.1"
@@ -36,5 +36,16 @@ trait DiscoveryClientSuite extends KyuubiFunSuite {
     val (host2, port2) = DiscoveryClient.parseInstanceHostPort(instance2)
     assert(host === host2)
     assert(port === port2)
+
+    // IPv6 address with square brackets
+    val ipv6Host = "fc00:172::1"
+    val (host3, port3) = DiscoveryClient.parseInstanceHostPort(s"[$ipv6Host]:$port")
+    assert(ipv6Host === host3)
+    assert(port === port3)
+
+    // IPv6 address without square brackets
+    val (host4, port4) = DiscoveryClient.parseInstanceHostPort(s"$ipv6Host:$port")
+    assert(ipv6Host === host4)
+    assert(port === port4)
   }
 }
