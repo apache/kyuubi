@@ -25,6 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URL;
+import java.net.URLClassLoader;
 import org.junit.jupiter.api.Test;
 
 public class DynMethodsTest {
@@ -245,5 +247,40 @@ public class DynMethodsTest {
     assertThrows(
         NullPointerException.class,
         () -> DynMethods.builder("checkScale").hiddenImpl((Class<?>) null, "checkScale"));
+  }
+
+  @Test
+  public void testCtorImplUsesTheConfiguredLoader() throws Exception {
+    // A bootstrap-parented loader can reach no application class on any JDK, so a lookup that
+    // falls back to the context loader fails and one through the configured loader succeeds.
+    // Both halves set the context loader explicitly rather than relying on the ambient one.
+    ClassLoader original = Thread.currentThread().getContextClassLoader();
+    try (URLClassLoader blinded = new URLClassLoader(new URL[0], null)) {
+      try {
+        Thread.currentThread().setContextClassLoader(blinded);
+        DynMethods.UnboundMethod ctor =
+            DynMethods.builder("newInstance")
+                .loader(getClass().getClassLoader())
+                .ctorImpl(ReflectionTarget.class.getName())
+                .buildChecked();
+
+        assertEquals(ReflectionTarget.class, ctor.invoke(null).getClass());
+
+        // The configured loader stays authoritative even when the context loader can see the
+        // class: no fallback is allowed once the builder's loader cannot resolve it.
+        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+        NoSuchMethodException thrown =
+            assertThrows(
+                NoSuchMethodException.class,
+                () ->
+                    DynMethods.builder("newInstance")
+                        .loader(blinded)
+                        .ctorImpl(ReflectionTarget.class.getName())
+                        .buildChecked());
+        assertTrue(thrown.getMessage().contains("Cannot find method"));
+      } finally {
+        Thread.currentThread().setContextClassLoader(original);
+      }
+    }
   }
 }

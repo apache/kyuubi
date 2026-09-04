@@ -343,6 +343,19 @@ public class DynMethods {
       return this;
     }
 
+    /**
+     * Checks for a constructor implementation, first finding the given class by name using this
+     * builder's {@link ClassLoader}.
+     *
+     * <p>Neither upstream copy forwarded the loader to the inner constructor builder, so the name
+     * resolved through the thread context loader regardless of what the caller configured.
+     * iceberg-common removed {@code ctorImpl} altogether in 1.7.0 (apache/iceberg#10818).
+     *
+     * @param className name of a class
+     * @param argClasses argument classes for the constructor
+     * @return this Builder for method chaining
+     * @see Class#forName(String)
+     */
     public Builder ctorImpl(String className, Class<?>... argClasses) {
       // don't do any work if an implementation has been found
       if (method != null) {
@@ -350,7 +363,8 @@ public class DynMethods {
       }
 
       try {
-        this.method = new DynConstructors.Builder().impl(className, argClasses).buildChecked();
+        this.method =
+            new DynConstructors.Builder().loader(loader).impl(className, argClasses).buildChecked();
       } catch (NoSuchMethodException e) {
         // not the right implementation
       }
