@@ -213,15 +213,18 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   if (eventEnabled) EventBus.post(getOperationEvent)
 
-  override def setState(newState: OperationState): Unit = {
+  override def setState(newState: OperationState): Unit = withLockRequired {
+    val oldState = state
+    super.setState(newState)
     MetricsSystem.tracing { ms =>
-      if (!OperationState.isTerminal(state)) {
-        ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, state.toString.toLowerCase), -1)
+      if (!OperationState.isTerminal(oldState)) {
+        ms.markMeter(
+          MetricRegistry.name(OPERATION_STATE, opType, oldState.toString.toLowerCase),
+          -1)
       }
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, opType, newState.toString.toLowerCase))
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
-    super.setState(newState)
     if (eventEnabled) EventBus.post(getOperationEvent)
   }
 
