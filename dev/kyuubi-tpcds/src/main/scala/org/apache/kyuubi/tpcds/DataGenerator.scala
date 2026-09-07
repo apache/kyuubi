@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.tpcds
 
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
 
@@ -40,6 +44,12 @@ object DataGenerator {
       parallel: Option[Int] = None)
 
   private val logger = LoggerFactory.getLogger(this.getClass.getSimpleName.stripSuffix("$"))
+
+  // Replicates Scala 2.12's `par.foreach` using stdlib concurrency, as Scala 2.13 requires
+  // the external scala-parallel-collections module for `.par`.
+  private def parForeach[T](items: Seq[T])(f: T => Unit): Unit = {
+    Await.result(Future.traverse(items)(item => Future(f(item))), Duration.Inf)
+  }
 
   def initTable(spark: SparkSession): Seq[TableGenerator] = {
     import spark.implicits._
@@ -606,7 +616,7 @@ object DataGenerator {
     spark.sql(s"DESC DATABASE ${config.db}").show()
 
     val tpcdsTables = initTable(spark)
-    tpcdsTables.par.foreach { table =>
+    parForeach(tpcdsTables) { table =>
       table.setScaleFactor(config.scaleFactor)
       table.setFormat(config.format)
       config.parallel.foreach(table.setParallelism)
