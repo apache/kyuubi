@@ -113,6 +113,30 @@ class StatementInterceptorSuite extends WithKyuubiServer with HiveJDBCTestHelper
     }
   }
 
+  Seq("invalid_statement_conf", "analysis_error_conf").foreach { marker =>
+    test(s"statement config does not leak after $marker") {
+      withSessionConf()(Map("spark.sql.shuffle.partitions" -> "11"))() {
+        withJdbcStatement() { statement =>
+          val error = intercept[SQLException] {
+            statement.executeQuery(s"SELECT '$marker' AS marker")
+          }
+          val expectedMessage = if (marker == "invalid_statement_conf") {
+            "spark.sql.shuffle.partitions"
+          } else {
+            "missing_column"
+          }
+          assert(error.getMessage.contains(expectedMessage))
+
+          val rs = statement.executeQuery(
+            "EXPLAIN FORMATTED SELECT * FROM range(100) DISTRIBUTE BY id")
+          val plan = Iterator.continually(rs).takeWhile(_.next()).map(_.getString(1)).mkString("\n")
+          assert(plan.contains("hashpartitioning"))
+          assert(plan.contains(", 11)"))
+        }
+      }
+    }
+  }
+
   test("REJECT - a server-side command (executeOnServer path) is also intercepted") {
     withJdbcStatement() { statement =>
       val e = intercept[SQLException] {
@@ -175,6 +199,13 @@ class TestStatementInterceptor extends StatementInterceptor {
     } else if (sql.contains("plan_only_conf")) {
       StatementInterceptResult.rewrite(
         "SELECT * FROM range(100) DISTRIBUTE BY id",
+        Collections.singletonMap("spark.sql.shuffle.partitions", "7"))
+    } else if (sql.contains("invalid_statement_conf")) {
+      StatementInterceptResult.proceed(
+        Collections.singletonMap("spark.sql.shuffle.partitions", "not-an-integer"))
+    } else if (sql.contains("analysis_error_conf")) {
+      StatementInterceptResult.rewrite(
+        "SELECT missing_column FROM range(1)",
         Collections.singletonMap("spark.sql.shuffle.partitions", "7"))
     } else if (sql.contains("echo_stmt_id")) {
       StatementInterceptResult.rewrite(s"SELECT '${context.statementId()}' AS sid")

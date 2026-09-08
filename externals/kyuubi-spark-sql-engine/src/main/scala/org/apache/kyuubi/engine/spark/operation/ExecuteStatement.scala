@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -85,16 +84,7 @@ class ExecuteStatement(
   protected def executeStatement(): Unit =
     try {
       withLocalProperties {
-        val operationConf = if (confOverlay.isEmpty) {
-          spark.sessionState.conf
-        } else {
-          val clonedConf = spark.sessionState.conf.clone()
-          confOverlay.foreach { case (key, value) =>
-            clonedConf.setConfString(key, value)
-          }
-          clonedConf
-        }
-        SQLConf.withExistingConf(operationConf) {
+        withStatementConf(confOverlay) {
           setState(OperationState.RUNNING)
           info(diagnostics)
           Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)

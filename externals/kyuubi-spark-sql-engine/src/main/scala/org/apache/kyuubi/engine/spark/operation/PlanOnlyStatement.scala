@@ -78,16 +78,7 @@ class PlanOnlyStatement(
   override protected def runInternal(): Unit =
     try {
       withLocalProperties {
-        val operationConf = if (confOverlay.isEmpty) {
-          spark.sessionState.conf
-        } else {
-          val clonedConf = spark.sessionState.conf.clone()
-          confOverlay.foreach { case (key, value) =>
-            clonedConf.setConfString(key, value)
-          }
-          clonedConf
-        }
-        SQLConf.withExistingConf(operationConf) {
+        withStatementConf(confOverlay) {
           val parsed = spark.sessionState.sqlParser.parsePlan(statement)
           parsed match {
             case cmd if planExcludes.contains(cmd.getClass.getSimpleName) =>
