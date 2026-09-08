@@ -19,7 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import com.unboundid.ldap.sdk.Entry
 
-import org.apache.kyuubi.service.authentication.ldap.{LdapAuthenticationTestCase, User}
+import org.apache.kyuubi.service.authentication.ldap.{Credentials, LdapAuthenticationTestCase, User}
 
 class LdapAtnProviderSuite extends WithLdapServer {
 
@@ -331,6 +331,54 @@ class LdapAtnProviderSuite extends WithLdapServer {
       .build
     testCase.assertAuthenticateFails(USER2.credentialsWithDn)
     testCase.assertAuthenticateFails(USER2.credentialsWithId)
+  }
+
+  test("CustomQueryAccessRestrictionWithWildcardUsername") {
+    // A user excluded by the custom query rule but whose uid is a prefix of an allowed
+    // member must not be able to authenticate by appending a wildcard to the username.
+    ldapServer.add(new Entry(
+      "dn: uid=mall,ou=People,dc=example,dc=com",
+      "uid: mall",
+      "objectClass: top",
+      "objectClass: person",
+      "objectClass: organizationalPerson",
+      "objectClass: inetOrgPerson",
+      "cn: Mall Attacker",
+      "sn: mall",
+      "userPassword: mall-pass"))
+
+    ldapServer.add(new Entry(
+      "dn: cn=mallory,ou=People,dc=example,dc=com",
+      "sAMAccountName: mallory",
+      "objectClass: top",
+      "objectClass: person",
+      "objectClass: organizationalPerson",
+      "objectClass: inetOrgPerson",
+      "cn: mallory",
+      "sn: mallory",
+      "userPassword: mallory-pass"))
+
+    ldapServer.add(new Entry(
+      "dn: cn=kyuubi,ou=Groups,dc=example,dc=com",
+      "cn: kyuubi",
+      "objectClass: top",
+      "objectClass: posixGroup",
+      "memberUid: mallory"))
+
+    testCase = defaultBuilder
+      .bindUser(s"uid=$ldapUser,ou=users")
+      .bindPassword(ldapUserPasswd)
+      .baseDN("dc=example,dc=com")
+      .userDNPatterns(
+        "uid=%s,ou=People,dc=example,dc=com",
+        "sAMAccountName=%s,ou=People,dc=example,dc=com")
+      .customQuery("(&(objectClass=posixGroup)(cn=kyuubi)(memberUid=%s))")
+      .build
+
+    testCase.assertAuthenticatePasses(Credentials("mallory", "mallory-pass"))
+    testCase.assertAuthenticateFails(Credentials("mall", "mall-pass"))
+    testCase.assertAuthenticateFails(Credentials("mall*", "mall-pass"))
+    testCase.assertAuthenticateFails(Credentials("mall*)(objectClass=*", "mall-pass"))
   }
 
   /**

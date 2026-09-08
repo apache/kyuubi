@@ -59,7 +59,7 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
     var allLdapNames: Array[String] = null
     if (LdapUtils.isDn(user)) {
       val userBaseDn: String = LdapUtils.extractBaseDn(user)
-      val userRdn: String = LdapUtils.extractFirstRdn(user)
+      val userRdn: String = LdapUtils.escapeLDAPSearchFilter(LdapUtils.extractFirstRdn(user))
       allLdapNames = execute(Array(userBaseDn), queries.findUserDnByRdn(userRdn)).getAllLdapNames
     } else {
       allLdapNames = findDnByPattern(userPatterns, user)
@@ -80,7 +80,8 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
   private def findDnByPattern(patterns: Seq[String], name: String): Array[String] = {
     for (pattern <- patterns) {
       val baseDnFromPattern: String = LdapUtils.extractBaseDn(pattern)
-      val rdn = LdapUtils.extractFirstRdn(pattern).replaceAll("%s", name)
+      val rdn =
+        LdapUtils.extractFirstRdn(pattern).replace("%s", LdapUtils.escapeLDAPSearchFilter(name))
       val names = execute(Array(baseDnFromPattern), queries.findDnByPattern(rdn)).getAllLdapNames
       if (!names.isEmpty) return names
     }
