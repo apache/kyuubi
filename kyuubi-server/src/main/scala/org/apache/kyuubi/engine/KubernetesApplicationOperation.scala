@@ -87,8 +87,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private var cleanupCanceledAppPodExecutor: ExecutorService = _
 
-  private var kubernetesClientInitializeCleanupTerminatedPodExecutor: ThreadPoolExecutor = _
-
   private var cleanupFailedMountLoopPodExecutor: ThreadPoolExecutor = _
 
   private var failedMountLoopPeriodicChecker: ScheduledExecutorService = _
@@ -189,9 +187,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     } else {
       ThreadUtils.newDaemonCachedThreadPool("cleanup-canceled-app-pod-thread")
     }
-    kubernetesClientInitializeCleanupTerminatedPodExecutor =
-      ThreadUtils.newDaemonCachedThreadPool(
-        "kubernetes-client-initialize-cleanup-terminated-pod-thread")
     cleanupFailedMountLoopPodExecutor = ThreadUtils.newDaemonCachedThreadPool(
       "cleanup-failed-mount-loop-pod-thread")
     initializeKubernetesClient(kyuubiConf)
@@ -405,10 +400,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupCanceledAppPodExecutor = null
     }
 
-    if (kubernetesClientInitializeCleanupTerminatedPodExecutor != null) {
-      ThreadUtils.shutdown(kubernetesClientInitializeCleanupTerminatedPodExecutor)
-      kubernetesClientInitializeCleanupTerminatedPodExecutor = null
-    }
     if (cleanupFailedMountLoopPodExecutor != null) {
       ThreadUtils.shutdown(cleanupFailedMountLoopPodExecutor)
       cleanupFailedMountLoopPodExecutor = null
