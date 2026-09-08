@@ -1621,7 +1621,8 @@ object KyuubiConf {
   // Thus 30 count correspond to (30*2)/60 = 1 hours
   val KUBERNETES_POD_FAILED_MOUNT_LOOP_THRESHOLD: ConfigEntry[Int] =
     buildConf("kyuubi.kubernetes.pod.failed.mount.loop.threshold")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .doc("The threshold for the number of failed mount loop to trigger pod deletion")
       .version("1.11.0")
       .intConf
@@ -1629,7 +1630,8 @@ object KyuubiConf {
 
   val KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.pod.failed.mount.loop.check.enabled")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .doc("Whether to periodically check Pending pods for FailedMount " +
         "loops and delete them when exceeding the threshold.")
       .version("1.11.0")
@@ -1638,7 +1640,8 @@ object KyuubiConf {
 
   val KUBERNETES_POD_FAILED_MOUNT_LOOP_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.kubernetes.pod.failed.mount.loop.check.interval")
-      .serverOnly
+      .audience(SERVER)
+      .immutable
       .doc("Interval for periodically checking Pending pods for FailedMount loops.")
       .version("1.11.0")
       .timeConf
