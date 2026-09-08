@@ -87,7 +87,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private var cleanupCanceledAppPodExecutor: ExecutorService = _
 
-  private var cleanupFailedMountLoopPodExecutor: ThreadPoolExecutor = _
+  private var cleanupFailedMountLoopPodExecutor: ExecutorService = _
 
   private var failedMountLoopPeriodicChecker: ScheduledExecutorService = _
 
