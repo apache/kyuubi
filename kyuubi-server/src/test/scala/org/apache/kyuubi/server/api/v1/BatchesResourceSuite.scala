@@ -623,7 +623,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       className = sparkBatchTestMainClass,
       requestName = "PENDING_RECOVERY",
       requestConf = Map("spark.master" -> "local"),
-      requestArgs = Seq.empty,
+      requestArgs = Seq("10000"),
       createTime = System.currentTimeMillis(),
       engineType = "SPARK")
 
@@ -652,7 +652,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     eventually(timeout(5.seconds)) {
       applicationStatus =
         sessionManager.applicationManager.getApplicationInfo(ApplicationManagerInfo(None), batchId2)
-      assert(applicationStatus.isDefined)
+      assert(applicationStatus.exists(i => i.id != null && i.state == ApplicationState.RUNNING))
     }
 
     val metadataToUpdate = Metadata(
