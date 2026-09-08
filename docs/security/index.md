@@ -25,6 +25,7 @@ and encryption, etc.
 
 Authentication <authentication>
 Authorization <authorization/index>
+Session Configuration <session_configuration>
 kinit
 hadoop_credentials_manager
 internal_secure_access
