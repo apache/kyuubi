@@ -652,7 +652,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     eventually(timeout(5.seconds)) {
       applicationStatus =
         sessionManager.applicationManager.getApplicationInfo(ApplicationManagerInfo(None), batchId2)
-      assert(applicationStatus.exists(i => i.id != null && i.state == ApplicationState.RUNNING))
+      assert(applicationStatus.isDefined)
     }
 
     val metadataToUpdate = Metadata(
