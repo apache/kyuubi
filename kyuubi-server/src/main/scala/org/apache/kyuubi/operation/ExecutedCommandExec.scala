@@ -27,8 +27,9 @@ import org.apache.kyuubi.sql.schema.SchemaHelper
 class ExecutedCommandExec(
     session: KyuubiSessionImpl,
     override val shouldRunAsync: Boolean,
-    command: RunnableCommand)
-  extends KyuubiOperation(session) {
+    command: RunnableCommand,
+    operationHandle: OperationHandle = OperationHandle())
+  extends KyuubiOperation(session, operationHandle) {
 
   private lazy val _operationLog: OperationLog =
     if (shouldRunAsync) {
