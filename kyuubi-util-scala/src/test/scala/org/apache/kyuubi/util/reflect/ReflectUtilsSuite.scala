@@ -41,6 +41,19 @@ class ReflectUtilsSuite extends AnyFunSuite {
     assert(!isClassLoadable("org.apache.kyuubi.util.reflect.FailingInit$"))
   }
 
+  test("check class loadable without a context classloader") {
+    // a thread without a context loader used to resolve through the bootstrap loader
+    // only, answering false for classes that are on the application classpath
+    val original = Thread.currentThread().getContextClassLoader
+    Thread.currentThread().setContextClassLoader(null)
+    try {
+      assert(isClassLoadable(ReflectUtils.getClass.getName))
+      assert(!isClassLoadable("org.apache.kyuubi.NonExistClass"))
+    } finally {
+      Thread.currentThread().setContextClassLoader(original)
+    }
+  }
+
   test("check invokeAs on base class") {
     assertResult("method1")(invokeAs[String](obj1, "method1"))
     assertResult("method2")(invokeAs[String](obj1, "method2"))

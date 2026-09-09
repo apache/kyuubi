@@ -29,14 +29,17 @@ object ReflectUtils {
    * Determines whether the provided class is loadable, answering false when it cannot
    * be found, linked, or initialized.
    * @param className the class name
-   * @param cl the class loader
+   * @param cl the class loader; falls back to ReflectUtils's own loader when null
    * @return is the class name loadable with the class loader
    */
   def isClassLoadable(
       className: String,
-      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean =
+      cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean = {
+    // Class.forName resolves through the bootstrap loader only when handed null, so a
+    // thread without a context loader would answer false for any application class
+    val effectiveCl = if (cl == null) getClass.getClassLoader else cl
     try {
-      DynClasses.builder().loader(cl).impl(className).buildChecked()
+      DynClasses.builder().loader(effectiveCl).impl(className).buildChecked()
       true
     } catch {
       // scala.util.Try does not catch LinkageError, so a class that fails to link or
@@ -44,6 +47,7 @@ object ReflectUtils {
       case _: ClassNotFoundException => false
       case _: LinkageError => false
     }
+  }
 
   /**
    * get the field value of the given object
