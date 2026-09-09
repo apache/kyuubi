@@ -38,6 +38,14 @@ class SemanticVersionSuite extends AnyFunSuite {
     assert(version.minorVersion === 14)
   }
 
+  test("parse two-segment snapshot version") {
+    val version = SemanticVersion("1.2-SNAPSHOT")
+    assert(version.majorVersion === 1)
+    assert(version.minorVersion === 2)
+    assert(version.isVersionAtLeast("1.1"))
+    assert(version.isVersionAtMost("1.3"))
+  }
+
   test("parse binary version") {
     val version = SemanticVersion("0.9")
     assert(version.majorVersion === 0)
