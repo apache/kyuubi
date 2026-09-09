@@ -22,12 +22,12 @@ import java.util.ServiceLoader
 import scala.collection.JavaConverters._
 import scala.language.existentials
 import scala.reflect.ClassTag
-import scala.util.Try
 
 object ReflectUtils {
 
   /**
-   * Determines whether the provided class is loadable
+   * Determines whether the provided class is loadable, answering false when it cannot
+   * be found, linked, or initialized.
    * @param className the class name
    * @param cl the class loader
    * @return is the class name loadable with the class loader
@@ -35,9 +35,15 @@ object ReflectUtils {
   def isClassLoadable(
       className: String,
       cl: ClassLoader = Thread.currentThread().getContextClassLoader): Boolean =
-    Try {
+    try {
       DynClasses.builder().loader(cl).impl(className).buildChecked()
-    }.isSuccess
+      true
+    } catch {
+      // scala.util.Try does not catch LinkageError, so a class that fails to link or
+      // initialize would escape the probe instead of answering false
+      case _: ClassNotFoundException => false
+      case _: LinkageError => false
+    }
 
   /**
    * get the field value of the given object
