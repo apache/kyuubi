@@ -109,9 +109,12 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "db4") ++ (if (SPARK_ENGINE_RUNTIME_VERSION < "4.0") Seq("`a.b``.c`") else Nil)
     withDatabases(dbs: _*) { statement =>
       Seq("spark_catalog", catalog).foreach { cg =>
-        dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $cg.$db"))
+        // `spark_catalog` is a hive-backed session catalog with single-level namespaces, while
+        // `catalog` (hadoop_prod) is a hadoop-backed v2 catalog supporting dotted namespaces.
+        val namespaces = if (cg == catalog) dbs else dbs.filterNot(_.contains("."))
         val metaData = statement.getConnection.getMetaData
-        dbs.foreach { db =>
+        namespaces.foreach { db =>
+          statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $cg.$db")
           try {
             statement.execute(
               s"CREATE TABLE IF NOT EXISTS $cg.$db.tbl(c STRING) USING iceberg")
@@ -132,6 +135,57 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       }
     }
 
+  }
+
+  test("get tables and views") {
+    val table = "table_type"
+    val view = "view_type"
+    val schema = "db_type"
+    withDatabases(schema) { statement =>
+      Seq("spark_catalog").foreach { cg =>
+        statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $cg.$schema")
+        try {
+          statement.execute(
+            s"CREATE TABLE IF NOT EXISTS $cg.$schema.$table(c STRING) USING iceberg")
+          statement.execute(s"CREATE VIEW $cg.$schema.$view AS SELECT 1 AS a")
+
+          val metaData = statement.getConnection.getMetaData
+
+          // Without a tableTypes filter, both table and view are returned with their true types.
+          val rsAll = metaData.getTables(cg, schema, "%", null)
+          val typeByName = scala.collection.mutable.Map.empty[String, String]
+          while (rsAll.next()) {
+            val name = rsAll.getString(TABLE_NAME)
+            if (name == table || name == view) {
+              typeByName += name -> rsAll.getString(TABLE_TYPE)
+            }
+          }
+          assert(typeByName(table) == "TABLE")
+          assert(typeByName(view) == "VIEW")
+
+          // tableTypes = TABLE returns only table.
+          val rsTable = metaData.getTables(cg, schema, "%", Array("TABLE"))
+          val tableNames = scala.collection.mutable.Set.empty[String]
+          while (rsTable.next()) {
+            tableNames += rsTable.getString(TABLE_NAME)
+          }
+          assert(tableNames.contains(table))
+          assert(!tableNames.contains(view))
+
+          // tableTypes = VIEW returns only view.
+          val rsView = metaData.getTables(cg, schema, "%", Array("VIEW"))
+          val viewNames = scala.collection.mutable.Set.empty[String]
+          while (rsView.next()) {
+            viewNames += rsView.getString(TABLE_NAME)
+          }
+          assert(viewNames.contains(view))
+          assert(!viewNames.contains(table))
+        } finally {
+          statement.execute(s"DROP VIEW IF EXISTS $cg.$schema.$view")
+          statement.execute(s"DROP TABLE IF EXISTS $cg.$schema.$table PURGE")
+        }
+      }
+    }
   }
 
   test("get columns operation") {
