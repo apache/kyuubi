@@ -100,6 +100,12 @@ object AssertionUtils {
           }
           fileLineCount = Math.max(lineNum, fileLineCount)
         }
+      // zip stops at the shorter side, so trailing file lines beyond the expected
+      // content are never compared; count them to fail the length check below
+      while (fileLinesIter.hasNext) {
+        fileLinesIter.next()
+        fileLineCount += 1
+      }
       withClue(s"Line number is not expected. $regenerationHint") {
         assertResult(expectedLinesIter.size)(fileLineCount)(prettifier, pos)
       }
