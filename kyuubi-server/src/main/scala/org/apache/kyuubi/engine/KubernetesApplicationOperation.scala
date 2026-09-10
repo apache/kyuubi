@@ -365,18 +365,23 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     override def onAdd(pod: Pod): Unit = {
       val observedAt = System.currentTimeMillis()
       if (isSparkEnginePod(pod)) {
-        Option(pod.getMetadata.getCreationTimestamp).foreach { creationTimestamp =>
-          try {
-            val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
-            if (latency >= 0) {
-              MetricsSystem.tracing(_.updateHistogram(
-                ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
-                latency))
+        Option(pod.getMetadata.getCreationTimestamp) match {
+          case Some(creationTimestamp) =>
+            try {
+              val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
+              if (latency >= 0) {
+                MetricsSystem.tracing(_.updateHistogram(
+                  ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
+                  latency))
+              }
+            } catch {
+              case e: DateTimeParseException =>
+                warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
             }
-          } catch {
-            case e: DateTimeParseException =>
-              warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
-          }
+          case None =>
+            warn(s"[$kubernetesInfo] Missing creation timestamp for engine pod " +
+              s"${pod.getMetadata.getNamespace}/${pod.getMetadata.getName}, " +
+              "skipping pod discovery latency metric")
         }
         val eventType = KubernetesResourceEventTypes.ADD
         updateApplicationState(kubernetesInfo, pod, eventType)
