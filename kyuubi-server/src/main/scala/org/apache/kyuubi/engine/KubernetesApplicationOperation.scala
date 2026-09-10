@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, ExecutorService, ScheduledExecutorService, TimeUnit}
 
@@ -37,6 +39,8 @@ import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{A
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, KILLED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.engine.KubernetesApplicationUrlSource._
 import org.apache.kyuubi.engine.KubernetesResourceEventTypes.KubernetesResourceEventType
+import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.KubernetesEngineInfo
@@ -447,6 +451,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
       eventType: KubernetesResourceEventType): Unit = {
+    val observedAt = System.currentTimeMillis()
     val (appState, appError) =
       toApplicationStateAndError(pod, appStateSource, appStateContainer, eventType)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
@@ -474,6 +479,21 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             url = getPodAppUrl(sparkAppUrlSource, sparkAppUrlPattern, kubernetesInfo, pod),
             error = appError,
             podName = Some(pod.getMetadata.getName)))
+        if (eventType != KubernetesResourceEventTypes.DELETE) {
+          Option(pod.getMetadata.getCreationTimestamp).foreach { creationTimestamp =>
+            try {
+              val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
+              if (latency >= 0) {
+                MetricsSystem.tracing(_.updateHistogram(
+                  ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
+                  latency))
+              }
+            } catch {
+              case e: DateTimeParseException =>
+                warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
+            }
+          }
+        }
       }
     }
   }
