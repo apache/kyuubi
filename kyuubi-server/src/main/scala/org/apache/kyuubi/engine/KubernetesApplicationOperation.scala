@@ -363,7 +363,21 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
+      val observedAt = System.currentTimeMillis()
       if (isSparkEnginePod(pod)) {
+        Option(pod.getMetadata.getCreationTimestamp).foreach { creationTimestamp =>
+          try {
+            val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
+            if (latency >= 0) {
+              MetricsSystem.tracing(_.updateHistogram(
+                ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
+                latency))
+            }
+          } catch {
+            case e: DateTimeParseException =>
+              warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
+          }
+        }
         val eventType = KubernetesResourceEventTypes.ADD
         updateApplicationState(kubernetesInfo, pod, eventType)
         val appState = toApplicationState(pod, appStateSource, appStateContainer, eventType)
@@ -451,7 +465,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       kubernetesInfo: KubernetesInfo,
       pod: Pod,
       eventType: KubernetesResourceEventType): Unit = {
-    val observedAt = System.currentTimeMillis()
     val (appState, appError) =
       toApplicationStateAndError(pod, appStateSource, appStateContainer, eventType)
     debug(s"Driver Informer changes pod: ${pod.getMetadata.getName} to state: $appState")
@@ -479,21 +492,6 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             url = getPodAppUrl(sparkAppUrlSource, sparkAppUrlPattern, kubernetesInfo, pod),
             error = appError,
             podName = Some(pod.getMetadata.getName)))
-        if (eventType != KubernetesResourceEventTypes.DELETE) {
-          Option(pod.getMetadata.getCreationTimestamp).foreach { creationTimestamp =>
-            try {
-              val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
-              if (latency >= 0) {
-                MetricsSystem.tracing(_.updateHistogram(
-                  ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
-                  latency))
-              }
-            } catch {
-              case e: DateTimeParseException =>
-                warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
-            }
-          }
-        }
       }
     }
   }

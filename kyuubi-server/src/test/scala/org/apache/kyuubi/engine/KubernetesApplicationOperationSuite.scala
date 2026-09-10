@@ -30,49 +30,50 @@ import org.apache.kyuubi.metrics.MetricsSystem
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
-  for (firstEvent <- Seq("ADD", "UPDATE")) {
-    test(s"record pod discovery latency once for first $firstEvent") {
-      val operation = new KubernetesApplicationOperation()
-      val metricsSystem = new MetricsSystem
-      val conf = KyuubiConf()
-      operation.initialize(conf, None)
-      metricsSystem.initialize(conf)
-      metricsSystem.start()
-      val createdAt = Instant.now().minusSeconds(180)
-      val pod = new PodBuilder()
-        .withNewMetadata()
-        .withName("delayed-driver")
-        .withCreationTimestamp(createdAt.toString)
-        .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, "delayed-app")
-        .addToLabels("spark-app-selector", "spark-application")
-        .endMetadata()
-        .withNewStatus()
-        .withPhase("Running")
-        .endStatus()
-        .build()
-      val handler = new operation.SparkEnginePodEventHandler(KubernetesInfo())
-      val histogram = MetricsSystem.getMetricsRegistry.get
-        .histogram(ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY)
-      try {
-        val before = System.currentTimeMillis()
-        if (firstEvent == "ADD") handler.onAdd(pod) else handler.onUpdate(pod, pod)
-        val after = System.currentTimeMillis()
-        assert(histogram.getCount == 1)
-        val latency = histogram.getSnapshot.getMax
-        assert(latency >= before - createdAt.toEpochMilli)
-        assert(latency <= after - createdAt.toEpochMilli)
-        handler.onAdd(pod)
-        handler.onUpdate(pod, pod)
-        handler.onDelete(pod, false)
-        assert(histogram.getCount == 1)
-      } finally {
-        operation.stop()
-        metricsSystem.stop()
-      }
+  test("record pod discovery latency only for ADD events") {
+    val operation = new KubernetesApplicationOperation()
+    val metricsSystem = new MetricsSystem
+    val conf = KyuubiConf()
+    operation.initialize(conf, None)
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+    val createdAt = Instant.now().minusSeconds(180)
+    val pod = new PodBuilder()
+      .withNewMetadata()
+      .withName("delayed-driver")
+      .withCreationTimestamp(createdAt.toString)
+      .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, "delayed-app")
+      .addToLabels("spark-app-selector", "spark-application")
+      .endMetadata()
+      .withNewStatus()
+      .withPhase("Running")
+      .endStatus()
+      .build()
+    val handler = new operation.SparkEnginePodEventHandler(KubernetesInfo())
+    val histogram = MetricsSystem.getMetricsRegistry.get
+      .histogram(ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY)
+    try {
+      handler.onUpdate(pod, pod)
+      assert(histogram.getCount == 0)
+      val before = System.currentTimeMillis()
+      handler.onAdd(pod)
+      val after = System.currentTimeMillis()
+      assert(histogram.getCount == 1)
+      val latency = histogram.getSnapshot.getMax
+      assert(latency >= before - createdAt.toEpochMilli)
+      assert(latency <= after - createdAt.toEpochMilli)
+      handler.onAdd(pod)
+      assert(histogram.getCount == 2)
+      handler.onUpdate(pod, pod)
+      handler.onDelete(pod, false)
+      assert(histogram.getCount == 2)
+    } finally {
+      operation.stop()
+      metricsSystem.stop()
     }
   }
 
-  test("skip invalid pod discovery samples without preventing cache updates") {
+  test("skip invalid pod discovery samples without preventing pod event handling") {
     val operation = new KubernetesApplicationOperation()
     val metricsSystem = new MetricsSystem
     val conf = KyuubiConf()
@@ -93,14 +94,12 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
             .addToLabels("spark-app-selector", "spark-application")
             .endMetadata()
             .withNewStatus()
-            .withPhase("Running")
+            .withPhase("Succeeded")
             .endStatus()
             .build()
           handler.onAdd(pod)
-          // A valid repeated ADD must not sample an already cached Pod.
-          pod.getMetadata.setCreationTimestamp(Instant.now().minusSeconds(180).toString)
-          handler.onAdd(pod)
           assert(histogram.getCount == 0)
+          assert(operation.cleanupTerminatedAppInfoTrigger.getIfPresent(s"app-$index") == FINISHED)
       }
       val deletedPod = new PodBuilder()
         .withNewMetadata()
