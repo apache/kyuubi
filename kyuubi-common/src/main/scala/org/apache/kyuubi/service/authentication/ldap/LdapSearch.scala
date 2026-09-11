@@ -30,7 +30,10 @@ import org.apache.kyuubi.config.KyuubiConf
  * @param conf Kyuubi configuration
  * @param ctx  Directory service that will be used for the queries.
  */
-class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Logging {
+class LdapSearch(
+    conf: KyuubiConf,
+    ctx: DirContext,
+    clearSslContextOnClose: Boolean = false) extends DirSearch with Logging {
 
   final private val baseDn = conf.get(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN).orNull
   final private val groupBases: Array[String] =
@@ -51,6 +54,10 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
     catch {
       case e: NamingException =>
         warn("Exception when closing LDAP context:", e)
+    } finally {
+      if (clearSslContextOnClose) {
+        LdapSSLSocketFactory.clearSslContextForCurrentThread()
+      }
     }
   }
 
