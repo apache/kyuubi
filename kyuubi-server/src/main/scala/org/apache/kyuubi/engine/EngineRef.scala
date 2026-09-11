@@ -283,7 +283,6 @@ private[kyuubi] class EngineRef(
       builder.validateConf()
       val process = builder.start
       var exitValue: Option[Int] = None
-      var lastApplicationInfo: Option[ApplicationInfo] = None
       while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
           exitValue = Some(process.exitValue())
@@ -315,11 +314,8 @@ private[kyuubi] class EngineRef(
         // even the submit process succeeds, the application might meet failure when initializing,
         // check the engine application state from engine manager and fast fail on engine terminate
         if (engineRef.isEmpty && exitValue.contains(0)) {
+          TimeUnit.SECONDS.sleep(1)
           Option(engineManager).foreach { engineMgr =>
-            if (lastApplicationInfo.isDefined) {
-              TimeUnit.SECONDS.sleep(1)
-            }
-
             val applicationInfo = engineMgr.getApplicationInfo(
               builder.appMgrInfo(),
               engineRefId,
@@ -340,8 +336,6 @@ private[kyuubi] class EngineRef(
                   builder.getError)
               }
             }
-
-            lastApplicationInfo = applicationInfo
           }
         }
       }
