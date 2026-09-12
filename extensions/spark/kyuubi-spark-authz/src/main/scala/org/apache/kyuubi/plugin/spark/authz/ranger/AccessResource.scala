@@ -104,28 +104,23 @@ case class AccessResource private[ranger] (
           attributes))
       case COLUMN =>
         val columns = getColumns
+        // all the column requests need the database and the table
+        val parent =
+          s"column:${requireRrnComponent(database, "database")}" +
+            s"/${requireRrnComponent(table, "table")}"
         if (columns.length == 1) {
           Seq(new RangerResourceInfo(
-            s"column:${requireRrnComponent(database, "database")}" +
-              s"/${requireRrnComponent(table, "table")}/${requireRrnComponent(columns.head, "column")}",
+            s"$parent/${requireRrnComponent(columns.head, "column")}",
             null,
             null,
             attributes))
         } else if (columns.isEmpty) {
-          Seq(new RangerResourceInfo(
-            s"column:${requireRrnComponent(database, "database")}/${requireRrnComponent(table, "table")}",
-            null,
-            null,
-            attributes))
+          Seq(new RangerResourceInfo(parent, null, null, attributes))
         } else {
           val subResources = columns
             .map(col => s"column:${requireRrnComponent(col, "column")}")
             .toSet.asJava
-          Seq(new RangerResourceInfo(
-            s"column:${requireRrnComponent(database, "database")}/${requireRrnComponent(table, "table")}",
-            subResources,
-            null,
-            attributes))
+          Seq(new RangerResourceInfo(parent, subResources, null, attributes))
         }
       case URI =>
         // Url policies may be written with or without a trailing slash, and the legacy
@@ -140,7 +135,8 @@ case class AccessResource private[ranger] (
           new RangerResourceInfo(s"url:$path/", null, null, attributes))
       case _ =>
         Seq(new RangerResourceInfo(
-          s"table:${requireRrnComponent(database, "database")}/${requireRrnComponent(table, "table")}",
+          s"table:${requireRrnComponent(database, "database")}" +
+            s"/${requireRrnComponent(table, "table")}",
           null,
           null,
           attributes))
