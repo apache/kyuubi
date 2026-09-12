@@ -30,9 +30,27 @@ class CommandUtilsSuite extends AnyFunSuite {
     assertResult("abc=123")(genKeyValuePair("   abc", "123   "))
     assertResult("abc.def=xyz.123")(genKeyValuePair("abc.def", "xyz.123"))
 
+    // trim each side of the pair separately, so a dirty key or value cannot leave
+    // whitespace inside the assembled argument
+    assertResult("abc=123")(genKeyValuePair("abc ", " 123"))
+    assertResult("abc=123")(genKeyValuePair("abc\t", "123"))
+
     assertMatches(genKeyValuePair("abc", "123"), PATTERN_FOR_KEY_VALUE_ARG)
     assertMatches(genKeyValuePair("   abc", "123   "), PATTERN_FOR_KEY_VALUE_ARG)
     assertMatches(genKeyValuePair("abc.def", "xyz.123"), PATTERN_FOR_KEY_VALUE_ARG)
+  }
+
+  test("redact key value argument assembled from a dirty key") {
+    // the assembled pair carries no inner whitespace, so exact-key redaction sees the
+    // clean key; a spaced key name is the shape that slips past the pattern-based
+    // stage for keys like the data agent api key, whose name the default redaction
+    // regex does not match at all
+    val commands = Seq(genKeyValuePair("kyuubi.engine.data.agent.openai.api.key ", "secret"))
+    val redacted = redactConfValues(
+      commands,
+      Set("kyuubi.engine.data.agent.openai.api.key"))
+    assert(redacted.head == "kyuubi.engine.data.agent.openai.api.key=" +
+      REDACTION_REPLACEMENT_TEXT)
   }
 
   test("assemble key value pair with config option") {
