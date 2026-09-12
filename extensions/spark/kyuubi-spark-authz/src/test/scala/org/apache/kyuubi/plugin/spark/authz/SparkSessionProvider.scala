@@ -57,6 +57,10 @@ trait SparkSessionProvider {
         "spark.sql.warehouse.dir",
         Utils.createTempDir("spark-warehouse").toString)
       .config("spark.sql.extensions", sqlExtensions)
+      // All authz suites fail closed on unclassified plan nodes; fallout goes to a spec
+      // or to known_harmless_spec.json, never to relaxing this default. (A suite may
+      // still override it via extraSparkConf when testing the other behaviors.)
+      .config(ParanoidMode.UNCLASSIFIED_NODE_BEHAVIOR_KEY, "deny")
       .withExtensions(extension)
       .config(extraSparkConf)
 

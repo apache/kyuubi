@@ -309,9 +309,31 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   private def getFirstSnapshot(table: String): Row = {
-    val existedSnapshots =
-      sql(s"SELECT * FROM $table.snapshots ORDER BY committed_at ASC LIMIT 1").collect()
+    // Reading the snapshots metadata table is authorized as a read of the base table
+    // (see TableTableExtractor), so this fixture query needs admin like the writes above.
+    val existedSnapshots = doAs(
+      admin,
+      sql(s"SELECT * FROM $table.snapshots ORDER BY committed_at ASC LIMIT 1").collect())
     existedSnapshots(0)
+  }
+
+  test("selecting an Iceberg metadata table requires select on the base table") {
+    // Metadata tables carry the base table's name but their own schema, and the resource
+    // built for them names the base table with the metadata column: `snapshots` is checked
+    // as [<namespace>/<table>/committed_at], not as a table of its own. A column-level
+    // Ranger policy on the base table therefore has to cover the metadata column names
+    // (a `*` column policy does, an enumeration of the base table's own columns does not).
+    val tableName = "table_metadata_select"
+    val table = s"$catalogV2.$namespace1.$tableName"
+    withCleanTmpResources(Seq((table, "table"))) {
+      prepareExampleIcebergTable(table, 1)
+      val selectSnapshots = s"SELECT committed_at FROM $table.snapshots"
+      interceptEndsWith[AccessControlException](doAs(someone, sql(selectSnapshots).collect()))(
+        s"does not have [select] privilege on [$namespace1/$tableName/committed_at]")
+      doAs(admin, sql(selectSnapshots).collect())
+      // not just admin: an ordinary user holding select on the base table gets through
+      doAs(bob, sql(selectSnapshots).collect())
+    }
   }
 
   test("CALL rollback_to_snapshot") {

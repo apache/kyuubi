@@ -180,6 +180,8 @@ class StringTableExtractor extends TableExtractor {
       case 1 => Table(None, None, tableNameArr(0), None)
       case 2 => Table(None, Some(tableNameArr(0)), tableNameArr(1), None)
       case 3 => Table(Some(tableNameArr(0)), Some(tableNameArr(1)), tableNameArr(2), None)
+      case n => throw new IllegalStateException(
+          s"table name '$v1' splits into $n parts; only 1-3 (catalog.db.table) are supported")
     }
     Option(maybeTable)
   }
@@ -325,8 +327,37 @@ class SubqueryAliasTableExtractor extends TableExtractor {
  */
 class TableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val tableName = invokeAs[String](v1, "name")
+    val tableName = invokeAs[String](TableTableExtractor.unwrapMetadataTable(v1), "name")
     lookupExtractor[StringTableExtractor].apply(spark, tableName)
+  }
+}
+
+object TableTableExtractor {
+
+  /**
+   * An Iceberg metadata table (`t.snapshots`, `t.history`, ...) reports `name()` as
+   * `<base table name>.<metadata type>`, which overflows the `catalog.db.table` form
+   * and names an object no policy can contain; reading table metadata is authorized
+   * as a read of the base table instead. Iceberg is an optional runtime dependency,
+   * so the metadata-table shape (a connector table whose `table()` payload extends
+   * `BaseMetadataTable`, whose own `table()` is the base table) is probed reflectively.
+   */
+  private def unwrapMetadataTable(table: AnyRef): AnyRef = {
+    scala.util.Try(invokeAs[AnyRef](table, "table"))
+      .filter(isIcebergMetadataTable)
+      .flatMap(meta => scala.util.Try(invokeAs[AnyRef](meta, "table")))
+      .getOrElse(table)
+  }
+
+  private def isIcebergMetadataTable(o: AnyRef): Boolean = {
+    var clz: Class[_] = o.getClass
+    while (clz != null) {
+      if (clz.getName == "org.apache.iceberg.BaseMetadataTable") {
+        return true
+      }
+      clz = clz.getSuperclass
+    }
+    false
   }
 }
 
