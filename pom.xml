@@ -2140,6 +2140,52 @@
         </profile>
 
         <profile>
+            <id>spark-4.3</id>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <maven.compiler.release>17</maven.compiler.release>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
+                <spark.version>4.3.0</spark.version>
+                <arrow.version>19.0.0</arrow.version>
+                <!-- TODO: update once Delta and Iceberg support Spark 4.3. -->
+                <spark.binary.version>4.1</spark.binary.version>
+                <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
+                     Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
+                     was introduced in Servlet 6.0. -->
+                <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <delta.version>4.3.1</delta.version>
+                <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
+                <hudi.version>1.2.0</hudi.version>
+                <!-- TODO: update once Paimon support Spark 4.3. -->
+                <paimon.version>1.4.2</paimon.version>
+                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <!-- TODO remove once Spark 4.3.0 GA -->
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc1-bin</spark.archive.mirror>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+                <spark.archive.query></spark.archive.query>
+            </properties>
+            <!-- TODO remove once Spark 4.3.0 GA -->
+            <repositories>
+                <repository>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>spark-staging</id>
+                    <name>Spark Staging Repository</name>
+                    <url>https://repository.apache.org/content/repositories/orgapachespark-1530</url>
+                </repository>
+            </repositories>
+        </profile>
+
+        <profile>
             <id>spark-master</id>
             <properties>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>

@@ -33,24 +33,28 @@ trait ShowTablesSuiteBase extends DDLCommandTestUtils {
 
   test("show an existing table") {
     withNamespaceAndTable("ns", "table") { t =>
-      sql(s"CREATE TABLE $t (name STRING, id INT) $defaultUsing")
+      executeSql(s"CREATE TABLE $t (name STRING, id INT) $defaultUsing")
       runShowTablesSql(s"SHOW TABLES IN $catalogName.ns", Seq(Row("ns", "table", false)))
     }
   }
 
   test("show tables with a pattern") {
     dropNamespaceAfter(s"$catalogName.ns1", s"$catalogName.ns2") {
-      sql(s"CREATE NAMESPACE $catalogName.ns1")
-      sql(s"CREATE NAMESPACE $catalogName.ns2")
+      executeSql(s"CREATE NAMESPACE $catalogName.ns1")
+      executeSql(s"CREATE NAMESPACE $catalogName.ns2")
       dropTableAfter(
         s"$catalogName.ns1.table",
         s"$catalogName.ns1.table_name_1a",
         s"$catalogName.ns1.table_name_2b",
         s"$catalogName.ns2.table_name_2b") {
-        sql(s"CREATE TABLE $catalogName.ns1.table (id bigint, data string) $defaultUsing")
-        sql(s"CREATE TABLE $catalogName.ns1.table_name_1a (id bigint, data string) $defaultUsing")
-        sql(s"CREATE TABLE $catalogName.ns1.table_name_2b (id bigint, data string) $defaultUsing")
-        sql(s"CREATE TABLE $catalogName.ns2.table_name_2b (id bigint, data string) $defaultUsing")
+        executeSql(
+          s"CREATE TABLE $catalogName.ns1.table (id bigint, data string) $defaultUsing")
+        executeSql(
+          s"CREATE TABLE $catalogName.ns1.table_name_1a (id bigint, data string) $defaultUsing")
+        executeSql(
+          s"CREATE TABLE $catalogName.ns1.table_name_2b (id bigint, data string) $defaultUsing")
+        executeSql(
+          s"CREATE TABLE $catalogName.ns2.table_name_2b (id bigint, data string) $defaultUsing")
 
         runShowTablesSql(
           s"SHOW TABLES FROM $catalogName.ns1",
@@ -81,13 +85,13 @@ trait ShowTablesSuiteBase extends DDLCommandTestUtils {
   test("change current catalog and namespace with USE statements") {
     resetCatalogAndNamespace {
       withNamespaceAndTable("ns", "table") { t =>
-        sql(s"CREATE TABLE $t (name STRING, id INT) $defaultUsing")
+        executeSql(s"CREATE TABLE $t (name STRING, id INT) $defaultUsing")
 
-        sql(s"USE $catalogName")
+        executeSql(s"USE $catalogName")
         runShowTablesSql("SHOW TABLES", Seq())
 
         // Update the current namespace to match "ns.tbl".
-        sql(s"USE $catalogName.ns")
+        executeSql(s"USE $catalogName.ns")
         runShowTablesSql("SHOW TABLES", Seq(Row("ns", "table", false)))
       }
     }
