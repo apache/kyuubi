@@ -17,18 +17,16 @@
 
 package org.apache.kyuubi.service.authentication.ldap
 
-import java.util
-import javax.naming.directory.SearchControls
+import scala.collection.mutable.ArrayBuffer
 
+import com.unboundid.ldap.sdk.{Filter => LdapFilter, LDAPException}
 import org.stringtemplate.v4.{ST, STGroup}
 
 /**
  * The object that encompasses all components of a Directory Service search query.
  *
- * The caller must and can only call each [[filter]] and [[build]] once,
- * otherwise [[ST]] internal cache may leak and cause heap OOM.
- *
  * @see [[LdapSearch]]
+ * @see [[UnboundIdDirSearch]]
  */
 object Query {
 
@@ -43,17 +41,9 @@ object Query {
    * A builder of the [[Query]].
    */
   final class QueryBuilder {
-
-    /** The [[STGroup]] used only for this builder's filter template; unloaded in [[build]]. */
-    private var filterTemplateGroup: Option[STGroup] = None
     private var filterTemplate: ST = _
-    private val controls: SearchControls = {
-      val _controls = new SearchControls
-      _controls.setSearchScope(SearchControls.SUBTREE_SCOPE)
-      _controls.setReturningAttributes(new Array[String](0))
-      _controls
-    }
-    private val returningAttributes: util.List[String] = new util.ArrayList[String]
+    private val attributes: ArrayBuffer[String] = ArrayBuffer.empty
+    private var sizeLimit: Int = 0
 
     /**
      * Sets search filter template.
@@ -62,8 +52,11 @@ object Query {
      * @return the current instance of the builder
      */
     def filter(filterTemplate: String): Query.QueryBuilder = {
+      // Use a dedicated STGroup per filter so LDAP filter compile/render is not concurrent on the
+      // same group. Sharwell (ST4 maintainer) advises against using one STGroup from multiple
+      // threads at once; options are one STGroup per thread, a pool, or external synchronization.
+      // See https://github.com/antlr/stringtemplate4/issues/61#issuecomment-43803970
       val group = new STGroup()
-      this.filterTemplateGroup = Some(group)
       this.filterTemplate = new ST(group, filterTemplate)
       this
     }
@@ -77,6 +70,28 @@ object Query {
      */
     def map(key: String, value: String): Query.QueryBuilder = {
       filterTemplate.add(key, value)
+      this
+    }
+
+    /**
+     * Sets mapping between names in the search filter template and an RFC 4515-escaped
+     * attribute value. Use this for any user-supplied or externally-sourced string that
+     * ends up in an attribute value assertion position (e.g. `(uid=<userName>)`).
+     *
+     * Escaping converts the five special characters (`*`, `(`, `)`, `\`, NUL) to their
+     * `\xx` hex forms per RFC 4515 section 3. This prevents filter injection: a username
+     * like `jsmith)(uid=admin` is rendered as `jsmith\29\28uid\3dadmin` and treated as a
+     * literal string rather than injected filter syntax.
+     *
+     * Do NOT use this for parameters in filter-fragment positions (e.g. `(<userRdn>)`) or
+     * attribute-name positions -- only attribute value literals should be escaped.
+     *
+     * @param key   marker in the search filter template.
+     * @param value user-controlled attribute value to escape before substitution
+     * @return the current instance of the builder
+     */
+    def mapEscaped(key: String, value: String): Query.QueryBuilder = {
+      filterTemplate.add(key, LdapFilter.encodeValue(value))
       this
     }
 
@@ -99,7 +114,7 @@ object Query {
      * @return the current instance of the builder
      */
     def returnAttribute(attributeName: String): Query.QueryBuilder = {
-      returningAttributes.add(attributeName)
+      attributes += attributeName
       this
     }
 
@@ -112,7 +127,7 @@ object Query {
      * @return the current instance of the builder
      */
     def limit(limit: Int): Query.QueryBuilder = {
-      controls.setCountLimit(limit)
+      sizeLimit = limit
       this
     }
 
@@ -120,27 +135,45 @@ object Query {
       require(filterTemplate != null, "filter is required for LDAP search query")
     }
 
-    private def createFilter(): String = filterTemplate.render()
-
-    private def updateControls(): Unit = {
-      if (!returningAttributes.isEmpty) controls.setReturningAttributes(
-        returningAttributes.toArray(new Array[String](returningAttributes.size)))
-    }
-
     /**
      * Builds an instance of [[Query]].
      *
      * @return configured directory service query
+     * @throws IllegalStateException if the rendered filter string is not valid RFC 4515
      */
     def build: Query = {
       validate()
-      val filter: String = createFilter()
+      val filterStr: String = filterTemplate.render()
       // Unload template cache after render to avoid CompiledST/STToken retention
-      filterTemplateGroup.foreach(_.unload())
-      updateControls()
-      new Query(filter, controls)
+      Option(filterTemplate.groupThatCreatedThisInstance).foreach(_.unload())
+      val filter: LdapFilter =
+        try LdapFilter.create(filterStr)
+        catch {
+          case e: LDAPException =>
+            throw new IllegalStateException(
+              s"Rendered LDAP filter is not valid RFC 4515: '$filterStr'",
+              e)
+        }
+      Query(filterStr, filter, attributes.toSeq, sizeLimit)
     }
   }
 }
 
-case class Query(filter: String, controls: SearchControls)
+/**
+ * An immutable LDAP search query.
+ *
+ * @param filterString The RFC 4515 filter string as rendered from the template. Used by the
+ *                     JNDI path ([[LdapSearch]]) which passes a raw string to
+ *                     [[javax.naming.directory.DirContext#search]].
+ * @param filter       The parsed [[LdapFilter]] object. Used by the UnboundID path
+ *                     ([[UnboundIdDirSearch]]) which passes it directly to [[SearchRequest]],
+ *                     eliminating a redundant parse step inside the SDK.
+ * @param attributes   Attribute names to return in search results. Empty means return no
+ *                     attributes (DN only); see [[UnboundIdDirSearch]] and [[LdapSearch]].
+ * @param sizeLimit    Maximum entries to return per base DN; 0 means no limit.
+ */
+case class Query(
+    filterString: String,
+    filter: LdapFilter,
+    attributes: Seq[String],
+    sizeLimit: Int)

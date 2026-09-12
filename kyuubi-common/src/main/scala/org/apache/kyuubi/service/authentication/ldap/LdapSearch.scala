@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.service.authentication.ldap
 
-import javax.naming.{NamingEnumeration, NamingException}
-import javax.naming.directory.{DirContext, SearchResult}
+import javax.naming.{NameNotFoundException, NamingEnumeration, NamingException}
+import javax.naming.directory.{DirContext, SearchControls, SearchResult}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -80,7 +80,10 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
   private def findDnByPattern(patterns: Seq[String], name: String): Array[String] = {
     for (pattern <- patterns) {
       val baseDnFromPattern: String = LdapUtils.extractBaseDn(pattern)
-      val rdn = LdapUtils.extractFirstRdn(pattern).replaceAll("%s", name)
+      // Use replace (literal) not replaceAll (regex): a name containing '$' or '\' is
+      // otherwise interpreted as a regex replacement back-reference/escape, corrupting the
+      // RDN or throwing IndexOutOfBoundsException.
+      val rdn = LdapUtils.extractFirstRdn(pattern).replace("%s", name)
       val names = execute(Array(baseDnFromPattern), queries.findDnByPattern(rdn)).getAllLdapNames
       if (!names.isEmpty) return names
     }
@@ -108,17 +111,36 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
     execute(Array(baseDn), queries.customQuery(query)).getAllLdapNamesAndAttributes
 
   private def execute(baseDns: Array[String], query: Query): SearchResultHandler = {
+    // Reconstruct JNDI SearchControls from the Query fields. Query no longer holds a
+    // SearchControls directly; the UnboundID path uses query.filter (Filter object) and
+    // query.attributes / query.sizeLimit natively, while this JNDI path builds its own.
+    val controls = new SearchControls()
+    controls.setSearchScope(SearchControls.SUBTREE_SCOPE)
+    // Always set returning attributes. An empty array means "return no attributes" (DN only)
+    // -- the pre-UnboundID default -- so DN-only lookups do not fetch every attribute; the
+    // SearchControls default of null would instead mean "return all". customQuery is the only
+    // query that populates attributes, so it still receives its requested attribute.
+    controls.setReturningAttributes(query.attributes.toArray)
+    if (query.sizeLimit > 0) controls.setCountLimit(query.sizeLimit)
+
     val searchResults = new ArrayBuffer[NamingEnumeration[SearchResult]]
-    debug(s"Executing a query: '${query.filter}' with base DNs ${baseDns.mkString(",")}")
+    debug(s"Executing a query: '${query.filterString}' with base DNs ${baseDns.mkString(",")}")
     baseDns.foreach { baseDn =>
       try {
-        val searchResult = ctx.search(baseDn, query.filter, query.controls)
+        val searchResult = ctx.search(baseDn, query.filterString, controls)
         if (searchResult != null) searchResults += searchResult
       } catch {
+        case _: NameNotFoundException =>
+          // Base DN does not exist in the directory -- not an error, try the next base.
+          // This is the JNDI equivalent of UnboundIdDirSearch swallowing NO_SUCH_OBJECT.
+          debug(s"Base DN '$baseDn' not found for query '${query.filterString}', skipping.")
         case ex: NamingException =>
-          debug(
-            s"Exception happened for query '${query.filter}' with base DN '$baseDn'",
-            ex)
+          // Any other JNDI failure (CommunicationException, ServiceUnavailableException,
+          // AuthenticationException, etc.) means the LDAP server is unreachable or the
+          // request was rejected at the protocol level. Propagate so callers can
+          // distinguish "user not found" from "LDAP is down" -- the original broad catch
+          // silently turned infrastructure failures into empty results, masking outages.
+          throw ex
       }
     }
     new SearchResultHandler(searchResults.toArray)
