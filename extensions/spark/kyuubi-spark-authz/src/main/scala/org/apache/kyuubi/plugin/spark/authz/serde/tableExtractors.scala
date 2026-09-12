@@ -20,6 +20,7 @@ package org.apache.kyuubi.plugin.spark.authz.serde
 import java.util.{LinkedHashMap, Map => JMap}
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
@@ -84,6 +85,30 @@ object TableExtractor {
     } catch {
       case _: Exception => None
     }
+  }
+
+  /**
+   * Iceberg metadata tables (`t.history`, `t.files`, `t.changes`, ...) are authorized as
+   * their data table. Splitting the 4-part `Table.name()` is not an option: `cat.a.b.c` is
+   * indistinguishable from a table in a nested namespace.
+   */
+  def getIcebergDataTableName(table: AnyRef): Option[String] = {
+    val dataTable = table match {
+      case t if isLoadedInstanceOf(t, "org.apache.iceberg.spark.source.SparkChangelogTable") =>
+        Some(getField[AnyRef](t, "icebergTable"))
+      case t if isLoadedInstanceOf(t, "org.apache.iceberg.spark.source.SparkTable") =>
+        Some(invokeAs[AnyRef](t, "table"))
+          .filter(isLoadedInstanceOf(_, "org.apache.iceberg.BaseMetadataTable"))
+          .map(invokeAs[AnyRef](_, "table"))
+      case _ => None
+    }
+    dataTable.map(invokeAs[String](_, "name"))
+  }
+
+  // Resolve with the object's own loader; false when Iceberg is absent from the plugin classpath.
+  private def isLoadedInstanceOf(obj: AnyRef, className: String): Boolean = {
+    Try(Class.forName(className, false, obj.getClass.getClassLoader).isInstance(obj))
+      .getOrElse(false)
   }
 }
 
@@ -325,7 +350,8 @@ class SubqueryAliasTableExtractor extends TableExtractor {
  */
 class TableTableExtractor extends TableExtractor {
   override def apply(spark: SparkSession, v1: AnyRef): Option[Table] = {
-    val tableName = invokeAs[String](v1, "name")
+    val tableName = TableExtractor.getIcebergDataTableName(v1)
+      .getOrElse(invokeAs[String](v1, "name"))
     lookupExtractor[StringTableExtractor].apply(spark, tableName)
   }
 }
