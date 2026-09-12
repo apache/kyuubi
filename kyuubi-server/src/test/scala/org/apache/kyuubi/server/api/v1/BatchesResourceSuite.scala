@@ -260,6 +260,27 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
   }
 
+  test("ignore null-valued batch configuration") {
+    val nullConfigKey = "spark.null.option"
+    val requestObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      nullConfigKey -> null))
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+    val batch = response.readEntity(classOf[Batch])
+
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    eventually(timeout(10.seconds)) {
+      val metadata = sessionManager.getBatchMetadata(batch.getId)
+      assert(metadata.isDefined)
+      assert(!metadata.get.requestConf.contains(nullConfigKey))
+    }
+  }
+
   test("open batch session with uploading resource") {
     val requestObj = newSparkBatchRequest(Map("spark.master" -> "local"))
     val exampleJarFile = Paths.get(sparkBatchTestResource.get).toFile
