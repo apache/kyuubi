@@ -87,4 +87,54 @@ trait DeltaMetadataTests extends HiveJDBCTestHelper with DeltaSuiteMixin {
       assert(!rs3.next())
     }
   }
+
+  test("get tables and views") {
+    val table = "table_type"
+    val view = "view_type"
+    val schema = "default"
+    withJdbcStatement() { statement =>
+      Seq("spark_catalog").foreach { cg =>
+        try {
+          statement.execute(
+            s"CREATE TABLE IF NOT EXISTS $cg.$schema.$table(key int) USING $format")
+          statement.execute(s"CREATE VIEW $cg.$schema.$view AS SELECT 1 AS a")
+
+          val metaData = statement.getConnection.getMetaData
+
+          // Without a tableTypes filter, both table and view are returned with their true types.
+          val rsAll = metaData.getTables(cg, schema, "%", null)
+          val typeByName = scala.collection.mutable.Map.empty[String, String]
+          while (rsAll.next()) {
+            val name = rsAll.getString(TABLE_NAME)
+            if (name == table || name == view) {
+              typeByName += name -> rsAll.getString(TABLE_TYPE)
+            }
+          }
+          assert(typeByName(table) == "TABLE")
+          assert(typeByName(view) == "VIEW")
+
+          // tableTypes = TABLE returns only the table.
+          val rsTable = metaData.getTables(cg, schema, "%", Array("TABLE"))
+          val tableNames = scala.collection.mutable.Set.empty[String]
+          while (rsTable.next()) {
+            tableNames += rsTable.getString(TABLE_NAME)
+          }
+          assert(tableNames.contains(table))
+          assert(!tableNames.contains(view))
+
+          // tableTypes = VIEW returns only the view.
+          val rsView = metaData.getTables(cg, schema, "%", Array("VIEW"))
+          val viewNames = scala.collection.mutable.Set.empty[String]
+          while (rsView.next()) {
+            viewNames += rsView.getString(TABLE_NAME)
+          }
+          assert(viewNames.contains(view))
+          assert(!viewNames.contains(table))
+        } finally {
+          statement.execute(s"DROP VIEW IF EXISTS $cg.$schema.$view")
+          statement.execute(s"DROP TABLE IF EXISTS $cg.$schema.$table PURGE")
+        }
+      }
+    }
+  }
 }
