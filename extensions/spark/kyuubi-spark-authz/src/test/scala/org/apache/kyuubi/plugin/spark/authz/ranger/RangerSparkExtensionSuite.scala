@@ -139,10 +139,10 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite
     val singleCallConfig =
       s"ranger.plugin.${SparkRangerAdminPlugin.getServiceType}.authorize.in.single.call"
     try {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(singleCallConfig, true)
+      SparkRangerAdminPlugin.config.setBoolean(singleCallConfig, true)
       f
     } finally {
-      SparkRangerAdminPlugin.getRangerConf.setBoolean(singleCallConfig, false)
+      SparkRangerAdminPlugin.config.setBoolean(singleCallConfig, false)
     }
   }
 

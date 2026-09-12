@@ -18,27 +18,156 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import java.io.File
-import java.util
 
-import scala.language.implicitConversions
+import scala.collection.JavaConverters._
 
-import org.apache.ranger.plugin.policyengine.RangerAccessResourceImpl
+import org.apache.commons.lang3.StringUtils
+import org.apache.ranger.authz.model.RangerResourceInfo
 
-import org.apache.kyuubi.plugin.spark.authz.{ObjectType, PrivilegeObject}
+import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, ObjectType, PrivilegeObject}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
 
-class AccessResource private (val objectType: ObjectType, val catalog: Option[String])
-  extends RangerAccessResourceImpl {
-  implicit def asString(obj: Object): String = if (obj != null) obj.asInstanceOf[String] else null
-  def getDatabase: String = getValue("database")
-  def getUdf: String = getValue("udf")
-  def getTable: String = getValue("table")
-  def getColumn: String = getValue("column")
+/**
+ * A privilege object to authorize, which is converted to a Ranger resource
+ * (e.g. "table:default/src" or "column:default/src/id") in requests to
+ * the Ranger authorizer.
+ *
+ * @param objectType the type of the object
+ * @param database   the database name, or null if not applicable
+ * @param table      the table name, or null if not applicable
+ * @param column     the column names joined by comma, or null if not applicable
+ * @param udf        the function name, or null if not applicable
+ * @param uri        the uri path, or null if not applicable
+ * @param owner      the owner of the object, if any
+ * @param catalog    the catalog name, if any
+ */
+case class AccessResource private[ranger] (
+    objectType: ObjectType,
+    database: String,
+    table: String,
+    column: String,
+    udf: String,
+    uri: String,
+    owner: Option[String],
+    catalog: Option[String]) {
+
+  def getDatabase: String = database
+  def getUdf: String = udf
+  def getTable: String = table
+  def getColumn: String = column
+
   def getColumns: Seq[String] = {
-    val columnStr = getColumn
-    if (columnStr == null) Nil else columnStr.split(",").filter(_.nonEmpty)
+    if (column == null) Nil else column.split(",").filter(_.nonEmpty)
   }
+
+  def getOwnerUser: String = owner.orNull
+
+  /**
+   * The path-like representation of this resource used in error messages,
+   * e.g. "default/src" for a table, "default/src/id" for a column.
+   */
+  def getAsString: String = objectType match {
+    case COLUMN =>
+      Seq(database, table, column).filter(_ != null).mkString("/")
+    case FUNCTION =>
+      Seq(database, udf).filter(_ != null).mkString("/")
+    case URI =>
+      // the uri is matched against both the exact path and the path with a
+      // trailing slash, as the legacy plugin did
+      val path = Option(uri).map(_.stripSuffix(File.separator)).getOrElse("")
+      s"[$path, $path/]"
+    case _ =>
+      Seq(database, table).filter(_ != null).mkString("/")
+  }
+
+  private[ranger] def toResourceInfos: Seq[RangerResourceInfo] = {
+    val attributes = owner.map(o => java.util.Collections.singletonMap("OWNER", o: AnyRef)).orNull
+    objectType match {
+      case DATABASE =>
+        Seq(new RangerResourceInfo(
+          s"database:${requireRrnComponent(database, "database")}",
+          null,
+          null,
+          attributes))
+      case FUNCTION =>
+        // An unqualified function reference (e.g. a built-in or temporary function) has no
+        // database. The legacy plugin left the database blank, and blank values in the legacy
+        // resource matched the wildcard values in policies, so keep the wildcard marker for
+        // the blank database. Blank names in other resource levels indicate a broken command
+        // extraction, which matched no policy in the legacy resource, so deny them.
+        val db = if (StringUtils.isBlank(database)) "*" else escapeRrnMetaChars(database)
+        Seq(new RangerResourceInfo(
+          s"udf:$db/${requireRrnComponent(udf, "udf")}",
+          null,
+          null,
+          attributes))
+      case COLUMN =>
+        val columns = getColumns
+        // all the column requests need the database and the table
+        val parent =
+          s"column:${requireRrnComponent(database, "database")}" +
+            s"/${requireRrnComponent(table, "table")}"
+        if (columns.length == 1) {
+          Seq(new RangerResourceInfo(
+            s"$parent/${requireRrnComponent(columns.head, "column")}",
+            null,
+            null,
+            attributes))
+        } else if (columns.isEmpty) {
+          Seq(new RangerResourceInfo(parent, null, null, attributes))
+        } else {
+          val subResources = columns
+            .map(col => s"column:${requireRrnComponent(col, "column")}")
+            .toSet.asJava
+          Seq(new RangerResourceInfo(parent, subResources, null, attributes))
+        }
+      case URI =>
+        // Url policies may be written with or without a trailing slash, and the legacy
+        // plugin matched a uri against both the exact path and the path with a trailing
+        // slash. The RRN request carries a single resource value set, so the two variants
+        // are returned and authorized as alternatives by separate requests.
+        val path = requireRrnComponent(
+          Option(uri).map(_.stripSuffix(File.separator)).orNull,
+          "uri")
+        Seq(
+          new RangerResourceInfo(s"url:$path", null, null, attributes),
+          new RangerResourceInfo(s"url:$path/", null, null, attributes))
+      case _ =>
+        Seq(new RangerResourceInfo(
+          s"table:${requireRrnComponent(database, "database")}" +
+            s"/${requireRrnComponent(table, "table")}",
+          null,
+          null,
+          attributes))
+    }
+  }
+
+  /**
+   * Escapes the RRN metacharacters in a resource name, so that a name containing
+   * them is parsed as a single resource level instead of breaking the resource
+   * hierarchy, e.g. a table named "a/b" becomes "a\/b" in the resource name
+   * "table:default/a\/b". The escape format follows RangerResourceNameParser:
+   * a backslash escapes the next character, so "\\" stands for a literal
+   * backslash and "\/" stands for a literal separator.
+   */
+  private def escapeRrnMetaChars(value: String): String =
+    value.replace("\\", "\\\\").replace("/", "\\/")
+
+  /**
+   * Returns the RRN component for the given resource name, throwing an access
+   * control exception for a blank name. The RRN parser rejects blank resource
+   * values, and the legacy plugin had no value for a blank name, which matched
+   * no policy, so the access is denied rather than being evaluated against the
+   * wildcard marker.
+   */
+  private def requireRrnComponent(value: String, name: String): String =
+    if (StringUtils.isBlank(value)) {
+      throw new AccessControlException(
+        s"Access denied: invalid [$objectType] resource, blank $name")
+    } else {
+      escapeRrnMetaChars(value)
+    }
 }
 
 object AccessResource {
@@ -49,35 +178,41 @@ object AccessResource {
       secondLevelResource: String,
       thirdLevelResource: String,
       owner: Option[String] = None,
-      catalog: Option[String] = None): AccessResource = {
-    val resource = new AccessResource(objectType, catalog)
-
-    resource.objectType match {
-      case DATABASE => resource.setValue("database", firstLevelResource)
-      case FUNCTION =>
-        resource.setValue("database", Option(firstLevelResource).getOrElse(""))
-        resource.setValue("udf", secondLevelResource)
-      case COLUMN =>
-        resource.setValue("database", firstLevelResource)
-        resource.setValue("table", secondLevelResource)
-        resource.setValue("column", thirdLevelResource)
-      case TABLE | VIEW | INDEX =>
-        resource.setValue("database", firstLevelResource)
-        resource.setValue("table", secondLevelResource)
-      case URI =>
-        val objectList = new util.ArrayList[String]
-        Option(firstLevelResource)
-          .filter(_.nonEmpty)
-          .foreach { path =>
-            val s = path.stripSuffix(File.separator)
-            objectList.add(s)
-            objectList.add(s + File.separator)
-          }
-        resource.setValue("url", objectList)
-    }
-    resource.setServiceDef(SparkRangerAdminPlugin.getServiceDef)
-    owner.foreach(resource.setOwnerUser)
-    resource
+      catalog: Option[String] = None): AccessResource = objectType match {
+    case DATABASE =>
+      new AccessResource(DATABASE, firstLevelResource, null, null, null, null, owner, catalog)
+    case FUNCTION =>
+      new AccessResource(
+        FUNCTION,
+        Option(firstLevelResource).getOrElse(""),
+        null,
+        null,
+        secondLevelResource,
+        null,
+        owner,
+        catalog)
+    case COLUMN =>
+      new AccessResource(
+        COLUMN,
+        firstLevelResource,
+        secondLevelResource,
+        thirdLevelResource,
+        null,
+        null,
+        owner,
+        catalog)
+    case TABLE | VIEW | INDEX =>
+      new AccessResource(
+        objectType,
+        firstLevelResource,
+        secondLevelResource,
+        null,
+        null,
+        null,
+        owner,
+        catalog)
+    case URI =>
+      new AccessResource(URI, null, null, null, null, firstLevelResource, owner, catalog)
   }
 
   def apply(
