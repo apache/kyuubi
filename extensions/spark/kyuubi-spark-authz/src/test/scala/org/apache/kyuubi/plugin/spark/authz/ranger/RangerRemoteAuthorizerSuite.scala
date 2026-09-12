@@ -22,9 +22,8 @@ import java.util.Properties
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.scalatest.funsuite.AnyFunSuite
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, OperationType}
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
@@ -55,8 +54,7 @@ import org.apache.kyuubi.plugin.spark.authz.ranger.AccessType._
  * Note that `-DforkMode=never` is required to run the tests in the maven JVM so
  * that the system properties reach the suite.
  */
-class RangerRemoteAuthorizerSuite extends AnyFunSuite with BeforeAndAfterAll
-  with BeforeAndAfterEach {
+class RangerRemoteAuthorizerSuite extends KyuubiFunSuite {
 
   private val RemoteAuthorizer = "org.apache.ranger.authz.remote.RangerRemoteAuthorizer"
 

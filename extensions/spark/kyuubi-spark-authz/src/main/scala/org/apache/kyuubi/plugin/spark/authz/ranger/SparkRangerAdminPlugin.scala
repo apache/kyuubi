@@ -171,7 +171,8 @@ object SparkRangerAdminPlugin {
       authorizer.init()
       registerCleanupShutdownHook(authorizer)
       LOG.info(
-        s"initialized ranger authorizer, service: $serviceName, impl: ${authorizer.getClass.getName}")
+        s"initialized ranger authorizer, service: $serviceName, " +
+          s"impl: ${authorizer.getClass.getName}")
     }
   }
 

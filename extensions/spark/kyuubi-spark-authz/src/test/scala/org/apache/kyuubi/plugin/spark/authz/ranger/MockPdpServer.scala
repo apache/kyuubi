@@ -74,12 +74,14 @@ class MockPdpServer extends AutoCloseable {
     }
   }
 
+  private val executor = Executors.newFixedThreadPool(4)
+
   private val server: HttpServer = {
     authorizer.init()
     val ret = HttpServer.create(new InetSocketAddress("localhost", 0), 0)
     ret.createContext("/authz/v1/authorize", authorizeHandler)
     ret.createContext("/authz/v1/authorizeMulti", authorizeMultiHandler)
-    ret.setExecutor(Executors.newFixedThreadPool(4))
+    ret.setExecutor(executor)
     ret.start()
     ret
   }
@@ -112,6 +114,7 @@ class MockPdpServer extends AutoCloseable {
 
   override def close(): Unit = {
     server.stop(0)
+    executor.shutdownNow()
     authorizer.close()
   }
 }
