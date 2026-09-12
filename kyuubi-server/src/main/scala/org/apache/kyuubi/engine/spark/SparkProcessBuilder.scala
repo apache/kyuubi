@@ -440,12 +440,14 @@ object SparkProcessBuilder {
    * - org.apache.spark.deploy.yarn.Client::prepareLocalResources
    * - KerberosConfDriverFeatureStep::configurePod
    * - KubernetesUtils.uploadAndTransformFileUris
+   * - org.apache.spark.deploy.k8s.DriverKubernetesCredentialsFeatureStep::configurePod
    */
   final val PATH_CONFIGS = Seq(
     SPARK_FILES,
     "spark.jars",
     "spark.archives",
     "spark.yarn.jars",
+    "spark.yarn.archive",
     "spark.yarn.dist.files",
     "spark.yarn.dist.pyFiles",
     "spark.submit.pyFiles",
@@ -454,7 +456,12 @@ object SparkProcessBuilder {
     "spark.kerberos.keytab",
     "spark.yarn.keytab",
     "spark.kubernetes.kerberos.krb5.path",
-    "spark.kubernetes.file.upload.path")
+    "spark.kubernetes.file.upload.path",
+    "spark.kubernetes.driver.podTemplateFile",
+    "spark.kubernetes.executor.podTemplateFile",
+    "spark.kubernetes.authenticate.driver.clientCertFile",
+    "spark.kubernetes.authenticate.driver.clientKeyFile",
+    "spark.kubernetes.authenticate.driver.caCertFile")
 
   final private[spark] val CLASS = "--class"
   final private[spark] val PROXY_USER = "--proxy-user"
