@@ -17,7 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.collection.JavaConverters._
+
+import org.apache.ranger.authz.util.RangerResourceNameParser
+
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
 class AccessResourceSuite extends KyuubiFunSuite {
@@ -42,7 +47,7 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource.catalog.isEmpty)
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
-    assert(resource2.getValue("udf") === "my_func_name")
+    assert(resource2.getUdf === "my_func_name")
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
 
@@ -78,5 +83,70 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource1.getTable === "my_table_name")
     assert(resource1.getColumn === "my_col_1,my_col_2")
     assert(resource1.getColumns === Seq("my_col_1", "my_col_2"))
+  }
+
+  test("escape RRN metacharacters in resource names") {
+    assert(
+      AccessResource(TABLE, "my/db", "my\\table", null).toResourceInfos.head.getName ===
+        s"table:my\\/db/my\\\\table")
+
+    assert(
+      AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName === "column:d/t/c\\/1")
+
+    val columns = AccessResource(COLUMN, "d", "t", "c1,c/2").toResourceInfos.head
+    assert(columns.getName === "column:d/t")
+    assert(columns.getSubResources.asScala.toSeq.sorted ===
+      Seq("column:c1", "column:c\\/2"))
+
+    assert(AccessResource(
+      FUNCTION,
+      "d",
+      "u/f",
+      null).toResourceInfos.head.getName === "udf:d/u\\/f")
+
+    assert(AccessResource(URI, "/tmp/a b", null, null).toResourceInfos.map(_.getName) ===
+      Seq(s"url:\\/tmp\\/a b", s"url:\\/tmp\\/a b/"))
+  }
+
+  test("generate two uri resource variants as alternatives") {
+    assert(AccessResource(URI, "/tmp/data", null, null).toResourceInfos.map(_.getName) ===
+      Seq(s"url:\\/tmp\\/data", s"url:\\/tmp\\/data/"))
+  }
+
+  test("RRN metacharacter escaping round-trips through RangerResourceNameParser") {
+    def parse(name: String, template: String): java.util.Map[String, String] =
+      new RangerResourceNameParser(template).parseToMap(name.substring(name.indexOf(':') + 1))
+
+    val tableComponents =
+      parse(
+        AccessResource(TABLE, "my/db", "my\\table", null).toResourceInfos.head.getName,
+        "database/table")
+    assert(tableComponents.get("database") === "my/db")
+    assert(tableComponents.get("table") === "my\\table")
+
+    val columnComponents =
+      parse(
+        AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName,
+        "database/table/column")
+    assert(columnComponents.get("column") === "c/1")
+  }
+
+  test("deny blank resource names") {
+    intercept[AccessControlException](AccessResource(DATABASE, null, null, null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(TABLE, null, "t", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(TABLE, "d", " ", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, null, "t", "c").toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, "d", null, "c").toResourceInfos)
+    intercept[AccessControlException](AccessResource(FUNCTION, "d", null, null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(URI, null, null, null).toResourceInfos)
+  }
+
+  test("blank function database is checked against any database") {
+    assert(AccessResource(FUNCTION, "", "func", null).toResourceInfos.head.getName === "udf:*/func")
+    assert(AccessResource(
+      FUNCTION,
+      null,
+      "func",
+      null).toResourceInfos.head.getName === "udf:*/func")
   }
 }

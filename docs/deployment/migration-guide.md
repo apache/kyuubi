@@ -23,6 +23,7 @@
 * Since Kyuubi 1.13, the support of Flink engine for Flink 1.17, 1.18 and 1.19 is removed.
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
+* Since Kyuubi 1.13, the Spark authorization plugin is migrated from the Ranger plugin API to the Ranger 2.9 authorization API, and Apache Ranger 2.9.0 or above is required for both authorizer modes. See [Installing and Configuring Kyuubi Spark AuthZ Plugin](../security/authorization/spark/install.md) for how to set up the new API.
 
 ## Upgrading from Kyuubi 1.11 to 1.12
 

@@ -21,12 +21,12 @@
 
 - [Apache Ranger](https://ranger.apache.org/)
 
-  This plugin works as a ranger rest client with Apache Ranger Admin server to do privilege check.
-  Thus, a ranger server need to be installed ahead and available to use.
+  The plugin talks to a Ranger PDP server (default) or Ranger Admin server to do privilege check.
+  A Ranger 2.9.0 server or above needs to be installed ahead and available to use.
 
 - Building(optional)
 
-  If your Ranger Admin or Spark distribution is not compatible with the official pre-built [artifact](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-authz) in maven central.
+  If your Ranger or Spark distribution is not compatible with the official pre-built [artifact](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-spark-authz) in maven central.
   You need to [build](build.md) the plugin targeting the spark/ranger you are using by yourself.
 
 ## Install
@@ -37,7 +37,74 @@ Use either the shaded jar `kyuubi-spark-authz-shaded_*.jar` or the `kyuubi-spark
 
 ## Configure
 
+### Authorizer Modes
+
+The plugin supports two authorizer modes, selected by `ranger.authorizer.impl.class`:
+
+- `org.apache.ranger.authz.remote.RangerRemoteAuthorizer` (default) — Ranger PDP mode.
+  Authorization requests are sent to the Ranger PDP server via REST APIs. The plugin is a thin
+  client: policies are not downloaded to the client side, and access audits are recorded by
+  the PDP server.
+- `org.apache.ranger.authz.embedded.RangerEmbeddedAuthorizer` — embedded mode, working as the
+  previous Ranger plugin did: policies are pulled from the Ranger admin server and access
+  requests are evaluated locally on the Spark driver side.
+
+:::{warning}
+The security-critical configurations — the authorizer implementation
+(`ranger.authorizer.impl.class`), the Ranger PDP server address
+(`ranger.authz.remote.pdp.url`), the Ranger service name
+(`ranger.plugin.spark.service.name`) and the Ranger PDP client authentication and
+encryption settings (`ranger.authz.remote.authn.*`, `ranger.authz.remote.ssl.*`,
+`ranger.authz.remote.header.*`) — are read from `ranger-spark-security.xml` only:
+JVM system properties can neither set nor override them, and the plugin fails to
+initialize when the Ranger PDP server address is missing for the Ranger PDP mode.
+Other configurations with the `ranger.` or `xasecure.` prefix can still be overridden
+by JVM system properties, so make sure tenant users cannot control the JVM options of
+the engine process (e.g. `spark.driver.extraJavaOptions`).
+:::
+
+#### Ranger PDP mode (default)
+
+- Create `ranger-spark-security.xml` in `$SPARK_HOME/conf` and add the following configurations
+  for pointing to the right Ranger PDP server.
+
+```xml
+<configuration>
+    <property>
+        <name>ranger.plugin.spark.service.name</name>
+        <value>a ranger service name, e.g. a ranger hive service name</value>
+    </property>
+
+    <property>
+        <name>ranger.authz.remote.pdp.url</name>
+        <value>ranger pdp server address like https://ranger-pdp.org:8585</value>
+    </property>
+
+</configuration>
+```
+
+The PDP client supports authentication and encryption settings, configured with
+`ranger.authz.remote.authn.type` (`header`, `jwt` or `kerberos`),
+`ranger.authz.remote.authn.*`, `ranger.authz.remote.ssl.*` and
+`ranger.authz.remote.header.*` properties. Refer to the
+[Ranger client libraries](https://cwiki.apache.org/confluence/display/RANGER/Ranger+Client+Libraries)
+for the full list.
+
+#### Embedded mode
+
+Set the authorizer implementation to the embedded one in `ranger-spark-security.xml`:
+
+```xml
+<property>
+    <name>ranger.authorizer.impl.class</name>
+    <value>org.apache.ranger.authz.embedded.RangerEmbeddedAuthorizer</value>
+</property>
+```
+
 ### Settings for Connecting Ranger Admin
+
+The settings below apply to the embedded mode, where the plugin pulls policies from
+the Ranger admin server and evaluates access requests locally.
 
 #### ranger-spark-security.xml
 
@@ -76,7 +143,7 @@ Use either the shaded jar `kyuubi-spark-authz-shaded_*.jar` or the `kyuubi-spark
 
 ##### Using Macros in Row Level Filters
 
-Macros are now supported for using user/group/tag in row filter expressions, introduced in [Ranger 2.3](https://cwiki.apache.org/confluence/display/RANGER/Apache+Ranger+2.3.0+-+Release+Notes). This feature helps significantly simplify row filter expressions by using user/group/tag's attributes instead of explicit conditions. Considering a user with an attribute `born_city` of value `Guangzhou `, the row filter condition as `city='${{USER.born_city}}'` will be transformed to `city='Guangzhou'` in execution plan. More supported macros and usage refer to [RANGER-3605](https://issues.apache.org/jira/browse/RANGER-3605) and [RANGER-3550](https://issues.apache.org/jira/browse/RANGER-3550). Add the following configs to `ranger-spark-security.xml` to enable UserStore Enricher required by macros.
+Macros are supported for using user/group/tag in row filter expressions (embedded mode only), introduced in [Ranger 2.3](https://cwiki.apache.org/confluence/display/RANGER/Apache+Ranger+2.3.0+-+Release+Notes). This feature helps significantly simplify row filter expressions by using user/group/tag's attributes instead of explicit conditions. Considering a user with an attribute `born_city` of value `Guangzhou `, the row filter condition as `city='${{USER.born_city}}'` will be transformed to `city='Guangzhou'` in execution plan. More supported macros and usage refer to [RANGER-3605](https://issues.apache.org/jira/browse/RANGER-3605) and [RANGER-3550](https://issues.apache.org/jira/browse/RANGER-3550). Add the following configs to `ranger-spark-security.xml` to enable UserStore Enricher required by macros.
 
 ```xml
     <property>
@@ -94,7 +161,7 @@ Macros are now supported for using user/group/tag in row filter expressions, int
 
 ##### Showing all disallowed privileges
 
-By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception. By setting `ranger.plugin.spark.authorize.in.single.call` to `true`, Authz plugin executes access checks in single call and throws all disallowed privileges in exception message.
+By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception. By setting `ranger.plugin.spark.authorize.in.single.call` to `true`, Authz plugin executes access checks in single call and throws all disallowed privileges in exception message. This setting also reduces the number of authorization requests in Ranger PDP mode.
 
 ```xml
 <property>
@@ -106,8 +173,9 @@ By default, Authz plugin checks required privileges one by one and throw the fir
 
 #### ranger-spark-audit.xml
 
-Create `ranger-spark-audit.xml` in `$SPARK_HOME/conf` and add the following configurations
-to enable/disable auditing.
+In the embedded mode, create `ranger-spark-audit.xml` in `$SPARK_HOME/conf` and add the following
+configurations to enable/disable auditing. In Ranger PDP mode, access audits are recorded by
+the PDP server, and this file is not required.
 
 ```xml
 <configuration>
