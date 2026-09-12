@@ -52,7 +52,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.62.1",
     "vite": "^8.1.2",
-    "vitest": "^4.1.9",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.3.6"
   }
 }
