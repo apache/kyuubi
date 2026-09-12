@@ -74,24 +74,16 @@ The available `spark.version`s are shown in the following table.
 
 The maven option `ranger.version` is used for specifying Ranger version to compile with and generate corresponding transitive dependencies.
 By default, it is always built with the latest `ranger.version` defined in kyuubi project main pom file.
-Sometimes, it may be incompatible with other Ranger Admins, then you may need to build the plugin on your own targeting the Ranger Admin version you connect with.
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.version=2.4.0
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Dranger.version=2.9.0
 ```
 
-The available `ranger.version`s are shown in the following table.
+The plugin is built on the Ranger 2.9 authorization API (`ranger-authz-api` and
+`authz-remote`), which was introduced in Ranger 2.9.0, so only Ranger 2.9.0 and above
+are supported.
 
-| Ranger Version | Supported | Remark |
-|:--------------:|:---------:|:------:|
-|     2.6.x      |     √     |   -    |
-|     2.5.x      |     √     |   -    |
-|     2.4.x      |     √     |   -    |
-|     2.3.x      |     √     |   -    |
-|     2.2.x      |     √     |   -    |
-|     2.1.x      |     √     |   -    |
-
-Currently, all ranger releases are supported.
+Please use branch-1.12 or prior to build against Ranger versions prior to 2.9.0.
 
 ## Test with ScalaTest Maven plugin
 
