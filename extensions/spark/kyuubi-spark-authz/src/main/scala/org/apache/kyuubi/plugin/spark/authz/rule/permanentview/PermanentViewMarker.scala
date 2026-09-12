@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.plugin.spark.authz.rule.permanentview
 
+import scala.annotation.tailrec
+
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics, View}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics}
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
@@ -39,7 +41,7 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
 
   override def newInstance(): LogicalPlan = {
     val projectList = child.output.map { case attr =>
-      Alias(Cast(attr, attr.dataType), attr.name)(explicitMetadata = Some(attr.metadata))
+      Alias(attr, attr.name)(explicitMetadata = Some(attr.metadata))
     }
     val newProj = Project(projectList, child)
     newProj.setTagValue(PVM_NEW_INSTANCE_TAG, ())
@@ -48,11 +50,14 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   }
 
   override def doCanonicalize(): LogicalPlan = {
-    child match {
-      case p @ Project(_, view: View) if p.getTagValue(PVM_NEW_INSTANCE_TAG).contains(true) =>
-        view.canonicalized
-      case _ =>
-        child.canonicalized
+    // newInstance() wraps the child in a Project, and a new instance of a new instance nests one
+    // inside another, so strip every layer it added rather than only the outermost one.
+    @tailrec
+    def stripNewInstanceProjects(plan: LogicalPlan): LogicalPlan = plan match {
+      case p: Project if p.getTagValue(PVM_NEW_INSTANCE_TAG).isDefined =>
+        stripNewInstanceProjects(p.child)
+      case other => other
     }
+    stripNewInstanceProjects(child).canonicalized
   }
 }
