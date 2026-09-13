@@ -133,6 +133,17 @@ case class AccessResource private[ranger] (
         Seq(
           new RangerResourceInfo(s"url:$path", null, null, attributes),
           new RangerResourceInfo(s"url:$path/", null, null, attributes))
+      case VIEW =>
+        // A local temporary view has no database in the SHOW TABLES output. The legacy
+        // plugin left the database blank, and blank values in the legacy resource matched
+        // the wildcard values in policies, so keep the wildcard marker for the blank
+        // database, as the unqualified function reference case does.
+        val db = if (StringUtils.isBlank(database)) "*" else escapeRrnMetaChars(database)
+        Seq(new RangerResourceInfo(
+          s"table:$db/${requireRrnComponent(table, "table")}",
+          null,
+          null,
+          attributes))
       case _ =>
         Seq(new RangerResourceInfo(
           s"table:${requireRrnComponent(database, "database")}" +
