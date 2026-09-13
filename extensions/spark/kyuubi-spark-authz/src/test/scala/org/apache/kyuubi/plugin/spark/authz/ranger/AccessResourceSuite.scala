@@ -149,4 +149,17 @@ class AccessResourceSuite extends KyuubiFunSuite {
       "func",
       null).toResourceInfos.head.getName === "udf:*/func")
   }
+
+  test("blank view database is checked against any database") {
+    // a local temporary view has no database in the SHOW TABLES output
+    assert(AccessResource(VIEW, "", "temp_view", null).toResourceInfos.head.getName ===
+      "table:*/temp_view")
+    assert(AccessResource(VIEW, null, "temp_view", null).toResourceInfos.head.getName ===
+      "table:*/temp_view")
+    assert(AccessResource(
+      VIEW,
+      "my_db_name",
+      "my_view_name",
+      null).toResourceInfos.head.getName === "table:my_db_name/my_view_name")
+  }
 }
