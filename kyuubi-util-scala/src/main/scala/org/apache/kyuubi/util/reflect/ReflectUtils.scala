@@ -48,19 +48,22 @@ object ReflectUtils {
    */
   def getField[T](target: AnyRef, fieldName: String): T = {
     val (clz, obj) = getTargetClass(target)
-    try {
-      val field = DynFields.builder
-        .hiddenImpl(clz, fieldName)
-        .impl(clz, fieldName)
-        .build[T]
-      if (field.isStatic) {
-        field.asStatic.get
-      } else {
-        field.bind(obj).get
+    // only the lookup is re-labeled as a missing field; a failure thrown while
+    // binding or reading the found field keeps its own message
+    val field =
+      try {
+        DynFields.builder
+          .hiddenImpl(clz, fieldName)
+          .impl(clz, fieldName)
+          .build[T]
+      } catch {
+        case e: Exception =>
+          throw new RuntimeException(s"$clz does not have $fieldName field", e)
       }
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(s"$clz does not have $fieldName field", e)
+    if (field.isStatic) {
+      field.asStatic.get
+    } else {
+      field.bind(obj).get
     }
   }
 
@@ -76,21 +79,24 @@ object ReflectUtils {
   def invokeAs[T](target: AnyRef, methodName: String, args: (Class[_], AnyRef)*): T = {
     val (clz, obj) = getTargetClass(target)
     val argClasses = args.map(_._1)
-    try {
-      val method = DynMethods.builder(methodName)
-        .hiddenImpl(clz, argClasses: _*)
-        .impl(clz, argClasses: _*)
-        .buildChecked
-      if (method.isStatic) {
-        method.asStatic.invoke[T](args.map(_._2): _*)
-      } else {
-        method.bind(obj).invoke[T](args.map(_._2): _*)
+    // only the lookup is re-labeled as a missing method; a failure thrown by the
+    // invoked method itself keeps its own type and message
+    val method =
+      try {
+        DynMethods.builder(methodName)
+          .hiddenImpl(clz, argClasses: _*)
+          .impl(clz, argClasses: _*)
+          .buildChecked
+      } catch {
+        case e: Exception =>
+          throw new RuntimeException(
+            s"$clz does not have $methodName${argClasses.map(_.getName).mkString("(", ", ", ")")}",
+            e)
       }
-    } catch {
-      case e: Exception =>
-        throw new RuntimeException(
-          s"$clz does not have $methodName${argClasses.map(_.getName).mkString("(", ", ", ")")}",
-          e)
+    if (method.isStatic) {
+      method.asStatic.invoke[T](args.map(_._2): _*)
+    } else {
+      method.bind(obj).invoke[T](args.map(_._2): _*)
     }
   }
 
