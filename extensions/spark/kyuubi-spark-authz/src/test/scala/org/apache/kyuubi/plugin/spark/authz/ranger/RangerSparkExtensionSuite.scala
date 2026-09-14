@@ -741,6 +741,42 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("[KYUUBI #5937] cached permanent view is reused when referenced twice in one query") {
+    val db1 = defaultDb
+    val srcTable = "pvm_cache_src"
+    val view = "pvm_cache_view"
+
+    withCleanTmpResources(Seq((s"$db1.$view", "view"), (s"$db1.$srcTable", "table"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $db1.$srcTable (id int, k int)"))
+      doAs(admin, sql(s"CREATE OR REPLACE VIEW $db1.$view AS SELECT id, k FROM $db1.$srcTable"))
+
+      doAs(admin) {
+        val df = spark.table(s"$db1.$view")
+        df.cache()
+        try {
+          df.count()
+          // The same cached relation appears twice in one plan, so the analyzer replaces one of
+          // them with PermanentViewMarker.newInstance(). Both occurrences should still be served
+          // from the cache.
+          val optimized = df.join(df.select("k").distinct(), "k").queryExecution.optimizedPlan
+          assert(optimized.collect { case r: InMemoryRelation => r }.size === 2)
+          assert(optimized.collect { case r: HiveTableRelation => r }.isEmpty)
+          assert(optimized.collect { case r: LogicalRelation => r }.isEmpty)
+
+          // Reusing an already analysed plan feeds a renewed marker back in, so newInstance()
+          // nests one Project inside another. Every layer has to be seen through.
+          val reused = df.join(df.select("k").distinct(), "k")
+          val nested = reused.join(reused.select("k").distinct(), "k")
+            .queryExecution.optimizedPlan
+          assert(nested.collect { case r: HiveTableRelation => r }.isEmpty)
+          assert(nested.collect { case r: LogicalRelation => r }.isEmpty)
+        } finally {
+          df.unpersist()
+        }
+      }
+    }
+  }
+
   test("[KYUUBI #3608] Support {OWNER} variable for queries") {
     val db = defaultDb
     val table = "owner_variable"
