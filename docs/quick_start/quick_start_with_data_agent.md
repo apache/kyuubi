@@ -56,7 +56,7 @@ Open `http://<kyuubi-host>:10099/ui` in a browser (the port comes from `kyuubi.f
 
 ### 3. Try it with the TPC-H demo dataset
 
-Kyuubi ships a [Spark TPC-H connector](../connector/spark/tpch.rst) that generates the standard TPC-H decision-support dataset on the fly — no external database needed. Add the following to `$SPARK_HOME/conf/spark-defaults.conf` (or `$KYUUBI_HOME/conf/kyuubi-defaults.conf` with the `spark.` prefix):
+Kyuubi ships a [Spark TPC-H connector](../connector/spark/tpch.md) that generates the standard TPC-H decision-support dataset on the fly — no external database needed. Add the following to `$SPARK_HOME/conf/spark-defaults.conf` (or `$KYUUBI_HOME/conf/kyuubi-defaults.conf` with the `spark.` prefix):
 
 ```
 spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
