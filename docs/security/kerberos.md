@@ -116,5 +116,5 @@ enable KERBEROS authentication.
 ### Refresh All the Kyuubi Server Instances
 
 Restart all the kyuubi server instances or
-[Refresh Configurations](../tools/kyuubi-admin.html#refresh-config) to activate
+[Refresh Configurations](../tools/kyuubi-admin.rst#refresh-config) to activate
 the settings.

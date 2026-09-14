@@ -21,7 +21,7 @@
 
 Kyuubi Thrift API is fully compatible with HiveServer2, so technically, it
 allows to use any Hive JDBC driver to connect Kyuubi Server. But it's
-recommended to use [Kyuubi Hive JDBC Driver](../client/jdbc/kyuubi_jdbc.rst), which is
+recommended to use [Kyuubi Hive JDBC Driver](../client/jdbc/kyuubi_jdbc.md), which is
 forked from Hive 3.1.x JDBC driver, aims to support some missing functionalities
 of the original Hive JDBC driver.
 
