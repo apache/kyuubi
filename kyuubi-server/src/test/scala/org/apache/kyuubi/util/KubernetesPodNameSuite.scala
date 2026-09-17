@@ -61,6 +61,33 @@ class KubernetesPodNameSuite extends KyuubiFunSuite {
     assert(podNameConf(KUBERNETES_EXECUTOR_POD_NAME_PREFIX) === s"kyuubi-$engineRefId")
   }
 
+  // Reproduces the scenario from a real-world bug report: a moderately long but not
+  // extreme `spark.app.name` (well within the 253-char pod name budget) still produces
+  // a driver pod name over 63 characters. That name is later reused as the value of a
+  // Kubernetes *label* (e.g. when Spark or Kyuubi tag executor pods with the driver pod
+  // name), and label values are restricted to the DNS label limit of 63 characters,
+  // independent of the 253-char DNS subdomain limit that applies to pod *names*.
+  test("driver pod name should also fall back when it would exceed " +
+    "the 63-char K8s label length limit, even if it satisfies the 253-char pod name limit") {
+    val moderateAppName =
+      "kyuubi_USER_SPARK_SQL_someuser_default_73bce6a4-df00-403e-bc5d-d1721e515f9d"
+    val refId = "73bce6a4-df00-403e-bc5d-d1721e515f9d"
+    val shortNamespace = "default"
+
+    val podName =
+      KubernetesUtils.generateDriverPodName(moderateAppName, refId, shortNamespace, false)
+
+    // The resolved name must fall back to the short, safe form because the "preserve the
+    // app name" branch would exceed the 63-char K8s DNS label limit (see
+    // https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+    // #syntax-and-character-set), even though it is nowhere near the 253-char pod name /
+    // kubelet log path budget.
+    assert(podName === s"kyuubi-$refId-driver")
+    assert(podName.length <= KubernetesUtils.DRIVER_POD_NAME_AS_LABEL_MAX_LENGTH)
+    assert(podLogsDirectoryNameLength(shortNamespace, podName) <=
+      KubernetesUtils.DRIVER_POD_NAME_MAX_LENGTH)
+  }
+
   private def podLogsDirectoryNameLength(namespace: String, podName: String): Int = {
     s"${namespace}_${podName}_$podUid".length
   }

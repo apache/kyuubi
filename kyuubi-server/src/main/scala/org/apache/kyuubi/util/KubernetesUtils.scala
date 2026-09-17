@@ -34,6 +34,14 @@ import org.apache.kyuubi.config.KyuubiConf._
 
 object KubernetesUtils extends Logging {
   final val DRIVER_POD_NAME_MAX_LENGTH = 253
+  // Kubernetes label values (e.g. the `kyuubi-unique-tag`/driver-pod-name style labels
+  // that Spark/Kyuubi propagate from the driver pod name onto executor pods) must
+  // additionally satisfy the DNS label length limit of 63 characters, which is
+  // independent of and stricter than the 253-char DNS subdomain limit that applies to
+  // pod *names*. See
+  // https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
+  // #syntax-and-character-set
+  final val DRIVER_POD_NAME_AS_LABEL_MAX_LENGTH = 63
   final private val POD_UID_MAX_LENGTH = 36
   final private val POD_LOGS_DIRECTORY_SEPARATOR_LENGTH = 2
   final private val EXECUTOR_POD_NAME_RESERVED_LENGTH =
@@ -165,7 +173,15 @@ object KubernetesUtils extends Logging {
     } else {
       s"kyuubi-$resourceNamePrefix-driver"
     }
-    if (forciblyRewrite || resolvedResourceName.length > maxDriverPodNameLength(namespace)) {
+    // The resolved name is used both as the pod's `.metadata.name` (bound by the 253-char
+    // DNS subdomain limit, checked via `maxDriverPodNameLength`) and is later propagated
+    // as the *value* of Kubernetes labels on the driver/executor pods (e.g. via
+    // `spark.kubernetes.driver.label.*`), which are bound by the stricter 63-char DNS
+    // label limit. Fall back to the short, always-safe `kyuubi-$engineRefId-driver` name
+    // if either limit would be violated.
+    if (forciblyRewrite ||
+      resolvedResourceName.length > maxDriverPodNameLength(namespace) ||
+      resolvedResourceName.length > DRIVER_POD_NAME_AS_LABEL_MAX_LENGTH) {
       s"kyuubi-$engineRefId-driver"
     } else {
       resolvedResourceName
