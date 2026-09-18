@@ -133,8 +133,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
           assertEqualsIgnoreCase(reusedDb)(po.dbname)
           assertExistsIgnoreCase(po.objectName)(Set(oldTableShort, "efg"))
           assert(po.columns.isEmpty)
-          val accessType = ranger.AccessType(po, operationType, isInput = false)
-          assert(accessType == AccessType.ALTER)
+          val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+          assert(accessTypes == Seq(AccessType.ALTER))
         }
       }
     }
@@ -154,8 +154,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
     assert(po.columns.head === "pid")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("AlterTableDropPartitionCommand") {
@@ -172,8 +172,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
     assert(po.columns.head === "pid")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   // ALTER TABLE default.StudentInfo PARTITION (age='10') RENAME TO PARTITION (age='15');
@@ -193,8 +193,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
     assert(po.columns.head === "pid")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("AlterTableSetLocationCommand") {
@@ -216,8 +216,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
     assert(po0.columns.head === "pid")
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
-    assert(accessType0 === AccessType.ALTER)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = false)
+    assert(accessTypes0 === Seq(AccessType.ALTER))
 
     val po1 = out.last
     assert(po1.actionType === PrivilegeObjectActionType.OTHER)
@@ -225,8 +225,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assert(po1.dbname === newLoc)
     assert(po1.columns === Seq.empty)
     checkTableOwner(po1)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 === AccessType.WRITE)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+    assert(accessTypes1 === Seq(AccessType.WRITE))
   }
 
   test("AlterTable(Un)SetPropertiesCommand") {
@@ -247,8 +247,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
       assert(po.columns.isEmpty)
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -266,8 +266,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
     assert(po0.columns === Seq("key", "pid", "value"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 1)
     val po = out.head
@@ -278,8 +278,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase("AlterViewAsCommand")(po.objectName)
     checkTableOwner(po)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("AnalyzeColumnCommand") {
@@ -296,8 +296,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("key"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.ALTER)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.ALTER))
 
     assert(out.size === 1)
     val po1 = out.head
@@ -308,8 +308,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po1.columns.isEmpty)
     checkTableOwner(po1)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 === AccessType.ALTER)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = true)
+    assert(accessTypes1 === Seq(AccessType.ALTER))
 
   }
 
@@ -328,8 +328,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns === Seq("pid"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.ALTER)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.ALTER))
 
     assert(out.size === 1)
     val po1 = out.head
@@ -340,8 +340,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po1.columns.isEmpty)
     checkTableOwner(po1)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 === AccessType.ALTER)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = true)
+    assert(accessTypes1 === Seq(AccessType.ALTER))
   }
 
   test("AnalyzeTableCommand") {
@@ -359,8 +359,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.ALTER)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.ALTER))
 
     assert(out.size === 1)
     val po1 = out.head
@@ -371,8 +371,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     // ignore this check as it behaves differently across spark versions
     assert(po1.columns.isEmpty)
     checkTableOwner(po1)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = true)
-    assert(accessType1 === AccessType.ALTER)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = true)
+    assert(accessTypes1 === Seq(AccessType.ALTER))
   }
 
   test("AnalyzeTablesCommand") {
@@ -388,8 +388,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedDb)(po0.objectName)
     // ignore this check as it behaves differently across spark versions
     assert(po0.columns.isEmpty)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -406,8 +406,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedDb)(po0.objectName)
     assert(po0.columns.isEmpty)
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -425,8 +425,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns.head === "key")
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -444,8 +444,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns === Seq("key", "value"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 1)
     val po = out.head
@@ -455,8 +455,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(defaultDb)(po.dbname)
     assertEqualsIgnoreCase("CreateViewCommand")(po.objectName)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.CREATE))
   }
 
   test("CreateDataSourceTableCommand") {
@@ -475,8 +475,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(defaultDb)(po.dbname)
       assertEqualsIgnoreCase(tableName)(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -523,8 +523,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("CreateFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.CREATE))
   }
 
   test("Describe Persistent Function") {
@@ -555,8 +555,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("DropFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.DROP)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.DROP))
   }
 
   test("RefreshFunctionCommand") {
@@ -575,8 +575,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(db)(po.dbname)
     assertEqualsIgnoreCase("RefreshFunctionCommand")(po.objectName)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.NONE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.NONE))
   }
 
   test("CreateTableLikeCommand") {
@@ -592,8 +592,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-      assert(accessType0 === AccessType.SELECT)
+      val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+      assert(accessTypes0 === Seq(AccessType.SELECT))
 
       assert(out.size === 1)
       val po = out.head
@@ -603,8 +603,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedDb)(po.dbname)
       assertEqualsIgnoreCase("CreateTableLikeCommand")(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -623,8 +623,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-      assert(accessType0 === AccessType.SELECT)
+      val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+      assert(accessTypes0 === Seq(AccessType.SELECT))
 
       assert(out.size === 1)
       val po = out.head
@@ -634,8 +634,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedDb)(po.dbname)
       assertEqualsIgnoreCase("CreateTableLikeCommandWithoutDatabase")(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -661,8 +661,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
     assert(po.columns === Seq("key"))
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.SELECT)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -680,8 +680,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.SELECT)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -699,8 +699,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
       assertEqualsIgnoreCase(reusedDb)(po0.dbname)
       assertEqualsIgnoreCase(reusedDb)(po0.objectName)
       assert(po0.columns.isEmpty)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
-      assert(accessType0 === AccessType.USE)
+      val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = false)
+      assert(accessTypes0 === Seq(AccessType.USE))
 
       assert(out.size === 0)
     } finally {
@@ -723,8 +723,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po.objectName)
     assert(po.columns.head === "pid")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("ShowColumnsCommand") {
@@ -739,9 +739,9 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns.isEmpty)
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
 
-    assert(accessType0 === AccessType.SELECT)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
     assert(out.size === 0)
   }
 
@@ -757,8 +757,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns.isEmpty)
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -775,8 +775,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns.isEmpty)
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -794,8 +794,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedPartTableShort)(po0.objectName)
     assert(po0.columns === Seq("pid"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 0)
   }
@@ -828,8 +828,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         assertEqualsIgnoreCase(tableName.split("\\.").last)(po.objectName)
         assert(po.columns.isEmpty)
         checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.ALTER)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+        assert(accessTypes === Seq(AccessType.ALTER))
       }
     }
   }
@@ -921,8 +921,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("value", "key", "pid"),
         s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -948,8 +948,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("value", "key", "pid"),
         s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -978,8 +978,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns.sorted === Seq("key", "value").sorted,
         s"$reusedPartTable 'key' is the join key and 'pid' is omitted")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -1007,8 +1007,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("key", "value"),
         s"$reusedPartTable both 'key' and 'value' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -1037,8 +1037,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("key", "value"),
         s"$reusedPartTable both 'key' and 'value' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -1063,8 +1063,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("key", "value"),
         s"$reusedPartTable both 'key' and 'value' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -1089,8 +1089,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
         po.columns === Seq("key", "pid", "value"),
         s"$reusedPartTable both 'key', 'value' and 'pid' should be authenticated")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     assert(out.size === 0)
   }
@@ -1131,8 +1131,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
     assert(po.columns.head === "a")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("AlterTableChangeColumnCommand") {
@@ -1150,8 +1150,8 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
     assert(po.columns.head === "value")
     checkTableOwner(po)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 }
 
@@ -1173,8 +1173,8 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns === Seq("key", "value"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 1)
     val po = out.head
@@ -1188,8 +1188,8 @@ class InMemoryPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     } else {
       assert(po.columns.isEmpty)
     }
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.CREATE))
   }
 }
 
@@ -1216,8 +1216,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(t)(po.objectName)
       assert(po.columns.head === "pid")
       checkTableOwner(po)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -1236,8 +1236,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(defaultDb)(po.dbname)
       assertEqualsIgnoreCase("CreateTableCommand")(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -1256,8 +1256,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
     assert(po0.columns === Seq("key", "value"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size === 1)
     val po = out.head
@@ -1267,8 +1267,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(defaultDb)(po.dbname)
     assertEqualsIgnoreCase("CreateHiveTableAsSelectCommand")(po.objectName)
     assert(po.columns === Seq("key", "value"))
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.CREATE))
   }
 
   test("LoadDataCommand") {
@@ -1293,8 +1293,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po0.objectName === null)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-      assert(accessType0 === AccessType.READ)
+      val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+      assert(accessTypes0 === Seq(AccessType.READ))
 
       assert(out.size === 1)
       val po1 = out.head
@@ -1304,8 +1304,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assert(po1.objectName equalsIgnoreCase tableName.split("\\.").last)
       assert(po1.columns.isEmpty)
       checkTableOwner(po1)
-      val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-      assert(accessType1 === AccessType.UPDATE)
+      val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+      assert(accessTypes1 === Seq(AccessType.UPDATE))
     }
   }
 
@@ -1329,8 +1329,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 == AccessType.WRITE)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+    assert(accessTypes1 == Seq(AccessType.WRITE))
   }
 
   test("InsertIntoDataSourceCommand") {
@@ -1373,8 +1373,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assertEqualsIgnoreCase(tableName)(po.objectName)
         assert(po.columns.isEmpty)
         checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.UPDATE)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+        assert(accessTypes === Seq(AccessType.UPDATE))
       }
     }
   }
@@ -1401,8 +1401,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assertEqualsIgnoreCase(reusedTableShort)(po.objectName)
         assert(po.columns === Seq("key", "value"))
         checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.SELECT)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+        assert(accessTypes === Seq(AccessType.SELECT))
       }
 
       assert(outputs.size === 1)
@@ -1413,8 +1413,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assertEqualsIgnoreCase(defaultDb)(po.dbname)
         assertEqualsIgnoreCase(tableName)(po.objectName)
         checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.UPDATE)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+        assert(accessTypes === Seq(AccessType.UPDATE))
       }
     }
   }
@@ -1439,8 +1439,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 == AccessType.WRITE)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+    assert(accessTypes1 == Seq(AccessType.WRITE))
   }
 
   test("InsertIntoHiveDirCommand") {
@@ -1463,8 +1463,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po0.objectName equalsIgnoreCase reusedPartTable.split("\\.").last)
     assert(po0.columns === Seq("key", "pid", "value"))
     checkTableOwner(po0)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-    assert(accessType0 === AccessType.SELECT)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+    assert(accessTypes0 === Seq(AccessType.SELECT))
 
     assert(out.size == 1)
     val po1 = out.head
@@ -1473,8 +1473,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assert(po1.dbname === directory.path)
     assert(po1.objectName === null)
     assert(po1.columns === Seq.empty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 == AccessType.WRITE)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+    assert(accessTypes1 == Seq(AccessType.WRITE))
   }
 
   test("InsertIntoHiveTableCommand") {
@@ -1499,8 +1499,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
         assertEqualsIgnoreCase(defaultDb)(po.dbname)
         assertEqualsIgnoreCase(tableName)(po.objectName)
         checkTableOwner(po)
-        val accessType = ranger.AccessType(po, operationType, isInput = false)
-        assert(accessType === AccessType.UPDATE)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+        assert(accessTypes === Seq(AccessType.UPDATE))
       }
     }
   }
@@ -1519,8 +1519,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(t)(po0.objectName)
       assert(po0.columns.isEmpty)
       checkTableOwner(po0)
-      val accessType0 = ranger.AccessType(po0, operationType, isInput = true)
-      assert(accessType0 === AccessType.SELECT)
+      val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = true)
+      assert(accessTypes0 === Seq(AccessType.SELECT))
 
       assert(out.size === 0)
     }
@@ -1543,8 +1543,8 @@ class HiveCatalogPrivilegeBuilderSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(defaultDb)(po.dbname)
     assertEqualsIgnoreCase("OptimizedCreateHiveTableAsSelectCommand")(po.objectName)
     assert(po.columns === Seq("a"))
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.CREATE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.CREATE))
   }
 
   test("KYUUBI #4532: Displays the columns involved in extracting the aggregation operator") {

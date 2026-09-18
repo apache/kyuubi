@@ -120,8 +120,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
   }
 
@@ -139,8 +139,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
   }
 
@@ -158,8 +158,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
   }
 
@@ -183,8 +183,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
         assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
         assert(po.dbname startsWith reusedDb.toLowerCase)
         assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-        val accessType = ranger.AccessType(po, QUERY, isInput = true)
-        assert(accessType === AccessType.SELECT)
+        val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+        assert(accessTypes === Seq(AccessType.SELECT))
       }
     }
   }
@@ -206,8 +206,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
   }
 
@@ -227,8 +227,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     val plan2 = sql("DROP TABLE IF EXISTS table1").queryExecution.analyzed
     val (inputs2, _, _) = PrivilegesBuilder.buildFunctions(plan2, spark)
@@ -248,8 +248,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
     val plan4 = sql("DROP VIEW IF EXISTS view1").queryExecution.analyzed
     val (inputs4, _, _) = PrivilegesBuilder.buildFunctions(plan4, spark)
@@ -270,8 +270,8 @@ class HiveFunctionPrivilegesBuilderSuite extends FunctionPrivilegesBuilderSuite 
       assert(po.privilegeObjectType === PrivilegeObjectType.FUNCTION)
       assert(po.dbname startsWith reusedDb.toLowerCase)
       assert(po.objectName startsWith functionNamePrefix.toLowerCase)
-      val accessType = ranger.AccessType(po, QUERY, isInput = true)
-      assert(accessType === AccessType.SELECT)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, QUERY, isInput = true)
+      assert(accessTypes === Seq(AccessType.SELECT))
     }
   }
 }

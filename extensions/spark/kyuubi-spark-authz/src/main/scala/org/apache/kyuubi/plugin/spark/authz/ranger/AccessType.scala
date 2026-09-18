@@ -28,20 +28,23 @@ object AccessType extends Enumeration {
   val NONE, CREATE, ALTER, DROP, SELECT, UPDATE, USE, READ, WRITE, ALL, ADMIN, INDEX, TEMPUDFADMIN =
     Value
 
-  def apply(obj: PrivilegeObject, opType: OperationType, isInput: Boolean): AccessType = {
+  def getAccessTypes(
+      obj: PrivilegeObject,
+      opType: OperationType,
+      isInput: Boolean): Seq[AccessType] = {
     if (obj.privilegeObjectType == DFS_URI || obj.privilegeObjectType == LOCAL_URI) {
       // This is equivalent to ObjectType.URI
-      return if (isInput) READ else WRITE
+      return Seq(if (isInput) READ else WRITE)
     }
 
     obj.actionType match {
       case PrivilegeObjectActionType.OTHER => opType match {
-          case ADD => TEMPUDFADMIN
-          case CREATEDATABASE if obj.privilegeObjectType == DATABASE => CREATE
-          case CREATEFUNCTION if obj.privilegeObjectType == FUNCTION => CREATE
+          case ADD => Seq(TEMPUDFADMIN)
+          case CREATEDATABASE if obj.privilegeObjectType == DATABASE => Seq(CREATE)
+          case CREATEFUNCTION if obj.privilegeObjectType == FUNCTION => Seq(CREATE)
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
-            if (isInput) SELECT else CREATE
+            Seq(if (isInput) SELECT else CREATE)
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |
@@ -57,29 +60,29 @@ object AccessType extends Enumeration {
               ALTERTABLE_SERDEPROPERTIES |
               ALTERVIEW_RENAME |
               MSCK |
-              ALTERINDEX_REBUILD => ALTER
-          case ALTERVIEW_AS => if (isInput) SELECT else ALTER
-          case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW | DROPINDEX => DROP
-          case LOAD => if (isInput) SELECT else UPDATE
+              ALTERINDEX_REBUILD => Seq(ALTER)
+          case ALTERVIEW_AS => Seq(if (isInput) SELECT else ALTER)
+          case DROPDATABASE | DROPTABLE | DROPFUNCTION | DROPVIEW | DROPINDEX => Seq(DROP)
+          case LOAD => Seq(if (isInput) SELECT else UPDATE)
           case QUERY |
               SHOW_CREATETABLE |
               SHOW_TBLPROPERTIES |
               SHOWPARTITIONS |
               SHOWINDEXES |
-              ANALYZE_TABLE => SELECT
-          case SHOWCOLUMNS | DESCTABLE => SELECT
+              ANALYZE_TABLE => Seq(SELECT)
+          case SHOWCOLUMNS | DESCTABLE => Seq(SELECT)
           case SHOWDATABASES |
               SWITCHDATABASE |
               DESCDATABASE |
               SHOWTABLES |
               SHOWFUNCTIONS |
-              DESCFUNCTION => USE
-          case TRUNCATETABLE => UPDATE
-          case CREATEINDEX => INDEX
-          case _ => NONE
+              DESCFUNCTION => Seq(USE)
+          case TRUNCATETABLE => Seq(UPDATE)
+          case CREATEINDEX => Seq(INDEX)
+          case _ => Seq(NONE)
         }
-      case PrivilegeObjectActionType.DELETE => DROP
-      case _ => UPDATE
+      case PrivilegeObjectActionType.DELETE => Seq(DROP)
+      case _ => Seq(UPDATE)
     }
   }
 }

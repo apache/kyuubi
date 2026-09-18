@@ -106,8 +106,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       assert(po.owner.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -138,8 +138,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       assert(po.owner.isEmpty)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -161,8 +161,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -193,8 +193,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -214,8 +214,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("UpdateTable") {
@@ -235,8 +235,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("DeleteFromTable") {
@@ -255,8 +255,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("OverwriteByExpression") {
@@ -273,8 +273,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("OverwritePartitionsDynamic") {
@@ -296,8 +296,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.UPDATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.UPDATE))
     } finally {
       sql("SET spark.sql.sources.partitionOverwriteMode=static")
     }
@@ -320,8 +320,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("DropPartitions") {
@@ -341,8 +341,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("RenamePartitions") {
@@ -362,8 +362,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("TruncatePartition") {
@@ -384,8 +384,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   // other table commands
@@ -405,8 +405,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("DropTable") {
@@ -427,8 +427,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.DROP)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.DROP))
     }
   }
 
@@ -464,8 +464,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.UPDATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.UPDATE))
     }
   }
 
@@ -486,8 +486,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogPartTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.ALTER)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.ALTER))
   }
 
   test("TruncateTable") {
@@ -506,8 +506,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("DescribeTable") {
@@ -523,8 +523,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = true)
-    assert(accessType === AccessType.SELECT)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = true)
+    assert(accessTypes === Seq(AccessType.SELECT))
     assert(outputs.size === 0)
   }
 
@@ -549,8 +549,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -572,8 +572,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -595,8 +595,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -618,8 +618,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -641,8 +641,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 
@@ -694,8 +694,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase("CreateNamespace")(po.dbname)
       assertEqualsIgnoreCase("CreateNamespace")(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.CREATE)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.CREATE))
     }
   }
 
@@ -718,8 +718,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(defaultDb)(po0.dbname)
     assertEqualsIgnoreCase(defaultDb)(po0.objectName)
     assert(po0.columns.isEmpty)
-    val accessType0 = ranger.AccessType(po0, operationType, isInput = false)
-    assert(accessType0 === AccessType.ALTER)
+    val accessTypes0 = ranger.AccessType.getAccessTypes(po0, operationType, isInput = false)
+    assert(accessTypes0 === Seq(AccessType.ALTER))
 
     val po1 = out.last
     assert(po1.actionType === PrivilegeObjectActionType.OTHER)
@@ -727,8 +727,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(defaultDb)(po0.dbname)
     assertEqualsIgnoreCase(defaultDb)(po0.objectName)
     assert(po1.columns.isEmpty)
-    val accessType1 = ranger.AccessType(po1, operationType, isInput = false)
-    assert(accessType1 === AccessType.WRITE)
+    val accessTypes1 = ranger.AccessType.getAccessTypes(po1, operationType, isInput = false)
+    assert(accessTypes1 === Seq(AccessType.WRITE))
   }
 
   test("DescribeNamespace") {
@@ -745,8 +745,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
     assertEqualsIgnoreCase(reusedDb)(po.dbname)
     assertEqualsIgnoreCase(reusedDb)(po.objectName)
     assert(po.columns.isEmpty)
-    val accessType = ranger.AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.USE)
+    val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.USE))
 
     assert(out.size === 0)
   }
@@ -768,8 +768,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(db)(po.dbname)
       assertEqualsIgnoreCase(db)(po.objectName)
       assert(po.columns.isEmpty)
-      val accessType = ranger.AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.DROP)
+      val accessTypes = ranger.AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.DROP))
     }
   }
 }
