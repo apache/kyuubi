@@ -45,6 +45,10 @@ object AccessType extends Enumeration {
           case CREATETABLE | CREATEVIEW | CREATETABLE_AS_SELECT
               if obj.privilegeObjectType == TABLE_OR_VIEW =>
             Seq(if (isInput) SELECT else CREATE)
+          case REPLACETABLE if obj.privilegeObjectType == TABLE_OR_VIEW =>
+            Seq(CREATE, DROP)
+          case REPLACETABLE_AS_SELECT if obj.privilegeObjectType == TABLE_OR_VIEW =>
+            if (isInput) Seq(SELECT) else Seq(CREATE, DROP)
           case ALTERDATABASE |
               ALTERDATABASE_LOCATION |
               ALTERTABLE_ADDCOLS |

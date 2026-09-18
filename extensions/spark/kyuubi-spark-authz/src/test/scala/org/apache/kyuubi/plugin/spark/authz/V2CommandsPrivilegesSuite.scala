@@ -150,7 +150,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val plan = executePlan(s"REPLACE TABLE $tableId (j int)").analyzed
 
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
-      assert(operationType === CREATETABLE)
+      assert(operationType === REPLACETABLE)
       assert(inputs.size === 0)
       assert(outputs.size === 1)
       val po = outputs.head
@@ -162,7 +162,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
       val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
-      assert(accessTypes === Seq(AccessType.CREATE))
+      assert(accessTypes === Seq(AccessType.CREATE, AccessType.DROP))
     }
   }
 
@@ -173,7 +173,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       val plan =
         executePlan(s"REPLACE TABLE $tableId AS SELECT * FROM $reusedTable").analyzed
       val (inputs, outputs, operationType) = PrivilegesBuilder.build(plan, spark)
-      assert(operationType === CREATETABLE_AS_SELECT)
+      assert(operationType === REPLACETABLE_AS_SELECT)
       assert(inputs.size === 1)
       val po0 = inputs.head
       assert(po0.actionType === PrivilegeObjectActionType.OTHER)
@@ -183,6 +183,8 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assertEqualsIgnoreCase(reusedTableShort)(po0.objectName)
       assert(po0.columns === Seq("a", "key", "value"))
       checkTableOwner(po0)
+      val inputAccessTypes = AccessType.getAccessTypes(po0, operationType, isInput = true)
+      assert(inputAccessTypes === Seq(AccessType.SELECT))
 
       assert(outputs.size === 1)
       val po = outputs.head
@@ -194,7 +196,7 @@ abstract class V2CommandsPrivilegesSuite extends PrivilegesBuilderSuite {
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
       val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
-      assert(accessTypes === Seq(AccessType.CREATE))
+      assert(accessTypes === Seq(AccessType.CREATE, AccessType.DROP))
     }
   }
 
