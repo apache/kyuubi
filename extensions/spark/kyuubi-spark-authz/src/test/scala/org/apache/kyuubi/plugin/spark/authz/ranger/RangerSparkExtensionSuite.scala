@@ -28,7 +28,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.PythonUDF
-import org.apache.spark.sql.catalyst.plans.logical.Statistics
+import org.apache.spark.sql.catalyst.plans.logical.{RepartitionByExpression, Statistics}
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.functions.col
@@ -719,6 +719,47 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }
       doAs(admin, sql(s"CACHE TABLE $cacheTable3 SELECT 1 AS a, 2 AS b "))
       doAs(someone, sql(s"CACHE TABLE $cacheTable4 select 1 as a, 2 as b "))
+    }
+  }
+
+  test("a nondeterministic view referenced twice through a CTE is computed once") {
+    val view = s"$defaultDb.pvm_nondeterministic_view"
+    withCleanTmpResources(Seq((view, "view"))) {
+      doAs(admin) {
+        sql(s"CREATE VIEW $view AS SELECT id, uuid() AS r FROM range(20)")
+        val query = sql(s"WITH c AS (SELECT * FROM $view) " +
+          "SELECT a.id, a.r AS l, b.r AS r FROM c a JOIN c b ON a.id = b.id")
+        // Spark keeps a nondeterministic CTE out of line when it is referenced more than once:
+        // each reference is planned under a rebalance shuffle and the physical plan reuses one
+        // Exchange. Inlining it would evaluate uuid() separately for each reference.
+        assert(
+          query.queryExecution.optimizedPlan.exists(_.isInstanceOf[RepartitionByExpression]),
+          "Expected the nondeterministic CTE to stay out of line")
+        val rows = query.collect()
+        assert(rows.length == 20)
+        assert(rows.forall(row => row.getString(1) == row.getString(2)))
+        assert(
+          query.queryExecution.executedPlan.toString.contains("ReusedExchange"),
+          "Expected both CTE references to share one Exchange")
+      }
+    }
+  }
+
+  test("a nondeterministic view referenced twice through a CTE yields the same values") {
+    val view = s"$defaultDb.pvm_reflect_nondeterministic_view"
+    withCleanTmpResources(Seq((view, "view"))) {
+      doAs(admin) {
+        // uuid() and rand() are seeded at analysis time, so inlined copies of the view happen to
+        // agree. reflect() draws a fresh value on every evaluation, so they do not.
+        sql(s"CREATE VIEW $view AS " +
+          "SELECT id, reflect('java.util.UUID', 'randomUUID') AS r FROM range(20)")
+        val rows = sql(s"WITH c AS (SELECT * FROM $view) " +
+          "SELECT a.id, a.r AS l, b.r AS r FROM c a JOIN c b ON a.id = b.id").collect()
+        assert(rows.length == 20)
+        assert(
+          rows.forall(row => row.getString(1) == row.getString(2)),
+          "Expected both CTE references to see the same evaluation of the view")
+      }
     }
   }
 
