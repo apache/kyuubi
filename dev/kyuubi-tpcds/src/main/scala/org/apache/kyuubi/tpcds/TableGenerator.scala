@@ -59,7 +59,7 @@ case class TableGenerator(
       Results.constructResults(table, session).iterator.asScala
         .map { _.get(0).asScala } // 1st row is specific table row
         .map { row => row.map { v => if (v == Options.DEFAULT_NULL_STRING) null else v } }
-        .map { row => Row.fromSeq(row) }
+        .map { row => Row.fromSeq(row.toSeq) }
     }
 
     val columns = fields.map { f => col(f.name).cast(f.dataType).as(f.name) }
