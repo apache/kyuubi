@@ -49,10 +49,11 @@ case class RuleFunctionAuthorization(spark: SparkSession) extends (LogicalPlan =
     def addAccessRequest(objects: Iterable[PrivilegeObject], isInput: Boolean): Unit = {
       objects.foreach { obj =>
         val resource = AccessResource(obj, opType)
-        val accessType = ranger.AccessType(obj, opType, isInput)
-        if (accessType != AccessType.NONE && !requestsSet.contains((resource, accessType))) {
-          requests += AccessRequest(resource, ugi, opType, accessType)
-          requestsSet.add(resource, accessType)
+        ranger.AccessType.getAccessTypes(obj, opType, isInput).foreach { accessType =>
+          if (accessType != AccessType.NONE && !requestsSet.contains((resource, accessType))) {
+            requests += AccessRequest(resource, ugi, opType, accessType)
+            requestsSet.add(resource, accessType)
+          }
         }
       }
     }

@@ -727,12 +727,14 @@ object TableCommands extends CommandSpecs[TableCommandSpec] {
     CreateTable,
     CreateTableLike,
     CreateTableV2,
-    CreateTableV2.copy(classname =
-      "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable"),
+    CreateTableV2.copy(
+      classname = "org.apache.spark.sql.catalyst.plans.logical.ReplaceTable",
+      opType = REPLACETABLE),
     CreateV2Table,
     CreateTableAsSelectV2,
-    CreateTableAsSelectV2.copy(classname =
-      "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect"),
+    CreateTableAsSelectV2.copy(
+      classname = "org.apache.spark.sql.catalyst.plans.logical.ReplaceTableAsSelect",
+      opType = REPLACETABLE_AS_SELECT),
     CreateView,
     CreateTempViewUsing,
     DeleteFromTable,
