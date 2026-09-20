@@ -84,7 +84,8 @@ trait Benchmarkable {
               parameters = Map.empty,
               failure = Some(Failure(
                 e.getClass.getSimpleName,
-                e.getMessage + ":\n" + e.getStackTraceString)))
+                // replicate Scala 2.12's getStackTraceString: mkString(EOL, EOL, EOL)
+                e.getMessage + ":\n" + e.getStackTrace.mkString("\n", "\n", "\n"))))
         }
       }
     }
