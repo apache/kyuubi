@@ -30,12 +30,14 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_SERVER_NAME_KEY
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.util.AssertionUtils._
+import org.apache.kyuubi.util.KubernetesUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
@@ -283,6 +285,22 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     conf.set("spark.yarn.tags", engineRefId2)
     assert(!pb.toString.contains(engineRefId2))
     assert(pb.toString.contains(engineRefId))
+  }
+
+  test("SparkProcessBuilder adds Kubernetes server name labels") {
+    val serverName = KubernetesUtils.serverName
+    val commands = new SparkProcessBuilder(
+      "kyuubi",
+      true,
+      conf
+        .set(MASTER_KEY, "k8s://internal")
+        .set(KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED, true))
+      .toString.split(' ')
+
+    assert(commands.contains(
+      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
+    assert(commands.contains(
+      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
   }
 
   test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {

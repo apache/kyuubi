@@ -23,6 +23,7 @@ import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState.{FAILED, FINISHED, PENDING}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.util.KubernetesUtils
 
 class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
 
@@ -47,6 +48,38 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
       assert(operation.cleanupTerminatedAppInfoTrigger.getIfPresent(tag) === FINISHED)
     } finally {
       operation.stop()
+    }
+  }
+
+  test("server name should be a valid Kubernetes label value") {
+    assert(KubernetesUtils.validateServerName("kyuubi-0") === "kyuubi-0")
+    assert(KubernetesUtils.validateServerName("kyuubi.server_0") === "kyuubi.server_0")
+
+    intercept[IllegalArgumentException] {
+      KubernetesUtils.validateServerName("kyuubi/server")
+    }
+    intercept[IllegalArgumentException] {
+      KubernetesUtils.validateServerName("k" * 64)
+    }
+  }
+
+  test("owner-scoped watch configuration") {
+    val operation = new KubernetesApplicationOperation()
+    operation.initialize(KyuubiConf(), None)
+    try {
+      assert(!operation.ownerScopedWatchEnabled)
+    } finally {
+      operation.stop()
+    }
+
+    val scopedOperation = new KubernetesApplicationOperation()
+    scopedOperation.initialize(
+      KyuubiConf().set(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED, true),
+      None)
+    try {
+      assert(scopedOperation.ownerScopedWatchEnabled)
+    } finally {
+      scopedOperation.stop()
     }
   }
 

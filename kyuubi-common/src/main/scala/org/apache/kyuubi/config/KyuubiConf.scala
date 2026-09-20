@@ -1462,6 +1462,19 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.application.ownerScopedWatch.enabled")
+      .doc("Whether each Kyuubi server only watches Kubernetes applications submitted by itself. " +
+        "When enabled, Kyuubi adds the server hostname as the " +
+        "`kyuubi.apache.org/server-name` label. The hostname must be a valid Kubernetes label " +
+        "value, unique across servers, and stable across restarts. This applies to all Spark " +
+        "applications submitted by Kyuubi, including SQL engines and batch applications.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
   val KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.client.dispatcher.virtualThreads.enabled")
       .doc("Whether the Kyuubi server Kubernetes HTTP client dispatcher uses virtual threads. " +

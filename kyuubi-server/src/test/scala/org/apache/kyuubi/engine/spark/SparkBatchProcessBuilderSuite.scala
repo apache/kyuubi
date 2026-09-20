@@ -23,6 +23,8 @@ import java.util.UUID
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_SERVER_NAME_KEY
+import org.apache.kyuubi.util.KubernetesUtils
 
 class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
   test("spark batch conf should be converted with `spark.` prefix") {
@@ -37,6 +39,29 @@ class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
       Seq.empty,
       None)
     assert(builder.commands.toSeq.contains("spark.kyuubi.key=value"))
+  }
+
+  test("spark batch adds Kubernetes server name labels") {
+    val conf = KyuubiConf(false)
+      .set("spark.master", "k8s://test:12345")
+      .set(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED, true)
+    val builder = new SparkBatchProcessBuilder(
+      "kyuubi",
+      conf,
+      UUID.randomUUID().toString,
+      "test",
+      Some("test"),
+      "test",
+      Map.empty,
+      Seq.empty,
+      None)
+    val commands = builder.toString.split(' ')
+    val serverName = KubernetesUtils.serverName
+
+    assert(commands.contains(
+      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
+    assert(commands.contains(
+      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
   }
 
   test("spark.kubernetes.file.upload.path supports placeholder") {

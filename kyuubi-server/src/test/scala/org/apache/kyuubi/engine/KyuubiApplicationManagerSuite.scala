@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{LABEL_KYUUBI_SERVER_NAME_KEY, LABEL_KYUUBI_UNIQUE_KEY}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.util.KubernetesUtils
 
 class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("application access path") {
@@ -187,5 +188,22 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     val yarnTag = conf.getOption("spark.yarn.tags")
     assert(kubernetesTag.nonEmpty && tag.equals(kubernetesTag.get))
     assert(yarnTag.isEmpty)
+
+    val serverNamePodLabel = "spark.kubernetes.driver.label." + LABEL_KYUUBI_SERVER_NAME_KEY
+    val serverNameServiceLabel =
+      "spark.kubernetes.driver.service.label." + LABEL_KYUUBI_SERVER_NAME_KEY
+    assert(conf.getOption(serverNamePodLabel).isEmpty)
+    assert(conf.getOption(serverNameServiceLabel).isEmpty)
+
+    conf.set(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED, true)
+    conf.set(serverNamePodLabel, "overridden")
+    conf.set(serverNameServiceLabel, "overridden")
+    KyuubiApplicationManager.tagApplication(
+      tag,
+      "SPARK",
+      Some("k8s://https://kyuubi-test:8443"),
+      conf)
+    assert(conf.getOption(serverNamePodLabel).contains(KubernetesUtils.serverName))
+    assert(conf.getOption(serverNameServiceLabel).contains(KubernetesUtils.serverName))
   }
 }

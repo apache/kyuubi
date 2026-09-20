@@ -28,11 +28,12 @@ import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{LABEL_KYUUBI_SERVER_NAME_KEY, LABEL_KYUUBI_UNIQUE_KEY}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.util.KubernetesUtils
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
@@ -126,6 +127,11 @@ object KyuubiApplicationManager {
 
   private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
+    if (conf.get(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED)) {
+      val serverName = KubernetesUtils.serverName
+      conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_SERVER_NAME_KEY, serverName)
+      conf.set("spark.kubernetes.driver.service.label." + LABEL_KYUUBI_SERVER_NAME_KEY, serverName)
+    }
   }
 
   private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {

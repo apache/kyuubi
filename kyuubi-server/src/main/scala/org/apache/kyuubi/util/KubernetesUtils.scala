@@ -34,6 +34,15 @@ import org.apache.kyuubi.config.KyuubiConf._
 
 object KubernetesUtils extends Logging {
   final val DRIVER_POD_NAME_MAX_LENGTH = 253
+
+  lazy val serverName: String = validateServerName(JavaUtils.findLocalInetAddress.getHostName)
+
+  private[kyuubi] def validateServerName(hostname: String): String = {
+    require(
+      hostname.matches("[A-Za-z0-9]([A-Za-z0-9_.-]{0,61}[A-Za-z0-9])?"),
+      s"Kyuubi server hostname '$hostname' is not a valid Kubernetes label value")
+    hostname
+  }
   final private val POD_UID_MAX_LENGTH = 36
   final private val POD_LOGS_DIRECTORY_SEPARATOR_LENGTH = 2
   final private val EXECUTOR_POD_NAME_RESERVED_LENGTH =
