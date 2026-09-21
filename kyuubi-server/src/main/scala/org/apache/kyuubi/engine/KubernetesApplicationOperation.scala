@@ -121,7 +121,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           enginePods
             .withLabelIn(
               LABEL_KYUUBI_WATCH_SCOPE_KEY,
-              KubernetesUtils.serverAddress,
+              KubernetesUtils.serverAddressLabelValue,
               GLOBAL_WATCH_SCOPE)
             .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         } else {
@@ -136,7 +136,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
             engineServices
               .withLabelIn(
                 LABEL_KYUUBI_WATCH_SCOPE_KEY,
-                KubernetesUtils.serverAddress,
+                KubernetesUtils.serverAddressLabelValue,
                 GLOBAL_WATCH_SCOPE)
               .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
           } else {
@@ -156,7 +156,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     info("Start initializing Kubernetes application operation.")
     if (ownerScopedWatchEnabled) {
       info(s"Kubernetes application owner-scoped watch is enabled for scopes " +
-        s"${KubernetesUtils.serverAddress} and $GLOBAL_WATCH_SCOPE.")
+        s"${KubernetesUtils.serverAddressLabelValue} and $GLOBAL_WATCH_SCOPE.")
     }
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information

@@ -36,7 +36,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 object KubernetesUtils extends Logging {
   final val DRIVER_POD_NAME_MAX_LENGTH = 253
 
-  lazy val serverAddress: String = toServerAddressLabelValue(JavaUtils.findLocalInetAddress)
+  lazy val serverAddressLabelValue: String =
+    toServerAddressLabelValue(JavaUtils.findLocalInetAddress)
 
   private[kyuubi] def toServerAddressLabelValue(address: InetAddress): String = address match {
     case ipv4: Inet4Address => ipv4.getHostAddress

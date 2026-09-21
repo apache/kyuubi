@@ -132,7 +132,7 @@ object KyuubiApplicationManager {
       engineShareLevel: Option[String]): Unit = {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
     val watchScope = engineShareLevel.map(ShareLevel.withName) match {
-      case Some(CONNECTION | SERVER_LOCAL) => KubernetesUtils.serverAddress
+      case Some(CONNECTION | SERVER_LOCAL) => KubernetesUtils.serverAddressLabelValue
       case _ => GLOBAL_WATCH_SCOPE
     }
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_WATCH_SCOPE_KEY, watchScope)

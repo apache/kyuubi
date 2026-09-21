@@ -205,8 +205,9 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
         Some("k8s://https://kyuubi-test:8443"),
         conf,
         Some(shareLevel.toString))
-      assert(conf.getOption(watchScopePodLabel).contains(KubernetesUtils.serverAddress))
-      assert(conf.getOption(watchScopeServiceLabel).contains(KubernetesUtils.serverAddress))
+      assert(conf.getOption(watchScopePodLabel).contains(KubernetesUtils.serverAddressLabelValue))
+      assert(conf.getOption(watchScopeServiceLabel)
+        .contains(KubernetesUtils.serverAddressLabelValue))
     }
 
     Seq(USER, GROUP, SERVER).foreach { shareLevel =>

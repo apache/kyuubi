@@ -299,7 +299,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(globalCommands.contains(
       s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$GLOBAL_WATCH_SCOPE"))
 
-    val serverAddress = KubernetesUtils.serverAddress
+    val serverAddressLabelValue = KubernetesUtils.serverAddressLabelValue
     val localCommands = new SparkProcessBuilder(
       "kyuubi",
       true,
@@ -309,9 +309,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       .toString.split(' ')
 
     assert(localCommands.contains(
-      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$serverAddress"))
+      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$serverAddressLabelValue"))
     assert(localCommands.contains(
-      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$serverAddress"))
+      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=" +
+        serverAddressLabelValue))
   }
 
   test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {
