@@ -30,7 +30,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_SERVER_NAME_KEY
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{GLOBAL_WATCH_SCOPE, LABEL_KYUUBI_WATCH_SCOPE_KEY}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -287,20 +287,31 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(pb.toString.contains(engineRefId))
   }
 
-  test("SparkProcessBuilder adds Kubernetes server name labels") {
-    val serverName = KubernetesUtils.serverName
-    val commands = new SparkProcessBuilder(
+  test("SparkProcessBuilder adds Kubernetes watch scope labels") {
+    val globalCommands = new SparkProcessBuilder(
+      "kyuubi",
+      true,
+      conf.set(MASTER_KEY, "k8s://internal"))
+      .toString.split(' ')
+
+    assert(globalCommands.contains(
+      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$GLOBAL_WATCH_SCOPE"))
+    assert(globalCommands.contains(
+      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$GLOBAL_WATCH_SCOPE"))
+
+    val serverAddress = KubernetesUtils.serverAddress
+    val localCommands = new SparkProcessBuilder(
       "kyuubi",
       true,
       conf
         .set(MASTER_KEY, "k8s://internal")
-        .set(KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED, true))
+        .set(ENGINE_SHARE_LEVEL, "CONNECTION"))
       .toString.split(' ')
 
-    assert(commands.contains(
-      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
-    assert(commands.contains(
-      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_SERVER_NAME_KEY=$serverName"))
+    assert(localCommands.contains(
+      s"spark.kubernetes.driver.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$serverAddress"))
+    assert(localCommands.contains(
+      s"spark.kubernetes.driver.service.label.$LABEL_KYUUBI_WATCH_SCOPE_KEY=$serverAddress"))
   }
 
   test("SparkProcessBuilder build spark engine with SPARK_USER_NAME") {

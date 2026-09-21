@@ -28,7 +28,8 @@ import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.{LABEL_KYUUBI_SERVER_NAME_KEY, LABEL_KYUUBI_UNIQUE_KEY}
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{GLOBAL_WATCH_SCOPE, LABEL_KYUUBI_UNIQUE_KEY, LABEL_KYUUBI_WATCH_SCOPE_KEY}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER_LOCAL}
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.server.metadata.MetadataManager
@@ -125,13 +126,17 @@ object KyuubiApplicationManager {
     conf.set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key, newTag)
   }
 
-  private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
+  private def setupSparkK8sTag(
+      tag: String,
+      conf: KyuubiConf,
+      engineShareLevel: Option[String]): Unit = {
     conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
-    if (conf.get(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED)) {
-      val serverName = KubernetesUtils.serverName
-      conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_SERVER_NAME_KEY, serverName)
-      conf.set("spark.kubernetes.driver.service.label." + LABEL_KYUUBI_SERVER_NAME_KEY, serverName)
+    val watchScope = engineShareLevel.map(ShareLevel.withName) match {
+      case Some(CONNECTION | SERVER_LOCAL) => KubernetesUtils.serverAddress
+      case _ => GLOBAL_WATCH_SCOPE
     }
+    conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_WATCH_SCOPE_KEY, watchScope)
+    conf.set("spark.kubernetes.driver.service.label." + LABEL_KYUUBI_WATCH_SCOPE_KEY, watchScope)
   }
 
   private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {
@@ -212,13 +217,23 @@ object KyuubiApplicationManager {
       applicationType: String,
       resourceManager: Option[String],
       conf: KyuubiConf): Unit = {
+    tagApplication(applicationTag, applicationType, resourceManager, conf, None)
+  }
+
+  def tagApplication(
+      applicationTag: String,
+      applicationType: String,
+      resourceManager: Option[String],
+      conf: KyuubiConf,
+      engineShareLevel: Option[String]): Unit = {
     (applicationType.toUpperCase, resourceManager.map(_.toUpperCase())) match {
       case ("SPARK", Some("YARN")) => setupSparkYarnTag(applicationTag, conf)
-      case ("SPARK", Some(rm)) if rm.startsWith("K8S") => setupSparkK8sTag(applicationTag, conf)
+      case ("SPARK", Some(rm)) if rm.startsWith("K8S") =>
+        setupSparkK8sTag(applicationTag, conf, engineShareLevel)
       case ("SPARK", _) =>
         // if the master is not identified ahead, add all tags
         setupSparkYarnTag(applicationTag, conf)
-        setupSparkK8sTag(applicationTag, conf)
+        setupSparkK8sTag(applicationTag, conf, engineShareLevel)
       case ("FLINK", Some("YARN")) =>
         // running flink on other platforms is not yet supported
         setupFlinkYarnTag(applicationTag, conf)

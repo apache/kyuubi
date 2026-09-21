@@ -50,9 +50,6 @@ class SparkBatchProcessBuilder(
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(batchKyuubiConf)
     batchConf.foreach(entry => { batchKyuubiConf.set(entry._1, entry._2) })
-    batchKyuubiConf.set(
-      KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED,
-      conf.get(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED))
     // tag batch application
     KyuubiApplicationManager.tagApplication(batchId, "spark", clusterManager(), batchKyuubiConf)
 

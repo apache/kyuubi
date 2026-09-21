@@ -119,7 +119,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
         val enginePods = client.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY)
         val enginePodInformer = if (ownerScopedWatchEnabled) {
           enginePods
-            .withLabel(LABEL_KYUUBI_SERVER_NAME_KEY, KubernetesUtils.serverName)
+            .withLabelIn(
+              LABEL_KYUUBI_WATCH_SCOPE_KEY,
+              KubernetesUtils.serverAddress,
+              GLOBAL_WATCH_SCOPE)
             .inform(new SparkEnginePodEventHandler(kubernetesInfo))
         } else {
           enginePods.inform(new SparkEnginePodEventHandler(kubernetesInfo))
@@ -131,7 +134,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
           val engineServices = client.services()
           val engineSvcInformer = if (ownerScopedWatchEnabled) {
             engineServices
-              .withLabel(LABEL_KYUUBI_SERVER_NAME_KEY, KubernetesUtils.serverName)
+              .withLabelIn(
+                LABEL_KYUUBI_WATCH_SCOPE_KEY,
+                KubernetesUtils.serverAddress,
+                GLOBAL_WATCH_SCOPE)
               .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
           } else {
             engineServices.inform(new SparkEngineSvcEventHandler(kubernetesInfo))
@@ -149,8 +155,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     this.metadataManager = metadataManager
     info("Start initializing Kubernetes application operation.")
     if (ownerScopedWatchEnabled) {
-      info(s"Kubernetes application owner-scoped watch is enabled for server " +
-        s"${KubernetesUtils.serverName}.")
+      info(s"Kubernetes application owner-scoped watch is enabled for scopes " +
+        s"${KubernetesUtils.serverAddress} and $GLOBAL_WATCH_SCOPE.")
     }
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
@@ -594,7 +600,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
-  val LABEL_KYUUBI_SERVER_NAME_KEY = "kyuubi.apache.org/server-name"
+  val LABEL_KYUUBI_WATCH_SCOPE_KEY = "kyuubi.apache.org/watch-scope"
+  val GLOBAL_WATCH_SCOPE = "global"
   private val SPARK_APP_ID_LABEL = "spark-app-selector"
   private val SPARK_APP_NAME_LABEL = "spark-app-name"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"

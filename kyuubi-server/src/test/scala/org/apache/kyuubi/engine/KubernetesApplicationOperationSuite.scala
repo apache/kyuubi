@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.net.InetAddress
+
 import io.fabric8.kubernetes.api.model.{ContainerState, ContainerStateWaiting, PodBuilder}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
@@ -51,16 +53,11 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
     }
   }
 
-  test("server name should be a valid Kubernetes label value") {
-    assert(KubernetesUtils.validateServerName("kyuubi-0") === "kyuubi-0")
-    assert(KubernetesUtils.validateServerName("kyuubi.server_0") === "kyuubi.server_0")
-
-    intercept[IllegalArgumentException] {
-      KubernetesUtils.validateServerName("kyuubi/server")
-    }
-    intercept[IllegalArgumentException] {
-      KubernetesUtils.validateServerName("k" * 64)
-    }
+  test("server address should be a valid Kubernetes label value") {
+    assert(KubernetesUtils.toServerAddressLabelValue(
+      InetAddress.getByName("10.0.0.1")) === "10.0.0.1")
+    assert(KubernetesUtils.toServerAddressLabelValue(
+      InetAddress.getByName("2001:db8::1")) === "20010db8000000000000000000000001")
   }
 
   test("owner-scoped watch configuration") {
