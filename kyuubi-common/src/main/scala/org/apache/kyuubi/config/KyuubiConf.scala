@@ -1468,7 +1468,8 @@ object KyuubiConf {
         "Kyuubi adds the `kyuubi.apache.org/watch-scope` label to all Spark applications it " +
         "submits. CONNECTION and SERVER_LOCAL engines use the Kyuubi server address as their " +
         "scope, while cross-server shared engines and batch applications use `global`. When " +
-        "enabled, each server watches applications in its own address scope and the global scope. " +
+        "enabled, each server watches applications in its own address scope and the global " +
+        "scope. " +
         "Server addresses must be unique across Kyuubi servers. Applications without the watch " +
         "scope label are not watched when this option is enabled.")
       .version("1.13.0")
