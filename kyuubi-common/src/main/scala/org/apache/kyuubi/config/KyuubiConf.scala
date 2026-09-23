@@ -3204,6 +3204,31 @@ object KyuubiConf {
       .version("1.12.0")
       .fallbackConf(ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
 
+  object InternalSecurityCryptoCompatibilityMode extends Enumeration {
+    type InternalSecurityCryptoCompatibilityMode = Value
+
+    val STRICT, READ_COMPATIBLE, MIGRATE = Value
+  }
+
+  val INTERNAL_SECURITY_CRYPTO_COMPATIBILITY_MODE: ConfigEntry[String] =
+    buildConf("kyuubi.internal.security.crypto.compatibilityMode")
+      .doc("Controls internal access token compatibility. Supported values: <ul>" +
+        "<li>STRICT: issue and accept only tokens with a prefixed random IV.</li>" +
+        "<li>READ_COMPATIBLE: issue tokens with a prefixed random IV and accept both token " +
+        "formats.</li>" +
+        "<li>MIGRATE: issue and accept both token formats using the legacy static zero IV for " +
+        "issued tokens.</li>" +
+        "</ul> MIGRATE weakens token security and should only be used during a rolling " +
+        "upgrade from Kyuubi 1.11.1 or earlier. This compatibility mode will be removed in a " +
+        "future release.")
+      .version("1.12.1")
+      .audience(ANY)
+      .immutable
+      .stringConf
+      .transformToUpperCase
+      .checkValues(InternalSecurityCryptoCompatibilityMode)
+      .createWithDefault(InternalSecurityCryptoCompatibilityMode.STRICT.toString)
+
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("kyuubi.session.name")
       .doc("A human readable name of the session and we use empty string by default. " +
