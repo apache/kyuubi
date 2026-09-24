@@ -230,6 +230,30 @@ abstract class RangerSparkExtensionSuite extends KyuubiFunSuite
     }
   }
 
+  test("[KYUUBI #7593] a cached relation authorizes the query it caches, per reader") {
+    // The CacheManager lives in SharedState and answers every session in the engine, so a
+    // second user's identical query is served from an InMemoryRelation that mentions none
+    // of the tables the cached query read. Whoever populated the cache is irrelevant to
+    // whether this user may read it.
+    val testTable = "cached_table"
+    val select = s"SELECT * FROM $testTable"
+
+    withCleanTmpResources(Seq((testTable, "table"))) {
+      doAs(admin, sql(s"CREATE TABLE IF NOT EXISTS $testTable (id string) USING parquet"))
+      doAs(admin, sql(select).cache().collect())
+
+      // the fixture is only meaningful if this query really is answered from the cache
+      val cachedPlan =
+        doAs(admin, spark.newSession().sql(select).queryExecution.optimizedPlan)
+      assert(cachedPlan.isInstanceOf[InMemoryRelation])
+
+      val e = intercept[AccessControlException](
+        doAs(someone, spark.newSession().sql(select).collect()))
+      assert(e.getMessage.contains(
+        s"does not have [select] privilege on [default/$testTable/id]"))
+    }
+  }
+
   test("auth: databases") {
     val testDb = "mydb"
     val create = s"CREATE DATABASE IF NOT EXISTS $testDb"

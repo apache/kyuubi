@@ -22,6 +22,15 @@
 - [x] Column-level fine-grained authorization
 - [x] Row-level fine-grained authorization, a.k.a. Row-level filtering
 - [x] Data masking
+- [x] Fail-closed handling of unclassified plan nodes ("paranoid mode"),
+      via `spark.kyuubi.authz.unclassifiedNode.behavior=allow|warn|deny`
+
+## Design Notes
+
+- [Paranoid mode](docs/paranoid-mode.md) — why non-recognition of a plan node must not
+  silently authorize it, the runtime `allow|warn|deny` mechanism, the
+  `known_harmless_spec.json` allowlist policy, and the per-Spark-profile build-time
+  coverage checks (`ClassificationCoverageSuite`).
 
 ## Build
 
