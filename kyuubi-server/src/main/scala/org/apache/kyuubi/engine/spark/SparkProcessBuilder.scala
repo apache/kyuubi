@@ -34,7 +34,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager, ProcBuilder}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, EngineType, KyuubiApplicationManager, ProcBuilder, ShareLevel}
 import org.apache.kyuubi.engine.KubernetesApplicationOperation.{KUBERNETES_SERVICE_HOST, KUBERNETES_SERVICE_PORT}
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -146,6 +146,13 @@ class SparkProcessBuilder(
     if (AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
+    // The engine rebuilds its own KyuubiConf from every `spark.kyuubi.*` entry it is handed, so
+    // this prefixed copy would turn Spark Connect on inside the engine without the server ever
+    // agreeing - `kyuubi.engine.spark.connect.enabled` is immutable under its own name only.
+    allConf = allConf - convertConfigKey(ENGINE_SPARK_CONNECT_ENABLED.key)
+    if (!sparkConnectEnabled) {
+      allConf = allConf - ENGINE_SPARK_CONNECT_ENABLED.key
+    }
     // pass spark engine log path to spark conf
     (allConf ++
       engineLogPathConf ++
@@ -161,6 +168,25 @@ class SparkProcessBuilder(
     mainResource.foreach { r => buffer += r }
 
     buffer
+  }
+
+  /**
+   * Whether this engine serves Spark Connect. The server decides, because a Spark Connect client
+   * is authorized as the user the engine runs as - its `user_id` never reaches execution - and
+   * only a `USER` engine with doAs runs as the session user. Other engines start without Connect
+   * rather than failing, since the share level is the session's own choice.
+   */
+  private[kyuubi] lazy val sparkConnectEnabled: Boolean = {
+    conf.get(ENGINE_SPARK_CONNECT_ENABLED) && {
+      val shareLevel = conf.get(ENGINE_SHARE_LEVEL)
+      val runsAsSessionUser = shareLevel == ShareLevel.USER.toString && doAsEnabled
+      if (!runsAsSessionUser) {
+        warn(s"Not starting Spark Connect for this engine: it serves the session user only with" +
+          s" ${ENGINE_SHARE_LEVEL.key}=${ShareLevel.USER} and ${ENGINE_DO_AS_ENABLED.key}=true," +
+          s" which are $shareLevel and $doAsEnabled here")
+      }
+      runsAsSessionUser
+    }
   }
 
   override protected def module: String = "kyuubi-spark-sql-engine"
