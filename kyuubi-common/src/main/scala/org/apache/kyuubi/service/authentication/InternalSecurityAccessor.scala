@@ -134,7 +134,7 @@ class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 
   private def hexStringToByteArray(str: String): Array[Byte] = {
-    // Use a catchable exception instead of assert so authToken can try the legacy format when enabled.
+    // Use an exception rather than assert so authToken can try the legacy format when enabled.
     if (str.length % 2 != 0) {
       throw new IllegalArgumentException(
         "Malformed engine access token: hex string has an odd length")
