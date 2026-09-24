@@ -38,7 +38,7 @@ pre-installed and the `JAVA_HOME` is correctly set to each component.
 | **Kyuubi**    | Gateway    | {{ release }}      | Kyuubi Server                                          |
 |               | Engine lib |                    | Kyuubi Engine                                          |
 |               | Beeline    |                    | Kyuubi Beeline                                         |
-| **Spark**     | Engine     | 3.5, 4.0 to 4.2    | A Spark distribution                                   |
+| **Spark**     | Engine     | 3.5, 4.0 to 4.3    | A Spark distribution                                   |
 | **Flink**     | Engine     | 1.20, 2.0 to 2.3   | A Flink distribution                                   |
 | **Trino**     | Engine     | N/A                | A Trino cluster allows to access via trino-client v411 |
 | **Doris**     | Engine     | N/A                | A Doris cluster                                        |
