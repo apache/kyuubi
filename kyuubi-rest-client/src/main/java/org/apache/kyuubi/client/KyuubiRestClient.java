@@ -17,12 +17,18 @@
 
 package org.apache.kyuubi.client;
 
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.kyuubi.client.auth.*;
+import org.apache.kyuubi.client.discovery.RestDiscoveryConf;
+import org.apache.kyuubi.client.discovery.RestServiceDiscoverer;
 
 public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
@@ -37,6 +43,9 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
   private ApiVersion version;
 
   private AuthHeaderGenerator authHeaderGenerator;
+
+  private ScheduledExecutorService discoveryRefresher;
+  private volatile RestDiscoveryConf discoveryConf;
 
   /** Specifies the version of the Kyuubi API to communicate with. */
   public enum ApiVersion {
@@ -55,6 +64,10 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
   @Override
   public void close() throws Exception {
+    if (discoveryRefresher != null) {
+      discoveryRefresher.shutdownNow();
+      discoveryRefresher = null;
+    }
     if (httpClient != null) {
       httpClient.close();
     }
@@ -104,6 +117,8 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
     this.httpClient = RetryableRestClient.getRestClient(this.baseUrls, conf);
 
+    this.discoveryConf = builder.discoveryConf;
+
     switch (builder.authHeaderMethod) {
       case BASIC:
         this.authHeaderGenerator = new BasicAuthHeaderGenerator(builder.username, builder.password);
@@ -120,6 +135,8 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
           this.authHeaderGenerator = builder.authHeaderGenerator;
         }
     }
+
+    startDiscoveryRefresher();
   }
 
   private List<String> initBaseUrls(List<String> hostUrls, ApiVersion version) {
@@ -157,6 +174,54 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     return new Builder(hostUrls);
   }
 
+  /**
+   * Create a Builder with host URLs discovered from ZK/ETCD service discovery. The returned Builder
+   * is pre-populated with discovered host URLs. After {@link Builder#build()} is called, a
+   * background thread will periodically refresh the URL list. The current server connection is
+   * preserved if it remains in the refreshed list.
+   *
+   * @param discoveryConf the discovery configuration
+   * @return a Builder pre-populated with discovered host URLs
+   */
+  public static Builder discoveryBuilder(RestDiscoveryConf discoveryConf) {
+    List<String> hostUrls = RestServiceDiscoverer.discoverHostUrls(discoveryConf);
+    return new Builder(hostUrls).discoveryConf(discoveryConf);
+  }
+
+  private void startDiscoveryRefresher() {
+    if (discoveryConf == null) {
+      return;
+    }
+    final RestDiscoveryConf conf = this.discoveryConf;
+    discoveryRefresher =
+        Executors.newSingleThreadScheduledExecutor(
+            r -> {
+              Thread t = new Thread(r, "rest-service-discovery-refresher");
+              t.setDaemon(true);
+              return t;
+            });
+    discoveryRefresher.scheduleWithFixedDelay(
+        () -> {
+          try {
+            List<String> newHostUrls = RestServiceDiscoverer.discoverHostUrls(conf);
+            if (!newHostUrls.equals(hostUrls)) {
+              List<String> newBaseUrls = initBaseUrls(newHostUrls, version);
+              hostUrls = newHostUrls;
+              baseUrls = newBaseUrls;
+              ((RetryableRestClient) Proxy.getInvocationHandler(httpClient))
+                  .updateUris(newBaseUrls);
+            }
+          } catch (Exception e) {
+            // log and continue, next refresh will retry
+            org.slf4j.LoggerFactory.getLogger(KyuubiRestClient.class)
+                .warn("Failed to refresh REST service endpoints", e);
+          }
+        },
+        conf.getRefreshIntervalMs(),
+        conf.getRefreshIntervalMs(),
+        TimeUnit.MILLISECONDS);
+  }
+
   public static class Builder {
 
     private List<String> hostUrls;
@@ -183,6 +248,8 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
     // 3s
     private int attemptWaitTime = 3 * 1000;
+
+    private RestDiscoveryConf discoveryConf;
 
     public Builder(String hostUrl) {
       if (StringUtils.isBlank(hostUrl)) {
@@ -248,6 +315,11 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
     public Builder attemptWaitTime(int attemptWaitTime) {
       this.attemptWaitTime = attemptWaitTime;
+      return this;
+    }
+
+    Builder discoveryConf(RestDiscoveryConf discoveryConf) {
+      this.discoveryConf = discoveryConf;
       return this;
     }
 
