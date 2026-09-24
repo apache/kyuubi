@@ -396,13 +396,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
     val ipDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
+    val ipAllowlist = conf.get(SERVER_LIMIT_CONNECTIONS_IP_ALLOWLIST).filter(_.nonEmpty)
+    val userAllowlist = conf.get(SERVER_LIMIT_CONNECTIONS_USER_ALLOWLIST).filter(_.nonEmpty)
     limiter = applySessionLimiter(
       userLimit,
       ipAddressLimit,
       userIpAddressLimit,
       userUnlimitedList,
       userDenyList,
-      ipDenyList)
+      ipDenyList,
+      ipAllowlist,
+      userAllowlist)
 
     val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
     val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
@@ -414,7 +418,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userIpAddressBatchLimit,
       userUnlimitedList,
       userDenyList,
-      ipDenyList)
+      ipDenyList,
+      ipAllowlist,
+      userAllowlist)
   }
 
   private[kyuubi] def getUnlimitedUsers: Set[String] = {
@@ -448,22 +454,49 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     batchLimiter.foreach(SessionLimiter.resetDenyIps(_, denyIps))
   }
 
+  private[kyuubi] def getIpAllowlist: Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getIpAllowlist).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshIpAllowlist(conf: KyuubiConf): Unit = {
+    val ipAllowlist =
+      conf.get(SERVER_LIMIT_CONNECTIONS_IP_ALLOWLIST).filter(_.nonEmpty)
+    limiter.foreach(SessionLimiter.resetIpAllowlist(_, ipAllowlist))
+    batchLimiter.foreach(SessionLimiter.resetIpAllowlist(_, ipAllowlist))
+  }
+
+  private[kyuubi] def getUserAllowlist: Set[String] = {
+    limiter.orElse(batchLimiter).map(SessionLimiter.getUserAllowlist).getOrElse(Set.empty)
+  }
+
+  private[kyuubi] def refreshUserAllowlist(conf: KyuubiConf): Unit = {
+    val userAllowlist =
+      conf.get(SERVER_LIMIT_CONNECTIONS_USER_ALLOWLIST).filter(_.nonEmpty)
+    limiter.foreach(SessionLimiter.resetUserAllowlist(_, userAllowlist))
+    batchLimiter.foreach(SessionLimiter.resetUserAllowlist(_, userAllowlist))
+  }
+
   private def applySessionLimiter(
       userLimit: Int,
       ipAddressLimit: Int,
       userIpAddressLimit: Int,
       userUnlimitedList: Set[String],
       userDenyList: Set[String],
-      ipDenyList: Set[String]): Option[SessionLimiter] = {
+      ipDenyList: Set[String],
+      ipAllowlist: Set[String] = Set.empty,
+      userAllowlist: Set[String] = Set.empty): Option[SessionLimiter] = {
     if (Seq(userLimit, ipAddressLimit, userIpAddressLimit).exists(_ > 0) ||
-      userDenyList.nonEmpty || ipDenyList.nonEmpty) {
+      userDenyList.nonEmpty || ipDenyList.nonEmpty ||
+      ipAllowlist.nonEmpty || userAllowlist.nonEmpty) {
       Some(SessionLimiter(
         userLimit,
         ipAddressLimit,
         userIpAddressLimit,
         userUnlimitedList,
         userDenyList,
-        ipDenyList))
+        ipDenyList,
+        ipAllowlist,
+        userAllowlist))
     } else {
       None
     }
