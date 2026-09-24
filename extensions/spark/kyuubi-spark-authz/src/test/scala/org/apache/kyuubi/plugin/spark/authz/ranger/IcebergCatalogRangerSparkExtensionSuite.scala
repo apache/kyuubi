@@ -309,9 +309,7 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
   }
 
   private def getFirstSnapshot(table: String): Row = {
-    val existedSnapshots =
-      sql(s"SELECT * FROM $table.snapshots ORDER BY committed_at ASC LIMIT 1").collect()
-    existedSnapshots(0)
+    doAs(admin, sql(s"SELECT * FROM $table.snapshots ORDER BY committed_at ASC LIMIT 1").head())
   }
 
   test("CALL rollback_to_snapshot") {
@@ -667,4 +665,17 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     }
   }
 
+  test("[KYUUBI #7740] Iceberg metadata tables are authorized as the data table") {
+    val dataTable = s"$catalogV2.$namespace1.$table1"
+    Seq("history", "snapshots", "files", "manifests", "partitions", "refs", "changes").foreach {
+      metadataTable =>
+        val select = s"SELECT * FROM $dataTable.$metadataTable"
+        withClue(select) {
+          val e = intercept[AccessControlException](doAs(someone, sql(select).collect()))
+          assert(e.getMessage.contains(
+            s"does not have [select] privilege on [$namespace1/$table1/"))
+          assert(doAs(bob, sql(select).collect()).nonEmpty)
+        }
+    }
+  }
 }
