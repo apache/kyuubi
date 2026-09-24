@@ -23,10 +23,15 @@
 - [x] Row-level fine-grained authorization, a.k.a. Row-level filtering
 - [x] Data masking
 
+The plugin supports two authorizer modes: Ranger PDP mode (default) which sends
+authorization requests to a Ranger PDP server via REST APIs with a thin client, and
+the embedded mode which pulls policies from the Ranger admin server and evaluates
+requests locally. See `docs/security/authorization/spark/install.md` for details.
+
 ## Build
 
 ```shell
-build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.version=3.5.6 -Dranger.version=2.6.0
+build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.version=3.5.6 -Dranger.version=2.9.0
 ```
 
 ### Supported Apache Spark Versions
@@ -44,11 +49,5 @@ build/mvn clean package -DskipTests -pl :kyuubi-spark-authz_2.12 -am -Dspark.ver
 
 `-Dranger.version=`
 
-- [ ] 2.7.x
-- [x] 2.6.x (default)
-- [x] 2.5.x
-- [x] 2.4.x
-- [x] 2.3.x
-- [x] 2.2.x
-- [x] 2.1.x
-- [ ] 2.0.x
+The plugin is built on the Ranger 2.9 authorization API, so Ranger 2.9.0 and above are
+the only supported versions.

@@ -17,6 +17,16 @@
   -->
 <configuration>
   <property>
+    <name>ranger.authorizer.impl.class</name>
+    <value>org.apache.ranger.authz.embedded.RangerEmbeddedAuthorizer</value>
+    <description>
+      The tests exercise the embedded Ranger authorizer that pulls policies from
+      the local RangerLocalClient; the PDP remote authorizer is covered by
+      RangerRemoteAuthorizerSuite
+    </description>
+  </property>
+
+  <property>
     <name>ranger.plugin.spark.service.name</name>
     <value>hive_jenkins</value>
     <description>
