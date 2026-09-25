@@ -22,12 +22,14 @@ import java.util.UUID
 import javax.servlet.{ServletOutputStream, WriteListener}
 import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import org.mockito.Mockito.{mock, verify, when}
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto.{ApprovalRequest, ChatRequest}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ENGINE_REF_ID, HA_NAMESPACE}
+import org.apache.kyuubi.ha.client.{DataAgentSessionRoute, DiscoveryClientProvider}
 
 class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
@@ -46,6 +48,77 @@ class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper 
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(new ChatRequest("hi"), MediaType.APPLICATION_JSON_TYPE))
     assert(response.getStatus === 404)
+  }
+
+  test("get and delete validate sessionHandle") {
+    Seq("not-a-uuid" -> 400, UUID.randomUUID().toString -> 404).foreach {
+      case (sessionId, expectedStatus) =>
+        Seq("GET", "DELETE").foreach { method =>
+          val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .method(method)
+          assert(response.getStatus === expectedStatus)
+        }
+    }
+  }
+
+  test("stale routes are removed by every session endpoint") {
+    val requests: Seq[(String, String => Response)] = Seq(
+      "get" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/sessions/$sessionId").request().get()
+      },
+      "delete" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/sessions/$sessionId").request().delete()
+      },
+      "chat" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/$sessionId/chat").request()
+          .post(Entity.json(new ChatRequest("hi")))
+      },
+      "approve" -> { sessionId =>
+        webTarget.path(s"api/v1/data-agent/$sessionId/approve").request()
+          .post(Entity.json(new ApprovalRequest("request-id", true)))
+      })
+
+    requests.foreach { case (endpoint, request) =>
+      withClue(endpoint) {
+        val sessionId = UUID.randomUUID().toString
+        registerRoute(sessionId, "anonymous")
+        assert(request(sessionId).getStatus === 410)
+        assert(findRoute(sessionId).isEmpty)
+      }
+    }
+  }
+
+  test("connection refusal removes a stale route and returns 410") {
+    val sessionId = UUID.randomUUID().toString
+    val engineSpace = s"/unreachable-engine-$sessionId"
+    val engineRefId = s"unreachable-ref-$sessionId"
+    val engineConf = conf.clone.set(HA_ENGINE_REF_ID, engineRefId)
+    val servicePath = DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+      val path = discovery.createAndGetServiceNode(
+        engineConf,
+        engineSpace,
+        "127.0.0.1:1",
+        external = true)
+      DataAgentSessionRoute.register(
+        discovery,
+        conf.get(HA_NAMESPACE),
+        sessionId,
+        DataAgentSessionRoute(engineSpace, engineRefId, "anonymous"))
+      path
+    }
+
+    try {
+      val response = webTarget.path(s"api/v1/data-agent/sessions/$sessionId")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .get()
+      assert(response.getStatus === 410)
+      assert(findRoute(sessionId).isEmpty)
+    } finally {
+      DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+        if (discovery.pathExists(servicePath)) discovery.delete(servicePath)
+      }
+    }
   }
 
   // -- approve preflight ------------------------------------------------------
@@ -173,6 +246,20 @@ class DataAgentResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper 
     val sink = new ByteArrayOutputStream()
     when(response.getOutputStream).thenReturn(servletStreamOver(sink))
     (new SseStream(response), sink)
+  }
+
+  private def registerRoute(sessionId: String, user: String): DataAgentSessionRoute = {
+    val route = DataAgentSessionRoute("missing-engine-space", "missing-engine-ref", user)
+    DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+      DataAgentSessionRoute.register(discovery, conf.get(HA_NAMESPACE), sessionId, route)
+    }
+    route
+  }
+
+  private def findRoute(sessionId: String): Option[DataAgentSessionRoute] = {
+    DiscoveryClientProvider.withDiscoveryClient(conf) { discovery =>
+      DataAgentSessionRoute.find(discovery, conf.get(HA_NAMESPACE), sessionId)
+    }
   }
 
   private def servletStreamOver(sink: OutputStream): ServletOutputStream =

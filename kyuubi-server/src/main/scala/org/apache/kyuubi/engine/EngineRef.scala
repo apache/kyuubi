@@ -31,7 +31,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_SUBMIT_TIME_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_SUBMIT_TIME_KEY, KYUUBI_SERVER_HA_NAMESPACE_KEY}
 import org.apache.kyuubi.engine.EngineType._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, SERVER_LOCAL, ShareLevel}
 import org.apache.kyuubi.engine.dataagent.DataAgentProcessBuilder
@@ -228,6 +228,7 @@ private[kyuubi] class EngineRef(
     var engineRef = discoveryClient.getServerHost(engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
+    conf.set(KYUUBI_SERVER_HA_NAMESPACE_KEY, serverSpace)
     conf.set(HA_NAMESPACE, engineSpace)
     conf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()

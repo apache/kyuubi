@@ -170,4 +170,38 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
       assert(data == dataFromGet)
     }
   }
+
+  test("data agent session route lifecycle") {
+    testDataAgentSessionRouteLifecycle()
+  }
+
+  protected def testDataAgentSessionRouteLifecycle(): Unit = {
+    withDiscoveryClient(conf) { discoveryClient =>
+      val serverSpace = "server-space"
+      val sessionId = "session-id"
+      val route = DataAgentSessionRoute(
+        "engine space/with.delimiters",
+        "engine-ref:id/with.delimiters",
+        "alice+route@example.com")
+
+      assert(DataAgentSessionRoute.find(discoveryClient, serverSpace, sessionId).isEmpty)
+      DataAgentSessionRoute.register(discoveryClient, serverSpace, sessionId, route)
+      DataAgentSessionRoute.register(discoveryClient, serverSpace, sessionId, route)
+      assert(DataAgentSessionRoute.find(discoveryClient, serverSpace, sessionId).contains(route))
+
+      val conflictingRoute = route.copy(engineRefId = "another-engine-ref-id")
+      intercept[IllegalStateException] {
+        DataAgentSessionRoute.register(
+          discoveryClient,
+          serverSpace,
+          sessionId,
+          conflictingRoute)
+      }
+      assert(DataAgentSessionRoute.find(discoveryClient, serverSpace, sessionId).contains(route))
+
+      DataAgentSessionRoute.unregister(discoveryClient, serverSpace, sessionId)
+      DataAgentSessionRoute.unregister(discoveryClient, serverSpace, sessionId)
+      assert(DataAgentSessionRoute.find(discoveryClient, serverSpace, sessionId).isEmpty)
+    }
+  }
 }
