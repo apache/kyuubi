@@ -100,6 +100,7 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     conf.setSocketTimeout(builder.socketTimeout);
     conf.setMaxAttempts(builder.maxAttempts);
     conf.setAttemptWaitTime(builder.attemptWaitTime);
+    conf.setInsecureSsl(builder.insecureSsl);
     this.conf = conf;
 
     this.httpClient = RetryableRestClient.getRestClient(this.baseUrls, conf);
@@ -184,6 +185,8 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     // 3s
     private int attemptWaitTime = 3 * 1000;
 
+    private boolean insecureSsl = false;
+
     public Builder(String hostUrl) {
       if (StringUtils.isBlank(hostUrl)) {
         throw new IllegalArgumentException("hostUrl cannot be blank.");
@@ -248,6 +251,17 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
     public Builder attemptWaitTime(int attemptWaitTime) {
       this.attemptWaitTime = attemptWaitTime;
+      return this;
+    }
+
+    /**
+     * Disable TLS certificate chain and hostname verification. Only use it against servers whose
+     * certificates cannot be trusted through the default JVM trust store, e.g. self-signed
+     * certificates in a test environment. Defaults to {@code false}: TLS certificate chain and
+     * hostname verification are enabled.
+     */
+    public Builder insecureSsl(boolean insecureSsl) {
+      this.insecureSsl = insecureSsl;
       return this;
     }
 
