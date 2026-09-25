@@ -19,6 +19,8 @@ package org.apache.kyuubi.service.authentication.ldap
 
 import scala.collection.mutable.ArrayBuffer
 
+import com.unboundid.ldap.sdk.{DN, LDAPException}
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.service.ServiceUtils
@@ -35,16 +37,21 @@ object LdapUtils extends Logging {
    * <br>
    * "ou=CORP,dc=mycompany,dc=com" is the base DN for "cn=user1,ou=CORP,dc=mycompany,dc=com"
    *
-   * @param dn distinguished name
-   * @return base DN
+   * Uses [[DN]] for correct parsing (handles escaped commas and multi-valued RDNs). Falls
+   * back to a simple comma-split for pattern strings containing "%s" placeholders, which are
+   * not valid DNs but are also passed through this method during filter construction.
+   *
+   * @param dn distinguished name or DN pattern
+   * @return base DN, or null if the input has no parent (single-RDN or unparseable)
    */
-  def extractBaseDn(dn: String): String = {
-    val indexOfFirstDelimiter = dn.indexOf(",")
-    if (indexOfFirstDelimiter > -1) {
-      return dn.substring(indexOfFirstDelimiter + 1)
+  def extractBaseDn(dn: String): String =
+    try {
+      Option(new DN(dn).getParent).map(_.toString).orNull
+    } catch {
+      case _: LDAPException =>
+        val idx = dn.indexOf(",")
+        if (idx > -1) dn.substring(idx + 1) else null
     }
-    null
-  }
 
   /**
    * Extracts the first Relative Distinguished Name (RDN).
@@ -53,10 +60,20 @@ object LdapUtils extends Logging {
    * <br>
    * For DN "cn=user1,ou=CORP,dc=mycompany,dc=com" this method will return "cn=user1"
    *
-   * @param dn distinguished name
-   * @return first RDN
+   * Uses [[DN]] for correct parsing (handles escaped commas and multi-valued RDNs). Falls
+   * back to a simple comma-split for pattern strings containing "%s" placeholders.
+   *
+   * @param dn distinguished name or DN pattern
+   * @return first RDN string
    */
-  def extractFirstRdn(dn: String): String = dn.substring(0, dn.indexOf(","))
+  def extractFirstRdn(dn: String): String =
+    try {
+      new DN(dn).getRDNString
+    } catch {
+      case _: LDAPException =>
+        val idx = dn.indexOf(",")
+        if (idx > -1) dn.substring(0, idx) else dn
+    }
 
   /**
    * Extracts username from user DN.
@@ -132,14 +149,22 @@ object LdapUtils extends Logging {
    * <pre>
    * LdapUtils.isDn("cn=UserName,dc=mycompany,dc=com") = true
    * LdapUtils.isDn("user1")                           = false
+   * LdapUtils.isDn(null)                              = false
    * </pre>
    *
+   * Uses [[DN.isValidDN]] for RFC 4514-compliant validation (handles multi-valued RDNs,
+   * escaped special characters, etc.) instead of a naive `contains("=")` check that would
+   * produce false positives for arbitrary "key=value" strings.
+   *
+   * The empty string is explicitly rejected even though it is the (valid) "null DN" per
+   * RFC 4514, because for our use case (deciding whether a value is a DN-typed login or a
+   * uid-style login) an empty value is never a DN.
+   *
    * @param name name to be checked
-   * @return true if the provided name is a distinguished name
+   * @return true if the provided name is a non-empty, valid distinguished name
    */
-  def isDn(name: String): Boolean = {
-    name.contains("=")
-  }
+  def isDn(name: String): Boolean =
+    name != null && name.nonEmpty && DN.isValidDN(name)
 
   /**
    * Reads and parses DN patterns from Kyuubi configuration.
@@ -206,7 +231,9 @@ object LdapUtils extends Logging {
       if (userPatterns.isEmpty) {
         return Array(user)
       }
-      userPatterns.map(_.replaceAll("%s", user))
+      // Use replace (literal) not replaceAll (regex): a user containing '$' or '\' is
+      // otherwise interpreted as a regex replacement back-reference/escape.
+      userPatterns.map(_.replace("%s", user))
     }
   }
 }

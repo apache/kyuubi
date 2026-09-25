@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.service.authentication.ldap
 
-import javax.naming.{NamingEnumeration, NamingException}
+import javax.naming.{CommunicationException, NameNotFoundException, NamingEnumeration, NamingException}
 import javax.naming.directory.{DirContext, SearchControls, SearchResult}
 
+import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.{any, anyString, contains, eq => mockEq}
 import org.mockito.Mockito.{atLeastOnce, verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
@@ -208,6 +209,49 @@ class LdapSearchSuite extends KyuubiFunSuite {
     assert(expected.sorted === actual.sorted)
   }
 
+  test("DnOnlyQueryRequestsNoAttributes") {
+    // Regression: query.attributes is empty for every lookup except customQuery. The JNDI
+    // path must set an EMPTY returning-attributes array so the server returns the DN only;
+    // leaving it unset (null) makes JNDI return ALL attributes -- a needless payload/load
+    // increase for DN-only lookups such as findUserDn / findGroupDn.
+    conf.set(KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN, "CN=%s,OU=org1,DC=foo,DC=bar")
+    // Build the enumeration first: mockNamingEnumeration stubs mocks internally, so inlining
+    // it inside thenReturn(...) would nest stubbing and throw UnfinishedStubbingException.
+    val result = mockNamingEnumeration("CN=Group1")
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls]))).thenReturn(result)
+    search = new LdapSearch(conf, ctx)
+    search.findGroupDn("grp1")
+    val controls = ArgumentCaptor.forClass(classOf[SearchControls])
+    verify(ctx).search(anyString, anyString, controls.capture())
+    val returning = controls.getValue.getReturningAttributes
+    assert(returning != null, "returningAttributes must be an empty array, not null")
+    assert(
+      returning.isEmpty,
+      s"DN-only query must request no attributes; got: ${returning.mkString(",")}")
+  }
+
+  test("CustomQueryRequestsOnlyMembershipAttribute") {
+    // customQuery is the only query that requests an attribute (the group-membership key,
+    // default "member"). The returning-attributes array must contain exactly that attribute
+    // -- not all attributes -- so the result carries only the membership values plus the DN.
+    conf.set(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN, "dc=example,dc=com")
+    // Build the enumeration first: mockSearchResult/mockNamingEnumeration stub mocks
+    // internally, so inlining inside thenReturn(...) throws UnfinishedStubbingException.
+    val result = mockNamingEnumeration(Array(
+      mockSearchResult(
+        "uid=group1,ou=Groups,dc=example,dc=com",
+        mockAttributes("member", "uid=user1,ou=People,dc=example,dc=com"))))
+    when(ctx.search(mockEq("dc=example,dc=com"), anyString, any(classOf[SearchControls])))
+      .thenReturn(result)
+    search = new LdapSearch(conf, ctx)
+    search.executeCustomQuery("(objectClass=groupOfNames)")
+    val controls = ArgumentCaptor.forClass(classOf[SearchControls])
+    verify(ctx).search(anyString, anyString, controls.capture())
+    val returning = controls.getValue.getReturningAttributes
+    assert(returning != null, "returningAttributes must be set for customQuery")
+    assert(returning.toSeq === Seq("member"))
+  }
+
   test("FindGroupDnPositive") {
     conf.set(
       KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN,
@@ -250,18 +294,36 @@ class LdapSearchSuite extends KyuubiFunSuite {
 
   }
 
-  test("FindGroupDNWhenExceptionInSearch") {
+  test("FindGroupDNWhenNameNotFoundExceptionOnSecondBase") {
+    // NameNotFoundException (base DN does not exist) must be swallowed and the next
+    // base DN tried. Previously any NamingException was swallowed, which masked real
+    // infrastructure failures. Only NameNotFoundException is the correct carve-out.
     conf.set(
       KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN,
       Array("CN=%s,OU=org1,DC=foo,DC=bar", "CN=%s,OU=org2,DC=foo,DC=bar").mkString(":"))
     val result: NamingEnumeration[SearchResult] = LdapTestUtils.mockNamingEnumeration("CN=Group1")
     when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
       .thenReturn(result)
-      .thenThrow(classOf[NamingException])
+      .thenThrow(new NameNotFoundException("ou=org2 does not exist"))
     search = new LdapSearch(conf, ctx)
     val expected: String = "CN=Group1"
     val actual: String = search.findGroupDn("grp1")
     assert(expected === actual)
+  }
+
+  test("FindGroupDNWhenCommunicationExceptionPropagates") {
+    // Infrastructure failures (CommunicationException, ServiceUnavailableException, etc.)
+    // must propagate so callers can distinguish "group not found" from "LDAP is down".
+    // The original broad NamingException catch silently turned outages into empty results.
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN,
+      "CN=%s,OU=org1,DC=foo,DC=bar")
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenThrow(new CommunicationException("connection refused"))
+    search = new LdapSearch(conf, ctx)
+    intercept[NamingException] {
+      search.findGroupDn("grp1")
+    }
   }
 
   test("IsUserMemberOfGroupWhenUserId") {
