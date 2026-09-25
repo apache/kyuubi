@@ -97,6 +97,22 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("stop retrying an update when its row remains missing") {
+    withMetadataManager(Map(
+      METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "true",
+      METADATA_REQUEST_RETRY_INTERVAL.key -> "100")) { metadataManager =>
+      val metadata = newMetadata()
+      metadataManager.updateMetadata(metadata)
+      val retryRef = metadataManager.getMetadataRequestsRetryRef(metadata.identifier)
+
+      assert(retryRef != null)
+      eventually(timeout(3.seconds)) {
+        assert(!retryRef.hasRemainingRequests())
+        assert(metadataManager.getMetadataRequestsRetryRef(metadata.identifier) == null)
+      }
+    }
+  }
+
   test("async metadata request metrics") {
     withMetadataManager(Map(
       METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "true",
