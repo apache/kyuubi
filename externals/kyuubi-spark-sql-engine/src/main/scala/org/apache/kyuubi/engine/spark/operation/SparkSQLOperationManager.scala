@@ -95,6 +95,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                   new ArrowBasedExecuteStatement(
                     session,
                     statement,
+                    confOverlay,
                     runAsync,
                     queryTimeout,
                     incrementalCollect,
@@ -103,13 +104,14 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                   new ExecuteStatement(
                     session,
                     statement,
+                    confOverlay,
                     runAsync,
                     queryTimeout,
                     incrementalCollect,
                     opHandle)
               }
             case mode =>
-              new PlanOnlyStatement(session, statement, mode, opHandle)
+              new PlanOnlyStatement(session, statement, confOverlay, mode, opHandle)
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))

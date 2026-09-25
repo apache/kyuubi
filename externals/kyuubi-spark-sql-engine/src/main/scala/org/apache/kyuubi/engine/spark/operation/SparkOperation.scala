@@ -25,6 +25,7 @@ import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.catalyst.CurrentUserContext.CURRENT_USER
 import org.apache.spark.sql.execution.SparkSQLExecutionHelper
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types.{BinaryType, StructField, StructType}
 import org.apache.spark.ui.SparkUIUtils.formatDuration
 
@@ -154,6 +155,18 @@ abstract class SparkOperation(session: Session)
 
   protected def setSparkLocalProperty: (String, String) => Unit =
     spark.sparkContext.setLocalProperty
+
+  final protected def withStatementConf[T](confOverlay: Map[String, String])(f: => T): T = {
+    val operationConf = if (confOverlay.isEmpty) {
+      spark.sessionState.conf
+    } else {
+      // Keep statement overrides out of the shared session configuration.
+      val clonedConf = spark.sessionState.conf.clone()
+      confOverlay.foreach { case (key, value) => clonedConf.setConfString(key, value) }
+      clonedConf
+    }
+    SQLConf.withExistingConf(operationConf)(f)
+  }
 
   protected def withLocalProperties[T](f: => T): T = {
     SparkSQLExecutionHelper.withSQLConfPropagated(spark) {
