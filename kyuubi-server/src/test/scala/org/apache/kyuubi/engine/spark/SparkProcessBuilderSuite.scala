@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.{Duration, LocalDate}
 import java.time.format.DateTimeFormatter
@@ -420,6 +421,21 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       "spark-core_2.13.2-3.5.0.jar").foreach { f =>
       assertThrows[KyuubiException](builder.extractSparkCoreScalaVersion(Seq(f)))
     }
+  }
+
+  test("load spark master from spark-defaults.conf after initialization") {
+    val sparkHome = Utils.createTempDir("spark-home-with-defaults")
+    val sparkConfDir = Files.createDirectory(sparkHome.resolve("conf"))
+    Files.write(
+      sparkConfDir.resolve("spark-defaults.conf"),
+      s"$MASTER_KEY yarn".getBytes(StandardCharsets.UTF_8))
+
+    val builderConf = KyuubiConf(false)
+      .set("kyuubi.engineEnv.SPARK_HOME", sparkHome.toString)
+      .set("kyuubi.engineEnv.SPARK_SCALA_VERSION", SCALA_COMPILE_VERSION)
+    val builder = new SparkProcessBuilder("kentyao", true, builderConf)
+
+    assert(builder.clusterManager() === Some("yarn"))
   }
 
   test("Fix NullPointerException when SPARK_HOME is invalid") {
