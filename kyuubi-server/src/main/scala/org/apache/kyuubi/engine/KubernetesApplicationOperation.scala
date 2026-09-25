@@ -91,6 +91,9 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private var metadataManager: Option[MetadataManager] = _
 
+  private[engine] def ownerScopedWatchEnabled: Boolean =
+    kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED)
+
   // Visible for testing
   private[engine] def checkKubernetesInfo(kubernetesInfo: KubernetesInfo): Unit = {
     val context = kubernetesInfo.context
@@ -113,15 +116,32 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     KubernetesUtils.buildKubernetesClient(kubernetesConf) match {
       case Some(client) =>
         info(s"[$kubernetesInfo] Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
-        val enginePodInformer = client.pods()
-          .withLabel(LABEL_KYUUBI_UNIQUE_KEY)
-          .inform(new SparkEnginePodEventHandler(kubernetesInfo))
+        val enginePods = client.pods().withLabel(LABEL_KYUUBI_UNIQUE_KEY)
+        val enginePodInformer = if (ownerScopedWatchEnabled) {
+          enginePods
+            .withLabelIn(
+              LABEL_KYUUBI_WATCH_SCOPE_KEY,
+              KubernetesUtils.serverAddressLabelValue,
+              GLOBAL_WATCH_SCOPE)
+            .inform(new SparkEnginePodEventHandler(kubernetesInfo))
+        } else {
+          enginePods.inform(new SparkEnginePodEventHandler(kubernetesInfo))
+        }
         info(s"[$kubernetesInfo] Start Kubernetes Client POD Informer.")
         enginePodInformers.put(kubernetesInfo, enginePodInformer)
         if (sparkAppUrlSource == KubernetesApplicationUrlSource.SVC) {
           info(s"[$kubernetesInfo] Start Kubernetes Client SVC Informer.")
-          val engineSvcInformer = client.services()
-            .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+          val engineServices = client.services()
+          val engineSvcInformer = if (ownerScopedWatchEnabled) {
+            engineServices
+              .withLabelIn(
+                LABEL_KYUUBI_WATCH_SCOPE_KEY,
+                KubernetesUtils.serverAddressLabelValue,
+                GLOBAL_WATCH_SCOPE)
+              .inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+          } else {
+            engineServices.inform(new SparkEngineSvcEventHandler(kubernetesInfo))
+          }
           engineSvcInformers.put(kubernetesInfo, engineSvcInformer)
         }
         client
@@ -134,6 +154,10 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     kyuubiConf = conf
     this.metadataManager = metadataManager
     info("Start initializing Kubernetes application operation.")
+    if (ownerScopedWatchEnabled) {
+      info(s"Kubernetes application owner-scoped watch is enabled for scopes " +
+        s"${KubernetesUtils.serverAddressLabelValue} and $GLOBAL_WATCH_SCOPE.")
+    }
     submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
     val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
@@ -576,6 +600,8 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
 object KubernetesApplicationOperation extends Logging {
   val LABEL_KYUUBI_UNIQUE_KEY = "kyuubi-unique-tag"
+  val LABEL_KYUUBI_WATCH_SCOPE_KEY = "kyuubi.apache.org/watch-scope"
+  val GLOBAL_WATCH_SCOPE = "global"
   private val SPARK_APP_ID_LABEL = "spark-app-selector"
   private val SPARK_APP_NAME_LABEL = "spark-app-name"
   val KUBERNETES_SERVICE_HOST = "KUBERNETES_SERVICE_HOST"
