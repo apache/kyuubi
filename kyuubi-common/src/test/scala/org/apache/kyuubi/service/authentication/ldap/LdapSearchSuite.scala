@@ -58,6 +58,33 @@ class LdapSearchSuite extends KyuubiFunSuite {
     assert(expected === actual)
   }
 
+  test("FindUserDnWhenUserDnEscapesSpecialCharacters") {
+    val searchResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(searchResult)
+    search = new LdapSearch(conf, ctx)
+    search.findUserDn("CN=User1*,OU=org1")
+    verify(ctx).search(
+      mockEq("OU=org1"),
+      contains("(CN=User1\\2a)"),
+      any(classOf[SearchControls]))
+  }
+
+  test("FindDnByPatternEscapesSpecialCharacters") {
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN,
+      "CN=%s,OU=org1,DC=foo,DC=bar")
+    val emptyResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(emptyResult)
+    search = new LdapSearch(conf, ctx)
+    assert(search.findUserDn("User1*") === null)
+    verify(ctx).search(
+      mockEq("OU=org1,DC=foo,DC=bar"),
+      contains("(CN=User1\\2a)"),
+      any(classOf[SearchControls]))
+  }
+
   test("FindUserDnWhenUserDnNegativeDuplicates") {
     val searchResult: NamingEnumeration[SearchResult] =
       mockNamingEnumeration("CN=User1,OU=org1,DC=foo,DC=bar", "CN=User1,OU=org2,DC=foo,DC=bar")

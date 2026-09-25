@@ -35,10 +35,10 @@ class QueryFactorySuite extends KyuubiFunSuite {
   }
 
   test("FindGroupDnById") {
-    val q = queries.findGroupDnById("unique_group_id")
-    val expected = "(&(objectClass=superGroups)(guid=unique_group_id))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(queries.findGroupDnById("unique_group_id").filter ===
+      "(&(objectClass=superGroups)(guid=unique_group_id))")
+    assert(queries.findGroupDnById("unique*group_id").filter ===
+      "(&(objectClass=superGroups)(guid=unique\\2agroup_id))")
   }
 
   test("FindUserDnByRdn") {
@@ -88,10 +88,36 @@ class QueryFactorySuite extends KyuubiFunSuite {
     }
   }
 
-  test("FindGroupDNByID") {
-    val q = queries.findGroupDnById("unique_group_id")
-    val expected = "(&(objectClass=superGroups)(guid=unique_group_id))"
-    val actual = q.filter
-    assert(expected === actual)
+  test("FindUserDnByNameWithSpecialCharacters") {
+    val q = queries.findUserDnByName("user1*)(objectClass=*")
+    val expected =
+      "(&(|(objectClass=person)(objectClass=user)(objectClass=inetOrgPerson))" +
+        "(|(uid=user1\\2a\\29\\28objectClass=\\2a)" +
+        "(sAMAccountName=user1\\2a\\29\\28objectClass=\\2a)))"
+    assert(expected === q.filter)
+  }
+
+  test("FindGroupsForUserWithSpecialCharacters") {
+    val q = queries.findGroupsForUser("user1*", "user_Dn")
+    val expected = "(&(objectClass=superGroups)(|(member=user_Dn)(member=user1\\2a)))"
+    assert(expected === q.filter)
+  }
+
+  test("FindGroupsForUserWithSpecialCharactersInUserDn") {
+    val q = queries.findGroupsForUser("user_name", "uid=user_Dn*,ou=People,dc=example,dc=com")
+    val expected =
+      "(&(objectClass=superGroups)" +
+        "(|(member=uid=user_Dn\\2a,ou=People,dc=example,dc=com)(member=user_name)))"
+    assert(expected === q.filter)
+  }
+
+  test("IsUserMemberOfGroupWithSpecialCharacters") {
+    // both the client-supplied user and the directory-sourced group DN are embedded in the
+    // filter, so both need escaping
+    val q = queries.isUserMemberOfGroup("user1*", "cn=My*Group,ou=Groups,dc=mycompany,dc=com")
+    val expected =
+      "(&(|(objectClass=person)(objectClass=user)(objectClass=inetOrgPerson))" +
+        "(partOf=cn=My\\2aGroup,ou=Groups,dc=mycompany,dc=com)(guid=user1\\2a))"
+    assert(expected === q.filter)
   }
 }
