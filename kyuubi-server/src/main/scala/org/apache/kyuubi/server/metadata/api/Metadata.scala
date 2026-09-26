@@ -95,4 +95,14 @@ case class Metadata(
   }
 
   def appState: Option[ApplicationState] = Option(engineState).map(ApplicationState.withName)
+
+  def withSanitizedRequestConf: Metadata = {
+    copy(requestConf = Metadata.sanitizeRequestConf(requestConf))
+  }
+}
+
+object Metadata {
+  def sanitizeRequestConf(requestConf: Map[String, String]): Map[String, String] = {
+    Option(requestConf).getOrElse(Map.empty).filter { case (_, value) => value != null }
+  }
 }
