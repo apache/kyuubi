@@ -24,6 +24,13 @@
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
 
+## Upgrading from Kyuubi 1.11.1 or earlier to 1.12.1 or later
+
+* Since Kyuubi 1.12, internal access token encryption uses a random IV instead of a static zero IV. Starting
+  with Kyuubi 1.12.1, use `kyuubi.internal.security.crypto.compatibilityMode` to perform a rolling upgrade of
+  servers and engines from Kyuubi 1.11.1 or earlier as described in
+  [Internal Secure Access](../security/internal_secure_access.md#rolling-upgrades-from-kyuubi-1111-or-earlier).
+
 ## Upgrading from Kyuubi 1.11 to 1.12
 
 * Since Kyuubi 1.12, the support of variable `<KYUUBI_HOME>` substitution in config `kyuubi.metadata.store.jdbc.url` is deprecated, use `{{KYUUBI_HOME}}` instead.
