@@ -32,15 +32,15 @@ object ClassUtils {
    * @return
    */
   def createInstance[T](className: String, expected: Class[T], conf: KyuubiConf): T = {
-    val classLoader = Thread.currentThread.getContextClassLoader
     try {
-      DynConstructors.builder(expected).loader(classLoader)
-        .impl(className, classOf[KyuubiConf])
-        .impl(className)
+      val implementation = DynClasses.loadSubclass(className, expected)
+      DynConstructors.builder(expected)
+        .impl(implementation, classOf[KyuubiConf])
+        .impl(implementation)
         .buildChecked[T]()
         .newInstance(conf)
     } catch {
-      case e: Exception =>
+      case e @ (_: Exception | _: NoClassDefFoundError) =>
         throw new KyuubiException(s"$className must extend of ${expected.getName}", e)
     }
   }

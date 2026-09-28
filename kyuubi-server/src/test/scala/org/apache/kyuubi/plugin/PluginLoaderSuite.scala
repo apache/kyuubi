@@ -131,8 +131,12 @@ class PluginLoaderSuite extends KyuubiFunSuite {
   }
 }
 
-class InvalidSessionConfAdvisor
-class InvalidGroupProvider
+class InvalidSessionConfAdvisor {
+  throw new AssertionError("Invalid advisor must not be constructed")
+}
+class InvalidGroupProvider {
+  throw new AssertionError("Invalid group provider must not be constructed")
+}
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(

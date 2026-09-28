@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.dataagent.provider;
 import java.util.function.Consumer;
 import org.apache.kyuubi.config.KyuubiConf;
 import org.apache.kyuubi.engine.dataagent.runtime.event.AgentEvent;
+import org.apache.kyuubi.util.reflect.DynClasses;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 
 /**
@@ -69,10 +70,12 @@ public interface DataAgentProvider {
   static DataAgentProvider load(KyuubiConf conf) {
     String providerClass = conf.get(KyuubiConf.ENGINE_DATA_AGENT_PROVIDER());
     try {
+      Class<? extends DataAgentProvider> implementation =
+          DynClasses.loadSubclass(providerClass, DataAgentProvider.class);
       return (DataAgentProvider)
           DynConstructors.builder(DataAgentProvider.class)
-              .impl(providerClass, KyuubiConf.class)
-              .impl(providerClass)
+              .impl(implementation, KyuubiConf.class)
+              .impl(implementation)
               .buildChecked()
               .newInstanceChecked(conf);
     } catch (ClassCastException e) {
@@ -83,7 +86,7 @@ public interface DataAgentProvider {
               + DataAgentProvider.class.getName()
               + "'.",
           e);
-    } catch (Exception e) {
+    } catch (Exception | NoClassDefFoundError e) {
       throw new IllegalArgumentException("Error while instantiating '" + providerClass + "': ", e);
     }
   }
