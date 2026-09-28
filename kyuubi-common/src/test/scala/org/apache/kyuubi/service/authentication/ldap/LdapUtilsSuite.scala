@@ -105,6 +105,26 @@ class LdapUtilsSuite extends KyuubiFunSuite {
     assert(LdapUtils.extractFirstRdn("user1") === "user1")
   }
 
+  test("FirstRdnAsFilterFragment") {
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=user1,ou=CORP,dc=mycompany,dc=com") ===
+      "cn=user1")
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=user1") === "cn=user1")
+    // the RFC 4514 escape belongs to the DN syntax, not to the value
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=Alice\\+Ops,ou=People,dc=example,dc=com") ===
+      "cn=Alice+Ops")
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=Doe\\, John,ou=People,dc=example,dc=com") ===
+      "cn=Doe, John")
+    // filter metacharacters in the value are still escaped
+    assert(LdapUtils.firstRdnAsFilterFragment("CN=User1*,OU=org1") === "CN=User1\\2a")
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=a)(objectClass=*,dc=example,dc=com") ===
+      "cn=a\\29\\28objectClass=\\2a")
+    // a name that cannot be parsed is rejected, so the attribute type cannot smuggle
+    // filter metacharacters into the assertion
+    assert(LdapUtils.firstRdnAsFilterFragment("cn=Alice+Ops,ou=People,dc=example,dc=com") ===
+      null)
+    assert(LdapUtils.firstRdnAsFilterFragment("c*)(uid=*,ou=example,dc=com") === null)
+  }
+
   test("ExtractBaseDn") {
     val dn: String = "cn=user1,ou=CORP1,dc=mycompany,dc=com"
     val expected = "ou=CORP1,dc=mycompany,dc=com"

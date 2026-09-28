@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.service.authentication.ldap
 
-import javax.naming.ldap.Rdn
+import javax.naming.InvalidNameException
+import javax.naming.ldap.{LdapName, Rdn}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -61,6 +62,30 @@ object LdapUtils extends Logging {
    * @return first RDN
    */
   def extractFirstRdn(dn: String): String = dn.split(",", 2)(0)
+
+  /**
+   * Renders the first RDN of a distinguished name as a single search filter assertion, with
+   * the attribute value escaped per RFC 4515 section 3.
+   * <br>
+   * The RDN has to be decoded before being escaped: inside a distinguished name the value
+   * is escaped per RFC 4514, so escaping the serialized form would turn the '\+' of
+   * "cn=Alice\+Ops" into a literal backslash and the entry would no longer be found.
+   * <br>
+   * Decoding also rejects a malformed name, so the attribute type cannot carry filter
+   * metacharacters into the assertion.
+   *
+   * @param dn distinguished name
+   * @return filter assertion such as "cn=Alice+Ops", or null if the name cannot be parsed
+   */
+  def firstRdnAsFilterFragment(dn: String): String = {
+    try {
+      val name = new LdapName(dn)
+      val rdn = name.getRdn(name.size() - 1)
+      s"${rdn.getType}=${escapeLDAPSearchFilter(String.valueOf(rdn.getValue))}"
+    } catch {
+      case _: InvalidNameException => null
+    }
+  }
 
   /**
    * Extracts username from user DN.

@@ -381,6 +381,26 @@ class LdapAtnProviderSuite extends WithLdapServer {
     testCase.assertAuthenticateFails(Credentials("mall*)(objectClass=*", "mall-pass"))
   }
 
+  test("UserBindPositiveWithEscapedRdnValue") {
+    ldapServer.add(new Entry(
+      "dn: cn=Alice\\+Ops,ou=People,dc=example,dc=com",
+      "cn: Alice+Ops",
+      "objectClass: top",
+      "objectClass: person",
+      "objectClass: organizationalPerson",
+      "objectClass: inetOrgPerson",
+      "sn: Alice",
+      "userPassword: alice-ops-pass"))
+    testCase = defaultBuilder
+      .bindUser(s"uid=$ldapUser,ou=users")
+      .bindPassword(ldapUserPasswd)
+      .userDNPatterns("cn=%s,ou=People,dc=example,dc=com")
+      .build
+    // the '+' is RFC 4514 DN syntax; it must be decoded before the value is used in a filter
+    testCase.assertAuthenticatePasses(
+      Credentials("cn=Alice\\+Ops,ou=People,dc=example,dc=com", "alice-ops-pass"))
+  }
+
   /**
    * Test to test the LDAP Atn to use a custom LDAP query that returns
    * a) A set of group DNs

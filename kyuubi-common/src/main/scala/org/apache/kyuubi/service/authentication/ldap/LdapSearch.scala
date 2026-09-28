@@ -59,7 +59,17 @@ class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Loggi
     var allLdapNames: Array[String] = null
     if (LdapUtils.isDn(user)) {
       val userBaseDn: String = LdapUtils.extractBaseDn(user)
-      val userRdn: String = LdapUtils.escapeLDAPSearchFilter(LdapUtils.extractFirstRdn(user))
+      val userRdn: String = LdapUtils.firstRdnAsFilterFragment(user)
+      if (userRdn == null) {
+        info(s"Ignoring the user '$user', whose distinguished name cannot be parsed. " +
+          s"Returning null")
+        return null
+      }
+      if (userBaseDn == null) {
+        info(s"Ignoring the user '$user', whose distinguished name has no base DN. " +
+          s"Returning null")
+        return null
+      }
       allLdapNames = execute(Array(userBaseDn), queries.findUserDnByRdn(userRdn)).getAllLdapNames
     } else {
       allLdapNames = findDnByPattern(userPatterns, user)
