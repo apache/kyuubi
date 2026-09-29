@@ -1462,6 +1462,22 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val KUBERNETES_APPLICATION_OWNER_SCOPED_WATCH_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.kubernetes.application.ownerScopedWatch.enabled")
+      .doc("Whether each Kyuubi server only watches Kubernetes applications in its watch scope. " +
+        "Kyuubi adds the `kyuubi.apache.org/watch-scope` label to all Spark applications it " +
+        "submits. CONNECTION and SERVER_LOCAL engines use the Kyuubi server address as their " +
+        "scope, while cross-server shared engines and batch applications use `global`. When " +
+        "enabled, each server watches applications in its own address scope and the global " +
+        "scope. " +
+        "Server addresses must be unique across Kyuubi servers. Applications without the watch " +
+        "scope label are not watched when this option is enabled.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .booleanConf
+      .createWithDefault(false)
+
   val KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.kubernetes.client.dispatcher.virtualThreads.enabled")
       .doc("Whether the Kyuubi server Kubernetes HTTP client dispatcher uses virtual threads. " +
