@@ -34,7 +34,7 @@ import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.OperationState
-import org.apache.kyuubi.server.metadata.MetadataStore
+import org.apache.kyuubi.server.metadata.{MetadataRowNotFoundException, MetadataStore, MetadataUpdateMismatchException}
 import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.DatabaseType._
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
@@ -332,74 +332,95 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
 
   override def updateMetadata(metadata: Metadata): Unit = {
     val queryBuilder = new StringBuilder
-    val params = ListBuffer[Any]()
+    val updateFields = ListBuffer[(String, Any)]()
 
     queryBuilder.append(s"UPDATE $METADATA_TABLE")
-    val setClauses = ListBuffer[String]()
     Option(metadata.kyuubiInstance).foreach { _ =>
-      setClauses += "kyuubi_instance = ?"
-      params += metadata.kyuubiInstance
+      updateFields += (("kyuubi_instance", metadata.kyuubiInstance))
     }
     Option(metadata.state).foreach { _ =>
-      setClauses += "state = ?"
-      params += metadata.state
+      updateFields += (("state", metadata.state))
     }
     Option(metadata.requestConf).filter(_.nonEmpty).foreach { _ =>
-      setClauses += "request_conf =?"
-      params += valueAsString(metadata.requestConf)
+      updateFields += (("request_conf", valueAsString(metadata.requestConf)))
     }
     metadata.clusterManager.foreach { cm =>
-      setClauses += "cluster_manager = ?"
-      params += cm
+      updateFields += (("cluster_manager", cm))
     }
     if (metadata.endTime > 0) {
-      setClauses += "end_time = ?"
-      params += metadata.endTime
+      updateFields += (("end_time", metadata.endTime))
     }
     if (metadata.engineOpenTime > 0) {
-      setClauses += "engine_open_time = ?"
-      params += metadata.engineOpenTime
+      updateFields += (("engine_open_time", metadata.engineOpenTime))
     }
     Option(metadata.engineId).foreach { _ =>
-      setClauses += "engine_id = ?"
-      params += metadata.engineId
+      updateFields += (("engine_id", metadata.engineId))
     }
     Option(metadata.engineName).foreach { _ =>
-      setClauses += "engine_name = ?"
-      params += metadata.engineName
+      updateFields += (("engine_name", metadata.engineName))
     }
     Option(metadata.engineUrl).foreach { _ =>
-      setClauses += "engine_url = ?"
-      params += metadata.engineUrl
+      updateFields += (("engine_url", metadata.engineUrl))
     }
     Option(metadata.engineState).foreach { _ =>
-      setClauses += "engine_state = ?"
-      params += metadata.engineState
+      updateFields += (("engine_state", metadata.engineState))
     }
     metadata.engineError.foreach { error =>
-      setClauses += "engine_error = ?"
-      params += error
+      updateFields += (("engine_error", error))
     }
     if (metadata.peerInstanceClosed) {
-      setClauses += "peer_instance_closed = ?"
-      params += metadata.peerInstanceClosed
+      updateFields += (("peer_instance_closed", metadata.peerInstanceClosed))
     }
-    if (setClauses.nonEmpty) {
-      queryBuilder.append(setClauses.mkString(" SET ", ", ", ""))
+    if (updateFields.nonEmpty) {
+      queryBuilder.append(updateFields.map { case (column, _) =>
+        s"$column = ?"
+      }.mkString(" SET ", ", ", ""))
     }
     queryBuilder.append(" WHERE identifier = ?")
-    params += metadata.identifier
+    val params = updateFields.map(_._2) :+ metadata.identifier
 
     val query = queryBuilder.toString()
     JdbcUtils.withConnection { connection =>
       withUpdateCount(connection, query, params.toSeq: _*) { updateCount =>
         if (updateCount == 0) {
-          throw new KyuubiException(
-            s"Error updating metadata for ${metadata.identifier} by SQL: $query, " +
-              s"with params: ${params.mkString(", ")}")
+          verifyMetadataUpdatePostcondition(connection, metadata.identifier, updateFields.toSeq)
         }
       }
     }
+  }
+
+  private def verifyMetadataUpdatePostcondition(
+      connection: Connection,
+      identifier: String,
+      updateFields: Seq[(String, Any)]): Unit = {
+    val query = s"SELECT ${updateFields.map(_._1).mkString(", ")} " +
+      s"FROM $METADATA_TABLE WHERE identifier = ?"
+    withResultSet(connection, query, identifier) { resultSet =>
+      if (!resultSet.next()) {
+        throw new MetadataRowNotFoundException(identifier)
+      }
+
+      val mismatchedColumns = updateFields.zipWithIndex.collect {
+        case ((column, expected), index)
+            if getResultSetValue(resultSet, index + 1, expected) != expected => column
+      }
+      if (mismatchedColumns.nonEmpty) {
+        throw new MetadataUpdateMismatchException(identifier, mismatchedColumns)
+      }
+    }
+  }
+
+  private def getResultSetValue(resultSet: ResultSet, index: Int, expected: Any): Any = {
+    val value = expected match {
+      case _: String => resultSet.getString(index)
+      case _: Int => resultSet.getInt(index)
+      case _: Long => resultSet.getLong(index)
+      case _: Double => resultSet.getDouble(index)
+      case _: Float => resultSet.getFloat(index)
+      case _: Boolean => resultSet.getBoolean(index)
+      case _ => resultSet.getObject(index)
+    }
+    if (resultSet.wasNull()) null else value
   }
 
   override def cleanupMetadataByIdentifier(identifier: String): Unit = {
