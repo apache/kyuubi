@@ -25,7 +25,6 @@ import com.dimafeng.testcontainers.{ContainerDef, GenericContainer}
 import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import com.github.dockerjava.api.model.{ExposedPort, Ports}
 import org.apache.hadoop.conf.Configuration
-import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy
 
 import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf
 import org.apache.kyuubi.shaded.hive.metastore.conf.MetastoreConf.ConfVars._
@@ -36,11 +35,11 @@ trait WithSecuredHMSContainer extends KerberizedTestHelper with TestContainerFor
   final val HIVE_METASTORE_KERBEROS_REALM = "TEST.ORG"
   final val HIVE_METASTORE_KERBEROS_PRINCIPAL = "hive/localhost"
   final val HIVE_METASTORE_KERBEROS_KEYTAB = "/hive.service.keytab"
-  final val DOCKER_IMAGE_NAME = "nekyuubi/kyuubi-hive-metastore:latest"
+  final val DOCKER_IMAGE_NAME = SimpleHMSContainer.DOCKER_IMAGE_NAME
 
   private val tempDir = Utils.createTempDir(prefix = "kyuubi-server-hms")
   private val exposedKdcPort = 88
-  private val exposedHmsPort = 9083
+  private val exposedHmsPort = SimpleHMSContainer.EXPOSED_HMS_PORT
   private val testPrincipalOverride =
     HIVE_METASTORE_KERBEROS_PRINCIPAL + "@" + HIVE_METASTORE_KERBEROS_REALM
   private val krb5ConfPathOverride = new File(tempDir.toFile, "krb5.conf").getAbsolutePath
@@ -119,10 +118,7 @@ object HMSContainer {
     override def createContainer(): Container = {
       val container = new HMSContainer(
         exposedKdcPort,
-        GenericContainer(
-          dockerImage,
-          env = env,
-          waitStrategy = new HostPortWaitStrategy().forPorts(exposedHmsPort)))
+        SimpleHMSContainer.newBaseContainer(dockerImage, exposedHmsPort, env = env))
 
       container.container.withExposedPorts(exposedKdcPort, exposedHmsPort)
       container.container.withCreateContainerCmdModifier(cmd => {
