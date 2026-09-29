@@ -60,7 +60,7 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
     }
   }
 
-  protected def sql(sql: String): DataFrame = {
+  protected def executeSql(sql: String): DataFrame = {
     withSparkSession() { spark =>
       spark.sql(sql)
     }
@@ -84,7 +84,7 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
       cat: String = catalogName)(f: String => Unit): Unit = {
     val nsCat = s"$cat.$ns"
     dropNamespaceAfter(nsCat) {
-      sql(s"CREATE NAMESPACE $nsCat")
+      executeSql(s"CREATE NAMESPACE $nsCat")
       val t = s"$nsCat.$tableName"
       dropTableAfter(t) {
         f(t)
@@ -96,8 +96,8 @@ trait DDLCommandTestUtils extends KyuubiHiveTest {
    * Restores the current catalog/database after calling `f`.
    */
   protected def resetCatalogAndNamespace(f: => Unit): Unit = {
-    val curCatalog = sql("select current_catalog()").head().getString(0)
-    val curDatabase = sql("select current_database()").head().getString(0)
+    val curCatalog = executeSql("select current_catalog()").head().getString(0)
+    val curDatabase = executeSql("select current_database()").head().getString(0)
     try {
       f
     } finally {

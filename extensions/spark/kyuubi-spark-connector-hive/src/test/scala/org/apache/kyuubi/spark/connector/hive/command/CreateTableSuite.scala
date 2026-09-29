@@ -35,7 +35,7 @@ class CreateTableSuite extends DDLCommandTestUtils {
     val table = "hive.default.employee"
     Seq("parquet", "orc").foreach { provider =>
       dropTableAfter(table) {
-        sql(
+        executeSql(
           s"""
              | CREATE TABLE IF NOT EXISTS
              | $table (id String, year String, month string)
@@ -58,7 +58,7 @@ class CreateTableSuite extends DDLCommandTestUtils {
     val table = "hive.default.employee"
     Seq("parquet", "orc").foreach { provider =>
       dropTableAfter(table) {
-        sql(
+        executeSql(
           s"""
              | CREATE TABLE IF NOT EXISTS
              | $table (id String, year String, month string)
