@@ -135,6 +135,18 @@ class MetadataManager extends AbstractService("MetadataManager") {
     }
   }
 
+  // Verifies whether a duplicate-key error on a queued insert retry actually means the
+  // insert already succeeded earlier (e.g. the acknowledgement was lost), by checking
+  // whether a matching row already exists. Used only by the retry loop below, so the
+  // fail-fast contract of insertMetadata() itself is unchanged for direct/foreground calls.
+  private def verifyInsertPostcondition(metadata: Metadata): Boolean = {
+    Option(_metadataStore.getMetadata(metadata.identifier)).exists { existing =>
+      existing.identifier == metadata.identifier &&
+      existing.sessionType == metadata.sessionType &&
+      existing.createTime == metadata.createTime
+    }
+  }
+
   def getBatch(batchId: String): Option[Batch] = {
     getBatchSessionMetadata(batchId).map(buildBatch)
   }
@@ -344,11 +356,30 @@ class MetadataManager extends AbstractService("MetadataManager") {
                     info(s"Retrying metadata requests for $id")
                     var request = ref.metadataRequests.peek()
                     while (request != null) {
-                      request match {
-                        case insert: InsertMetadata =>
-                          insertMetadata(insert.metadata, asyncRetryOnError = false)
-                        case update: UpdateMetadata =>
-                          updateMetadata(update.metadata, asyncRetryOnError = false)
+                      try {
+                        request match {
+                          case insert: InsertMetadata =>
+                            insertMetadata(insert.metadata, asyncRetryOnError = false)
+                          case update: UpdateMetadata =>
+                            updateMetadata(update.metadata, asyncRetryOnError = false)
+                        }
+                      } catch {
+                        // A duplicate-key error while retrying a queued insert means a row
+                        // with this identifier already exists, e.g. the earlier attempt
+                        // actually succeeded but its acknowledgement was lost. Verify the
+                        // postcondition instead of leaving this request stuck at the head
+                        // of the queue forever, which would also block all later requests
+                        // for this session (KYUUBI #7720).
+                        case rethrow: Throwable
+                            if request.isInstanceOf[InsertMetadata] &&
+                              unrecoverableDBErr(rethrow) &&
+                              verifyInsertPostcondition(request.metadata) =>
+                          warn(
+                            s"Insert for ${request.metadata.identifier} returned a " +
+                              "duplicate-key error on retry but a matching row already " +
+                              "exists; treating as idempotent success and removing it " +
+                              "from the retry queue.",
+                            rethrow)
                       }
                       ref.metadataRequests.remove(request)
                       MetricsSystem.tracing(_.markMeter(
