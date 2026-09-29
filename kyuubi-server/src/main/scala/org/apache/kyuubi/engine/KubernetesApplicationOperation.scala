@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.time.Instant
+import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, ExecutorService, ScheduledExecutorService, TimeUnit}
 
@@ -37,6 +39,8 @@ import org.apache.kyuubi.config.KyuubiConf.KubernetesCleanupDriverPodStrategy.{A
 import org.apache.kyuubi.engine.ApplicationState.{isTerminated, ApplicationState, FAILED, FINISHED, KILLED, NOT_FOUND, PENDING, RUNNING, UNKNOWN}
 import org.apache.kyuubi.engine.KubernetesApplicationUrlSource._
 import org.apache.kyuubi.engine.KubernetesResourceEventTypes.KubernetesResourceEventType
+import org.apache.kyuubi.metrics.MetricsConstants.ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
 import org.apache.kyuubi.server.metadata.api.KubernetesEngineInfo
@@ -359,7 +363,26 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     extends ResourceEventHandler[Pod] {
 
     override def onAdd(pod: Pod): Unit = {
+      val observedAt = System.currentTimeMillis()
       if (isSparkEnginePod(pod)) {
+        Option(pod.getMetadata.getCreationTimestamp) match {
+          case Some(creationTimestamp) =>
+            try {
+              val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
+              if (latency >= 0) {
+                MetricsSystem.tracing(_.updateHistogram(
+                  ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
+                  latency))
+              }
+            } catch {
+              case e: DateTimeParseException =>
+                warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
+            }
+          case None =>
+            warn(s"[$kubernetesInfo] Missing creation timestamp for engine pod " +
+              s"${pod.getMetadata.getNamespace}/${pod.getMetadata.getName}, " +
+              "skipping pod discovery latency metric")
+        }
         val eventType = KubernetesResourceEventTypes.ADD
         updateApplicationState(kubernetesInfo, pod, eventType)
         val appState = toApplicationState(pod, appStateSource, appStateContainer, eventType)
