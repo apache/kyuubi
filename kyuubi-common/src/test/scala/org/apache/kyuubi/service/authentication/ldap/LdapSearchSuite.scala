@@ -21,7 +21,7 @@ import javax.naming.{NamingEnumeration, NamingException}
 import javax.naming.directory.{DirContext, SearchControls, SearchResult}
 
 import org.mockito.ArgumentMatchers.{any, anyString, contains, eq => mockEq}
-import org.mockito.Mockito.{atLeastOnce, verify, when}
+import org.mockito.Mockito.{atLeastOnce, never, verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -56,6 +56,65 @@ class LdapSearchSuite extends KyuubiFunSuite {
     val expected: String = "CN=User1,OU=org1,DC=foo,DC=bar"
     val actual: String = search.findUserDn("CN=User1,OU=org1")
     assert(expected === actual)
+  }
+
+  test("FindUserDnWhenUserDnEscapesSpecialCharacters") {
+    val searchResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(searchResult)
+    search = new LdapSearch(conf, ctx)
+    search.findUserDn("CN=User1*,OU=org1")
+    verify(ctx).search(
+      mockEq("OU=org1"),
+      contains("(CN=User1\\2a)"),
+      any(classOf[SearchControls]))
+  }
+
+  test("FindDnByPatternEscapesSpecialCharacters") {
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN,
+      "CN=%s,OU=org1,DC=foo,DC=bar")
+    val emptyResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(emptyResult)
+    search = new LdapSearch(conf, ctx)
+    assert(search.findUserDn("User1*") === null)
+    verify(ctx).search(
+      mockEq("OU=org1,DC=foo,DC=bar"),
+      contains("(CN=User1\\2a)"),
+      any(classOf[SearchControls]))
+  }
+
+  test("FindUserDnDecodesEscapedRdnValue") {
+    val searchResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(searchResult)
+    search = new LdapSearch(conf, ctx)
+    search.findUserDn("cn=Alice\\+Ops,ou=People,dc=example,dc=com")
+    verify(ctx).search(
+      mockEq("ou=People,dc=example,dc=com"),
+      contains("(cn=Alice+Ops)"),
+      any(classOf[SearchControls]))
+  }
+
+  test("FindUserDnWithUnparsableDn") {
+    val searchResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(searchResult)
+    search = new LdapSearch(conf, ctx)
+    // a bare '+' is not a legal DN escape, so the name is rejected instead of searched for
+    assert(search.findUserDn("cn=Alice+Ops,ou=People,dc=example,dc=com") === null)
+    verify(ctx, never()).search(anyString, anyString, any(classOf[SearchControls]))
+  }
+
+  test("FindUserDnWithSingleComponentDn") {
+    val searchResult: NamingEnumeration[SearchResult] = mockEmptyNamingEnumeration
+    when(ctx.search(anyString, anyString, any(classOf[SearchControls])))
+      .thenReturn(searchResult)
+    search = new LdapSearch(conf, ctx)
+    // there is no base DN to scope the search to
+    assert(search.findUserDn("cn=user1") === null)
+    verify(ctx, never()).search(anyString, anyString, any(classOf[SearchControls]))
   }
 
   test("FindUserDnWhenUserDnNegativeDuplicates") {

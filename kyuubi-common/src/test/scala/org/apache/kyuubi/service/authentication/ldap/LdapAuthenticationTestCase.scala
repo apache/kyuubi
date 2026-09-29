@@ -58,6 +58,12 @@ object LdapAuthenticationTestCase {
     def ldapUrl(ldapUrl: String): LdapAuthenticationTestCase.Builder =
       setVarOnce(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
 
+    def bindUser(bindUser: String): LdapAuthenticationTestCase.Builder =
+      setVarOnce(KyuubiConf.AUTHENTICATION_LDAP_BIND_USER, bindUser)
+
+    def bindPassword(bindPassword: String): LdapAuthenticationTestCase.Builder =
+      setVarOnce(KyuubiConf.AUTHENTICATION_LDAP_BIND_PASSWORD, bindPassword)
+
     def customQuery(customQuery: String): LdapAuthenticationTestCase.Builder =
       setVarOnce(KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY, customQuery)
 
