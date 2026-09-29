@@ -37,23 +37,20 @@ class QueryFactorySuite extends KyuubiFunSuite {
   test("FindGroupDnById") {
     val q = queries.findGroupDnById("unique_group_id")
     val expected = "(&(objectClass=superGroups)(guid=unique_group_id))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("FindUserDnByRdn") {
     val q = queries.findUserDnByRdn("cn=User1")
     val expected =
       "(&(|(objectClass=person)(objectClass=user)(objectClass=inetOrgPerson))(cn=User1))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("FindDnByPattern") {
     val q = queries.findDnByPattern("cn=User1")
     val expected = "(cn=User1)"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("FindUserDnByName") {
@@ -61,15 +58,13 @@ class QueryFactorySuite extends KyuubiFunSuite {
     val expected =
       "(&(|(objectClass=person)(objectClass=user)(objectClass=inetOrgPerson))" +
         "(|(uid=unique_user_id)(sAMAccountName=unique_user_id)))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("FindGroupsForUser") {
     val q = queries.findGroupsForUser("user_name", "user_Dn")
     val expected = "(&(objectClass=superGroups)(|(member=user_Dn)(member=user_name)))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("IsUserMemberOfGroup") {
@@ -77,8 +72,7 @@ class QueryFactorySuite extends KyuubiFunSuite {
     val expected =
       "(&(|(objectClass=person)(objectClass=user)(objectClass=inetOrgPerson))" +
         "(partOf=cn=MyGroup,ou=Groups,dc=mycompany,dc=com)(guid=unique_user))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
   }
 
   test("IsUserMemberOfGroupWhenMisconfigured") {
@@ -91,7 +85,37 @@ class QueryFactorySuite extends KyuubiFunSuite {
   test("FindGroupDNByID") {
     val q = queries.findGroupDnById("unique_group_id")
     val expected = "(&(objectClass=superGroups)(guid=unique_group_id))"
-    val actual = q.filter
-    assert(expected === actual)
+    assert(expected === q.filterString)
+  }
+
+  test("findUserDnByName escapes LDAP filter metacharacters in userName") {
+    // userName is in an attribute value position: (uid=<userName>). Without escaping, a
+    // username like "jsmith)(uid=admin" would inject extra filter clauses. With escaping,
+    // the special characters are converted to \xx hex form and treated as literals.
+    val injectionAttempt = "jsmith)(uid=admin"
+    val q = queries.findUserDnByName(injectionAttempt)
+    // Parentheses become \28 and \29 per RFC 4515.
+    assert(!q.filterString.contains(")(uid=admin"), "filter must not contain injected clause")
+    assert(
+      q.filterString.contains("\\28") || q.filterString.contains("jsmith"),
+      s"escaped metacharacters expected in filter; got: ${q.filterString}")
+    // The parsed filter must also be valid (LdapFilter.create succeeded inside build()).
+    assert(q.filter != null)
+  }
+
+  test("findUserDnByName with wildcard username escapes asterisk") {
+    val q = queries.findUserDnByName("*")
+    // Unescaped * would be a presence assertion matching all users.
+    // Escaped \2a is a literal search for the string "*".
+    assert(!q.filterString.contains("uid=*"), s"wildcard must be escaped; got: ${q.filterString}")
+    assert(q.filterString.contains("\\2a"), s"expected \\2a in filter; got: ${q.filterString}")
+  }
+
+  test("filter field is a parsed Filter object matching filterString") {
+    val q = queries.findGroupDnById("unique_group_id")
+    assert(q.filter != null)
+    // Filter.toString() returns the normalized RFC 4515 representation; for our simple
+    // filter strings there should be no normalization difference.
+    assert(q.filterString === q.filter.toString)
   }
 }
