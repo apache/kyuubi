@@ -37,6 +37,7 @@ import org.apache.kyuubi.session.Session
 class ExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
@@ -83,14 +84,16 @@ class ExecuteStatement(
   protected def executeStatement(): Unit =
     try {
       withLocalProperties {
-        setState(OperationState.RUNNING)
-        info(diagnostics)
-        Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-        addOperationListener()
-        result = spark.sql(statement)
-        iter = collectAsIterator(result)
-        setCompiledStateIfNeeded()
-        setState(OperationState.FINISHED)
+        withStatementConf(confOverlay) {
+          setState(OperationState.RUNNING)
+          info(diagnostics)
+          Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+          addOperationListener()
+          result = spark.sql(statement)
+          iter = collectAsIterator(result)
+          setCompiledStateIfNeeded()
+          setState(OperationState.FINISHED)
+        }
       }
     } catch {
       onError(cancel = true)
@@ -212,6 +215,7 @@ class ExecuteStatement(
 class ArrowBasedExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean,
@@ -219,6 +223,7 @@ class ArrowBasedExecuteStatement(
   extends ExecuteStatement(
     session,
     statement,
+    confOverlay,
     shouldRunAsync,
     queryTimeout,
     incrementalCollect,
