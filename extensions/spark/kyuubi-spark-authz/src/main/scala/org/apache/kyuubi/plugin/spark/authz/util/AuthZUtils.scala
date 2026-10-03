@@ -25,7 +25,6 @@ import java.util.Base64
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.ranger.plugin.service.RangerBasePlugin
 import org.apache.spark.{SPARK_VERSION, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
@@ -33,7 +32,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, View}
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.util.ReservedKeys._
 import org.apache.kyuubi.util.SemanticVersion
-import org.apache.kyuubi.util.reflect.DynConstructors
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 private[authz] object AuthZUtils {
@@ -75,21 +73,6 @@ private[authz] object AuthZUtils {
   def isSkipCataloglessV2RelationEnabled(spark: SparkSession): Boolean =
     spark.conf.getOption(SKIP_CATALOGLESS_V2_RELATION_ENABLED_KEY)
       .exists(_.equalsIgnoreCase("true"))
-
-  lazy val isRanger21orGreater: Boolean = {
-    try {
-      DynConstructors.builder().impl(
-        classOf[RangerBasePlugin],
-        classOf[String],
-        classOf[String],
-        classOf[String])
-        .buildChecked[RangerBasePlugin]()
-      true
-    } catch {
-      case _: NoSuchMethodException =>
-        false
-    }
-  }
 
   lazy val SPARK_RUNTIME_VERSION: SemanticVersion = SemanticVersion(SPARK_VERSION)
   lazy val isSparkV40OrGreater: Boolean = SPARK_RUNTIME_VERSION >= "4.0"

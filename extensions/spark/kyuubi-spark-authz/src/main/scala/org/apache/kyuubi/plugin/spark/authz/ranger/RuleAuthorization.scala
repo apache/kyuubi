@@ -19,10 +19,9 @@ package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import scala.collection.mutable
 
-import org.apache.ranger.plugin.policyengine.RangerAccessRequest
-import org.apache.ranger.plugin.util.RangerPerfTracer
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz._
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
@@ -32,20 +31,14 @@ import org.apache.kyuubi.plugin.spark.authz.rule.Authorization
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 
 case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
-  private val PERF_SPARKAUTH_REQUEST_LOG =
-    RangerPerfTracer.getPerfLogger("sparkauth.request")
+  // the perf logger used by the legacy Ranger plugin (RangerPerfTracer) to trace
+  // access checks; keep the same logger name for existing perf-log consumers
+  final private val PERF_LOGGER =
+    LoggerFactory.getLogger("org.apache.ranger.perf.sparkauth.request")
 
   override def checkPrivileges(spark: SparkSession, plan: LogicalPlan): Unit = {
-    val perf = if (RangerPerfTracer.isPerfTraceEnabled(PERF_SPARKAUTH_REQUEST_LOG)) {
-      RangerPerfTracer.getPerfTracer(
-        PERF_SPARKAUTH_REQUEST_LOG,
-        "RuleAuthorization.checkPrivileges()")
-    } else {
-      null
-    }
-
+    val start = System.nanoTime
     try {
-      val auditHandler = new SparkRangerAuditHandler
       val ugi = getAuthzUgi(spark.sparkContext)
       val (inputs, outputs, opType) = PrivilegesBuilder.build(plan, spark)
 
@@ -69,7 +62,7 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
       addAccessRequest(outputs, isInput = false)
 
       val requestArrays = requests.map { request =>
-        val resource = request.getResource.asInstanceOf[AccessResource]
+        val resource = request.resource
         resource.objectType match {
           case ObjectType.COLUMN if resource.getColumns.nonEmpty =>
             resource.getColumns.map { col =>
@@ -81,21 +74,24 @@ case class RuleAuthorization(spark: SparkSession) extends Authorization(spark) {
                   col,
                   Option(resource.getOwnerUser),
                   resource.catalog)
-              AccessRequest(cr, ugi, opType, request.accessType).asInstanceOf[RangerAccessRequest]
+              AccessRequest(cr, ugi, opType, request.accessType)
             }
           case _ => Seq(request)
         }
       }.toSeq
 
       if (authorizeInSingleCall) {
-        verify(requestArrays.flatten, auditHandler)
+        verify(requestArrays.flatten)
       } else {
         requestArrays.flatten.foreach { req =>
-          verify(Seq(req), auditHandler)
+          verify(Seq(req))
         }
       }
     } finally {
-      RangerPerfTracer.log(perf)
+      if (PERF_LOGGER.isDebugEnabled) {
+        val elapsed = System.nanoTime - start
+        PERF_LOGGER.debug(s"RuleAuthorization.checkPrivileges() took ${(elapsed / 1000000d)}ms")
+      }
     }
   }
 }
