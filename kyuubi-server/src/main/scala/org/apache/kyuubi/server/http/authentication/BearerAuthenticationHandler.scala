@@ -27,6 +27,7 @@ import org.apache.kyuubi.server.http.authentication.AuthSchemes.AuthScheme
 import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, WWW_AUTHENTICATE_HEADER}
 import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthenticationProviderFactory, DefaultTokenCredential, TokenAuthenticationProvider}
+import org.apache.kyuubi.util.reflect.DynClasses
 
 class BearerAuthenticationHandler(providerClass: String)
   extends AuthenticationHandler with Logging {
@@ -42,7 +43,10 @@ class BearerAuthenticationHandler(providerClass: String)
   override def authenticationSupported: Boolean = {
     Option(providerClass).exists { _ =>
       try {
-        Class.forName(providerClass).isAssignableFrom(classOf[TokenAuthenticationProvider])
+        DynClasses.loadSubclass(
+          providerClass,
+          classOf[TokenAuthenticationProvider],
+          classOf[BearerAuthenticationHandler].getClassLoader)
         true
       } catch {
         case _: Throwable => false
