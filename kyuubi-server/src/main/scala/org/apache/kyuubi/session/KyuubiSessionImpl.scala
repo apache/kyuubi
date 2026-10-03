@@ -18,16 +18,18 @@
 package org.apache.kyuubi.session
 
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiConf.EngineOpenOnFailure._
-import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
-import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_ENGINE_APP_MGR_INFO_KEY, KYUUBI_ENGINE_CREDENTIALS_KEY, KYUUBI_SESSION_HANDLE_KEY, KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_SIGN}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
@@ -106,6 +108,10 @@ class KyuubiSessionImpl(
   @volatile private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
+  @volatile private var cachedEngineNode: Option[ServiceNodeInfo] = None
+
+  private val terminalEngineCloseSubmitted = new AtomicBoolean(false)
+
   @volatile private var _engineSessionHandle: SessionHandle = _
 
   @volatile private var openSessionError: Option[Throwable] = None
@@ -126,6 +132,61 @@ class KyuubiSessionImpl(
   def getEngineNode: Option[ServiceNodeInfo] = {
     withDiscoveryClient(sessionConf) { discoveryClient =>
       engine.getServiceNode(discoveryClient, _client.hostPort)
+    }
+  }
+
+  private[kyuubi] def engineApplicationTerminatedException(
+      cause: Throwable = null): Option[KyuubiSQLException] = {
+    try {
+      cachedEngineNode.flatMap { node =>
+        node.engineRefId.flatMap { engineRefId =>
+          val appMgrInfo = node.attributes.get(KYUUBI_ENGINE_APP_MGR_INFO_KEY)
+            .map(ApplicationManagerInfo.deserialize)
+            .getOrElse(ApplicationManagerInfo(None))
+          sessionManager.applicationManager
+            .getApplicationInfo(appMgrInfo, engineRefId)
+            .filter { info =>
+              info.state == ApplicationState.FAILED ||
+              info.state == ApplicationState.KILLED ||
+              info.state == ApplicationState.FINISHED
+            }
+            .map { info =>
+              KyuubiSQLException(
+                s"""
+                   |The engine application has been terminated. Please check the engine log.
+                   |ApplicationInfo: ${info.toMap.mkString("(\n", ",\n", "\n)")}
+                   |""".stripMargin,
+                cause)
+            }
+        }
+      }
+    } catch {
+      case NonFatal(e) =>
+        warn("Failed to get the terminated engine application info", e)
+        None
+    }
+  }
+
+  private[kyuubi] def closeOnEngineTermination(exception: KyuubiSQLException): Unit = {
+    if (terminalEngineCloseSubmitted.compareAndSet(false, true)) {
+      sessionEvent.exception = Some(exception)
+      try {
+        sessionManager.submitBackgroundOperation(() => {
+          Option(client).foreach(_.markEngineBroken())
+          try {
+            sessionManager.closeSession(handle)
+          } catch {
+            case NonFatal(e) if sessionManager.getSessionOption(handle).isEmpty =>
+              debug(s"Session $handle was already closed after engine termination", e)
+            case NonFatal(e) =>
+              warn(s"Failed to close session $handle after engine termination", e)
+          }
+        })
+      } catch {
+        case NonFatal(e) =>
+          warn(s"Failed to submit session $handle closure after engine termination", e)
+          Option(client).foreach(_.markEngineBroken())
+      }
     }
   }
 
@@ -180,6 +241,12 @@ class KyuubiSessionImpl(
             _engineSessionHandle =
               engineClient.openSession(protocol, user, passwd, openEngineSessionConf)
             _client = engineClient
+            try {
+              cachedEngineNode = engine.getServiceNode(discoveryClient, (host, port))
+            } catch {
+              case NonFatal(e) =>
+                warn(s"Failed to cache engine node [$host:$port]", e)
+            }
             if (isClosed) {
               shouldRetry = false
               throw KyuubiSQLException(s"KyuubiSession $handle has been closed")
@@ -327,7 +394,12 @@ class KyuubiSessionImpl(
 
   def checkEngineConnectionAlive(): Boolean = {
     if (client == null) return true // client has not been initialized
-    if (client.engineConnectionClosed) return false
-    !client.remoteEngineBroken
+    val alive = !client.engineConnectionClosed && !client.remoteEngineBroken
+    if (!alive) {
+      engineApplicationTerminatedException().foreach { exception =>
+        sessionEvent.exception = Some(exception)
+      }
+    }
+    alive
   }
 }
