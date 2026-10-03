@@ -31,6 +31,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.AuthTypes
@@ -57,6 +58,42 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val process = builder.start
     assert(process.isAlive)
     process.destroyForcibly()
+  }
+
+  test("the server decides that an engine serves Spark Connect") {
+    val builder = new SparkProcessBuilder(
+      "kentyao",
+      true,
+      conf.set(ENGINE_SPARK_CONNECT_ENABLED, true)
+        .set(ENGINE_SHARE_LEVEL, ShareLevel.USER.toString))
+    assert(builder.sparkConnectEnabled)
+    assert(builder.commands.exists(_ == s"spark.${ENGINE_SPARK_CONNECT_ENABLED.key}=true"))
+  }
+
+  test("a session cannot turn Spark Connect on through the spark.kyuubi prefix") {
+    // the engine rebuilds its KyuubiConf from `spark.kyuubi.*`, where the key is not immutable
+    val builder = new SparkProcessBuilder(
+      "kentyao",
+      true,
+      conf.set(s"spark.${ENGINE_SPARK_CONNECT_ENABLED.key}", "true"))
+    assert(!builder.sparkConnectEnabled)
+    assert(!builder.commands.exists(_.contains(ENGINE_SPARK_CONNECT_ENABLED.key)))
+  }
+
+  test("an engine that does not run as the session user serves Thrift only") {
+    val sharedEngine = new SparkProcessBuilder(
+      "kentyao",
+      true,
+      conf.set(ENGINE_SPARK_CONNECT_ENABLED, true)
+        .set(ENGINE_SHARE_LEVEL, ShareLevel.CONNECTION.toString))
+    assert(!sharedEngine.sparkConnectEnabled)
+    assert(!sharedEngine.commands.exists(_.contains(ENGINE_SPARK_CONNECT_ENABLED.key)))
+
+    val withoutDoAs = new SparkProcessBuilder(
+      "kentyao",
+      false,
+      conf.set(ENGINE_SPARK_CONNECT_ENABLED, true))
+    assert(!withoutDoAs.sparkConnectEnabled)
   }
 
   test("capture error from spark process builder") {
