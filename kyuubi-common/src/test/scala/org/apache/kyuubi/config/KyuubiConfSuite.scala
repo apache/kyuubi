@@ -304,6 +304,25 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(sparkConf(ENGINE_EXEC_POOL_SIZE.key) === "200")
   }
 
+  test("getEngineConf forwards internal security compatibility mode to all engines") {
+    val migrateMode = InternalSecurityCryptoCompatibilityMode.MIGRATE.toString
+    val kyuubiConf = KyuubiConf(false)
+      .set(INTERNAL_SECURITY_CRYPTO_COMPATIBILITY_MODE, migrateMode)
+
+    EngineType.values.foreach { engineType =>
+      assert(kyuubiConf.getEngineConf(engineType)(
+        INTERNAL_SECURITY_CRYPTO_COMPATIBILITY_MODE.key) === migrateMode)
+    }
+  }
+
+  test("internal security compatibility mode values are case-insensitive") {
+    val kyuubiConf = KyuubiConf(false)
+      .set(INTERNAL_SECURITY_CRYPTO_COMPATIBILITY_MODE.key, "migrate")
+
+    assert(kyuubiConf.get(INTERNAL_SECURITY_CRYPTO_COMPATIBILITY_MODE) ===
+      InternalSecurityCryptoCompatibilityMode.MIGRATE.toString)
+  }
+
   test("getEngineConf respects explicit audience(ANY) on engine-prefixed keys") {
     val explicitAnyConf = KyuubiConf.buildConf("kyuubi.engine.spark.cross.cutting.feature")
       .audience(ConfigAudience.ANY)
