@@ -45,16 +45,19 @@ We strongly recommend restricting access to these secrets.
 
 Custom implementations of `EngineSecuritySecretProvider` are also supported for advanced secret management needs.
 
-## Rolling upgrades from Kyuubi 1.11.1 or earlier
+## Rolling upgrades from Kyuubi 1.11.x or earlier
 
 Kyuubi 1.12 changed the internal access token format from a ciphertext encrypted with a static zero IV to a
-ciphertext prefixed with a random IV. To interoperate with servers and engines from Kyuubi 1.11.1 or earlier,
+ciphertext prefixed with a random IV. To interoperate with servers and engines from Kyuubi 1.11.x or earlier,
 use the following rolling upgrade procedure:
 
 1. Configure every replacement Kyuubi server with
-   `kyuubi.internal.security.crypto.compatibilityMode=MIGRATE`. The configuration is propagated to newly
+   `kyuubi.internal.security.legacy.crypto.compatMode=MIGRATE`. The configuration is propagated to newly
    launched engines. In this mode, Kyuubi issues legacy zero-IV tokens and accepts both token formats.
-2. Replace all pre-1.12 servers and engines, then ensure that no pre-1.12 server or engine remains.
+2. Replace all pre-1.12 servers and engines, then ensure that no pre-1.12 server or engine remains. This
+   is only needed when an engine resource is set explicitly, such as
+   `kyuubi.session.engine.spark.main.resource`; otherwise a replacement server always picks up the engine
+   jars shipped in its `$KYUUBI_HOME`, and this step can be skipped.
 3. Change the compatibility mode to `READ_COMPATIBLE` on every server, restart the servers, and recycle
    any remaining engines. This mode restores random-IV token issuance while continuing to accept legacy
    tokens.
@@ -78,6 +81,6 @@ homogeneous pre-1.12 deployment or isolate components that require different com
 | `kyuubi.internal.security.crypto.keyAlgorithm`           | AES                  | The algorithm for generated secret key.                                                                                             | string   | 1.12.0 |
 | `kyuubi.internal.security.crypto.keyLength`              | 128                  | The length in bits of the encryption key to generate. Valid values are 128, 192, and 256.                                           | int      | 1.12.0 |
 | `kyuubi.internal.security.crypto.cipher`                 | AES/CBC/PKCS5PADDING | The cipher transformation to use for encrypting internal access token.                                                              | string   | 1.12.0 |
-| `kyuubi.internal.security.crypto.compatibilityMode`      | STRICT               | Controls internal access token compatibility during rolling upgrades. Supported values: `STRICT`, `READ_COMPATIBLE`, and `MIGRATE`. | string   | 1.12.1 |
+| `kyuubi.internal.security.legacy.crypto.compatMode`      | STRICT               | Controls internal access token compatibility during rolling upgrades. Supported values: `STRICT`, `READ_COMPATIBLE`, and `MIGRATE`. | string   | 1.12.1 |
 | `kyuubi.internal.security.crypto.ivLength`               | 16                   | Initial vector length, in bytes.                                                                                                    | int      | 1.12.0 |
 
