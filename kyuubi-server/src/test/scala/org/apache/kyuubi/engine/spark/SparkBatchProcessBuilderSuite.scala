@@ -21,10 +21,64 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 
 class SparkBatchProcessBuilderSuite extends KyuubiFunSuite {
+
+  private def newBuilder(conf: KyuubiConf): SparkBatchProcessBuilder = {
+    new SparkBatchProcessBuilder(
+      "kyuubi",
+      conf,
+      UUID.randomUUID().toString,
+      "test",
+      Some("test"),
+      "test",
+      Map.empty,
+      Seq.empty,
+      None)
+  }
+
+  test("SPARK-BATCH-K8S: reject k8s batch submission when deployMode is not cluster") {
+    val conf = KyuubiConf(false)
+    conf.set("spark.master", "k8s://https://kubernetes.default.svc:443")
+    conf.set("spark.submit.deployMode", "client")
+    val builder = newBuilder(conf)
+    val e = intercept[KyuubiException](builder.validateConf())
+    assert(e.getMessage.contains("requires"))
+    assert(e.getMessage.contains("spark.submit.deployMode=cluster"))
+  }
+
+  test("SPARK-BATCH-K8S: reject k8s batch submission when deployMode is unset") {
+    val conf = KyuubiConf(false)
+    conf.set("spark.master", "k8s://https://kubernetes.default.svc:443")
+    // spark.submit.deployMode intentionally left unset, defaults to Spark's own "client"
+    val builder = newBuilder(conf)
+    val e = intercept[KyuubiException](builder.validateConf())
+    assert(e.getMessage.contains("spark.submit.deployMode=cluster"))
+  }
+
+  test("SPARK-BATCH-K8S: allow k8s batch submission when deployMode is cluster") {
+    val conf = KyuubiConf(false)
+    conf.set("spark.master", "k8s://https://kubernetes.default.svc:443")
+    conf.set("spark.submit.deployMode", "cluster")
+    val builder = newBuilder(conf)
+    builder.validateConf() // should not throw
+  }
+
+  test("SPARK-BATCH-K8S: do not reject non-k8s masters regardless of deployMode") {
+    val conf = KyuubiConf(false)
+    conf.set("spark.master", "local[*]")
+    val builder = newBuilder(conf)
+    builder.validateConf() // should not throw, this check only targets k8s master
+
+    val conf2 = KyuubiConf(false)
+    conf2.set("spark.master", "yarn")
+    conf2.set("spark.submit.deployMode", "client")
+    val builder2 = newBuilder(conf2)
+    builder2.validateConf() // should not throw, yarn client is out of this check's scope
+  }
+
   test("spark batch conf should be converted with `spark.` prefix") {
     val builder = new SparkBatchProcessBuilder(
       "kyuubi",
