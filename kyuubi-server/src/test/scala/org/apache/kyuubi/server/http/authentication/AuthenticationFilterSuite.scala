@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.http.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.AuthTypes
+import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthTypes}
 
 class AuthenticationFilterSuite extends KyuubiFunSuite {
   test("add auth handler and destroy") {
@@ -32,6 +32,11 @@ class AuthenticationFilterSuite extends KyuubiFunSuite {
     assert(filter.authSchemeHandlers.size == 1)
     filter.addAuthHandler(new KerberosAuthenticationHandler())
     assert(filter.authSchemeHandlers.size == 1)
+    filter.addAuthHandler(new BearerAuthenticationHandler(classOf[KyuubiConf].getName))
+    assert(filter.authSchemeHandlers.size == 1)
+    filter.addAuthHandler(new BearerAuthenticationHandler(
+      classOf[AnonymousAuthenticationProviderImpl].getName))
+    assert(filter.authSchemeHandlers.size == 2)
     filter.destroy()
     assert(filter.authSchemeHandlers.isEmpty)
   }

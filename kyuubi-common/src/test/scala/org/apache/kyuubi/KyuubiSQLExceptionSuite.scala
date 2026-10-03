@@ -77,4 +77,29 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val cornerCase = new InvocationTargetException(null)
     assert(KyuubiSQLException(cornerCase).getCause === cornerCase)
   }
+
+  test("non-Throwable classes are not initialized or constructed") {
+    // Refer to the module by name to avoid initializing it in the test itself.
+    val classNames = Seq(
+      "org.apache.kyuubi.RemoteInitializationProbe$",
+      classOf[RemoteConstructorProbe].getName)
+    classNames.foreach { className =>
+      val cause = KyuubiSQLException.toCause(List(s"*$className:remote failure:0:-1"))
+      assert(!KyuubiSQLExceptionSuite.remoteCodeExecuted)
+      assert(cause.getClass === classOf[RuntimeException])
+      assert(cause.getMessage === s"$className:remote failure")
+    }
+  }
+}
+
+object KyuubiSQLExceptionSuite {
+  var remoteCodeExecuted = false
+}
+
+private[kyuubi] object RemoteInitializationProbe {
+  KyuubiSQLExceptionSuite.remoteCodeExecuted = true
+}
+
+private[kyuubi] class RemoteConstructorProbe(message: String, cause: Throwable) {
+  KyuubiSQLExceptionSuite.remoteCodeExecuted = true
 }
