@@ -158,11 +158,13 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     val sessionConf = this.getConf.getUserDefaults(user)
+    val sanitizedConf = Metadata.sanitizeRequestConf(conf)
+    val sanitizedMetadata = metadata.map(_.withSanitizedRequestConf)
     new KyuubiBatchSession(
       username,
       password,
       ipAddress,
-      conf,
+      sanitizedConf,
       this,
       sessionConf,
       batchType,
@@ -170,7 +172,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       resource,
       className,
       batchArgs,
-      metadata,
+      sanitizedMetadata,
       fromRecovery)
   }
 
@@ -242,7 +244,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       resource = batchRequest.getResource,
       className = batchRequest.getClassName,
       requestName = batchRequest.getName,
-      requestConf = conf,
+      requestConf = Metadata.sanitizeRequestConf(conf),
       requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType,
@@ -319,9 +321,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         stateToRecover.toString,
         kyuubiInstance,
         0,
-        Int.MaxValue).map { metadata =>
-        createBatchSessionFromRecovery(metadata)
-      }).getOrElse(Seq.empty)
+        Int.MaxValue).map(createBatchSessionFromRecovery)).getOrElse(Seq.empty)
     }
   }
 
@@ -338,7 +338,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           getBatchMetadata(batchId)
             .filter(m =>
               m.kyuubiInstance == kyuubiInstance && batchStatesToRecovery.contains(m.opState))
-            .flatMap { metadata => Some(createBatchSessionFromRecovery(metadata)) }
+            .map(createBatchSessionFromRecovery)
       }
     }
   }
