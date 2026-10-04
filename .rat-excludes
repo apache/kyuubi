@@ -37,6 +37,8 @@ build/scala-*/**
 **/**/server_operation_logs/**/**
 **/**/engine_operation_logs/**/**
 **/*.output.schema
+**/classification_backlog_spark_*.txt
+**/spec_verified_spark_versions.txt
 **/apache-kyuubi-*-bin*/**
 **/benchmarks/**
 **/org.apache.spark.status.AppHistoryServerPlugin
