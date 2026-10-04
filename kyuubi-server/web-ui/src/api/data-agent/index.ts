@@ -25,7 +25,7 @@ export interface SessionOpenRequest {
 
 export interface SessionHandle {
   identifier: string
-  secretId: string
+  kyuubiInstance: string
 }
 
 export interface SseEvent {
@@ -43,14 +43,14 @@ export function openSession(data: SessionOpenRequest) {
 
 export function closeSession(sessionHandle: string) {
   return request({
-    url: `api/v1/sessions/${sessionHandle}`,
+    url: `api/v1/data-agent/sessions/${sessionHandle}`,
     method: 'delete'
   })
 }
 
 export function getSession(sessionHandle: string) {
   return request({
-    url: `api/v1/sessions/${sessionHandle}`,
+    url: `api/v1/data-agent/sessions/${sessionHandle}`,
     method: 'get'
   })
 }
