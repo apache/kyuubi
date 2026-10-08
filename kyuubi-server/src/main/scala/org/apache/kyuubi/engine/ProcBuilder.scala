@@ -169,6 +169,11 @@ trait ProcBuilder {
   @volatile private[kyuubi] var process: Process = _
   @volatile private[kyuubi] var processLaunched: Boolean = false
 
+  // Set engine application manger info conf
+  conf.set(
+    KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY,
+    ApplicationManagerInfo.serialize(appMgrInfo()))
+
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
     val currentTime = System.currentTimeMillis()
@@ -208,12 +213,6 @@ trait ProcBuilder {
   def validateConf(): Unit = {}
 
   final def start: Process = synchronized {
-
-    // Set engine application manger info conf
-    conf.set(
-      KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY,
-      ApplicationManagerInfo.serialize(appMgrInfo()))
-
     process = processBuilder.start()
     processLaunched = true
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
