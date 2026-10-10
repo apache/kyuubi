@@ -42,54 +42,12 @@ legality issues.
 
 ## General Style
 
-- Use [ReStructuredText](https://docutils.sourceforge.io/rst.html) or [Markdown](https://en.wikipedia.org/wiki/Markdown) format for text, avoid HTML hacks
-- Use [draw.io](https://www.diagrams.net/) for drawing or editing an image, and export it as PNG for
-  referencing in document. A pull request should commit both of them
-- Use Kyuubi for short instead of Apache Kyuubi after the first time in the
-  same page
-- Character line limit: 78, except unbreakable ones
-- Prefer lists to tables
-- Prefer unordered list than ordered
-
-## ReStructuredText
-
-### Headings
-
-- Use **Pascal Case**, every word starts with an uppercase letter, e.g., 'Documentation Style Guide'
-- Use a max of **three levels**
-  - Split into multiple files when there comes an H4
-  - Prefer [directive rubric](https://www.sphinx-doc.org/en/master/usage/restructuredtext/directives.html#directive-rubric) than H4
-- Use underline-only adornment styles, **DO NOT** use overline
-  - The length of underline characters **SHOULD** match the title
-  - H1 should be underlined with '='
-  - H2 should be underlined with '-'
-  - H3 should be underlined with '~'
-  - H4 should be underlined with '^', but it's better to avoid using H4
-- **DO NOT** use numbering for sections
-- **DO NOT** use "Kyuubi" in titles if possible
-
-### Links
-
-- Define links with short descriptive phrases, group them at the bottom of the file
-
-:::{note}
-:class: dropdown
-
-Recommended
-
-```
-Please refer to `Apache Kyuubi Home Page`_.
-
-.. _Apache Kyuubi Home Page: https://kyuubi.apache.org/
-```
-
-Not recommended
-
-```
-Please refer to `Apache Kyuubi Home Page <https://kyuubi.apache.org/>`_.
-```
-
-:::
+- Use [Markdown](https://en.wikipedia.org/wiki/Markdown) format with [MyST](https://myst-parser.readthedocs.io/en/latest) flavor if needed, avoid HTML hacks.
+- Use [draw.io](https://www.diagrams.net/) for drawing or editing an image, and export it as PNG for referencing in document.
+  A pull request should commit both of them Use Kyuubi for short instead of Apache Kyuubi after the first time in the same page.
+- Character line limit: 78, except unbreakable ones.
+- Prefer lists to tables.
+- Prefer unordered list than ordered.
 
 ## Markdown
 
