@@ -109,7 +109,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
                     opHandle)
               }
             case mode =>
-              new PlanOnlyStatement(session, statement, mode, opHandle)
+              new PlanOnlyStatement(session, statement, mode, queryTimeout, opHandle)
           }
         case OperationLanguages.SCALA =>
           val repl = sessionToRepl.getOrElseUpdate(session.handle, KyuubiSparkILoop(spark))
