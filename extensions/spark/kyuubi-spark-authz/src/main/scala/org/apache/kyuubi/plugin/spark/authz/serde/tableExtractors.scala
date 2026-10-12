@@ -30,6 +30,7 @@ import org.apache.spark.sql.connector.catalog.Identifier
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
+import org.slf4j.LoggerFactory
 
 import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils._
 import org.apache.kyuubi.plugin.spark.authz.util.PathIdentifier._
@@ -42,6 +43,8 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 trait TableExtractor extends ((SparkSession, AnyRef) => Option[Table]) with Extractor
 
 object TableExtractor {
+  final private val LOG = LoggerFactory.getLogger(getClass)
+
   val tableExtractors: Map[String, TableExtractor] = {
     loadExtractorsToMap[TableExtractor]
   }
@@ -52,10 +55,14 @@ object TableExtractor {
    * @return owner
    */
   def getOwner(v: AnyRef): Option[String] = {
-    // org.apache.spark.sql.connector.catalog.Table
-    val table = invokeAs[AnyRef](v, "table")
-    val properties = invokeAs[JMap[String, String]](table, "properties").asScala
-    properties.get("owner")
+    // It holds the properties itself, rather than wrapping another table.
+    val maybeTable = v.getClass.getName match {
+      case "org.apache.spark.sql.connector.catalog.V1Table" => v
+      case _ => invokeAs[AnyRef](v, "table")
+    }
+    val properties = invokeAs[JMap[String, String]](maybeTable, "properties").asScala
+    // V1Table always sets the owner property, using "" when the table has no owner
+    properties.get("owner").filter(_.nonEmpty)
   }
 
   def getOwner(spark: SparkSession, catalogName: String, tableIdent: AnyRef): Option[String] = {
@@ -69,7 +76,9 @@ object TableExtractor {
       getOwner(table)
     } catch {
       // Exception may occur due to invalid reflection or table not found
-      case _: Exception => None
+      case e: Exception =>
+        LOG.debug("Failed to resolve the owner of {}.{}", catalogName, tableIdent, e)
+        None
     }
   }
 
