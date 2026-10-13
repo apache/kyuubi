@@ -24,6 +24,7 @@ import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.kyuubi.SparkSQLKeywordHelper
 import org.apache.spark.ui.SparkUIUtils.formatDuration
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -117,7 +118,8 @@ class SparkSessionImpl(
       case TGetInfoType.CLI_SERVER_NAME | TGetInfoType.CLI_DBMS_NAME =>
         TGetInfoValue.stringValue("Spark SQL")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.spark.SPARK_VERSION)
-      case TGetInfoType.CLI_ODBC_KEYWORDS => TGetInfoValue.stringValue("Unimplemented")
+      case TGetInfoType.CLI_ODBC_KEYWORDS =>
+        TGetInfoValue.stringValue(SparkSQLKeywordHelper.keywords.mkString(","))
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
