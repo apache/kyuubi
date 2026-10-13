@@ -22,10 +22,10 @@ import java.util.UUID
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ApplicationState
-import org.apache.kyuubi.server.metadata.MetadataManager
+import org.apache.kyuubi.server.metadata.{MetadataManager, MetadataRowNotFoundException, MetadataUpdateMismatchException}
 import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 import org.apache.kyuubi.server.metadata.jdbc.JDBCMetadataStoreConf._
 import org.apache.kyuubi.session.SessionType
@@ -274,10 +274,61 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     jdbcMetadataStore.cleanupMetadataByIdentifier(batchId)
   }
 
-  test("throw exception if update count is 0") {
+  test("report a missing metadata row after update count is 0") {
     val metadata = Metadata(identifier = UUID.randomUUID().toString, state = "RUNNING")
-    intercept[KyuubiException] {
+    intercept[MetadataRowNotFoundException] {
       jdbcMetadataStore.updateMetadata(metadata)
+    }
+  }
+
+  test("accept update count 0 if the metadata already matches") {
+    val batchId = UUID.randomUUID().toString
+    val triggerName = s"ignore_metadata_update_${batchId.replace("-", "")}"
+    val metadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      state = "RUNNING",
+      createTime = System.currentTimeMillis(),
+      engineType = "spark")
+    val metadataToUpdate = Metadata(
+      identifier = batchId,
+      kyuubiInstance = "localhost:10099",
+      state = "RUNNING",
+      requestConf = Map("spark.master" -> "local"),
+      clusterManager = Some("kubernetes"),
+      engineOpenTime = System.currentTimeMillis(),
+      engineId = "app_id",
+      engineName = "app_name",
+      engineUrl = "app_url",
+      engineState = "FAILED",
+      engineError = Some("engine_error"),
+      endTime = System.currentTimeMillis(),
+      peerInstanceClosed = true)
+
+    try {
+      jdbcMetadataStore.insertMetadata(metadata)
+      jdbcMetadataStore.updateMetadata(metadataToUpdate)
+      executeSql(
+        s"""
+           |CREATE TRIGGER $triggerName
+           |BEFORE UPDATE ON metadata
+           |WHEN OLD.identifier = '$batchId'
+           |BEGIN
+           |  SELECT RAISE(IGNORE);
+           |END
+           |""".stripMargin)
+
+      jdbcMetadataStore.updateMetadata(metadataToUpdate)
+
+      val error = intercept[MetadataUpdateMismatchException] {
+        jdbcMetadataStore.updateMetadata(metadataToUpdate.copy(state = "FINISHED"))
+      }
+      assert(error.mismatchedColumns === Seq("state"))
+    } finally {
+      executeSql(s"DROP TRIGGER IF EXISTS $triggerName")
+      jdbcMetadataStore.cleanupMetadataByIdentifier(batchId)
     }
   }
 
@@ -362,5 +413,19 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
 
     jdbcMetadataStore.cleanupKubernetesEngineInfoByIdentifier(tag)
     assert(jdbcMetadataStore.getKubernetesMetaEngineInfo(tag) == null)
+  }
+
+  private def executeSql(sql: String): Unit = {
+    val connection = jdbcMetadataStore.hikariDataSource.getConnection
+    try {
+      val statement = connection.createStatement()
+      try {
+        statement.execute(sql)
+      } finally {
+        statement.close()
+      }
+    } finally {
+      connection.close()
+    }
   }
 }

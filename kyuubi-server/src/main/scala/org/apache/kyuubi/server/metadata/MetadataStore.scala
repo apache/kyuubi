@@ -19,6 +19,7 @@ package org.apache.kyuubi.server.metadata
 
 import java.io.Closeable
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.server.metadata.api.{KubernetesEngineInfo, Metadata, MetadataFilter}
 
 trait MetadataStore extends Closeable {
@@ -118,3 +119,17 @@ trait MetadataStore extends Closeable {
    */
   def cleanupKubernetesEngineInfoByAge(maxAge: Long, limit: Int): Int
 }
+
+sealed abstract private[metadata] class MetadataUpdatePostconditionException(message: String)
+  extends KyuubiException(message)
+
+private[metadata] class MetadataRowNotFoundException(identifier: String)
+  extends MetadataUpdatePostconditionException(
+    s"Metadata row $identifier was not found after an update returned 0")
+
+private[metadata] class MetadataUpdateMismatchException(
+    identifier: String,
+    val mismatchedColumns: Seq[String])
+  extends MetadataUpdatePostconditionException(
+    s"Metadata row $identifier does not match the requested update for columns: " +
+      mismatchedColumns.mkString(", "))
