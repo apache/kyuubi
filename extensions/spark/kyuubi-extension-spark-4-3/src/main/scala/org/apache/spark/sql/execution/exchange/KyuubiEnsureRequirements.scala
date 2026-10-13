@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql
+package org.apache.spark.sql.execution.exchange
 
+import scala.collection.immutable.BitSet
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.SparkException
 import org.apache.spark.internal.LogKeys
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans._
@@ -28,10 +27,9 @@ import org.apache.spark.sql.catalyst.plans.JoinType
 import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.util.InternalRowComparableWrapper
-import org.apache.spark.sql.connector.catalog.functions.Reducer
+import org.apache.spark.sql.errors.QueryExecutionErrors
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.v2.GroupPartitionsExec
-import org.apache.spark.sql.execution.exchange._
 import org.apache.spark.sql.execution.joins.{ShuffledHashJoinExec, SortMergeJoinExec}
 import org.apache.spark.sql.internal.SQLConf
 
@@ -42,6 +40,9 @@ import org.apache.spark.sql.internal.SQLConf
  */
 object KyuubiEnsureRequirements extends Rule[SparkPlan] {
 
+  private type KeyedResolution =
+    Either[KeyedPartitioning, (KeyedPartitioning, Option[Seq[Int]])]
+
   private def ensureDistributionAndOrdering(
       parent: Option[SparkPlan],
       originalChildren: Seq[SparkPlan],
@@ -50,90 +51,85 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
       shuffleOrigin: ShuffleOrigin): Seq[SparkPlan] = {
     assert(requiredChildDistributions.length == originalChildren.length)
     assert(requiredChildOrderings.length == originalChildren.length)
-    // Ensure that the operator's children satisfy their output distribution requirements.
-    var children = originalChildren.zip(requiredChildDistributions).map {
-      case (child, distribution) =>
-        // Split child's partitioning into categories
-        val (other, grouped, nonGrouped) = splitKeyedPartitionings(child.outputPartitioning)
-
-        // If non-KeyedPartitioning already satisfies, no changes needed
-        if (other.exists(_.satisfies(distribution))) {
-          child
-        } else {
-          // Check KeyedPartitioning satisfaction conditions
-          val groupedSatisfies = grouped.find(_.satisfies(distribution))
-          val nonGroupedSatisfiesAsIs = nonGrouped.exists(_.nonGroupedSatisfies(distribution))
-          val nonGroupedSatisfiesWhenGrouped = nonGrouped.find(_.groupedSatisfies(distribution))
-
-          // Check if any KeyedPartitioning satisfies the distribution
-          if (groupedSatisfies.isDefined || nonGroupedSatisfiesAsIs
-            || nonGroupedSatisfiesWhenGrouped.isDefined) {
-            distribution match {
-              case o: OrderedDistribution =>
-                // OrderedDistribution requires grouped KeyedPartitioning with sorted keys
-                // according to the distribution's ordering.
-                // Find any KeyedPartitioning that satisfies via groupedSatisfies.
-                val satisfyingKeyedPartitioning =
-                  groupedSatisfies.orElse(nonGroupedSatisfiesWhenGrouped).get
-                val attrs = satisfyingKeyedPartitioning.expressions.flatMap(_.collectLeaves())
-                  .map(_.asInstanceOf[Attribute])
-                val keyRowOrdering = RowOrdering.create(o.ordering, attrs)
-                val keyOrdering = keyRowOrdering.on((t: InternalRowComparableWrapper) => t.row)
-                if (satisfyingKeyedPartitioning.partitionKeys.sliding(2).forall {
-                    case Seq(k1, k2) => keyOrdering.lteq(k1, k2)
-                  }) {
-                  child
-                } else {
-                  // Use distributePartitions to spread splits across expected partitions
-                  val sortedGroupedKeys = satisfyingKeyedPartitioning.partitionKeys
-                    .groupBy(identity).view.mapValues(_.size)
-                    .toSeq.sortBy(_._1)(keyOrdering)
-                  GroupPartitionsExec(
-                    child,
-                    expectedPartitionKeys = Some(sortedGroupedKeys),
-                    distributePartitions = true)
-                }
-
-              case _ if groupedSatisfies.isDefined =>
-                // Grouped KeyedPartitioning already satisfies
-                child
-
-              case _ if nonGroupedSatisfiesAsIs =>
-                // Non-grouped KeyedPartitioning satisfies without grouping
-                child
-
-              case _ =>
-                // Non-grouped KeyedPartitioning satisfies only after grouping
-                GroupPartitionsExec(child)
-            }
-          } else {
-            // No partitioning satisfies - need broadcast or shuffle
-            val numPartitions = distribution.requiredNumPartitions
-              .getOrElse(conf.numShufflePartitions)
-            distribution match {
-              case BroadcastDistribution(mode) =>
-                BroadcastExchangeExec(mode, child)
-              case _: StatefulOpClusteredDistribution =>
-                ShuffleExchangeExec(
-                  distribution.createPartitioning(numPartitions),
-                  child,
-                  REQUIRED_BY_STATEFUL_OPERATOR)
-              case _ =>
-                ShuffleExchangeExec(
-                  distribution.createPartitioning(numPartitions),
-                  child,
-                  shuffleOrigin)
-            }
-          }
-        }
-    }
-
-    // Get the indexes of children which have specified distribution requirements and need to be
-    // co-partitioned.
     val childrenIndexes = requiredChildDistributions.zipWithIndex.filter {
       case (_: ClusteredDistribution, _) => true
       case _ => false
     }.map(_._2)
+    val isCoPartitioned = childrenIndexes.length > 1
+    // Ensure that the operator's children satisfy their output distribution requirements.
+    var children = originalChildren.zip(requiredChildDistributions).map {
+      case (child, distribution) =>
+        val (otherSatisfies, keyed) =
+          splitKeyedPartitionings(child.outputPartitioning, distribution, isCoPartitioned)
+
+        // If non-KeyedPartitioning already satisfies, no changes needed
+        if (otherSatisfies) {
+          child
+        } else {
+          keyed match {
+            case Some(resolution) =>
+              (distribution, resolution) match {
+                case (ordering: OrderedDistribution, _) =>
+                  // OrderedDistribution requires grouped KeyedPartitioning with sorted keys
+                  // according to the distribution's ordering.
+                  val satisfyingKeyedPartitioning = resolution.fold(identity, _._1)
+                  assert(
+                    ordering.areAllClusterKeysMatched(satisfyingKeyedPartitioning.expressions),
+                    "the partition expressions must be the ordering's, position by position")
+                  val keyRowOrdering = RowOrdering.create(
+                    ordering.ordering.zip(satisfyingKeyedPartitioning.keyDataTypes)
+                      .zipWithIndex.map {
+                        case ((sortOrder, dataType), index) =>
+                          sortOrder.copy(
+                            child = BoundReference(index, dataType, nullable = true),
+                            sameOrderExpressions = Seq.empty)
+                      },
+                    Nil)
+                  val keyOrdering =
+                    keyRowOrdering.on((key: InternalRowComparableWrapper) => key.row)
+                  val keys = satisfyingKeyedPartitioning.partitionKeys
+                  if (keys.zip(keys.drop(1)).forall {
+                      case (leftKey, rightKey) => keyOrdering.lteq(leftKey, rightKey)
+                    }) {
+                    child
+                  } else {
+                    // Use distributePartitions to spread splits across expected partitions
+                    val sortedGroupedKeys = keys
+                      .groupBy(identity).view.mapValues(_.size)
+                      .toSeq.sortBy(_._1)(keyOrdering)
+                    GroupPartitionsExec(
+                      child,
+                      expectedPartitionKeys = Some(sortedGroupedKeys),
+                      distributePartitions = true)
+                  }
+
+                case (_, scala.Left(_)) =>
+                  child
+
+                case (_, scala.Right((_, positions))) =>
+                  GroupPartitionsExec(child, joinKeyPositions = positions)
+              }
+            case None =>
+              // No partitioning satisfies - need broadcast or shuffle
+              val numPartitions = distribution.requiredNumPartitions
+                .getOrElse(conf.numShufflePartitions)
+              distribution match {
+                case BroadcastDistribution(mode) =>
+                  BroadcastExchangeExec(mode, child)
+                case _: StatefulOpClusteredDistribution =>
+                  ShuffleExchangeExec(
+                    distribution.createPartitioning(numPartitions),
+                    child,
+                    REQUIRED_BY_STATEFUL_OPERATOR)
+                case _ =>
+                  ShuffleExchangeExec(
+                    distribution.createPartitioning(numPartitions),
+                    child,
+                    shuffleOrigin)
+              }
+          }
+        }
+    }
 
     // Special case: if all sides of the join are single partition and it's physical size less than
     // or equal spark.sql.maxSinglePartitionBytes.
@@ -183,7 +179,8 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
       // HashPartitioning(6).
       val shouldConsiderMinParallelism = specs.forall(p =>
         !p._2.canCreatePartitioning || children(p._1).isInstanceOf[ShuffleExchangeLike])
-      // Choose all the specs that can be used to shuffle other children
+      def servingMembers(spec: ShuffleSpec): Seq[ShuffleSpec] =
+        flattenSpec(spec).filter(_.canCreatePartitioning)
       val candidateSpecs = specs.filter { case (index, spec) =>
         spec.canCreatePartitioning &&
         (!shouldConsiderMinParallelism ||
@@ -206,7 +203,7 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
           candidateSpecs
         }
         // Pick the spec with the best parallelism
-        Some(finalCandidateSpecs.values.maxBy(_.numPartitions))
+        Some(finalCandidateSpecs.values.maxBy(servingMembers(_).head.numPartitions))
       }
 
       // Check if the following conditions are satisfied:
@@ -238,14 +235,26 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
           }
         }
 
+      lazy val matchedIndexes = bestSpecOpt.toSeq.flatMap { best =>
+        childrenIndexes.filter(index =>
+          servingMembers(best).exists(_.isCompatibleWith(specs(index))))
+      }
+      lazy val bestMemberOpt = bestSpecOpt.flatMap { best =>
+        val matchedMembers = matchedIndexes.map(index => flattenSpec(specs(index)))
+        servingMembers(best)
+          .filter(member => matchedMembers.forall(_.exists(member.isCompatibleWith)))
+          .maxByOption(_.numPartitions)
+      }
+
       children = children.zip(requiredChildDistributions).zipWithIndex.map {
         case ((child, _), idx)
             if areChildrenCompatible ||
               !childrenIndexes.contains(idx) =>
           child
         case ((child, dist), idx) =>
-          if (bestSpecOpt.isDefined && bestSpecOpt.get.isCompatibleWith(specs(idx))) {
-            bestSpecOpt match {
+          if (bestMemberOpt.isDefined && matchedIndexes.contains(idx)) {
+            val bestMember = bestMemberOpt.get
+            flattenSpec(specs(idx)).find(bestMember.isCompatibleWith) match {
               // If `areChildrenCompatible` is false, we can still perform SPJ
               // by shuffling the other side based on join keys (see the else case below).
               // Hence we need to ensure that after this call, the outputPartitioning of the
@@ -256,10 +265,10 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
               case _ => child
             }
           } else {
-            val newPartitioning = bestSpecOpt.map { bestSpec =>
+            val newPartitioning = bestMemberOpt.map { bestMember =>
               // Use the best spec to create a new partitioning to re-shuffle this child
               val clustering = dist.asInstanceOf[ClusteredDistribution].clustering
-              bestSpec.createPartitioning(clustering)
+              bestMember.createPartitioning(clustering)
             }.getOrElse {
               // No best spec available, so we create default partitioning from the required
               // distribution
@@ -271,7 +280,8 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
             child match {
               case exchange: ShuffleExchangeExec =>
                 exchange.copy(outputPartitioning = newPartitioning)
-              case gpe: GroupPartitionsExec => ShuffleExchangeExec(newPartitioning, gpe.child)
+              case grouping: GroupPartitionsExec =>
+                ShuffleExchangeExec(newPartitioning, unwrapGroupPartitions(grouping))
               case _ => ShuffleExchangeExec(newPartitioning, child)
             }
           }
@@ -384,7 +394,7 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
       (conf.v2BucketingPushPartValuesEnabled ||
         conf.v2BucketingAllowKeysSubsetOfPartitionKeys)) {
       logInfo("Pushing common partition values for storage-partitioned join")
-      isCompatible = leftSpec.areKeysCompatible(rightSpec)
+      isCompatible = leftSpec.areKeysCompatible(rightSpec, allowReduce = true)
 
       // Partition expressions are compatible. Regardless of whether partition values
       // match from both sides of children, we can calculate a superset of partition values and
@@ -415,29 +425,32 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
 
         // in case of compatible but not identical partition expressions, we apply 'reduce'
         // transforms to group one side's partitions as well as the common partition values
-        val leftReducers = leftSpec.reducers(rightSpec)
-        val rightReducers = rightSpec.reducers(leftSpec)
+        val (leftReducers, rightReducers) = leftSpec.reducersBothWays(rightSpec)
         val (leftReducedDataTypes, leftReducedKeys) = leftReducers.fold(
           (
-            leftPartitioning.expressionDataTypes,
+            leftPartitioning.keyDataTypes,
             leftPartitioning.partitionKeys))(leftPartitioning.reduceKeys)
         val (rightReducedDataTypes, rightReducedKeys) = rightReducers.fold(
           (
-            rightPartitioning.expressionDataTypes,
+            rightPartitioning.keyDataTypes,
             rightPartitioning.partitionKeys))(rightPartitioning.reduceKeys)
-        val reducedDataTypes = if (leftReducedDataTypes == rightReducedDataTypes) {
+        val leftTypesDescribeKeys =
+          leftReducedKeys.nonEmpty || leftPartitioning.expressionsDescribeKeys
+        val rightTypesDescribeKeys =
+          rightReducedKeys.nonEmpty || rightPartitioning.expressionsDescribeKeys
+        val reducedDataTypes = if (!leftTypesDescribeKeys) {
+          rightReducedDataTypes
+        } else if (!rightTypesDescribeKeys || leftReducedDataTypes == rightReducedDataTypes) {
           leftReducedDataTypes
         } else {
-          // QueryExecutionErrors.storagePartitionJoinIncompatibleReducedTypesError is
-          // private[sql] in Spark and thus inaccessible from kyuubi; fall back to a generic
-          // internal error carrying the same diagnostic information.
-          throw SparkException.internalError(
-            s"Storage partition join has incompatible reduced key data types: " +
-              s"left=$leftReducedDataTypes with reducers=$leftReducers, " +
-              s"right=$rightReducedDataTypes with reducers=$rightReducers")
+          throw QueryExecutionErrors.storagePartitionJoinIncompatibleReducedTypesError(
+            leftReducers = leftReducers,
+            leftReducedDataTypes = leftReducedDataTypes,
+            rightReducers = rightReducers,
+            rightReducedDataTypes = rightReducedDataTypes)
         }
 
-        val reducedKeyRowOrdering = RowOrdering.createNaturalAscendingOrdering(reducedDataTypes)
+        val reducedKeyRowOrdering = KeyedPartitioning.groupedKeyRowOrdering(reducedDataTypes)
         val reducedKeyOrdering =
           reducedKeyRowOrdering.on((t: InternalRowComparableWrapper) => t.row)
 
@@ -474,8 +487,10 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
             logInfo(log"Skipping partially clustered distribution as it cannot be applied for " +
               log"join type '${MDC(LogKeys.JOIN_TYPE, joinType)}'")
           } else {
-            val unwrappedLeft = unwrapGroupPartitions(left)
-            val unwrappedRight = unwrapGroupPartitions(right)
+            val leftGrouping = innermostGroupPartition(left)
+            val rightGrouping = innermostGroupPartition(right)
+            val unwrappedLeft = leftGrouping.map(_._1.child).getOrElse(left)
+            val unwrappedRight = rightGrouping.map(_._1.child).getOrElse(right)
 
             val leftLink = unwrappedLeft.logicalLink
             val rightLink = unwrappedRight.logicalLink
@@ -502,7 +517,10 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
                 // to apply the grouping & replication of partitions
                 logInfo("Using number of partitions to determine which side of join " +
                   "to fully cluster partition values")
-                leftPartKeys.size < rightPartKeys.size
+                PartitioningCollection.numKeyedPartitions(unwrappedLeft.outputPartitioning)
+                  .getOrElse(leftPartKeys.size) <
+                  PartitioningCollection.numKeyedPartitions(unwrappedRight.outputPartitioning)
+                    .getOrElse(rightPartKeys.size)
               }
 
             replicateRightSide = !replicateLeftSide
@@ -522,22 +540,24 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
               replicateRightSide = false
             } else {
               // In partially clustered distribution, we should use un-grouped partition values
-              val (partiallyClusteredChild, partiallyClusteredSpec) = if (replicateLeftSide) {
-                (unwrappedRight, rightSpec)
+              val (partiallyClusteredChild, partiallyClusteredPositions) = if (replicateLeftSide) {
+                (
+                  unwrappedRight,
+                  rightGrouping.flatMap(_._1.joinKeyPositions)
+                    .orElse(rightSpec.joinKeyPositions))
               } else {
-                (unwrappedLeft, leftSpec)
+                (
+                  unwrappedLeft,
+                  leftGrouping.flatMap(_._1.joinKeyPositions)
+                    .orElse(leftSpec.joinKeyPositions))
               }
-              // Original `KeyedPartitioning` can be obtained from the child directly if the child
-              // satisfied the distribution requirement; or from the child's child if it didn't as
-              // the child must be a `GroupPartitionsExec` inserted by `EnsureRequirement`
-              // to satisfy the distribution requirement.
               val originalPartitioning =
                 partiallyClusteredChild.outputPartitioning.asInstanceOf[Expression]
               // `outputPartitioning` is either a `PartitioningCollection` or a `KeyedPartitioning`
               // otherwise `createKeyedShuffleSpec()` would have returned `None`.
               val originalKeyedPartitioning =
                 originalPartitioning.collectFirst { case k: KeyedPartitioning => k }.get
-              val projectedOriginalPartitionKeys = partiallyClusteredSpec.joinKeyPositions
+              val projectedOriginalPartitionKeys = partiallyClusteredPositions
                 .fold(originalKeyedPartitioning.partitionKeys)(
                   originalKeyedPartitioning.projectKeys(_)._2)
 
@@ -602,44 +622,54 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
     joinType == LeftAnti || joinType == LeftOuter
   }
 
-  /**
-   * Unwraps a GroupPartitionsExec to get the underlying child plan.
-   */
-  private def unwrapGroupPartitions(plan: SparkPlan): SparkPlan = plan match {
-    case g: GroupPartitionsExec => g.child
-    case other => other
+  private def innermostGroupPartition(
+      plan: SparkPlan): Option[(GroupPartitionsExec, SparkPlan => SparkPlan)] = plan match {
+    case grouping: GroupPartitionsExec =>
+      innermostGroupPartition(grouping.child)
+        .orElse(Some((grouping, identity[SparkPlan])))
+    case sort: SortExec if !sort.global =>
+      innermostGroupPartition(sort.child).map { case (grouping, rebuild) =>
+        (grouping, (newChild: SparkPlan) => sort.withNewChildren(Seq(rebuild(newChild))))
+      }
+    case _ => None
   }
 
-  /**
-   * Applies or updates `GroupPartitionsExec` with the given parameters.
-   *
-   * `GroupPartitionsExec` can be either the given plan node (child of the join inserted by
-   * `EnsureRequirement`) if the original child didn't satisfy the distribution requirement; or we
-   * can create a new one specifically for this join.
-   */
+  private def rewriteGroupPartitions(plan: SparkPlan)(
+      rewrite: GroupPartitionsExec => GroupPartitionsExec): Option[SparkPlan] =
+    innermostGroupPartition(plan).map { case (grouping, rebuild) =>
+      val rewritten = rewrite(grouping)
+      rewritten.copyTagsFrom(grouping)
+      rebuild(rewritten)
+    }
+
+  private def unwrapGroupPartitions(plan: SparkPlan): SparkPlan =
+    innermostGroupPartition(plan).map(_._1.child).getOrElse(plan)
+
   private def applyGroupPartitions(
       plan: SparkPlan,
       joinKeyPositions: Option[Seq[Int]],
       mergedPartitionKeys: Seq[(InternalRowComparableWrapper, Int)],
-      reducers: Option[Seq[Option[Reducer[_, _]]]],
+      reducers: Option[Seq[Option[KeyReducer]]],
       distributePartitions: Boolean): SparkPlan = {
-    plan match {
-      case g: GroupPartitionsExec =>
-        val newGroupPartitions = g.copy(
-          joinKeyPositions = joinKeyPositions,
-          expectedPartitionKeys = Some(mergedPartitionKeys),
-          reducers = reducers,
-          distributePartitions = distributePartitions)
-        newGroupPartitions.copyTagsFrom(g)
-        newGroupPartitions
-      case _ =>
-        GroupPartitionsExec(
-          plan,
-          joinKeyPositions,
-          Some(mergedPartitionKeys),
-          reducers,
-          distributePartitions)
+    rewriteGroupPartitions(plan) { grouping =>
+      grouping.copy(
+        joinKeyPositions = grouping.joinKeyPositions.orElse(joinKeyPositions),
+        expectedPartitionKeys = Some(mergedPartitionKeys),
+        reducers = reducers,
+        distributePartitions = distributePartitions)
+    }.getOrElse {
+      GroupPartitionsExec(
+        plan,
+        joinKeyPositions,
+        Some(mergedPartitionKeys),
+        reducers,
+        distributePartitions)
     }
+  }
+
+  private def flattenSpec(spec: ShuffleSpec): Seq[ShuffleSpec] = spec match {
+    case ShuffleSpecCollection(specs) => specs.flatMap(flattenSpec)
+    case other => Seq(other)
   }
 
   /**
@@ -664,10 +694,11 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
       partitioning: Partitioning,
       distribution: ClusteredDistribution): Option[KeyedShuffleSpec] = {
     def tryCreate(partitioning: KeyedPartitioning): Option[KeyedShuffleSpec] = {
-      val attributes = partitioning.expressions.flatMap(_.collectLeaves())
+      val attributes = partitioning.expressions.flatMap(_.references)
       val clustering = distribution.clustering
 
       val satisfies = if (SQLConf.get.getConf(SQLConf.REQUIRE_ALL_CLUSTER_KEYS_FOR_CO_PARTITION)) {
+        partitioning.expressions.forall(_.references.size == 1) &&
         attributes.length == clustering.length && attributes.zip(clustering).forall {
           case (l, r) => l.semanticEquals(r)
         }
@@ -735,43 +766,97 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
     result.toSeq
   }
 
-  /**
-   * Splits a partitioning into three categories:
-   * 1. Non-KeyedPartitioning (HashPartitioning, RangePartitioning, etc.)
-   * 2. Grouped KeyedPartitioning (isGrouped = true)
-   * 3. Non-grouped KeyedPartitioning (isGrouped = false)
-   *
-   * @param partitioning The partitioning to split
-   * @return A tuple of (other, grouped, nonGrouped) where:
-   *         - other: Option containing non-KeyedPartitioning(s)
-   *         - grouped: Seq of grouped KeyedPartitionings
-   *         - nonGrouped: Seq of non-grouped KeyedPartitionings
-   */
-  private def splitKeyedPartitionings(partitioning: Partitioning) = {
-    val otherPartitionings = ArrayBuffer.empty[Partitioning]
-    val groupedKeyedPartitionings = ArrayBuffer.empty[KeyedPartitioning]
-    val nonGroupedKeyedPartitionings = ArrayBuffer.empty[KeyedPartitioning]
+  private def clusterKeyPositions(
+      partitioning: KeyedPartitioning,
+      distribution: Distribution,
+      isCoPartitioned: Boolean): BitSet = distribution match {
+    case clustered: ClusteredDistribution if !isCoPartitioned =>
+      partitioning.expressions.zipWithIndex.collect {
+        case (expression, index)
+            if clustered.clustering.exists(_.semanticEquals(expression)) ||
+              expression.references.exists(reference =>
+                clustered.clustering.exists(_.semanticEquals(reference))) => index
+      }.to(BitSet)
+    case _ => partitioning.expressions.indices.to(BitSet)
+  }
 
-    def split(p: Partitioning): Unit = p match {
-      case c: PartitioningCollection => c.partitionings.foreach(split)
-      case k: KeyedPartitioning =>
-        if (k.isGrouped) {
-          groupedKeyedPartitionings += k
-        } else {
-          nonGroupedKeyedPartitionings += k
+  private def splitKeyedPartitionings(
+      partitioning: Partitioning,
+      distribution: Distribution,
+      isCoPartitioned: Boolean): (Boolean, Option[KeyedResolution]) = {
+    val flattened = PartitioningCollection.flatten(partitioning)
+    if (flattened.exists(partitioning =>
+        !partitioning.isInstanceOf[KeyedPartitioning] && partitioning.satisfies(distribution))) {
+      (true, None)
+    } else {
+      val keyed = flattened.collect { case partitioning: KeyedPartitioning => partitioning }
+      (false, resolveKeyedPartitioning(keyed, distribution, isCoPartitioned))
+    }
+  }
+
+  private def resolveKeyedPartitioning(
+      keyedPartitionings: Seq[KeyedPartitioning],
+      distribution: Distribution,
+      isCoPartitioned: Boolean): Option[KeyedResolution] = {
+    val projectedNumPartitions = mutable.Map.empty[BitSet, Int]
+    def numPartitionsAfter(partitioning: KeyedPartitioning, positions: BitSet): Int =
+      projectedNumPartitions.getOrElseUpdate(
+        positions,
+        partitioning.numPartitionsProjectedOn(positions.toSeq))
+
+    val admitted = keyedPartitionings.flatMap { partitioning =>
+      val satisfies = partitioning.satisfies(distribution)
+      if (satisfies || partitioning.keysMaySatisfy(distribution)) {
+        val positions = clusterKeyPositions(partitioning, distribution, isCoPartitioned)
+        Option.when(positions.nonEmpty || partitioning.expressions.isEmpty)(
+          (partitioning, satisfies, positions))
+      } else {
+        None
+      }
+    }
+
+    val satisfiedAsIs = admitted
+      .find { case (partitioning, satisfies, positions) =>
+        satisfies && positions.size == partitioning.expressions.length
+      }
+      .orElse(admitted.find { case (partitioning, satisfies, positions) =>
+        satisfies && numPartitionsAfter(partitioning, positions) == partitioning.numPartitions
+      })
+      .map(_._1)
+
+    if (satisfiedAsIs.isDefined) {
+      satisfiedAsIs.map(scala.Left(_))
+    } else {
+      val candidates = admitted.map { case (partitioning, _, positions) =>
+        partitioning -> positions
+      }.distinctBy(_._2)
+
+      val eligible = distribution.requiredNumPartitions match {
+        case Some(requiredCount) => candidates.filter { case (partitioning, positions) =>
+            partitioning.numPartitions >= requiredCount &&
+            numPartitionsAfter(partitioning, positions) == requiredCount
+          }
+        case None => candidates
+      }
+      if (eligible.isEmpty) {
+        None
+      } else {
+        val maximal = eligible.filter { case (_, positions) =>
+          !eligible.exists { case (_, otherPositions) =>
+            otherPositions.size > positions.size && positions.subsetOf(otherPositions)
+          }
         }
-      case o => otherPartitionings += o
+        val (partitioning, positions) =
+          if (maximal.size == 1) maximal.head
+          else maximal.maxBy { case (partitioning, positions) =>
+            numPartitionsAfter(partitioning, positions)
+          }
+        Some(scala.Right(
+          (
+            partitioning,
+            Option.when(positions.size < partitioning.expressions.length)(positions.toSeq))))
+      }
     }
-
-    split(partitioning)
-
-    val other = otherPartitionings.length match {
-      case 0 => None
-      case 1 => Some(otherPartitionings.head)
-      case _ => Some(PartitioningCollection(otherPartitionings.toSeq))
-    }
-
-    (other, groupedKeyedPartitionings.toSeq, nonGroupedKeyedPartitionings.toSeq)
   }
 
   def apply(plan: SparkPlan): SparkPlan = plan.transformUp {
