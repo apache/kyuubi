@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.util.Locale
+
 import scala.collection.mutable
 
+import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{EngineType, KyuubiApplicationManager}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -82,5 +85,35 @@ class SparkBatchProcessBuilder(
 
   override private[spark] def getSparkOption(key: String) = {
     batchConf.get(key).orElse(super.getSparkOption(key))
+  }
+
+  /**
+   * Batch job submission relies on tracking a dedicated Spark driver pod on Kubernetes
+   * (tagged with `kyuubi-unique-tag`) to report status, fetch logs, and support kill.
+   * When `spark.submit.deployMode` is not `cluster` (either explicitly set to `client`,
+   * or left unset and thus defaulting to Spark's own `client` default), Spark runs the
+   * driver as a subprocess of the Kyuubi server itself instead of creating a separate
+   * pod. In that case Kyuubi's tracking mechanism can never find the expected pod, and
+   * users see confusing failures (e.g. "No pod was found named ...") that give no hint
+   * about the actual root cause, while the batch driver also loses resource isolation
+   * from the Kyuubi server process.
+   *
+   * Fail fast with a clear, actionable error instead of silently attempting an
+   * unsupported submission mode.
+   */
+  override def validateConf(): Unit = {
+    super.validateConf()
+    val isK8sMaster = clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
+    if (isK8sMaster && !isClusterMode()) {
+      throw new KyuubiException(
+        s"Batch job submission on Kubernetes requires " +
+          s"$DEPLOY_MODE_KEY=cluster, but got " +
+          s"$MASTER_KEY=${clusterManager().getOrElse("")}, " +
+          s"$DEPLOY_MODE_KEY=${deployMode().getOrElse("<unset, defaults to client>")}. " +
+          "In client mode, Kyuubi cannot create or track a dedicated driver pod for " +
+          "this batch, so status monitoring, log retrieval and kill operations would " +
+          "not work correctly, and the driver would run inside the Kyuubi server's " +
+          "own process without resource isolation.")
+    }
   }
 }
