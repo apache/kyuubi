@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.connector.catalog.Identifier
+import org.apache.spark.sql.connector.catalog.{Identifier, Table => ConnectorTable}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.unsafe.types.UTF8String
@@ -55,9 +55,9 @@ object TableExtractor {
    * @return owner
    */
   def getOwner(v: AnyRef): Option[String] = {
-    // It holds the properties itself, rather than wrapping another table.
-    val maybeTable = v.getClass.getName match {
-      case "org.apache.spark.sql.connector.catalog.V1Table" => v
+    val maybeTable = v match {
+      // It holds the properties itself, rather than wrapping another table.
+      case _: ConnectorTable => v
       case _ => invokeAs[AnyRef](v, "table")
     }
     val properties = invokeAs[JMap[String, String]](maybeTable, "properties").asScala
