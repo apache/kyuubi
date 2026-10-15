@@ -152,8 +152,8 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
     service.start()
 
     val basePath = s"/$namespace"
+    val sessionManager = service.backendService.sessionManager
     try {
-      val sessionManager = service.backendService.sessionManager
       // simulate a session left open by a disconnected client
       sessionManager.openSession(
         TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
@@ -174,6 +174,7 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
         }
       }
     } finally {
+      sessionManager.allSessions().foreach(session => sessionManager.closeSession(session.handle))
       service.stop()
       discovery.stop()
     }
