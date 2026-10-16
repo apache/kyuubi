@@ -243,6 +243,14 @@ class HiveExecutionContext(default.DefaultExecutionContext):
 class HiveDialect(default.DefaultDialect):
     name = 'hive'
     driver = 'thrift'
+    # Give this dialect its own colspecs dict, like every SQLAlchemy
+    # built-in dialect does. Without this, HiveDialect.colspecs is the
+    # exact same dict object as DefaultDialect.colspecs, so mutating it
+    # to customize one type for this dialect (a normal thing to do, e.g.
+    # Superset's Databricks engine spec does it) silently corrupts type
+    # handling for every other dialect in the process that also hasn't
+    # defined its own colspecs.
+    colspecs = {}
     execution_ctx_cls = HiveExecutionContext
     preparer = HiveIdentifierPreparer
     statement_compiler = HiveCompiler
