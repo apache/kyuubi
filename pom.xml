@@ -2080,8 +2080,8 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- Paimon 2.x reference the Spark 4.1+ Table.constraints() API for its Spark 4.0 build,
-                     cause java.lang.NoClassDefFoundError at runtime. -->
+                <!-- Paimon 2.x references the Spark 4.1+ Table.constraints() API in its Spark 4.0
+                     build, causing java.lang.NoClassDefFoundError at runtime. -->
                 <paimon.version>1.4.2</paimon.version>
                 <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
