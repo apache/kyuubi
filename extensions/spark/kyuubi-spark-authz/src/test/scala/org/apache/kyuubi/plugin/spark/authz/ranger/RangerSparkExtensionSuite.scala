@@ -40,6 +40,7 @@ import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.plugin.lineage.helper.SparkSQLLineageParseHelper
 import org.apache.kyuubi.plugin.spark.authz.{AccessControlException, SparkSessionProvider}
 import org.apache.kyuubi.plugin.spark.authz.MysqlContainerEnv
+import org.apache.kyuubi.plugin.spark.authz.PrivilegesBuilder
 import org.apache.kyuubi.plugin.spark.authz.RangerTestNamespace._
 import org.apache.kyuubi.plugin.spark.authz.RangerTestUsers._
 import org.apache.kyuubi.plugin.spark.authz.rule.Authorization.KYUUBI_AUTHZ_TAG
@@ -553,6 +554,19 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "hive"
   override protected val extraSparkConf: SparkConf = new SparkConf()
     .set("spark.kyuubi.authz.udf.enabled", "true")
+
+  test("resource owner must be set for DropTable on v1 (Hive) tables") {
+    val table = "DropTable"
+    withCleanTmpResources(Seq((table, "table"))) {
+      doAs(admin, sql(s"CREATE TABLE $table (i int)"))
+      val parsed = spark.sessionState.sqlParser.parsePlan(s"DROP TABLE $table")
+      val plan = spark.sessionState.executePlan(parsed).analyzed
+      val (_, outputs, _) = PrivilegesBuilder.build(plan, spark)
+      assert(outputs.size === 1)
+      val po = outputs.head
+      assert(po.owner === Some(defaultTableOwner))
+    }
+  }
 
   test("table stats must be specified") {
     val table = "hive_src"
