@@ -64,8 +64,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("UpdateIcebergTable") {
@@ -85,8 +85,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
     assertEqualsIgnoreCase(catalogTableShort)(po.objectName)
     assert(po.columns.isEmpty)
     checkV2TableOwner(po)
-    val accessType = AccessType(po, operationType, isInput = false)
-    assert(accessType === AccessType.UPDATE)
+    val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+    assert(accessTypes === Seq(AccessType.UPDATE))
   }
 
   test("MergeIntoIcebergTable") {
@@ -125,8 +125,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       assertEqualsIgnoreCase(table)(po.objectName)
       assert(po.columns.isEmpty)
       checkV2TableOwner(po)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.UPDATE)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.UPDATE))
     }
   }
 
@@ -147,8 +147,8 @@ class IcebergCatalogPrivilegesBuilderSuite extends V2CommandsPrivilegesSuite {
       assert(po.privilegeObjectType === PrivilegeObjectType.TABLE_OR_VIEW)
       assertEqualsIgnoreCase(namespace)(po.dbname)
       assertEqualsIgnoreCase(table)(po.objectName)
-      val accessType = AccessType(po, operationType, isInput = false)
-      assert(accessType === AccessType.ALTER)
+      val accessTypes = AccessType.getAccessTypes(po, operationType, isInput = false)
+      assert(accessTypes === Seq(AccessType.ALTER))
     }
   }
 }

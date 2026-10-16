@@ -88,6 +88,27 @@ class PaimonCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
+  test("REPLACE TABLE requires both CREATE and DROP") {
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table1", "table"))) {
+      doAs(admin, sql(createTableSql(namespace1, table1)))
+      val replaceTableSql =
+        s"""
+           |REPLACE TABLE $catalogV2.$namespace1.$table1
+           |(id int, name string)
+           |USING paimon
+           |OPTIONS (
+           | 'primary-key' = 'id'
+           |)
+           |""".stripMargin
+      // createOnlyUser only has [create] on $namespace1, REPLACE TABLE also needs [drop]
+      // on the table being replaced.
+      interceptEndsWith[AccessControlException] {
+        doAs(createOnlyUser, sql(replaceTableSql))
+      }(s"does not have [drop] privilege on [$namespace1/$table1]")
+      doAs(admin, sql(replaceTableSql))
+    }
+  }
+
   test("[KYUUBI #6541] INSERT/SELECT TABLE") {
     val tName = "t_paimon"
     withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$tName", "table"))) {
