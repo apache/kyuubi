@@ -2080,6 +2080,9 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
+                <!-- Paimon 2.x declares Spark 4.0.3 for its Spark 4.0 build, but the classes
+                     reference the Spark 4.1-only Table.constraints() API, so 1.4.2 is the
+                     last release that runs on Spark 4.0. -->
                 <paimon.version>1.4.2</paimon.version>
                 <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
@@ -2103,10 +2106,9 @@
                 <delta.version>4.3.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- TODO: update once Paimon support Spark 4.1. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
@@ -2132,8 +2134,8 @@
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
                 <!-- TODO: update once Paimon support Spark 4.2. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
@@ -2161,8 +2163,8 @@
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
                 <!-- TODO: update once Paimon support Spark 4.3. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-4.1_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <!-- TODO remove once Spark 4.3.0 GA -->
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin</spark.archive.mirror>
