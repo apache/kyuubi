@@ -137,6 +137,13 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       rootSparkSession: SparkSession,
       sessionConf: Map[String, String]): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
+    // The new session inherits configs from the SparkContext, i.e. the ones of the session which
+    // launched the engine. Apply this session's configs before running the initialization SQLs,
+    // otherwise catalog plugins touched by them get initialized with the stale configs.
+    validateAndNormalizeConf(sessionConf).foreach {
+      case (USE_CATALOG | USE_DATABASE, _) =>
+      case (key, value) => KyuubiSparkUtil.setModifiableConfig(newSparkSession, key, value)
+    }
     KyuubiSparkUtil.initializeSparkSession(
       newSparkSession,
       sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
