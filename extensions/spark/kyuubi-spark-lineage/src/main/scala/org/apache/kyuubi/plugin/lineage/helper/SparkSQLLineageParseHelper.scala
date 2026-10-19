@@ -274,6 +274,8 @@ trait LineageParser {
         extractColumnsLineage(getQuery(plan), parentColumnsLineage, inputTablesByPlan).map {
           case (k, v) if table.nonEmpty =>
             k.withName(s"$table.${k.name}") -> v
+          // Temporary views may not have catalog metadata; retain the query column lineage.
+          case (k, v) => k -> v
         }
 
       case p if p.nodeName == "InsertIntoHadoopFsRelationCommand" =>

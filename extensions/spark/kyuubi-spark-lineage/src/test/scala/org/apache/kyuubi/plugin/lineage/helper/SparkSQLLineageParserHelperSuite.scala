@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.plugin.lineage.helper
 
+import java.sql.{DriverManager, SQLException}
+import java.util.UUID
+
 import scala.reflect.io.File
 
 import org.apache.spark.SparkConf
@@ -24,11 +27,13 @@ import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.{DataFrame, SparkListenerExtensionTest, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.plugin.lineage.Lineage
+import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   with SparkListenerExtensionTest {
@@ -320,6 +325,67 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           (
             "v2_catalog.db.createhivetableasselectcommand1.value",
             Set(s"$DEFAULT_CATALOG.test_db0.test_table0.value")))))
+    }
+  }
+
+  test("columns lineage extract - insert into a JDBC temporary view without catalog metadata") {
+    val url = s"jdbc:derby:memory:lineage_${UUID.randomUUID().toString.replace('-', '_')}"
+    val connection = DriverManager.getConnection(s"$url;create=true")
+    try {
+      val statement = connection.createStatement()
+      try {
+        statement.execute("CREATE TABLE target_table (\"id\" INT, \"name\" VARCHAR(100))")
+        withTable("test_db0.jdbc_source") { _ =>
+          withView("jdbc_target") { _ =>
+            spark.sql("CREATE TABLE test_db0.jdbc_source (key INT, value STRING) USING parquet")
+            spark.sql("INSERT INTO test_db0.jdbc_source VALUES (1, 'one')")
+            spark.sql(s"""
+                         |CREATE TEMPORARY VIEW jdbc_target
+                         |USING org.apache.spark.sql.jdbc
+                         |OPTIONS (url '$url', dbtable 'target_table')
+                         |""".stripMargin)
+            val sql = "INSERT INTO jdbc_target SELECT key AS id, value AS name " +
+              "FROM test_db0.jdbc_source"
+            val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+            val analyzed = spark.sessionState.analyzer.execute(parsed)
+            spark.sessionState.analyzer.checkAnalysis(analyzed)
+            assert(analyzed.nodeName == "InsertIntoDataSourceCommand")
+            val relation = getField[LogicalRelation](analyzed, "logicalRelation")
+            info(s"JDBC temporary view insert plan:\n${analyzed.treeString}")
+            info(s"JDBC temporary view catalogTable: ${relation.catalogTable}")
+            assert(relation.catalogTable.isEmpty)
+
+            spark.sql(sql).collect()
+            val rows = statement.executeQuery("SELECT \"id\", \"name\" FROM target_table")
+            try {
+              assert(rows.next())
+              assert(rows.getInt(1) == 1)
+              assert(rows.getString(2) == "one")
+              assert(!rows.next())
+            } finally {
+              rows.close()
+            }
+
+            val expected = Lineage(
+              List(s"$DEFAULT_CATALOG.test_db0.jdbc_source"),
+              List(),
+              List(
+                ("id", Set(s"$DEFAULT_CATALOG.test_db0.jdbc_source.key")),
+                ("name", Set(s"$DEFAULT_CATALOG.test_db0.jdbc_source.value"))))
+            val helper = SparkSQLLineageParseHelper(spark)
+            assert(helper.parse(analyzed) == expected)
+            assert(helper.transformToLineage(0, analyzed).contains(expected))
+          }
+        }
+      } finally {
+        statement.close()
+      }
+    } finally {
+      connection.close()
+      val error = intercept[SQLException] {
+        DriverManager.getConnection(s"$url;drop=true")
+      }
+      assert(error.getSQLState == "08006")
     }
   }
 
