@@ -16,9 +16,11 @@
  */
 package org.apache.kyuubi.engine.dataagent.session
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion}
 
 class DataAgentSessionImpl(
@@ -27,20 +29,20 @@ class DataAgentSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+    dataAgentSessionManager: DataAgentSessionManager)
+  extends AbstractSession(protocol, user, password, ipAddress, conf, dataAgentSessionManager) {
 
   override val handle: SessionHandle =
     conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
-  private val dataAgentProvider =
-    sessionManager.asInstanceOf[DataAgentSessionManager].dataAgentProvider
+  private val dataAgentProvider = dataAgentSessionManager.dataAgentProvider
 
   override def open(): Unit = {
     info(s"Starting to open data agent session.")
     dataAgentProvider.open(handle.identifier.toString, user)
     try {
       super.open()
+      dataAgentSessionManager.registerRoute(handle.identifier.toString, user)
     } catch {
       case e: Throwable =>
         try {
@@ -72,6 +74,11 @@ class DataAgentSessionImpl(
   }
 
   override def close(): Unit = {
+    try {
+      dataAgentSessionManager.unregisterRoute(handle.identifier.toString)
+    } catch {
+      case NonFatal(e) => warn("Failed to unregister data agent session route", e)
+    }
     try {
       dataAgentProvider.close(handle.identifier.toString)
     } finally {
