@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.plugin.lineage.helper
 
-import java.sql.{DriverManager, SQLException}
+import java.sql.DriverManager
 import java.util.UUID
 
 import scala.reflect.io.File
+import scala.util.Try
 
 import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
@@ -31,7 +32,7 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
@@ -351,8 +352,6 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             spark.sessionState.analyzer.checkAnalysis(analyzed)
             assert(analyzed.nodeName == "InsertIntoDataSourceCommand")
             val relation = getField[LogicalRelation](analyzed, "logicalRelation")
-            info(s"JDBC temporary view insert plan:\n${analyzed.treeString}")
-            info(s"JDBC temporary view catalogTable: ${relation.catalogTable}")
             assert(relation.catalogTable.isEmpty)
 
             spark.sql(sql).collect()
@@ -382,10 +381,52 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
       }
     } finally {
       connection.close()
-      val error = intercept[SQLException] {
-        DriverManager.getConnection(s"$url;drop=true")
+      Try(DriverManager.getConnection(s"$url;drop=true"))
+    }
+  }
+
+  Seq("json", "parquet").foreach { format =>
+    test(
+      s"columns lineage extract - insert into a $format temporary view without catalog metadata") {
+      val directory = Utils.createTempDir()
+      try {
+        withTable("test_db0.file_source") { _ =>
+          withView("file_target") { _ =>
+            spark.sql("CREATE TABLE test_db0.file_source (key INT, value STRING) USING parquet")
+            spark.sql("INSERT INTO test_db0.file_source VALUES (1, 'one')")
+            spark.sql(s"""
+                         |CREATE TEMPORARY VIEW file_target (id INT, name STRING)
+                         |USING $format
+                         |OPTIONS (path '${directory.toFile.getCanonicalPath}')
+                         |""".stripMargin)
+            val sql = "INSERT OVERWRITE TABLE file_target SELECT key AS id, value AS name " +
+              "FROM test_db0.file_source"
+            val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+            val analyzed = spark.sessionState.analyzer.execute(parsed)
+            spark.sessionState.analyzer.checkAnalysis(analyzed)
+            assert(analyzed.nodeName == "InsertIntoHadoopFsRelationCommand")
+            assert(getField[Option[CatalogTable]](analyzed, "catalogTable").isEmpty)
+
+            spark.sql(sql).collect()
+            val rows = spark.read.format(format).load(directory.toString).collect()
+            assert(rows.length == 1)
+            assert(rows.head.getAs[Number]("id").intValue() == 1)
+            assert(rows.head.getAs[String]("name") == "one")
+
+            val expected = Lineage(
+              List(s"$DEFAULT_CATALOG.test_db0.file_source"),
+              List(),
+              List(
+                ("id", Set(s"$DEFAULT_CATALOG.test_db0.file_source.key")),
+                ("name", Set(s"$DEFAULT_CATALOG.test_db0.file_source.value"))))
+            val helper = SparkSQLLineageParseHelper(spark)
+            assert(helper.parse(analyzed) == expected)
+            assert(helper.transformToLineage(0, analyzed).contains(expected))
+          }
+        }
+      } finally {
+        Utils.deleteDirectoryRecursively(directory.toFile)
       }
-      assert(error.getSQLState == "08006")
     }
   }
 
