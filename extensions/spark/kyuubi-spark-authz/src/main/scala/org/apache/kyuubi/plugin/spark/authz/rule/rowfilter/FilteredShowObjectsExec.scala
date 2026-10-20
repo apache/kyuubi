@@ -51,8 +51,7 @@ object FilteredShowNamespaceExec extends FilteredShowObjectsCheck {
     val database = r.getString(0)
     val resource = AccessResource(ObjectType.DATABASE, database, null, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWDATABASES, AccessType.USE)
-    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
-    result != null && result.getIsAllowed
+    SparkRangerAdminPlugin.isAccessAllowed(request)
   }
 }
 
@@ -75,7 +74,6 @@ object FilteredShowTablesExec extends FilteredShowObjectsCheck {
     val objectType = if (isTemp) ObjectType.VIEW else ObjectType.TABLE
     val resource = AccessResource(objectType, database, table, null)
     val request = AccessRequest(resource, ugi, OperationType.SHOWTABLES, AccessType.USE)
-    val result = SparkRangerAdminPlugin.isAccessAllowed(request)
-    result != null && result.getIsAllowed
+    SparkRangerAdminPlugin.isAccessAllowed(request)
   }
 }
