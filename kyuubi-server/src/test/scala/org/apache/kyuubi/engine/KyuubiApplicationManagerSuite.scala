@@ -19,8 +19,10 @@ package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.KubernetesApplicationOperation.LABEL_KYUUBI_UNIQUE_KEY
+import org.apache.kyuubi.engine.KubernetesApplicationOperation.{GLOBAL_WATCH_SCOPE, LABEL_KYUUBI_UNIQUE_KEY, LABEL_KYUUBI_WATCH_SCOPE_KEY}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, SERVER_LOCAL, USER}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.util.KubernetesUtils
 
 class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("application access path") {
@@ -177,6 +179,10 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
   test("Test kyuubi application Manager tag spark on kubernetes application") {
     val conf: KyuubiConf = KyuubiConf()
     val tag = "kyuubi-test-tag"
+    val watchScopePodLabel = "spark.kubernetes.driver.label." + LABEL_KYUUBI_WATCH_SCOPE_KEY
+    val watchScopeServiceLabel =
+      "spark.kubernetes.driver.service.label." + LABEL_KYUUBI_WATCH_SCOPE_KEY
+
     KyuubiApplicationManager.tagApplication(
       tag,
       "SPARK",
@@ -187,5 +193,32 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     val yarnTag = conf.getOption("spark.yarn.tags")
     assert(kubernetesTag.nonEmpty && tag.equals(kubernetesTag.get))
     assert(yarnTag.isEmpty)
+    assert(conf.getOption(watchScopePodLabel).contains(GLOBAL_WATCH_SCOPE))
+    assert(conf.getOption(watchScopeServiceLabel).contains(GLOBAL_WATCH_SCOPE))
+
+    Seq(CONNECTION, SERVER_LOCAL).foreach { shareLevel =>
+      conf.set(watchScopePodLabel, "overridden")
+      conf.set(watchScopeServiceLabel, "overridden")
+      KyuubiApplicationManager.tagApplication(
+        tag,
+        "SPARK",
+        Some("k8s://https://kyuubi-test:8443"),
+        conf,
+        Some(shareLevel.toString))
+      assert(conf.getOption(watchScopePodLabel).contains(KubernetesUtils.serverAddressLabelValue))
+      assert(conf.getOption(watchScopeServiceLabel)
+        .contains(KubernetesUtils.serverAddressLabelValue))
+    }
+
+    Seq(USER, GROUP, SERVER).foreach { shareLevel =>
+      KyuubiApplicationManager.tagApplication(
+        tag,
+        "SPARK",
+        Some("k8s://https://kyuubi-test:8443"),
+        conf,
+        Some(shareLevel.toString))
+      assert(conf.getOption(watchScopePodLabel).contains(GLOBAL_WATCH_SCOPE))
+      assert(conf.getOption(watchScopeServiceLabel).contains(GLOBAL_WATCH_SCOPE))
+    }
   }
 }
