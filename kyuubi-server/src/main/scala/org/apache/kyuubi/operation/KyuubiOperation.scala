@@ -81,21 +81,36 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
             MetricRegistry.name(OPERATION_FAIL, opType, errorType)))
-          val ke = e match {
-            case kse: KyuubiSQLException => kse
-            case te: TTransportException
-                if te.getType == TTransportException.END_OF_FILE &&
-                  StringUtils.isEmpty(te.getMessage) =>
-              // https://issues.apache.org/jira/browse/THRIFT-4858
-              KyuubiSQLException(
-                s"Error $action $opType: Socket for ${session.handle} is closed",
-                e)
-            case e =>
-              KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
+          val terminalEngineFailure = e match {
+            case te: TTransportException =>
+              session match {
+                case kyuubiSession: KyuubiSessionImpl =>
+                  kyuubiSession.engineApplicationTerminatedException(te)
+                    .map(exception => (kyuubiSession, exception))
+                case _ => None
+              }
+            case _ => None
+          }
+          val ke = terminalEngineFailure.map(_._2).getOrElse {
+            e match {
+              case kse: KyuubiSQLException => kse
+              case te: TTransportException
+                  if te.getType == TTransportException.END_OF_FILE &&
+                    StringUtils.isEmpty(te.getMessage) =>
+                // https://issues.apache.org/jira/browse/THRIFT-4858
+                KyuubiSQLException(
+                  s"Error $action $opType: Socket for ${session.handle} is closed",
+                  te)
+              case e =>
+                KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
+            }
           }
           setOperationException(ke)
           setState(OperationState.ERROR)
           shutdownTimeoutMonitor()
+          terminalEngineFailure.foreach { case (kyuubiSession, exception) =>
+            kyuubiSession.closeOnEngineTermination(exception)
+          }
           throw ke
         }
       }
