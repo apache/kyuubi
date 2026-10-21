@@ -233,19 +233,34 @@ object SparkCatalogUtils extends Logging {
         }
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
-        val identifiers = namespaces.flatMap { ns =>
-          tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
-        }
-        identifiers.map { ident =>
-          // TODO: restore view type for session catalog
-          val comment = if (ignoreTableProperties) ""
-          else { // load table is a time consuming operation
-            tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+        val tables = if (ignoreTableProperties || tableTypes.exists(TABLE.equalsIgnoreCase)) {
+          namespaces.flatMap { ns =>
+            tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+          }.map { ident =>
+            val comment = if (ignoreTableProperties) ""
+            else { // load table is a time consuming operation
+              tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+            }
+            val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+            val tableName = quoteIfNeeded(ident.name())
+            Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
           }
-          val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
-          val tableName = quoteIfNeeded(ident.name())
-          Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
+        } else {
+          Array.empty[Row]
         }
+        // Preserve the identities-only fast path, which does not inspect persistent views.
+        val views = if (!ignoreTableProperties && tableTypes.exists(VIEW.equalsIgnoreCase)) {
+          namespaces.flatMap { ns =>
+            PaimonCatalogUtils.getViews(catalog, ns, tp)
+          }.map { case (ident, comment) =>
+            val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+            val viewName = quoteIfNeeded(ident.name())
+            Row(catalog.name(), schema, viewName, VIEW, comment, null, null, null, null, null)
+          }
+        } else {
+          Array.empty[Row]
+        }
+        tables ++ views
       case _ => Seq.empty[Row]
     }
   }
