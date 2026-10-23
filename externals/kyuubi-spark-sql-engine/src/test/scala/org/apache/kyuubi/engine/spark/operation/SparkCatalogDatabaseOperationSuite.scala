@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.sql.SQLException
 import java.util
-import java.util.regex.Pattern
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -31,7 +30,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED, OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES}
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.util.{PaimonCatalogUtils, SparkCatalogUtils}
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
@@ -109,13 +108,6 @@ class SparkCatalogDatabaseOperationSuite extends WithSparkSQLEngine with HiveJDB
     }
   }
 
-  test("catalogs without optional Paimon classes have no Paimon views") {
-    assert(PaimonCatalogUtils.getViews(
-      new DummyCatalog,
-      Array("default"),
-      Pattern.compile(".*")).isEmpty)
-  }
-
   test("set/get current catalog") {
     withJdbcStatement() { statement =>
       val catalog = statement.getConnection.getCatalog
@@ -150,20 +142,20 @@ class DummyCatalog extends CatalogPlugin {
   override def defaultNamespace(): Array[String] = Array("a", "b")
 }
 
-class MetadataTestCatalog extends TableCatalog with SupportsNamespaces {
+class MetadataTestNamespaceCatalog extends SupportsNamespaces {
   private var catalogName: String = _
-  private var failLoadTable: Boolean = false
+  protected var catalogOptions: CaseInsensitiveStringMap = _
 
   override def initialize(name: String, options: CaseInsensitiveStringMap): Unit = {
     catalogName = name
-    failLoadTable = java.lang.Boolean.parseBoolean(options.get("fail-load-table"))
+    catalogOptions = options
   }
 
   override def name(): String = catalogName
 
   override def defaultNamespace(): Array[String] = Array("default")
 
-  private def checkNamespace(namespace: Array[String]): Unit = {
+  protected def checkNamespace(namespace: Array[String]): Unit = {
     if (!namespace.sameElements(defaultNamespace())) {
       throw new NoSuchNamespaceException(namespace)
     }
@@ -184,17 +176,30 @@ class MetadataTestCatalog extends TableCatalog with SupportsNamespaces {
     util.Collections.emptyMap[String, String]()
   }
 
+  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
+    throw new UnsupportedOperationException
+
+  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
+    throw new UnsupportedOperationException
+
+  override def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
+    throw new UnsupportedOperationException
+}
+
+class MetadataTestCatalog extends MetadataTestNamespaceCatalog with TableCatalog {
   override def listTables(namespace: Array[String]): Array[Identifier] = {
     checkNamespace(namespace)
     Array(Identifier.of(namespace, "orders"))
   }
 
   override def loadTable(ident: Identifier): Table = {
-    if (failLoadTable) throw new IllegalStateException("Table metadata must not be loaded")
+    if (catalogOptions.getBoolean("fail-load-table", false)) {
+      throw new IllegalStateException("Table metadata must not be loaded")
+    }
     checkNamespace(ident.namespace())
     if (ident.name() != "orders") throw new NoSuchTableException(ident)
     new Table {
-      override def name(): String = s"$catalogName.default.orders"
+      override def name(): String = s"${MetadataTestCatalog.this.name()}.default.orders"
       override def schema(): StructType = new StructType().add("id", "int")
       override def capabilities(): util.Set[TableCapability] = util.Collections.emptySet()
       override def properties(): util.Map[String, String] =
@@ -216,12 +221,4 @@ class MetadataTestCatalog extends TableCatalog with SupportsNamespaces {
   override def renameTable(oldIdent: Identifier, newIdent: Identifier): Unit =
     throw new UnsupportedOperationException
 
-  override def createNamespace(namespace: Array[String], metadata: util.Map[String, String]): Unit =
-    throw new UnsupportedOperationException
-
-  override def alterNamespace(namespace: Array[String], changes: NamespaceChange*): Unit =
-    throw new UnsupportedOperationException
-
-  override def dropNamespace(namespace: Array[String], cascade: Boolean): Boolean =
-    throw new UnsupportedOperationException
 }

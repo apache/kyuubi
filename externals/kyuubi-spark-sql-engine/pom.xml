@@ -245,7 +245,7 @@
                 <configuration>
                     <testSourceDirectories>
                         <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
-                        <testSourceDirectory>${project.basedir}/src/test/scala-paimon</testSourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala-spark-4.2</testSourceDirectory>
                     </testSourceDirectories>
                 </configuration>
             </plugin>
@@ -502,23 +502,8 @@
     </build>
 
     <profiles>
-        <!-- Real Paimon view coverage is opt-in; the connector is never bundled into the engine. -->
         <profile>
-            <id>paimon-view-tests</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.paimon</groupId>
-                    <artifactId>paimon-spark-3.5_${scala.binary.version}</artifactId>
-                    <version>2.0.0</version>
-                    <scope>test</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.xerial</groupId>
-                    <artifactId>sqlite-jdbc</artifactId>
-                    <version>3.45.3.0</version>
-                    <scope>test</scope>
-                </dependency>
-            </dependencies>
+            <id>spark-4.2</id>
             <build>
                 <plugins>
                     <plugin>
@@ -526,14 +511,39 @@
                         <artifactId>build-helper-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>add-paimon-view-test-sources</id>
+                                <id>add-view-catalog-test-sources</id>
                                 <goals>
                                     <goal>add-test-source</goal>
                                 </goals>
                                 <phase>generate-test-sources</phase>
                                 <configuration>
                                     <sources>
-                                        <source>src/test/scala-paimon</source>
+                                        <source>src/test/scala-spark-4.2</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>spark-4.3</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-view-catalog-test-sources</id>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <sources>
+                                        <source>src/test/scala-spark-4.2</source>
                                     </sources>
                                 </configuration>
                             </execution>

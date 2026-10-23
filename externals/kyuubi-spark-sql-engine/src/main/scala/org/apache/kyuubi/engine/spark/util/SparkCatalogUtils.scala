@@ -153,6 +153,7 @@ object SparkCatalogUtils extends Logging {
         val rootSchema = catalog.listNamespaces()
         val allSchemas = listAllNamespaces(catalog, rootSchema)
         allSchemas
+      case _ => Array(catalog.defaultNamespace())
     }
   }
 
@@ -231,27 +232,39 @@ object SparkCatalogUtils extends Logging {
               }
           }
         }
-      case tc: TableCatalog =>
+      case _ =>
         val tp = tablePattern.r.pattern
-        val tables = if (ignoreTableProperties || tableTypes.exists(TABLE.equalsIgnoreCase)) {
-          namespaces.flatMap { ns =>
-            tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
-          }.map { ident =>
-            val comment = if (ignoreTableProperties) ""
-            else { // load table is a time consuming operation
-              tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+        val tables = catalog match {
+          case tc: TableCatalog
+              if ignoreTableProperties || tableTypes.exists(TABLE.equalsIgnoreCase) =>
+            namespaces.flatMap { ns =>
+              tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+            }.map { ident =>
+              val comment = if (ignoreTableProperties) ""
+              else { // load table is a time consuming operation
+                tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+              }
+              val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+              val tableName = quoteIfNeeded(ident.name())
+              Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
             }
-            val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
-            val tableName = quoteIfNeeded(ident.name())
-            Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
-          }
-        } else {
-          Array.empty[Row]
+          case _ => Array.empty[Row]
         }
         // Preserve the identities-only fast path, which does not inspect persistent views.
         val views = if (!ignoreTableProperties && tableTypes.exists(VIEW.equalsIgnoreCase)) {
-          namespaces.flatMap { ns =>
-            PaimonCatalogUtils.getViews(catalog, ns, tp)
+          // listNamespaces lists children; views can also exist in the root namespace.
+          // Check root support before listing views there, and leave table enumeration unchanged.
+          val viewNamespaces = catalog match {
+            case ns: SupportsNamespaces
+                if !namespaces.exists(_.isEmpty) &&
+                  schemaPattern.r.pattern.matcher("").matches() &&
+                  SparkViewCatalogUtils.isViewCatalog(catalog) &&
+                  ns.namespaceExists(Array.empty[String]) =>
+              Array.empty[String] +: namespaces
+            case _ => namespaces
+          }
+          viewNamespaces.flatMap { ns =>
+            SparkViewCatalogUtils.getViews(catalog, ns, tp)
           }.map { case (ident, comment) =>
             val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
             val viewName = quoteIfNeeded(ident.name())
@@ -261,7 +274,6 @@ object SparkCatalogUtils extends Logging {
           Array.empty[Row]
         }
         tables ++ views
-      case _ => Seq.empty[Row]
     }
   }
 
