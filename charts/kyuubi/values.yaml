@@ -27,6 +27,9 @@ replicaCount: 2
 # The default policy is `OrderedReady`, alternative policy is `Parallel`.
 podManagementPolicy: OrderedReady
 
+# Optional additional annotations to add to the Kyuubi server StatefulSet
+annotations: {}
+
 # Optional additional annotations to add to Kyuubi server pods
 podAnnotations: {}
 
@@ -290,6 +293,9 @@ affinity: {}
 
 # Kyuubi pods security context
 securityContext: {}
+
+# Kyuubi server container security context
+containerSecurityContext: {}
 
 # Metrics configuration
 metrics:
