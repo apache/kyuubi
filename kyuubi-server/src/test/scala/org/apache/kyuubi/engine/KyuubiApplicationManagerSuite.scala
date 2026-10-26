@@ -147,6 +147,33 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("application access path checks the spark engine main resource") {
+    val localDirLimitConf = KyuubiConf()
+      .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Set("/apache/kyuubi"))
+    val mainResourceKey = KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE.key
+
+    KyuubiApplicationManager.checkApplicationAccessPaths(
+      "SPARK_SQL",
+      Map(mainResourceKey -> "/apache/kyuubi/engine.jar"),
+      localDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPaths(
+      "SPARK_SQL",
+      Map(mainResourceKey -> "hdfs://nameservice/kyuubi/engine.jar"),
+      localDirLimitConf)
+    KyuubiApplicationManager.checkApplicationAccessPaths(
+      "SPARK_SQL",
+      Map(mainResourceKey -> "/apache/kyuubi/engine.jar"),
+      KyuubiConf())
+
+    val e = intercept[KyuubiException] {
+      KyuubiApplicationManager.checkApplicationAccessPaths(
+        "SPARK_SQL",
+        Map(mainResourceKey -> "/etc/security/keytabs/kyuubi.keytab"),
+        localDirLimitConf)
+    }
+    assert(e.getMessage.contains("is not in the local dir allow list"))
+  }
+
   test("Test kyuubi application Manager tag spark on kubernetes application") {
     val conf: KyuubiConf = KyuubiConf()
     val tag = "kyuubi-test-tag"

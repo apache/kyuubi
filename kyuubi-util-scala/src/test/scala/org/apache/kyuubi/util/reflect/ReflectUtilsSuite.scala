@@ -32,6 +32,15 @@ class ReflectUtilsSuite extends AnyFunSuite {
     assert(!isClassLoadable("org.apache.kyuubi.NonExistClass"))
   }
 
+  test("check class that fails to initialize is not loadable") {
+    // Class.forName reports a failing static initializer as ExceptionInInitializerError,
+    // a LinkageError that Try does not catch; a loadability probe must answer false
+    // instead of letting the error escape
+    // probe by binary name: touching the object reference would run the failing
+    // initialization outside the code under test and abort the suite
+    assert(!isClassLoadable("org.apache.kyuubi.util.reflect.FailingInit$"))
+  }
+
   test("check invokeAs on base class") {
     assertResult("method1")(invokeAs[String](obj1, "method1"))
     assertResult("method2")(invokeAs[String](obj1, "method2"))
@@ -78,6 +87,21 @@ class ReflectUtilsSuite extends AnyFunSuite {
     }("class org.apache.kyuubi.util.reflect.ObjectA$ does not have methodNotExists(" +
       "java.lang.String, java.lang.String)")
   }
+
+  test("invokeAs propagates the failure thrown by the invoked method") {
+    // the lookup succeeded and the method ran; re-labeling its failure as
+    // "does not have" points readers at a lookup problem that does not exist
+    interceptContains[IllegalArgumentException](invokeAs[String](obj2, "methodThrows"))(
+      "bad input")
+  }
+
+  test("getField reports the bind failure for an instance field on a class target") {
+    // binding a class target to an instance field fails with the truthful
+    // IllegalArgumentException from the field wrapper, not a missing-field message
+    interceptContains[IllegalArgumentException](getField[String](
+      classOf[ClassA],
+      "field0"))("Cannot bind")
+  }
 }
 
 class ClassA(val field0: String = "field0") {
@@ -94,6 +118,8 @@ class ClassB extends ClassA {
 
   def method3(): String = "method3"
   private def method4(): String = "method4"
+
+  def methodThrows(): String = throw new IllegalArgumentException("bad input")
 }
 
 object ObjectA {
@@ -102,4 +128,8 @@ object ObjectA {
 
   def method5(): String = "method5"
   private def method6(): String = "method6"
+}
+
+object FailingInit {
+  throw new IllegalStateException("static init failed")
 }

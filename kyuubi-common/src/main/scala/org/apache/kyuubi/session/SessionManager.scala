@@ -19,7 +19,7 @@ package org.apache.kyuubi.session
 
 import java.io.IOException
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ExecutorService, Future, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.Duration
@@ -76,7 +76,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   protected def isServer: Boolean
 
-  private var execPool: ThreadPoolExecutor = _
+  private var execPool: ExecutorService = _
+  private var execPoolSize: () => Int = _
+  private var execPoolActiveCount: () => Int = _
+  private var execPoolQueueSize: () => Int = _
 
   def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
@@ -170,17 +173,17 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getExecPoolSize: Int = {
     assert(execPool != null)
-    execPool.getPoolSize
+    execPoolSize()
   }
 
   def getActiveCount: Int = {
     assert(execPool != null)
-    execPool.getActiveCount
+    execPoolActiveCount()
   }
 
   def getWorkQueueSize: Int = {
     assert(execPool != null)
-    execPool.getQueue.size()
+    execPoolQueueSize()
   }
 
   private var _confRestrictList: Set[String] = _
@@ -282,11 +285,28 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       s"${SESSION_USER_SIGN_ENABLED.key}"
     _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST)
 
-    execPool = ThreadUtils.newDaemonQueuedThreadPool(
-      poolSize,
-      waitQueueSize,
-      keepAliveMs,
-      s"$name-exec-pool")
+    if (isServer && conf.get(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED)) {
+      val virtualThreadPool = ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+        poolSize,
+        waitQueueSize,
+        s"$name-exec-pool")
+      execPool = virtualThreadPool
+      execPoolSize = () => virtualThreadPool.getPoolSize
+      execPoolActiveCount = () => virtualThreadPool.getActiveCount
+      execPoolQueueSize = () => virtualThreadPool.getQueueSize
+      info(s"$name-exec-pool: concurrency limit: $poolSize, wait queue size: " +
+        s"$waitQueueSize, virtual threads")
+    } else {
+      val platformThreadPool = ThreadUtils.newDaemonQueuedThreadPool(
+        poolSize,
+        waitQueueSize,
+        keepAliveMs,
+        s"$name-exec-pool")
+      execPool = platformThreadPool
+      execPoolSize = () => platformThreadPool.getPoolSize
+      execPoolActiveCount = () => platformThreadPool.getActiveCount
+      execPoolQueueSize = () => platformThreadPool.getQueue.size()
+    }
     super.initialize(conf)
   }
 

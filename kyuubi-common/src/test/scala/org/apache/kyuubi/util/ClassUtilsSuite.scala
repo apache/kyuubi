@@ -17,12 +17,19 @@
 
 package org.apache.kyuubi.util
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 
 class ClassUtilsSuite extends KyuubiFunSuite {
 
   private val _conf = KyuubiConf()
+
+  test("reject unrelated classes") {
+    val error = intercept[KyuubiException] {
+      ClassUtils.createInstance(classOf[KyuubiConf].getName, classOf[SomeProvider], _conf)
+    }
+    assert(error.getCause.isInstanceOf[ClassCastException])
+  }
 
   test("create instance with zero-arg arg") {
     val instance = ClassUtils.createInstance[SomeProvider](

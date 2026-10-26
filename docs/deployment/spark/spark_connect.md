@@ -31,7 +31,7 @@ spark.connect.authenticate.token=<a token this deployment generates>
 ```
 
 `kyuubi.engine.spark.connect.enabled` is immutable and the server decides it per engine, so a
-session cannot turn Spark Connect on by itself — neither under that key nor under the
+session cannot turn Spark Connect on by itself: neither under that key nor under the
 `spark.kyuubi.` prefixed copy that the engine would otherwise read.
 
 ## Requirements
@@ -68,11 +68,10 @@ Configs the deployment sets are kept, so a fixed port or extra plugins keep work
   command line.
 - On a Spark distribution without [SPARK-58658](https://issues.apache.org/jira/browse/SPARK-58658),
   an authenticated Spark Connect client reads the engine's configuration back through the Config
-  RPC, and the secrets the server hands the engine are in it —
-  `spark.kyuubi.ha.zookeeper.auth.digest` among them. The engine names them in
-  `spark.redaction.regex`, but only the patched handler consults that pattern. The fix is merged
-  on every Spark branch and released in none: 4.0.4, 4.1.3 and 4.2.0 all predate it, so it arrives
-  in the next patch release of each line.
+  RPC, and the secrets the server hands the engine are in it, including
+  `spark.kyuubi.ha.zookeeper.auth.digest`. The engine names them in
+  `spark.redaction.regex`, but only the patched handler consults that pattern. Use a Spark build
+  that includes this fix before enabling Spark Connect in a Kyuubi deployment.
 - Share levels other than `USER`, and engines started with `kyuubi.engine.doAs.enabled=false`, do
   not serve Spark Connect.
 

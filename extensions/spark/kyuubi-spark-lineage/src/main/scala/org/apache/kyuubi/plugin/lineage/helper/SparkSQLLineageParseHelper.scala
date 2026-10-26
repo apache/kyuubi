@@ -269,21 +269,17 @@ trait LineageParser {
 
       case p if p.nodeName == "InsertIntoDataSourceCommand" =>
         val logicalRelation = getField[LogicalRelation](plan, "logicalRelation")
-        val table = logicalRelation
-          .catalogTable.map(t => getV1TableName(t.qualifiedName)).getOrElse("")
+        val table = logicalRelation.catalogTable.map(t => getV1TableName(t.qualifiedName))
         extractColumnsLineage(getQuery(plan), parentColumnsLineage, inputTablesByPlan).map {
-          case (k, v) if table.nonEmpty =>
-            k.withName(s"$table.${k.name}") -> v
+          case (k, v) => table.map(name => k.withName(s"$name.${k.name}")).getOrElse(k) -> v
         }
 
       case p if p.nodeName == "InsertIntoHadoopFsRelationCommand" =>
         val table =
           getField[Option[CatalogTable]](plan, "catalogTable")
             .map(t => getV1TableName(t.qualifiedName))
-            .getOrElse("")
         extractColumnsLineage(getQuery(plan), parentColumnsLineage, inputTablesByPlan).map {
-          case (k, v) if table.nonEmpty =>
-            k.withName(s"$table.${k.name}") -> v
+          case (k, v) => table.map(name => k.withName(s"$name.${k.name}")).getOrElse(k) -> v
         }
 
       case p

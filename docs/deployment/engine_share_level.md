@@ -140,7 +140,7 @@ Here is an example to configure `HadoopGroupProvider` to use LDAP-based group ma
 
 <property>
   <name>hadoop.security.group.mapping.ldap.search.filter.user</name>
-  <value>(&(objectClass=posixAccount)(cn={0}))</value>
+  <value>(&amp;(objectClass=posixAccount)(cn={0}))</value>
 </property>
 
 <property>

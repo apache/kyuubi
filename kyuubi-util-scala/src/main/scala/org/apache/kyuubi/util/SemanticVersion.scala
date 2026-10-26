@@ -65,7 +65,7 @@ case class SemanticVersion(majorVersion: Int, minorVersion: Int)
 
 object SemanticVersion {
 
-  private val semanticVersionRegex = """^(\d+)(?:\.(\d+))?(\..*)?$""".r
+  private val semanticVersionRegex = """^(\d+)(?:\.(\d+))?(?:[.-].*)?$""".r
 
   def apply(versionString: String): SemanticVersion = {
     semanticVersionRegex.findFirstMatchIn(versionString) match {

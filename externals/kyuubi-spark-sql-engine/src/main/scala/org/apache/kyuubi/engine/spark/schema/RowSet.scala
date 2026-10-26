@@ -30,18 +30,16 @@ object RowSet {
   // SPARK-47911 (4.0.0) introduced it
   type BinaryFormatter = Array[Byte] => String
 
-  def getBinaryFormatter: BinaryFormatter =
+  private val getBinaryFormatterMethod: DynMethods.BoundMethod =
     DynMethods.builder("getBinaryFormatter")
       .impl(HiveResult.getClass) // for Spark 4.0 and later
       .orNoop() // for Spark 3.5 and before
       .buildChecked(HiveResult)
-      .invokeChecked[BinaryFormatter]()
 
-  def toHiveString(
-      valueAndType: (Any, DataType),
-      nested: JBoolean = false,
-      timeFormatters: TimeFormatters,
-      binaryFormatter: BinaryFormatter): String =
+  def getBinaryFormatter: BinaryFormatter =
+    getBinaryFormatterMethod.invokeChecked[BinaryFormatter]()
+
+  private val toHiveStringMethod: DynMethods.BoundMethod =
     DynMethods.builder("toHiveString")
       .impl( // for Spark 3.5 and before
         HiveResult.getClass,
@@ -55,5 +53,11 @@ object RowSet {
         classOf[TimeFormatters],
         classOf[BinaryFormatter])
       .buildChecked(HiveResult)
-      .invokeChecked[String](valueAndType, nested, timeFormatters, binaryFormatter)
+
+  def toHiveString(
+      valueAndType: (Any, DataType),
+      nested: JBoolean = false,
+      timeFormatters: TimeFormatters,
+      binaryFormatter: BinaryFormatter): String =
+    toHiveStringMethod.invokeChecked[String](valueAndType, nested, timeFormatters, binaryFormatter)
 }

@@ -37,6 +37,11 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
 
   override def computeStats(): Statistics = child.stats
 
+  // As a LeafNode the marker has no expressions or children, so QueryPlan.deterministic would
+  // report true even for a view over rand() or uuid(). InlineCTE relies on this flag to keep a
+  // nondeterministic CTE out of line when it is referenced more than once.
+  override lazy val deterministic: Boolean = child.deterministic
+
   override def newInstance(): LogicalPlan = {
     val projectList = child.output.map { case attr =>
       Alias(Cast(attr, attr.dataType), attr.name)(explicitMetadata = Some(attr.metadata))

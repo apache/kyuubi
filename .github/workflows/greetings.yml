@@ -42,4 +42,4 @@ jobs:
           Hello @${{ github.actor }},
           Thanks for finding the time to submit the Pull request, the Kyuubi community thanks you！
           We really appreciate the community's efforts to improve Apache Kyuubi.
-          If you are new to Apache Kyuubi for code changes, please take some time to read our [contributing guide](https://kyuubi.apache.org/contributing.html).
+          If you are new to Apache Kyuubi for code changes, please take some time to read our [contributing guide](https://kyuubi.readthedocs.io/en/master/contributing/code/get_started.html).

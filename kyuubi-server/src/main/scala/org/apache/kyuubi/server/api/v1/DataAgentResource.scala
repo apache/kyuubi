@@ -162,7 +162,8 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
       try {
         val f = CompletableFuture.supplyAsync(
           () => client.executeStatement(text, confOverlay, true, 0L),
-          opSubmitter)
+          opSubmitter(fe.getConf.get(
+            KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_SUBMIT_VIRTUAL_THREADS_ENABLED)))
         f.whenComplete((handle, _) => {
           if (handle != null && timedOut.get() && closed.compareAndSet(false, true)) {
             info(s"Closing orphaned op for session $sessionHandleStr (servlet already timed out)")
@@ -458,21 +459,29 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
 
 private[server] object DataAgentResource {
   // Bounded pool for blocking executeStatement submissions; rebuildable after service restart.
-  @volatile private var opSubmitExecutor: ExecutorService = newOpSubmitExecutor()
+  @volatile private var opSubmitExecutor: ExecutorService = _
 
-  private def newOpSubmitExecutor(): ExecutorService =
-    ThreadUtils.newDaemonQueuedThreadPool(
-      poolSize = 8,
-      poolQueueSize = 64,
-      keepAliveMs = 60000L,
-      threadPoolName = "data-agent-op-submit")
+  private def newOpSubmitExecutor(useVirtualThreads: Boolean): ExecutorService = {
+    if (useVirtualThreads) {
+      ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+        maxConcurrentTasks = 8,
+        maxQueuedTasks = 64,
+        threadNamePrefix = "data-agent-op-submit")
+    } else {
+      ThreadUtils.newDaemonQueuedThreadPool(
+        poolSize = 8,
+        poolQueueSize = 64,
+        keepAliveMs = 60000L,
+        threadPoolName = "data-agent-op-submit")
+    }
+  }
 
-  private def opSubmitter: ExecutorService = {
+  private def opSubmitter(useVirtualThreads: Boolean): ExecutorService = {
     val current = opSubmitExecutor
     if (current != null && !current.isShutdown) current
     else synchronized {
       if (opSubmitExecutor == null || opSubmitExecutor.isShutdown) {
-        opSubmitExecutor = newOpSubmitExecutor()
+        opSubmitExecutor = newOpSubmitExecutor(useVirtualThreads)
       }
       opSubmitExecutor
     }

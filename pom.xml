@@ -131,13 +131,13 @@
         <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.17.6</byte-buddy.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-lang3.version>3.21.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.3.1</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
@@ -289,6 +289,10 @@
         <distMgmtSnapshotsName>Apache Development Snapshot Repository</distMgmtSnapshotsName>
         <distMgmtSnapshotsUrl>https://repository.apache.org/content/repositories/snapshots</distMgmtSnapshotsUrl>
 
+        <!-- Both test plugins default their argLine to ${argLine}; jacoco:prepare-agent
+             prepends the agent to it under -Pcodecov. Overriding argLine in plugin config
+             instead breaks that, since plugin config is interpolated before the agent runs. -->
+        <argLine>${extraJavaTestArgs}</argLine>
         <extraJavaTestArgs>-XX:+IgnoreUnrecognizedVMOptions
             --add-opens=java.base/java.lang=ALL-UNNAMED
             --add-opens=java.base/java.lang.invoke=ALL-UNNAMED
@@ -1504,7 +1508,6 @@
                     <configuration>
                         <skipTests>true</skipTests>
                         <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
-                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -1531,7 +1534,6 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <argLine>${extraJavaTestArgs}</argLine>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
@@ -2075,9 +2077,11 @@
                 <spark.version>4.0.3</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
+                <delta.version>4.4.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
+                <!-- Paimon 2.x references the Spark 4.1+ Table.constraints() API in its Spark 4.0
+                     build, causing java.lang.NoClassDefFoundError at runtime. -->
                 <paimon.version>1.4.2</paimon.version>
                 <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
@@ -2098,13 +2102,12 @@
                 <spark.version>4.1.2</spark.version>
                 <spark.binary.version>4.1</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
+                <delta.version>4.4.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- TODO: update once Paimon support Spark 4.1. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
@@ -2119,22 +2122,68 @@
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
                 <spark.version>4.2.0</spark.version>
-                <!-- TODO: update once Delta and Iceberg support Spark 4.2. -->
+                <!-- TODO: update once Iceberg and Hudi support Spark 4.2. -->
                 <spark.binary.version>4.1</spark.binary.version>
                 <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
                      Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
                      was introduced in Servlet 6.0. -->
                 <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
-                <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
+                <delta.version>4.4.1</delta.version>
+                <delta.artifact>delta-spark_4.2_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
                 <!-- TODO: update once Paimon support Spark 4.2. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
+        </profile>
+
+        <profile>
+            <id>spark-4.3</id>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <maven.compiler.release>17</maven.compiler.release>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
+                <spark.version>4.3.0</spark.version>
+                <arrow.version>19.0.0</arrow.version>
+                <!-- TODO: update once Delta and Iceberg support Spark 4.3. -->
+                <spark.binary.version>4.1</spark.binary.version>
+                <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
+                     Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
+                     was introduced in Servlet 6.0. -->
+                <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <delta.version>4.4.1</delta.version>
+                <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
+                <hudi.version>1.2.0</hudi.version>
+                <!-- TODO: update once Paimon support Spark 4.3. -->
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-4.1_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <!-- TODO remove once Spark 4.3.0 GA -->
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v4.3.0-rc2-bin</spark.archive.mirror>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+                <spark.archive.query></spark.archive.query>
+            </properties>
+            <!-- TODO remove once Spark 4.3.0 GA -->
+            <repositories>
+                <repository>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>false</enabled>
+                    </snapshots>
+                    <id>spark-staging</id>
+                    <name>Spark Staging Repository</name>
+                    <url>https://repository.apache.org/content/repositories/orgapachespark-1538</url>
+                </repository>
+            </repositories>
         </profile>
 
         <profile>

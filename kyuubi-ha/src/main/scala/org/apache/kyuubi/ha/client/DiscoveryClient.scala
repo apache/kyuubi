@@ -19,6 +19,7 @@ package org.apache.kyuubi.ha.client
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.IPStackUtils
 
 /**
  * A collection of apis that discovery client need implement.
@@ -201,8 +202,8 @@ object DiscoveryClient {
         maybeInfos("hive.server2.thrift.bind.host"),
         maybeInfos("hive.server2.thrift.port").toInt)
     } else {
-      val strings = instance.split(":")
-      (strings(0), strings(1).toInt)
+      val hostPort = IPStackUtils.getHostAndPort(instance)
+      (hostPort.getHostname, hostPort.getPort)
     }
   }
 }

@@ -27,6 +27,9 @@ replicaCount: 2
 # The default policy is `OrderedReady`, alternative policy is `Parallel`.
 podManagementPolicy: OrderedReady
 
+# Optional additional annotations to add to the Kyuubi server StatefulSet
+annotations: {}
+
 # Optional additional annotations to add to Kyuubi server pods
 podAnnotations: {}
 
@@ -77,7 +80,10 @@ rbac:
   rules:
     - apiGroups: [""]
       resources: ["pods"]
-      verbs: ["create", "list", "delete"]
+      verbs: ["create", "list", "watch", "delete"]
+    - apiGroups: [""]
+      resources: ["services"]
+      verbs: ["list", "watch"]
 
 service:
   # configuration of the headless service
@@ -290,6 +296,9 @@ affinity: {}
 
 # Kyuubi pods security context
 securityContext: {}
+
+# Kyuubi server container security context
+containerSecurityContext: {}
 
 # Metrics configuration
 metrics:

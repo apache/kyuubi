@@ -187,7 +187,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <skipTests>${skipTests}</skipTests>
-                    <argLine>${extraJavaTestArgs}</argLine>
                 </configuration>
             </plugin>
             <plugin>

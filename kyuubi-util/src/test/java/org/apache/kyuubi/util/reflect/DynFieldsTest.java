@@ -21,13 +21,20 @@ package org.apache.kyuubi.util.reflect;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.math.BigInteger;
 import org.junit.jupiter.api.Test;
 
 public class DynFieldsTest {
+
+  // "1.8" -> 8, "9" -> 9, "17" -> 17, etc.
+  private static final int JAVA_SPEC_VER =
+      Math.max(
+          8, Integer.parseInt(System.getProperty("java.specification.version").split("\\.")[0]));
 
   private static class ReflectionTarget {
     public static String staticField = "static-value";
@@ -165,5 +172,45 @@ public class DynFieldsTest {
     bound.set("new-value");
     assertEquals("new-value", bound.get());
     assertEquals("new-value", target.instanceField);
+  }
+
+  @Test
+  public void testHiddenImplTreatsStronglyEncapsulatedFieldsAsMisses() throws Exception {
+    // Pin the probe: if a future JDK drops this member the lookup would miss for an unrelated
+    // reason and the assertions below would pass while covering nothing.
+    assertNotNull(BigInteger.class.getDeclaredField("signum"));
+
+    // The test JVM opens java.base/java.lang to the unnamed module, so the encapsulated
+    // path needs a package the surefire configuration leaves closed; java.math is one.
+    if (JAVA_SPEC_VER >= 16) {
+      // setAccessible on BigInteger.signum reports InaccessibleObjectException; the builder
+      // must count it as a candidate miss instead of letting it escape the fallback chain.
+      RuntimeException thrown =
+          assertThrows(
+              RuntimeException.class,
+              () -> DynFields.builder().hiddenImpl("java.math.BigInteger", "signum").build());
+      assertEquals(RuntimeException.class, thrown.getClass());
+      assertTrue(thrown.getMessage().contains("Cannot find field"));
+      // the candidate carries the exception, so these pin the encapsulation path itself rather
+      // than any candidate miss, and keep the module and package to open in the message
+      assertTrue(thrown.getMessage().contains("InaccessibleObjectException"));
+      assertTrue(thrown.getMessage().contains("opens java.math"));
+    } else {
+      // before strong encapsulation the same hidden lookup succeeds
+      DynFields.UnboundField<?> signum =
+          DynFields.builder().hiddenImpl("java.math.BigInteger", "signum").build();
+      assertNotNull(signum.bind(BigInteger.ONE).get());
+    }
+  }
+
+  @Test
+  public void testHiddenImplPropagatesUnrelatedFailures() {
+    // a RuntimeException that is not InaccessibleObjectException must still escape the
+    // builder instead of being counted as a candidate miss. The null goes to fieldName
+    // because hiddenImpl guards targetClass == null at the top; getDeclaredField(null) NPEs
+    // on every supported JDK (name.intern() on 8/11, requireNonNull at entry on 17+).
+    assertThrows(
+        NullPointerException.class,
+        () -> DynFields.builder().hiddenImpl(ReflectionTarget.class, null));
   }
 }

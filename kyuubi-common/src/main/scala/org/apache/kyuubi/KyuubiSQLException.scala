@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TStatus, TStatusCode}
-import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 /**
  * @param reason     a description of the exception
@@ -139,12 +139,14 @@ object KyuubiSQLException {
   }
   private def newInstance(className: String, message: String, cause: Throwable): Throwable = {
     try {
+      val exceptionClass = DynClasses.loadSubclass(className, classOf[Throwable])
       DynConstructors.builder()
-        .impl(className, classOf[String], classOf[Throwable])
+        .impl(exceptionClass, classOf[String], classOf[Throwable])
         .buildChecked[Throwable]()
         .newInstance(message, cause)
     } catch {
-      case _: Exception => new RuntimeException(className + ":" + message, cause)
+      case _: Exception | _: NoClassDefFoundError =>
+        new RuntimeException(className + ":" + message, cause)
     }
   }
 

@@ -43,10 +43,10 @@ Notes: this is an inefficient way to access data stored in Hive warehouse, you c
 
 Prepare JDBC driver jar file. Supported Hive compatible JDBC Driver as below:
 
-|                          Driver                           |            Driver Class Name            |                                                 Remarks                                                  |
-|-----------------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
-| Kyuubi Hive JDBC Driver ([doc](../jdbc/kyuubi_jdbc.html)) | org.apache.kyuubi.jdbc.KyuubiHiveDriver | Use v1.6.1 or later versions, which includes [KYUUBI #3484](https://github.com/apache/kyuubi/pull/3485). |
-| Hive JDBC Driver ([doc](../jdbc/hive_jdbc.html))          | org.apache.hive.jdbc.HiveDriver         | The Hive JDBC driver is already included in official Spark binary distribution.                          |
+|                                Driver                                |            Driver Class Name            |                                                 Remarks                                                  |
+|----------------------------------------------------------------------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
+| Kyuubi Hive JDBC Driver ([doc](../../../client/jdbc/kyuubi_jdbc.md)) | org.apache.kyuubi.jdbc.KyuubiHiveDriver | Use v1.6.1 or later versions, which includes [KYUUBI #3484](https://github.com/apache/kyuubi/pull/3485). |
+| Hive JDBC Driver ([doc](../../../client/jdbc/hive_jdbc.md))          | org.apache.hive.jdbc.HiveDriver         | The Hive JDBC driver is already included in official Spark binary distribution.                          |
 
 Refer to docs of the driver and prepare the JDBC driver jar file.
 

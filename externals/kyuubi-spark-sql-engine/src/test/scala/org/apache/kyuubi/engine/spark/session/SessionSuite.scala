@@ -24,6 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TGetInfoReq, TGetInfoType, TProtocolVersion, TStatusCode}
 
 class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
@@ -43,7 +44,35 @@ class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   }
 
   override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
+    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;" +
+      s"clientProtocolVersion=${TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11.getValue};" +
+      "#spark.ui.enabled=false"
+
+  private def assertSQLKeywords(value: String): Unit = {
+    val keywords = value.split(",", -1).toSeq
+    assert(
+      Set("SELECT", "FROM", "WHERE").subsetOf(keywords.toSet),
+      s"Expected Spark SQL keywords, but received: $value")
+    assert(keywords.forall(_.matches("[A-Z_]+")))
+    assert(keywords == keywords.sorted)
+  }
+
+  test("KYUUBI #5860: get Spark SQL keywords through Thrift GetInfo") {
+    withSessionHandle { (client, handle) =>
+      val request = new TGetInfoReq()
+      request.setSessionHandle(handle)
+      request.setInfoType(TGetInfoType.CLI_ODBC_KEYWORDS)
+      val response = client.GetInfo(request)
+      assert(response.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+      assertSQLKeywords(response.getInfoValue.getStringValue)
+    }
+  }
+
+  test("KYUUBI #5860: get Spark SQL keywords through JDBC metadata") {
+    withJdbcStatement() { statement =>
+      assertSQLKeywords(statement.getConnection.getMetaData.getSQLKeywords)
+    }
+  }
 
   test("release session if shared level is CONNECTION") {
     assert(engine.getServiceState == STARTED)

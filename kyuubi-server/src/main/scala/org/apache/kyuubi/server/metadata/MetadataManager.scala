@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.metadata
 
-import java.util.concurrent.{ConcurrentHashMap, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ExecutorService, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
@@ -59,10 +59,17 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private lazy val requestsAsyncRetryTrigger =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-requests-async-retry-trigger")
 
-  private lazy val requestsAsyncRetryExecutor: ThreadPoolExecutor =
-    ThreadUtils.newDaemonFixedThreadPool(
-      conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_THREADS),
-      "metadata-requests-async-retry")
+  private lazy val requestsAsyncRetryExecutor: ExecutorService = {
+    val poolSize = conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_THREADS)
+    if (conf.get(KyuubiConf.METADATA_REQUEST_ASYNC_RETRY_VIRTUAL_THREADS_ENABLED)) {
+      ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
+        poolSize,
+        Int.MaxValue - poolSize,
+        "metadata-requests-async-retry")
+    } else {
+      ThreadUtils.newDaemonFixedThreadPool(poolSize, "metadata-requests-async-retry")
+    }
+  }
 
   private lazy val cleanerEnabled = conf.get(KyuubiConf.METADATA_CLEANER_ENABLED)
 

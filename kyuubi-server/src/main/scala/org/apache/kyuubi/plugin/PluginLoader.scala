@@ -21,7 +21,7 @@ import scala.util.control.NonFatal
 
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 private[kyuubi] object PluginLoader {
 
@@ -32,13 +32,14 @@ private[kyuubi] object PluginLoader {
     }
     advisorClass.get.map { advisorClassName =>
       try {
-        DynConstructors.builder.impl(advisorClassName)
+        val implementation = DynClasses.loadSubclass(advisorClassName, classOf[SessionConfAdvisor])
+        DynConstructors.builder.impl(implementation)
           .buildChecked[SessionConfAdvisor].newInstance()
       } catch {
         case _: ClassCastException =>
           throw new KyuubiException(
             s"Class $advisorClassName is not a child of '${classOf[SessionConfAdvisor].getName}'.")
-        case NonFatal(e) =>
+        case e @ (NonFatal(_) | _: NoClassDefFoundError) =>
           throw new IllegalArgumentException(s"Error while instantiating '$advisorClassName': ", e)
       }
     }
@@ -47,12 +48,13 @@ private[kyuubi] object PluginLoader {
   def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
     val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
     try {
-      DynConstructors.builder().impl(groupProviderClass).buildChecked[GroupProvider]().newInstance()
+      val providerClass = DynClasses.loadSubclass(groupProviderClass, classOf[GroupProvider])
+      DynConstructors.builder().impl(providerClass).buildChecked[GroupProvider]().newInstance()
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
           s"Class $groupProviderClass is not a child of '${classOf[GroupProvider].getName}'.")
-      case NonFatal(e) =>
+      case e @ (NonFatal(_) | _: NoClassDefFoundError) =>
         throw new IllegalArgumentException(s"Error while instantiating '$groupProviderClass': ", e)
     }
   }

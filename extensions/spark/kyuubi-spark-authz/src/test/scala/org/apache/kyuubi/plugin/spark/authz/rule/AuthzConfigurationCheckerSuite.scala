@@ -84,6 +84,34 @@ class AuthzConfigurationCheckerSuite extends KyuubiFunSuite with SparkSessionPro
     }
   }
 
+  test("check every authz rule the extension injects, not only the ranger ones") {
+    val extension = AuthzConfigurationChecker(spark)
+    val plan = sql("select 1").queryExecution.analyzed
+
+    // the marker-eliminating rules live in org.apache.kyuubi.plugin.spark.authz.rule and are
+    // optimizer rules, so spark.sql.optimizer.excludedRules reaches them the same way it
+    // reaches RuleAuthorization
+    Seq(
+      RuleEliminateMarker.ruleName,
+      RuleEliminatePermanentViewMarker(spark).ruleName,
+      RuleEliminateTypeOf.ruleName).foreach { rule =>
+      spark.conf.set(extension.EXCLUDED_RULES_KEY, rule)
+      try {
+        intercept[AccessControlException](extension.apply(plan))
+      } finally {
+        spark.conf.unset(extension.EXCLUDED_RULES_KEY)
+      }
+    }
+
+    val setPlan = sql(s"set ${extension.EXCLUDED_RULES_KEY}=${RuleEliminateMarker.ruleName}")
+      .queryExecution.analyzed
+    try {
+      intercept[AccessControlException](extension.apply(setPlan))
+    } finally {
+      spark.conf.unset(extension.EXCLUDED_RULES_KEY)
+    }
+  }
+
   test("apply spark configuration restriction rules for RESET") {
     sql("set spark.kyuubi.conf.restricted.list=spark.sql.abc,spark.sql.xyz")
     val extension = AuthzConfigurationChecker(spark)

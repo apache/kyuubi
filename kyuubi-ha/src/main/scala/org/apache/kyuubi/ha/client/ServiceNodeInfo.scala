@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha.client
 
+import org.apache.kyuubi.util.IPStackUtils
+
 case class ServiceNodeInfo(
     namespace: String,
     nodeName: String,
@@ -25,5 +27,5 @@ case class ServiceNodeInfo(
     version: Option[String],
     engineRefId: Option[String],
     attributes: Map[String, String] = Map.empty) {
-  def instance: String = s"$host:$port"
+  def instance: String = IPStackUtils.concatHostPort(host, port)
 }

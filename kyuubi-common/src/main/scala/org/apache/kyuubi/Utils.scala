@@ -381,7 +381,9 @@ object Utils extends Logging {
   def getContextOrKyuubiClassLoader: ClassLoader =
     Option(Thread.currentThread().getContextClassLoader).getOrElse(getKyuubiClassLoader)
 
-  def isOnK8s: Boolean = Files.exists(Paths.get("/var/run/secrets/kubernetes.io"))
+  def isOnK8s(env: Map[String, String] = sys.env): Boolean =
+    env.get("KUBERNETES_SERVICE_HOST").exists(_.nonEmpty) &&
+      env.get("KUBERNETES_SERVICE_PORT").exists(_.nonEmpty)
 
   /**
    * Return a nice string representation of the exception. It will call "printStackTrace" to

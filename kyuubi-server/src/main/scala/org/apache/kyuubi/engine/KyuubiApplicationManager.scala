@@ -186,6 +186,11 @@ object KyuubiApplicationManager {
           }
         }
       }
+      // the main resource is not a spark.* conf but spark-submit uploads it from the server
+      // host as the primary resource of the engine application
+      appConf.get(KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE.key).filter(_.nonEmpty).foreach { path =>
+        checkApplicationAccessPath(path, kyuubiConf)
+      }
     }
   }
 

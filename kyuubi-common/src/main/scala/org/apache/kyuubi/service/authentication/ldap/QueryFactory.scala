@@ -40,7 +40,7 @@ final class QueryFactory(conf: KyuubiConf) {
     .filter("(&(objectClass=<groupClassAttr>)(<guidAttr>=<groupID>))")
     .map("guidAttr", guidAttr)
     .map("groupClassAttr", groupClassAttr)
-    .map("groupID", groupId).limit(2)
+    .map("groupID", LdapUtils.escapeLDAPSearchFilter(groupId)).limit(2)
     .build
 
   /**
@@ -80,7 +80,7 @@ final class QueryFactory(conf: KyuubiConf) {
     .filter("(&(|<classes:{ class |(objectClass=<class>)}>)" +
       "(|(uid=<userName>)(sAMAccountName=<userName>)))")
     .map("classes", USER_OBJECT_CLASSES)
-    .map("userName", userName)
+    .map("userName", LdapUtils.escapeLDAPSearchFilter(userName))
     .limit(2)
     .build
 
@@ -96,8 +96,8 @@ final class QueryFactory(conf: KyuubiConf) {
       "(|(<groupMembershipAttr>=<userDn>)(<groupMembershipAttr>=<userName>)))")
     .map("groupClassAttr", groupClassAttr)
     .map("groupMembershipAttr", groupMembershipAttr)
-    .map("userName", userName)
-    .map("userDn", userDn)
+    .map("userName", LdapUtils.escapeLDAPSearchFilter(userName))
+    .map("userDn", LdapUtils.escapeLDAPSearchFilter(userDn))
     .build
 
   /**
@@ -122,8 +122,8 @@ final class QueryFactory(conf: KyuubiConf) {
       .map("classes", USER_OBJECT_CLASSES)
       .map("guidAttr", guidAttr)
       .map("userMembershipAttr", userMembershipAttrOpt.get)
-      .map("userId", userId)
-      .map("groupDn", groupDn)
+      .map("userId", LdapUtils.escapeLDAPSearchFilter(userId))
+      .map("groupDn", LdapUtils.escapeLDAPSearchFilter(groupDn))
       .limit(2)
       .build
   }
