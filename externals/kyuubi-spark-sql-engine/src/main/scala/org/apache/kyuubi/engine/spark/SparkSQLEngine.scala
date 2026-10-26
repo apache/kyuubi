@@ -227,6 +227,7 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
+  private val ENGINE_CONTEXT_TERMINATION_CHECK_INTERVAL_SECONDS = 1L
 
   private val sparkSessionCreated = new AtomicBoolean(false)
 
@@ -410,7 +411,11 @@ object SparkSQLEngine extends Logging {
         try {
           startEngine(spark)
           // blocking main thread
-          countDownLatch.await()
+          waitForEngineTermination(
+            countDownLatch,
+            () => spark.sparkContext.isStopped,
+            ENGINE_CONTEXT_TERMINATION_CHECK_INTERVAL_SECONDS,
+            TimeUnit.SECONDS)
         } catch {
           case e: KyuubiException =>
             currentEngine match {
@@ -441,6 +446,20 @@ object SparkSQLEngine extends Logging {
         if (spark != null) {
           spark.stop()
         }
+      }
+    }
+  }
+
+  @VisibleForTesting
+  private[kyuubi] def waitForEngineTermination(
+      latch: CountDownLatch,
+      isSparkContextStopped: () => Boolean,
+      checkInterval: Long,
+      timeUnit: TimeUnit): Unit = {
+    // The engine may not reach stopServer after SparkContext shutdown starts.
+    while (!latch.await(checkInterval, timeUnit)) {
+      if (isSparkContextStopped()) {
+        return
       }
     }
   }
