@@ -227,8 +227,6 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
-  private val ENGINE_CONTEXT_TERMINATION_CHECK_INTERVAL_SECONDS = 1L
-
   private val sparkSessionCreated = new AtomicBoolean(false)
 
   final private val POD_NAME_MAX_LENGTH = 253
@@ -411,11 +409,7 @@ object SparkSQLEngine extends Logging {
         try {
           startEngine(spark)
           // blocking main thread
-          waitForEngineTermination(
-            countDownLatch,
-            () => spark.sparkContext.isStopped,
-            ENGINE_CONTEXT_TERMINATION_CHECK_INTERVAL_SECONDS,
-            TimeUnit.SECONDS)
+          waitForEngineTermination(countDownLatch, () => spark.sparkContext.isStopped)
         } catch {
           case e: KyuubiException =>
             currentEngine match {
@@ -453,12 +447,12 @@ object SparkSQLEngine extends Logging {
   @VisibleForTesting
   private[kyuubi] def waitForEngineTermination(
       latch: CountDownLatch,
-      isSparkContextStopped: () => Boolean,
-      checkInterval: Long,
-      timeUnit: TimeUnit): Unit = {
+      isSparkContextStopped: () => Boolean): Unit = {
     // The engine may not reach stopServer after SparkContext shutdown starts.
-    while (!latch.await(checkInterval, timeUnit)) {
+    while (!latch.await(1, TimeUnit.SECONDS)) {
       if (isSparkContextStopped()) {
+        // stop() may already be running, so exit the wait instead of calling it again.
+        warn("SparkContext has been stopped, breaking main thread wait")
         return
       }
     }

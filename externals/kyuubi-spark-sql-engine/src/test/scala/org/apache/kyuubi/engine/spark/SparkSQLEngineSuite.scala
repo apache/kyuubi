@@ -33,7 +33,7 @@ class SparkSQLEngineSuite extends KyuubiFunSuite {
     val finished = new CountDownLatch(1)
     val waitingThread = new Thread(() => {
       try {
-        SparkSQLEngine.waitForEngineTermination(latch, () => true, 100, TimeUnit.MILLISECONDS)
+        SparkSQLEngine.waitForEngineTermination(latch, () => true)
         finished.countDown()
       } catch {
         case _: InterruptedException => ()
