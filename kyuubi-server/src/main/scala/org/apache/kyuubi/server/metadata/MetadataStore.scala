@@ -129,7 +129,11 @@ private[metadata] class MetadataRowNotFoundException(identifier: String)
 
 private[metadata] class MetadataUpdateMismatchException(
     identifier: String,
-    val mismatchedColumns: Seq[String])
+    mismatchedValues: Seq[(String, String, String)])
   extends MetadataUpdatePostconditionException(
     s"Metadata row $identifier does not match the requested update for columns: " +
-      mismatchedColumns.mkString(", "))
+      mismatchedValues.map { case (column, expected, actual) =>
+        s"$column (expected: $expected, actual: $actual)"
+      }.mkString(", ")) {
+  val mismatchedColumns: Seq[String] = mismatchedValues.map(_._1)
+}

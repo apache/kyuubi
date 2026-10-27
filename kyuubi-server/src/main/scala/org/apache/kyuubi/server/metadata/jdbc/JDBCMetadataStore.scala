@@ -400,13 +400,22 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         throw new MetadataRowNotFoundException(identifier)
       }
 
-      val mismatchedColumns = updateFields.zipWithIndex.collect {
-        case ((column, expected), index)
-            if getResultSetValue(resultSet, index + 1, expected) != expected => column
+      val mismatchedValues = updateFields.zipWithIndex.flatMap { case ((column, expected), index) =>
+        val actual = getResultSetValue(resultSet, index + 1, expected)
+        if (actual == expected) {
+          None
+        } else {
+          val Seq((_, redactedExpected), (_, redactedActual)) = Utils.redact(
+            Some(conf.get(KyuubiConf.SERVER_SECRET_REDACTION_PATTERN)),
+            Seq(column -> String.valueOf(expected), column -> String.valueOf(actual)))
+          Some((column, redactedExpected, redactedActual))
+        }
       }
-      if (mismatchedColumns.nonEmpty) {
-        throw new MetadataUpdateMismatchException(identifier, mismatchedColumns)
+      if (mismatchedValues.nonEmpty) {
+        throw new MetadataUpdateMismatchException(identifier, mismatchedValues)
       }
+      warn(s"Update for $identifier returned 0 but all requested values already match, " +
+        "treating as idempotent success")
     }
   }
 
