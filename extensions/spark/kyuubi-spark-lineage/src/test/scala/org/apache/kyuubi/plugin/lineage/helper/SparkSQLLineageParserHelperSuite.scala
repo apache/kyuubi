@@ -21,7 +21,7 @@ import scala.reflect.io.File
 
 import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
-import org.apache.spark.sql.{DataFrame, SparkListenerExtensionTest, SparkSession, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SparkListenerExtensionTest, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
@@ -1593,6 +1593,55 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
                 ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
                 ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
                 ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+          }
+        } finally {
+          SparkContextHelper.setConf(legacyEntry, previousLegacy)
+        }
+        assert(SparkContextHelper.getConf(legacyEntry) == previousLegacy)
+      }
+    }
+  }
+
+  Seq(false, true).foreach { legacy =>
+    Seq("SELECT", "INSERT").foreach { statement =>
+      test(s"columns lineage extract - bare outer reference $statement with legacy=$legacy") {
+        val legacyEntry = LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED
+        val previousLegacy = SparkContextHelper.getConf(legacyEntry)
+        try {
+          SparkContextHelper.setConf(legacyEntry, legacy)
+          withTable("v2_catalog.db.tb1", "v2_catalog.db.tb3") { tables =>
+            tables.foreach { table =>
+              spark.sql(s"CREATE TABLE $table (col1 INT, col2 STRING, col3 INT)").collect()
+            }
+            spark.sql("INSERT INTO v2_catalog.db.tb1 VALUES (1, 'one', 10), (2, 'two', 20)")
+              .collect()
+            val select = "SELECT * FROM v2_catalog.db.tb1 t1 " +
+              "WHERE t1.col1 = (SELECT t1.col1)"
+            val sql = if (statement == "SELECT") select
+            else s"INSERT OVERWRITE v2_catalog.db.tb3 $select"
+            val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+            val analyzed = spark.sessionState.analyzer.execute(parsed)
+            spark.sessionState.analyzer.checkAnalysis(analyzed)
+            info(s"Bare outer reference $statement with legacy=$legacy SQL: $sql")
+            info(s"Bare outer reference analyzed plan:\n${analyzed.treeString}")
+            val result = spark.sql(sql).collect()
+            val rows = if (statement == "SELECT") result
+            else spark.sql("SELECT * FROM v2_catalog.db.tb3").collect()
+            assert(rows.toSeq.sortBy(_.getInt(0)) == Seq(Row(1, "one", 10), Row(2, "two", 20)))
+            info(s"Bare outer reference $statement with legacy=$legacy executed rows: " +
+              rows.toSeq.sortBy(_.getInt(0)).mkString(", "))
+            val outputPrefix = if (statement == "SELECT") "" else "v2_catalog.db.tb3."
+            val expected = Lineage(
+              List("v2_catalog.db.tb1"),
+              if (statement == "SELECT") List.empty[String] else List("v2_catalog.db.tb3"),
+              (1 to 3).map { index =>
+                s"${outputPrefix}col$index" -> Set(s"v2_catalog.db.tb1.col$index")
+              }.toList)
+            val helper = SparkSQLLineageParseHelper(spark)
+            val lineage = helper.transformToLineage(0, analyzed)
+            info(s"Bare outer reference $statement with legacy=$legacy actual lineage: $lineage")
+            assert(lineage.contains(expected))
+            assert(helper.parse(analyzed) == expected)
           }
         } finally {
           SparkContextHelper.setConf(legacyEntry, previousLegacy)
