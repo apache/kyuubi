@@ -330,6 +330,8 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
   }
 
   test("columns lineage extract - insert into a JDBC temporary view without catalog metadata") {
+    // Load Derby in this classloader rather than relying on Hive's isolated driver registration.
+    Class.forName("org.apache.derby.jdbc.EmbeddedDriver")
     val url = s"jdbc:derby:memory:lineage_${UUID.randomUUID().toString.replace('-', '_')}"
     val connection = DriverManager.getConnection(s"$url;create=true")
     try {

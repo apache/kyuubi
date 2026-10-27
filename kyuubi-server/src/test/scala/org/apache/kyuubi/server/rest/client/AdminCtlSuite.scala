@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.rest.client
 import java.util.UUID
 
 import org.mockito.Mockito.lenient
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.{KYUUBI_VERSION, RestClientTestHelper}
@@ -102,9 +103,11 @@ class AdminCtlSuite extends RestClientTestHelper with TestPrematureExit {
       ldapUser,
       "--password",
       ldapUserPasswd)
-    testPrematureExitForAdminControlCli(
-      args,
-      "Engine Node List (total 0)")
+    eventually(timeout(5.seconds), interval(100.milliseconds)) {
+      testPrematureExitForAdminControlCli(
+        args,
+        "Engine Node List (total 0)")
+    }
   }
 
   test("list server") {
