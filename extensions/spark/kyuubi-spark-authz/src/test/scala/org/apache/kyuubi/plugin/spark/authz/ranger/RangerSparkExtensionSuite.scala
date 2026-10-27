@@ -27,7 +27,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSessionExtensions}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.expressions.PythonUDF
-import org.apache.spark.sql.catalyst.plans.logical.{RepartitionByExpression, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{RepartitionOperation, Statistics}
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.functions.col
@@ -691,11 +691,11 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         sql(s"CREATE VIEW $view AS SELECT id, uuid() AS r FROM range(20)")
         val query = sql(s"WITH c AS (SELECT * FROM $view) " +
           "SELECT a.id, a.r AS l, b.r AS r FROM c a JOIN c b ON a.id = b.id")
-        // Spark keeps a nondeterministic CTE out of line when it is referenced more than once:
-        // each reference is planned under a rebalance shuffle and the physical plan reuses one
-        // Exchange. Inlining it would evaluate uuid() separately for each reference.
+        // Spark keeps a nondeterministic CTE out of line when it is referenced more than once.
+        // SPARK-40105 (3.4.0): uses RepartitionByExpression instead of Repartition for the shuffle.
+        // Both reuse one Exchange; inlining would evaluate uuid() separately for each reference.
         assert(
-          query.queryExecution.optimizedPlan.exists(_.isInstanceOf[RepartitionByExpression]),
+          query.queryExecution.optimizedPlan.exists(_.isInstanceOf[RepartitionOperation]),
           "Expected the nondeterministic CTE to stay out of line")
         val rows = query.collect()
         assert(rows.length == 20)
