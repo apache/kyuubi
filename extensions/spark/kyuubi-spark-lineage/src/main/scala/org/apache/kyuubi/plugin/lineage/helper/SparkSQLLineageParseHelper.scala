@@ -27,7 +27,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, PersistedView, ViewType}
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, HiveTableRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, OuterReference, ScalarSubquery, SubqueryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeSet, Expression, NamedExpression, OuterReference, ScalarSubquery}
 import org.apache.spark.sql.catalyst.expressions.aggregate.Count
 import org.apache.spark.sql.catalyst.plans.{LeftAnti, LeftSemi}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -204,6 +204,13 @@ trait LineageParser {
       plan: LogicalPlan,
       parentColumnsLineage: AttributeMap[AttributeSet],
       inputTablesByPlan: mutable.HashSet[String]): AttributeMap[AttributeSet] = {
+
+    if (!SparkContextHelper.getConf(LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED)) {
+      plan.subqueries.foreach { subquery =>
+        // Only collect input tables; these column mappings must not feed the parent lineage.
+        extractColumnsLineage(subquery, ListMap[Attribute, AttributeSet](), inputTablesByPlan)
+      }
+    }
 
     plan match {
       // For command
@@ -455,17 +462,6 @@ trait LineageParser {
           _,
           nextColumnsLineage,
           inputTablesByPlan)).reduce(mergeColumnsLineage)
-
-      case p: Filter =>
-        p.condition.foreach {
-          case expression: SubqueryExpression =>
-            extractColumnsLineage(
-              expression.plan,
-              ListMap[Attribute, AttributeSet](),
-              inputTablesByPlan)
-          case _ =>
-        }
-        extractColumnsLineage(p.child, parentColumnsLineage, inputTablesByPlan)
 
       case p: Join =>
         p.joinType match {
