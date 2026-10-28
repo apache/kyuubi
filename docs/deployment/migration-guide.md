@@ -23,6 +23,15 @@
 * Since Kyuubi 1.13, the support of Flink engine for Flink 1.17, 1.18 and 1.19 is removed.
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
+* Since Kyuubi 1.13, Engine UI proxy links use registered Engine references or Batch IDs. Legacy
+  `/engine-ui/<host>:<port>/...` links are rejected; reopen the UI from the Engine or Batch page.
+  `kyuubi.frontend.rest.engine.ui.proxy.hosts` is removed; proxy targets are constrained by
+  the registered references instead of the host allow-list.
+* Since Kyuubi 1.13, Engine UI proxy requests use the existing HTTP authentication chain by default. `NONE` and `NOSASL`
+  continue to allow anonymous access. The Web UI's Basic login stores credentials in an
+  HttpOnly cookie scoped to `/engine-ui`; use HTTPS to protect them. Logout clears the cookie.
+  Set `kyuubi.frontend.rest.engine.ui.proxy.auth.enabled=false` to allow anonymous proxy
+  access with deployment-level access control; target and redirect validation remain enabled.
 
 ## Upgrading from Kyuubi 1.11 to 1.12
 

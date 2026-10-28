@@ -22,18 +22,46 @@ function normalizeEngineUIUrl(url: string): string {
   return `http://${url}`
 }
 
-function getProxyEngineUIUrl(url: string): string {
-  const engineURL = normalizeEngineUIUrl(url)
-  const parsedURL = new URL(engineURL)
-  const proxyPath = `${parsedURL.host}${parsedURL.pathname}${parsedURL.search}`
-  return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${proxyPath}`
+type EngineUIResource = { kind: 'engines' | 'batches'; id: string }
+
+function getProxyEngineUIUrl(resource: EngineUIResource): string {
+  if (!resource.id || !/^[A-Za-z0-9_-]+$/.test(resource.id)) return ''
+  return `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/${resource.kind}/${resource.id}/`
 }
 
-function getEngineUIUrl(url: string, proxyEnabled: boolean): string {
-  if (proxyEnabled) {
-    return getProxyEngineUIUrl(url)
+function getEngineUIUrl(
+  url: string,
+  proxyEnabled: boolean,
+  resource?: EngineUIResource
+): string {
+  if (proxyEnabled) return resource ? getProxyEngineUIUrl(resource) : ''
+  return url ? normalizeEngineUIUrl(url) : ''
+}
+
+function getEngineUIReturnTarget(value: string | null): string | undefined {
+  if (
+    !value ||
+    !value.startsWith('/') ||
+    value.startsWith('//') ||
+    value.includes('\\')
+  ) {
+    return undefined
   }
-  return normalizeEngineUIUrl(url)
+  const target = new URL(value, window.location.origin)
+  if (
+    target.origin !== window.location.origin ||
+    !/^\/engine-ui\/(engines|batches)\/[A-Za-z0-9_-]+(?:\/|$)/.test(
+      target.pathname
+    )
+  ) {
+    return undefined
+  }
+  return target.pathname + target.search + target.hash
 }
 
-export { getEngineUIUrl, getProxyEngineUIUrl, normalizeEngineUIUrl }
+export {
+  getEngineUIUrl,
+  getProxyEngineUIUrl,
+  normalizeEngineUIUrl,
+  getEngineUIReturnTarget
+}

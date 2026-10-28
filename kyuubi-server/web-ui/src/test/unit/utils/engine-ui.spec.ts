@@ -17,6 +17,7 @@
 
 import {
   getEngineUIUrl,
+  getEngineUIReturnTarget,
   getProxyEngineUIUrl,
   normalizeEngineUIUrl
 } from '@/utils/engine-ui'
@@ -29,13 +30,32 @@ test('engine ui url direct mode', () => {
   )
 })
 
-test('engine ui url proxy mode', () => {
-  expect(getProxyEngineUIUrl('spark.example.com:4040')).toEqual(
-    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/spark.example.com:4040/`
+test('proxy links identify resources and never encode destination addresses', () => {
+  expect(getProxyEngineUIUrl({ kind: 'engines', id: 'engine-ref' })).toEqual(
+    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/engines/engine-ref/`
   )
-  expect(getEngineUIUrl('spark.example.com:4040/sql/?id=1', true)).toEqual(
-    `${
-      import.meta.env.VITE_APP_DEV_WEB_URL
-    }engine-ui/spark.example.com:4040/sql/?id=1`
+  expect(
+    getEngineUIUrl('host:4040', true, { kind: 'batches', id: 'batch-id' })
+  ).toEqual(
+    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/batches/batch-id/`
   )
+  expect(getEngineUIUrl('host:4040', true)).toBe('')
+  expect(getProxyEngineUIUrl({ kind: 'engines', id: '../host:4040' })).toBe('')
+})
+
+test('login return targets stay within resource UI paths and preserve query parameters', () => {
+  expect(
+    getEngineUIReturnTarget('/engine-ui/batches/batch-id/SQL/execution/?id=0')
+  ).toBe('/engine-ui/batches/batch-id/SQL/execution/?id=0')
+  for (const value of [
+    null,
+    '',
+    'https://foreign.invalid/',
+    '//foreign.invalid/',
+    '/\\foreign.invalid/',
+    '/ui/',
+    '/engine-ui/engines/ref/../../../../outside'
+  ]) {
+    expect(getEngineUIReturnTarget(value)).toBeUndefined()
+  }
 })

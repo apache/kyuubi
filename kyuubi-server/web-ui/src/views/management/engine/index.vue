@@ -83,19 +83,14 @@
           <el-space wrap>
             <el-tooltip
               effect="dark"
-              :content="
-                $t('engine_ui') +
-                ': ' +
-                getEngineUI(scope.row.attributes['kyuubi.engine.url'])
-              "
+              :content="$t('engine_ui') + ': ' + getEngineUI(scope.row)"
               placement="top">
               <el-button
                 type="primary"
+                :disabled="!getEngineUI(scope.row)"
                 icon="Link"
                 circle
-                @click="
-                  openEngineUI(scope.row.attributes['kyuubi.engine.url'])
-                " />
+                @click="openEngineUI(scope.row)" />
             </el-tooltip>
             <el-popconfirm
               :title="$t('operation.delete_confirm')"
@@ -130,7 +125,7 @@
   import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import { getEngineType, getShareLevel } from '@/utils/engine'
-  import { getEngineUIUrl, getProxyEngineUIUrl } from '@/utils/engine-ui'
+  import { getEngineUIUrl } from '@/utils/engine-ui'
 
   const { t } = useI18n()
   const { tableData, loading, getList: _getList } = useTable()
@@ -179,23 +174,23 @@
       })
   }
 
-  function getProxyEngineUI(url: string): string {
-    return getProxyEngineUIUrl(url)
+  function getEngineUI(engine: any): string {
+    return getEngineUIUrl(
+      engine.attributes?.['kyuubi.engine.url'],
+      engineUIProxyConfig.engineUIProxyEnabled,
+      { kind: 'engines', id: engine.attributes?.['kyuubi.engine.ui.proxy.ref'] }
+    )
   }
 
-  function getEngineUI(url: string): string {
-    return getEngineUIUrl(url, engineUIProxyConfig.engineUIProxyEnabled)
-  }
-
-  function openEngineUI(url: string) {
-    window.open(getEngineUI(url))
+  function openEngineUI(engine: any) {
+    const url = getEngineUI(engine)
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   init()
   // export for test
   defineExpose({
     getEngineUI,
-    getProxyEngineUI,
     engineUIProxyConfig
   })
 </script>
