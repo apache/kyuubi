@@ -227,6 +227,7 @@ object SparkSQLEngine extends Logging {
   private lazy val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
+
   private val sparkSessionCreated = new AtomicBoolean(false)
 
   final private val POD_NAME_MAX_LENGTH = 253
@@ -410,11 +411,11 @@ object SparkSQLEngine extends Logging {
           startEngine(spark)
           // blocking main thread
           // The engine may not reach stopServer after SparkContext shutdown starts.
+          // Fail through the engine error path so abnormal termination is reported.
           while (!countDownLatch.await(1, TimeUnit.SECONDS)) {
             if (spark.sparkContext.isStopped) {
-              // stop() may already be running, so exit the wait instead of calling it again.
-              warn("SparkContext has been stopped, breaking main thread wait")
-              return
+              throw new KyuubiException(
+                "SparkContext stopped before SparkSQLEngine, terminating the engine main thread")
             }
           }
         } catch {
