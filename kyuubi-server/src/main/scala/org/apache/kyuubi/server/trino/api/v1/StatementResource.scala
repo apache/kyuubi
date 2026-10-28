@@ -76,8 +76,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       throw badRequest(BAD_REQUEST, "SQL statement is empty")
     }
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
-    val trinoContext = TrinoContext(headers, remoteAddr)
+    val trinoContext = TrinoContext(headers, clientIpAddress)
 
     try {
       parser.parsePlan(statement) match {
@@ -137,8 +136,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @Context headers: HttpHeaders,
       @Context uriInfo: UriInfo): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
-    val trinoContext = TrinoContext(headers, remoteAddr)
+    val trinoContext = TrinoContext(headers, clientIpAddress)
     val waitTime = if (maxWait == null) 0 else maxWait.toMillis
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, QUEUED_QUERY)
       .flatMap(query =>
@@ -172,8 +170,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @Context headers: HttpHeaders,
       @Context uriInfo: UriInfo): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
-    val trinoContext = TrinoContext(headers, remoteAddr)
+    val trinoContext = TrinoContext(headers, clientIpAddress)
     val waitTime = if (maxWait == null) 0 else maxWait.toMillis
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, EXECUTING_QUERY)
       .flatMap(query =>
@@ -202,8 +199,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @PathParam("token") token: Long,
       @Context headers: HttpHeaders): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
-    val trinoContext = TrinoContext(headers, remoteAddr)
+    val trinoContext = TrinoContext(headers, clientIpAddress)
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, QUEUED_QUERY)
       .flatMap(query => Try(query.cancel))
       .recover {
@@ -229,8 +225,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @PathParam("token") token: Long,
       @Context headers: HttpHeaders): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
-    val trinoContext = TrinoContext(headers, remoteAddr)
+    val trinoContext = TrinoContext(headers, clientIpAddress)
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, EXECUTING_QUERY)
       .flatMap(query => Try(query.cancel))
       .recover {
