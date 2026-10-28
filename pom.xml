@@ -260,7 +260,6 @@
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.19</maven.plugin.silencer.version>
         <!-- MSOURCES-121 breaks creating source artifacts for shaded modules,
              we should skip upgrading until MSOURCES-141 gets fixed. -->
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
@@ -1446,9 +1445,9 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
-                            <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
-                            <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
+                            <arg>-Wconf:msg=deprecated:s</arg>
+                            <arg>-Wconf:msg=Could not find any member to link for:s</arg>
+                            <arg>-Wconf:msg=undefined in comment for class:s</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
                         </args>
@@ -1460,13 +1459,6 @@
                         <javacArgs>
                             <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
                         </javacArgs>
-                        <compilerPlugins>
-                            <compilerPlugin>
-                                <groupId>com.github.ghik</groupId>
-                                <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                <version>${maven.plugin.silencer.version}</version>
-                            </compilerPlugin>
-                        </compilerPlugins>
                     </configuration>
                     <executions>
                         <execution>
