@@ -140,7 +140,7 @@ class ExecuteStatement(
       super.cleanup(targetState)
     } finally {
       if (jdbcStatement != null) {
-        if (targetState == OperationState.CANCELED) {
+        if (targetState == OperationState.CANCELED || targetState == OperationState.TIMEOUT) {
           dialect.cancelStatement(jdbcStatement)
         } else {
           dialect.closeStatement(jdbcStatement)
