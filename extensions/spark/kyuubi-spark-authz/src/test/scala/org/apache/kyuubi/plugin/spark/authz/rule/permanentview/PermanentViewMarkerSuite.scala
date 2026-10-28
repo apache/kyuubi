@@ -65,8 +65,8 @@ class PermanentViewMarkerSuite extends KyuubiFunSuite {
       storage = CatalogStorageFormat.empty,
       schema = new StructType().add("a", "int").add("b", "string"),
       viewText = Some("SELECT a, b FROM t WHERE a IN (SELECT a FROM s)"))
-    val subqueryPlan: LogicalPlan =
-      Project(Seq($"a".int, $"b".string), LocalRelation($"a".int, $"b".string))
+    val relation = LocalRelation($"a".int, $"b".string)
+    val subqueryPlan: LogicalPlan = Project(relation.output, relation)
     val marker = PermanentViewMarker(subqueryPlan, desc)
     assert(marker.newInstance().canonicalized == marker.canonicalized)
   }

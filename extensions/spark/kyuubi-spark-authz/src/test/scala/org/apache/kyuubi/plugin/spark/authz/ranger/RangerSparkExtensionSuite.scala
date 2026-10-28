@@ -782,7 +782,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
     }
   }
 
-  test("[KYUUBI #5937] cached permanent view is reused when referenced twice in one query") {
+  test("[KYUUBI #7738] cached permanent view is reused when referenced twice in one query") {
     val db1 = defaultDb
     val srcTable = "pvm_cache_src"
     val view = "pvm_cache_view"
@@ -809,6 +809,7 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           val reused = df.join(df.select("k").distinct(), "k")
           val nested = reused.join(reused.select("k").distinct(), "k")
             .queryExecution.optimizedPlan
+          assert(nested.collect { case r: InMemoryRelation => r }.size === 4)
           assert(nested.collect { case r: HiveTableRelation => r }.isEmpty)
           assert(nested.collect { case r: LogicalRelation => r }.isEmpty)
         } finally {
