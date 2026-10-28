@@ -413,7 +413,14 @@ object SparkSQLEngine extends Logging {
         try {
           startEngine(spark)
           // blocking main thread
-          countDownLatch.await()
+          // The engine may not reach stopServer after SparkContext shutdown starts.
+          // Fail through the engine error path so abnormal termination is reported.
+          while (!countDownLatch.await(1, TimeUnit.SECONDS)) {
+            if (spark.sparkContext.isStopped) {
+              throw new KyuubiException(
+                "SparkContext stopped before SparkSQLEngine, terminating the engine main thread")
+            }
+          }
         } catch {
           case e: KyuubiException =>
             currentEngine match {
