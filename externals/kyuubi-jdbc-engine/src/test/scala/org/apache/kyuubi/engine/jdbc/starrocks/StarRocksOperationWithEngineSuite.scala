@@ -24,7 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.jdbc.connection.ConnectionProvider
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState.{CANCELED_STATE, RUNNING_STATE}
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState.{CANCELED_STATE, RUNNING_STATE, TIMEDOUT_STATE}
 
 class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with HiveJDBCTestHelper {
 
@@ -98,6 +98,28 @@ class StarRocksOperationWithEngineSuite extends StarRocksOperationSuite with Hiv
         val cancelResp = client.CancelOperation(new TCancelOperationReq(operationHandle))
         assert(cancelResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         waitForOperationStatusIn(client, operationHandle, Set(CANCELED_STATE))
+      }
+    }
+  }
+
+  test("StarRocks - JDBC ExecuteStatement timeout should kill SQL statement") {
+    failAfter(20.seconds) {
+      withSessionHandle { (client, handle) =>
+        val executeReq = new TExecuteStatementReq()
+        executeReq.setSessionHandle(handle)
+        // The SQL will sleep 120s
+        executeReq.setStatement("SELECT sleep(120)")
+        executeReq.setRunAsync(true)
+        executeReq.setQueryTimeout(3)
+        val executeResp = client.ExecuteStatement(executeReq)
+        assert(executeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+        val operationHandle = executeResp.getOperationHandle
+        waitForOperationStatusIn(client, operationHandle, Set(TIMEDOUT_STATE))
+
+        // Should not be blocked until the SQL finishes
+        val closeResp = client.CloseOperation(new TCloseOperationReq(operationHandle))
+        assert(closeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       }
     }
   }
