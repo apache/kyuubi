@@ -16,6 +16,8 @@
  */
 package org.apache.kyuubi.session
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import com.codahale.metrics.MetricRegistry
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
@@ -39,6 +41,21 @@ abstract class KyuubiSession(
   val connectionUrl = conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, "")
 
   val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+
+  /**
+   * Whether the session limiter counted this session when it was opened. Closing gives the count
+   * back only when this is set, as the unlimited user list can change while the session is open.
+   */
+  private val limiterCounted = new AtomicBoolean(false)
+
+  private[kyuubi] def markLimiterCounted(): Unit = limiterCounted.set(true)
+
+  /**
+   * Clears the mark and tells whether it was set, so that only one of the callers closing this
+   * session at once - the idle checker, the engine alive checker, the client - gives the count
+   * back.
+   */
+  private[kyuubi] def releaseLimiterCount(): Boolean = limiterCounted.getAndSet(false)
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

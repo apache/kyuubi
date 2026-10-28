@@ -93,8 +93,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val userConf = this.getConf.getUserDefaults(user)
+    // Counted before the session is built, since building it registers its LaunchEngine operation
+    // and posts its event, which a refused session would leave behind. Whether it is counted is
+    // marked on the session, and closeSession gives the count back only for a marked one.
+    val limiterCounted = limiter.exists(_.increment(UserIpAddress(user, ipAddress)))
     try {
-      new KyuubiSessionImpl(
+      val session = new KyuubiSessionImpl(
         protocol,
         user,
         password,
@@ -104,17 +108,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         userConf,
         userConf.get(ENGINE_DO_AS_ENABLED),
         parser)
+      if (limiterCounted) session.markLimiterCounted()
+      session
     } catch {
       case e: Throwable =>
-        // The count openSession took is given back by closeSession alone. A session that fails
-        // here - on the session conf validation in AbstractSession.normalizedConf, for one - is
-        // never registered in handleToSession, so closeSession never runs for it and the count
-        // stays taken: once as many opens have failed as the limit allows, the user and the
-        // client address are turned away by the limiter until the server restarts. A failure
-        // after setSession is already given back by the closeSession call in
-        // SessionManager.openSession, so giving it back here alone keeps it from going back
-        // twice.
-        limiter.foreach(_.decrement(UserIpAddress(user, ipAddress)))
+        // A session that fails here - on the session conf validation in
+        // AbstractSession.normalizedConf, for one - is never registered in handleToSession, so
+        // closeSession never runs for it and its count is given back here instead. A failure
+        // after setSession is given back by the closeSession call in SessionManager.openSession.
+        if (limiterCounted) limiter.foreach(_.decrement(UserIpAddress(user, ipAddress)))
         throw e
     }
   }
@@ -126,10 +128,12 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
       super.openSession(protocol, username, password, ipAddress, conf)
     } catch {
+      // The limiter refuses from createSession. A refusal is not a failure to open the session,
+      // so it is neither wrapped nor counted as CONN_FAIL.
+      case e: SessionLimiterRejectedException => throw e
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
           ms.incCount(CONN_FAIL)
@@ -147,11 +151,16 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       super.closeSession(sessionHandle)
     } finally {
+      // Gives the count back only for a session counted when it was opened, and only once when
+      // several callers close it at once.
       session match {
-        case _: KyuubiBatchSession =>
-          batchLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
+        case s: KyuubiSession if s.releaseLimiterCount() =>
+          val sessionLimiter = s match {
+            case _: KyuubiBatchSession => batchLimiter
+            case _ => limiter
+          }
+          sessionLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
         case _ =>
-          limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
       }
     }
   }
@@ -191,7 +200,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
-    batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
+    if (batchLimiter.exists(_.increment(UserIpAddress(user, ipAddress)))) {
+      batchSession.markLimiterCounted()
+    }
     val handle = batchSession.handle
     try {
       setSession(handle, batchSession)
