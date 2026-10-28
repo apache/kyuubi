@@ -409,7 +409,14 @@ object SparkSQLEngine extends Logging {
         try {
           startEngine(spark)
           // blocking main thread
-          waitForEngineTermination(countDownLatch, () => spark.sparkContext.isStopped)
+          // The engine may not reach stopServer after SparkContext shutdown starts.
+          while (!countDownLatch.await(1, TimeUnit.SECONDS)) {
+            if (spark.sparkContext.isStopped) {
+              // stop() may already be running, so exit the wait instead of calling it again.
+              warn("SparkContext has been stopped, breaking main thread wait")
+              return
+            }
+          }
         } catch {
           case e: KyuubiException =>
             currentEngine match {
@@ -440,20 +447,6 @@ object SparkSQLEngine extends Logging {
         if (spark != null) {
           spark.stop()
         }
-      }
-    }
-  }
-
-  @VisibleForTesting
-  private[kyuubi] def waitForEngineTermination(
-      latch: CountDownLatch,
-      isSparkContextStopped: () => Boolean): Unit = {
-    // The engine may not reach stopServer after SparkContext shutdown starts.
-    while (!latch.await(1, TimeUnit.SECONDS)) {
-      if (isSparkContextStopped()) {
-        // stop() may already be running, so exit the wait instead of calling it again.
-        warn("SparkContext has been stopped, breaking main thread wait")
-        return
       }
     }
   }

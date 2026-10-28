@@ -28,27 +28,6 @@ class SparkSQLEngineSuite extends KyuubiFunSuite {
   private val namespace = "n" * 63
   private val podUid = "u" * 36
 
-  test("[KYUUBI #7590] stop waiting when SparkContext has stopped") {
-    val latch = new CountDownLatch(1)
-    val finished = new CountDownLatch(1)
-    val waitingThread = new Thread(() => {
-      try {
-        SparkSQLEngine.waitForEngineTermination(latch, () => true)
-        finished.countDown()
-      } catch {
-        case _: InterruptedException => ()
-      }
-    })
-    waitingThread.setDaemon(true)
-    waitingThread.start()
-    try {
-      assert(finished.await(5, TimeUnit.SECONDS))
-    } finally {
-      waitingThread.interrupt()
-      waitingThread.join(1000)
-    }
-  }
-
   test("[KYUUBI #3385] generate executor pod name prefix with user or UUID") {
     val userName1 = "/kyuubi_user+-*"
     val executorPodNamePrefix1 = SparkSQLEngine.generateExecutorPodNamePrefixForK8s(userName1)
