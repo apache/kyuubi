@@ -28,7 +28,10 @@ import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.{DataFrame, SparkListenerExtensionTest, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
+import org.apache.spark.sql.catalyst.expressions.{InSubquery, ListQuery, SubqueryExpression}
+import org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
@@ -1137,7 +1140,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret3 = extractLineage(sql3)
       assert(ret3 == Lineage(
-        List(s"$DEFAULT_CATALOG.default.table0"),
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
           ("a", Set(s"$DEFAULT_CATALOG.default.table0.a")),
@@ -1151,7 +1154,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret4 = extractLineage(sql4)
       assert(ret4 == Lineage(
-        List(s"$DEFAULT_CATALOG.default.table0"),
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
           ("a", Set(s"$DEFAULT_CATALOG.default.table0.a")),
@@ -1164,7 +1167,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret5 = extractLineage(sql5)
       assert(ret5 == Lineage(
-        List(s"$DEFAULT_CATALOG.default.table0"),
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
           ("a", Set(s"$DEFAULT_CATALOG.default.table0.a")),
@@ -1177,7 +1180,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret6 = extractLineage(sql6)
       assert(ret6 == Lineage(
-        List(s"$DEFAULT_CATALOG.default.table0"),
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
           ("a", Set(s"$DEFAULT_CATALOG.default.table0.a")),
@@ -1190,7 +1193,7 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
           |""".stripMargin
       val ret7 = extractLineage(sql7)
       assert(ret7 == Lineage(
-        List(s"$DEFAULT_CATALOG.default.table0"),
+        List(s"$DEFAULT_CATALOG.default.table0", s"$DEFAULT_CATALOG.default.table1"),
         List(),
         List(
           ("a", Set(s"$DEFAULT_CATALOG.default.table0.a")),
@@ -1598,6 +1601,180 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             ("v2_catalog.db.tb3.col1", Set("v2_catalog.db.tb1.col1")),
             ("v2_catalog.db.tb3.col2", Set("v2_catalog.db.tb1.col2")),
             ("v2_catalog.db.tb3.col3", Set("v2_catalog.db.tb1.col3")))))
+    }
+  }
+
+  test("columns lineage extract - subquery input tables with legacy modes") {
+    val entry = LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED
+    val previous = SparkContextHelper.getConf(entry)
+    try {
+      val tables = Seq("tb1", "tb2", "tb3", "tb4").map(name => s"v2_catalog.db.$name")
+      withTable(tables: _*) { _ =>
+        tables.foreach { table =>
+          spark.sql(s"CREATE TABLE $table (col1 STRING, col2 STRING, col3 STRING)").collect()
+        }
+        val filterQueries = Seq(
+          (
+            "EXISTS",
+            "WHERE EXISTS (SELECT 1 FROM v2_catalog.db.tb2 t2 WHERE t2.col1 = t1.col1)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "NOT EXISTS",
+            "WHERE NOT EXISTS (SELECT 1 FROM v2_catalog.db.tb2 t2 WHERE t2.col1 = t1.col1)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "IN",
+            "WHERE t1.col1 IN (SELECT col1 FROM v2_catalog.db.tb2)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "NOT IN",
+            "WHERE t1.col1 NOT IN (SELECT col1 FROM v2_catalog.db.tb2)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "scalar subquery",
+            "WHERE t1.col1 > (SELECT max(col1) FROM v2_catalog.db.tb2)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "HAVING",
+            "GROUP BY t1.col1, t1.col2, t1.col3 " +
+              "HAVING count(*) > (SELECT count(*) FROM v2_catalog.db.tb2)",
+            Set("v2_catalog.db.tb2")),
+          (
+            "nested IN",
+            "WHERE t1.col1 IN (SELECT t2.col1 FROM v2_catalog.db.tb2 t2 " +
+              "WHERE t2.col2 IN (SELECT col2 FROM v2_catalog.db.tb4))",
+            Set("v2_catalog.db.tb2", "v2_catalog.db.tb4")),
+          (
+            "multiple subqueries",
+            "WHERE EXISTS (SELECT 1 FROM v2_catalog.db.tb2 t2 WHERE t2.col1 = t1.col1) " +
+              "AND (t1.col2 IN (SELECT col2 FROM v2_catalog.db.tb4) OR t1.col3 = 'keep')",
+            Set("v2_catalog.db.tb2", "v2_catalog.db.tb4")),
+          (
+            "no subquery",
+            "WHERE t1.col1 = 'keep'",
+            Set.empty[String])).map { case (name, condition, filterTables) =>
+          (
+            name,
+            s"SELECT t1.* FROM v2_catalog.db.tb1 t1 $condition",
+            Set("v2_catalog.db.tb1") ++ filterTables,
+            true)
+        }
+        val outerReferenceQueries = Seq(
+          "filter" -> ("SELECT * FROM v2_catalog.db.tb1 t1 " +
+            "WHERE t1.col1 = (SELECT t1.col1)"),
+          "projection" -> ("SELECT (SELECT t1.col1) AS col1, t1.col2, t1.col3 " +
+            "FROM v2_catalog.db.tb1 t1")).flatMap { case (location, query) =>
+          Seq(false, true).map { insert =>
+            (s"bare outer reference in $location", query, Set("v2_catalog.db.tb1"), insert)
+          }
+        }
+        val queries = filterQueries ++ Seq(
+          (
+            "select-list IN",
+            "SELECT t1.col1, t1.col2 IN (SELECT col2 FROM v2_catalog.db.tb2), t1.col3 " +
+              "FROM v2_catalog.db.tb1 t1",
+            Set("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
+            true),
+          (
+            "JOIN EXISTS",
+            "SELECT t1.* FROM v2_catalog.db.tb1 t1 " +
+              "JOIN v2_catalog.db.tb2 t2 ON t1.col1 = t2.col1 " +
+              "AND EXISTS (SELECT 1 FROM v2_catalog.db.tb4 t4 WHERE t4.col1 = 'keep')",
+            Set("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb4"),
+            true)) ++ outerReferenceQueries
+        Seq(false, true).foreach { legacy =>
+          SparkContextHelper.setConf(entry, legacy)
+          queries.foreach { case (scenario, query, inputTables, insert) =>
+            val sql = if (insert) s"INSERT OVERWRITE v2_catalog.db.tb3 $query" else query
+            val outputPrefix = if (insert) "v2_catalog.db.tb3." else ""
+            withClue(s"$scenario legacy=$legacy SQL: $sql\n") {
+              assert(extractLineage(sql) == Lineage(
+                if (legacy) List("v2_catalog.db.tb1") else inputTables.toList,
+                if (insert) List("v2_catalog.db.tb3") else List.empty[String],
+                (1 to 3).map { index =>
+                  s"${outputPrefix}col$index" -> Set(s"v2_catalog.db.tb1.col$index")
+                }.toList))
+            }
+          }
+        }
+      }
+    } finally {
+      SparkContextHelper.setConf(entry, previous)
+    }
+  }
+
+  test("columns lineage extract - overwrite predicate subquery with legacy modes") {
+    val entry = LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED
+    val previous = SparkContextHelper.getConf(entry)
+    try {
+      withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2", "v2_catalog.db.tb3") { tables =>
+        tables.foreach { table =>
+          spark.sql(s"CREATE TABLE $table (col1 STRING, col2 STRING, col3 STRING)").collect()
+        }
+        val analyzer = spark.sessionState.analyzer
+        val parser = spark.sessionState.sqlParser
+        val overwrite = analyzer.execute(parser.parsePlan(
+          "INSERT OVERWRITE v2_catalog.db.tb3 SELECT * FROM v2_catalog.db.tb1"))
+          .asInstanceOf[OverwriteByExpression]
+        val subquery = analyzer.execute(parser.parsePlan("SELECT col1 FROM v2_catalog.db.tb2"))
+        analyzer.checkAnalysis(overwrite)
+        analyzer.checkAnalysis(subquery)
+        // Spark's analyzer rejects REPLACE WHERE subqueries. Construct a resolved
+        // predicate to cover the lineage parser's handling of command expressions.
+        val plan = overwrite.copy(deleteExpr = InSubquery(
+          Seq(overwrite.table.output.head),
+          ListQuery(subquery, numCols = 1)))
+        assert(plan.resolved)
+        Seq(false, true).foreach { legacy =>
+          SparkContextHelper.setConf(entry, legacy)
+          val inputs = if (legacy) List("v2_catalog.db.tb1")
+          else List("v2_catalog.db.tb1", "v2_catalog.db.tb2")
+          withClue(s"Overwrite predicate legacy=$legacy\n") {
+            assert(SparkSQLLineageParseHelper(spark).transformToLineage(0, plan).contains(Lineage(
+              inputs,
+              List("v2_catalog.db.tb3"),
+              (1 to 3).map { index =>
+                s"v2_catalog.db.tb3.col$index" -> Set(s"v2_catalog.db.tb1.col$index")
+              }.toList)))
+          }
+        }
+      }
+    } finally {
+      SparkContextHelper.setConf(entry, previous)
+    }
+  }
+
+  test("columns lineage extract - legacy skips predicate subquery table collection") {
+    val entry = LineageConf.LEGACY_COLLECT_INPUT_TABLES_ENABLED
+    val previous = SparkContextHelper.getConf(entry)
+    try {
+      SparkContextHelper.setConf(entry, true)
+      withTable("v2_catalog.db.tb1", "v2_catalog.db.tb2") { tables =>
+        tables.foreach { table =>
+          spark.sql(s"CREATE TABLE $table (col1 STRING)").collect()
+        }
+        val sql = "SELECT t1.col1 FROM v2_catalog.db.tb1 t1 " +
+          "WHERE EXISTS (SELECT 1 FROM v2_catalog.db.tb2)"
+        val parsed = spark.sessionState.sqlParser.parsePlan(sql)
+        val analyzed = spark.sessionState.analyzer.execute(parsed)
+        spark.sessionState.analyzer.checkAnalysis(analyzed)
+        // Table collection cannot name a V2 relation without a catalog identifier.
+        // Legacy column lineage must not depend on this predicate-only relation.
+        val withoutIdentifier = analyzed.transformAllExpressions {
+          case subquery: SubqueryExpression =>
+            subquery.withNewPlan(subquery.plan.transform {
+              case relation: DataSourceV2Relation => relation.copy(identifier = None)
+            })
+        }
+        assert(withoutIdentifier.resolved)
+        assert(SparkSQLLineageParseHelper(spark).transformToLineage(0, withoutIdentifier)
+          .contains(Lineage(
+            List("v2_catalog.db.tb1"),
+            List.empty[String],
+            List("col1" -> Set("v2_catalog.db.tb1.col1")))))
+      }
+    } finally {
+      SparkContextHelper.setConf(entry, previous)
     }
   }
 
