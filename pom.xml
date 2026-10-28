@@ -150,7 +150,7 @@
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.76.2</grpc.version>
-        <guava.version>33.4.8-jre</guava.version>
+        <guava.version>33.7.1-jre</guava.version>
         <guava.failureaccess.version>1.0.3</guava.failureaccess.version>
         <hadoop.version>3.4.3</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
