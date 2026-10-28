@@ -60,6 +60,8 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
+  // KYUUBI #7616: ProcBuilder reads sparkHome via appMgrInfo() -> defaultsConf during trait
+  // initialization, before subclass vals are initialized, so this must be lazy.
   private[kyuubi] lazy val sparkHome = getEngineHome(shortName)
 
   override protected val executable: String = {

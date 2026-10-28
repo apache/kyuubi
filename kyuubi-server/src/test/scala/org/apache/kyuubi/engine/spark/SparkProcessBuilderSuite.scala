@@ -31,6 +31,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -432,10 +434,13 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
     val builderConf = KyuubiConf(false)
       .set("kyuubi.engineEnv.SPARK_HOME", sparkHome.toString)
+      .set("kyuubi.engineEnv.SPARK_CONF_DIR", sparkConfDir.toString)
       .set("kyuubi.engineEnv.SPARK_SCALA_VERSION", SCALA_COMPILE_VERSION)
     val builder = new SparkProcessBuilder("kentyao", true, builderConf)
 
     assert(builder.clusterManager() === Some("yarn"))
+    val encodedInfo = builder.conf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
+    assert(ApplicationManagerInfo.deserialize(encodedInfo) === ApplicationManagerInfo(Some("yarn")))
   }
 
   test("Fix NullPointerException when SPARK_HOME is invalid") {
