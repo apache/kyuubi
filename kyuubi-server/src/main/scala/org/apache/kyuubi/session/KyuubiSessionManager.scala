@@ -93,16 +93,30 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val userConf = this.getConf.getUserDefaults(user)
-    new KyuubiSessionImpl(
-      protocol,
-      user,
-      password,
-      ipAddress,
-      conf,
-      this,
-      userConf,
-      userConf.get(ENGINE_DO_AS_ENABLED),
-      parser)
+    try {
+      new KyuubiSessionImpl(
+        protocol,
+        user,
+        password,
+        ipAddress,
+        conf,
+        this,
+        userConf,
+        userConf.get(ENGINE_DO_AS_ENABLED),
+        parser)
+    } catch {
+      case e: Throwable =>
+        // The count openSession took is given back by closeSession alone. A session that fails
+        // here - on the session conf validation in AbstractSession.normalizedConf, for one - is
+        // never registered in handleToSession, so closeSession never runs for it and the count
+        // stays taken: once as many opens have failed as the limit allows, the user and the
+        // client address are turned away by the limiter until the server restarts. A failure
+        // after setSession is already given back by the closeSession call in
+        // SessionManager.openSession, so giving it back here alone keeps it from going back
+        // twice.
+        limiter.foreach(_.decrement(UserIpAddress(user, ipAddress)))
+        throw e
+    }
   }
 
   override def openSession(
