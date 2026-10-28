@@ -99,6 +99,36 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       .foreach(c => assert(c.get() == 0))
   }
 
+  test("rejected increment gives back the keys counted before the one that rejects it") {
+    val limiter = SessionLimiter(5, 1, 10).asInstanceOf[SessionLimiterImpl]
+    def count(key: String): Int = Option(limiter.counters().get(key)).map(_.get()).getOrElse(0)
+
+    // fill up the address
+    limiter.increment(UserIpAddress("user001", "127.0.0.1"))
+    // every attempt of user002 from the full address is rejected by the ipaddress limit
+    (1 to 10).foreach { _ =>
+      val caught = intercept[KyuubiSQLException] {
+        limiter.increment(UserIpAddress("user002", "127.0.0.1"))
+      }
+      assert(caught.getMessage.startsWith("Connection limit per ipaddress reached"))
+    }
+    assert(count("user002") === 0)
+    assert(count("user002:127.0.0.1") === 0)
+    assert(count("127.0.0.1") === 1)
+    // user002 holds no session, so it is still let in from another address
+    limiter.increment(UserIpAddress("user002", "127.0.0.2"))
+    assert(count("user002") === 1)
+
+    // the user limit gives back the userIpAddress key counted before it
+    (1 to 4).foreach(i => limiter.increment(UserIpAddress("user002", s"127.0.1.$i")))
+    val caught = intercept[KyuubiSQLException] {
+      limiter.increment(UserIpAddress("user002", "127.0.2.1"))
+    }
+    assert(caught.getMessage.startsWith("Connection limit per user reached"))
+    assert(count("user002") === 5)
+    assert(count("user002:127.0.2.1") === 0)
+  }
+
   test("test session limiter with user unlimited list") {
     val user = "user001"
     val ipAddress = "127.0.0.1"
