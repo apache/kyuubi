@@ -143,7 +143,7 @@ unsupported Scala versions.
 To install Spark, you need to unpack the tarball. For example,
 
 ```bash
-$ tar zxf spark-3.5.8-bin-hadoop3.tgz
+$ tar zxf spark-3.5.9-bin-hadoop3.tgz
 ```
 
 ### Configuration
