@@ -28,8 +28,8 @@ import org.apache.spark.kyuubi.lineage.{LineageConf, SparkContextHelper}
 import org.apache.spark.sql.{DataFrame, SparkListenerExtensionTest, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
-import org.apache.spark.sql.catalyst.expressions.{InSubquery, ListQuery, SubqueryExpression}
-import org.apache.spark.sql.catalyst.plans.logical.OverwriteByExpression
+import org.apache.spark.sql.catalyst.expressions.{InSubquery, SubqueryExpression}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, OverwriteByExpression}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
+import org.apache.kyuubi.plugin.lineage.helper.SparkListenerHelper.SPARK_RUNTIME_VERSION
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
@@ -1668,13 +1669,18 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
             (s"bare outer reference in $location", query, Set("v2_catalog.db.tb1"), insert)
           }
         }
-        val queries = filterQueries ++ Seq(
-          (
+        // SPARK-30220 (3.4.0): enabled IN/EXISTS subqueries outside of the Filter node
+        val selectListQueries = if (SPARK_RUNTIME_VERSION >= "3.4") {
+          Seq((
             "select-list IN",
             "SELECT t1.col1, t1.col2 IN (SELECT col2 FROM v2_catalog.db.tb2), t1.col3 " +
               "FROM v2_catalog.db.tb1 t1",
             Set("v2_catalog.db.tb1", "v2_catalog.db.tb2"),
-            true),
+            true))
+        } else {
+          Seq.empty
+        }
+        val queries = filterQueries ++ selectListQueries ++ Seq(
           (
             "JOIN EXISTS",
             "SELECT t1.* FROM v2_catalog.db.tb1 t1 " +
@@ -1716,14 +1722,16 @@ abstract class SparkSQLLineageParserHelperSuite extends KyuubiFunSuite
         val overwrite = analyzer.execute(parser.parsePlan(
           "INSERT OVERWRITE v2_catalog.db.tb3 SELECT * FROM v2_catalog.db.tb1"))
           .asInstanceOf[OverwriteByExpression]
-        val subquery = analyzer.execute(parser.parsePlan("SELECT col1 FROM v2_catalog.db.tb2"))
+        val filter = analyzer.execute(parser.parsePlan(
+          "SELECT * FROM v2_catalog.db.tb1 WHERE col1 IN (SELECT col1 FROM v2_catalog.db.tb2)"))
         analyzer.checkAnalysis(overwrite)
-        analyzer.checkAnalysis(subquery)
-        // Spark's analyzer rejects REPLACE WHERE subqueries. Construct a resolved
-        // predicate to cover the lineage parser's handling of command expressions.
-        val plan = overwrite.copy(deleteExpr = InSubquery(
-          Seq(overwrite.table.output.head),
-          ListQuery(subquery, numCols = 1)))
+        analyzer.checkAnalysis(filter)
+        // Spark's analyzer rejects REPLACE WHERE subqueries. Borrow a resolved predicate
+        // to cover the lineage parser's handling of command expressions; the ListQuery
+        // constructor differs across Spark versions, so do not build it directly.
+        val inSubquery = filter.collectFirst { case Filter(in: InSubquery, _) => in }.get
+        val plan = overwrite.copy(deleteExpr =
+          inSubquery.copy(values = Seq(overwrite.table.output.head)))
         assert(plan.resolved)
         Seq(false, true).foreach { legacy =>
           SparkContextHelper.setConf(entry, legacy)
