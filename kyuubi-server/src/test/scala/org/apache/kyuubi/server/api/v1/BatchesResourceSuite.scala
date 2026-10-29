@@ -541,6 +541,29 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     }
   }
 
+  test("local batch finished before the application is detected") {
+    // a long check interval lets the process exit before the app is ever polled
+    val requestObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      BATCH_APPLICATION_CHECK_INTERVAL.key -> "PT1M"))
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+    val batchId = response.readEntity(classOf[Batch]).getId
+
+    val batchState = eventually(timeout(3.minutes), interval(1.second)) {
+      val batch = webTarget.path(s"api/v1/batches/$batchId")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .get().readEntity(classOf[Batch])
+      assert(BatchUtils.isTerminalState(batch.getState))
+      batch.getState
+    }
+    assert(batchState === OperationState.FINISHED.toString)
+  }
+
   test("batch sessions recovery") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
     val kyuubiInstance = fe.connectionUrl
