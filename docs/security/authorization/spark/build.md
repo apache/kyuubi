@@ -53,7 +53,7 @@ Sometimes, it may be incompatible with other Spark distributions, then you may n
 For example,
 
 ```shell
-build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Pspark-3.5 -Dspark.version=3.5.8
+build/mvn clean package -pl :kyuubi-spark-authz_2.12 -am -DskipTests -Pspark-3.5 -Dspark.version=3.5.9
 ```
 
 The available `spark.version`s are shown in the following table.

@@ -212,7 +212,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.8</spark.version>
+        <spark.version>3.5.9</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -2051,7 +2051,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.8</spark.version>
+                <spark.version>3.5.9</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
@@ -2066,7 +2066,7 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.3</spark.version>
+                <spark.version>4.0.5</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.4.1</delta.version>
@@ -2091,7 +2091,7 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.1.2</spark.version>
+                <spark.version>4.1.4</spark.version>
                 <spark.binary.version>4.1</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
                 <delta.version>4.4.1</delta.version>
@@ -2113,7 +2113,7 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.2.0</spark.version>
+                <spark.version>4.2.1</spark.version>
                 <!-- TODO: update once Iceberg and Hudi support Spark 4.2. -->
                 <spark.binary.version>4.1</spark.binary.version>
                 <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
