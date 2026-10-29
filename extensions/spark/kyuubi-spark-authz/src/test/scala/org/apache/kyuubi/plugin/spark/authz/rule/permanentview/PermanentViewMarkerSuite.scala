@@ -22,10 +22,12 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{LocalRelation, LogicalPlan, Project, View}
 import org.apache.spark.sql.types.StructType
+// scalastyle:off anyfunsuite
+// kyuubi-spark-authz does not depend on the kyuubi-common test-jar that has KyuubiFunSuite
+import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class PermanentViewMarkerSuite extends KyuubiFunSuite {
+class PermanentViewMarkerSuite extends AnyFunSuite {
+  // scalastyle:on anyfunsuite
 
   private def newMarker(): PermanentViewMarker = {
     val desc = CatalogTable(
