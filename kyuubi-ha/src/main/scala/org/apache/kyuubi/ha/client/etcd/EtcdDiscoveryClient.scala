@@ -220,7 +220,8 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       sizeOpt: Option[Int] = None,
       silent: Boolean = false): Seq[ServiceNodeInfo] = {
     try {
-      val hosts = getChildren(DiscoveryPaths.makePath(null, namespace))
+      // Service records are children of this namespace, not keys sharing its name prefix.
+      val hosts = getChildren(DiscoveryPaths.makePath(null, namespace) + "/")
       val size = sizeOpt.getOrElse(hosts.size)
       hosts.takeRight(size).map { p =>
         val path = DiscoveryPaths.makePath(namespace, p)

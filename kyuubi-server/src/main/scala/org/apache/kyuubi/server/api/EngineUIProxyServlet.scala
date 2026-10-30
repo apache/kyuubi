@@ -17,16 +17,21 @@
 
 package org.apache.kyuubi.server.api
 
-import java.net.{URI, URL}
+import java.io.IOException
+import java.net.URI
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets.ISO_8859_1
 import java.util.Locale
 import java.util.regex.Pattern
 import javax.servlet.http.{HttpServletRequest, HttpServletResponse}
 
 import scala.util.Try
+import scala.util.control.NonFatal
 
-import org.apache.commons.lang3.StringUtils
-import org.eclipse.jetty.client.api.Request
-import org.eclipse.jetty.proxy.ProxyServlet
+import org.eclipse.jetty.client.{HttpClient, HttpRedirector, HttpRequest, RedirectProtocolHandler}
+import org.eclipse.jetty.client.api.{Request, Response, Result}
+import org.eclipse.jetty.proxy.AsyncMiddleManServlet
+import org.eclipse.jetty.proxy.AsyncMiddleManServlet.{ContentTransformer, GZIPContentTransformer}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -34,133 +39,289 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 private[api] class EngineUIProxyServlet(
     proxyEnabled: Boolean,
-    allowedHosts: Set[String]) extends ProxyServlet with Logging {
-
-  private val allowedHostPatterns =
-    allowedHosts.map(EngineUIProxyServlet.normalizeHost).filter(_.nonEmpty).map(
-      EngineUIProxyServlet.wildcardHostPattern)
+    resolveTarget: (String, String) => Option[EngineUIProxyTarget]) extends AsyncMiddleManServlet
+  with Logging {
+  import EngineUIProxyServlet._
 
   override def rewriteTarget(request: HttpServletRequest): String = {
-    val requestURL = request.getRequestURL
-    val requestURI = request.getRequestURI
-    // A null target is handled by onProxyRewriteFailed with an actionable 403 response.
-    val targetURL = allowedTarget(requestURI).map { targetAddress =>
-      val targetURI = targetAddress.path match {
-        // for some reason, the proxy can not handle redirect well, as a workaround,
-        // we simulate the Spark UI redirection behavior and forcibly rewrite the
-        // empty URI to the Spark Jobs page.
-        case "" | "/" => "/jobs/"
-        case path => path
+    if (!proxyEnabled) return null
+    parseRoute(request.getRequestURI).flatMap { case (kind, reference, path) =>
+      try {
+        resolveTarget(kind, reference).map { resource =>
+          val target = resource.uri
+          val basePath = Option(target.getRawPath).getOrElse("").stripSuffix("/")
+          val suffix = if (path.isEmpty || path == "/") {
+            if (basePath.isEmpty) "/jobs/" else "/"
+          } else path
+          val query = Option(request.getQueryString).filter(_.nonEmpty).map("?" + _).getOrElse("")
+          val targetURL = s"${target.getScheme}://${target.getRawAuthority}$basePath$suffix$query"
+          request.setAttribute(
+            CONTEXT_ATTRIBUTE,
+            new ProxyContext(resource, s"/engine-ui/$kind/$reference"))
+          targetURL
+        }
+      } catch {
+        case NonFatal(e) =>
+          error(s"Unable to resolve Engine UI $kind resource $reference", e)
+          None
       }
-      val targetQueryString =
-        Option(
-          request.getQueryString).filter(StringUtils.isNotEmpty).map(q => s"?$q").getOrElse("")
-      new URL(
-        "http",
-        targetAddress.host,
-        targetAddress.port,
-        targetURI + targetQueryString).toString
     }.orNull
-    debug(s"rewrite $requestURL => $targetURL")
-    targetURL
   }
 
   override def onProxyRewriteFailed(
       request: HttpServletRequest,
       response: HttpServletResponse): Unit = {
-    val (title, message) = deniedRequestMessage(request.getRequestURI)
     response.setStatus(HttpServletResponse.SC_FORBIDDEN)
     response.setCharacterEncoding("UTF-8")
     response.setContentType("text/html")
-    response.getWriter.write(EngineUIProxyServlet.errorPage(
-      title,
-      message,
-      extractTargetAddress(request.getRequestURI)))
+    val message = if (!proxyEnabled) {
+      s"Ask an administrator to enable <code>${
+          KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_ENABLED.key
+        }</code>."
+    } else {
+      "Open the UI from an active Engine or Batch in the Kyuubi Web UI."
+    }
+    response.getWriter.write(errorPage("Engine UI is not accessible", message))
+  }
+
+  override protected def createHttpClient(): HttpClient = {
+    val client = super.createHttpClient()
+    val redirector = new ApplicationRedirector(client)
+    client.getProtocolHandlers.put(new RedirectProtocolHandler(client) {
+      private def context(request: Request): ProxyContext =
+        request.asInstanceOf[HttpRequest].getConversation
+          .getAttribute(CONTEXT_ATTRIBUTE).asInstanceOf[ProxyContext]
+
+      override def accept(proxyRequest: Request, response: Response): Boolean = {
+        val proxy = context(proxyRequest)
+        proxy != null && proxy.proxyBase.isEmpty &&
+        Set("GET", "HEAD").contains(proxyRequest.getMethod) &&
+        Set(301, 302, 303, 307, 308).contains(response.getStatus) &&
+        proxy.resource.applicationPath.nonEmpty
+      }
+
+      override def onComplete(result: Result): Unit = {
+        if (result.isFailed) {
+          super.onComplete(result)
+          return
+        }
+        val proxy = context(result.getRequest)
+        val resource = proxy.resource
+        try {
+          val location = Option(result.getResponse.getHeaders.get("Location"))
+            .getOrElse(throw new IOException("Application redirect has no Location"))
+          val source = result.getRequest.getURI
+          val redirect = source.resolve(location)
+          val destination =
+            if (rewriteLocation(
+                proxy.target,
+                source,
+                proxy.prefix,
+                location).nonEmpty) {
+              Some(redirect)
+            } else {
+              resource.resolveProxy().flatMap(approvedProxyRedirect(
+                _,
+                redirect)).map { approved =>
+                val proxyBase = new URI(
+                  s"${approved.getScheme}://${approved.getRawAuthority}" +
+                    s"${resource.applicationPath.get}/")
+                proxy.proxyBase = Some(proxyBase)
+                approved
+              }
+            }
+          destination match {
+            case Some(approved) =>
+              result.getResponse.getHeaders.put("Location", approved.toString)
+              super.onComplete(result)
+            case None =>
+              redirector.reject(
+                result,
+                new IOException("Application redirect is outside its target"))
+          }
+        } catch {
+          case NonFatal(e) => redirector.reject(result, e)
+        }
+      }
+    })
+    client
+  }
+
+  override protected def copyRequestHeaders(
+      clientRequest: HttpServletRequest,
+      proxyRequest: Request): Unit = {
+    super.copyRequestHeaders(clientRequest, proxyRequest)
+    proxyRequest.asInstanceOf[HttpRequest].getConversation
+      .setAttribute(CONTEXT_ATTRIBUTE, proxyContext(clientRequest))
+    // Kyuubi credentials must never reach the application being proxied.
+    Seq("Authorization", "Proxy-Authorization", "Cookie", "X-Forwarded-Context")
+      .foreach(proxyRequest.getHeaders.remove)
+    // Keep textual responses transformable even when browsers advertise Brotli support.
+    proxyRequest.header("Accept-Encoding", "identity")
   }
 
   override def addXForwardedHeaders(
       clientRequest: HttpServletRequest,
       proxyRequest: Request): Unit = {
-    allowedTarget(clientRequest.getRequestURI).foreach {
-      case TargetAddress(host, port, _) =>
-        // SPARK-24209: Knox uses X-Forwarded-Context to notify the application the base path
-        proxyRequest.header("X-Forwarded-Context", s"/engine-ui/$host:$port")
-    }
     super.addXForwardedHeaders(clientRequest, proxyRequest)
+    proxyRequest.header(
+      "X-Forwarded-Context",
+      proxyContext(clientRequest).prefix)
   }
 
-  private def isAllowedHost(host: String): Boolean =
-    proxyEnabled && {
-      val normalizedHost = EngineUIProxyServlet.normalizeHost(host)
-      allowedHostPatterns.exists(_.matcher(normalizedHost).matches())
+  override protected def newServerResponseContentTransformer(
+      request: HttpServletRequest,
+      proxyResponse: HttpServletResponse,
+      response: Response): ContentTransformer = {
+    val context = proxyContext(request)
+    val base = context.target
+    val resource = context.resource
+    val applicationBase = resource.applicationPath.map { path =>
+      new URI(s"${base.getScheme}://${base.getRawAuthority}$path/")
+    }.getOrElse(base)
+    val basePath = Option(applicationBase.getRawPath).getOrElse("").stripSuffix("/")
+    val contentType = Option(response.getHeaders.get("Content-Type"))
+      .getOrElse("").takeWhile(_ != ';').trim.toLowerCase(Locale.ROOT)
+    if (basePath.isEmpty || !Set(
+        "text/html",
+        "application/xhtml+xml",
+        "text/css",
+        "text/javascript",
+        "application/javascript").contains(contentType)) {
+      return ContentTransformer.IDENTITY
     }
-
-  private def allowedTarget(requestURI: String): Option[TargetAddress] =
-    extractTargetAddress(requestURI).filter(target => isAllowedHost(target.host))
-
-  private[api] def deniedRequestMessage(requestURI: String): (String, String) = {
-    if (!proxyEnabled) {
-      val allowedHost = extractTargetAddress(requestURI)
-        .map(target => s"add <code>${EngineUIProxyServlet.escapeHtml(target.host)}</code> to")
-        .getOrElse("add the target host to")
-      (
-        "Engine UI proxy is disabled",
-        s"Ask an administrator to set <code>${
-            KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_ENABLED.key
-          }</code> to <code>true</code>, then $allowedHost <code>${
-            KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_HOSTS.key
-          }</code>.")
-    } else {
-      extractTargetAddress(requestURI) match {
-        case Some(target) =>
-          val escapedHost = EngineUIProxyServlet.escapeHtml(target.host)
-          (
-            "Engine UI host is not allowed",
-            s"Ask an administrator to add <code>$escapedHost</code> " +
-              s"to <code>${KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_HOSTS.key}</code>.")
-        case None =>
-          (
-            "Invalid Engine UI address",
-            "The URL must include an engine host and port, for example " +
-              "<code>/engine-ui/spark.example.com:4040/</code>.")
-      }
+    val transformer = new ApplicationPathTransformer(
+      applicationBase,
+      proxyContext(request).prefix)
+    Option(response.getHeaders.get("Content-Encoding")).map(_.toLowerCase(Locale.ROOT)) match {
+      case None | Some("identity") => transformer
+      case Some("gzip") => new GZIPContentTransformer(transformer)
+      case _ => ContentTransformer.IDENTITY
     }
   }
 
-  private[api] def extractTargetAddress(requestURI: String): Option[TargetAddress] = {
-    val target = requestURI.stripPrefix("/engine-ui/")
-    if (target == requestURI) {
-      None
-    } else {
-      Try(new URI(s"http://$target")).toOption.flatMap { uri =>
-        for {
-          host <- Option(uri.getHost)
-          port <- Option(uri.getPort).filter(_ >= 0)
-        } yield TargetAddress(
-          host,
-          port,
-          Option(uri.getRawPath).filter(_.nonEmpty).getOrElse("/"))
-      }
+  override protected def filterServerResponseHeader(
+      request: HttpServletRequest,
+      response: Response,
+      name: String,
+      value: String): String = {
+    if (name.equalsIgnoreCase("Set-Cookie")) return null
+    if (name.equalsIgnoreCase("Location")) {
+      val context = proxyContext(request)
+      return rewriteLocation(
+        context.target,
+        response.getRequest.getURI,
+        context.prefix,
+        value).orNull
     }
+    super.filterServerResponseHeader(request, response, name, value)
   }
-
 }
 
-private[api] case class TargetAddress(host: String, port: Int, path: String)
-
 private[api] object EngineUIProxyServlet {
+  private val CONTEXT_ATTRIBUTE = "kyuubi.engine.ui.context"
+
+  private class ProxyContext(val resource: EngineUIProxyTarget, val prefix: String) {
+    var proxyBase: Option[URI] = None
+    def target: URI = proxyBase.getOrElse(resource.uri)
+  }
+
+  private def proxyContext(request: HttpServletRequest): ProxyContext =
+    request.getAttribute(CONTEXT_ATTRIBUTE).asInstanceOf[ProxyContext]
+
+  private class ApplicationRedirector(client: HttpClient) extends HttpRedirector(client) {
+    def reject(result: Result, cause: Throwable): Unit =
+      fail(result.getRequest, result.getResponse, cause)
+  }
+
+  private[api] def approvedProxyRedirect(proxy: URI, redirect: URI): Option[URI] = {
+    val path = Option(proxy.getRawPath).getOrElse("").stripSuffix("/")
+    val redirectPath = Option(redirect.getRawPath).getOrElse("")
+    val alternate = path.replaceFirst("^/proxy/", "/proxy/redirect/")
+    if (!path.matches("/proxy/application_[0-9]+_[0-9]+") ||
+      proxy.getScheme != redirect.getScheme || proxy.getRawAuthority != redirect.getRawAuthority ||
+      !safePath(redirectPath)) {
+      return None
+    }
+    Seq(path, alternate).find(root => redirectPath == root || redirectPath.startsWith(root + "/"))
+      .map { root =>
+        new URI(s"${proxy.getScheme}://${proxy.getRawAuthority}$path" +
+          redirectPath.stripPrefix(root) + Option(redirect.getRawQuery).map("?" + _).getOrElse(""))
+      }
+  }
+
+  /** Rebase quoted application URLs without buffering an entire UI page or decoding its text. */
+  private[api] class ApplicationPathTransformer(base: URI, prefix: String)
+    extends ContentTransformer {
+    private val basePath = Option(base.getRawPath).getOrElse("").stripSuffix("/")
+    private val roots = Seq(basePath, s"${base.getScheme}://${base.getRawAuthority}$basePath")
+    private val pattern = Pattern.compile(
+      "[\"'(](?:" + roots.map(Pattern.quote).mkString("|") + ")(?=[/\"')?#])")
+    private val retainedBytes = roots.map(_.length).max + 2
+    private var pending = ""
+
+    override def transform(
+        input: ByteBuffer,
+        finished: Boolean,
+        output: java.util.List[ByteBuffer]): Unit = {
+      val bytes = new Array[Byte](input.remaining())
+      input.get(bytes)
+      // ISO-8859-1 is a reversible byte mapping: split UTF-8 characters are left intact.
+      val content = pending + new String(bytes, ISO_8859_1)
+      val limit = if (finished) content.length else math.max(0, content.length - retainedBytes)
+      val matcher = pattern.matcher(content)
+      val result = new StringBuilder
+      var consumed = 0
+      while (matcher.find() && matcher.start() < limit) {
+        result.append(content.substring(consumed, matcher.start() + 1))
+        result.append(prefix)
+        consumed = matcher.end()
+      }
+      val end = math.max(consumed, limit)
+      result.append(content.substring(consumed, end))
+      pending = content.substring(end)
+      if (result.nonEmpty) output.add(ByteBuffer.wrap(result.toString.getBytes(ISO_8859_1)))
+    }
+  }
+
+  private[api] def safePath(path: String): Boolean = {
+    val lower = path.toLowerCase(Locale.ROOT)
+    !path.contains("\\") && !path.contains(";") && !path.exists(_.isControl) &&
+    !path.split("/", -1).exists(p => p == "." || p == "..") &&
+    !Seq("%2e", "%2f", "%5c", "%25", "%00", "%3b").exists(lower.contains)
+  }
+
+  private[api] def parseRoute(uri: String): Option[(String, String, String)] = {
+    val parts = uri.split("/", 5)
+    if (parts.length < 4 || parts(0).nonEmpty || parts(1) != "engine-ui" ||
+      !Set("engines", "batches").contains(parts(2)) ||
+      !parts(3).matches("[A-Za-z0-9_-]+")) {
+      return None
+    }
+    val path = if (parts.length == 5) "/" + parts(4) else ""
+    if (safePath(path)) Some((parts(2), parts(3), path)) else None
+  }
+
+  private[api] def rewriteLocation(
+      base: URI,
+      source: URI,
+      prefix: String,
+      location: String): Option[String] = {
+    Try(source.resolve(location)).toOption.filter { target =>
+      target.getScheme == base.getScheme && target.getRawAuthority == base.getRawAuthority &&
+      safePath(target.getRawPath) &&
+      target.getRawPath.startsWith(Option(base.getRawPath).getOrElse("").stripSuffix("/") + "/")
+    }.map { target =>
+      val basePath = Option(base.getRawPath).getOrElse("").stripSuffix("/")
+      prefix + target.getRawPath.stripPrefix(basePath) +
+        Option(target.getRawQuery).map("?" + _).getOrElse("") +
+        Option(target.getRawFragment).map("#" + _).getOrElse("")
+    }
+  }
 
   private def errorPage(
       title: String,
-      message: String,
-      targetAddress: Option[TargetAddress]): String = {
-    val target = targetAddress.map { address =>
-      s"""<div class="target">
-         |      <span>Target engine</span>
-         |      <code>${escapeHtml(address.host)}:${address.port}</code>
-         |    </div>""".stripMargin
-    }.getOrElse("")
-
+      message: String): String = {
     s"""<!DOCTYPE html>
        |<html lang="en">
        |<head>
@@ -187,16 +348,10 @@ private[api] object EngineUIProxyServlet {
        |    code { padding: 2px 6px; background: #f2f6fc; color: #242e42;
        |      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
        |      font-size: 14px; overflow-wrap: anywhere; }
-       |    .target { margin: 28px 0 20px; padding: 14px 16px; display: flex;
-       |      align-items: center; gap: 16px; background: #f5f7fa; border-left: 3px solid #1890ff; }
-       |    .target span { min-width: 96px; color: #909399; font-size: 13px; font-weight: 600;
-       |      letter-spacing: .02em; text-transform: uppercase; }
-       |    .target code { padding: 0; background: transparent; color: #001529; font-weight: 600; }
        |    @media (max-width: 540px) {
        |      article { padding: 28px 24px 32px; }
        |      header { padding: 0 24px; }
        |      h1 { font-size: 25px; }
-       |      .target { align-items: flex-start; flex-direction: column; gap: 6px; }
        |    }
        |  </style>
        |</head>
@@ -206,7 +361,6 @@ private[api] object EngineUIProxyServlet {
        |    <article>
        |      <div class="status">403 / ACCESS DENIED</div>
        |      <h1>$title</h1>
-       |      $target
        |      <p>$message</p>
        |    </article>
        |  </main>
@@ -214,26 +368,15 @@ private[api] object EngineUIProxyServlet {
        |</html>""".stripMargin
   }
 
-  private def escapeHtml(value: String): String =
-    value
-      .replace("&", "&amp;")
-      .replace("<", "&lt;")
-      .replace(">", "&gt;")
-      .replace("\"", "&quot;")
-      .replace("'", "&#39;")
-
   def apply(fe: KyuubiRestFrontendService): EngineUIProxyServlet = {
+    val resolver = new EngineUIProxyTargetResolver(fe)
     new EngineUIProxyServlet(
       fe.getConf.get(KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_ENABLED),
-      fe.getConf.get(KyuubiConf.FRONTEND_REST_ENGINE_UI_PROXY_HOSTS).toSet)
-  }
-
-  private[api] def normalizeHost(host: String): String = host.trim.toLowerCase(Locale.ROOT)
-
-  private[api] def wildcardHostPattern(hostPattern: String): Pattern = {
-    Pattern.compile(hostPattern.map {
-      case '*' => ".*"
-      case c => Pattern.quote(c.toString)
-    }.mkString("^", "", "$"))
+      resolver.resolveResource) {
+      override def destroy(): Unit = {
+        try super.destroy()
+        finally resolver.close()
+      }
+    }
   }
 }

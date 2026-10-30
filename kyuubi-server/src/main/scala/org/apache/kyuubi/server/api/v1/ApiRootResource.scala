@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{GET, Path, Produces}
+import javax.ws.rs.{GET, Path, POST, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
@@ -51,6 +51,10 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @Path("ping")
   @Produces(Array(MediaType.TEXT_PLAIN))
   def ping(): String = "pong"
+
+  @POST
+  @Path("logout")
+  def logout(): Response = Response.noContent().build()
 
   @GET
   @Path("webui/config")

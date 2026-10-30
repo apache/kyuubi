@@ -120,13 +120,13 @@
             <el-tooltip
               v-if="canShowAppUI(scope.row)"
               effect="dark"
-              :content="$t('app_url') + ': ' + getAppUI(scope.row.appUrl)"
+              :content="$t('app_url') + ': ' + getAppUI(scope.row)"
               placement="top">
               <el-button
                 type="primary"
                 icon="Link"
                 circle
-                @click="openAppUI(scope.row.appUrl)" />
+                @click="openAppUI(scope.row)" />
             </el-tooltip>
             <el-tooltip effect="dark" :content="$t('log')" placement="top">
               <el-button icon="Document" circle @click="openLog(scope.row)" />
@@ -301,12 +301,20 @@
     return fallback
   }
 
-  function getAppUI(url: string): string {
-    return getEngineUIUrl(url, engineUIProxyConfig.engineUIProxyEnabled)
+  function getAppUI(batch: IBatch): string {
+    return getEngineUIUrl(
+      batch.appUrl || '',
+      engineUIProxyConfig.engineUIProxyEnabled,
+      {
+        kind: 'batches',
+        id: batch.id
+      }
+    )
   }
 
-  function openAppUI(url: string) {
-    window.open(getAppUI(url))
+  function openAppUI(batch: IBatch) {
+    const url = getAppUI(batch)
+    if (url) window.open(url, '_blank', 'noopener,noreferrer')
   }
 
   function getList() {

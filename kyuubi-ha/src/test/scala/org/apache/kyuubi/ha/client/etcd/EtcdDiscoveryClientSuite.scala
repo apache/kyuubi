@@ -110,4 +110,25 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
       assert(!discoveryClient.pathExists(path))
     }
   }
+
+  test("service discovery excludes namespaces sharing the same prefix") {
+    withDiscoveryClient(conf) { client =>
+      val namespace = "/kyuubi-prefix-isolation"
+      val node = s"$namespace/serverUri=localhost:10009;refId=known-ref;sequence=0000000000"
+      val sibling = node.replace(namespace, s"$namespace-sibling")
+      try {
+        Seq(node, sibling).foreach { path =>
+          client.create(path, "PERSISTENT")
+          client.setData(path, "localhost:10009".getBytes(StandardCharsets.UTF_8))
+        }
+        val nodes = client.getServiceNodesInfo(namespace)
+        assert(nodes.size == 1)
+        assert(nodes.head.engineRefId.contains("known-ref"))
+        assert(nodes.head.namespace == namespace)
+      } finally {
+        client.delete(node)
+        client.delete(sibling)
+      }
+    }
+  }
 }

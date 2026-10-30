@@ -39,7 +39,7 @@ import org.apache.kyuubi.ha.client.{DiscoveryPaths, ServiceNodeInfo}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils}
+import org.apache.kyuubi.server.api.{ApiRequestContext, ApiUtils, EngineUIProxyTargetResolver}
 import org.apache.kyuubi.session.{KyuubiSession, KyuubiSessionManager, SessionHandle}
 
 @Tag(name = "Admin")
@@ -374,7 +374,8 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
         node.namespace.split("/").last,
         node.instance,
         node.namespace,
-        node.attributes.asJava))
+        (node.attributes ++ EngineUIProxyTargetResolver.reference(node).map(
+          EngineUIProxyTargetResolver.REFERENCE_ATTRIBUTE -> _)).asJava))
       .toSeq
   }
 

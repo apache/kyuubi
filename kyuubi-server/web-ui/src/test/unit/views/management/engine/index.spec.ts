@@ -41,10 +41,19 @@ test('engine ui url', async () => {
   })
 
   wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = false
-  expect(wrapper.vm.getEngineUI('host:4040')).toEqual('http://host:4040')
+  expect(
+    wrapper.vm.getEngineUI({ attributes: { 'kyuubi.engine.url': 'host:4040' } })
+  ).toEqual('http://host:4040')
 
   wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = true
-  expect(wrapper.vm.getEngineUI('spark.example.com:4040')).toEqual(
-    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/spark.example.com:4040/`
+  expect(
+    wrapper.vm.getEngineUI({
+      attributes: {
+        'kyuubi.engine.url': 'spark.example.com:4040',
+        'kyuubi.engine.ui.proxy.ref': 'engine-ref'
+      }
+    })
+  ).toEqual(
+    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/engines/engine-ref/`
   )
 })

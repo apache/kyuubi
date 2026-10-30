@@ -43,10 +43,17 @@ export const useAuthStore = defineStore('auth', {
         throw new Error('Authentication failed')
       }
     },
-    clearUser() {
+    async clearUser() {
+      // Capture the request credentials before clearing local state without waiting for the server.
+      const logout = request({ url: 'api/v1/logout', method: 'post' })
       this.user = null
       this.authToken = null
       this.isAuthenticated = false
+      try {
+        await logout
+      } catch {
+        // Local credentials are already cleared even when the server is unavailable.
+      }
     }
   },
   persist: {
