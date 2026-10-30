@@ -64,6 +64,7 @@ private[kyuubi] class JettyServer(
 
   def addHandler(handler: Handler): Unit = synchronized {
     rootHandler.addHandler(handler)
+    rootHandler.manage(handler)
     if (!handler.isStarted) handler.start()
   }
 
