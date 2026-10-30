@@ -26,6 +26,7 @@ import javax.ws.rs.ext.{ExceptionMapper, Provider}
 import org.eclipse.jetty.server.handler.ContextHandler
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER
 import org.apache.kyuubi.server.KyuubiTrinoFrontendService
 
 private[api] trait ApiRequestContext {
@@ -37,6 +38,15 @@ private[api] trait ApiRequestContext {
   protected var httpRequest: HttpServletRequest = _
 
   final protected def fe: KyuubiTrinoFrontendService = FrontendServiceContext.get(servletContext)
+
+  /**
+   * The address of the client, taken from the proxy client ip header first like the thrift HTTP
+   * and REST frontends do: behind a proxy, the TCP peer of every request is the proxy.
+   */
+  final protected def clientIpAddress: Option[String] =
+    Option(httpRequest.getHeader(fe.getConf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
+      .filter(_.trim.nonEmpty)
+      .orElse(Option(httpRequest.getRemoteAddr))
 }
 
 @Provider
