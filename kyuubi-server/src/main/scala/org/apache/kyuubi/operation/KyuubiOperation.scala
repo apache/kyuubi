@@ -141,7 +141,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
       withLockRequired(f(None))
     } else {
       client.withCleanupRequest(operation) { deadline =>
-        withLockBeforeDeadline(deadline)(f(Some(deadline)))
+        withLockAcquisitionDeadline(deadline)(f(Some(deadline)))
       }
     }
   }

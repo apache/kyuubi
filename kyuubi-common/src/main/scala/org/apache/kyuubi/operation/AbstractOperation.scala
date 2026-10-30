@@ -51,7 +51,7 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
 
   protected def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
 
-  private[kyuubi] def withLockBeforeDeadline[T](deadline: Deadline)(block: => T): T = {
+  private[kyuubi] def withLockAcquisitionDeadline[T](deadline: Deadline)(block: => T): T = {
     if (deadline.isOverdue() || !lock.tryLock(deadline.timeLeft.toNanos, TimeUnit.NANOSECONDS)) {
       throw new TimeoutException("Timed out waiting for the operation lock")
     }

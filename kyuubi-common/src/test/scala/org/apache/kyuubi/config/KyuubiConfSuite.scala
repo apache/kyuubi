@@ -40,8 +40,8 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(ENGINE_CLEANUP_TIMEOUT.immutable)
     conf.set(ENGINE_CLEANUP_TIMEOUT, 1000L)
     assert(!conf.getEngineConf(EngineType.SPARK_SQL).contains(ENGINE_CLEANUP_TIMEOUT.key))
-    Seq(0L, -1L).foreach { value =>
-      conf.set(ENGINE_CLEANUP_TIMEOUT, value)
+    Seq("0", "-1").foreach { value =>
+      conf.set(ENGINE_CLEANUP_TIMEOUT.key, value)
       intercept[IllegalArgumentException] {
         conf.get(ENGINE_CLEANUP_TIMEOUT)
       }
