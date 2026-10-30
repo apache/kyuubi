@@ -541,6 +541,33 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     }
   }
 
+  test("local batch finished before the application is detected") {
+    // hide the launcher and spark-submit JVMs from jps, so the app is never detected
+    val hiddenFromJps = "-XX:-UsePerfData"
+    val requestObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      s"$KYUUBI_ENGINE_ENV_PREFIX.SPARK_LAUNCHER_OPTS" -> hiddenFromJps,
+      s"$KYUUBI_ENGINE_ENV_PREFIX.SPARK_SUBMIT_OPTS" -> hiddenFromJps))
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+    val batchId = response.readEntity(classOf[Batch]).getId
+
+    val batch = eventually(timeout(3.minutes), interval(1.second)) {
+      val batch = webTarget.path(s"api/v1/batches/$batchId")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .get().readEntity(classOf[Batch])
+      assert(BatchUtils.isTerminalState(batch.getState))
+      batch
+    }
+    assert(batch.getAppId === null)
+    assert(batch.getAppStartTime === 0)
+    assert(batch.getState === OperationState.FINISHED.toString)
+  }
+
   test("batch sessions recovery") {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
     val kyuubiInstance = fe.connectionUrl

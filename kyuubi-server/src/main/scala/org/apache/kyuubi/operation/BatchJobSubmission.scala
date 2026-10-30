@@ -347,7 +347,9 @@ class BatchJobSubmission(
 
       applicationId(_applicationInfo) match {
         case Some(appId) => monitorBatchJob(appId)
-        case None if !appStarted =>
+        // without persisted app state, a finished app is indistinguishable from one that
+        // never started, so the zero exit code above is the only trustworthy signal
+        case None if !appStarted && appOperation.forall(_.supportPersistedAppState) =>
           throw new KyuubiException(s"$batchType batch[$batchId] job failed: ${_applicationInfo}")
         case None =>
       }
