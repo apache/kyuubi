@@ -17,11 +17,16 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.File
+import java.io.{CharArrayWriter, File}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
+import java.util.concurrent.{Callable, CountDownLatch, Executors, TimeUnit}
 
 import scala.collection.JavaConverters._
+
+import org.apache.logging.log4j.core.impl.Log4jLogEvent
+import org.apache.logging.log4j.core.layout.PatternLayout
+import org.apache.logging.log4j.message.{Message, SimpleMessage}
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -124,6 +129,107 @@ class OperationLogSuite extends KyuubiFunSuite {
     val list2 = operationLog.read(-1).getColumns.get(0).getStringVal.getValues
     assert(list2.isEmpty)
     operationLog.close()
+  }
+
+  test("log4j2 divert appender allows formatting to wait for another logging thread") {
+    val directory = Utils.createTempDir()
+    val mainPath = directory.resolve("main.log")
+    val workerPath = directory.resolve("worker.log")
+    val mainLog = new OperationLog(mainPath)
+    val workerLog = new OperationLog(workerPath)
+    val executor = Executors.newSingleThreadExecutor()
+    val appender = new Log4j2DivertAppender(
+      "formatting-test",
+      PatternLayout.newBuilder().withPattern("%m%n").build(),
+      null,
+      false,
+      true,
+      new CharArrayWriter())
+    val message = new Message {
+      override def getFormattedMessage: String = {
+        executor.submit(new Callable[String] {
+          override def call(): String = {
+            OperationLog.setCurrentOperationLog(workerLog)
+            try {
+              appender.append(Log4jLogEvent.newBuilder()
+                .setMessage(new SimpleMessage("worker message")).build())
+              "main message"
+            } finally {
+              OperationLog.removeCurrentOperationLog()
+            }
+          }
+        }).get(10, TimeUnit.SECONDS)
+      }
+
+      override def getFormat: String = "main message"
+      override def getParameters: Array[AnyRef] = Array.empty
+      override def getThrowable: Throwable = null
+    }
+
+    try {
+      appender.start()
+      OperationLog.setCurrentOperationLog(mainLog)
+      appender.append(Log4jLogEvent.newBuilder().setMessage(message).build())
+      assert(Files.readAllLines(mainPath, StandardCharsets.UTF_8).asScala === Seq("main message"))
+      assert(Files.readAllLines(
+        workerPath,
+        StandardCharsets.UTF_8).asScala === Seq("worker message"))
+    } finally {
+      OperationLog.removeCurrentOperationLog()
+      executor.shutdownNow()
+      assert(executor.awaitTermination(10, TimeUnit.SECONDS))
+      appender.stop()
+      mainLog.close()
+      workerLog.close()
+      Utils.deleteDirectoryRecursively(directory.toFile)
+    }
+  }
+
+  test("log4j2 divert appender keeps concurrent operation logs separate") {
+    val directory = Utils.createTempDir()
+    val paths = Seq(directory.resolve("first.log"), directory.resolve("second.log"))
+    val logs = paths.map(new OperationLog(_))
+    val executor = Executors.newFixedThreadPool(2)
+    val start = new CountDownLatch(1)
+    val appender = new Log4j2DivertAppender(
+      "concurrent-test",
+      PatternLayout.newBuilder().withPattern("%m%n").build(),
+      null,
+      false,
+      true,
+      new CharArrayWriter())
+
+    try {
+      appender.start()
+      val tasks = logs.zipWithIndex.map { case (operationLog, index) =>
+        executor.submit(new Callable[Unit] {
+          override def call(): Unit = {
+            OperationLog.setCurrentOperationLog(operationLog)
+            try {
+              start.await()
+              (0 until 100).foreach { i =>
+                appender.append(Log4jLogEvent.newBuilder()
+                  .setMessage(new SimpleMessage(s"$index-$i")).build())
+              }
+            } finally {
+              OperationLog.removeCurrentOperationLog()
+            }
+          }
+        })
+      }
+      start.countDown()
+      tasks.foreach(_.get(10, TimeUnit.SECONDS))
+      paths.zipWithIndex.foreach { case (path, index) =>
+        assert(Files.readAllLines(path, StandardCharsets.UTF_8).asScala ===
+          (0 until 100).map(i => s"$index-$i"))
+      }
+    } finally {
+      executor.shutdownNow()
+      assert(executor.awaitTermination(10, TimeUnit.SECONDS))
+      appender.stop()
+      logs.foreach(_.close())
+      Utils.deleteDirectoryRecursively(directory.toFile)
+    }
   }
 
   test("exception when creating log files") {
