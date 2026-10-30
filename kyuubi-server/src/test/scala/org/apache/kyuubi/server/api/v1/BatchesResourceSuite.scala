@@ -1015,4 +1015,29 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(proxyUserResponse3.getStatus === 403)
     assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
   }
+
+  test("[KYUUBI #7749] reject the batch submission on Kubernetes if deployMode is not cluster") {
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    // `spark.submit.deployMode` is intentionally left unset, which defaults to client in Spark
+    val batchRequest = newSparkBatchRequest(Map(
+      "spark.master" -> "k8s://https://kubernetes.default.svc:443",
+      KYUUBI_BATCH_ID_KEY -> UUID.randomUUID().toString))
+
+    val sessionHandle = sessionManager.openBatchSession(
+      "kyuubi",
+      "kyuubi",
+      InetAddress.getLocalHost.getCanonicalHostName,
+      batchRequest)
+    val batchJobSubmissionOp =
+      sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiBatchSession]
+        .batchJobSubmissionOp
+
+    eventually(timeout(30.seconds), interval(100.milliseconds)) {
+      assert(batchJobSubmissionOp.getStatus.state === OperationState.ERROR)
+    }
+    // the submission is rejected before spark-submit is launched
+    assert(!batchJobSubmissionOp.builder.processLaunched)
+    val errorMessage = batchJobSubmissionOp.getStatus.exception.map(_.getMessage).getOrElse("")
+    assert(errorMessage.contains("spark.submit.deployMode=cluster"))
+  }
 }
