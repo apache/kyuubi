@@ -358,7 +358,8 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
           customRedactionStore.updateMetadata(metadataToUpdate.copy(engineName = "private-name"))
         }
         assert(customError.getMessage.contains(
-          s"engine_name (expected: $REDACTION_REPLACEMENT_TEXT, actual: $REDACTION_REPLACEMENT_TEXT)"))
+          s"engine_name (expected: $REDACTION_REPLACEMENT_TEXT, " +
+            s"actual: $REDACTION_REPLACEMENT_TEXT)"))
         assert(!customError.getMessage.contains("app_name"))
         assert(!customError.getMessage.contains("private-name"))
       } finally {
