@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.{Duration, LocalDate}
 import java.time.format.DateTimeFormatter
@@ -30,6 +31,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY
+import org.apache.kyuubi.engine.ApplicationManagerInfo
 import org.apache.kyuubi.engine.ProcBuilder.KYUUBI_ENGINE_LOG_PATH_KEY
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder._
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -420,6 +423,24 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       "spark-core_2.13.2-3.5.0.jar").foreach { f =>
       assertThrows[KyuubiException](builder.extractSparkCoreScalaVersion(Seq(f)))
     }
+  }
+
+  test("load spark master from spark-defaults.conf after initialization") {
+    val sparkHome = Utils.createTempDir("spark-home-with-defaults")
+    val sparkConfDir = Files.createDirectory(sparkHome.resolve("conf"))
+    Files.write(
+      sparkConfDir.resolve("spark-defaults.conf"),
+      s"$MASTER_KEY yarn".getBytes(StandardCharsets.UTF_8))
+
+    val builderConf = KyuubiConf(false)
+      .set("kyuubi.engineEnv.SPARK_HOME", sparkHome.toString)
+      .set("kyuubi.engineEnv.SPARK_CONF_DIR", sparkConfDir.toString)
+      .set("kyuubi.engineEnv.SPARK_SCALA_VERSION", SCALA_COMPILE_VERSION)
+    val builder = new SparkProcessBuilder("kentyao", true, builderConf)
+
+    assert(builder.clusterManager() === Some("yarn"))
+    val encodedInfo = builder.conf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
+    assert(ApplicationManagerInfo.deserialize(encodedInfo) === ApplicationManagerInfo(Some("yarn")))
   }
 
   test("Fix NullPointerException when SPARK_HOME is invalid") {
