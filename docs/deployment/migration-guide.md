@@ -23,6 +23,7 @@
 * Since Kyuubi 1.13, the support of Flink engine for Flink 1.17, 1.18 and 1.19 is removed.
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
+* Since Kyuubi 1.13, the REST client verifies server certificates and hostnames by default, so HTTPS connections with untrusted certificates or mismatched hostnames now fail. Java callers can configure a JVM trust store or opt out with `KyuubiRestClient.builder(...).insecureSsl(true)`; `kyuubi-ctl` users can pass the `javax.net.ssl.trustStore*` properties via `KYUUBI_CTL_JAVA_OPTS`, though a hostname mismatch still requires a matching URL or certificate.
 
 ## Upgrading from Kyuubi 1.11 to 1.12
 
