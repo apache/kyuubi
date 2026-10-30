@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.CharArrayWriter
-
 import scala.collection.JavaConverters._
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
-import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, RollingFileAppender, WriterManager}
+import org.apache.logging.log4j.core.appender.{AbstractAppender, ConsoleAppender, RollingFileAppender}
+import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
@@ -31,24 +30,13 @@ class Log4j2DivertAppender(
     name: String,
     layout: StringLayout,
     filter: Filter,
-    ignoreExceptions: Boolean,
-    immediateFlush: Boolean,
-    writer: CharArrayWriter)
-  extends AbstractWriterAppender[WriterManager](
-    name,
-    layout,
-    filter,
-    ignoreExceptions,
-    immediateFlush,
-    null,
-    new WriterManager(writer, name, layout, true)) {
+    ignoreExceptions: Boolean)
+  extends AbstractAppender(name, filter, layout, ignoreExceptions, Property.EMPTY_ARRAY) {
   def this() = this(
     "KyuubiEngineLogDivertAppender",
     Log4j2DivertAppender.initLayout(),
     null,
-    false,
-    true,
-    new CharArrayWriter())
+    false)
 
   addFilter(new AbstractFilter() {
     override def filter(event: LogEvent): Filter.Result = {
@@ -61,9 +49,11 @@ class Log4j2DivertAppender(
   })
 
   override def append(event: LogEvent): Unit = {
-    // Formatting can wait for another logging thread. Do not hold an appender lock here.
-    val logOutput = getStringLayout.toSerializable(event)
-    OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
+    OperationLog.getCurrentOperationLog.foreach { log =>
+      // Formatting can wait for another logging thread. Do not hold an appender lock here.
+      val message = layout.toSerializable(event)
+      if (message.nonEmpty) log.write(message)
+    }
   }
 }
 

@@ -17,16 +17,18 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.{CharArrayWriter, File}
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{Callable, CountDownLatch, Executors, TimeUnit}
 
 import scala.collection.JavaConverters._
 
+import org.apache.logging.log4j.Level
+import org.apache.logging.log4j.core.{LogEvent, LoggerContext}
 import org.apache.logging.log4j.core.impl.Log4jLogEvent
-import org.apache.logging.log4j.core.layout.PatternLayout
-import org.apache.logging.log4j.message.{Message, SimpleMessage}
+import org.apache.logging.log4j.core.layout.{AbstractStringLayout, PatternLayout}
+import org.apache.logging.log4j.message.SimpleMessage
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -138,38 +140,39 @@ class OperationLogSuite extends KyuubiFunSuite {
     val mainLog = new OperationLog(mainPath)
     val workerLog = new OperationLog(workerPath)
     val executor = Executors.newSingleThreadExecutor()
+    val context = new LoggerContext("formatting-test")
+    val logger = context.getLogger("formatting-test")
+    val layout = new AbstractStringLayout(StandardCharsets.UTF_8) {
+      override def toSerializable(event: LogEvent): String = {
+        val message = event.getMessage.getFormattedMessage
+        if (message == "main message") {
+          executor.submit(new Callable[Unit] {
+            override def call(): Unit = {
+              OperationLog.setCurrentOperationLog(workerLog)
+              try {
+                logger.info("worker message")
+              } finally {
+                OperationLog.removeCurrentOperationLog()
+              }
+            }
+          }).get(10, TimeUnit.SECONDS)
+        }
+        message + System.lineSeparator()
+      }
+    }
     val appender = new Log4j2DivertAppender(
       "formatting-test",
-      PatternLayout.newBuilder().withPattern("%m%n").build(),
+      layout,
       null,
-      false,
-      true,
-      new CharArrayWriter())
-    val message = new Message {
-      override def getFormattedMessage: String = {
-        executor.submit(new Callable[String] {
-          override def call(): String = {
-            OperationLog.setCurrentOperationLog(workerLog)
-            try {
-              appender.append(Log4jLogEvent.newBuilder()
-                .setMessage(new SimpleMessage("worker message")).build())
-              "main message"
-            } finally {
-              OperationLog.removeCurrentOperationLog()
-            }
-          }
-        }).get(10, TimeUnit.SECONDS)
-      }
-
-      override def getFormat: String = "main message"
-      override def getParameters: Array[AnyRef] = Array.empty
-      override def getThrowable: Throwable = null
-    }
+      false)
 
     try {
       appender.start()
+      logger.addAppender(appender)
+      logger.setAdditive(false)
+      logger.setLevel(Level.INFO)
       OperationLog.setCurrentOperationLog(mainLog)
-      appender.append(Log4jLogEvent.newBuilder().setMessage(message).build())
+      logger.info("main message")
       assert(Files.readAllLines(mainPath, StandardCharsets.UTF_8).asScala === Seq("main message"))
       assert(Files.readAllLines(
         workerPath,
@@ -177,8 +180,10 @@ class OperationLogSuite extends KyuubiFunSuite {
     } finally {
       OperationLog.removeCurrentOperationLog()
       executor.shutdownNow()
-      assert(executor.awaitTermination(10, TimeUnit.SECONDS))
+      executor.awaitTermination(10, TimeUnit.SECONDS)
+      logger.removeAppender(appender)
       appender.stop()
+      context.stop()
       mainLog.close()
       workerLog.close()
       Utils.deleteDirectoryRecursively(directory.toFile)
@@ -191,16 +196,19 @@ class OperationLogSuite extends KyuubiFunSuite {
     val logs = paths.map(new OperationLog(_))
     val executor = Executors.newFixedThreadPool(2)
     val start = new CountDownLatch(1)
+    val context = new LoggerContext("concurrent-test")
+    val logger = context.getLogger("concurrent-test")
     val appender = new Log4j2DivertAppender(
       "concurrent-test",
       PatternLayout.newBuilder().withPattern("%m%n").build(),
       null,
-      false,
-      true,
-      new CharArrayWriter())
+      false)
 
     try {
       appender.start()
+      logger.addAppender(appender)
+      logger.setAdditive(false)
+      logger.setLevel(Level.INFO)
       val tasks = logs.zipWithIndex.map { case (operationLog, index) =>
         executor.submit(new Callable[Unit] {
           override def call(): Unit = {
@@ -208,8 +216,7 @@ class OperationLogSuite extends KyuubiFunSuite {
             try {
               start.await()
               (0 until 100).foreach { i =>
-                appender.append(Log4jLogEvent.newBuilder()
-                  .setMessage(new SimpleMessage(s"$index-$i")).build())
+                logger.info(s"$index-$i")
               }
             } finally {
               OperationLog.removeCurrentOperationLog()
@@ -225,9 +232,76 @@ class OperationLogSuite extends KyuubiFunSuite {
       }
     } finally {
       executor.shutdownNow()
-      assert(executor.awaitTermination(10, TimeUnit.SECONDS))
+      executor.awaitTermination(10, TimeUnit.SECONDS)
+      logger.removeAppender(appender)
       appender.stop()
+      context.stop()
       logs.foreach(_.close())
+      Utils.deleteDirectoryRecursively(directory.toFile)
+    }
+  }
+
+  test("log4j2 divert appender skips formatting without a current operation log") {
+    var formattedEvents = 0
+    val layout = new AbstractStringLayout(StandardCharsets.UTF_8) {
+      override def toSerializable(event: LogEvent): String = {
+        formattedEvents += 1
+        event.getMessage.getFormattedMessage
+      }
+    }
+    val context = new LoggerContext("no-operation-log-test")
+    val logger = context.getLogger("no-operation-log-test")
+    val appender = new Log4j2DivertAppender(
+      "no-operation-log-test",
+      layout,
+      null,
+      false)
+
+    try {
+      appender.start()
+      logger.addAppender(appender)
+      logger.setAdditive(false)
+      logger.setLevel(Level.INFO)
+      OperationLog.removeCurrentOperationLog()
+      logger.info(msg1)
+      assert(formattedEvents === 0)
+      appender.append(Log4jLogEvent.newBuilder().setMessage(new SimpleMessage(msg1)).build())
+      assert(formattedEvents === 0)
+    } finally {
+      logger.removeAppender(appender)
+      appender.stop()
+      context.stop()
+    }
+  }
+
+  test("log4j2 divert appender skips empty output") {
+    val directory = Utils.createTempDir()
+    val path = directory.resolve("empty-output.log")
+    val operationLog = new OperationLog(path)
+    val context = new LoggerContext("empty-output-test")
+    val logger = context.getLogger("empty-output-test")
+    val appender = new Log4j2DivertAppender(
+      "empty-output-test",
+      PatternLayout.newBuilder().withPattern("%m").build(),
+      null,
+      false)
+
+    try {
+      appender.start()
+      logger.addAppender(appender)
+      logger.setAdditive(false)
+      logger.setLevel(Level.INFO)
+      OperationLog.setCurrentOperationLog(operationLog)
+      logger.info("")
+      assert(!Files.exists(path))
+      logger.info(msg1)
+      assert(Files.readAllLines(path, StandardCharsets.UTF_8).asScala === Seq(msg1))
+    } finally {
+      OperationLog.removeCurrentOperationLog()
+      logger.removeAppender(appender)
+      appender.stop()
+      context.stop()
+      operationLog.close()
       Utils.deleteDirectoryRecursively(directory.toFile)
     }
   }
