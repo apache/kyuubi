@@ -18,10 +18,11 @@
 package org.apache.kyuubi.operation
 
 import java.io.IOException
-import java.util.concurrent.{Future, ScheduledFuture}
+import java.util.concurrent.{Future, ScheduledFuture, TimeoutException, TimeUnit}
 import java.util.concurrent.locks.ReentrantLock
 
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.Deadline
 
 import org.apache.commons.lang3.StringUtils
 
@@ -49,6 +50,14 @@ abstract class AbstractOperation(session: Session) extends Operation with Loggin
   private val lock: ReentrantLock = new ReentrantLock()
 
   protected def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)
+
+  private[kyuubi] def withLockBeforeDeadline[T](deadline: Deadline)(block: => T): T = {
+    if (deadline.isOverdue() || !lock.tryLock(deadline.timeLeft.toNanos, TimeUnit.NANOSECONDS)) {
+      throw new TimeoutException("Timed out waiting for the operation lock")
+    }
+    try block
+    finally lock.unlock()
+  }
 
   protected def cleanup(targetState: OperationState): Unit = withLockRequired {
     if (!isTerminalState(state)) {

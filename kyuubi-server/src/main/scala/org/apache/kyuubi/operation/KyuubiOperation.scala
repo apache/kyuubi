@@ -19,6 +19,8 @@ package org.apache.kyuubi.operation
 
 import java.io.IOException
 
+import scala.concurrent.duration.Deadline
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
 
@@ -134,44 +136,69 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def cancel(): Unit = withLockRequired {
-    if (!isClosedOrCanceled) {
-      setState(OperationState.CANCELED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-      if (_remoteOpHandle != null) {
-        try {
-          client.cancelOperation(_remoteOpHandle)
-        } catch {
-          case e @ (_: TException | _: KyuubiSQLException) =>
-            warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
-        }
+  private def withCleanupLock[T](operation: String)(f: Option[Deadline] => T): T = {
+    if (_remoteOpHandle == null) {
+      withLockRequired(f(None))
+    } else {
+      client.withCleanupRequest(operation) { deadline =>
+        withLockBeforeDeadline(deadline)(f(Some(deadline)))
       }
     }
-    // Clean up timeout monitor when operation is cancelled
-    shutdownTimeoutMonitor()
   }
 
-  override def close(): Unit = withLockRequired {
-    if (!isClosedOrCanceled) {
-      setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-      if (_remoteOpHandle != null) {
-        try {
-          client.closeOperation(_remoteOpHandle)
-        } catch {
-          case e @ (_: TException | _: KyuubiSQLException) =>
-            warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+  override def cancel(): Unit = {
+    try {
+      withCleanupLock("CancelOperation") { deadline =>
+        if (!isClosedOrCanceled) {
+          setState(OperationState.CANCELED)
+          MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+          if (_remoteOpHandle != null) {
+            try {
+              deadline match {
+                case Some(limit) => client.cancelOperation(_remoteOpHandle, limit)
+                case None => client.cancelOperation(_remoteOpHandle)
+              }
+            } catch {
+              // Let the outer cleanup boundary abort the client on a deadline or interruption.
+              case e @ (_: TException | _: KyuubiSQLException) =>
+                warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+            }
+          }
         }
       }
+    } finally {
+      shutdownTimeoutMonitor()
     }
-    // Clean up timeout monitor to prevent memory leaks
-    shutdownTimeoutMonitor()
+  }
+
+  override def close(): Unit = {
     try {
-      // For launch engine operation, we use OperationLog to pass engine submit log but
-      // at that time we do not have remoteOpHandle
-      getOperationLog.foreach(_.close())
-    } catch {
-      case e: IOException => error(e.getMessage, e)
+      withCleanupLock("CloseOperation") { deadline =>
+        if (!isClosedOrCanceled) {
+          setState(OperationState.CLOSED)
+          MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+          if (_remoteOpHandle != null) {
+            try {
+              deadline match {
+                case Some(limit) => client.closeOperation(_remoteOpHandle, limit)
+                case None => client.closeOperation(_remoteOpHandle)
+              }
+            } catch {
+              case e @ (_: TException | _: KyuubiSQLException) =>
+                warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+            }
+          }
+        }
+      }
+    } finally {
+      shutdownTimeoutMonitor()
+      try {
+        // For launch engine operation, we use OperationLog to pass engine submit log but
+        // at that time we do not have remoteOpHandle
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
     }
   }
 

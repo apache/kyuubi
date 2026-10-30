@@ -34,6 +34,20 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
   }
 
+  test("engine cleanup timeout is positive and only configurable on the server") {
+    val conf = KyuubiConf(false)
+    assert(conf.get(ENGINE_CLEANUP_TIMEOUT) === Duration.ofSeconds(60).toMillis)
+    assert(ENGINE_CLEANUP_TIMEOUT.immutable)
+    conf.set(ENGINE_CLEANUP_TIMEOUT, 1000L)
+    assert(!conf.getEngineConf(EngineType.SPARK_SQL).contains(ENGINE_CLEANUP_TIMEOUT.key))
+    Seq(0L, -1L).foreach { value =>
+      conf.set(ENGINE_CLEANUP_TIMEOUT, value)
+      intercept[IllegalArgumentException] {
+        conf.get(ENGINE_CLEANUP_TIMEOUT)
+      }
+    }
+  }
+
   test("kyuubi conf w/ w/o no sys defaults") {
     val key = "kyuubi.conf.abc"
     System.setProperty(key, "xyz")
