@@ -26,12 +26,12 @@ import org.apache.spark.sql.catalyst.plans.physical._
 import org.apache.spark.sql.connector.catalog.functions.BucketFunction
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.GroupPartitionsExec
-import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, KyuubiEnsureRequirements, REPARTITION_BY_COL, ShuffleExchangeExec, ShuffleExchangeLike}
+import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, REPARTITION_BY_COL, ShuffleExchangeExec, ShuffleExchangeLike}
 import org.apache.spark.sql.execution.joins.SortMergeJoinExec
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types.{IntegerType, LongType}
 
-import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.{KyuubiEnsureRequirements, KyuubiSQLConf}
 
 class InsertShuffleNodeBeforeJoinSuite extends KyuubiSparkSQLExtensionTest {
   override protected def beforeAll(): Unit = {
