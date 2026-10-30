@@ -136,62 +136,56 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  private def withCleanupLock[T](operation: String)(f: Option[Deadline] => T): T = {
-    if (_remoteOpHandle == null) {
-      withLockRequired(f(None))
-    } else {
-      client.withCleanupRequest(operation) { deadline =>
-        withLockAcquisitionDeadline(deadline)(f(Some(deadline)))
+  private def cleanupOperation(
+      operation: String,
+      targetState: OperationState,
+      action: String)(f: Option[Deadline] => Unit): Unit = {
+    def updateStateAndCleanup(deadline: Option[Deadline]): Unit = {
+      if (!isClosedOrCanceled) {
+        setState(targetState)
+        MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+        if (_remoteOpHandle != null) {
+          try {
+            f(deadline)
+          } catch {
+            // Let the outer cleanup boundary abort the client on a deadline or interruption.
+            case e @ (_: TException | _: KyuubiSQLException) =>
+              warn(s"Error $action ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+          }
+        }
       }
     }
-  }
 
-  override def cancel(): Unit = {
     try {
-      withCleanupLock("CancelOperation") { deadline =>
-        if (!isClosedOrCanceled) {
-          setState(OperationState.CANCELED)
-          MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-          if (_remoteOpHandle != null) {
-            try {
-              deadline match {
-                case Some(limit) => client.cancelOperation(_remoteOpHandle, limit)
-                case None => client.cancelOperation(_remoteOpHandle)
-              }
-            } catch {
-              // Let the outer cleanup boundary abort the client on a deadline or interruption.
-              case e @ (_: TException | _: KyuubiSQLException) =>
-                warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
-            }
-          }
+      if (_remoteOpHandle == null) {
+        withLockRequired(updateStateAndCleanup(None))
+      } else {
+        client.withCleanupRequest(operation) { deadline =>
+          withLockAcquisitionDeadline(deadline)(updateStateAndCleanup(Some(deadline)))
         }
       }
     } finally {
       shutdownTimeoutMonitor()
     }
   }
+
+  override def cancel(): Unit =
+    cleanupOperation("CancelOperation", OperationState.CANCELED, "cancelling") { deadline =>
+      deadline match {
+        case Some(limit) => client.cancelOperation(_remoteOpHandle, limit)
+        case None => client.cancelOperation(_remoteOpHandle)
+      }
+    }
 
   override def close(): Unit = {
     try {
-      withCleanupLock("CloseOperation") { deadline =>
-        if (!isClosedOrCanceled) {
-          setState(OperationState.CLOSED)
-          MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-          if (_remoteOpHandle != null) {
-            try {
-              deadline match {
-                case Some(limit) => client.closeOperation(_remoteOpHandle, limit)
-                case None => client.closeOperation(_remoteOpHandle)
-              }
-            } catch {
-              case e @ (_: TException | _: KyuubiSQLException) =>
-                warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
-            }
-          }
+      cleanupOperation("CloseOperation", OperationState.CLOSED, "closing") { deadline =>
+        deadline match {
+          case Some(limit) => client.closeOperation(_remoteOpHandle, limit)
+          case None => client.closeOperation(_remoteOpHandle)
         }
       }
     } finally {
-      shutdownTimeoutMonitor()
       try {
         // For launch engine operation, we use OperationLog to pass engine submit log but
         // at that time we do not have remoteOpHandle

@@ -18,7 +18,7 @@
 package org.apache.kyuubi.client
 
 import java.net.{InetAddress, ServerSocket}
-import java.util.concurrent.{Callable, CountDownLatch, TimeoutException, TimeUnit}
+import java.util.concurrent.{Callable, CountDownLatch, Future, TimeoutException, TimeUnit}
 import java.util.concurrent.atomic.{AtomicInteger, AtomicReference}
 
 import scala.concurrent.duration._
@@ -56,26 +56,20 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
   cleanupCalls.foreach { case (name, cleanup) =>
     test(s"$name times out and closes the connection when the engine does not respond") {
       withEngine(name) { (client, engine) =>
-        val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("cleanup-caller")
-        try {
-          val result = caller.submit(new Callable[KyuubiSQLException] {
-            override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-              cleanup(client)
-            }
-          })
-          assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-          val error = result.get(3, TimeUnit.SECONDS)
-          assert(error.getMessage.contains(name))
-          assert(error.getMessage.toLowerCase.contains("timed out"))
-          assert(client.engineConnectionClosed)
-          assert(client.asyncRequestInterrupted)
-          assertRpcExecutorStopped(client)
+        val result = engine.submit {
           intercept[KyuubiSQLException] {
-            client.getInfo(TGetInfoType.CLI_DBMS_VER)
+            cleanup(client)
           }
-        } finally {
-          engine.releaseResponse.countDown()
-          ThreadUtils.shutdown(caller, 3.seconds)
+        }
+        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+        val error = result.get(3, TimeUnit.SECONDS)
+        assert(error.getMessage.contains(name))
+        assert(error.getMessage.toLowerCase.contains("timed out"))
+        assert(client.engineConnectionClosed)
+        assert(client.asyncRequestInterrupted)
+        assertRpcExecutorStopped(client)
+        intercept[KyuubiSQLException] {
+          client.getInfo(TGetInfoType.CLI_DBMS_VER)
         }
       }
     }
@@ -83,30 +77,22 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
 
   test("cleanup timeout includes waiting for a client lock held by another RPC") {
     withEngine("GetInfo") { (client, engine) =>
-      val callers = ThreadUtils.newDaemonFixedThreadPool(2, "cleanup-lock-caller")
-      try {
-        val info = callers.submit(new Callable[Boolean] {
-          override def call(): Boolean = {
-            intercept[Exception] {
-              client.getInfo(TGetInfoType.CLI_DBMS_VER)
-            }
-            true
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        val cancel = callers.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-            client.cancelOperation(remoteOperationHandle())
-          }
-        })
-        assert(cancel.get(3, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
-        assert(client.engineConnectionClosed)
-        assert(info.get(3, TimeUnit.SECONDS))
-        assertRpcExecutorStopped(client)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(callers, 3.seconds)
+      val info = engine.submit {
+        intercept[Exception] {
+          client.getInfo(TGetInfoType.CLI_DBMS_VER)
+        }
+        true
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      val cancel = engine.submit {
+        intercept[KyuubiSQLException] {
+          client.cancelOperation(remoteOperationHandle())
+        }
+      }
+      assert(cancel.get(3, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
+      assert(client.engineConnectionClosed)
+      assert(info.get(3, TimeUnit.SECONDS))
+      assertRpcExecutorStopped(client)
     }
   }
 
@@ -123,86 +109,59 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
   test("lock acquisition and the RPC response share one cleanup timeout") {
     withEngine("GetInfo,CancelOperation", KyuubiConf().set(cleanupTimeoutKey, "PT3S")) {
       (client, engine) =>
-        val callers = ThreadUtils.newDaemonFixedThreadPool(2, "cleanup-budget-caller")
         val cancelStarted = new CountDownLatch(1)
-        try {
-          val info = callers.submit(new Callable[String] {
-            override def call(): String = {
-              client.getInfo(TGetInfoType.CLI_DBMS_VER).getInfoValue.getStringValue
-            }
-          })
-          assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-          val cancel = callers.submit(new Callable[KyuubiSQLException] {
-            override def call(): KyuubiSQLException = {
-              cancelStarted.countDown()
-              intercept[KyuubiSQLException] {
-                client.cancelOperation(remoteOperationHandle())
-              }
-            }
-          })
-          assert(cancelStarted.await(3, TimeUnit.SECONDS))
-          intercept[TimeoutException] {
-            cancel.get(2, TimeUnit.SECONDS)
-          }
-          engine.releaseInfoResponse.countDown()
-          assert(info.get(1, TimeUnit.SECONDS) === "test")
-          assert(cancel.get(2, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
-          assert(client.engineConnectionClosed)
-          assertRpcExecutorStopped(client)
-        } finally {
-          engine.releaseInfoResponse.countDown()
-          engine.releaseResponse.countDown()
-          ThreadUtils.shutdown(callers, 3.seconds)
+        val info = engine.submit {
+          client.getInfo(TGetInfoType.CLI_DBMS_VER).getInfoValue.getStringValue
         }
+        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+        val cancel = engine.submit {
+          cancelStarted.countDown()
+          intercept[KyuubiSQLException] {
+            client.cancelOperation(remoteOperationHandle())
+          }
+        }
+        assert(cancelStarted.await(3, TimeUnit.SECONDS))
+        intercept[TimeoutException] {
+          cancel.get(2, TimeUnit.SECONDS)
+        }
+        engine.releaseInfoResponse.countDown()
+        assert(info.get(1, TimeUnit.SECONDS) === "test")
+        assert(cancel.get(2, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
+        assert(client.engineConnectionClosed)
+        assertRpcExecutorStopped(client)
     }
   }
 
   test("interrupting a cleanup waiter closes the connection and restores the interrupt") {
     withEngine("CancelOperation", KyuubiConf().set(cleanupTimeoutKey, "PT5S")) { (client, engine) =>
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("interrupted-cleanup-caller")
       val requestThread = new AtomicReference[Thread]()
-      try {
-        val result = caller.submit(new Callable[Boolean] {
-          override def call(): Boolean = {
-            requestThread.set(Thread.currentThread())
-            intercept[KyuubiSQLException] {
-              client.cancelOperation(remoteOperationHandle())
-            }
-            Thread.currentThread().isInterrupted
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        requestThread.get().interrupt()
-        assert(result.get(3, TimeUnit.SECONDS))
-        assert(client.engineConnectionClosed)
-        assertRpcExecutorStopped(client)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
+      val result = engine.submit {
+        requestThread.set(Thread.currentThread())
+        intercept[KyuubiSQLException] {
+          client.cancelOperation(remoteOperationHandle())
+        }
+        Thread.currentThread().isInterrupted
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      requestThread.get().interrupt()
+      assert(result.get(3, TimeUnit.SECONDS))
+      assert(client.engineConnectionClosed)
+      assertRpcExecutorStopped(client)
     }
   }
 
   test("ordinary RPCs are not limited by the cleanup timeout") {
     withEngine("GetInfo") { (client, engine) =>
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("ordinary-rpc-caller")
-      try {
-        val info = caller.submit(new Callable[String] {
-          override def call(): String = {
-            client.getInfo(TGetInfoType.CLI_DBMS_VER).getInfoValue.getStringValue
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        intercept[TimeoutException] {
-          info.get(400, TimeUnit.MILLISECONDS)
-        }
-        assert(!client.engineConnectionClosed)
-        engine.releaseResponse.countDown()
-        assert(info.get(3, TimeUnit.SECONDS) === "test")
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
+      val info = engine.submit {
+        client.getInfo(TGetInfoType.CLI_DBMS_VER).getInfoValue.getStringValue
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      intercept[TimeoutException] {
+        info.get(400, TimeUnit.MILLISECONDS)
+      }
+      assert(!client.engineConnectionClosed)
+      engine.releaseResponse.countDown()
+      assert(info.get(3, TimeUnit.SECONDS) === "test")
     }
   }
 
@@ -212,23 +171,17 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       .set(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED, true)
       .set(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL, 20L)
     withEngine("CancelOperation", conf) { (client, engine) =>
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("probe-cleanup-caller")
-      try {
-        val result = caller.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-            client.cancelOperation(remoteOperationHandle())
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        eventually(timeout(800.millis)) {
-          assert(engine.infoRequests.get() > 0)
+      val result = engine.submit {
+        intercept[KyuubiSQLException] {
+          client.cancelOperation(remoteOperationHandle())
         }
-        assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
-        assert(client.engineConnectionClosed)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      eventually(timeout(800.millis)) {
+        assert(engine.infoRequests.get() > 0)
+      }
+      assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CancelOperation"))
+      assert(client.engineConnectionClosed)
     }
   }
 
@@ -259,13 +212,12 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       }.when(healthySession).closeExpiredOperations()
       manager.register(stalledSession)
       manager.register(healthySession)
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("checker-cleanup-caller")
       try {
-        val cancellation = caller.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
+        val cancellation = engine.submit {
+          intercept[KyuubiSQLException] {
             operation.cancel()
           }
-        })
+        }
         assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
         manager.start()
         eventually(timeout(12.seconds)) {
@@ -275,7 +227,6 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
         assert(client.engineConnectionClosed)
       } finally {
         engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
         manager.stop()
         Utils.deleteDirectoryRecursively(logRoot.toFile)
       }
@@ -297,28 +248,22 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
         setState(OperationState.FINISHED)
         override protected def runInternal(): Unit = {}
       }
-      val callers = ThreadUtils.newDaemonFixedThreadPool(2, "operation-lock-caller")
-      try {
-        val fetching = callers.submit(new Callable[Exception] {
-          override def call(): Exception = intercept[Exception] {
-            operation.getNextRowSet(FETCH_NEXT, 1)
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        val closing = callers.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-            operation.close()
-          }
-        })
-        assert(closing.get(3, TimeUnit.SECONDS).getMessage.contains("CloseOperation"))
-        assert(client.engineConnectionClosed)
-        fetching.get(3, TimeUnit.SECONDS)
-        verify(log).close()
-        assertRpcExecutorStopped(client)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(callers, 3.seconds)
+      val fetching = engine.submit {
+        intercept[Exception] {
+          operation.getNextRowSet(FETCH_NEXT, 1)
+        }
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      val closing = engine.submit {
+        intercept[KyuubiSQLException] {
+          operation.close()
+        }
+      }
+      assert(closing.get(3, TimeUnit.SECONDS).getMessage.contains("CloseOperation"))
+      assert(client.engineConnectionClosed)
+      fetching.get(3, TimeUnit.SECONDS)
+      verify(log).close()
+      assertRpcExecutorStopped(client)
     }
   }
 
@@ -328,22 +273,16 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       .set(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED, true)
       .set(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL, 1000L)
     withEngine("ProbeCloseSession", conf) { (client, engine) =>
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("probe-close-caller")
-      try {
-        val result = caller.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-            client.closeSession()
-          }
-        })
-        assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-        assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CloseSession"))
-        assert(client.engineConnectionClosed)
-        assert(client.getEngineAliveProbeProtocol.forall(!_.getTransport.isOpen))
-        assertRpcExecutorStopped(client)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
+      val result = engine.submit {
+        intercept[KyuubiSQLException] {
+          client.closeSession()
+        }
       }
+      assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
+      assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CloseSession"))
+      assert(client.engineConnectionClosed)
+      assert(client.getEngineAliveProbeProtocol.forall(!_.getTransport.isOpen))
+      assertRpcExecutorStopped(client)
     }
   }
 
@@ -354,21 +293,15 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       .set(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL, 1000L)
     withEngine("GetInfo", conf) { (client, engine) =>
       assert(engine.requestStarted.await(3, TimeUnit.SECONDS))
-      val caller = ThreadUtils.newDaemonSingleThreadScheduledExecutor("probe-stop-caller")
-      try {
-        val result = caller.submit(new Callable[KyuubiSQLException] {
-          override def call(): KyuubiSQLException = intercept[KyuubiSQLException] {
-            client.closeSession()
-          }
-        })
-        assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CloseSession"))
-        assert(client.engineConnectionClosed)
-        assert(client.getEngineAliveProbeProtocol.forall(!_.getTransport.isOpen))
-        assertRpcExecutorStopped(client)
-      } finally {
-        engine.releaseResponse.countDown()
-        ThreadUtils.shutdown(caller, 3.seconds)
+      val result = engine.submit {
+        intercept[KyuubiSQLException] {
+          client.closeSession()
+        }
       }
+      assert(result.get(3, TimeUnit.SECONDS).getMessage.contains("CloseSession"))
+      assert(client.engineConnectionClosed)
+      assert(client.getEngineAliveProbeProtocol.forall(!_.getTransport.isOpen))
+      assertRpcExecutorStopped(client)
     }
   }
 
@@ -403,9 +336,9 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       conf: KyuubiConf = KyuubiConf().set(cleanupTimeoutKey, "PT0.2S"))(
       f: (KyuubiSyncThriftClient, TestEngine) => Unit): Unit = {
     val engine = new TestEngine(blockedMethod, conf)
-    engine.start()
     var client: KyuubiSyncThriftClient = null
     try {
+      engine.start()
       client = KyuubiSyncThriftClient.createClient(
         "test",
         "anonymous",
@@ -415,9 +348,8 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       client.openSession(HIVE_CLI_SERVICE_PROTOCOL_V10, "test", "anonymous", Map.empty)
       f(client, engine)
     } finally {
-      engine.releaseInfoResponse.countDown()
-      engine.releaseResponse.countDown()
       try {
+        engine.finishRequests()
         if (client != null && !client.engineConnectionClosed) client.closeSession()
       } finally {
         engine.stop()
@@ -436,6 +368,7 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
     val host: String = socket.getInetAddress.getHostAddress
     val port: Int = socket.getLocalPort
     private val handler = mock[TCLIService.Iface]
+    private val callers = ThreadUtils.newDaemonFixedThreadPool(2, "test-engine-caller")
     private val workers = ThreadUtils.newDaemonCachedThreadPool("test-engine-worker")
     private val acceptor = ThreadUtils.newDaemonSingleThreadScheduledExecutor("test-engine")
 
@@ -496,6 +429,17 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
       .protocolFactory(new TBinaryProtocol.Factory())
       .executorService(workers))
 
+    def submit[T](f: => T): Future[T] = callers.submit(new Callable[T] {
+      override def call(): T = f
+    })
+
+    def finishRequests(): Unit = {
+      // Release simulated RPCs before joining callers or closing the client connection.
+      releaseInfoResponse.countDown()
+      releaseResponse.countDown()
+      ThreadUtils.shutdown(callers, 3.seconds)
+    }
+
     def start(): Unit = {
       acceptor.submit(new Runnable {
         override def run(): Unit = server.serve()
@@ -506,8 +450,6 @@ class KyuubiSyncThriftClientSuite extends KyuubiFunSuite {
     }
 
     def stop(): Unit = {
-      releaseInfoResponse.countDown()
-      releaseResponse.countDown()
       server.stop()
       workers.shutdownNow()
       ThreadUtils.shutdown(acceptor, 3.seconds)
