@@ -19,6 +19,8 @@ package org.apache.kyuubi.operation
 
 import java.io.IOException
 
+import scala.concurrent.duration.Deadline
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
 
@@ -134,44 +136,63 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
     }
   }
 
-  override def cancel(): Unit = withLockRequired {
-    if (!isClosedOrCanceled) {
-      setState(OperationState.CANCELED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-      if (_remoteOpHandle != null) {
-        try {
-          client.cancelOperation(_remoteOpHandle)
-        } catch {
-          case e @ (_: TException | _: KyuubiSQLException) =>
-            warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+  private def cleanupOperation(
+      operation: String,
+      targetState: OperationState,
+      action: String)(f: Option[Deadline] => Unit): Unit = {
+    def updateStateAndCleanup(deadline: Option[Deadline]): Unit = {
+      if (!isClosedOrCanceled) {
+        setState(targetState)
+        MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
+        if (_remoteOpHandle != null) {
+          try {
+            f(deadline)
+          } catch {
+            // Let the outer cleanup boundary abort the client on a deadline or interruption.
+            case e @ (_: TException | _: KyuubiSQLException) =>
+              warn(s"Error $action ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+          }
         }
       }
     }
-    // Clean up timeout monitor when operation is cancelled
-    shutdownTimeoutMonitor()
+
+    try {
+      if (_remoteOpHandle == null) {
+        withLockRequired(updateStateAndCleanup(None))
+      } else {
+        client.withCleanupRequest(operation) { deadline =>
+          withLockAcquisitionDeadline(deadline)(updateStateAndCleanup(Some(deadline)))
+        }
+      }
+    } finally {
+      shutdownTimeoutMonitor()
+    }
   }
 
-  override def close(): Unit = withLockRequired {
-    if (!isClosedOrCanceled) {
-      setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opType)))
-      if (_remoteOpHandle != null) {
-        try {
-          client.closeOperation(_remoteOpHandle)
-        } catch {
-          case e @ (_: TException | _: KyuubiSQLException) =>
-            warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
-        }
+  override def cancel(): Unit =
+    cleanupOperation("CancelOperation", OperationState.CANCELED, "cancelling") { deadline =>
+      deadline match {
+        case Some(limit) => client.cancelOperation(_remoteOpHandle, limit)
+        case None => client.cancelOperation(_remoteOpHandle)
       }
     }
-    // Clean up timeout monitor to prevent memory leaks
-    shutdownTimeoutMonitor()
+
+  override def close(): Unit = {
     try {
-      // For launch engine operation, we use OperationLog to pass engine submit log but
-      // at that time we do not have remoteOpHandle
-      getOperationLog.foreach(_.close())
-    } catch {
-      case e: IOException => error(e.getMessage, e)
+      cleanupOperation("CloseOperation", OperationState.CLOSED, "closing") { deadline =>
+        deadline match {
+          case Some(limit) => client.closeOperation(_remoteOpHandle, limit)
+          case None => client.closeOperation(_remoteOpHandle)
+        }
+      }
+    } finally {
+      try {
+        // For launch engine operation, we use OperationLog to pass engine submit log but
+        // at that time we do not have remoteOpHandle
+        getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException => error(e.getMessage, e)
+      }
     }
   }
 
