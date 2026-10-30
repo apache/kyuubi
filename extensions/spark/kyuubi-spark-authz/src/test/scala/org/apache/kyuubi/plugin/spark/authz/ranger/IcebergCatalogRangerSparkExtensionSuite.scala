@@ -236,6 +236,43 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
     }
   }
 
+  test("MERGE INTO with source aggregating a permanent view that contains CTE") {
+    // The copy-on-write MERGE rewrite copies the source into the group filter subquery of
+    // ReplaceData, so the view's CTE appears twice with the same CTE id. The subquery copy is
+    // unwrapped from PermanentViewMarker earlier than the main one, so CTE rules see only one copy.
+
+    val raw = s"$defaultDb.merge_pvm_cte_raw"
+    val view = s"$defaultDb.merge_pvm_cte_view"
+    val target = s"$catalogV2.$namespace1.merge_pvm_cte_target"
+    withCleanTmpResources(Seq((view, "view"), (raw, "table"), (target, "table"))) {
+      doAs(
+        admin, {
+          sql(s"CREATE TABLE IF NOT EXISTS $raw (id bigint, user_id bigint, d date, amt double)")
+          sql(s"INSERT INTO $raw VALUES (1, 1, date'2024-01-01', 10.0)")
+          sql(s"CREATE VIEW $view AS WITH r AS (SELECT * FROM $raw) SELECT * FROM r")
+          sql(s"CREATE TABLE IF NOT EXISTS $target (d date, amt double) USING iceberg")
+          sql(s"INSERT INTO $target VALUES (date'2024-01-01', 0.0)")
+        })
+
+      doAs(
+        admin,
+        sql(
+          s"""
+             |MERGE INTO $target t
+             |USING (
+             |  SELECT d, sum(amt) + count(DISTINCT user_id) AS amt
+             |  FROM $view GROUP BY d) s
+             |ON t.d = s.d
+             |WHEN MATCHED THEN UPDATE SET amt = s.amt
+             |""".stripMargin))
+
+      checkAnswer(
+        admin,
+        s"SELECT d, amt FROM $target",
+        Seq(Row(java.sql.Date.valueOf("2024-01-01"), 11.0)))
+    }
+  }
+
   test("[KYUUBI #4255] DESCRIBE TABLE") {
     val e1 = intercept[AccessControlException](
       doAs(someone, sql(s"DESCRIBE TABLE $catalogV2.$namespace1.$table1").explain()))
