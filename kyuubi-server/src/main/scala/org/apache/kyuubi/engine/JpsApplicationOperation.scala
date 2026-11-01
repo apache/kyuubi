@@ -44,7 +44,7 @@ class JpsApplicationOperation extends ApplicationOperation {
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
     runner != null &&
-    (appMgrInfo.resourceManager.isEmpty || appMgrInfo.resourceManager.get == "local")
+    appMgrInfo.resourceManager.forall(_.matches("""local(\[([0-9]+|\*)(\s*,\s*[0-9]+)?\])?"""))
   }
 
   private def getEngine(tag: String): Option[String] = {
