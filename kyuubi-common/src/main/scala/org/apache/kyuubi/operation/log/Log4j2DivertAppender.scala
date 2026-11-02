@@ -17,41 +17,26 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.CharArrayWriter
-import java.util.concurrent.locks.ReadWriteLock
-
 import scala.collection.JavaConverters._
 
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
-import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, RollingFileAppender, WriterManager}
+import org.apache.logging.log4j.core.appender.{AbstractAppender, ConsoleAppender, RollingFileAppender}
+import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
-
-import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 class Log4j2DivertAppender(
     name: String,
     layout: StringLayout,
     filter: Filter,
-    ignoreExceptions: Boolean,
-    immediateFlush: Boolean,
-    writer: CharArrayWriter)
-  extends AbstractWriterAppender[WriterManager](
-    name,
-    layout,
-    filter,
-    ignoreExceptions,
-    immediateFlush,
-    null,
-    new WriterManager(writer, name, layout, true)) {
+    ignoreExceptions: Boolean)
+  extends AbstractAppender(name, filter, layout, ignoreExceptions, Property.EMPTY_ARRAY) {
   def this() = this(
     "KyuubiEngineLogDivertAppender",
     Log4j2DivertAppender.initLayout(),
     null,
-    false,
-    true,
-    new CharArrayWriter())
+    false)
 
   addFilter(new AbstractFilter() {
     override def filter(event: LogEvent): Filter.Result = {
@@ -63,23 +48,11 @@ class Log4j2DivertAppender(
     }
   })
 
-  private val writeLock =
-    getField[ReadWriteLock]((classOf[AbstractWriterAppender[_]], this), "readWriteLock").writeLock
-
-  /**
-   * Overrides AbstractWriterAppender.append(), which does the real logging. No need
-   * to worry about concurrency since log4j calls this synchronously.
-   */
   override def append(event: LogEvent): Unit = {
-    super.append(event)
-    writeLock.lock()
-    try {
-      // That should've gone into our writer. Notify the LogContext.
-      val logOutput = writer.toString
-      writer.reset()
-      OperationLog.getCurrentOperationLog.foreach(_.write(logOutput))
-    } finally {
-      writeLock.unlock()
+    OperationLog.getCurrentOperationLog.foreach { log =>
+      // Formatting can wait for another logging thread. Do not hold an appender lock here.
+      val message = layout.toSerializable(event)
+      if (message.nonEmpty) log.write(message)
     }
   }
 }
