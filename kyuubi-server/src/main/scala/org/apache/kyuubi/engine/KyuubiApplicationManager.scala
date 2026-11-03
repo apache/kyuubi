@@ -146,8 +146,8 @@ object KyuubiApplicationManager {
     path
   }
 
-  private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {
-    var localDirAllowList: Set[String] = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
+  private[kyuubi] def checkApplicationAccessPath(path: String, serverConf: KyuubiConf): Unit = {
+    var localDirAllowList: Set[String] = serverConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
     if (localDirAllowList.nonEmpty) {
       localDirAllowList ++= Set(uploadWorkDir.toUri.getPath)
       val uri =
@@ -174,22 +174,22 @@ object KyuubiApplicationManager {
 
   private def checkSparkAccessPaths(
       appConf: Map[String, String],
-      kyuubiConf: KyuubiConf): Unit = {
-    if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
+      serverConf: KyuubiConf): Unit = {
+    if (serverConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
       val policedKeys = SparkProcessBuilder.PATH_CONFIGS.toSet ++
-        kyuubiConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
+        serverConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
           .map(SparkProcessBuilder.convertConfigKey)
       appConf.foreach { case (key, value) =>
         if (policedKeys.contains(SparkProcessBuilder.convertConfigKey(key))) {
           value.split(",").filter(_.nonEmpty).foreach { path =>
-            checkApplicationAccessPath(path, kyuubiConf)
+            checkApplicationAccessPath(path, serverConf)
           }
         }
       }
       // the main resource is not a spark.* conf but spark-submit uploads it from the server
       // host as the primary resource of the engine application
       appConf.get(KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE.key).filter(_.nonEmpty).foreach { path =>
-        checkApplicationAccessPath(path, kyuubiConf)
+        checkApplicationAccessPath(path, serverConf)
       }
     }
   }
@@ -228,9 +228,9 @@ object KyuubiApplicationManager {
   def checkApplicationAccessPaths(
       applicationType: String,
       appConf: Map[String, String],
-      kyuubiConf: KyuubiConf): Unit = {
+      serverConf: KyuubiConf): Unit = {
     applicationType.toUpperCase(Locale.ROOT) match {
-      case appType if appType.contains("SPARK") => checkSparkAccessPaths(appConf, kyuubiConf)
+      case appType if appType.contains("SPARK") => checkSparkAccessPaths(appConf, serverConf)
       case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }

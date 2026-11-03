@@ -36,7 +36,7 @@ class KyuubiBatchSession(
     user: String,
     password: String,
     ipAddress: String,
-    conf: Map[String, String],
+    sessionRequestConf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchType: String,
@@ -51,14 +51,16 @@ class KyuubiBatchSession(
     user,
     password,
     ipAddress,
-    conf,
+    sessionRequestConf,
     sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
   override val connectionUrl: String =
-    metadata.map(_.kyuubiInstance).getOrElse(conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, ""))
+    metadata.map(_.kyuubiInstance).getOrElse(sessionRequestConf.getOrElse(
+      KYUUBI_SESSION_CONNECTION_URL_KEY,
+      ""))
 
   override val handle: SessionHandle = {
-    val batchId = metadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    val batchId = metadata.map(_.identifier).getOrElse(sessionRequestConf(KYUUBI_BATCH_ID_KEY))
     SessionHandle.fromUUID(batchId)
   }
 
@@ -81,7 +83,7 @@ class KyuubiBatchSession(
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
   override val normalizedConf: Map[String, String] =
-    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
+    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(sessionRequestConf)
 
   private[kyuubi] def resourceUploadFolderPath: Path =
     KyuubiApplicationManager.sessionUploadFolderPath(handle.identifier.toString)
@@ -109,7 +111,9 @@ class KyuubiBatchSession(
 
   // whether the resource file is from uploading
   private[kyuubi] lazy val isResourceUploaded: Boolean =
-    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, false.toString).toBoolean
+    sessionRequestConf.getOrElse(
+      KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY,
+      false.toString).toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -198,7 +202,7 @@ class KyuubiBatchSession(
           createTime = createTime,
           engineType = batchType,
           clusterManager = batchJobSubmissionOp.builder.clusterManager(),
-          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+          priority = sessionRequestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)
