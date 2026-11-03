@@ -37,7 +37,7 @@ To enable the integration of kyuubi flink sql engine and Apache Paimon, you need
 
 The **classpath** of kyuubi flink sql engine with Apache Paimon supported consists of:
 
-1. kyuubi-flink-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-flink-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Flink distribution
 3. `paimon-flink-<version>.jar` (example: `paimon-flink-1.20-0.8.1.jar`), which can be found in the [Apache Paimon Supported Engines Flink](https://paimon.apache.org/docs/master/flink/installation#choose-an-artifact)
 4. `flink-shaded-hadoop-2-uber-<version>.jar`, which code can be found in the [Pre-bundled Hadoop Jar](https://flink.apache.org/downloads/#additional-components)

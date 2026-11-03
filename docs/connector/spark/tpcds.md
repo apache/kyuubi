@@ -42,14 +42,14 @@ To enable the integration of Kyuubi Spark SQL engine and TPC-DS through Spark Da
 
 The **classpath** of Kyuubi Spark SQL engine with TPC-DS supported consists of
 
-1. kyuubi-spark-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-spark-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Spark distribution
-3. kyuubi-spark-connector-tpcds-{{ release }}_2.12.jar, which can be found in the [Maven Central](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-connector-tpcds_2.12/)
+3. kyuubi-spark-connector-tpcds_2.12-{{ release }}.jar, which can be found in the [Maven Central](https://repo1.maven.org/maven2/org/apache/kyuubi/kyuubi-spark-connector-tpcds_2.12/)
 
 In order to make the TPC-DS connector package visible for the runtime classpath of engines, we can use one of these methods:
 
 1. Put the TPC-DS connector package into `$SPARK_HOME/jars` directly
-2. Set spark.jars=kyuubi-spark-connector-tpcds-{{ release }}_2.12.jar
+2. Set spark.jars=kyuubi-spark-connector-tpcds_2.12-{{ release }}.jar
 
 ### Configurations
 

@@ -62,7 +62,7 @@ Kyuubi ships a [Spark TPC-H connector](../connector/spark/tpch.md) that generate
 spark.sql.catalog.tpch=org.apache.kyuubi.spark.connector.tpch.TPCHCatalog
 ```
 
-Make sure `kyuubi-spark-connector-tpch-<version>_2.12.jar` is on the Spark engine classpath (drop it into `$SPARK_HOME/jars` or set `spark.jars`).
+Make sure `kyuubi-spark-connector-tpch_2.12-<version>.jar` is on the Spark engine classpath (drop it into `$SPARK_HOME/jars` or set `spark.jars`).
 
 ### 4. Ask a question
 
