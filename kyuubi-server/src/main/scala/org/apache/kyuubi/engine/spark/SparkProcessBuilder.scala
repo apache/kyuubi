@@ -134,7 +134,12 @@ class SparkProcessBuilder(
     // complete `spark.master` if absent on kubernetes
     completeMasterUrl(conf)
 
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(
+      engineRefId,
+      shortName,
+      clusterManager(),
+      conf,
+      Some(conf.get(KyuubiConf.ENGINE_SHARE_LEVEL)))
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     buffer += CLASS
