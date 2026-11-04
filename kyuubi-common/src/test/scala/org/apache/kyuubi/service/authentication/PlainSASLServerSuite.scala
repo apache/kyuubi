@@ -29,8 +29,11 @@ import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainServerF
 class PlainSASLServerSuite extends KyuubiFunSuite {
 
   for {
+    // Non-ASCII credentials are intentional regression inputs for KYUUBI-7842.
+    // scalastyle:off nonascii
     username <- Seq("testaccount", "töstuser")
     password <- Seq("password123!", "§", "ß", "ö", "ä", "ü", "€", "§ßöäü€")
+    // scalastyle:on nonascii
   } {
     test(s"preserve UTF-8 SASL PLAIN credentials: $username/$password") {
       val handler = new CallbackHandler {
