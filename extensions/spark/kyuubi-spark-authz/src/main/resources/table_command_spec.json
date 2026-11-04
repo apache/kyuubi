@@ -656,7 +656,7 @@
     "setCurrentDatabaseIfMissing" : false,
     "comment" : ""
   } ],
-  "opType" : "CREATETABLE",
+  "opType" : "REPLACETABLE",
   "queryDescs" : [ ],
   "uriDescs" : [ {
     "fieldName" : "tableSpec",
@@ -711,7 +711,7 @@
     "setCurrentDatabaseIfMissing" : false,
     "comment" : ""
   } ],
-  "opType" : "CREATETABLE_AS_SELECT",
+  "opType" : "REPLACETABLE_AS_SELECT",
   "queryDescs" : [ {
     "fieldName" : "query",
     "fieldExtractor" : "LogicalPlanQueryExtractor",
