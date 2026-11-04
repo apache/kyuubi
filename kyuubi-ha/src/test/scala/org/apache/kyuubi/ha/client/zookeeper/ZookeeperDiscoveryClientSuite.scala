@@ -247,6 +247,58 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
   }
 
+  test("explicit server stop completes while ZooKeeper watch callbacks are queued") {
+    val namespace = "queued-watch-shutdown"
+    conf.set(HA_NAMESPACE, namespace).set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    var discovery: ServiceDiscovery = null
+    val server = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new KyuubiServiceDiscovery(this)
+            Some(discovery)
+          }
+        })
+    }
+    server.initialize(conf)
+    server.start()
+
+    val callbackStarted = new CountDownLatch(1)
+    val releaseCallback = new CountDownLatch(1)
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      withDiscoveryClient(conf) { observer =>
+        val basePath = s"/$namespace"
+        val servicePath = s"$basePath/${observer.getChildren(basePath).head}"
+        val barrierPath = s"$basePath/barrier"
+        observer.create(barrierPath, CreateMode.PERSISTENT.name())
+        val zkClient = getField[CuratorFramework](discovery.discoveryClient, "zkClient")
+        zkClient.checkExists().usingWatcher(new Watcher {
+          override def process(event: WatchedEvent): Unit = {
+            if (event.getType == Watcher.Event.EventType.NodeDataChanged) {
+              callbackStarted.countDown()
+              releaseCallback.await()
+            }
+          }
+        }).forPath(barrierPath)
+        observer.setData(barrierPath, Array[Byte](1))
+        assert(callbackStarted.await(10, TimeUnit.SECONDS))
+        observer.setData(servicePath, observer.getData(servicePath))
+
+        val shutdown = executor.submit(new Runnable {
+          override def run(): Unit = server.stop()
+        })
+        shutdown.get(10, TimeUnit.SECONDS)
+        assert(discovery.getServiceState == ServiceState.STOPPED)
+        assert(observer.pathNonExists(servicePath))
+      }
+    } finally {
+      releaseCallback.countDown()
+      executor.shutdownNow()
+      server.stop()
+    }
+  }
+
   test("watcher for zookeeper") {
     val namespace = "kyuubiwatcher"
     var discovery: ServiceDiscovery = null

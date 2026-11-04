@@ -32,7 +32,8 @@ class KyuubiServiceDiscovery(
     if (!isServerLost.get()) {
       discoveryClient.deregisterService()
       discoveryClient.closeClient()
-      gracefulShutdownLatch.await() // wait for graceful shutdown triggered by watcher
+      // Closing the client can prevent delivery of the deletion notification.
+      waitForActiveSessions()
     } else {
       warn(s"The Zookeeper ensemble is LOST")
     }
