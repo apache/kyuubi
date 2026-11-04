@@ -1856,6 +1856,20 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
 
+  val ENGINE_CLEANUP_TIMEOUT: ConfigEntry[Long] =
+    buildConf("kyuubi.session.engine.cleanup.timeout")
+      .doc("The total timeout for cancelling or closing an engine operation, or closing an " +
+        "engine session, including lock acquisition and the RPC response. On timeout, " +
+        "the server closes this session's engine client and aliveness-probe connections. " +
+        "Other operations in the same session can fail; engine-side cleanup is not confirmed. " +
+        "This does not limit ordinary query or result-fetching RPCs.")
+      .version("1.13.0")
+      .audience(SERVER)
+      .immutable
+      .timeConf
+      .checkValue(_ > 0, "Must be positive")
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
   val ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.rpc.client.virtualThreads.enabled")
       .doc("Whether the Kyuubi server uses virtual threads for per-session blocking RPC calls " +
