@@ -37,6 +37,29 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
     .find(_.getClass.isAssignableFrom(classOf[JpsApplicationOperation])).get
   jps.initialize(null, None)
 
+  test("supported local resource managers") {
+    assert(jps.isSupported(ApplicationManagerInfo(None)))
+    Seq("local", "local[1]", "local[16]", "local[*]", "local[2,4]", "local[*, 4]", "local[2 , 4]")
+      .foreach { master =>
+        assert(jps.isSupported(ApplicationManagerInfo(Some(master))), master)
+      }
+    Seq(
+      "local-cluster[2,1,1024]",
+      "yarn",
+      "k8s://host",
+      "spark://host:7077",
+      "local[]",
+      "local[abc]",
+      "local[-1]",
+      "local[1,]",
+      "local[1,*]",
+      "local[1,2,3]",
+      "local[1]suffix")
+      .foreach { master =>
+        assert(!jps.isSupported(ApplicationManagerInfo(Some(master))), master)
+      }
+  }
+
   test("JpsApplicationOperation with jstat") {
     assert(jps.isSupported(ApplicationManagerInfo(None)))
     assert(jps.isSupported(ApplicationManagerInfo(Some("local"))))
