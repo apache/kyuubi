@@ -44,7 +44,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
   var conf: KyuubiConf = KyuubiConf()
     .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
 
-  private val hasDockerEnv = DockerClientFactory.instance().isDockerAvailable
+  private lazy val hasDockerEnv = DockerClientFactory.instance().isDockerAvailable
 
   override def beforeAll(): Unit = {
     if (hasDockerEnv) {
@@ -79,7 +79,7 @@ class EtcdDiscoveryClientSuite extends DiscoveryClientTests {
 
   test("etcd test: set, get and delete") {
     withDiscoveryClient(conf) { discoveryClient =>
-      val path = "/kyuubi"
+      val path = "/etcd_test_set_get_delete"
       // set
       discoveryClient.create(path, "PERSISTENT")
       assert(discoveryClient.pathExists(path))

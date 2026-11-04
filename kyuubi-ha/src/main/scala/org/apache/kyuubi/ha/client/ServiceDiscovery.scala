@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{AbstractService, FrontendService}
+import org.apache.kyuubi.service.{AbstractService, FrontendService, ServiceState}
 
 /**
  * A abstract service for service discovery
@@ -66,11 +66,18 @@ abstract class ServiceDiscovery(
 
   // stop the server genteelly
   def stopGracefully(isLost: Boolean = false): Unit = {
-    var activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
-    while (activeSessionCount > 0) {
+    val sessionManager = fe.be.sessionManager
+    var activeSessionCount = sessionManager.getActiveUserSessionCount
+    // A stopped session manager no longer runs its idle-session checker, so the remaining
+    // sessions can never be closed and waiting on them would block forever.
+    while (activeSessionCount > 0 && sessionManager.getServiceState != ServiceState.STOPPED) {
       info(s"$activeSessionCount connection(s) are active, delay shutdown")
       Thread.sleep(TimeUnit.SECONDS.toMillis(10))
-      activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
+      activeSessionCount = sessionManager.getActiveUserSessionCount
+    }
+    if (activeSessionCount > 0) {
+      warn(s"Session manager is stopped with $activeSessionCount connection(s) still open," +
+        " stop without waiting for them")
     }
     isServerLost.set(isLost)
     gracefulShutdownLatch.countDown()
