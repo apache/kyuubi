@@ -18,6 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
+import java.nio.charset.StandardCharsets.UTF_8
 import java.security.Provider
 import java.util
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
@@ -40,11 +41,11 @@ class PlainSASLServer(
       // message = [authzid] UTF8NUL authcid UTF8NUL passwd'
       val tokenList = new util.ArrayDeque[String]
       val messageToken: StringBuilder = new StringBuilder
-      response.foreach {
-        case 0 =>
+      new String(response, UTF_8).foreach {
+        case '\u0000' =>
           tokenList.addLast(messageToken.toString)
           messageToken.setLength(0)
-        case b: Byte => messageToken.append(b.toChar)
+        case character => messageToken.append(character)
       }
       tokenList.addLast(messageToken.toString)
       // validate response

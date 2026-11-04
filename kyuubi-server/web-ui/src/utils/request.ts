@@ -16,6 +16,7 @@
  */
 
 import { useAuthStore } from '@/pinia/auth/auth'
+import { createBasicAuthHeader } from '@/utils/auth'
 
 interface RequestConfig {
   url: string
@@ -32,9 +33,10 @@ async function request(config: RequestConfig): Promise<unknown> {
   const headers: Record<string, string> = {}
 
   if (auth) {
-    headers['Authorization'] = `Basic ${btoa(
-      auth.username + ':' + auth.password
-    )}`
+    headers['Authorization'] = createBasicAuthHeader(
+      auth.username,
+      auth.password
+    )
   } else if (authStore.isAuthenticated && authStore.authToken) {
     headers['Authorization'] = authStore.authToken
   }

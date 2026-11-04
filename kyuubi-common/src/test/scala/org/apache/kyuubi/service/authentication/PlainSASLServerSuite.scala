@@ -17,15 +17,40 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets.UTF_8
 import java.util
 import java.util.Collections
-import javax.security.auth.callback.{Callback, CallbackHandler}
+import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback}
 import javax.security.sasl.{AuthorizeCallback, SaslException}
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainServerFactory
 
 class PlainSASLServerSuite extends KyuubiFunSuite {
+
+  for {
+    username <- Seq("testaccount", "töstuser")
+    password <- Seq("password123!", "§", "ß", "ö", "ä", "ü", "€", "§ßöäü€")
+  } {
+    test(s"preserve UTF-8 SASL PLAIN credentials: $username/$password") {
+      val handler = new CallbackHandler {
+        override def handle(callbacks: Array[Callback]): Unit = callbacks.foreach {
+          case nc: NameCallback => assert(nc.getName === username)
+          case pc: PasswordCallback => assert(new String(pc.getPassword) === password)
+          case ac: AuthorizeCallback =>
+            assert(ac.getAuthenticationID === username)
+            assert(ac.getAuthorizationID === username)
+            ac.setAuthorized(true)
+          case _ => fail("Unexpected callback")
+        }
+      }
+      val server = new PlainSASLServer(handler, AuthMethods.LDAP)
+      val response = Seq(username, username, password).mkString("\u0000").getBytes(UTF_8)
+      server.evaluateResponse(response)
+      assert(server.isComplete)
+      assert(server.getAuthorizationID === username)
+    }
+  }
 
   test("SaslPlainServerFactory") {
     val plainServerFactory = new SaslPlainServerFactory()
