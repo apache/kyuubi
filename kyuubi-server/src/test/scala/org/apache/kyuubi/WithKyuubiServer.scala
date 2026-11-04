@@ -63,7 +63,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
-    logger.info(s"$suiteName: Closing remaining sessions")
     server.frontendServices.foreach {
       case frontend: AbstractFrontendService =>
         val sessionManager = frontend.be.sessionManager.asInstanceOf[KyuubiSessionManager]
@@ -79,19 +78,14 @@ trait WithKyuubiServer extends KyuubiFunSuite {
       case _ =>
     }
 
-    logger.info(s"$suiteName: Finished closing remaining sessions")
     if (server != null) {
-      logger.info(s"$suiteName: Stopping Kyuubi server")
       server.stop()
       server = null
-      logger.info(s"$suiteName: Kyuubi server stopped")
     }
 
     if (zkServer != null) {
-      logger.info(s"$suiteName: Stopping embedded ZooKeeper")
       zkServer.stop()
       zkServer = null
-      logger.info(s"$suiteName: Embedded ZooKeeper stopped")
     }
     super.afterAll()
   }
