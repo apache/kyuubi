@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.util.concurrent.{CountDownLatch, TimeUnit}
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.Logging
@@ -35,7 +35,6 @@ abstract class ServiceDiscovery(
     name: String,
     val fe: FrontendService) extends AbstractService(name) {
 
-  protected val gracefulShutdownLatch = new CountDownLatch(1)
   protected val isServerLost = new AtomicBoolean(false)
 
   /**
@@ -64,16 +63,18 @@ abstract class ServiceDiscovery(
     super.start()
   }
 
-  // stop the server genteelly
-  def stopGracefully(isLost: Boolean = false): Unit = {
+  final protected def waitForActiveSessions(): Unit = {
     var activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
     while (activeSessionCount > 0) {
       info(s"$activeSessionCount connection(s) are active, delay shutdown")
       Thread.sleep(TimeUnit.SECONDS.toMillis(10))
       activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
     }
+  }
+
+  def stopGracefully(isLost: Boolean = false): Unit = {
+    waitForActiveSessions()
     isServerLost.set(isLost)
-    gracefulShutdownLatch.countDown()
     fe.serverable.stop()
   }
 }

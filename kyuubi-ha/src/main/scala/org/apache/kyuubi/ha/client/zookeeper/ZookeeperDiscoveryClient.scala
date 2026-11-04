@@ -230,27 +230,33 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       external: Boolean = false): Unit = {
     val instance = serviceDiscovery.fe.connectionUrl
     watcher = new DeRegisterWatcher(instance, serviceDiscovery)
-    serviceNode = createPersistentNode(
+    val node = createPersistentNode(
       conf,
       namespace,
       instance,
       version,
       external,
       serviceDiscovery.fe.attributes)
-    // Set a watch on the serviceNode
+    synchronized {
+      serviceNode = node
+    }
     watchNode()
   }
 
   override def deregisterService(): Unit = {
-    // close the EPHEMERAL_SEQUENTIAL node in zk
-    if (serviceNode != null) {
+    // Explicit shutdown and the deletion watcher can deregister concurrently.
+    val node = synchronized {
+      val current = serviceNode
+      serviceNode = null
+      current
+    }
+    if (node != null) {
+      val path = node.getActualPath
       try {
-        serviceNode.close()
+        node.close()
       } catch {
         case e @ (_: IOException | _: KeeperException) =>
-          error("Failed to close the persistent ephemeral znode" + serviceNode.getActualPath, e)
-      } finally {
-        serviceNode = null
+          error(s"Failed to close the persistent ephemeral znode $path", e)
       }
     }
   }
@@ -401,11 +407,12 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   private def watchNode(): Unit = {
-    if (zkClient.checkExists
-        .usingWatcher(watcher.asInstanceOf[Watcher]).forPath(serviceNode.getActualPath) == null) {
-      // No node exists, throw exception
-      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${watcher.instance}] on ZooKeeper.")
+    // A queued NodeDataChanged event can arrive after deregistration.
+    Option(serviceNode).flatMap(node => Option(node.getActualPath)).foreach { path =>
+      if (zkClient.checkExists.usingWatcher(watcher.asInstanceOf[Watcher]).forPath(path) == null) {
+        throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
+          s"instance[${watcher.instance}] on ZooKeeper.")
+      }
     }
   }
 

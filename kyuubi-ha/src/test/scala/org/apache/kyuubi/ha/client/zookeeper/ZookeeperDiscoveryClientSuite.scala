@@ -20,7 +20,8 @@ package org.apache.kyuubi.ha.client.zookeeper
 import java.io.{File, IOException}
 import java.net.InetAddress
 import java.util
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
@@ -37,8 +38,9 @@ import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
 import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, ServerSelectStrategyFactory}
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.kyuubi.shaded.curator.framework.recipes.nodes.PersistentNode
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
-import org.apache.kyuubi.shaded.zookeeper.ZooDefs
+import org.apache.kyuubi.shaded.zookeeper.{CreateMode, WatchedEvent, Watcher, ZooDefs}
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
@@ -196,6 +198,104 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
       assert(isServerLost.get())
       assert(discovery.getServiceState === ServiceState.STOPPED)
       assert(service.getServiceState === ServiceState.STOPPED)
+    }
+  }
+
+  test("node deletion can complete graceful shutdown during explicit deregistration") {
+    val client = new ZookeeperDiscoveryClient(conf)
+    val zkClient = getField[CuratorFramework](client, "zkClient")
+    val path = "/concurrent-deregistration"
+    val closeStarted = new CountDownLatch(1)
+    val finishClose = new CountDownLatch(1)
+    val gracefulShutdown = new CountDownLatch(1)
+    val closeCalls = new AtomicInteger()
+    val serviceNode =
+      new PersistentNode(zkClient, CreateMode.EPHEMERAL, false, path, Array.empty[Byte]) {
+        override def close(): Unit = {
+          if (closeCalls.incrementAndGet() == 1) {
+            closeStarted.countDown()
+            assert(finishClose.await(10, TimeUnit.SECONDS))
+          }
+        }
+      }
+    val serviceNodeField = classOf[ZookeeperDiscoveryClient].getDeclaredField("serviceNode")
+    serviceNodeField.setAccessible(true)
+    serviceNodeField.set(client, serviceNode)
+
+    val discovery = new ServiceDiscovery("test", null) {
+      override def stopGracefully(isLost: Boolean): Unit = gracefulShutdown.countDown()
+    }
+    val watcher = new client.DeRegisterWatcher("test", discovery)
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      val deregistration = executor.submit(new Runnable {
+        override def run(): Unit = client.deregisterService()
+      })
+      assert(closeStarted.await(10, TimeUnit.SECONDS))
+      watcher.process(new WatchedEvent(
+        Watcher.Event.EventType.NodeDeleted,
+        Watcher.Event.KeeperState.SyncConnected,
+        path))
+      assert(gracefulShutdown.getCount == 0)
+      finishClose.countDown()
+      deregistration.get(10, TimeUnit.SECONDS)
+      assert(closeCalls.get() == 1)
+    } finally {
+      finishClose.countDown()
+      executor.shutdownNow()
+      client.closeClient()
+    }
+  }
+
+  test("explicit server stop completes while ZooKeeper watch callbacks are queued") {
+    val namespace = "queued-watch-shutdown"
+    conf.set(HA_NAMESPACE, namespace).set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    var discovery: ServiceDiscovery = null
+    val server = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new KyuubiServiceDiscovery(this)
+            Some(discovery)
+          }
+        })
+    }
+    server.initialize(conf)
+    server.start()
+
+    val callbackStarted = new CountDownLatch(1)
+    val releaseCallback = new CountDownLatch(1)
+    val executor = Executors.newSingleThreadExecutor()
+    try {
+      withDiscoveryClient(conf) { observer =>
+        val basePath = s"/$namespace"
+        val servicePath = s"$basePath/${observer.getChildren(basePath).head}"
+        val barrierPath = s"$basePath/barrier"
+        observer.create(barrierPath, CreateMode.PERSISTENT.name())
+        val zkClient = getField[CuratorFramework](discovery.discoveryClient, "zkClient")
+        zkClient.checkExists().usingWatcher(new Watcher {
+          override def process(event: WatchedEvent): Unit = {
+            if (event.getType == Watcher.Event.EventType.NodeDataChanged) {
+              callbackStarted.countDown()
+              releaseCallback.await()
+            }
+          }
+        }).forPath(barrierPath)
+        observer.setData(barrierPath, Array[Byte](1))
+        assert(callbackStarted.await(10, TimeUnit.SECONDS))
+        observer.setData(servicePath, observer.getData(servicePath))
+
+        val shutdown = executor.submit(new Runnable {
+          override def run(): Unit = server.stop()
+        })
+        shutdown.get(10, TimeUnit.SECONDS)
+        assert(discovery.getServiceState == ServiceState.STOPPED)
+        assert(observer.pathNonExists(servicePath))
+      }
+    } finally {
+      releaseCallback.countDown()
+      executor.shutdownNow()
+      server.stop()
     }
   }
 
