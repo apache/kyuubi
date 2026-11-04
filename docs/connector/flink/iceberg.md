@@ -42,7 +42,7 @@ Catalog APIs, you need to:
 
 The **classpath** of kyuubi flink sql engine with Iceberg supported consists of:
 
-1. kyuubi-flink-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-flink-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Flink distribution
 3. `iceberg-flink-runtime-<flink.version>-<iceberg.version>.jar` (example: `iceberg-flink-runtime-1.20-1.7.0.jar`), which can be found in the [Maven Central](https://mvnrepository.com/artifact/org.apache.iceberg)
 

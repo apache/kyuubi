@@ -40,7 +40,7 @@ To enable the integration of Kyuubi Trino SQL engine and Apache Paimon, you need
 
 The **classpath** of Kyuubi Trino SQL engine with Apache Paimon supported consists of:
 
-1. kyuubi-trino-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-trino-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Trino distribution
 3. `paimon-trino-<version>.jar` (example: `paimon-trino-0.2.jar`), which code can be found in the [Source Code](https://github.com/apache/paimon-trino)
 4. `flink-shaded-hadoop-2-uber-<version>.jar`, which code can be found in the [Pre-bundled Hadoop](https://flink.apache.org/downloads/#additional-components)
