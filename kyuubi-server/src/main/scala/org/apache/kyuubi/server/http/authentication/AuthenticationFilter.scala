@@ -27,7 +27,7 @@ import scala.collection.mutable
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{AUTHENTICATION_METHOD, FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER}
-import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
+import org.apache.kyuubi.server.http.util.HttpAuthUtils.{AUTHORIZATION_HEADER, NEGOTIATE => NEGOTIATE_SCHEME, WWW_AUTHENTICATE_HEADER}
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{CUSTOM, KERBEROS, NOSASL}
 
@@ -123,6 +123,9 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
 
     try {
       if (matchedHandler == null) {
+        if (Option(authorization).forall(_.isEmpty) && authSchemeHandlers.contains(NEGOTIATE)) {
+          httpResponse.setHeader(WWW_AUTHENTICATE_HEADER, NEGOTIATE_SCHEME)
+        }
         debug(s"No auth scheme matched for url: ${httpRequest.getRequestURL}")
         httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED)
         httpResponse.sendError(

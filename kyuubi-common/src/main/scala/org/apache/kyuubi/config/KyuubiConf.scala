@@ -798,18 +798,16 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val FRONTEND_REST_ENGINE_UI_PROXY_HOSTS: ConfigEntry[Seq[String]] =
-    buildConf("kyuubi.frontend.rest.engine.ui.proxy.hosts")
+  val FRONTEND_REST_ENGINE_UI_PROXY_AUTH_ENABLED: ConfigEntry[Boolean] =
+    buildConf("kyuubi.frontend.rest.engine.ui.proxy.auth.enabled")
       .audience(SERVER)
       .immutable
-      .doc("A comma-separated list of hosts that Engine UI proxy requests can route to when " +
-        s"`${FRONTEND_REST_ENGINE_UI_PROXY_ENABLED.key}` is enabled. " +
-        "Host matching is case-insensitive and supports `*` as a wildcard, for example, " +
-        "`*.example.com`. If empty, all Engine UI proxy requests are denied.")
-      .version("1.12.0")
-      .stringConf
-      .toSequence()
-      .createWithDefault(Nil)
+      .doc("Whether to apply REST authentication to Engine UI proxy requests. Disabling it " +
+        "allows anonymous proxy access and requires deployment-level access control. " +
+        "Target and redirect validation remain enabled.")
+      .version("1.13.0")
+      .booleanConf
+      .createWithDefault(true)
 
   val FRONTEND_REST_JETTY_STOP_TIMEOUT: ConfigEntry[Long] =
     buildConf("kyuubi.frontend.rest.jetty.stopTimeout")

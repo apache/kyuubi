@@ -85,12 +85,14 @@ test('getAppUI proxies the engine url only when proxy is enabled', () => {
   const wrapper = mountBatch()
 
   wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = false
-  expect(wrapper.vm.getAppUI('host:4040')).toBe('http://host:4040')
+  expect(
+    wrapper.vm.getAppUI(makeBatch({ appUrl: 'host:4040', id: 'batch-id' }))
+  ).toBe('http://host:4040')
 
   wrapper.vm.engineUIProxyConfig.engineUIProxyEnabled = true
-  expect(wrapper.vm.getAppUI('host:4040')).toBe(
-    `${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/host:4040/`
-  )
+  expect(
+    wrapper.vm.getAppUI(makeBatch({ appUrl: 'host:4040', id: 'batch-id' }))
+  ).toBe(`${import.meta.env.VITE_APP_DEV_WEB_URL}engine-ui/batches/batch-id/`)
 })
 
 test('isTerminalState classifies batch states', () => {

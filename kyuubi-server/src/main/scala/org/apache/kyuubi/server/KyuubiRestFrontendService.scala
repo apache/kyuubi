@@ -36,7 +36,7 @@ import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_BATCH_PENDING_MAX_ELAPSE
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.api.v1.{ApiRootResource, DataAgentResource}
-import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, KyuubiHttpAuthenticationFactory}
+import org.apache.kyuubi.server.http.authentication.{AuthenticationFilter, EngineUIAuthenticationFilter, KyuubiHttpAuthenticationFactory}
 import org.apache.kyuubi.server.ui.{JettyServer, JettyUtils}
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceUtils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, AuthUtils}
@@ -117,7 +117,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   private def startInternal(): Unit = {
     val contextHandler = ApiRootResource.getServletHandler(this)
-    val holder = new FilterHolder(new AuthenticationFilter(conf))
+    val holder = new FilterHolder(new EngineUIAuthenticationFilter(conf, proxy = false))
     contextHandler.addFilter(holder, "/v1/*", EnumSet.allOf(classOf[DispatcherType]))
     val authenticationFactory = new KyuubiHttpAuthenticationFactory(conf)
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(
@@ -125,6 +125,10 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       Some(MetricsConstants.JETTY_API_V1)))
 
     val proxyHandler = ApiRootResource.getEngineUIProxyHandler(this)
+    proxyHandler.addFilter(
+      new FilterHolder(new EngineUIAuthenticationFilter(conf, proxy = true)),
+      "/*",
+      EnumSet.of(DispatcherType.REQUEST))
     server.addHandler(authenticationFactory.httpHandlerWrapperFactory.wrapHandler(proxyHandler))
     if (conf.get(FRONTEND_REST_UI_ENABLED)) {
       installWebUI()

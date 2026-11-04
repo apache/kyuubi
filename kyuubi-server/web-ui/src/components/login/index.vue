@@ -52,6 +52,8 @@
   import { ref, computed, onMounted } from 'vue'
   import { useI18n } from 'vue-i18n'
   import { useAuthStore } from '@/pinia/auth/auth'
+  import { getEngineUIReturnTarget } from '@/utils/engine-ui'
+  import request from '@/utils/request'
 
   const { t } = useI18n()
   const authStore = useAuthStore()
@@ -59,6 +61,9 @@
   const username = ref('')
   const password = ref('')
   const loginError = ref('')
+  const returnTarget = getEngineUIReturnTarget(
+    new URLSearchParams(window.location.search).get('returnTo')
+  )
 
   const isLoginDisabled = computed(() => {
     return (
@@ -71,6 +76,7 @@
       await authStore.setUser(username.value, password.value)
       dialogVisible.value = false
       loginError.value = ''
+      if (returnTarget) window.location.replace(returnTarget)
     } catch (error) {
       const status = (error as any)?.response?.status
       if (status === 401 || status === 403) {
@@ -88,6 +94,14 @@
       loginError.value = ''
       dialogVisible.value = true
     })
+    if (returnTarget) {
+      // Refresh the proxy cookie with the existing login before asking for credentials.
+      request({ url: 'api/v1/ping', method: 'get' })
+        .then(() => window.location.replace(returnTarget))
+        .catch(() => {
+          dialogVisible.value = true
+        })
+    }
   })
 </script>
 
