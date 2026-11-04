@@ -156,6 +156,7 @@ jobs:
             export MAVEN_ARGS="${MAVEN_ARGS} -Pcodecov -Dmaven.javadoc.skip=false -Dmaven.scaladoc.skip=false"
           fi
           TEST_MODULES="dev/kyuubi-codecov"
+          bash .github/scripts/run-with-jvm-diagnostics.sh \
           ./build/mvn clean install -pl ${TEST_MODULES} -am \
           -Pjava-${{ matrix.java }} -Pspark-${{ matrix.spark }} ${{ matrix.spark-archive }} ${{ matrix.exclude-tags }}
       - name: Code coverage
@@ -175,6 +176,7 @@ jobs:
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
             **/kyuubi-spark-batch-submit.log*
+            ${{ runner.temp }}/kyuubi-ci-diagnostics/
 
   scala-test:
     name: Scala Test
