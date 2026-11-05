@@ -47,8 +47,6 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
   class HttpHandlerWrapperFactory(ugi: UserGroupInformation, kerberosEnabled: Boolean) {
     def wrapHandler(handler: Handler, metricPrefix: Option[String] = None): HandlerWrapper = {
       val handlerWrapper = new HandlerWrapper {
-        _handler = handler
-
         override def handle(
             target: String,
             baseRequest: Request,
@@ -87,11 +85,8 @@ class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
           }
         }
 
-        override def doStart(): Unit = {
-          super.doStart()
-          handler.start()
-        }
       }
+      handlerWrapper.setHandler(handler)
 
       (MetricsSystem.getMetricsRegistry, metricPrefix) match {
         case (Some(metricRegistry), Some(prefix)) =>
