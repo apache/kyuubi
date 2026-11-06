@@ -17,6 +17,7 @@
 package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
+import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_CONNECTION_URL_KEY, KYUUBI_SESSION_REAL_USER_KEY}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
@@ -31,8 +32,26 @@ abstract class KyuubiSession(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: KyuubiSessionManager)
+    sessionManager: KyuubiSessionManager,
+    limiter: Option[SessionLimiter])
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  private val limitCounted: AtomicBoolean = new AtomicBoolean(false)
+
+  protected def incLimiter(): Unit = {
+    limiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
+    limitCounted.set(true)
+  }
+
+  override def close(): Unit = {
+    try {
+      super.close()
+    } finally {
+      if (limitCounted.compareAndSet(true, false)) {
+        limiter.foreach(_.decrement(UserIpAddress(user, ipAddress)))
+      }
+    }
+  }
 
   val sessionType: SessionType
 
