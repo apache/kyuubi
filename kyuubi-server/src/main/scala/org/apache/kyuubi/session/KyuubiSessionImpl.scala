@@ -58,11 +58,11 @@ class KyuubiSessionImpl(
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
   private[kyuubi] val effectiveSessionConfOverlay: Map[String, String] = {
-    val requestAdvisorConf = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
+    val advisorConfOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedSessionConfOverlay.asJava).asScala).reduce(_ ++ _)
-    if (requestAdvisorConf != null) {
-      normalizedSessionConfOverlay ++ requestAdvisorConf
+    if (advisorConfOverlay != null) {
+      normalizedSessionConfOverlay ++ advisorConfOverlay
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedSessionConfOverlay

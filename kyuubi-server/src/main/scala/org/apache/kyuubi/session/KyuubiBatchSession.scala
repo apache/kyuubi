@@ -91,12 +91,12 @@ class KyuubiBatchSession(
     KyuubiApplicationManager.sessionUploadFolderPath(handle.identifier.toString)
 
   val effectiveSessionConfOverlay: Map[String, String] = {
-    val requestAdvisorConf = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
+    val advisorConfOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedSessionConfOverlay.asJava).asScala).reduce(_ ++ _)
-    if (requestAdvisorConf != null) {
+    if (advisorConfOverlay != null) {
       val batchAdvisorConf = new KyuubiConf(false)
-      requestAdvisorConf.foreach { case (k, v) => batchAdvisorConf.set(k, v) }
+      advisorConfOverlay.foreach { case (k, v) => batchAdvisorConf.set(k, v) }
       normalizedSessionConfOverlay ++ batchAdvisorConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
