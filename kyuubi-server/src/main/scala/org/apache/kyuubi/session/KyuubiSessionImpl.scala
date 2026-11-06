@@ -48,10 +48,11 @@ class KyuubiSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
+    limiter: Option[SessionLimiter],
     sessionConf: KyuubiConf,
     doAsEnabled: Boolean,
     parser: KyuubiParser)
-  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager, limiter) {
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
@@ -83,7 +84,7 @@ class KyuubiSessionImpl(
     handle.identifier.toString,
     sessionManager.applicationManager,
     sessionManager.engineStartupProcessSemaphore)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager
+  private[kyuubi] lazy val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
 
   private lazy val sessionUserSignBase64: String =
