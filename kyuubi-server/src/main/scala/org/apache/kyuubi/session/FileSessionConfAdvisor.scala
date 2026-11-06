@@ -37,11 +37,11 @@ class FileSessionConfAdvisor extends SessionConfAdvisor {
     profiles match {
       case null => Collections.emptyMap()
       case _ =>
-        val confMap = scala.collection.mutable.Map[String, String]()
+        val advisorConfOverlay = scala.collection.mutable.Map[String, String]()
         profiles.split(",").map(_.trim).filter(_.nonEmpty).foreach { profile =>
-          confMap ++= sessionConfCache.get(profile).asScala
+          advisorConfOverlay ++= sessionConfCache.get(profile).asScala
         }
-        confMap.asJava
+        advisorConfOverlay.asJava
     }
   }
 }

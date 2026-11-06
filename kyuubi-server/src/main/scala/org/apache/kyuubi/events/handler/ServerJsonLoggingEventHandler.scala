@@ -25,5 +25,5 @@ case class ServerJsonLoggingEventHandler(
     logName: String,
     logPath: ConfigEntry[String],
     hadoopConf: Configuration,
-    kyuubiConf: KyuubiConf)
-  extends JsonLoggingEventHandler(logName, logPath, hadoopConf, kyuubiConf)
+    serverConf: KyuubiConf)
+  extends JsonLoggingEventHandler(logName, logPath, hadoopConf, serverConf)

@@ -32,13 +32,13 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.KERBEROS
 
-class KyuubiHttpAuthenticationFactory(conf: KyuubiConf) {
-  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+class KyuubiHttpAuthenticationFactory(serverConf: KyuubiConf) {
+  private val authTypes = serverConf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val kerberosEnabled = authTypes.contains(KERBEROS)
   private val ugi = UserGroupInformation.getCurrentUser
 
-  if (conf.get(ENGINE_SECURITY_ENABLED)) {
-    InternalSecurityAccessor.initialize(conf, true)
+  if (serverConf.get(ENGINE_SECURITY_ENABLED)) {
+    InternalSecurityAccessor.initialize(serverConf, true)
   }
 
   private[kyuubi] val httpHandlerWrapperFactory =

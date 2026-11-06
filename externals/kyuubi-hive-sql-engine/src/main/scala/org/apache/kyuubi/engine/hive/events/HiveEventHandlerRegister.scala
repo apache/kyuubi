@@ -38,7 +38,7 @@ object HiveEventHandlerRegister extends EventHandlerRegister {
       kyuubiConf)
   }
 
-  override protected def getLoggers(conf: KyuubiConf): Seq[String] = {
-    conf.get(ENGINE_HIVE_EVENT_LOGGERS)
+  override protected def getLoggers(engineConf: KyuubiConf): Seq[String] = {
+    engineConf.get(ENGINE_HIVE_EVENT_LOGGERS)
   }
 }

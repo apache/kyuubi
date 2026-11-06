@@ -97,11 +97,11 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   private[credentials] var renewalExecutor: Option[ScheduledExecutorService] = None
   private[credentials] var credentialsTimeoutChecker: Option[ScheduledExecutorService] = None
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    providers = HadoopCredentialsManager.loadProviders(conf)
+  override def initialize(serverConf: KyuubiConf): Unit = {
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(serverConf)
+    providers = HadoopCredentialsManager.loadProviders(serverConf)
       .filter { case (_, provider) =>
-        provider.initialize(hadoopConf, conf)
+        provider.initialize(hadoopConf, serverConf)
         val required = provider.delegationTokensRequired()
         if (!required) {
           warn(s"Service ${provider.serviceName} does not require a token." +
@@ -122,14 +122,14 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         s"${providers.keys.mkString(", ")}.")
     }
 
-    renewalInterval = conf.get(CREDENTIALS_RENEWAL_INTERVAL)
-    renewalRetryWait = conf.get(CREDENTIALS_RENEWAL_RETRY_WAIT)
-    credentialsWaitTimeout = conf.get(CREDENTIALS_UPDATE_WAIT_TIMEOUT)
+    renewalInterval = serverConf.get(CREDENTIALS_RENEWAL_INTERVAL)
+    renewalRetryWait = serverConf.get(CREDENTIALS_RENEWAL_RETRY_WAIT)
+    credentialsWaitTimeout = serverConf.get(CREDENTIALS_UPDATE_WAIT_TIMEOUT)
 
-    credentialsCheckInterval = conf.get(CREDENTIALS_CHECK_INTERVAL)
-    credentialsTimeout = conf.get(CREDENTIALS_IDLE_TIMEOUT)
+    credentialsCheckInterval = serverConf.get(CREDENTIALS_CHECK_INTERVAL)
+    credentialsTimeout = serverConf.get(CREDENTIALS_IDLE_TIMEOUT)
 
-    super.initialize(conf)
+    super.initialize(serverConf)
   }
 
   override def start(): Unit = {
@@ -315,7 +315,7 @@ object HadoopCredentialsManager extends Logging {
 
   private val providerEnabledConfig = "kyuubi.credentials.%s.enabled"
 
-  def loadProviders(kyuubiConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
+  def loadProviders(serverConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
     val providers = mutable.ArrayBuffer[HadoopDelegationTokenProvider]()
 
     val iterator =
@@ -331,14 +331,14 @@ object HadoopCredentialsManager extends Logging {
 
     // Filter out providers for which kyuubi.credentials.{service}.enabled is false.
     providers
-      .filter { p => HadoopCredentialsManager.isServiceEnabled(kyuubiConf, p.serviceName) }
+      .filter { p => HadoopCredentialsManager.isServiceEnabled(serverConf, p.serviceName) }
       .map { p => (p.serviceName, p) }
       .toMap
   }
 
-  def isServiceEnabled(kyuubiConf: KyuubiConf, serviceName: String): Boolean = {
+  def isServiceEnabled(serverConf: KyuubiConf, serviceName: String): Boolean = {
     val key = providerEnabledConfig.format(serviceName)
-    kyuubiConf
+    serverConf
       .getOption(key)
       .map(_.toBoolean)
       .getOrElse(true)

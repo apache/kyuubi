@@ -39,14 +39,14 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 class JdbcProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
-    this(proxyUser, doAsEnabled, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, sessionConf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, sessionConf, "")
   }
 
   /**
@@ -64,15 +64,15 @@ class JdbcProcessBuilder(
 
   override protected val commands: Iterable[String] = {
     require(
-      conf.get(ENGINE_JDBC_CONNECTION_URL).nonEmpty,
+      sessionConf.get(ENGINE_JDBC_CONNECTION_URL).nonEmpty,
       s"Jdbc server url can not be null! Please set ${ENGINE_JDBC_CONNECTION_URL.key}")
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
-    val memory = conf.get(ENGINE_JDBC_MEMORY)
+    val memory = sessionConf.get(ENGINE_JDBC_MEMORY)
     buffer += s"-Xmx$memory"
 
-    val javaOptions = conf.get(ENGINE_JDBC_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
+    val javaOptions = sessionConf.get(ENGINE_JDBC_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       buffer ++= parseOptionString(javaOptions.get)
     }
@@ -92,7 +92,7 @@ class JdbcProcessBuilder(
       }
     }
 
-    val extraCp = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
+    val extraCp = sessionConf.get(ENGINE_JDBC_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     buffer ++= genClasspathOption(classpathEntries)
 
@@ -100,7 +100,7 @@ class JdbcProcessBuilder(
 
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    buffer ++= confKeyValues(conf.getEngineConf(EngineType.JDBC))
+    buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.JDBC))
 
     buffer
   }
@@ -110,7 +110,7 @@ class JdbcProcessBuilder(
       super.toString
     } else {
       redactConfValues(
-        Utils.redactCommandLineArgs(conf, commands),
+        Utils.redactCommandLineArgs(sessionConf, commands),
         Set(ENGINE_JDBC_CONNECTION_PASSWORD.key)).map {
         case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
@@ -126,25 +126,30 @@ object JdbcProcessBuilder extends Logging {
   def apply(
       proxyUser: String,
       doAsEnabled: Boolean,
-      conf: KyuubiConf,
+      sessionConf: KyuubiConf,
       engineRefId: String,
       extraEngineLog: Option[OperationLog],
       defaultEngineName: String): JdbcProcessBuilder = {
-    checkKeytab(proxyUser, conf)
-    DeployMode.withName(conf.get(ENGINE_JDBC_DEPLOY_MODE)) match {
+    checkKeytab(proxyUser, sessionConf)
+    DeployMode.withName(sessionConf.get(ENGINE_JDBC_DEPLOY_MODE)) match {
       case LOCAL =>
-        new JdbcProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        new JdbcProcessBuilder(proxyUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
       case YARN =>
         warn(s"JDBC on YARN model is experimental.")
-        conf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
-        new JdbcYarnModeProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        sessionConf.setIfMissing(ENGINE_DEPLOY_YARN_MODE_APP_NAME, Some(defaultEngineName))
+        new JdbcYarnModeProcessBuilder(
+          proxyUser,
+          doAsEnabled,
+          sessionConf,
+          engineRefId,
+          extraEngineLog)
       case other => throw new KyuubiException(s"Unsupported deploy mode: $other")
     }
   }
 
-  private def checkKeytab(proxyUser: String, conf: KyuubiConf): Unit = {
-    val principal = conf.get(ENGINE_PRINCIPAL)
-    val keytab = conf.get(ENGINE_KEYTAB)
+  private def checkKeytab(proxyUser: String, sessionConf: KyuubiConf): Unit = {
+    val principal = sessionConf.get(ENGINE_PRINCIPAL)
+    val keytab = sessionConf.get(ENGINE_KEYTAB)
     if (!UserGroupInformation.isSecurityEnabled) {
       if (principal.isDefined || keytab.isDefined) {
         warn("Principal and keytab takes no effect when hadoop security is not enabled.")
@@ -164,7 +169,7 @@ object JdbcProcessBuilder extends Logging {
           s"engine principal: ${ugi.getShortUserName}.")
     }
 
-    val deployMode = DeployMode.withName(conf.get(ENGINE_JDBC_DEPLOY_MODE))
+    val deployMode = DeployMode.withName(sessionConf.get(ENGINE_JDBC_DEPLOY_MODE))
     if (principal.isEmpty && keytab.isEmpty && deployMode == YARN) {
       warn("JDBC on YARN can not work properly without principal and keytab.")
     }

@@ -105,7 +105,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     userIsolatedSparkSessionThread.foreach(_.shutdown())
   }
 
-  private def getOrNewSparkSession(user: String, sessionConf: Map[String, String]): SparkSession = {
+  private def getOrNewSparkSession(
+      user: String,
+      sessionConfOverlay: Map[String, String]): SparkSession = {
     if (singleSparkSession) {
       spark
     } else {
@@ -113,8 +115,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         // it's unnecessary to create a new spark session in connection share level
         // since the session is only one
         case CONNECTION => spark
-        case USER => newSparkSession(spark, sessionConf)
-        case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark, sessionConf)
+        case USER => newSparkSession(spark, sessionConfOverlay)
+        case GROUP | SERVER if userIsolatedSparkSession =>
+          newSparkSession(spark, sessionConfOverlay)
         case GROUP | SERVER =>
           userIsolatedCacheLock.synchronized {
             if (userIsolatedCache.containsKey(user)) {
@@ -123,7 +126,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
               userIsolatedCache.get(user)
             } else {
               userIsolatedCacheCount.put(user, (1, System.currentTimeMillis()))
-              val newSession = newSparkSession(spark, sessionConf)
+              val newSession = newSparkSession(spark, sessionConfOverlay)
               userIsolatedCache.put(user, newSession)
               newSession
             }
@@ -134,11 +137,11 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   private def newSparkSession(
       rootSparkSession: SparkSession,
-      sessionConf: Map[String, String]): SparkSession = {
+      sessionConfOverlay: Map[String, String]): SparkSession = {
     val newSparkSession = rootSparkSession.newSession()
     KyuubiSparkUtil.initializeSparkSession(
       newSparkSession,
-      sessionConf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
+      sessionConfOverlay.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL.key)
         .filter(_.nonEmpty)
         .map(_.split(";").toSeq)
         .getOrElse(conf.get(ENGINE_SESSION_SPARK_INITIALIZE_SQL)))
@@ -150,12 +153,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      sessionConfOverlay: Map[String, String]): Session = {
+    sessionConfOverlay.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
       getSessionOption).getOrElse {
       val sparkSession =
         try {
-          getOrNewSparkSession(user, conf)
+          getOrNewSparkSession(user, sessionConfOverlay)
         } catch {
           case e: Exception => throw KyuubiSQLException(e)
         }
@@ -165,7 +168,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         user,
         password,
         ipAddress,
-        conf,
+        sessionConfOverlay,
         this,
         sparkSession)
     }

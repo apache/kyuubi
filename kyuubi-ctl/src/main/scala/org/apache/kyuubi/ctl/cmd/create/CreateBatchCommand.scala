@@ -45,7 +45,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
         error(s"No batch request field specified in yaml")
         throw ControlCliException(1)
       }
-      val config = Option(request.get("configs").asInstanceOf[JMap[Object, Object]].asScala)
+      val requestConf = Option(request.get("configs").asInstanceOf[JMap[Object, Object]].asScala)
         .map(_.map { case (k, v) => (k.toString, Option(v).map(_.toString).getOrElse("")) }.asJava)
         .getOrElse(Collections.emptyMap())
       val args = Option(request.get("args").asInstanceOf[JList[Object]].asScala)
@@ -56,7 +56,7 @@ class CreateBatchCommand(cliConfig: CliConfig) extends Command[Batch](cliConfig)
         request.get("resource").asInstanceOf[String],
         request.get("className").asInstanceOf[String],
         request.get("name").asInstanceOf[String],
-        config,
+        requestConf,
         args)
 
       batchRestApi.createBatch(batchRequest)

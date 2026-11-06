@@ -41,7 +41,7 @@ class ThriftHttpServlet(
     processor: TProcessor,
     protocolFactory: TProtocolFactory,
     authFactory: KyuubiAuthenticationFactory,
-    conf: KyuubiConf)
+    serverConf: KyuubiConf)
   extends TServlet(processor, protocolFactory) with Logging {
   // Class members for cookie based authentication.
   private var signer: CookieSigner = _
@@ -54,23 +54,23 @@ class ThriftHttpServlet(
   private var isCookieSecure = false
   private var isHttpOnlyCookie = false
   private val X_FORWARDED_FOR_HEADER = "X-Forwarded-For"
-  private val authenticationFilter = new AuthenticationFilter(conf)
+  private val authenticationFilter = new AuthenticationFilter(serverConf)
   private val XSRF_HEADER_DEFAULT = "X-XSRF-HEADER"
   private val XSRF_METHODS_TO_IGNORE_DEFAULT = Set("GET", "OPTIONS", "HEAD", "TRACE")
 
   override def init(): Unit = {
-    isCookieAuthEnabled = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
+    isCookieAuthEnabled = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_AUTH_ENABLED)
     // Initialize the cookie based authentication related variables.
     if (isCookieAuthEnabled) { // Generate the signer with secret.
       val secret = RAN.nextLong().toString
       debug("Using the random number as the secret for cookie generation " + secret)
       signer = new CookieSigner(secret.getBytes)
-      cookieMaxAge = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_MAX_AGE)
-      cookieDomain = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN).orNull
-      cookiePath = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_PATH).orNull
+      cookieMaxAge = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_MAX_AGE)
+      cookieDomain = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_DOMAIN).orNull
+      cookiePath = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_PATH).orNull
       // always send secure cookies for SSL mode
-      isCookieSecure = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_USE_SSL)
-      isHttpOnlyCookie = conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY)
+      isCookieSecure = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_USE_SSL)
+      isHttpOnlyCookie = serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_COOKIE_IS_HTTPONLY)
     }
     authenticationFilter.initAuthHandlers()
   }
@@ -82,7 +82,7 @@ class ThriftHttpServlet(
     var requireNewCookie: Boolean = false
     var doAuth: Boolean = false
     try {
-      if (conf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_XSRF_FILTER_ENABLED)) {
+      if (serverConf.get(KyuubiConf.FRONTEND_THRIFT_HTTP_XSRF_FILTER_ENABLED)) {
         val continueProcessing = doXsrfFilter(request, response)
         if (!continueProcessing) {
           warn("Request did not have valid XSRF header, rejecting.")
@@ -105,7 +105,7 @@ class ThriftHttpServlet(
 
       AuthenticationFilter.HTTP_CLIENT_IP_ADDRESS.set(request.getRemoteAddr)
       AuthenticationFilter.HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
-        request.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
+        request.getHeader(serverConf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
       Option(request.getHeader(X_FORWARDED_FOR_HEADER)).map(_.split(",").toList).foreach(
         AuthenticationFilter.HTTP_FORWARDED_ADDRESSES.set)
 

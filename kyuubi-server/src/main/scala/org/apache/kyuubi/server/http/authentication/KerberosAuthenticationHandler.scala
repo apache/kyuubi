@@ -38,7 +38,7 @@ import org.apache.kyuubi.server.http.util.HttpAuthUtils.{NEGOTIATE, WWW_AUTHENTI
 class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
 
   private var gssManager: GSSManager = _
-  private var conf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
   private var serverSubject = new Subject()
   private var keytab: String = _
   private var principal: String = _
@@ -49,10 +49,10 @@ class KerberosAuthenticationHandler extends AuthenticationHandler with Logging {
     keytab.nonEmpty && principal.nonEmpty
   }
 
-  override def init(conf: KyuubiConf): Unit = {
-    this.conf = conf
-    keytab = conf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
-    principal = conf.get(KyuubiConf.SERVER_SPNEGO_PRINCIPAL).getOrElse("")
+  override def init(serverConf: KyuubiConf): Unit = {
+    this.serverConf = serverConf
+    keytab = serverConf.get(KyuubiConf.SERVER_SPNEGO_KEYTAB).getOrElse("")
+    principal = serverConf.get(KyuubiConf.SERVER_SPNEGO_PRINCIPAL).getOrElse("")
     if (authenticationSupported) {
       val keytabFile = new File(keytab)
       if (!keytabFile.exists()) {

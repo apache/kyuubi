@@ -42,14 +42,14 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 class FlinkProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
-    this(proxyUser, doAsEnabled, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, sessionConf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, sessionConf, "")
   }
 
   val flinkHome: String = getEngineHome(shortName)
@@ -59,7 +59,7 @@ class FlinkProcessBuilder(
   }
 
   // flink.execution.target are required in Kyuubi conf currently
-  val executionTarget: Option[String] = conf.getOption("flink.execution.target")
+  val executionTarget: Option[String] = sessionConf.getOption("flink.execution.target")
 
   private[kyuubi] lazy val flinkVersion: SemanticVersion = {
     val libDir = Paths.get(flinkHome, "lib").toFile
@@ -72,7 +72,7 @@ class FlinkProcessBuilder(
   }
 
   private lazy val proxyUserEnable: Boolean = {
-    var flinkDoAsEnabled = conf.get(ENGINE_FLINK_DOAS_ENABLED)
+    var flinkDoAsEnabled = sessionConf.get(ENGINE_FLINK_DOAS_ENABLED)
     if (flinkDoAsEnabled && !UserGroupInformation.isSecurityEnabled) {
       warn(s"${ENGINE_FLINK_DOAS_ENABLED.key} can only be enabled on Kerberized environment.")
       flinkDoAsEnabled = false
@@ -86,7 +86,7 @@ class FlinkProcessBuilder(
 
   override def env: Map[String, String] = {
     val flinkConfDir =
-      conf.getEnvs.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
+      sessionConf.getEnvs.getOrElse("FLINK_CONF_DIR", s"$flinkHome${File.separator}conf")
     val flinkExtraEnvs = if (proxyUserEnable) {
       Map(
         "FLINK_CONF_DIR" -> flinkConfDir,
@@ -94,7 +94,7 @@ class FlinkProcessBuilder(
     } else {
       Map("FLINK_CONF_DIR" -> flinkConfDir)
     }
-    conf.getEnvs ++ flinkExtraEnvs
+    sessionConf.getEnvs ++ flinkExtraEnvs
   }
 
   override def clusterManager(): Option[String] = {
@@ -109,7 +109,7 @@ class FlinkProcessBuilder(
   }
 
   override protected val commands: Iterable[String] = {
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), sessionConf)
     // flink.execution.target are required in Kyuubi conf currently
     executionTarget match {
       case Some("yarn-application") =>
@@ -130,7 +130,7 @@ class FlinkProcessBuilder(
           }).map(f => f.getAbsolutePath).sorted
         flinkExtraJars ++= flinkSqlJars
 
-        val userJars = conf.get(ENGINE_FLINK_APPLICATION_JARS)
+        val userJars = sessionConf.get(ENGINE_FLINK_APPLICATION_JARS)
         userJars.foreach(jars => flinkExtraJars ++= jars.split(","))
 
         val hiveConfDirOpt = env.get("HIVE_CONF_DIR")
@@ -165,16 +165,17 @@ class FlinkProcessBuilder(
           Map.empty
         }
 
-        val customFlinkConf = conf.getAllWithPrefix(FLINK_CONF_PREFIX, "") ++ externalProxyUserConf
+        val customFlinkConf =
+          sessionConf.getAllWithPrefix(FLINK_CONF_PREFIX, "") ++ externalProxyUserConf
         // add custom yarn.ship-files
         flinkExtraJars ++= customFlinkConf.get(YARN_SHIP_FILES_KEY)
         val yarnAppName = customFlinkConf.get(YARN_APPLICATION_NAME_KEY)
-          .orElse(conf.getOption(APP_KEY))
+          .orElse(sessionConf.getOption(APP_KEY))
         buffer += "-t"
         buffer += "yarn-application"
         buffer += s"-Dyarn.ship-files=${flinkExtraJars.mkString(";")}"
         buffer += s"-Dyarn.application.name=${yarnAppName.get}"
-        buffer += s"-Dyarn.tags=${conf.getOption(YARN_TAG_KEY).get}"
+        buffer += s"-Dyarn.tags=${sessionConf.getOption(YARN_TAG_KEY).get}"
         buffer += "-Dcontainerized.master.env.FLINK_CONF_DIR=."
 
         hiveConfDirOpt.foreach { _ =>
@@ -195,7 +196,7 @@ class FlinkProcessBuilder(
         buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
         buffer ++= confKeyValues(
-          conf.getEngineConf(EngineType.FLINK_SQL).filter(_._1.startsWith("kyuubi.")))
+          sessionConf.getEngineConf(EngineType.FLINK_SQL).filter(_._1.startsWith("kyuubi.")))
 
         buffer
 
@@ -203,9 +204,10 @@ class FlinkProcessBuilder(
         val buffer = new mutable.ListBuffer[String]()
         buffer += executable
 
-        val memory = conf.get(ENGINE_FLINK_MEMORY)
+        val memory = sessionConf.get(ENGINE_FLINK_MEMORY)
         buffer += s"-Xmx$memory"
-        val javaOptions = conf.get(ENGINE_FLINK_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
+        val javaOptions =
+          sessionConf.get(ENGINE_FLINK_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
         if (javaOptions.isDefined) {
           buffer ++= parseOptionString(javaOptions.get)
         }
@@ -234,7 +236,7 @@ class FlinkProcessBuilder(
         env.get("HBASE_CONF_DIR").foreach(classpathEntries.add)
         env.get("HIVE_CONF_DIR").foreach(classpathEntries.add)
         val hadoopCp = env.get(FLINK_HADOOP_CLASSPATH_KEY)
-        val extraCp = conf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
+        val extraCp = sessionConf.get(ENGINE_FLINK_EXTRA_CLASSPATH)
         extraCp.foreach(classpathEntries.add)
 
         val hasHadoopJar = {
@@ -279,7 +281,7 @@ class FlinkProcessBuilder(
 
         buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-        buffer ++= confKeyValues(conf.getEngineConf(EngineType.FLINK_SQL))
+        buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.FLINK_SQL))
 
         buffer
     }

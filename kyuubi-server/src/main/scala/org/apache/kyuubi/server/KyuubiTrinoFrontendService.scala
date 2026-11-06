@@ -49,16 +49,16 @@ class KyuubiTrinoFrontendService(override val serverable: Serverable)
 
   private lazy val port: Int = conf.get(FRONTEND_TRINO_BIND_PORT)
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    this.conf = conf
+  override def initialize(serverConf: KyuubiConf): Unit = synchronized {
+    this.conf = serverConf
     server = JettyServer(
       getName,
       host,
       port,
-      conf.get(FRONTEND_TRINO_MAX_WORKER_THREADS),
-      conf.get(FRONTEND_TRINO_JETTY_STOP_TIMEOUT),
-      conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
-    super.initialize(conf)
+      serverConf.get(FRONTEND_TRINO_MAX_WORKER_THREADS),
+      serverConf.get(FRONTEND_TRINO_JETTY_STOP_TIMEOUT),
+      serverConf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
+    super.initialize(serverConf)
   }
 
   override def connectionUrl: String = {

@@ -698,12 +698,14 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
             (confKey, tempFilePaths.mkString(fileNameSeparator))
         }
 
-      val conf = request.getConf
+      val requestConf = request.getConf
       transformedExtraResourcesMap.foreach { case (confKey, tempFilePathStr) =>
-        conf.get(confKey) match {
+        requestConf.get(confKey) match {
           case confValue: String if StringUtils.isNotBlank(confValue) =>
-            conf.put(confKey, List(confValue.trim, tempFilePathStr).mkString(fileNameSeparator))
-          case _ => conf.put(confKey, tempFilePathStr)
+            requestConf.put(
+              confKey,
+              List(confValue.trim, tempFilePathStr).mkString(fileNameSeparator))
+          case _ => requestConf.put(confKey, tempFilePathStr)
         }
       }
     }

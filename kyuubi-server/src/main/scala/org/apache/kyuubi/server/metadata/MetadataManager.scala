@@ -76,9 +76,9 @@ class MetadataManager extends AbstractService("MetadataManager") {
   private lazy val metadataCleaner =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("metadata-cleaner")
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    _metadataStore = MetadataManager.createMetadataStore(conf)
-    super.initialize(conf)
+  override def initialize(serverConf: KyuubiConf): Unit = {
+    _metadataStore = MetadataManager.createMetadataStore(serverConf)
+    super.initialize(serverConf)
   }
 
   override def start(): Unit = {
@@ -389,13 +389,13 @@ class MetadataManager extends AbstractService("MetadataManager") {
 }
 
 object MetadataManager extends Logging {
-  def createMetadataStore(conf: KyuubiConf): MetadataStore = {
-    val className = conf.get(KyuubiConf.METADATA_STORE_CLASS)
+  def createMetadataStore(serverConf: KyuubiConf): MetadataStore = {
+    val className = serverConf.get(KyuubiConf.METADATA_STORE_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
         s"${KyuubiConf.METADATA_STORE_CLASS.key} cannot be empty.")
     }
-    ClassUtils.createInstance(className, classOf[MetadataStore], conf)
+    ClassUtils.createInstance(className, classOf[MetadataStore], serverConf)
   }
 
   def buildBatch(batchMetadata: Metadata): Batch = {

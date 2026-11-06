@@ -202,11 +202,11 @@ class KyuubiSyncThriftClient private (
       protocol: TProtocolVersion,
       user: String,
       password: String,
-      configs: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
-    req.setConfiguration((configs ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
+    req.setConfiguration((sessionConfOverlay ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
@@ -223,7 +223,7 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
-        req.setConfiguration((configs ++ Map(
+        req.setConfiguration((sessionConfOverlay ++ Map(
           KyuubiConf.SESSION_NAME.key -> sessionName,
           KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
           KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "",
@@ -271,13 +271,13 @@ class KyuubiSyncThriftClient private (
 
   def executeStatement(
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       shouldRunAsync: Boolean,
       queryTimeout: Long): TOperationHandle = {
     val req = new TExecuteStatementReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setStatement(statement)
-    req.setConfOverlay(confOverlay.asJava)
+    req.setConfOverlay(reqConfOverlay.asJava)
     req.setRunAsync(shouldRunAsync)
     req.setQueryTimeout(queryTimeout)
     val resp = withLockAcquiredAsyncRequest(ExecuteStatement(req))
@@ -497,15 +497,16 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       password: String,
       host: String,
       port: Int,
-      conf: KyuubiConf): KyuubiSyncThriftClient = {
+      sessionConf: KyuubiConf): KyuubiSyncThriftClient = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-    val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
-    val maxMessageSize = conf.get(KyuubiConf.FRONTEND_THRIFT_CLIENT_MAX_MESSAGE_SIZE)
-    val aliveProbeEnabled = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
-    val aliveProbeInterval = conf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
-    val aliveTimeout = conf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
-    val useVirtualThreadsForAliveProbe = conf.get(ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED)
-    val useVirtualThreadsForAsyncRequests = conf.get(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED)
+    val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
+    val maxMessageSize = sessionConf.get(KyuubiConf.FRONTEND_THRIFT_CLIENT_MAX_MESSAGE_SIZE)
+    val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
+    val aliveProbeInterval = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_INTERVAL).toInt
+    val aliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
+    val useVirtualThreadsForAliveProbe = sessionConf.get(ENGINE_ALIVE_PROBE_VIRTUAL_THREADS_ENABLED)
+    val useVirtualThreadsForAsyncRequests =
+      sessionConf.get(ENGINE_RPC_CLIENT_VIRTUAL_THREADS_ENABLED)
 
     val tProtocol = createTProtocol(user, passwd, host, port, 0, loginTimeout, maxMessageSize)
 

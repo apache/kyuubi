@@ -396,10 +396,10 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       throw new ForbiddenException(
         s"$userName is not allowed to list all live kyuubi servers")
     }
-    val kyuubiConf = fe.getConf
+    val serverConf = fe.getConf
     val servers = ListBuffer[ServerData]()
-    val serverSpec = DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
-    withDiscoveryClient(kyuubiConf) { discoveryClient =>
+    val serverSpec = DiscoveryPaths.makePath(null, serverConf.get(HA_NAMESPACE))
+    withDiscoveryClient(serverConf) { discoveryClient =>
       discoveryClient.getServiceNodesInfo(serverSpec).map(nodeInfo => {
         servers += ApiUtils.serverData(nodeInfo)
       })

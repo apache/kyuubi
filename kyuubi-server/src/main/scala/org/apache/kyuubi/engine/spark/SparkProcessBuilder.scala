@@ -48,14 +48,14 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 class SparkProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
-    this(proxyUser, doAsEnabled, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, sessionConf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, sessionConf, "")
   }
 
   import SparkProcessBuilder._
@@ -76,7 +76,7 @@ class SparkProcessBuilder(
    * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
    * api-server is not exposed to us.
    */
-  override protected def completeMasterUrl(conf: KyuubiConf): Unit = {
+  override protected def completeMasterUrl(sessionConf: KyuubiConf): Unit = {
     try {
       (
         clusterManager(),
@@ -87,7 +87,7 @@ class SparkProcessBuilder(
           // node-communication/#node-to-control-plane", the API server is configured to listen
           // for remote connections on a secure HTTPS port (typically 443), so we set https here.
           val masterURL = s"k8s://https://${kubernetesServiceHost}:${kubernetesServicePort}"
-          conf.set(MASTER_KEY, masterURL)
+          sessionConf.set(MASTER_KEY, masterURL)
         case _ =>
       }
     } catch {
@@ -134,25 +134,25 @@ class SparkProcessBuilder(
 
   override protected[kyuubi] lazy val commands: Iterable[String] = {
     // complete `spark.master` if absent on kubernetes
-    completeMasterUrl(conf)
+    completeMasterUrl(sessionConf)
 
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), sessionConf)
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
     buffer += CLASS
     buffer += mainClass
 
-    var allConf = conf.getEngineConf(EngineType.SPARK_SQL)
+    var engineConf = sessionConf.getEngineConf(EngineType.SPARK_SQL)
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server keytab file
-    if (AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
-      allConf = allConf ++ zkAuthKeytabFileConf(allConf)
+    if (AuthTypes.withName(sessionConf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+      engineConf = engineConf ++ zkAuthKeytabFileConf(engineConf)
     }
     // pass spark engine log path to spark conf
-    (allConf ++
+    (engineConf ++
       engineLogPathConf ++
-      extraYarnConf(allConf) ++
-      appendPodNameConf(allConf) ++
+      extraYarnConf(engineConf) ++
+      appendPodNameConf(engineConf) ++
       prepareK8sFileUploadPath() ++
       engineWaitCompletionConf).foreach {
       case (k, v) => buffer ++= confKeyValue(convertConfigKey(k), v)
@@ -182,8 +182,8 @@ class SparkProcessBuilder(
   }
 
   private def tryKeytab(): Option[String] = {
-    val principal = conf.getOption(PRINCIPAL)
-    val keytab = conf.getOption(KEYTAB)
+    val principal = sessionConf.getOption(PRINCIPAL)
+    val keytab = sessionConf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {
       None
     } else {
@@ -212,7 +212,7 @@ class SparkProcessBuilder(
   }
 
   private def zkAuthKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
-    val zkAuthKeytab = conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_KEYTAB)
+    val zkAuthKeytab = sessionConf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_KEYTAB)
     if (zkAuthKeytab.isDefined) {
       sparkConf.get(SPARK_FILES) match {
         case Some(files) =>
@@ -251,18 +251,18 @@ class SparkProcessBuilder(
   }
 
   private val forciblyRewriteDriverPodName: Boolean =
-    conf.get(KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME)
+    sessionConf.get(KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME)
   private val forciblyRewriteExecPodNamePrefix: Boolean =
-    conf.get(KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX)
+    sessionConf.get(KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX)
 
-  def appendPodNameConf(conf: Map[String, String]): Map[String, String] = {
-    val appName = conf.getOrElse(APP_KEY, "spark")
-    val namespace = conf.get(KUBERNETES_NAMESPACE_KEY)
+  def appendPodNameConf(engineConf: Map[String, String]): Map[String, String] = {
+    val appName = engineConf.getOrElse(APP_KEY, "spark")
+    val namespace = engineConf.get(KUBERNETES_NAMESPACE_KEY)
       .orElse(kubernetesNamespace())
       .getOrElse(KUBERNETES_NAMESPACE.defaultValStr)
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(cm => cm.toLowerCase(Locale.ROOT).startsWith("k8s"))) {
-      if (!conf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
+      if (!engineConf.contains(KUBERNETES_EXECUTOR_POD_NAME_PREFIX)) {
         val prefix = KubernetesUtils.generateExecutorPodNamePrefix(
           appName,
           engineRefId,
@@ -271,7 +271,7 @@ class SparkProcessBuilder(
         map += (KUBERNETES_EXECUTOR_POD_NAME_PREFIX -> prefix)
       }
       if (deployMode().exists(_.toLowerCase(Locale.ROOT) == "cluster")) {
-        if (!conf.contains(KUBERNETES_DRIVER_POD_NAME)) {
+        if (!engineConf.contains(KUBERNETES_DRIVER_POD_NAME)) {
           val name = KubernetesUtils.generateDriverPodName(
             appName,
             engineRefId,
@@ -293,7 +293,7 @@ class SparkProcessBuilder(
           .replace("{{MONTH}}", today.format(MONTH_FMT))
           .replace("{{DAY}}", today.format(DAY_FMT))
 
-        if (conf.get(KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH)) {
+        if (sessionConf.get(KUBERNETES_SPARK_AUTO_CREATE_FILE_UPLOAD_PATH)) {
           // Create the `uploadPath` using permission 777, otherwise, spark just creates the
           // `$uploadPath/spark-upload-$uuid` using default permission 511, which might prevent
           // other users from creating the staging dir under `uploadPath` later.
@@ -322,10 +322,10 @@ class SparkProcessBuilder(
     }
   }
 
-  def extraYarnConf(conf: Map[String, String]): Map[String, String] = {
+  def extraYarnConf(engineConf: Map[String, String]): Map[String, String] = {
     val map = mutable.Map.newBuilder[String, String]
     if (clusterManager().exists(_.toLowerCase(Locale.ROOT).startsWith("yarn"))) {
-      if (!conf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
+      if (!engineConf.contains(YARN_MAX_APP_ATTEMPTS_KEY)) {
         // Set `spark.yarn.maxAppAttempts` to 1 to avoid invalid attempts.
         // As mentioned in YARN-5617, it is improved after hadoop `2.8.2/2.9.0/3.0.0`.
         map += (YARN_MAX_APP_ATTEMPTS_KEY -> "1")
@@ -367,7 +367,7 @@ class SparkProcessBuilder(
     getSparkOption(KUBERNETES_FILE_UPLOAD_PATH)
   }
 
-  override def validateConf(): Unit = Validator.validateConf(conf)
+  override def validateConf(): Unit = Validator.validateConf(sessionConf)
 
   // For spark on kubernetes, spark pod using env SPARK_USER_NAME as current user
   def setSparkUserName(userName: String, buffer: mutable.Buffer[String]): Unit = {
@@ -384,7 +384,7 @@ class SparkProcessBuilder(
   }
 
   private[spark] def getSparkOption(key: String): Option[String] = {
-    conf.getOption(key).orElse(defaultsConf.get(key))
+    sessionConf.getOption(key).orElse(defaultsConf.get(key))
   }
 
   override def waitEngineCompletion: Boolean = {

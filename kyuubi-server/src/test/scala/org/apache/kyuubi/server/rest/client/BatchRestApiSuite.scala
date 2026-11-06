@@ -348,6 +348,7 @@ class BatchRestApiSuite extends RestClientTestHelper with BatchTestHelper {
     val batchSession =
       server.backendService.sessionManager.getSession(SessionHandle.fromUUID(batch.getId))
     assert(
-      batchSession.conf.get(KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY) == Some(KYUUBI_VERSION))
+      batchSession.sessionConfOverlay.get(KyuubiReservedKeys.KYUUBI_CLIENT_VERSION_KEY) == Some(
+        KYUUBI_VERSION))
   }
 }
