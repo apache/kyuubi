@@ -83,7 +83,9 @@ The plugin is built on the Ranger 2.9 authorization API (`ranger-authz-api` and
 `authz-remote`), which was introduced in Ranger 2.9.0, so only Ranger 2.9.0 and above
 are supported.
 
-Please use branch-1.12 or prior to build against Ranger versions prior to 2.9.0.
+Ranger versions prior to 2.9.0 are not supported on this branch. Use branch-1.12 or
+prior. The branch-1.12 documentation lists support for Ranger 0.7.x through 2.6.x
+(0.6.x has known failures).
 
 ## Test with ScalaTest Maven plugin
 
