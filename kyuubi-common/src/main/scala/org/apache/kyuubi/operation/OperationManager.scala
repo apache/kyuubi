@@ -207,21 +207,17 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   final def processCatalogDatabase(
       session: Session,
       statement: String,
-      requestConfOverlay: Map[String, String]): Operation = {
-    if (requestConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
+      reqConfOverlay: Map[String, String]): Operation = {
+    if (reqConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_SET_CATALOG) {
-      newSetCurrentCatalogOperation(
-        session,
-        requestConfOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
-    } else if (requestConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
+      newSetCurrentCatalogOperation(session, reqConfOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_GET_CATALOG) {
       newGetCurrentCatalogOperation(session)
-    } else if (requestConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
       && PATTERN_FOR_SET_SCHEMA.unapplySeq(statement).isDefined) {
-      newSetCurrentDatabaseOperation(
-        session,
-        requestConfOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
-    } else if (requestConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
+      newSetCurrentDatabaseOperation(session, reqConfOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
       && PATTERN_FOR_GET_SCHEMA == statement.toLowerCase) {
       newGetCurrentDatabaseOperation(session)
     } else {

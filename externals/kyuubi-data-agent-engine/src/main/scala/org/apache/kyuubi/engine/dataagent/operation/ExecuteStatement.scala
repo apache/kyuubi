@@ -87,9 +87,9 @@ class ExecuteStatement(
       MDC.put("sessionId", sessionId)
       val request = new ProviderRunRequest(statement)
       // Merge session-level conf with per-statement requestConfOverlay (request takes precedence)
-      val requestConf = session.sessionConfOverlay ++ requestConfOverlay
-      requestConf.get(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key).foreach(request.modelName)
-      val approvalMode = requestConf.getOrElse(
+      val mergedConf = session.sessionConfOverlay ++ requestConfOverlay
+      mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key).foreach(request.modelName)
+      val approvalMode = mergedConf.getOrElse(
         KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key,
         session.sessionManager.getConf.get(KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE))
       request.approvalMode(approvalMode)
