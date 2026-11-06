@@ -50,13 +50,13 @@ class JdbcSessionImpl(
   val sessionConf: KyuubiConf = normalizeConf
 
   private def normalizeConf: KyuubiConf = {
-    val sessionConf = sessionManager.getConf.clone
-    if (sessionConf.get(ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL)) {
-      sessionConf.set(ENGINE_JDBC_CONNECTION_USER, user)
-      sessionConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
+    val kyuubiConf = sessionManager.getConf.clone
+    if (kyuubiConf.get(ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL)) {
+      kyuubiConf.set(ENGINE_JDBC_CONNECTION_USER, user)
+      kyuubiConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
     }
-    requestConf.foreach { case (k, v) => sessionConf.set(k, v) }
-    sessionConf
+    requestConf.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    kyuubiConf
   }
 
   override def open(): Unit = {

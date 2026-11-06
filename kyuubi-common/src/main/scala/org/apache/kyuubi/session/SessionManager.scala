@@ -234,10 +234,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def validateAndNormalizeConf(requestConf: Map[String, String]): Map[String, String] =
-    requestConf.flatMap {
-      case (k, v) => validateKey(k, v)
-    }
+  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
+    case (k, v) => validateKey(k, v)
+  }
 
   // validate whether if a batch key should be ignored
   def validateBatchKey(key: String, value: String): Option[(String, String)] = {
@@ -252,10 +251,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def validateBatchConf(requestConf: Map[String, String]): Map[String, String] =
-    requestConf.flatMap {
-      case (k, v) => validateBatchKey(k, v)
-    }
+  def validateBatchConf(config: Map[String, String]): Map[String, String] = config.flatMap {
+    case (k, v) => validateBatchKey(k, v)
+  }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf

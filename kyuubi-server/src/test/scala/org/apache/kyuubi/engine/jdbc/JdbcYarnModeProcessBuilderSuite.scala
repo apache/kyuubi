@@ -25,10 +25,10 @@ import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KE
 class JdbcYarnModeProcessBuilderSuite extends KyuubiFunSuite {
 
   test("jdbc yarn mode process builder") {
-    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val conf = KyuubiConf().set("kyuubi.on", "off")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(ENGINE_JDBC_CONNECTION_PASSWORD.key, "123456")
-    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, sessionConf, "")
+    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, conf, "")
     val commands = builder.toString.split('\n')
     assert(commands.head.contains("bin/java"), "wrong exec")
     assert(builder.toString.contains("--conf kyuubi.session.user=kyuubi"))
@@ -37,10 +37,10 @@ class JdbcYarnModeProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("hadoop conf dir") {
-    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val conf = KyuubiConf().set("kyuubi.on", "off")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(ENGINE_JDBC_CONNECTION_PASSWORD.key, "123456")
-    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, sessionConf, "") {
+    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, conf, "") {
       override def env: Map[String, String] =
         super.env + ("HADOOP_CONF_DIR" -> "/etc/hadoop/conf") +
           (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")
@@ -50,10 +50,10 @@ class JdbcYarnModeProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("yarn conf dir") {
-    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val conf = KyuubiConf().set("kyuubi.on", "off")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(ENGINE_JDBC_CONNECTION_PASSWORD.key, "123456")
-    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, sessionConf, "") {
+    val builder = new JdbcYarnModeProcessBuilder("kyuubi", true, conf, "") {
       override def env: Map[String, String] =
         super.env + ("YARN_CONF_DIR" -> "/etc/hadoop/yarn/conf") +
           (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")

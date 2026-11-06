@@ -45,11 +45,11 @@ trait EngineRefTests extends KyuubiFunSuite {
   protected val user = Utils.currentUser
   private val metricsSystem = new MetricsSystem
 
-  protected val sessionConf: KyuubiConf
+  protected val conf: KyuubiConf
   protected def getConnectString(): String
 
   override def beforeAll(): Unit = {
-    metricsSystem.initialize(sessionConf)
+    metricsSystem.initialize(conf)
     metricsSystem.start()
     super.beforeAll()
   }
@@ -60,28 +60,22 @@ trait EngineRefTests extends KyuubiFunSuite {
   }
 
   override def beforeEach(): Unit = {
-    sessionConf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    sessionConf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    sessionConf.unset(KyuubiConf.ENGINE_POOL_SIZE)
-    sessionConf.unset(KyuubiConf.ENGINE_POOL_NAME)
+    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    conf.unset(KyuubiConf.ENGINE_POOL_SIZE)
+    conf.unset(KyuubiConf.ENGINE_POOL_NAME)
     super.beforeEach()
   }
 
   test("CONNECTION shared level engine name") {
     val id = UUID.randomUUID().toString
-    val engineType = sessionConf.get(KyuubiConf.ENGINE_TYPE)
+    val engineType = conf.get(KyuubiConf.ENGINE_TYPE)
     Seq(None, Some("suffix")).foreach { domain =>
-      sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
-      domain.foreach(sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
-      sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+      conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
+      domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
+      conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-      val engine = new EngineRef(
-        sessionConf,
-        user,
-        true,
-        PluginLoader.loadGroupProvider(sessionConf),
-        id,
-        null)
+      val engine = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
       assert(engine.engineSpace ===
         DiscoveryPaths.makePath(
           s"kyuubi_${KYUUBI_VERSION}_${CONNECTION}_${engineType}",
@@ -93,12 +87,11 @@ trait EngineRefTests extends KyuubiFunSuite {
 
   test("USER shared level engine name") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val appName =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val appName = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${USER}_$FLINK_SQL",
@@ -108,16 +101,10 @@ trait EngineRefTests extends KyuubiFunSuite {
 
     Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN, KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach {
       k =>
-        sessionConf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
-        sessionConf.set(k.key, "abc")
+        conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
+        conf.set(k.key, "abc")
         val appName2 =
-          new EngineRef(
-            sessionConf,
-            user,
-            true,
-            PluginLoader.loadGroupProvider(sessionConf),
-            id,
-            null)
+          new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
         assert(appName2.engineSpace ===
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${USER}_${FLINK_SQL}",
@@ -129,17 +116,14 @@ trait EngineRefTests extends KyuubiFunSuite {
 
   test("GROUP shared level engine name") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val primaryGroupName =
-      PluginLoader.loadGroupProvider(sessionConf).primaryGroup(
-        user,
-        Map.empty[String, String].asJava)
+      PluginLoader.loadGroupProvider(conf).primaryGroup(user, Map.empty[String, String].asJava)
 
-    val engineRef =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val engineRef = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engineRef.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -150,16 +134,10 @@ trait EngineRefTests extends KyuubiFunSuite {
 
     Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN, KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach {
       k =>
-        sessionConf.unset(k)
-        sessionConf.set(k.key, "abc")
+        conf.unset(k)
+        conf.set(k.key, "abc")
         val engineRef2 =
-          new EngineRef(
-            sessionConf,
-            user,
-            true,
-            PluginLoader.loadGroupProvider(sessionConf),
-            id,
-            null)
+          new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
         assert(engineRef2.engineSpace ===
           DiscoveryPaths.makePath(
             s"kyuubi_${KYUUBI_VERSION}_${GROUP}_${SPARK_SQL}",
@@ -172,12 +150,11 @@ trait EngineRefTests extends KyuubiFunSuite {
 
   test("SERVER shared level engine name") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val appName =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val appName = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
@@ -185,9 +162,8 @@ trait EngineRefTests extends KyuubiFunSuite {
         "default"))
     assert(appName.defaultEngineName === s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_default_$id")
 
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    val appName2 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    val appName2 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(appName2.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER}_${FLINK_SQL}",
@@ -199,11 +175,10 @@ trait EngineRefTests extends KyuubiFunSuite {
   test("SERVER_LOCAL shared level engine name") {
     val id = UUID.randomUUID().toString
     val localHostAddress = JavaUtils.findLocalInetAddress.getHostAddress
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER_LOCAL.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER_LOCAL.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
 
-    val appName =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val appName = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(appName.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
@@ -212,9 +187,8 @@ trait EngineRefTests extends KyuubiFunSuite {
     assert(appName.defaultEngineName ===
       s"kyuubi_${SERVER_LOCAL}_${SPARK_SQL}_${user}_${localHostAddress}_default_$id")
 
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    val appName2 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    val appName2 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(appName2.engineSpace ===
       DiscoveryPaths.makePath(
         s"kyuubi_${KYUUBI_VERSION}_${SERVER_LOCAL}_${SPARK_SQL}",
@@ -228,92 +202,79 @@ trait EngineRefTests extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
 
     // set subdomain and disable engine pool
-    sessionConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    sessionConf.set(ENGINE_POOL_SIZE, -1)
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    conf.set(ENGINE_POOL_SIZE, -1)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val engine1 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val engine1 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine1.subdomain === "abc")
 
     // unset subdomain and disable engine pool
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    sessionConf.set(ENGINE_POOL_SIZE, -1)
-    val engine2 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.set(ENGINE_POOL_SIZE, -1)
+    val engine2 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine2.subdomain === "default")
 
     // set subdomain and 1 <= engine pool size < threshold
-    sessionConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    sessionConf.set(ENGINE_POOL_SIZE, 1)
-    val engine3 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    conf.set(ENGINE_POOL_SIZE, 1)
+    val engine3 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine3.subdomain === "abc")
 
     // unset subdomain and 1 <= engine pool size < threshold
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    sessionConf.set(ENGINE_POOL_SIZE, 3)
-    val engine4 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 3)
+    val engine4 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine4.subdomain.startsWith("engine-pool-"))
 
     // unset subdomain and engine pool size > threshold
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    sessionConf.set(ENGINE_POOL_SIZE, 100)
-    val engine5 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 100)
+    val engine5 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     val engineNumber = Integer.parseInt(engine5.subdomain.substring(12))
     val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
     assert(engineNumber <= threshold)
 
     // unset subdomain and set engine pool name and 1 <= engine pool size < threshold
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     val enginePoolName = "Test-pool"
     val lowerEnginePoolName = "test-pool"
-    sessionConf.set(ENGINE_POOL_NAME, enginePoolName)
-    sessionConf.set(ENGINE_POOL_SIZE, 3)
-    val engine6 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(ENGINE_POOL_NAME, enginePoolName)
+    conf.set(ENGINE_POOL_SIZE, 3)
+    val engine6 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(!engine6.subdomain.startsWith(s"$enginePoolName-"))
     assert(engine6.subdomain.startsWith(s"$lowerEnginePoolName-"))
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    sessionConf.set(ENGINE_POOL_SIZE, 5)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 5)
     val pool_name = "pool_default_name"
-    sessionConf.set(ENGINE_POOL_NAME, pool_name)
-    sessionConf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
-    sessionConf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    sessionConf.set(ENGINE_POOL_SELECT_POLICY, "POLLING")
+    conf.set(ENGINE_POOL_NAME, pool_name)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(ENGINE_POOL_SELECT_POLICY, "POLLING")
     (0 until 10).foreach { i =>
-      val engine7 = new EngineRef(
-        sessionConf,
-        user,
-        true,
-        PluginLoader.loadGroupProvider(sessionConf),
-        id,
-        null)
+      val engine7 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
       val engineNumber = Integer.parseInt(engine7.subdomain.substring(pool_name.length + 1))
-      assert(engineNumber == (i % sessionConf.get(ENGINE_POOL_SIZE)))
+      assert(engineNumber == (i % conf.get(ENGINE_POOL_SIZE)))
     }
   }
 
   test("start and get engine address with lock") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    sessionConf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    sessionConf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
-    sessionConf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val engine =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val engine = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
 
     var port1 = 0
     var port2 = 0
 
     val r1 = new Runnable {
       override def run(): Unit = {
-        DiscoveryClientProvider.withDiscoveryClient(sessionConf) { client =>
+        DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
           val hp = engine.getOrCreate(client)
           port1 = hp._2
         }
@@ -322,7 +283,7 @@ trait EngineRefTests extends KyuubiFunSuite {
 
     val r2 = new Runnable {
       override def run(): Unit = {
-        DiscoveryClientProvider.withDiscoveryClient(sessionConf) { client =>
+        DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
           val hp = engine.getOrCreate(client)
           port2 = hp._2
         }
@@ -346,13 +307,13 @@ trait EngineRefTests extends KyuubiFunSuite {
 
   test("three same lock request with initialization timeout") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    sessionConf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    sessionConf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
-    sessionConf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test2")
-    sessionConf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test2")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val beforeEngines = MetricsSystem.counterValue(ENGINE_TOTAL).getOrElse(0L)
     val start = System.currentTimeMillis()
@@ -360,7 +321,7 @@ trait EngineRefTests extends KyuubiFunSuite {
     val executor = Executors.newFixedThreadPool(3)
     try {
       (0 until 3).foreach { i =>
-        val cloned = sessionConf.clone
+        val cloned = conf.clone
         executor.execute(() => {
           DiscoveryClientProvider.withDiscoveryClient(cloned) { client =>
             try {
@@ -368,7 +329,7 @@ trait EngineRefTests extends KyuubiFunSuite {
                 cloned,
                 user,
                 true,
-                PluginLoader.loadGroupProvider(sessionConf),
+                PluginLoader.loadGroupProvider(conf),
                 id,
                 null).getOrCreate(client)
             } finally {
@@ -395,45 +356,40 @@ trait EngineRefTests extends KyuubiFunSuite {
     val id = UUID.randomUUID().toString
 
     // set subdomain and disable engine pool
-    sessionConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    sessionConf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, false)
-    sessionConf.set(ENGINE_POOL_SIZE, -1)
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, false)
+    conf.set(ENGINE_POOL_SIZE, -1)
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val engine1 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val engine1 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine1.subdomain === "abc")
 
-    sessionConf.set(ENGINE_POOL_SIZE, 1)
-    val engine2 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(ENGINE_POOL_SIZE, 1)
+    val engine2 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine2.subdomain === "abc")
 
-    sessionConf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    val engine3 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    val engine3 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine3.subdomain.startsWith("engine-pool-"))
 
-    sessionConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    sessionConf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, true)
-    val engine4 =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
+    conf.set(ENGINE_POOL_IGNORE_SUBDOMAIN, true)
+    val engine4 = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
     assert(engine4.subdomain.startsWith("engine-pool-"))
   }
 
   test("deregister engine with existing host port") {
     val id = UUID.randomUUID().toString
-    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    sessionConf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    sessionConf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    sessionConf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
-    sessionConf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test")
+    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val engine =
-      new EngineRef(sessionConf, user, true, PluginLoader.loadGroupProvider(sessionConf), id, null)
+    val engine = new EngineRef(conf, user, true, PluginLoader.loadGroupProvider(conf), id, null)
 
-    DiscoveryClientProvider.withDiscoveryClient(sessionConf) { client =>
+    DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
       val hp = engine.getOrCreate(client)
       assert(client.getServerHost(engine.engineSpace) == Option(hp))
       assert(!engine.deregister(client, ("non_existing_host", 0))._1)

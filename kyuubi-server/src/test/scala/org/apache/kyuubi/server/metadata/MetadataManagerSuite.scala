@@ -197,13 +197,13 @@ class MetadataManagerSuite extends KyuubiFunSuite {
   }
 
   private def withMetadataManager(
-      requestConf: Map[String, String],
+      confOverlay: Map[String, String],
       newMetadataMgr: () => MetadataManager = () => new MetadataManager())(
       f: MetadataManager => Unit): Unit = {
     val metricsSystem = new MetricsSystem()
     val metadataManager = newMetadataMgr()
     val conf = KyuubiConf()
-    requestConf.foreach { case (k, v) => conf.set(k, v) }
+    confOverlay.foreach { case (k, v) => conf.set(k, v) }
     try {
       metricsSystem.initialize(conf)
       metricsSystem.start()

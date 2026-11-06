@@ -71,11 +71,11 @@ class JpsApplicationOperationSuite extends KyuubiFunSuite {
   test("JpsApplicationOperation with spark local mode") {
     val user = Utils.currentUser
     val id = UUID.randomUUID().toString
-    val sessionConf = new KyuubiConf()
+    val conf = new KyuubiConf()
       .set("spark.abc", id)
       .set("spark.master", "local")
       .set(SESSION_IDLE_TIMEOUT, Duration.ofMinutes(3).toMillis)
-    val builder = new SparkProcessBuilder(user, true, sessionConf)
+    val builder = new SparkProcessBuilder(user, true, conf)
     builder.start
 
     assert(jps.isSupported(ApplicationManagerInfo(builder.clusterManager())))

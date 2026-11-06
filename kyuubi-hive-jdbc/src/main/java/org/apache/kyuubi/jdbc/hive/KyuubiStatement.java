@@ -42,7 +42,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
   private final TSessionHandle sessHandle;
-  Map<String, String> statementConf = new HashMap<>();
+  Map<String, String> sessConf = new HashMap<>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
@@ -191,9 +191,9 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
     return executeWithConfOverlay(sql, null);
   }
 
-  private boolean executeWithConfOverlay(String sql, Map<String, String> requestConf)
+  private boolean executeWithConfOverlay(String sql, Map<String, String> confOverlay)
       throws SQLException {
-    runAsyncOnServer(sql, requestConf);
+    runAsyncOnServer(sql, confOverlay);
     TGetOperationStatusResp status = waitForOperationToComplete();
 
     // The query should be completed by now
@@ -324,11 +324,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
      */
     execReq.setRunAsync(true);
     if (confOneTime != null) {
-      Map<String, String> requestConf = new HashMap<String, String>(statementConf);
-      requestConf.putAll(confOneTime);
-      execReq.setConfOverlay(requestConf);
+      Map<String, String> confOverlay = new HashMap<String, String>(sessConf);
+      confOverlay.putAll(confOneTime);
+      execReq.setConfOverlay(confOverlay);
     } else {
-      execReq.setConfOverlay(statementConf);
+      execReq.setConfOverlay(sessConf);
     }
     execReq.setQueryTimeout(queryTimeout);
     try {

@@ -24,8 +24,8 @@ import org.apache.kyuubi.config.KyuubiConf._
 class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
 
   test("toString includes correct main class") {
-    val sessionConf = new KyuubiConf(false)
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(
       output.contains("org.apache.kyuubi.engine.dataagent.DataAgentEngine"),
@@ -33,9 +33,9 @@ class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("API key is redacted in toString") {
-    val sessionConf = new KyuubiConf(false)
-    sessionConf.set(ENGINE_DATA_AGENT_OPENAI_API_KEY.key, "sk-secret-key-12345")
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    conf.set(ENGINE_DATA_AGENT_OPENAI_API_KEY.key, "sk-secret-key-12345")
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(!output.contains("sk-secret-key-12345"), "API key should not appear in toString output")
     assert(
@@ -44,11 +44,11 @@ class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("JDBC URL with credentials is redacted in toString") {
-    val sessionConf = new KyuubiConf(false)
-    sessionConf.set(
+    val conf = new KyuubiConf(false)
+    conf.set(
       ENGINE_DATA_AGENT_JDBC_URL.key,
       "jdbc:hive2://localhost:10009/default;user=alice;password=Alice2026!")
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(
       !output.contains("Alice2026!"),
@@ -56,40 +56,40 @@ class DataAgentProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("memory flag uses configured value") {
-    val sessionConf = new KyuubiConf(false)
-    sessionConf.set(ENGINE_DATA_AGENT_MEMORY.key, "2g")
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    conf.set(ENGINE_DATA_AGENT_MEMORY.key, "2g")
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(output.contains("-Xmx2g"), s"Expected -Xmx2g in toString: $output")
   }
 
   test("default memory is 1g") {
-    val sessionConf = new KyuubiConf(false)
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(output.contains("-Xmx1g"), s"Expected -Xmx1g in toString: $output")
   }
 
   test("extra classpath is included") {
-    val sessionConf = new KyuubiConf(false)
-    sessionConf.set(ENGINE_DATA_AGENT_EXTRA_CLASSPATH.key, "/extra/path/lib/*")
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    conf.set(ENGINE_DATA_AGENT_EXTRA_CLASSPATH.key, "/extra/path/lib/*")
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(output.contains("/extra/path/lib/*"), s"Expected extra classpath in toString: $output")
   }
 
   test("java options are included") {
-    val sessionConf = new KyuubiConf(false)
-    sessionConf.set(ENGINE_DATA_AGENT_JAVA_OPTIONS.key, "-Dfoo=bar -Dbaz=qux")
-    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    conf.set(ENGINE_DATA_AGENT_JAVA_OPTIONS.key, "-Dfoo=bar -Dbaz=qux")
+    val builder = new DataAgentProcessBuilder("testUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(output.contains("-Dfoo=bar"), s"Expected -Dfoo=bar in toString: $output")
     assert(output.contains("-Dbaz=qux"), s"Expected -Dbaz=qux in toString: $output")
   }
 
   test("proxy user is passed in commands") {
-    val sessionConf = new KyuubiConf(false)
-    val builder = new DataAgentProcessBuilder("myUser", doAsEnabled = false, sessionConf)
+    val conf = new KyuubiConf(false)
+    val builder = new DataAgentProcessBuilder("myUser", doAsEnabled = false, conf)
     val output = builder.toString
     assert(output.contains("myUser"), s"Expected proxy user in toString: $output")
   }

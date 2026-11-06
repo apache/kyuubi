@@ -23,10 +23,10 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_JDBC_CONNECTION_PASSWORD, ENG
 class JdbcProcessBuilderSuite extends KyuubiFunSuite {
 
   test("jdbc process builder") {
-    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val conf = KyuubiConf().set("kyuubi.on", "off")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(ENGINE_JDBC_CONNECTION_PASSWORD.key, "123456")
-    val builder = new JdbcProcessBuilder("kyuubi", true, sessionConf)
+    val builder = new JdbcProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("bin/java"), "wrong exec")
     assert(command.contains("--conf kyuubi.session.user=kyuubi"))
@@ -44,38 +44,38 @@ class JdbcProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("default engine memory") {
-    val sessionConf = KyuubiConf()
+    val conf = KyuubiConf()
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
-    val builder = new JdbcProcessBuilder("kyuubi", true, sessionConf)
+    val builder = new JdbcProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-Xmx1g"))
   }
 
   test("set engine memory") {
-    val sessionConf = KyuubiConf()
+    val conf = KyuubiConf()
       .set(ENGINE_JDBC_MEMORY, "5g")
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
-    val builder = new JdbcProcessBuilder("kyuubi", true, sessionConf)
+    val builder = new JdbcProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-Xmx5g"))
   }
 
   test("set engine java options") {
-    val sessionConf = KyuubiConf()
+    val conf = KyuubiConf()
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(
         ENGINE_JDBC_JAVA_OPTIONS,
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-    val builder = new JdbcProcessBuilder("kyuubi", true, sessionConf)
+    val builder = new JdbcProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"))
   }
 
   test("set extra classpath") {
-    val sessionConf = KyuubiConf()
+    val conf = KyuubiConf()
       .set(ENGINE_JDBC_CONNECTION_URL.key, "")
       .set(ENGINE_JDBC_EXTRA_CLASSPATH, "/dummy_classpath/*")
-    val builder = new JdbcProcessBuilder("kyuubi", true, sessionConf)
+    val builder = new JdbcProcessBuilder("kyuubi", true, conf)
     val command = builder.toString
     assert(command.contains("/dummy_classpath/*"))
   }
