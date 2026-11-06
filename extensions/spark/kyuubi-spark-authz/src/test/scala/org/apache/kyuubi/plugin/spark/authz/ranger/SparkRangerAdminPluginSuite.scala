@@ -159,6 +159,39 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
     }
   }
 
+  test("the Ranger PDP remote authorizer is the default") {
+    SparkRangerAdminPlugin.initialize()
+    val config = SparkRangerAdminPlugin.config
+    val originalImplClass = config.get("ranger.authorizer.impl.class")
+    val originalPdpUrl = config.get("ranger.authz.remote.pdp.url")
+    config.unset("ranger.authorizer.impl.class")
+    config.set("ranger.authz.remote.pdp.url", "http://localhost:1")
+    try {
+      SparkRangerAdminPlugin.reset()
+      SparkRangerAdminPlugin.initialize()
+      assert(SparkRangerAdminPlugin.authorizerClassName === RemoteAuthorizer)
+    } finally {
+      config.set("ranger.authorizer.impl.class", originalImplClass)
+      if (originalPdpUrl == null) {
+        config.unset("ranger.authz.remote.pdp.url")
+      } else {
+        config.set("ranger.authz.remote.pdp.url", originalPdpUrl)
+      }
+      SparkRangerAdminPlugin.reset()
+      SparkRangerAdminPlugin.initialize()
+    }
+  }
+
+  test("embedded policy source configurations are admin-only") {
+    Seq(
+      "ranger.plugin.spark.policy.source.impl",
+      "ranger.plugin.spark.policy.rest.url",
+      "ranger.plugin.spark.policy.cache.dir",
+      "ranger.plugin.hive.policy.cache.dir").foreach { key =>
+      assert(SparkRangerAdminPlugin.isAdminOnlyKey(key), s"$key should be admin-only")
+    }
+  }
+
   test("fail to initialize when the Ranger PDP url is missing for the remote authorizer") {
     SparkRangerAdminPlugin.initialize()
     val config = SparkRangerAdminPlugin.config

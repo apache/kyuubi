@@ -21,8 +21,9 @@
 
 - [Apache Ranger](https://ranger.apache.org/)
 
-  The plugin talks to a Ranger PDP server (default) or Ranger Admin server to do privilege check.
-  A Ranger 2.9.0 server or above needs to be installed ahead and available to use.
+  The plugin talks to a Ranger PDP (Policy Decision Point) server (default) or Ranger Admin
+  server to do privilege check. A Ranger 2.9.0 server or above needs to be installed ahead
+  and available to use.
 
 - Building(optional)
 
@@ -53,9 +54,12 @@ The plugin supports two authorizer modes, selected by `ranger.authorizer.impl.cl
 The security-critical configurations — the authorizer implementation
 (`ranger.authorizer.impl.class`), the Ranger PDP server address
 (`ranger.authz.remote.pdp.url`), the Ranger service name
-(`ranger.plugin.spark.service.name`) and the Ranger PDP client authentication and
+(`ranger.plugin.spark.service.name`), the Ranger PDP client authentication and
 encryption settings (`ranger.authz.remote.authn.*`, `ranger.authz.remote.ssl.*`,
-`ranger.authz.remote.header.*`) — are read from `ranger-spark-security.xml` only:
+`ranger.authz.remote.header.*`) and the embedded-mode policy source settings
+(`ranger.plugin.spark.policy.source.impl`, `ranger.plugin.spark.policy.rest.url`,
+`ranger.plugin.spark.policy.cache.dir`, `ranger.plugin.hive.policy.cache.dir`) —
+are read from `ranger-spark-security.xml` only:
 JVM system properties can neither set nor override them, and the plugin fails to
 initialize when the Ranger PDP server address is missing for the Ranger PDP mode.
 Other configurations with the `ranger.` or `xasecure.` prefix can still be overridden
@@ -92,6 +96,10 @@ for the full list.
 
 #### Embedded mode
 
+The shaded jar does not bundle the embedded authorizer. Add
+`org.apache.ranger:authz-embedded` (version 2.9.0 or above, matching your Ranger
+deployment) and its transitive dependencies to the Spark classpath when using this mode.
+
 Set the authorizer implementation to the embedded one in `ranger-spark-security.xml`:
 
 ```xml
@@ -103,8 +111,9 @@ Set the authorizer implementation to the embedded one in `ranger-spark-security.
 
 ### Settings for Connecting Ranger Admin
 
-The settings below apply to the embedded mode, where the plugin pulls policies from
-the Ranger admin server and evaluates access requests locally.
+The Ranger Admin connection settings in this section apply to the embedded mode, where
+the plugin pulls policies from the Ranger admin server and evaluates access requests
+locally.
 
 #### ranger-spark-security.xml
 
@@ -160,6 +169,8 @@ Macros are supported for using user/group/tag in row filter expressions (embedde
 ```
 
 ##### Showing all disallowed privileges
+
+This setting applies to both the Ranger PDP and embedded modes.
 
 By default, Authz plugin checks required privileges one by one and throw the first unsatisfied privilege in exception. By setting `ranger.plugin.spark.authorize.in.single.call` to `true`, Authz plugin executes access checks in single call and throws all disallowed privileges in exception message. This setting also reduces the number of authorization requests in Ranger PDP mode.
 

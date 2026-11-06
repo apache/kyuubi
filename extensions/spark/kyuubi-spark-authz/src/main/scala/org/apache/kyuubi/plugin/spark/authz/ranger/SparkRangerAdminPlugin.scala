@@ -65,6 +65,11 @@ object SparkRangerAdminPlugin {
   final private val KEY_CLUSTER_NAME = s"ranger.plugin.$SERVICE_TYPE.access.cluster.name"
   final private val KEY_AUTHORIZE_IN_SINGLE_CALL =
     s"ranger.plugin.$SERVICE_TYPE.authorize.in.single.call"
+  final private val KEY_POLICY_SOURCE_IMPL =
+    s"ranger.plugin.$SERVICE_TYPE.policy.source.impl"
+  final private val KEY_POLICY_REST_URL = s"ranger.plugin.$SERVICE_TYPE.policy.rest.url"
+  final private val KEY_POLICY_CACHE_DIR = s"ranger.plugin.$SERVICE_TYPE.policy.cache.dir"
+  final private val KEY_HIVE_POLICY_CACHE_DIR = "ranger.plugin.hive.policy.cache.dir"
 
   final private val REMOTE_AUTHORIZER_CLASS: String =
     classOf[org.apache.ranger.authz.remote.RangerRemoteAuthorizer].getName
@@ -73,10 +78,16 @@ object SparkRangerAdminPlugin {
    * The security-critical configurations which are read from the Ranger configuration
    * resources only: JVM system properties can neither set nor override them, so a tenant
    * who can control the JVM options of the engine process cannot point the authorization
-   * to a server they control or bypass the policies.
+   * to a server they control, load policies from another source, or bypass the policies.
    */
-  final private val ADMIN_ONLY_KEYS: Seq[String] =
-    Seq(KEY_IMPL_CLASS, KEY_PDP_URL, KEY_SERVICE_NAME)
+  final private val ADMIN_ONLY_KEYS: Seq[String] = Seq(
+    KEY_IMPL_CLASS,
+    KEY_PDP_URL,
+    KEY_SERVICE_NAME,
+    KEY_POLICY_SOURCE_IMPL,
+    KEY_POLICY_REST_URL,
+    KEY_POLICY_CACHE_DIR,
+    KEY_HIVE_POLICY_CACHE_DIR)
 
   final private val ADMIN_ONLY_KEY_PREFIXES: Seq[String] = Seq(
     "ranger.authz.remote.authn.",
@@ -125,11 +136,17 @@ object SparkRangerAdminPlugin {
         CONFIG_PREFIXES.exists(key.startsWith) && !isAdminOnlyKey(key)
       }
       .foreach { case (key, value) => props.put(key, value) }
+    // The Ranger authorizer factory defaults to the embedded authorizer, but the
+    // plugin default is the Ranger PDP remote authorizer. Set it explicitly when
+    // the configuration does not select an implementation.
+    if (!props.containsKey(KEY_IMPL_CLASS)) {
+      props.put(KEY_IMPL_CLASS, REMOTE_AUTHORIZER_CLASS)
+    }
     validateAdminOnlyKeys(props)
     initialize(props)
   }
 
-  private def isAdminOnlyKey(key: String): Boolean =
+  private[ranger] def isAdminOnlyKey(key: String): Boolean =
     ADMIN_ONLY_KEYS.contains(key) || ADMIN_ONLY_KEY_PREFIXES.exists(key.startsWith)
 
   /**
@@ -175,6 +192,9 @@ object SparkRangerAdminPlugin {
           s"impl: ${authorizer.getClass.getName}")
     }
   }
+
+  private[ranger] def authorizerClassName: String =
+    if (authorizer == null) null else authorizer.getClass.getName
 
   /**
    * Reset the authorizer to the uninitialized state, so that the next
