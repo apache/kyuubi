@@ -39,9 +39,9 @@ class DataAgentSessionManager(name: String)
   override lazy val operationManager: OperationManager =
     new DataAgentOperationManager(conf, dataAgentProvider)
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {
-    this.conf = kyuubiConf
-    super.initialize(kyuubiConf)
+  override def initialize(engineConf: KyuubiConf): Unit = {
+    this.conf = engineConf
+    super.initialize(engineConf)
   }
 
   override protected def createSession(

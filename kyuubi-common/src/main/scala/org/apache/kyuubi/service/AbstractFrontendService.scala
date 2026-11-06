@@ -36,9 +36,9 @@ abstract class AbstractFrontendService(name: String)
     }
   }
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   override def attributes: Map[String, String] = {

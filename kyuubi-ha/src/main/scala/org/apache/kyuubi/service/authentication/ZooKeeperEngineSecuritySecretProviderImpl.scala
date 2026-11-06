@@ -26,15 +26,15 @@ import org.apache.kyuubi.ha.client.DiscoveryClientProvider
 class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
   import DiscoveryClientProvider._
 
-  private var kyuubiConf: KyuubiConf = _
+  private var conf: KyuubiConf = _
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {
-    this.kyuubiConf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
   }
 
   override def getSecret(): String = {
-    kyuubiConf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
-      withDiscoveryClient[String](kyuubiConf) { discoveryClient =>
+    conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
+      withDiscoveryClient[String](conf) { discoveryClient =>
         new String(discoveryClient.getData(zkNode), StandardCharsets.UTF_8)
       }
     }.getOrElse(

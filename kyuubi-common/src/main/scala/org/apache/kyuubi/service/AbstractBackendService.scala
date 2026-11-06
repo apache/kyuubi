@@ -213,8 +213,8 @@ abstract class AbstractBackendService(name: String)
       .fetchResults(operationHandle, orientation, maxRows, fetchLog)
   }
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = {
     addService(sessionManager)
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 }

@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
-class JdbcOperationManager(kyuubiConf: KyuubiConf) extends OperationManager("JdbcOperationManager")
+class JdbcOperationManager(engineConf: KyuubiConf) extends OperationManager("JdbcOperationManager")
   with SupportServiceLoader {
 
   override def name(): String = "jdbc"
@@ -38,11 +38,11 @@ class JdbcOperationManager(kyuubiConf: KyuubiConf) extends OperationManager("Jdb
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
-    val engineProcessConf = session.sessionManager.getConf
+    val engineConf = session.sessionManager.getConf
     val convertCatalogDatabaseEnabled = normalizedConf
       .get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
       .map(_.toBoolean)
-      .getOrElse(engineProcessConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))
+      .getOrElse(engineConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))
     // Intercept Kyuubi's special `_GET_CATALOG` / `_SET_CATALOG` / `use <db>` /
     // `select current_database()` statements (sent by KyuubiConnection.getCatalog/setCatalog/
     // setSchema/getSchema) and route them to the corresponding lifecycle operations instead
@@ -56,11 +56,11 @@ class JdbcOperationManager(kyuubiConf: KyuubiConf) extends OperationManager("Jdb
     val incrementalCollect = normalizedConf
       .get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT.key)
       .map(_.toBoolean)
-      .getOrElse(engineProcessConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
+      .getOrElse(engineConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
     val fetchSize = normalizedConf
       .get(ENGINE_JDBC_FETCH_SIZE.key)
       .map(_.toInt)
-      .getOrElse(engineProcessConf.get(ENGINE_JDBC_FETCH_SIZE))
+      .getOrElse(engineConf.get(ENGINE_JDBC_FETCH_SIZE))
     val executeStatement =
       new ExecuteStatement(
         session,

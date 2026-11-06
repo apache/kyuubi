@@ -32,33 +32,32 @@ object AuthenticationProviderFactory {
   @throws[AuthenticationException]
   def getAuthenticationProvider(
       method: AuthMethod,
-      kyuubiConf: KyuubiConf,
+      conf: KyuubiConf,
       isServer: Boolean = true): PasswdAuthenticationProvider = {
     if (isServer) {
-      getAuthenticationProviderForServer(method, kyuubiConf)
+      getAuthenticationProviderForServer(method, conf)
     } else {
-      getAuthenticationProviderForEngine(kyuubiConf)
+      getAuthenticationProviderForEngine(conf)
     }
   }
 
   private def getAuthenticationProviderForServer(
       method: AuthMethod,
-      kyuubiConf: KyuubiConf): PasswdAuthenticationProvider = method match {
+      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
-    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(kyuubiConf)
-    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(kyuubiConf)
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
-      val className = kyuubiConf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
+      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
       require(
         className.nonEmpty,
         "kyuubi.authentication.custom.class must be set when auth method was CUSTOM.")
-      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], kyuubiConf)
+      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 
-  private def getAuthenticationProviderForEngine(kyuubiConf: KyuubiConf)
-      : PasswdAuthenticationProvider = {
-    if (kyuubiConf.get(KyuubiConf.INTERNAL_SECURITY_ENABLED)) {
+  private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
+    if (conf.get(KyuubiConf.INTERNAL_SECURITY_ENABLED)) {
       new EngineSecureAuthenticationProviderImpl
     } else {
       new AnonymousAuthenticationProviderImpl
@@ -67,25 +66,25 @@ object AuthenticationProviderFactory {
 
   def getHttpBasicAuthenticationProvider(
       method: AuthMethod,
-      kyuubiConf: KyuubiConf): PasswdAuthenticationProvider = method match {
+      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
-    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(kyuubiConf)
-    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(kyuubiConf)
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case AuthMethods.JDBC => new JdbcAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>
-      val className = kyuubiConf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
+      val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS)
       require(
         className.nonEmpty,
         "kyuubi.authentication.custom.basic.class must be set for http basic authentication.")
-      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], kyuubiConf)
+      ClassUtils.createInstance(className.get, classOf[PasswdAuthenticationProvider], conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 
   def getHttpBearerAuthenticationProvider(
       providerClass: String,
-      kyuubiConf: KyuubiConf): TokenAuthenticationProvider = {
+      conf: KyuubiConf): TokenAuthenticationProvider = {
     require(
       !StringUtils.isBlank(providerClass),
       "kyuubi.authentication.custom.bearer.class must be set for http bearer authentication.")
-    ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], kyuubiConf)
+    ClassUtils.createInstance(providerClass, classOf[TokenAuthenticationProvider], conf)
   }
 }

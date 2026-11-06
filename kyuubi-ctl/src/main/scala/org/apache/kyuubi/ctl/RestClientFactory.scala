@@ -33,9 +33,9 @@ object RestClientFactory {
   private[ctl] def withKyuubiRestClient[T](
       cliConfig: CliConfig,
       map: JMap[String, Object],
-      kyuubiConf: KyuubiConf)(f: KyuubiRestClient => T): T = {
+      conf: KyuubiConf)(f: KyuubiRestClient => T): T = {
     val kyuubiRestClient: KyuubiRestClient =
-      RestClientFactory.getKyuubiRestClient(cliConfig, map, kyuubiConf)
+      RestClientFactory.getKyuubiRestClient(cliConfig, map, conf)
     try {
       f(kyuubiRestClient)
     } finally {
@@ -60,17 +60,17 @@ object RestClientFactory {
   private def getKyuubiRestClient(
       cliConfig: CliConfig,
       map: JMap[String, Object],
-      kyuubiConf: KyuubiConf): KyuubiRestClient = {
+      conf: KyuubiConf): KyuubiRestClient = {
     val version = getApiVersion(map)
     val hostUrl =
-      getRestConfig("hostUrl", kyuubiConf.get(CTL_REST_CLIENT_BASE_URL).orNull, cliConfig, map)
+      getRestConfig("hostUrl", conf.get(CTL_REST_CLIENT_BASE_URL).orNull, cliConfig, map)
     val authSchema =
-      getRestConfig("authSchema", kyuubiConf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliConfig, map)
+      getRestConfig("authSchema", conf.get(CTL_REST_CLIENT_AUTH_SCHEMA), cliConfig, map)
 
-    val maxAttempts = kyuubiConf.get(CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS)
-    val attemptWaitTime = kyuubiConf.get(CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
-    val connectionTimeout = kyuubiConf.get(CTL_REST_CLIENT_CONNECT_TIMEOUT).toInt
-    val socketTimeout = kyuubiConf.get(CTL_REST_CLIENT_SOCKET_TIMEOUT).toInt
+    val maxAttempts = conf.get(CTL_REST_CLIENT_REQUEST_MAX_ATTEMPTS)
+    val attemptWaitTime = conf.get(CTL_REST_CLIENT_REQUEST_ATTEMPT_WAIT).toInt
+    val connectionTimeout = conf.get(CTL_REST_CLIENT_CONNECT_TIMEOUT).toInt
+    val socketTimeout = conf.get(CTL_REST_CLIENT_SOCKET_TIMEOUT).toInt
 
     var kyuubiRestClient: KyuubiRestClient = null
     authSchema.toLowerCase match {
@@ -89,11 +89,7 @@ object RestClientFactory {
           .build()
       case "spnego" =>
         val spnegoHost =
-          getRestConfig(
-            "spnegoHost",
-            kyuubiConf.get(CTL_REST_CLIENT_SPNEGO_HOST).orNull,
-            cliConfig,
-            map)
+          getRestConfig("spnegoHost", conf.get(CTL_REST_CLIENT_SPNEGO_HOST).orNull, cliConfig, map)
         kyuubiRestClient = KyuubiRestClient.builder(hostUrl)
           .apiVersion(KyuubiRestClient.ApiVersion.valueOf(version))
           .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)

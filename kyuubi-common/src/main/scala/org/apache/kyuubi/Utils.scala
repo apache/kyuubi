@@ -311,7 +311,7 @@ object Utils extends Logging {
     }
   }
 
-  def fromCommandLineArgs(args: Array[String], kyuubiConf: KyuubiConf): Unit = {
+  def fromCommandLineArgs(args: Array[String], conf: KyuubiConf): Unit = {
     require(args.length % 2 == 0, s"Illegal size of arguments.")
     for (i <- args.indices by 2) {
       require(
@@ -320,16 +320,14 @@ object Utils extends Logging {
           s"the argument format is '--conf k=v'.")
 
       args(i + 1).split("=", 2).map(_.trim) match {
-        case seq if seq.length == 2 => kyuubiConf.set(seq.head, seq.last)
+        case seq if seq.length == 2 => conf.set(seq.head, seq.last)
         case _ => throw new IllegalArgumentException(s"Illegal argument: ${args(i + 1)}.")
       }
     }
   }
 
-  def redactCommandLineArgs(
-      kyuubiConf: KyuubiConf,
-      commands: Iterable[String]): Iterable[String] = {
-    val redactionPattern = kyuubiConf.get(SERVER_SECRET_REDACTION_PATTERN)
+  def redactCommandLineArgs(conf: KyuubiConf, commands: Iterable[String]): Iterable[String] = {
+    val redactionPattern = conf.get(SERVER_SECRET_REDACTION_PATTERN)
     commands.map {
       case PATTERN_FOR_KEY_VALUE_ARG(key, value) =>
         val (_, newValue) = redact(redactionPattern, Seq((key, value))).head

@@ -25,7 +25,7 @@ import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class DataAgentOperationManager(
-    kyuubiConf: KyuubiConf,
+    engineConf: KyuubiConf,
     dataAgentProvider: DataAgentProvider) extends OperationManager("DataAgentOperationManager") {
 
   override def newExecuteStatementOperation(

@@ -50,15 +50,15 @@ object ZookeeperClientProvider extends Logging {
    * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client
    * Use the [[ZookeeperACLProvider]] to create appropriate ACLs
    */
-  def buildZookeeperClient(kyuubiConf: KyuubiConf): CuratorFramework = {
-    setUpZooKeeperAuth(kyuubiConf)
-    val connectionStr = kyuubiConf.get(HA_ADDRESSES)
-    val sessionTimeout = kyuubiConf.get(HA_ZK_SESSION_TIMEOUT)
-    val connectionTimeout = kyuubiConf.get(HA_ZK_CONN_TIMEOUT)
-    val baseSleepTime = kyuubiConf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
-    val maxSleepTime = kyuubiConf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
-    val maxRetries = kyuubiConf.get(HA_ZK_CONN_MAX_RETRIES)
-    val retryPolicyName = kyuubiConf.get(HA_ZK_CONN_RETRY_POLICY)
+  def buildZookeeperClient(conf: KyuubiConf): CuratorFramework = {
+    setUpZooKeeperAuth(conf)
+    val connectionStr = conf.get(HA_ADDRESSES)
+    val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
+    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
+    val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
+    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
+    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
+    val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
     val retryPolicy = RetryPolicies.withName(retryPolicyName) match {
       case ONE_TIME => new RetryOneTime(baseSleepTime)
       case N_TIME => new RetryNTimes(maxRetries, baseSleepTime)
@@ -71,21 +71,21 @@ object ZookeeperClientProvider extends Logging {
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
       .connectionTimeoutMs(connectionTimeout)
-      .aclProvider(new ZookeeperACLProvider(kyuubiConf))
+      .aclProvider(new ZookeeperACLProvider(conf))
       .retryPolicy(retryPolicy)
 
-    kyuubiConf.get(HA_ZK_AUTH_DIGEST).foreach { authString =>
+    conf.get(HA_ZK_AUTH_DIGEST).foreach { authString =>
       builder.authorization("digest", authString.getBytes(StandardCharsets.UTF_8))
     }
 
     builder.build()
   }
 
-  def getGracefulStopThreadDelay(kyuubiConf: KyuubiConf): Long = {
-    val baseSleepTime = kyuubiConf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
-    val maxSleepTime = kyuubiConf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
-    val maxRetries = kyuubiConf.get(HA_ZK_CONN_MAX_RETRIES)
-    val retryPolicyName = kyuubiConf.get(HA_ZK_CONN_RETRY_POLICY)
+  def getGracefulStopThreadDelay(conf: KyuubiConf): Long = {
+    val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
+    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
+    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
+    val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
     RetryPolicies.withName(retryPolicyName) match {
       case ONE_TIME => baseSleepTime
       case N_TIME => maxRetries * baseSleepTime
@@ -105,21 +105,21 @@ object ZookeeperClientProvider extends Logging {
   /**
    * For a kerberized cluster, we dynamically set up the client's JAAS conf.
    *
-   * @param kyuubiConf SparkConf
+   * @param conf SparkConf
    * @return
    */
   @throws[Exception]
-  def setUpZooKeeperAuth(kyuubiConf: KyuubiConf): Unit = {
+  def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
     def setupZkAuth(
         principalConfKey: ConfigEntry[Option[String]],
         keytabConfKey: ConfigEntry[Option[String]]): Unit =
-      (kyuubiConf.get(principalConfKey), getKeyTabFile(kyuubiConf, keytabConfKey)) match {
+      (conf.get(principalConfKey), getKeyTabFile(conf, keytabConfKey)) match {
         case (Some(principal), Some(keytab)) if UserGroupInformation.isSecurityEnabled =>
           if (!new File(keytab).exists()) {
             throw new IOException(s"${keytabConfKey.key}: $keytab does not exists")
           }
           System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-          kyuubiConf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
+          conf.get(HA_ZK_AUTH_SERVER_PRINCIPAL).foreach { zkServerPrincipal =>
             // ZOOKEEPER-1467 allows configuring SPN in client
             System.setProperty("zookeeper.server.principal", zkServerPrincipal)
           }
@@ -148,18 +148,18 @@ object ZookeeperClientProvider extends Logging {
         case _ =>
       }
 
-    if (kyuubiConf.get(HA_ENGINE_REF_ID).isEmpty &&
-      AuthTypes.withName(kyuubiConf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    if (conf.get(HA_ENGINE_REF_ID).isEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth(HA_ZK_AUTH_PRINCIPAL, HA_ZK_AUTH_KEYTAB)
-    } else if (kyuubiConf.get(HA_ENGINE_REF_ID).nonEmpty &&
-      AuthTypes.withName(kyuubiConf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
+    } else if (conf.get(HA_ENGINE_REF_ID).nonEmpty &&
+      AuthTypes.withName(conf.get(HA_ZK_ENGINE_AUTH_TYPE)) == AuthTypes.KERBEROS) {
       setupZkAuth(HA_ZK_ENGINE_AUTH_PRINCIPAL, HA_ZK_ENGINE_AUTH_KEYTAB)
     }
   }
 
   @VisibleForTesting
-  def getKeyTabFile(kyuubiConf: KyuubiConf, key: ConfigEntry[Option[String]]): Option[String] = {
-    kyuubiConf.get(key).map { fullPath =>
+  def getKeyTabFile(conf: KyuubiConf, key: ConfigEntry[Option[String]]): Option[String] = {
+    conf.get(key).map { fullPath =>
       val filename = new File(fullPath).getName
       if (new File(filename).exists()) filename else fullPath
     }

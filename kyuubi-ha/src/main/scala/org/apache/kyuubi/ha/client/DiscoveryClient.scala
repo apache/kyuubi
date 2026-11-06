@@ -123,7 +123,7 @@ trait DiscoveryClient extends Logging {
 
   /**
    * Register Kyuubi instance on discovery service.
-   * @param kyuubiConf Kyuubi config
+   * @param conf Kyuubi config
    * @param namespace the path to register instance
    * @param serviceDiscovery service discovery
    * @param version kyuubi version
@@ -131,7 +131,7 @@ trait DiscoveryClient extends Logging {
    *                 the service info will not be automatically deleted upon client's disconnect
    */
   def registerService(
-      kyuubiConf: KyuubiConf,
+      conf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
       version: Option[String] = None,
@@ -149,7 +149,7 @@ trait DiscoveryClient extends Logging {
 
   /**
    * Create server service node info on discovery and get the actual path.
-   * @param kyuubiConf Kyuubi config
+   * @param conf Kyuubi config
    * @param namespace the path to register instance
    * @param instance server info, host:port
    * @param version kyuubi version
@@ -157,7 +157,7 @@ trait DiscoveryClient extends Logging {
    *                 the service info will not be automatically deleted upon client's disconnect
    */
   def createAndGetServiceNode(
-      kyuubiConf: KyuubiConf,
+      conf: KyuubiConf,
       namespace: String,
       instance: String,
       version: Option[String] = None,

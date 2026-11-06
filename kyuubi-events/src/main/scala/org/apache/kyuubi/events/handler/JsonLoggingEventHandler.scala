@@ -126,8 +126,8 @@ class JsonLoggingEventHandler(
     }
   }
 
-  private def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
-    logRoot = URI.create(kyuubiConf.get(logPath))
+  private def initialize(conf: KyuubiConf): Unit = synchronized {
+    logRoot = URI.create(conf.get(logPath))
     fs = FileSystem.get(logRoot, hadoopConf)
     createLogDir(new Path(logRoot))
     requireLogRootWritable()

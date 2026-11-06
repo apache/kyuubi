@@ -26,11 +26,11 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
 object GroupFilterFactory extends FilterFactory {
-  override def getInstance(kyuubiConf: KyuubiConf): Option[Filter] = {
-    val groupFilter = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_FILTER)
+  override def getInstance(conf: KyuubiConf): Option[Filter] = {
+    val groupFilter = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_FILTER)
     if (groupFilter.isEmpty) {
       None
-    } else if (kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY).isDefined) {
+    } else if (conf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY).isDefined) {
       Some(new UserMembershipKeyFilter(groupFilter))
     } else {
       Some(new GroupMembershipKeyFilter(groupFilter))

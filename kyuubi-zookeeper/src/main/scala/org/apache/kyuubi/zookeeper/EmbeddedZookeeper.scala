@@ -38,17 +38,17 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   private val deleteDataDirectoryOnClose = true
   private var host: String = _
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
-    dataDirectory = resolvePathIfRelative(kyuubiConf, ZK_DATA_DIR)
-    dataLogDirectory = resolvePathIfRelative(kyuubiConf, ZK_DATA_LOG_DIR)
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    dataDirectory = resolvePathIfRelative(conf, ZK_DATA_DIR)
+    dataLogDirectory = resolvePathIfRelative(conf, ZK_DATA_LOG_DIR)
 
-    val clientPort = kyuubiConf.get(ZK_CLIENT_PORT)
-    val tickTime = kyuubiConf.get(ZK_TICK_TIME)
-    val maxClientCnxns = kyuubiConf.get(ZK_MAX_CLIENT_CONNECTIONS)
-    val minSessionTimeout = kyuubiConf.get(ZK_MIN_SESSION_TIMEOUT)
-    val maxSessionTimeout = kyuubiConf.get(ZK_MAX_SESSION_TIMEOUT)
-    host = kyuubiConf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse {
-      if (kyuubiConf.get(ZK_CLIENT_USE_HOSTNAME)) {
+    val clientPort = conf.get(ZK_CLIENT_PORT)
+    val tickTime = conf.get(ZK_TICK_TIME)
+    val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
+    val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
+    val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
+    host = conf.get(ZK_CLIENT_PORT_ADDRESS).getOrElse {
+      if (conf.get(ZK_CLIENT_USE_HOSTNAME)) {
         JavaUtils.findLocalInetAddress.getCanonicalHostName
       } else {
         JavaUtils.findLocalInetAddress.getHostAddress
@@ -63,7 +63,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
       serverFactory = new NIOServerCnxnFactory
       serverFactory.configure(new InetSocketAddress(host, clientPort), maxClientCnxns)
 
-      super.initialize(kyuubiConf)
+      super.initialize(conf)
     } catch {
       case e: Exception =>
         throw new RuntimeException(
@@ -97,8 +97,8 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     s"$host:${serverFactory.getLocalPort}"
   }
 
-  def resolvePathIfRelative(kyuubiConf: KyuubiConf, configEntry: ConfigEntry[String]): File = {
-    val dirFromConfig = kyuubiConf.get(configEntry)
+  def resolvePathIfRelative(conf: KyuubiConf, configEntry: ConfigEntry[String]): File = {
+    val dirFromConfig = conf.get(configEntry)
     val KYUUBI_HOME = sys.env.getOrElse(KyuubiConf.KYUUBI_HOME_ENV_VAR_NAME, ".")
     Paths.get(KYUUBI_HOME).resolve(dirFromConfig).toFile
   }

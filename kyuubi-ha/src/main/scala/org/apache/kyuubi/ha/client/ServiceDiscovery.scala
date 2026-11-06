@@ -47,15 +47,15 @@ abstract class ServiceDiscovery(
   def namespace: String = _namespace
   def discoveryClient: DiscoveryClient = _discoveryClient
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {
-    this.conf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
 
-    _namespace = kyuubiConf.get(HA_NAMESPACE)
-    _discoveryClient = DiscoveryClientProvider.createDiscoveryClient(kyuubiConf)
+    _namespace = conf.get(HA_NAMESPACE)
+    _discoveryClient = DiscoveryClientProvider.createDiscoveryClient(conf)
     discoveryClient.monitorState(this)
     discoveryClient.createClient()
 
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   override def start(): Unit = {
@@ -80,8 +80,8 @@ abstract class ServiceDiscovery(
 
 object ServiceDiscovery extends Logging {
 
-  def supportServiceDiscovery(kyuubiConf: KyuubiConf): Boolean = {
-    val zkEnsemble = kyuubiConf.get(HA_ADDRESSES)
+  def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
+    val zkEnsemble = conf.get(HA_ADDRESSES)
     zkEnsemble != null && zkEnsemble.nonEmpty
   }
 }

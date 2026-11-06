@@ -26,7 +26,7 @@ trait EngineSecuritySecretProvider {
   /**
    * Initialize with kyuubi conf.
    */
-  def initialize(kyuubiConf: KyuubiConf): Unit
+  def initialize(conf: KyuubiConf): Unit
 
   /**
    * Get the secret to encrypt and decrypt the secure access token.
@@ -36,12 +36,12 @@ trait EngineSecuritySecretProvider {
 
 class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
 
-  private var _kyuubiConf: KyuubiConf = _
+  private var _conf: KyuubiConf = _
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = _kyuubiConf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = _conf = conf
 
   override def getSecret(): String = {
-    _kyuubiConf.get(INTERNAL_SECURITY_SECRET_PROVIDER_SIMPLE_SECRET).getOrElse {
+    _conf.get(INTERNAL_SECURITY_SECRET_PROVIDER_SIMPLE_SECRET).getOrElse {
       throw new IllegalArgumentException(
         s"${INTERNAL_SECURITY_SECRET_PROVIDER_SIMPLE_SECRET.key} must be configured " +
           s"when ${INTERNAL_SECURITY_SECRET_PROVIDER.key} is `simple`.")
@@ -50,15 +50,15 @@ class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvide
 }
 
 object EngineSecuritySecretProvider {
-  def create(kyuubiConf: KyuubiConf): EngineSecuritySecretProvider = {
+  def create(conf: KyuubiConf): EngineSecuritySecretProvider = {
     val providerClass = DynClasses.loadSubclass(
-      kyuubiConf.get(INTERNAL_SECURITY_SECRET_PROVIDER),
+      conf.get(INTERNAL_SECURITY_SECRET_PROVIDER),
       classOf[EngineSecuritySecretProvider])
     val provider = DynConstructors.builder()
       .impl(providerClass)
       .buildChecked[EngineSecuritySecretProvider]()
-      .newInstance(kyuubiConf)
-    provider.initialize(kyuubiConf)
+      .newInstance(conf)
+    provider.initialize(conf)
     provider
   }
 }

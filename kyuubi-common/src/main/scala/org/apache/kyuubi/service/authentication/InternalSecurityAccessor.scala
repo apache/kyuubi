@@ -28,16 +28,14 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-class InternalSecurityAccessor(kyuubiConf: KyuubiConf, val isServer: Boolean) {
-  val cryptoKeyLengthBytes =
-    kyuubiConf.get(INTERNAL_SECURITY_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
-  val cryptoIvLength = kyuubiConf.get(INTERNAL_SECURITY_CRYPTO_IV_LENGTH)
-  val cryptoKeyAlgorithm = kyuubiConf.get(INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM)
-  val cryptoCipher = kyuubiConf.get(INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
+class InternalSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
+  val cryptoKeyLengthBytes = conf.get(INTERNAL_SECURITY_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
+  val cryptoIvLength = conf.get(INTERNAL_SECURITY_CRYPTO_IV_LENGTH)
+  val cryptoKeyAlgorithm = conf.get(INTERNAL_SECURITY_CRYPTO_KEY_ALGORITHM)
+  val cryptoCipher = conf.get(INTERNAL_SECURITY_CRYPTO_CIPHER_TRANSFORMATION)
 
-  private val tokenMaxLifeTime: Long = kyuubiConf.get(INTERNAL_SECURITY_TOKEN_MAX_LIFETIME)
-  private val provider: EngineSecuritySecretProvider =
-    EngineSecuritySecretProvider.create(kyuubiConf)
+  private val tokenMaxLifeTime: Long = conf.get(INTERNAL_SECURITY_TOKEN_MAX_LIFETIME)
+  private val provider: EngineSecuritySecretProvider = EngineSecuritySecretProvider.create(conf)
   private val (secretKeySpec, encryptor, decryptor) =
     initializeForAuth(cryptoCipher, normalizeSecret(provider.getSecret()))
 
@@ -123,9 +121,9 @@ object InternalSecurityAccessor extends Logging {
   @volatile private var _engineSecurityAccessor: InternalSecurityAccessor = _
   private val random: SecureRandom = new SecureRandom()
 
-  def initialize(kyuubiConf: KyuubiConf, isServer: Boolean): Unit = {
+  def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
     if (_engineSecurityAccessor == null) {
-      _engineSecurityAccessor = new InternalSecurityAccessor(kyuubiConf, isServer)
+      _engineSecurityAccessor = new InternalSecurityAccessor(conf, isServer)
     }
   }
 

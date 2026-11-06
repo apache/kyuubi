@@ -462,9 +462,9 @@ abstract class EngineYarnModeSubmitter extends Logging {
   private def addClasspathEntry(path: String, env: mutable.HashMap[String, String]): Unit =
     KyuubiHadoopUtils.addPathToEnvironment(env, Environment.CLASSPATH.name, path)
 
-  private def confToProperties(kyuubiConf: KyuubiConf): Properties = {
+  private def confToProperties(conf: KyuubiConf): Properties = {
     val props = new Properties()
-    kyuubiConf.getAll.foreach { case (k, v) =>
+    conf.getAll.foreach { case (k, v) =>
       props.setProperty(k, v)
     }
     props

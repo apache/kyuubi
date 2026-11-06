@@ -41,11 +41,11 @@ abstract class Serverable(name: String) extends CompositeService(name) {
 
   val frontendServices: Seq[AbstractFrontendService]
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
-    this.conf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     addService(backendService)
     frontendServices.foreach(addService)
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {

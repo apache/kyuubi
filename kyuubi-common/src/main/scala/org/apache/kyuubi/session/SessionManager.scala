@@ -257,37 +257,37 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       case (k, v) => validateBatchKey(k, v)
     }
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
-    this.conf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     addService(operationManager)
     initOperationLogRootDir()
 
     val poolSize: Int =
       if (isServer) {
-        kyuubiConf.get(SERVER_EXEC_POOL_SIZE)
+        conf.get(SERVER_EXEC_POOL_SIZE)
       } else {
-        kyuubiConf.get(ENGINE_EXEC_POOL_SIZE)
+        conf.get(ENGINE_EXEC_POOL_SIZE)
       }
 
     val waitQueueSize: Int =
       if (isServer) {
-        kyuubiConf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
+        conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
       } else {
-        kyuubiConf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+        conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
       }
     val keepAliveMs: Long =
       if (isServer) {
-        kyuubiConf.get(SERVER_EXEC_KEEPALIVE_TIME)
+        conf.get(SERVER_EXEC_KEEPALIVE_TIME)
       } else {
-        kyuubiConf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+        conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
       }
 
-    _confRestrictList = kyuubiConf.get(SESSION_CONF_RESTRICT_LIST)
-    _confIgnoreList = kyuubiConf.get(SESSION_CONF_IGNORE_LIST) +
+    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST)
+    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST) +
       s"${SESSION_USER_SIGN_ENABLED.key}"
-    _batchConfIgnoreList = kyuubiConf.get(BATCH_CONF_IGNORE_LIST)
+    _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST)
 
-    if (isServer && kyuubiConf.get(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED)) {
+    if (isServer && conf.get(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED)) {
       val virtualThreadPool = ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
         poolSize,
         waitQueueSize,
@@ -309,7 +309,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       execPoolActiveCount = () => platformThreadPool.getActiveCount
       execPoolQueueSize = () => platformThreadPool.getQueue.size()
     }
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {

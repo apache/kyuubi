@@ -70,7 +70,7 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
       })
   }
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     registry.registerAll(MetricsConstants.JVM, new JvmAttributeGaugeSet)
     registry.registerAll(MetricsConstants.GC_METRIC, new GarbageCollectorMetricSet)
     registry.registerAll(MetricsConstants.MEMORY_USAGE, new MemoryUsageGaugeSet)
@@ -80,14 +80,14 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     registry.registerAll(MetricsConstants.THREAD_STATE, new ThreadStatesGaugeSet)
     registry.registerAll(MetricsConstants.CLASS_LOADING, new ClassLoadingGaugeSet)
 
-    kyuubiConf.get(METRICS_REPORTERS).map(ReporterType.withName).foreach {
+    conf.get(METRICS_REPORTERS).map(ReporterType.withName).foreach {
       case JSON => addService(new JsonReporterService(registry))
       case SLF4J => addService(new Slf4jReporterService(registry))
       case CONSOLE => addService(new ConsoleReporterService(registry))
       case JMX => addService(new JMXReporterService(registry))
       case PROMETHEUS => addService(new PrometheusReporterService(registry))
     }
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {

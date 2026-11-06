@@ -42,18 +42,18 @@ object KubernetesUtils extends Logging {
   final val EXECUTOR_POD_NAME_PREFIX_MAX_LENGTH =
     maxExecutorPodNamePrefixLength(KUBERNETES_NAMESPACE.defaultValStr)
 
-  def buildKubernetesClient(kyuubiConf: KyuubiConf): Option[KubernetesClient] = {
-    val master = kyuubiConf.get(KUBERNETES_MASTER)
-    val namespace = kyuubiConf.get(KUBERNETES_NAMESPACE)
+  def buildKubernetesClient(conf: KyuubiConf): Option[KubernetesClient] = {
+    val master = conf.get(KUBERNETES_MASTER)
+    val namespace = conf.get(KUBERNETES_NAMESPACE)
     val serviceAccountToken =
       Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_TOKEN_PATH)).filter(_.exists)
     val serviceAccountCaCrt =
       Some(new File(Config.KUBERNETES_SERVICE_ACCOUNT_CA_CRT_PATH)).filter(_.exists)
 
-    val oauthTokenFile = kyuubiConf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE)
+    val oauthTokenFile = conf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN_FILE)
       .map(new File(_))
       .orElse(serviceAccountToken)
-    val oauthTokenValue = kyuubiConf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN)
+    val oauthTokenValue = conf.get(KUBERNETES_AUTHENTICATE_OAUTH_TOKEN)
 
     KubernetesUtils.requireNandDefined(
       oauthTokenFile,
@@ -61,14 +61,14 @@ object KubernetesUtils extends Logging {
       s"Cannot specify OAuth token through both a oauth token file and a " +
         s"oauth token value.")
 
-    val caCertFile = kyuubiConf
+    val caCertFile = conf
       .get(KUBERNETES_AUTHENTICATE_CA_CERT_FILE)
       .orElse(serviceAccountCaCrt.map(_.getAbsolutePath))
-    val clientKeyFile = kyuubiConf.get(KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE)
-    val clientCertFile = kyuubiConf.get(KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE)
+    val clientKeyFile = conf.get(KUBERNETES_AUTHENTICATE_CLIENT_KEY_FILE)
+    val clientCertFile = conf.get(KUBERNETES_AUTHENTICATE_CLIENT_CERT_FILE)
 
     // Allow for specifying a context used to auto-configure from the users K8S config file
-    val kubeContext = kyuubiConf.get(KUBERNETES_CONTEXT).filter(_.nonEmpty)
+    val kubeContext = conf.get(KUBERNETES_CONTEXT).filter(_.nonEmpty)
     info("Auto-configuring K8S client using " +
       kubeContext.map("context " + _).getOrElse("current context") +
       " from users K8S config file")
@@ -78,7 +78,7 @@ object KubernetesUtils extends Logging {
       .withOption(master) { (master, configBuilder) =>
         configBuilder.withMasterUrl(master)
       }.withNamespace(namespace)
-      .withTrustCerts(kyuubiConf.get(KUBERNETES_TRUST_CERTIFICATES))
+      .withTrustCerts(conf.get(KUBERNETES_TRUST_CERTIFICATES))
       .withOption(oauthTokenValue) { (token, configBuilder) =>
         configBuilder.withOauthToken(token)
       }.withOption(oauthTokenFile) { (file, configBuilder) =>
@@ -97,7 +97,7 @@ object KubernetesUtils extends Logging {
 
     // https://github.com/fabric8io/kubernetes-client/issues/3547
     val dispatcherExecutor =
-      if (kyuubiConf.get(KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED)) {
+      if (conf.get(KUBERNETES_CLIENT_DISPATCHER_VIRTUAL_THREADS_ENABLED)) {
         ThreadUtils.newVirtualThreadPerTaskExecutor("kubernetes-dispatcher")
       } else {
         ThreadUtils.newDaemonCachedThreadPool("kubernetes-dispatcher")
@@ -110,8 +110,7 @@ object KubernetesUtils extends Logging {
     }
 
     debug("Kubernetes client config: " +
-      new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
-        config))
+      new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config))
     Some(new KubernetesClientBuilder()
       .withHttpClientFactory(factoryWithCustomDispatcher)
       .withConfig(config)

@@ -29,17 +29,16 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.kyuubi.shaded.thrift.TProcessorFactory
 import org.apache.kyuubi.shaded.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
 
-class KyuubiAuthenticationFactory(kyuubiConf: KyuubiConf, isServer: Boolean = true)
-  extends Logging {
+class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
-  val authTypes: Seq[AuthType] = kyuubiConf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  val authTypes: Seq[AuthType] = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   val saslDisabled: Boolean = AuthUtils.saslDisabled(authTypes)
   val kerberosEnabled: Boolean = AuthUtils.kerberosEnabled(authTypes)
   val effectivePlainAuthType: Option[AuthType] = AuthUtils.effectivePlainAuthType(authTypes)
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
     if (kerberosEnabled) {
-      val secretMgr = KyuubiDelegationTokenManager(kyuubiConf)
+      val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
         secretMgr.startThreads()
       } catch {
@@ -51,13 +50,13 @@ class KyuubiAuthenticationFactory(kyuubiConf: KyuubiConf, isServer: Boolean = tr
     }
   }
 
-  if (kyuubiConf.get(INTERNAL_SECURITY_ENABLED)) {
-    InternalSecurityAccessor.initialize(kyuubiConf, isServer)
+  if (conf.get(INTERNAL_SECURITY_ENABLED)) {
+    InternalSecurityAccessor.initialize(conf, isServer)
   }
 
   private def getSaslProperties: java.util.Map[String, String] = {
     val props = new java.util.HashMap[String, String]()
-    val qop = SaslQOP.withName(kyuubiConf.get(SASL_QOP))
+    val qop = SaslQOP.withName(conf.get(SASL_QOP))
     props.put(Sasl.QOP, qop.toString)
     props.put(Sasl.SERVER_AUTH, "true")
     props
@@ -85,7 +84,7 @@ class KyuubiAuthenticationFactory(kyuubiConf: KyuubiConf, isServer: Boolean = tr
         case Some(plainAuthType) =>
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
-            kyuubiConf,
+            conf,
             Option(transportFactory),
             isServer).asInstanceOf[TSaslServerTransport.Factory]
 

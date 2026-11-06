@@ -42,7 +42,7 @@ class SparkEventHandlerRegister(spark: SparkSession) extends EventHandlerRegiste
       kyuubiConf)
   }
 
-  override protected def getLoggers(kyuubiConf: KyuubiConf): Seq[String] = {
-    kyuubiConf.get(ENGINE_SPARK_EVENT_LOGGERS)
+  override protected def getLoggers(engineConf: KyuubiConf): Seq[String] = {
+    engineConf.get(ENGINE_SPARK_EVENT_LOGGERS)
   }
 }

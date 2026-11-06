@@ -59,14 +59,14 @@ abstract class TBinaryFrontendService(name: String)
 
   // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
-    this.conf = kyuubiConf
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    this.conf = conf
     try {
-      val minThreads = kyuubiConf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
-      val maxThreads = kyuubiConf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
-      val keepAliveTime = kyuubiConf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
+      val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
+      val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
+      val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
       val useVirtualThreads = isServer() &&
-        kyuubiConf.get(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED)
+        conf.get(FRONTEND_THRIFT_BINARY_VIRTUAL_THREADS_ENABLED)
       val executor = if (useVirtualThreads) {
         ThreadUtils.newBoundedVirtualThreadPerTaskExecutor(maxThreads, name + "Handler")
       } else {
@@ -82,14 +82,13 @@ abstract class TBinaryFrontendService(name: String)
       val tProcFactory = authFactory.getTProcessorFactory(this)
       val tServerSocket =
         // only enable ssl for server side
-        if (isServer() && kyuubiConf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
-          keyStorePath = kyuubiConf.get(FRONTEND_SSL_KEYSTORE_PATH)
-          keyStorePassword = kyuubiConf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
-          keyStoreType = kyuubiConf.get(FRONTEND_SSL_KEYSTORE_TYPE)
-          val keyStoreAlgorithm = kyuubiConf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
-          val disallowedSslProtocols =
-            kyuubiConf.get(FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS)
-          val includeCipherSuites = kyuubiConf.get(FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES)
+        if (isServer() && conf.get(FRONTEND_THRIFT_BINARY_SSL_ENABLED)) {
+          keyStorePath = conf.get(FRONTEND_SSL_KEYSTORE_PATH)
+          keyStorePassword = conf.get(FRONTEND_SSL_KEYSTORE_PASSWORD)
+          keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
+          val disallowedSslProtocols = conf.get(FRONTEND_THRIFT_BINARY_SSL_DISALLOWED_PROTOCOLS)
+          val includeCipherSuites = conf.get(FRONTEND_THRIFT_BINARY_SSL_INCLUDE_CIPHER_SUITES)
 
           if (keyStorePath.isEmpty) {
             throw new IllegalArgumentException(
@@ -111,7 +110,7 @@ abstract class TBinaryFrontendService(name: String)
           new TServerSocket(new ServerSocket(portNum, -1, serverAddr))
         }
       _actualPort = tServerSocket.getServerSocket.getLocalPort
-      val maxMessageSize = kyuubiConf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
+      val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
       val args = new TThreadPoolServer.Args(tServerSocket)
         .processorFactory(tProcFactory)
         .transportFactory(transFactory)
@@ -137,7 +136,7 @@ abstract class TBinaryFrontendService(name: String)
           s"Failed to initialize frontend service on $serverAddr:$portNum.",
           e)
     }
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
   }
 
   private def getServerSSLSocket(

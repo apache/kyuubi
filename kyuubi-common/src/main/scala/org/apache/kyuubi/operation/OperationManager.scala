@@ -50,12 +50,12 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
 
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
-    super.initialize(kyuubiConf)
+    super.initialize(conf)
 
-    val timeoutPoolSize = kyuubiConf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
-    val timeoutPoolKeepAliveTime = kyuubiConf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
+    val timeoutPoolSize = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
+    val timeoutPoolKeepAliveTime = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
     timeoutScheduler = ThreadUtils.newDaemonScheduledThreadPool(
       timeoutPoolSize,
       timeoutPoolKeepAliveTime,

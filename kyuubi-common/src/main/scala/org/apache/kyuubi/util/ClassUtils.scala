@@ -27,18 +27,18 @@ object ClassUtils {
    * Create an object instance with given class name and [[KyuubiConf]].
    * @param className the class name
    * @param expected the expected class type
-   * @param kyuubiConf configuration ([[KyuubiConf]])
+   * @param conf configuration ([[KyuubiConf]])
    * @tparam T object instance type to create
    * @return
    */
-  def createInstance[T](className: String, expected: Class[T], kyuubiConf: KyuubiConf): T = {
+  def createInstance[T](className: String, expected: Class[T], conf: KyuubiConf): T = {
     try {
       val implementation = DynClasses.loadSubclass(className, expected)
       DynConstructors.builder(expected)
         .impl(implementation, classOf[KyuubiConf])
         .impl(implementation)
         .buildChecked[T]()
-        .newInstance(kyuubiConf)
+        .newInstance(conf)
     } catch {
       case e @ (_: Exception | _: NoClassDefFoundError) =>
         throw new KyuubiException(s"$className must extend of ${expected.getName}", e)

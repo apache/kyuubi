@@ -28,9 +28,9 @@ trait Service {
    * The transition must be from [[LATENT]] to [[INITIALIZED]] unless the
    * operation failed and an exception was raised.
    *
-   * @param kyuubiConf the configuration of the service
+   * @param conf the configuration of the service
    */
-  def initialize(kyuubiConf: KyuubiConf): Unit
+  def initialize(conf: KyuubiConf): Unit
 
   /**
    * Start the service.

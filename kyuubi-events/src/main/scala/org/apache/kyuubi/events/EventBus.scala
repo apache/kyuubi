@@ -46,11 +46,11 @@ sealed trait EventBus {
 
 object EventBus extends Logging {
   private val defaultEventBus = EventBusLive()
-  private val kyuubiConf: KyuubiConf = KyuubiConf().loadFileDefaults()
+  private val conf: KyuubiConf = KyuubiConf().loadFileDefaults()
 
-  private val poolSize = kyuubiConf.get(ASYNC_EVENT_HANDLER_POLL_SIZE)
-  private val waitQueueSize = kyuubiConf.get(ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE)
-  private val keepAliveMs = kyuubiConf.get(ASYNC_EVENT_HANDLER_KEEPALIVE_TIME)
+  private val poolSize = conf.get(ASYNC_EVENT_HANDLER_POLL_SIZE)
+  private val waitQueueSize = conf.get(ASYNC_EVENT_HANDLER_WAIT_QUEUE_SIZE)
+  private val keepAliveMs = conf.get(ASYNC_EVENT_HANDLER_KEEPALIVE_TIME)
 
   implicit private lazy val asyncEventExecutionContext: ExecutionContextExecutorService =
     ExecutionContext.fromExecutorService(ThreadUtils.newDaemonQueuedThreadPool(

@@ -29,8 +29,8 @@ import org.apache.kyuubi.config.KyuubiConf
  */
 
 class ChainFilterFactory(chainedFactories: FilterFactory*) extends FilterFactory {
-  override def getInstance(kyuubiConf: KyuubiConf): Option[Filter] = {
-    val maybeFilters = chainedFactories.map(_.getInstance(kyuubiConf))
+  override def getInstance(conf: KyuubiConf): Option[Filter] = {
+    val maybeFilters = chainedFactories.map(_.getInstance(conf))
     val filters = maybeFilters.flatten
     if (filters.isEmpty) None else Some(new ChainFilter(filters))
   }

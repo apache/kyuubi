@@ -38,7 +38,7 @@ object TrinoEventHandlerRegister extends EventHandlerRegister {
       kyuubiConf)
   }
 
-  override protected def getLoggers(kyuubiConf: KyuubiConf): Seq[String] = {
-    kyuubiConf.get(ENGINE_TRINO_EVENT_LOGGERS)
+  override protected def getLoggers(engineConf: KyuubiConf): Seq[String] = {
+    engineConf.get(ENGINE_TRINO_EVENT_LOGGERS)
   }
 }
