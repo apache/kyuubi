@@ -80,10 +80,10 @@ public class BeelineSiteParser implements HS2ConnectionFileParser {
     }
     log.info("Beeline configuration file at: {}", fileLocation);
     // load the properties from config file
-    Configuration conf = new Configuration(false);
-    conf.addResource(new Path(new File(fileLocation).toURI()));
+    Configuration connectionConf = new Configuration(false);
+    connectionConf.addResource(new Path(new File(fileLocation).toURI()));
     try {
-      for (Entry<String, String> kv : conf) {
+      for (Entry<String, String> kv : connectionConf) {
         String key = kv.getKey();
         if (key.startsWith(BEELINE_CONNECTION_NAMED_JDBC_URL_PREFIX)) {
           props.setProperty(
@@ -105,10 +105,10 @@ public class BeelineSiteParser implements HS2ConnectionFileParser {
     }
     log.info("Beeline configuration file at: {}", fileLocation);
     // load the properties from config file
-    Configuration conf = new Configuration(false);
-    conf.addResource(new Path(new File(fileLocation).toURI()));
+    Configuration connectionConf = new Configuration(false);
+    connectionConf.addResource(new Path(new File(fileLocation).toURI()));
     try {
-      for (Entry<String, String> kv : conf) {
+      for (Entry<String, String> kv : connectionConf) {
         String key = kv.getKey();
         if (key.startsWith(BEELINE_CONNECTION_NAMED_JDBC_URL_PREFIX)
             && (propertyValue.equalsIgnoreCase(kv.getValue()))) {

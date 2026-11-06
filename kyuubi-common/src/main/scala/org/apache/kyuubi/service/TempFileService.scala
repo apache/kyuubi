@@ -37,10 +37,10 @@ class TempFileService(name: String) extends AbstractService(name) {
 
   def remainedExpiringFilesCount(): Long = expiringFiles.size()
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    super.initialize(conf)
-    val expireTimeInMs = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME)
-    val maxCountOpt = conf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_MAX_COUNT)
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+    super.initialize(kyuubiConf)
+    val expireTimeInMs = kyuubiConf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_TIME)
+    val maxCountOpt = kyuubiConf.get(KyuubiConf.SERVER_TEMP_FILE_EXPIRE_MAX_COUNT)
     expiringFiles = {
       val builder = CacheBuilder.newBuilder()
         .expireAfterWrite(expireTimeInMs, TimeUnit.MILLISECONDS)

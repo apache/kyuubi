@@ -127,8 +127,8 @@ object HiveSQLEngine extends Logging {
     currentEngine = Some(engine)
   }
 
-  private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    HiveEventHandlerRegister.registerEventLoggers(conf)
+  private def initLoggerEventHandler(kyuubiConf: KyuubiConf): Unit = {
+    HiveEventHandlerRegister.registerEventLoggers(kyuubiConf)
   }
 
   def main(args: Array[String]): Unit = {

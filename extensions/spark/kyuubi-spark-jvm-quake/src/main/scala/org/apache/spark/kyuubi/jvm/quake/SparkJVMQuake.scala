@@ -30,13 +30,13 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.kyuubi.jvm.quake.SparkJVMQuakeConf._
 import org.apache.spark.util.ThreadUtils
 
-class SparkJVMQuake(conf: SparkConf, heapDumpEnabled: Boolean) extends Logging {
-  private val appId = conf.get("spark.app.id", "app-id")
-  private val killThreshold = TimeUnit.SECONDS.toNanos(conf.get(JVM_QUAKE_KILL_THRESHOLD))
-  private val exitCode = conf.get(JVM_QUAKE_EXIT_CODE)
-  private val checkInterval = TimeUnit.SECONDS.toMillis(conf.get(JVM_QUAKE_CHECK_INTERVAL))
-  private val runTimeWeight = conf.get(JVM_QUAKE_RUN_TIME_WEIGHT)
-  private[quake] val heapPath = s"${conf.get(JVM_QUAKE_HEAP_DUMP_PATH)}/$appId"
+class SparkJVMQuake(sparkConf: SparkConf, heapDumpEnabled: Boolean) extends Logging {
+  private val appId = sparkConf.get("spark.app.id", "app-id")
+  private val killThreshold = TimeUnit.SECONDS.toNanos(sparkConf.get(JVM_QUAKE_KILL_THRESHOLD))
+  private val exitCode = sparkConf.get(JVM_QUAKE_EXIT_CODE)
+  private val checkInterval = TimeUnit.SECONDS.toMillis(sparkConf.get(JVM_QUAKE_CHECK_INTERVAL))
+  private val runTimeWeight = sparkConf.get(JVM_QUAKE_RUN_TIME_WEIGHT)
+  private[quake] val heapPath = s"${sparkConf.get(JVM_QUAKE_HEAP_DUMP_PATH)}/$appId"
 
   private[quake] var (lastExitTime, lastGCTime) = getLastGCInfo
   private[quake] var bucket: Long = 0L

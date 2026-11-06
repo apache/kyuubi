@@ -43,11 +43,11 @@ class JsonReporterService(registry: MetricRegistry)
   private var reportDir: Path = _
   private var reportPath: Path = _
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    reportDir = Paths.get(Utils.substituteKyuubiEnvVars(conf.get(METRICS_JSON_LOCATION)))
+  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
+    reportDir = Paths.get(Utils.substituteKyuubiEnvVars(kyuubiConf.get(METRICS_JSON_LOCATION)))
     Files.createDirectories(reportDir)
     reportPath = Paths.get(reportDir.toString, "report.json").toAbsolutePath
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
   }
 
   override def start(): Unit = synchronized {

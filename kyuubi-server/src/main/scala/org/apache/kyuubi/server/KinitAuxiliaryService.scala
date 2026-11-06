@@ -35,17 +35,17 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
 
   private var kinitTask: Runnable = _
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(serverConf: KyuubiConf): Unit = {
     if (UserGroupInformation.isSecurityEnabled) {
-      val keytab = conf.get(KyuubiConf.SERVER_KEYTAB)
-      val principal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
+      val keytab = serverConf.get(KyuubiConf.SERVER_KEYTAB)
+      val principal = serverConf.get(KyuubiConf.SERVER_PRINCIPAL)
         .map(KyuubiHadoopUtils.getServerPrincipal)
-      kinitInterval = conf.get(KyuubiConf.KINIT_INTERVAL)
-      kinitMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
+      kinitInterval = serverConf.get(KyuubiConf.KINIT_INTERVAL)
+      kinitMaxAttempts = serverConf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 
       require(keytab.nonEmpty && principal.nonEmpty, "principal or keytab is missing")
-      if (conf.get(KyuubiConf.ENGINE_DO_AS_ENABLED) &&
-        conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).isEmpty) {
+      if (serverConf.get(KyuubiConf.ENGINE_DO_AS_ENABLED) &&
+        serverConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).isEmpty) {
         warn(s"User impersonation is enabled, but ${KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST}" +
           " is unset. We strongly recommend to configure the allowed local dir list" +
           " to exclude any credential including keytab.")
@@ -74,7 +74,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
         }
       }
     }
-    super.initialize(conf)
+    super.initialize(serverConf)
   }
 
   override def start(): Unit = {

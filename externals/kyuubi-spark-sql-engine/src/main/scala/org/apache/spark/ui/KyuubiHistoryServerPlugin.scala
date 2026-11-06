@@ -35,8 +35,10 @@ import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 // scalastyle:on line.size.limit
 class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
 
-  override def createListeners(conf: SparkConf, store: ElementTrackingStore): Seq[SparkListener] = {
-    val kyuubiConf = mergedKyuubiConf(conf)
+  override def createListeners(
+      sparkConf: SparkConf,
+      store: ElementTrackingStore): Seq[SparkListener] = {
+    val kyuubiConf = mergedKyuubiConf(sparkConf)
     Seq(new SparkSQLEngineEventListener(store, kyuubiConf))
   }
 

@@ -41,9 +41,9 @@ class FetchOrcStatement(spark: SparkSession) {
 
   var orcIter: OrcFileIterator = _
   def getIterator(path: String, orcSchema: StructType): FetchIterator[Row] = {
-    val conf = spark.sparkContext.hadoopConfiguration
+    val hadoopConf = spark.sparkContext.hadoopConfiguration
     val savePath = new Path(path)
-    val fsIterator = savePath.getFileSystem(conf).listFiles(savePath, false)
+    val fsIterator = savePath.getFileSystem(hadoopConf).listFiles(savePath, false)
     val list = new ListBuffer[LocatedFileStatus]
     while (fsIterator.hasNext) {
       val file = fsIterator.next()

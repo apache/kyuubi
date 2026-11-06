@@ -39,11 +39,11 @@ case class KyuubiDelegationTokenManager(
 
 object KyuubiDelegationTokenManager {
 
-  def apply(conf: KyuubiConf): KyuubiDelegationTokenManager = {
-    val keyUpdateInterval = conf.get(DELEGATION_KEY_UPDATE_INTERVAL)
-    val tokenMaxLifetime = conf.get(DELEGATION_TOKEN_MAX_LIFETIME)
-    val tokenRenewInterval = conf.get(DELEGATION_TOKEN_RENEW_INTERVAL)
-    val tokenRemoverScanInterval = conf.get(DELEGATION_TOKEN_GC_INTERVAL)
+  def apply(kyuubiConf: KyuubiConf): KyuubiDelegationTokenManager = {
+    val keyUpdateInterval = kyuubiConf.get(DELEGATION_KEY_UPDATE_INTERVAL)
+    val tokenMaxLifetime = kyuubiConf.get(DELEGATION_TOKEN_MAX_LIFETIME)
+    val tokenRenewInterval = kyuubiConf.get(DELEGATION_TOKEN_RENEW_INTERVAL)
+    val tokenRemoverScanInterval = kyuubiConf.get(DELEGATION_TOKEN_GC_INTERVAL)
 
     KyuubiDelegationTokenManager(
       keyUpdateInterval,

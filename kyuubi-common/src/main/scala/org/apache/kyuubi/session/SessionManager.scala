@@ -90,7 +90,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session
+      requestConf: Map[String, String]): Session
 
   protected def logSessionCountInfo(session: Session, action: String): Unit = {
     info(s"${session.user}'s ${session.getClass.getSimpleName} with" +
@@ -103,9 +103,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      requestConf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val session = createSession(protocol, user, password, ipAddress, conf)
+    val session = createSession(protocol, user, password, ipAddress, requestConf)
     val handle = session.handle
     try {
       setSession(handle, session)
@@ -234,9 +234,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
-    case (k, v) => validateKey(k, v)
-  }
+  def validateAndNormalizeConf(requestConf: Map[String, String]): Map[String, String] =
+    requestConf.flatMap {
+      case (k, v) => validateKey(k, v)
+    }
 
   // validate whether if a batch key should be ignored
   def validateBatchKey(key: String, value: String): Option[(String, String)] = {
@@ -251,41 +252,42 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def validateBatchConf(config: Map[String, String]): Map[String, String] = config.flatMap {
-    case (k, v) => validateBatchKey(k, v)
-  }
+  def validateBatchConf(requestConf: Map[String, String]): Map[String, String] =
+    requestConf.flatMap {
+      case (k, v) => validateBatchKey(k, v)
+    }
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    this.conf = conf
+  override def initialize(kyuubiConf: KyuubiConf): Unit = synchronized {
+    this.conf = kyuubiConf
     addService(operationManager)
     initOperationLogRootDir()
 
     val poolSize: Int =
       if (isServer) {
-        conf.get(SERVER_EXEC_POOL_SIZE)
+        kyuubiConf.get(SERVER_EXEC_POOL_SIZE)
       } else {
-        conf.get(ENGINE_EXEC_POOL_SIZE)
+        kyuubiConf.get(ENGINE_EXEC_POOL_SIZE)
       }
 
     val waitQueueSize: Int =
       if (isServer) {
-        conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
+        kyuubiConf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
       } else {
-        conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+        kyuubiConf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
       }
     val keepAliveMs: Long =
       if (isServer) {
-        conf.get(SERVER_EXEC_KEEPALIVE_TIME)
+        kyuubiConf.get(SERVER_EXEC_KEEPALIVE_TIME)
       } else {
-        conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+        kyuubiConf.get(ENGINE_EXEC_KEEPALIVE_TIME)
       }
 
-    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST)
-    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST) +
+    _confRestrictList = kyuubiConf.get(SESSION_CONF_RESTRICT_LIST)
+    _confIgnoreList = kyuubiConf.get(SESSION_CONF_IGNORE_LIST) +
       s"${SESSION_USER_SIGN_ENABLED.key}"
-    _batchConfIgnoreList = conf.get(BATCH_CONF_IGNORE_LIST)
+    _batchConfIgnoreList = kyuubiConf.get(BATCH_CONF_IGNORE_LIST)
 
-    if (isServer && conf.get(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED)) {
+    if (isServer && kyuubiConf.get(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED)) {
       val virtualThreadPool = ThreadUtils.newBoundedQueuedVirtualThreadPerTaskExecutor(
         poolSize,
         waitQueueSize,
@@ -307,7 +309,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       execPoolActiveCount = () => platformThreadPool.getActiveCount
       execPoolQueueSize = () => platformThreadPool.getQueue.size()
     }
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
   }
 
   override def start(): Unit = synchronized {

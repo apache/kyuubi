@@ -209,7 +209,7 @@ object LdapUtils extends Logging {
    * <br>
    * If no patterns are provided in the configuration, then the base DN will be used.
    *
-   * @param conf Kyuubi configuration
+   * @param kyuubiConf Kyuubi configuration
    * @param confKey  configuration key to be read
    * @return a list of DN patterns
    * @see [[KyuubiConf.AUTHENTICATION_LDAP_BASE_DN]]
@@ -217,9 +217,11 @@ object LdapUtils extends Logging {
    * @see [[KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN]]
    * @see [[KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN]]
    */
-  def parseDnPatterns(conf: KyuubiConf, confKey: OptionalConfigEntry[String]): Array[String] = {
+  def parseDnPatterns(
+      kyuubiConf: KyuubiConf,
+      confKey: OptionalConfigEntry[String]): Array[String] = {
     val result = new ArrayBuffer[String]
-    conf.get(confKey).map { patternsString =>
+    kyuubiConf.get(confKey).map { patternsString =>
       patternsString.split(":").foreach { pattern =>
         if (pattern.contains(",") && pattern.contains("=")) {
           result += pattern
@@ -228,8 +230,8 @@ object LdapUtils extends Logging {
         }
       }
     }.getOrElse {
-      val guidAttr = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GUID_KEY)
-      conf.get(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN).foreach { defaultBaseDn =>
+      val guidAttr = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GUID_KEY)
+      kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN).foreach { defaultBaseDn =>
         result += s"$guidAttr=%s,$defaultBaseDn"
       }
     }
@@ -254,18 +256,18 @@ object LdapUtils extends Logging {
   /**
    * Creates a list of principals to be used for user authentication.
    *
-   * @param conf Kyuubi configuration
+   * @param kyuubiConf Kyuubi configuration
    * @param user username
    * @return a list of user's principals
    */
-  def createCandidatePrincipals(conf: KyuubiConf, user: String): Array[String] = {
+  def createCandidatePrincipals(kyuubiConf: KyuubiConf, user: String): Array[String] = {
     if (hasDomain(user) || isDn(user)) {
       return Array(user)
     }
-    conf.get(KyuubiConf.AUTHENTICATION_LDAP_DOMAIN).map { ldapDomain =>
+    kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_DOMAIN).map { ldapDomain =>
       Array(user + "@" + ldapDomain)
     }.getOrElse {
-      val userPatterns = parseDnPatterns(conf, KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN)
+      val userPatterns = parseDnPatterns(kyuubiConf, KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN)
       if (userPatterns.isEmpty) {
         return Array(user)
       }

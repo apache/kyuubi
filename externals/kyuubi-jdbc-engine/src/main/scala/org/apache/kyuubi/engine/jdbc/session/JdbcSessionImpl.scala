@@ -35,12 +35,13 @@ class JdbcSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    conf: Map[String, String],
+    requestConf: Map[String, String],
     sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
 
   override val handle: SessionHandle =
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+    requestConf.get(
+      KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private[jdbc] var sessionConnection: Connection = _
 
@@ -49,13 +50,13 @@ class JdbcSessionImpl(
   val sessionConf: KyuubiConf = normalizeConf
 
   private def normalizeConf: KyuubiConf = {
-    val kyuubiConf = sessionManager.getConf.clone
-    if (kyuubiConf.get(ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL)) {
-      kyuubiConf.set(ENGINE_JDBC_CONNECTION_USER, user)
-      kyuubiConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
+    val sessionConf = sessionManager.getConf.clone
+    if (sessionConf.get(ENGINE_JDBC_CONNECTION_PROPAGATECREDENTIAL)) {
+      sessionConf.set(ENGINE_JDBC_CONNECTION_USER, user)
+      sessionConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
     }
-    conf.foreach { case (k, v) => kyuubiConf.set(k, v) }
-    kyuubiConf
+    requestConf.foreach { case (k, v) => sessionConf.set(k, v) }
+    sessionConf
   }
 
   override def open(): Unit = {
@@ -68,14 +69,14 @@ class JdbcSessionImpl(
     // "default" is a stub Hive clients send when the URL has no `/<db>` - skip it, since
     // forwarding it would fail on backends (PG, ClickHouse) lacking that database.
     val dialect = JdbcDialects.get(sessionConf)
-    conf.get(USE_CATALOG) match {
+    requestConf.get(USE_CATALOG) match {
       case Some("default") =>
         info("Ignoring URL catalog \"default\" stub; backend connection unchanged.")
       case Some(catalog) =>
         dialect.setCatalog(sessionConnection, catalog)
       case None =>
     }
-    conf.get(USE_DATABASE) match {
+    requestConf.get(USE_DATABASE) match {
       case Some("default") =>
         info("Ignoring URL database \"default\" stub; backend connection unchanged.")
       case Some(db) =>

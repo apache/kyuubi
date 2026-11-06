@@ -27,19 +27,19 @@ import org.apache.kyuubi.config.KyuubiConf
 
 /**
  * Implements search for LDAP.
- * @param conf Kyuubi configuration
+ * @param kyuubiConf Kyuubi configuration
  * @param ctx  Directory service that will be used for the queries.
  */
-class LdapSearch(conf: KyuubiConf, ctx: DirContext) extends DirSearch with Logging {
+class LdapSearch(kyuubiConf: KyuubiConf, ctx: DirContext) extends DirSearch with Logging {
 
-  final private val baseDn = conf.get(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN).orNull
+  final private val baseDn = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_BASE_DN).orNull
   final private val groupBases: Array[String] =
     LdapUtils.patternsToBaseDns(
-      LdapUtils.parseDnPatterns(conf, KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN))
+      LdapUtils.parseDnPatterns(kyuubiConf, KyuubiConf.AUTHENTICATION_LDAP_GROUP_DN_PATTERN))
   final private val userPatterns: Array[String] =
-    LdapUtils.parseDnPatterns(conf, KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN)
+    LdapUtils.parseDnPatterns(kyuubiConf, KyuubiConf.AUTHENTICATION_LDAP_USER_DN_PATTERN)
   final private val userBases: Array[String] = LdapUtils.patternsToBaseDns(userPatterns)
-  final private val queries: QueryFactory = new QueryFactory(conf)
+  final private val queries: QueryFactory = new QueryFactory(kyuubiConf)
 
   /**
    * Closes this search object and releases any system resources associated

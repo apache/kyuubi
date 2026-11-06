@@ -29,11 +29,11 @@ trait DirSearchFactory {
   /**
    * Returns an instance of [[DirSearch]].
    *
-   * @param conf     Kyuubi configuration
+   * @param kyuubiConf     Kyuubi configuration
    * @param user     username
    * @param password user password
    * @return instance of [[DirSearch]]
    */
   @throws[AuthenticationException]
-  def getInstance(conf: KyuubiConf, user: String, password: String): DirSearch
+  def getInstance(kyuubiConf: KyuubiConf, user: String, password: String): DirSearch
 }

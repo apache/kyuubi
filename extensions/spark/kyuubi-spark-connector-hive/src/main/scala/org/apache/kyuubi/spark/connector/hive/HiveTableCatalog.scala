@@ -89,20 +89,20 @@ class HiveTableCatalog(sparkSession: SparkSession)
   def newScanHadoopConf(): Configuration = buildHadoopConf()
 
   private def buildHadoopConf(): Configuration = {
-    val conf = sparkSession.sessionState.newHadoopConf()
-    catalogOptions.asScala.foreach { case (k, v) => conf.set(k, v) }
+    val scanHadoopConf = sparkSession.sessionState.newHadoopConf()
+    catalogOptions.asScala.foreach { case (k, v) => scanHadoopConf.set(k, v) }
     if (catalogOptions.containsKey("hive.metastore.uris")) {
-      conf.set("hive.metastore.token.signature", metastoreTokenSignature(catalogOptions))
+      scanHadoopConf.set("hive.metastore.token.signature", metastoreTokenSignature(catalogOptions))
     }
-    conf
+    scanHadoopConf
   }
 
   private lazy val sparkConf: SparkConf = {
-    val conf = sparkSession.sparkContext.getConf
+    val catalogSparkConf = sparkSession.sparkContext.getConf
     catalogOptions.asScala.foreach {
-      case (k, v) => conf.set(k, v)
+      case (k, v) => catalogSparkConf.set(k, v)
     }
-    conf
+    catalogSparkConf
   }
 
   def hadoopConfiguration(): Configuration = hadoopConf
@@ -694,9 +694,9 @@ private object HiveTableCatalog extends Logging {
       locationUri = location.map(CatalogUtils.stringToURI),
       properties = optionsProps)
 
-    val conf = SQLConf.get
+    val sqlConf = SQLConf.get
     val defaultHiveStorage =
-      HiveConnectorUtils.copyStorageFormat(HiveSerDe.getDefaultStorage(conf))(
+      HiveConnectorUtils.copyStorageFormat(HiveSerDe.getDefaultStorage(sqlConf))(
         locationUri = location.map(CatalogUtils.stringToURI),
         properties = optionsProps)
 
@@ -730,9 +730,9 @@ private object HiveTableCatalog extends Logging {
       }
       (storageFormat, DDLUtils.HIVE_PROVIDER)
     } else {
-      val createHiveTableByDefault = conf.getConf(SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT)
+      val createHiveTableByDefault = sqlConf.getConf(SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT)
       if (!createHiveTableByDefault) {
-        (nonHiveStorageFormat, conf.defaultDataSourceName)
+        (nonHiveStorageFormat, sqlConf.defaultDataSourceName)
       } else {
         logWarning("A Hive serde table will be created as there is no table provider " +
           s"specified. You can set ${SQLConf.LEGACY_CREATE_HIVE_TABLE_BY_DEFAULT.key} to false " +

@@ -38,22 +38,22 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
 
   override def serviceName: String = "hive"
 
-  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
-    val conf = MetastoreConf.newMetastoreConf(hadoopConf)
+  override def initialize(hadoopConf: Configuration, serverConf: KyuubiConf): Unit = {
+    val serverConf = MetastoreConf.newMetastoreConf(hadoopConf)
     val metastoreUris = MetastoreConf.getVar(hadoopConf, ConfVars.THRIFT_URIS)
     // SQL engine requires token alias to be `hive.metastore.uris`
     tokenAlias = new Text(metastoreUris)
 
     if (SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
       && metastoreUris.nonEmpty
-      && MetastoreConf.getBoolVar(conf, ConfVars.USE_THRIFT_SASL)) {
+      && MetastoreConf.getBoolVar(serverConf, ConfVars.USE_THRIFT_SASL)) {
 
       principal = MetastoreConf.getVar(hadoopConf, ConfVars.KERBEROS_PRINCIPAL)
       require(
         principal.nonEmpty,
         s"Hive principal ${ConfVars.KERBEROS_PRINCIPAL.getVarname} undefined")
 
-      client = Some(RetryingMetaStoreClient.getProxy(conf))
+      client = Some(RetryingMetaStoreClient.getProxy(serverConf))
       info(s"Created HiveMetaStoreClient with metastore uris $metastoreUris")
     }
   }

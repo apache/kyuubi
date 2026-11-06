@@ -31,7 +31,7 @@ class EngineRefWithEtcdSuite extends EngineRefTests {
   private var etcdCluster: EtcdCluster = _
   private lazy val _connectString: String = etcdCluster.clientEndpoints().asScala.mkString(",")
 
-  override protected val conf: KyuubiConf = {
+  override protected val sessionConf: KyuubiConf = {
     KyuubiConf()
       .set(HA_CLIENT_CLASS, classOf[EtcdDiscoveryClient].getName)
       .set("spark.sql.catalogImplementation", "in-memory")

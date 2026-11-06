@@ -33,9 +33,9 @@ object ExternalCatalogManager {
     if (manager == null) {
       synchronized {
         if (manager == null) {
-          val conf = sparkSession.sessionState.conf
+          val sqlConf = sparkSession.sessionState.conf
           manager = ExternalCatalogSharePolicy.fromString(
-            conf.getConf(EXTERNAL_CATALOG_SHARE_POLICY)) match {
+            sqlConf.getConf(EXTERNAL_CATALOG_SHARE_POLICY)) match {
             case OneForAllPolicy => new OneForAllPolicyManager()
             case OneForOnePolicy => OneForOnePolicyManager
           }

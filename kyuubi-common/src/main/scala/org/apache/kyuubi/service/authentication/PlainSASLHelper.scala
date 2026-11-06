@@ -42,12 +42,12 @@ object PlainSASLHelper {
 
   private class PlainServerCallbackHandler private (
       authMethod: AuthMethod,
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       isServer: Boolean)
     extends CallbackHandler {
 
-    def this(authMethodStr: String, conf: KyuubiConf, isServer: Boolean) =
-      this(AuthMethods.withName(authMethodStr), conf, isServer)
+    def this(authMethodStr: String, kyuubiConf: KyuubiConf, isServer: Boolean) =
+      this(AuthMethods.withName(authMethodStr), kyuubiConf, isServer)
 
     @throws[UnsupportedCallbackException]
     override def handle(callbacks: Array[Callback]): Unit = {
@@ -65,7 +65,7 @@ object PlainSASLHelper {
         }
       }
       val provider =
-        AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf, isServer)
+        AuthenticationProviderFactory.getAuthenticationProvider(authMethod, kyuubiConf, isServer)
       provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
     }
@@ -77,12 +77,12 @@ object PlainSASLHelper {
 
   def getTransportFactory(
       authTypeStr: String,
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       transportFactory: Option[TSaslServerTransport.Factory] = None,
       isServer: Boolean = true): TTransportFactory = {
     val handler =
       try {
-        new PlainServerCallbackHandler(authTypeStr, conf, isServer)
+        new PlainServerCallbackHandler(authTypeStr, kyuubiConf, isServer)
       } catch {
         case _: NoSuchElementException =>
           throw new IllegalArgumentException(

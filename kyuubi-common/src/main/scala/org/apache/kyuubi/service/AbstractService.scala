@@ -32,11 +32,11 @@ abstract class AbstractService(serviceName: String) extends Service with Logging
    * The transition must be from [[LATENT]]to [[INITIALIZED]] unless the
    * operation failed and an exception was raised.
    *
-   * @param conf the configuration of the service
+   * @param kyuubiConf the configuration of the service
    */
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
     ensureCurrentState(LATENT)
-    this.conf = conf
+    this.conf = kyuubiConf
     changeState(INITIALIZED)
     info(s"Service[$serviceName] is initialized.")
   }

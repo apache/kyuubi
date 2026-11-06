@@ -102,25 +102,25 @@ private[server] object ApiRootResource {
   def getEngineUIProxyHandler(fe: KyuubiRestFrontendService): ServletContextHandler = {
     val proxyServlet = EngineUIProxyServlet(fe)
     val holder = new ServletHolder(proxyServlet)
-    val conf = fe.getConf
+    val serverConf = fe.getConf
     holder.setInitParameter(
       "idleTimeout",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_IDLE_TIMEOUT).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_IDLE_TIMEOUT).toString)
     holder.setInitParameter(
       "maxConnections",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_CONNECTIONS).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_CONNECTIONS).toString)
     holder.setInitParameter(
       "maxThreads",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_THREADS).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_MAX_THREADS).toString)
     holder.setInitParameter(
       "requestBufferSize",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_REQUEST_BUFFER_SIZE).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_REQUEST_BUFFER_SIZE).toString)
     holder.setInitParameter(
       "responseBufferSize",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_RESPONSE_BUFFER_SIZE).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_RESPONSE_BUFFER_SIZE).toString)
     holder.setInitParameter(
       "timeout",
-      conf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_TIMEOUT).toString)
+      serverConf.get(FRONTEND_REST_PROXY_JETTY_CLIENT_TIMEOUT).toString)
     val proxyHandler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     proxyHandler.setContextPath("/engine-ui")
     FrontendServiceContext.set(proxyHandler, fe)

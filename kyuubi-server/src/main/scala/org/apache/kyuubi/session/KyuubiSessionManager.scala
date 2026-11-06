@@ -91,7 +91,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      sessionRequestConf: Map[String, String]): Session = {
+      requestConf: Map[String, String]): Session = {
     val sessionConf = this.getConf.getUserDefaults(user)
     try {
       new KyuubiSessionImpl(
@@ -99,7 +99,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         user,
         password,
         ipAddress,
-        sessionRequestConf,
+        requestConf,
         this,
         sessionConf,
         sessionConf.get(ENGINE_DO_AS_ENABLED),
@@ -124,11 +124,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      sessionRequestConf: Map[String, String]): SessionHandle = {
+      requestConf: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
-      super.openSession(protocol, username, password, ipAddress, sessionRequestConf)
+      super.openSession(protocol, username, password, ipAddress, requestConf)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
@@ -161,7 +161,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      sessionRequestConf: Map[String, String],
+      requestConf: Map[String, String],
       batchType: String,
       batchName: Option[String],
       resource: String,
@@ -176,7 +176,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       username,
       password,
       ipAddress,
-      sessionRequestConf,
+      requestConf,
       this,
       sessionConf,
       batchType,
@@ -241,11 +241,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   def initializeBatchState(
       user: String,
       ipAddress: String,
-      sessionRequestConf: Map[String, String],
+      requestConf: Map[String, String],
       batchRequest: BatchRequest): String = {
-    val realUser = sessionRequestConf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+    val realUser = requestConf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val batchId = sessionRequestConf(KYUUBI_BATCH_ID_KEY)
+    val batchId = requestConf(KYUUBI_BATCH_ID_KEY)
     val metadata = Metadata(
       identifier = batchId,
       sessionType = SessionType.BATCH,
@@ -256,11 +256,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       resource = batchRequest.getResource,
       className = batchRequest.getClassName,
       requestName = batchRequest.getName,
-      requestConf = sessionRequestConf,
+      requestConf = requestConf,
       requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType,
-      priority = sessionRequestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+      priority = requestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
     // there is a chance that operation failed w/ duplicated key error
     metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))

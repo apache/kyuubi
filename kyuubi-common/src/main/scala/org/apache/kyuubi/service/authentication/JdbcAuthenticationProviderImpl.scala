@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.util.JdbcUtils
 
-class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider
+class JdbcAuthenticationProviderImpl(kyuubiConf: KyuubiConf) extends PasswdAuthenticationProvider
   with Logging {
 
   private val SQL_PLACEHOLDER_REGEX = """\$\{.+?}""".r
@@ -39,11 +39,11 @@ class JdbcAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     USER_SQL_PLACEHOLDER,
     PASSWORD_SQL_PLACEHOLDER)
 
-  private val driverClass = conf.get(AUTHENTICATION_JDBC_DRIVER)
-  private val authDbJdbcUrl = conf.get(AUTHENTICATION_JDBC_URL)
-  private val authDbUser = conf.get(AUTHENTICATION_JDBC_USER)
-  private val authDbPassword = conf.get(AUTHENTICATION_JDBC_PASSWORD)
-  private val authQuery = conf.get(AUTHENTICATION_JDBC_QUERY)
+  private val driverClass = kyuubiConf.get(AUTHENTICATION_JDBC_DRIVER)
+  private val authDbJdbcUrl = kyuubiConf.get(AUTHENTICATION_JDBC_URL)
+  private val authDbUser = kyuubiConf.get(AUTHENTICATION_JDBC_USER)
+  private val authDbPassword = kyuubiConf.get(AUTHENTICATION_JDBC_PASSWORD)
+  private val authQuery = kyuubiConf.get(AUTHENTICATION_JDBC_QUERY)
 
   checkJdbcConfigs()
 

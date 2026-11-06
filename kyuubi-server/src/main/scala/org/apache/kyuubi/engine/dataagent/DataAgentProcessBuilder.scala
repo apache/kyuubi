@@ -36,14 +36,14 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 class DataAgentProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) = {
-    this(proxyUser, doAsEnabled, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, sessionConf: KyuubiConf) = {
+    this(proxyUser, doAsEnabled, sessionConf, "")
   }
 
   override def shortName: String = "data-agent"
@@ -57,11 +57,12 @@ class DataAgentProcessBuilder(
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
-    val memory = conf.get(ENGINE_DATA_AGENT_MEMORY)
+    val memory = sessionConf.get(ENGINE_DATA_AGENT_MEMORY)
     buffer += s"-Xmx$memory"
     buffer += "-Dfile.encoding=UTF-8"
 
-    val javaOptions = conf.get(ENGINE_DATA_AGENT_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
+    val javaOptions =
+      sessionConf.get(ENGINE_DATA_AGENT_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       buffer ++= parseOptionString(javaOptions.get)
     }
@@ -82,7 +83,7 @@ class DataAgentProcessBuilder(
       }
     }
 
-    val extraCp = conf.get(ENGINE_DATA_AGENT_EXTRA_CLASSPATH)
+    val extraCp = sessionConf.get(ENGINE_DATA_AGENT_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
     buffer ++= genClasspathOption(classpathEntries)
 
@@ -91,7 +92,7 @@ class DataAgentProcessBuilder(
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
     buffer ++= confKeyValue(KYUUBI_ENGINE_ID, engineRefId)
 
-    buffer ++= confKeyValues(conf.getEngineConf(EngineType.DATA_AGENT))
+    buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.DATA_AGENT))
 
     buffer
   }
@@ -101,7 +102,7 @@ class DataAgentProcessBuilder(
       super.toString
     } else {
       redactConfValues(
-        Utils.redactCommandLineArgs(conf, commands),
+        Utils.redactCommandLineArgs(sessionConf, commands),
         Set(ENGINE_DATA_AGENT_OPENAI_API_KEY.key, ENGINE_DATA_AGENT_JDBC_URL.key)).map {
         case arg if arg.startsWith("-") || arg == mainClass => s"\\\n\t$arg"
         case arg => arg

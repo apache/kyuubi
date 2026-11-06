@@ -31,7 +31,7 @@ import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.{AuthTypes, InternalSecurityAccessor}
 import org.apache.kyuubi.service.authentication.AuthTypes.{CUSTOM, KERBEROS, NOSASL}
 
-class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
+class AuthenticationFilter(serverConf: KyuubiConf) extends Filter with Logging {
   import AuthenticationFilter._
   import AuthSchemes._
 
@@ -39,7 +39,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     new mutable.HashMap[AuthScheme, AuthenticationHandler]()
 
   private[authentication] def addAuthHandler(authHandler: AuthenticationHandler): Unit = {
-    authHandler.init(conf)
+    authHandler.init(serverConf)
     if (authHandler.authenticationSupported) {
       if (authSchemeHandlers.contains(authHandler.authScheme)) {
         warn(s"Authentication handler has been defined for scheme ${authHandler.authScheme}")
@@ -55,7 +55,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
   }
 
   private[kyuubi] def initAuthHandlers(): Unit = {
-    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    val authTypes = serverConf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     val spnegoKerberosEnabled = authTypes.contains(KERBEROS)
     val basicAuthTypeOpt = {
       if (authTypes.toSet == Set(NOSASL)) {
@@ -70,11 +70,11 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     }
     basicAuthTypeOpt.foreach { basicAuthType =>
       if (basicAuthType.equals(CUSTOM)) {
-        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS).foreach { _ =>
+        serverConf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BASIC_CLASS).foreach { _ =>
           val basicHandler = new BasicAuthenticationHandler(CUSTOM)
           addAuthHandler(basicHandler)
         }
-        conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS).foreach { bearerClassName =>
+        serverConf.get(KyuubiConf.AUTHENTICATION_CUSTOM_BEARER_CLASS).foreach { bearerClassName =>
           val bearerHandler = new BearerAuthenticationHandler(bearerClassName)
           addAuthHandler(bearerHandler)
         }
@@ -119,7 +119,7 @@ class AuthenticationFilter(conf: KyuubiConf) extends Filter with Logging {
     val matchedHandler = getMatchedHandler(authorization).orNull
     HTTP_CLIENT_IP_ADDRESS.set(httpRequest.getRemoteAddr)
     HTTP_PROXY_HEADER_CLIENT_IP_ADDRESS.set(
-      httpRequest.getHeader(conf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
+      httpRequest.getHeader(serverConf.get(FRONTEND_PROXY_HTTP_CLIENT_IP_HEADER)))
 
     try {
       if (matchedHandler == null) {

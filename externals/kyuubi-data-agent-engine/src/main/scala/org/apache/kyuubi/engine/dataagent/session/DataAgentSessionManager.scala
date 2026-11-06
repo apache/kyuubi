@@ -39,9 +39,9 @@ class DataAgentSessionManager(name: String)
   override lazy val operationManager: OperationManager =
     new DataAgentOperationManager(conf, dataAgentProvider)
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-    super.initialize(conf)
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+    this.conf = kyuubiConf
+    super.initialize(kyuubiConf)
   }
 
   override protected def createSession(
@@ -49,10 +49,10 @@ class DataAgentSessionManager(name: String)
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+      requestConf: Map[String, String]): Session = {
+    requestConf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
       .flatMap(getSessionOption).getOrElse {
-        new DataAgentSessionImpl(protocol, user, password, ipAddress, conf, this)
+        new DataAgentSessionImpl(protocol, user, password, ipAddress, requestConf, this)
       }
   }
 

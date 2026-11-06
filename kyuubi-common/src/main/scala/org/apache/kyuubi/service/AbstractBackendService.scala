@@ -56,12 +56,12 @@ abstract class AbstractBackendService(name: String)
   override def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(
       statement,
-      confOverlay,
+      requestConf,
       runAsync,
       queryTimeout)
   }
@@ -213,8 +213,8 @@ abstract class AbstractBackendService(name: String)
       .fetchResults(operationHandle, orientation, maxRows, fetchLog)
   }
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
     addService(sessionManager)
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
   }
 }

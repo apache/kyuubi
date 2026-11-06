@@ -168,11 +168,11 @@ case class HivePartitionReaderFactory(
 
   def configureJobPropertiesForStorageHandler(
       tableDesc: TableDesc,
-      conf: Configuration,
+      scanHadoopConf: Configuration,
       input: Boolean): Unit = {
     val property = tableDesc.getProperties.getProperty(META_TABLE_STORAGE)
     val storageHandler =
-      org.apache.hadoop.hive.ql.metadata.HiveUtils.getStorageHandler(conf, property)
+      org.apache.hadoop.hive.ql.metadata.HiveUtils.getStorageHandler(scanHadoopConf, property)
     if (storageHandler != null) {
       val jobProperties = new java.util.LinkedHashMap[String, String]
       if (input) {

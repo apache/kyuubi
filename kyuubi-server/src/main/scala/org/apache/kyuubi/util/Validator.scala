@@ -22,12 +22,12 @@ import org.apache.kyuubi.config.KyuubiConf
 
 object Validator {
 
-  def validateConf(kyuubiConf: KyuubiConf): Unit = {
-    validateSparkK8sConf(kyuubiConf)
+  def validateConf(sessionConf: KyuubiConf): Unit = {
+    validateSparkK8sConf(sessionConf)
   }
 
-  private def validateSparkK8sConf(kyuubiConf: KyuubiConf): Unit = {
-    val prefix = kyuubiConf.getOption(KUBERNETES_EXECUTOR_POD_NAME_PREFIX).orNull
+  private def validateSparkK8sConf(sessionConf: KyuubiConf): Unit = {
+    val prefix = sessionConf.getOption(KUBERNETES_EXECUTOR_POD_NAME_PREFIX).orNull
     if (prefix != null && !isValidExecutorPodNamePrefix(prefix)) {
       throw new KyuubiException(s"'$prefix' " +
         s"in spark.kubernetes.executor.podNamePrefix is invalid." +

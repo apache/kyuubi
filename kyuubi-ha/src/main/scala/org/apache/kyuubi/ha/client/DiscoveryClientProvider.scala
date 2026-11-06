@@ -29,8 +29,8 @@ object DiscoveryClientProvider extends Logging {
   /**
    * Creates a zookeeper client before calling `f` and close it after calling `f`.
    */
-  def withDiscoveryClient[T](conf: KyuubiConf)(f: DiscoveryClient => T): T = {
-    val discoveryClient = createDiscoveryClient(conf)
+  def withDiscoveryClient[T](kyuubiConf: KyuubiConf)(f: DiscoveryClient => T): T = {
+    val discoveryClient = createDiscoveryClient(kyuubiConf)
     try {
       discoveryClient.createClient()
       f(discoveryClient)
@@ -43,12 +43,12 @@ object DiscoveryClientProvider extends Logging {
     }
   }
 
-  def createDiscoveryClient(conf: KyuubiConf): DiscoveryClient = {
-    val className = conf.get(HighAvailabilityConf.HA_CLIENT_CLASS)
+  def createDiscoveryClient(kyuubiConf: KyuubiConf): DiscoveryClient = {
+    val className = kyuubiConf.get(HighAvailabilityConf.HA_CLIENT_CLASS)
     if (className.isEmpty) {
       throw new KyuubiException(
         s"${HighAvailabilityConf.HA_CLIENT_CLASS.key} cannot be empty.")
     }
-    ClassUtils.createInstance(className, classOf[DiscoveryClient], conf)
+    ClassUtils.createInstance(className, classOf[DiscoveryClient], kyuubiConf)
   }
 }

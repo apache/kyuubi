@@ -25,13 +25,13 @@ import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class DataAgentOperationManager(
-    conf: KyuubiConf,
+    kyuubiConf: KyuubiConf,
     dataAgentProvider: DataAgentProvider) extends OperationManager("DataAgentOperationManager") {
 
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation = if (ApproveToolCall.isApprovalCommand(statement)) {
@@ -40,7 +40,7 @@ class DataAgentOperationManager(
       new ExecuteStatement(
         session,
         statement,
-        confOverlay,
+        requestConf,
         runAsync,
         queryTimeout,
         dataAgentProvider)

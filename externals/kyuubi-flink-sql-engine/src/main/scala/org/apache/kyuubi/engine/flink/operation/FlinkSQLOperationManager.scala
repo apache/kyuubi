@@ -46,7 +46,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
@@ -54,7 +54,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConf)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }

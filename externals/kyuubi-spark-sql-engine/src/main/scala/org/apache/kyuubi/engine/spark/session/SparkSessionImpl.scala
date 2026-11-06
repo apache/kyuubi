@@ -44,13 +44,14 @@ class SparkSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    conf: Map[String, String],
+    requestConf: Map[String, String],
     sessionManager: SessionManager,
     val spark: SparkSession)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
 
   override val handle: SessionHandle =
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+    requestConf.get(
+      KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
   private val sessionRunTime = new AtomicLong(0)
   private val sessionCpuTime = new AtomicLong(0)
 
@@ -63,7 +64,7 @@ class SparkSessionImpl(
   }
 
   override val sessionIdleTimeoutThreshold: Long = {
-    conf.get(SESSION_IDLE_TIMEOUT.key)
+    requestConf.get(SESSION_IDLE_TIMEOUT.key)
       .map(_.trim)
       .map(v => Try(Duration.parse(v).toMillis).getOrElse(v.toLong))
       .getOrElse(sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))

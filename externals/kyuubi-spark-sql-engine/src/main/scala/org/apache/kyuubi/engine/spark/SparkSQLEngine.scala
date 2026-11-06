@@ -61,13 +61,13 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private lazy val engineSavePath =
     backendService.sessionManager.asInstanceOf[SparkSQLSessionManager].getEngineResultSavePath()
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
     val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
-    val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
+    val engineEventListener = new SparkSQLEngineEventListener(kvStore, kyuubiConf)
     spark.sparkContext.addSparkListener(engineEventListener)
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
   }
 
   override def start(): Unit = {
@@ -383,9 +383,9 @@ object SparkSQLEngine extends Logging {
       addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 2)
     }
 
-    def initLoggerEventHandler(conf: KyuubiConf): Unit = {
+    def initLoggerEventHandler(kyuubiConf: KyuubiConf): Unit = {
       val sparkEventRegister = new SparkEventHandlerRegister(spark)
-      sparkEventRegister.registerEventLoggers(conf)
+      sparkEventRegister.registerEventLoggers(kyuubiConf)
     }
   }
 

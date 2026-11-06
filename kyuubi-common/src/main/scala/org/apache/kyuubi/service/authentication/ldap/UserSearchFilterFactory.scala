@@ -28,9 +28,9 @@ import org.apache.kyuubi.config.KyuubiConf
  * The produced filter object filters out all users that are not found in the directory.
  */
 object UserSearchFilterFactory extends FilterFactory {
-  override def getInstance(conf: KyuubiConf): Option[Filter] = {
-    val groupFilter = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_FILTER)
-    val userFilter = conf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_FILTER)
+  override def getInstance(kyuubiConf: KyuubiConf): Option[Filter] = {
+    val groupFilter = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_FILTER)
+    val userFilter = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_FILTER)
     if (groupFilter.isEmpty && userFilter.isEmpty) None else Some(UserSearchFilter)
   }
 }

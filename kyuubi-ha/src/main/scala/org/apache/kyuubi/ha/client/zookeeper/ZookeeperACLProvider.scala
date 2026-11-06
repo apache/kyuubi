@@ -24,7 +24,7 @@ import org.apache.kyuubi.shaded.curator.framework.api.ACLProvider
 import org.apache.kyuubi.shaded.zookeeper.ZooDefs
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
 
-class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
+class ZookeeperACLProvider(kyuubiConf: KyuubiConf) extends ACLProvider {
 
   /**
    * Return the ACL list to use by default.
@@ -41,9 +41,10 @@ class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
       nodeAcls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
     }
 
-    if (conf.get(HighAvailabilityConf.HA_ENGINE_REF_ID).isEmpty && enabledServerAcls()) {
+    if (kyuubiConf.get(HighAvailabilityConf.HA_ENGINE_REF_ID).isEmpty && enabledServerAcls()) {
       addACL()
-    } else if (conf.get(HighAvailabilityConf.HA_ENGINE_REF_ID).nonEmpty && enabledEngineAcls()) {
+    } else if (kyuubiConf.get(
+        HighAvailabilityConf.HA_ENGINE_REF_ID).nonEmpty && enabledEngineAcls()) {
       addACL()
     } else {
       // ACLs for znodes on a non-kerberized cluster
@@ -54,13 +55,13 @@ class ZookeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
   }
 
   private def enabledServerAcls(): Boolean = AuthTypes
-    .withName(conf.get(HighAvailabilityConf.HA_ZK_AUTH_TYPE)) match {
+    .withName(kyuubiConf.get(HighAvailabilityConf.HA_ZK_AUTH_TYPE)) match {
     case AuthTypes.NONE => false
     case _ => true
   }
 
   private def enabledEngineAcls(): Boolean = AuthTypes
-    .withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE)) match {
+    .withName(kyuubiConf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE)) match {
     case AuthTypes.NONE => false
     case _ => true
   }

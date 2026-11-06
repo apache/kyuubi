@@ -27,10 +27,13 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class LdapSearchFactory extends DirSearchFactory with Logging {
   @throws[AuthenticationException]
-  override def getInstance(conf: KyuubiConf, principal: String, password: String): DirSearch = {
+  override def getInstance(
+      kyuubiConf: KyuubiConf,
+      principal: String,
+      password: String): DirSearch = {
     try {
-      val ctx = createDirContext(conf, principal, password)
-      new LdapSearch(conf, ctx)
+      val ctx = createDirContext(kyuubiConf, principal, password)
+      new LdapSearch(kyuubiConf, ctx)
     } catch {
       case e: NamingException =>
         debug(s"Could not connect to the LDAP Server: Authentication failed for $principal")
@@ -40,10 +43,10 @@ class LdapSearchFactory extends DirSearchFactory with Logging {
 
   @throws[NamingException]
   private def createDirContext(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       principal: String,
       password: String): DirContext = {
-    val ldapUrl = conf.get(KyuubiConf.AUTHENTICATION_LDAP_URL)
+    val ldapUrl = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_URL)
     val env = new util.Hashtable[String, AnyRef]
     ldapUrl.foreach(env.put(Context.PROVIDER_URL, _))
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")

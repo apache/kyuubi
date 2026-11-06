@@ -89,7 +89,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   private String jdbcUriString;
   private String host;
   private int port;
-  private final Map<String, String> sessConfMap;
+  private final Map<String, String> connectionConf;
   private JdbcConnectionParams connParams;
   private TTransport transport;
   private TCLIService.Iface client;
@@ -138,16 +138,16 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       throw new KyuubiSQLException(e);
     }
     jdbcUriString = connParams.getJdbcUriString();
-    sessConfMap = connParams.getSessionVars();
+    connectionConf = connParams.getSessionVars();
 
-    if (!sessConfMap.containsKey(AUTH_PRINCIPAL)
-        && sessConfMap.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
-      sessConfMap.put(AUTH_PRINCIPAL, sessConfMap.get(AUTH_KYUUBI_SERVER_PRINCIPAL));
+    if (!connectionConf.containsKey(AUTH_PRINCIPAL)
+        && connectionConf.containsKey(AUTH_KYUUBI_SERVER_PRINCIPAL)) {
+      connectionConf.put(AUTH_PRINCIPAL, connectionConf.get(AUTH_KYUUBI_SERVER_PRINCIPAL));
     }
 
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on
-    // sess_var_list -> sessConfMap
+    // sess_var_list -> connectionConf
     // hive_conf_list -> hiveConfMap
     // hive_var_list -> hiveVarMap
     if (isKerberosAuthMode()) {
@@ -163,15 +163,15 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
     setupTimeout();
 
-    if (sessConfMap.containsKey(FETCH_SIZE)) {
-      fetchSize = Integer.parseInt(sessConfMap.get(FETCH_SIZE));
+    if (connectionConf.containsKey(FETCH_SIZE)) {
+      fetchSize = Integer.parseInt(connectionConf.get(FETCH_SIZE));
     }
-    if (sessConfMap.containsKey(INIT_FILE)) {
-      initFile = sessConfMap.get(INIT_FILE);
+    if (connectionConf.containsKey(INIT_FILE)) {
+      initFile = connectionConf.get(INIT_FILE);
     }
-    wmPool = sessConfMap.get(WM_POOL);
+    wmPool = connectionConf.get(WM_POOL);
     for (String application : APPLICATION) {
-      wmApp = sessConfMap.get(application);
+      wmApp = connectionConf.get(application);
       if (wmApp != null) break;
     }
 
@@ -180,7 +180,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
     int maxRetries = 1;
     try {
-      String strRetries = sessConfMap.get(RETRIES);
+      String strRetries = connectionConf.get(RETRIES);
       if (StringUtils.isNotBlank(strRetries)) {
         maxRetries = Integer.parseInt(strRetries);
       }
@@ -223,7 +223,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
           }
           throw newLaunchEngineInterruptedException(e);
         }
-        if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
+        if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(connectionConf)) {
           errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
           // Try next available server in zookeeper, or retry all the servers again if retry is
           // enabled
@@ -423,7 +423,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     String schemeName = useSsl ? "https" : "http";
     // http path should begin with "/"
     String httpPath;
-    httpPath = sessConfMap.get(HTTP_PATH);
+    httpPath = connectionConf.get(HTTP_PATH);
     if (httpPath == null) {
       httpPath = "/";
     } else if (!httpPath.startsWith("/")) {
@@ -449,14 +449,14 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private CloseableHttpClient getHttpClient(Boolean useSsl) throws SQLException {
     boolean isCookieEnabled = isCookieEnabled();
-    String cookieName = sessConfMap.getOrDefault(COOKIE_NAME, DEFAULT_COOKIE_NAMES_HS2);
+    String cookieName = connectionConf.getOrDefault(COOKIE_NAME, DEFAULT_COOKIE_NAMES_HS2);
     CookieStore cookieStore = isCookieEnabled ? new BasicCookieStore() : null;
     // Request interceptor for any request pre-processing logic
     Map<String, String> additionalHttpHeaders = new HashMap<>();
     Map<String, String> customCookies = new HashMap<>();
 
     // Retrieve the additional HttpHeaders
-    for (Map.Entry<String, String> entry : sessConfMap.entrySet()) {
+    for (Map.Entry<String, String> entry : connectionConf.entrySet()) {
       String key = entry.getKey();
 
       if (key.startsWith(HTTP_HEADER_PREFIX)) {
@@ -508,7 +508,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
        */
       requestInterceptor =
           new HttpKerberosRequestInterceptor(
-              sessConfMap.get(AUTH_PRINCIPAL),
+              connectionConf.get(AUTH_PRINCIPAL),
               host,
               subject,
               cookieStore,
@@ -520,12 +520,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 
     // Set timeout
-    RequestConfig config =
+    RequestConfig httpRequestConfig =
         RequestConfig.custom()
             .setConnectTimeout(connectTimeout)
             .setSocketTimeout(socketTimeout)
             .build();
-    httpClientBuilder.setDefaultRequestConfig(config);
+    httpClientBuilder.setDefaultRequestConfig(httpRequestConfig);
 
     // Configure http client for cookie based authentication
     if (isCookieEnabled) {
@@ -576,10 +576,10 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
     // Configure http client for SSL
     if (useSsl) {
-      String useTwoWaySSL = sessConfMap.get(USE_TWO_WAY_SSL);
-      String sslTrustStorePath = sessConfMap.get(SSL_TRUST_STORE);
+      String useTwoWaySSL = connectionConf.get(USE_TWO_WAY_SSL);
+      String sslTrustStorePath = connectionConf.get(SSL_TRUST_STORE);
       String sslTrustStorePassword =
-          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+          Utils.getPassword(connectionConf, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore;
       SSLConnectionSocketFactory socketFactory;
       SSLContext sslContext;
@@ -641,7 +641,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private String getJWTStringFromSession() {
-    String jwtCredential = sessConfMap.get(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
+    String jwtCredential = connectionConf.get(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
     if (jwtCredential == null || jwtCredential.isEmpty()) {
       LOG.debug("No JWT is specified in connection string.");
     } else {
@@ -663,9 +663,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     // if dynamic service discovery is configured.
     if (isSslConnection()) {
       // get SSL socket
-      String sslTrustStore = sessConfMap.get(SSL_TRUST_STORE);
+      String sslTrustStore = connectionConf.get(SSL_TRUST_STORE);
       String sslTrustStorePassword =
-          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+          Utils.getPassword(connectionConf, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
         transport =
@@ -690,7 +690,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private int getMaxMessageSize() throws SQLException {
-    String maxMessageSize = sessConfMap.get(JdbcConnectionParams.THRIFT_CLIENT_MAX_MESSAGE_SIZE);
+    String maxMessageSize = connectionConf.get(JdbcConnectionParams.THRIFT_CLIENT_MAX_MESSAGE_SIZE);
     if (maxMessageSize == null) {
       return -1;
     }
@@ -736,9 +736,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       saslProps.put(Sasl.SERVER_AUTH, "true");
       // If the client did not specify qop then just negotiate the one supported by server
       saslProps.put(Sasl.QOP, "auth-conf,auth-int,auth");
-      if (sessConfMap.containsKey(AUTH_QOP)) {
+      if (connectionConf.containsKey(AUTH_QOP)) {
         try {
-          SaslQOP saslQOP = SaslQOP.fromString(sessConfMap.get(AUTH_QOP));
+          SaslQOP saslQOP = SaslQOP.fromString(connectionConf.get(AUTH_QOP));
           saslProps.put(Sasl.QOP, saslQOP.toString());
         } catch (IllegalArgumentException e) {
           throw new KyuubiSQLException(
@@ -747,7 +747,7 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
       }
 
       Subject subject = createSubject();
-      String serverPrincipal = sessConfMap.get(AUTH_PRINCIPAL);
+      String serverPrincipal = connectionConf.get(AUTH_PRINCIPAL);
       return KerberosSaslHelper.createSubjectAssumedTransport(
           subject, serverPrincipal, host, socketTransport, saslProps);
     } catch (Exception e) {
@@ -762,9 +762,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     try {
       KeyManagerFactory keyManagerFactory =
           KeyManagerFactory.getInstance(SUNX509_ALGORITHM_STRING, SUNJSSE_ALGORITHM_STRING);
-      String keyStorePath = sessConfMap.get(SSL_KEY_STORE);
+      String keyStorePath = connectionConf.get(SSL_KEY_STORE);
       String keyStorePassword =
-          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_KEY_STORE_PASSWORD);
+          Utils.getPassword(connectionConf, JdbcConnectionParams.SSL_KEY_STORE_PASSWORD);
       KeyStore sslKeyStore = KeyStore.getInstance(SSL_KEY_STORE_TYPE);
 
       if (keyStorePath == null || keyStorePath.isEmpty()) {
@@ -779,9 +779,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
       TrustManagerFactory trustManagerFactory =
           TrustManagerFactory.getInstance(SUNX509_ALGORITHM_STRING);
-      String trustStorePath = sessConfMap.get(SSL_TRUST_STORE);
+      String trustStorePath = connectionConf.get(SSL_TRUST_STORE);
       String trustStorePassword =
-          Utils.getPassword(sessConfMap, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+          Utils.getPassword(connectionConf, JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore = KeyStore.getInstance(SSL_TRUST_STORE_TYPE);
 
       if (trustStorePath == null || trustStorePath.isEmpty()) {
@@ -857,9 +857,9 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     openReq.setConfiguration(openConf);
 
     // Store the user name in the open request in case no non-sasl authentication
-    if (AUTH_SIMPLE.equals(sessConfMap.get(AUTH_TYPE))) {
-      openReq.setUsername(sessConfMap.get(AUTH_USER));
-      openReq.setPassword(sessConfMap.get(AUTH_PASSWD));
+    if (AUTH_SIMPLE.equals(connectionConf.get(AUTH_TYPE))) {
+      openReq.setUsername(connectionConf.get(AUTH_USER));
+      openReq.setPassword(connectionConf.get(AUTH_PASSWD));
     }
 
     try {
@@ -910,26 +910,26 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     isClosed = false;
   }
 
-  /** @return username from sessConfMap */
+  /** @return username from connectionConf */
   private String getUserName() {
     return getSessionValue(AUTH_USER, ANONYMOUS_USER);
   }
 
-  /** @return password from sessConfMap */
+  /** @return password from connectionConf */
   private String getPassword() {
     return getSessionValue(AUTH_PASSWD, ANONYMOUS_PASSWD);
   }
 
   private boolean isCookieEnabled() {
-    return !"false".equalsIgnoreCase(sessConfMap.get(COOKIE_AUTH));
+    return !"false".equalsIgnoreCase(connectionConf.get(COOKIE_AUTH));
   }
 
   private boolean isSslConnection() {
-    return "true".equalsIgnoreCase(sessConfMap.get(USE_SSL));
+    return "true".equalsIgnoreCase(connectionConf.get(USE_SSL));
   }
 
   private boolean isSaslAuthMode() {
-    return !AUTH_SIMPLE.equalsIgnoreCase(sessConfMap.get(AUTH_TYPE));
+    return !AUTH_SIMPLE.equalsIgnoreCase(connectionConf.get(AUTH_TYPE));
   }
 
   private boolean isHadoopUserGroupInformationDoAs() {
@@ -946,17 +946,17 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isForciblyFromKeytabAuthMode() {
     return AUTH_KERBEROS_AUTH_TYPE_FROM_KEYTAB.equalsIgnoreCase(
-        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+        connectionConf.get(AUTH_KERBEROS_AUTH_TYPE));
   }
 
   private boolean isForciblyFromSubjectAuthMode() {
     return AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equalsIgnoreCase(
-        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+        connectionConf.get(AUTH_KERBEROS_AUTH_TYPE));
   }
 
   private boolean isForciblyTgtCacheAuthMode() {
     return AUTH_KERBEROS_AUTH_TYPE_FROM_TICKET_CACHE.equalsIgnoreCase(
-        sessConfMap.get(AUTH_KERBEROS_AUTH_TYPE));
+        connectionConf.get(AUTH_KERBEROS_AUTH_TYPE));
   }
 
   private boolean isKeytabAuthMode() {
@@ -1014,8 +1014,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isJwtAuthMode() {
     return JdbcConnectionParams.AUTH_TYPE_JWT.equalsIgnoreCase(
-            sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))
-        || sessConfMap.containsKey(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
+            connectionConf.get(JdbcConnectionParams.AUTH_TYPE))
+        || connectionConf.containsKey(JdbcConnectionParams.AUTH_TYPE_JWT_KEY);
   }
 
   private boolean isKerberosAuthMode() {
@@ -1024,19 +1024,19 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
 
   private boolean isEnableCanonicalHostnameCheck() {
     return Boolean.parseBoolean(
-        sessConfMap.getOrDefault(
+        connectionConf.getOrDefault(
             JdbcConnectionParams.AUTH_KERBEROS_ENABLE_CANONICAL_HOSTNAME_CHECK, "true"));
   }
 
   private Subject createSubject() {
     if (isKeytabAuthMode()) {
-      String principal = sessConfMap.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
-      String keytab = sessConfMap.get(AUTH_KYUUBI_CLIENT_KEYTAB);
+      String principal = connectionConf.get(AUTH_KYUUBI_CLIENT_PRINCIPAL);
+      String keytab = connectionConf.get(AUTH_KYUUBI_CLIENT_KEYTAB);
       return KerberosAuthenticationManager.getKeytabAuthentication(principal, keytab).getSubject();
     } else if (isFromSubjectAuthMode()) {
       return SubjectUtil.current();
     } else if (isTgtCacheAuthMode()) {
-      String ticketCache = sessConfMap.getOrDefault(AUTH_KYUUBI_CLIENT_TICKET_CACHE, "");
+      String ticketCache = connectionConf.getOrDefault(AUTH_KYUUBI_CLIENT_TICKET_CACHE, "");
       return KerberosAuthenticationManager.getTgtCacheAuthentication(ticketCache).getSubject();
     } else {
       // This should never happen
@@ -1045,23 +1045,23 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private boolean isHttpTransportMode() {
-    return "http".equalsIgnoreCase(sessConfMap.get(TRANSPORT_MODE));
+    return "http".equalsIgnoreCase(connectionConf.get(TRANSPORT_MODE));
   }
 
   private void logZkDiscoveryMessage(String message) {
-    if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(sessConfMap)) {
+    if (ZooKeeperHiveClientHelper.isZkDynamicDiscoveryMode(connectionConf)) {
       LOG.info(message);
     }
   }
 
   private boolean hasSessionValue(String varName) {
-    String varValue = sessConfMap.get(varName);
+    String varValue = connectionConf.get(varName);
     return !(varValue == null || varValue.isEmpty());
   }
 
-  /** Lookup varName in sessConfMap, if its null or empty return the default value varDefault */
+  /** Lookup varName in connectionConf, if its null or empty return the default value varDefault */
   private String getSessionValue(String varName, String varDefault) {
-    String varValue = sessConfMap.get(varName);
+    String varValue = connectionConf.get(varName);
     if (varValue == null || varValue.isEmpty()) {
       varValue = varDefault;
     }
@@ -1069,8 +1069,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
   }
 
   private void setupTimeout() {
-    if (sessConfMap.containsKey(CONNECT_TIMEOUT)) {
-      String connectTimeoutStr = sessConfMap.get(CONNECT_TIMEOUT);
+    if (connectionConf.containsKey(CONNECT_TIMEOUT)) {
+      String connectTimeoutStr = connectionConf.get(CONNECT_TIMEOUT);
       try {
         long connectTimeoutMs = Long.parseLong(connectTimeoutStr);
         connectTimeout = (int) Math.max(0, Math.min(connectTimeoutMs, Integer.MAX_VALUE));
@@ -1078,8 +1078,8 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
         LOG.info("Failed to parse connectTimeout of value " + connectTimeoutStr);
       }
     }
-    if (sessConfMap.containsKey(SOCKET_TIMEOUT)) {
-      String socketTimeoutStr = sessConfMap.get(SOCKET_TIMEOUT);
+    if (connectionConf.containsKey(SOCKET_TIMEOUT)) {
+      String socketTimeoutStr = connectionConf.get(SOCKET_TIMEOUT);
       try {
         long socketTimeoutMs = Long.parseLong(socketTimeoutStr);
         socketTimeout = (int) Math.max(0, Math.min(socketTimeoutMs, Integer.MAX_VALUE));

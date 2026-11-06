@@ -40,16 +40,16 @@ import org.apache.kyuubi.util.reflect.ReflectUtils._
 object KyuubiHadoopUtils extends Logging {
 
   def newHadoopConf(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       loadDefaults: Boolean = true): Configuration = {
     val hadoopConf = new Configuration(loadDefaults)
-    conf.getAll
+    kyuubiConf.getAll
       .foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
   }
 
-  def newYarnConfiguration(conf: KyuubiConf): YarnConfiguration = {
-    new YarnConfiguration(newHadoopConf(conf))
+  def newYarnConfiguration(kyuubiConf: KyuubiConf): YarnConfiguration = {
+    new YarnConfiguration(newHadoopConf(kyuubiConf))
   }
 
   def getServerPrincipal(principal: String): String = {

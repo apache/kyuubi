@@ -47,7 +47,7 @@ trait BackendService {
   def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 

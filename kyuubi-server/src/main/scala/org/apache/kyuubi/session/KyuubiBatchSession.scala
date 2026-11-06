@@ -36,7 +36,7 @@ class KyuubiBatchSession(
     user: String,
     password: String,
     ipAddress: String,
-    sessionRequestConf: Map[String, String],
+    requestConf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
     val sessionConf: KyuubiConf,
     batchType: String,
@@ -51,16 +51,16 @@ class KyuubiBatchSession(
     user,
     password,
     ipAddress,
-    sessionRequestConf,
+    requestConf,
     sessionManager) {
   override val sessionType: SessionType = SessionType.BATCH
   override val connectionUrl: String =
-    metadata.map(_.kyuubiInstance).getOrElse(sessionRequestConf.getOrElse(
+    metadata.map(_.kyuubiInstance).getOrElse(requestConf.getOrElse(
       KYUUBI_SESSION_CONNECTION_URL_KEY,
       ""))
 
   override val handle: SessionHandle = {
-    val batchId = metadata.map(_.identifier).getOrElse(sessionRequestConf(KYUUBI_BATCH_ID_KEY))
+    val batchId = metadata.map(_.identifier).getOrElse(requestConf(KYUUBI_BATCH_ID_KEY))
     SessionHandle.fromUUID(batchId)
   }
 
@@ -83,35 +83,35 @@ class KyuubiBatchSession(
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
   override val normalizedConf: Map[String, String] =
-    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(sessionRequestConf)
+    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(requestConf)
 
   private[kyuubi] def resourceUploadFolderPath: Path =
     KyuubiApplicationManager.sessionUploadFolderPath(handle.identifier.toString)
 
-  val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
+  val effectiveConf: Map[String, String] = {
+    val requestAdvisorConf = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedConf.asJava).asScala).reduce(_ ++ _)
-    if (confOverlay != null) {
-      val overlayConf = new KyuubiConf(false)
-      confOverlay.foreach { case (k, v) => overlayConf.set(k, v) }
-      normalizedConf ++ overlayConf.getBatchConf(batchType)
+    if (requestAdvisorConf != null) {
+      val batchAdvisorConf = new KyuubiConf(false)
+      requestAdvisorConf.foreach { case (k, v) => batchAdvisorConf.set(k, v) }
+      normalizedConf ++ batchAdvisorConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
       normalizedConf
     }
   }
 
-  optimizedConf.foreach {
+  effectiveConf.foreach {
     case (key, value) => sessionConf.set(key, value)
   }
 
   override lazy val name: Option[String] =
-    batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
+    batchName.filterNot(_.trim.isEmpty).orElse(effectiveConf.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
   private[kyuubi] lazy val isResourceUploaded: Boolean =
-    sessionRequestConf.getOrElse(
+    requestConf.getOrElse(
       KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY,
       false.toString).toBoolean
 
@@ -122,7 +122,7 @@ class KyuubiBatchSession(
       name.orNull,
       resource,
       className,
-      optimizedConf,
+      effectiveConf,
       batchArgs,
       metadata)
 
@@ -153,7 +153,7 @@ class KyuubiBatchSession(
   override def checkSessionAccessPathURIs(): Unit = {
     KyuubiApplicationManager.checkApplicationAccessPaths(
       batchType,
-      optimizedConf,
+      effectiveConf,
       sessionManager.getConf)
     if (resource != SparkProcessBuilder.INTERNAL_RESOURCE) {
       KyuubiApplicationManager.checkApplicationAccessPath(resource, sessionManager.getConf)
@@ -170,7 +170,7 @@ class KyuubiBatchSession(
       }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
         Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
       }.getOrElse(Map.empty) ++ (batchJobSubmissionOp.builder match {
-        case builder: SparkProcessBuilder => builder.appendPodNameConf(optimizedConf)
+        case builder: SparkProcessBuilder => builder.appendPodNameConf(effectiveConf)
         case _ => Map.empty[String, String]
       })
     }
@@ -181,7 +181,7 @@ class KyuubiBatchSession(
         val metadataToUpdate = Metadata(
           identifier = initialMetadata.identifier,
           requestName = name.orNull,
-          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          requestConf = effectiveConf ++ kubernetesInfo, // save the kubernetes info
           clusterManager = batchJobSubmissionOp.builder.clusterManager())
         sessionManager.updateMetadata(metadataToUpdate)
       case (None, _) =>
@@ -197,12 +197,12 @@ class KyuubiBatchSession(
           resource = resource,
           className = className,
           requestName = name.orNull,
-          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          requestConf = effectiveConf ++ kubernetesInfo, // save the kubernetes info
           requestArgs = batchArgs,
           createTime = createTime,
           engineType = batchType,
           clusterManager = batchJobSubmissionOp.builder.clusterManager(),
-          priority = sessionRequestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+          priority = requestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)

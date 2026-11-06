@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
  * This class is modified to get rid of dependency on HiveConf
  */
 public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser {
-  private Configuration conf;
+  private Configuration hiveConf;
   private final URL hiveSiteURI;
   private static final String TRUSTSTORE_PASS_PROP = "javax.net.ssl.trustStorePassword";
   private static final String TRUSTSTORE_PROP = "javax.net.ssl.trustStore";
@@ -99,18 +99,18 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
     }
     // Look for hive-site.xml on the CLASSPATH and log its location if found.
     hiveSiteURI = findConfigFile(classLoader, "hive-site.xml", true);
-    conf = new Configuration();
+    hiveConf = new Configuration();
     if (hiveSiteURI == null) {
       LOG.debug("hive-site.xml not found for constructing the connection URL");
     } else {
       LOG.info("Using hive-site.xml at " + hiveSiteURI);
-      conf.addResource(hiveSiteURI);
+      hiveConf.addResource(hiveSiteURI);
     }
   }
 
   @VisibleForTesting
   void setHiveConf(Configuration hiveConf) {
-    this.conf = hiveConf;
+    this.hiveConf = hiveConf;
   }
 
   @Override
@@ -128,7 +128,7 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
   }
 
   private void addSSL(Properties props) {
-    if (!conf.getBoolean("hive.server2.use.SSL", false)) {
+    if (!hiveConf.getBoolean("hive.server2.use.SSL", false)) {
       return;
     } else {
       props.setProperty("ssl", "true");
@@ -141,31 +141,31 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
     if (trustStorePassword != null && !trustStorePassword.isEmpty()) {
       props.setProperty("trustStorePassword", trustStorePassword);
     }
-    String saslQop = conf.get("hive.server2.thrift.sasl.qop", "auth");
+    String saslQop = hiveConf.get("hive.server2.thrift.sasl.qop", "auth");
     if (!"auth".equalsIgnoreCase(saslQop)) {
       props.setProperty("sasl.qop", saslQop);
     }
   }
 
   private void addKerberos(Properties props) {
-    if ("KERBEROS".equals(conf.get("hive.server2.authentication", "NONE"))) {
+    if ("KERBEROS".equals(hiveConf.get("hive.server2.authentication", "NONE"))) {
       props.setProperty(
-          "principal", conf.get("hive.server2.authentication.kerberos.principal", ""));
+          "principal", hiveConf.get("hive.server2.authentication.kerberos.principal", ""));
     }
   }
 
   private void addHttp(Properties props) {
-    if ("http".equalsIgnoreCase(conf.get("hive.server2.transport.mode", "binary"))) {
+    if ("http".equalsIgnoreCase(hiveConf.get("hive.server2.transport.mode", "binary"))) {
       props.setProperty("transportMode", "http");
     } else {
       return;
     }
-    props.setProperty("httpPath", conf.get("hive.server2.thrift.http.path", "cliservice"));
+    props.setProperty("httpPath", hiveConf.get("hive.server2.thrift.http.path", "cliservice"));
   }
 
   private void addHosts(Properties props) throws BeelineHS2ConnectionFileParseException {
     // if zk HA is enabled get hosts property
-    if (conf.getBoolean("hive.server2.support.dynamic.service.discovery", false)) {
+    if (hiveConf.getBoolean("hive.server2.support.dynamic.service.discovery", false)) {
       addZKServiceDiscoveryHosts(props);
     } else {
       addDefaultHS2Hosts(props);
@@ -176,8 +176,8 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
       throws BeelineHS2ConnectionFileParseException {
     props.setProperty("serviceDiscoveryMode", "zooKeeper");
     props.setProperty(
-        "zooKeeperNamespace", conf.get("hive.server2.zookeeper.namespace", "hiveserver2"));
-    props.setProperty("hosts", conf.get("hive.zookeeper.quorum", ""));
+        "zooKeeperNamespace", hiveConf.get("hive.server2.zookeeper.namespace", "hiveserver2"));
+    props.setProperty("hosts", hiveConf.get("hive.zookeeper.quorum", ""));
   }
 
   /**
@@ -201,7 +201,7 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
   private void addDefaultHS2Hosts(Properties props) throws BeelineHS2ConnectionFileParseException {
     String hiveHost = System.getenv("HIVE_SERVER2_THRIFT_BIND_HOST");
     if (hiveHost == null) {
-      hiveHost = conf.get("hive.server2.thrift.bind.host", "");
+      hiveHost = hiveConf.get("hive.server2.thrift.bind.host", "");
     }
 
     InetAddress serverIPAddress;
@@ -211,7 +211,7 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
       throw new BeelineHS2ConnectionFileParseException(e.getMessage(), e);
     }
     int portNum =
-        getPortNum("http".equalsIgnoreCase(conf.get("hive.server2.transport.mode", "binary")));
+        getPortNum("http".equalsIgnoreCase(hiveConf.get("hive.server2.transport.mode", "binary")));
     props.setProperty("hosts", serverIPAddress.getHostName() + ":" + portNum);
   }
 
@@ -223,14 +223,14 @@ public class HiveSiteHS2ConnectionFileParser implements HS2ConnectionFileParser 
       if (portString != null) {
         portNum = Integer.parseInt(portString);
       } else {
-        portNum = conf.getInt("hive.server2.thrift.http.port", 10001);
+        portNum = hiveConf.getInt("hive.server2.thrift.http.port", 10001);
       }
     } else {
       portString = System.getenv("HIVE_SERVER2_THRIFT_PORT");
       if (portString != null) {
         portNum = Integer.parseInt(portString);
       } else {
-        portNum = conf.getInt("hive.server2.thrift.port", 10000);
+        portNum = hiveConf.getInt("hive.server2.thrift.port", 10000);
       }
     }
     return portNum;

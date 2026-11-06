@@ -24,8 +24,8 @@ import org.apache.kyuubi.engine.hive.HiveProcessBuilder.HIVE_HADOOP_CLASSPATH_KE
 class HiveYarnModeProcessBuilderSuite extends KyuubiFunSuite {
 
   test("hive yarn mode process builder") {
-    val conf = KyuubiConf().set("kyuubi.on", "off")
-    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, conf, "") {
+    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, sessionConf, "") {
       override def env: Map[String, String] =
         super.env + ("HIVE_CONF_DIR" -> "/etc/hive/conf") + (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")
     }
@@ -39,8 +39,8 @@ class HiveYarnModeProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("hadoop conf dir") {
-    val conf = KyuubiConf().set("kyuubi.on", "off")
-    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, conf, "") {
+    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, sessionConf, "") {
       override def env: Map[String, String] =
         super.env + ("HADOOP_CONF_DIR" -> "/etc/hadoop/conf") +
           (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")
@@ -50,8 +50,8 @@ class HiveYarnModeProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("yarn conf dir") {
-    val conf = KyuubiConf().set("kyuubi.on", "off")
-    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, conf, "") {
+    val sessionConf = KyuubiConf().set("kyuubi.on", "off")
+    val builder = new HiveYarnModeProcessBuilder("kyuubi", true, sessionConf, "") {
       override def env: Map[String, String] =
         super.env + ("YARN_CONF_DIR" -> "/etc/hadoop/yarn/conf") +
           (HIVE_HADOOP_CLASSPATH_KEY -> "/hadoop")

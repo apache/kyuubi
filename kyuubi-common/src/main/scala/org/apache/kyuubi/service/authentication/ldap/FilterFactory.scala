@@ -27,8 +27,8 @@ trait FilterFactory {
   /**
    * Returns an instance of the corresponding filter.
    *
-   * @param conf Kyuubi configurations used to configure the filter.
+   * @param kyuubiConf Kyuubi configurations used to configure the filter.
    * @return Some(filter) or None if this filter doesn't support provided set of properties
    */
-  def getInstance(conf: KyuubiConf): Option[Filter]
+  def getInstance(kyuubiConf: KyuubiConf): Option[Filter]
 }

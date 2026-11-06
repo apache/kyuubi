@@ -25,10 +25,10 @@ import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 class TrinoProcessBuilderSuite extends KyuubiFunSuite {
 
   test("trino process builder") {
-    val conf = KyuubiConf()
+    val sessionConf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
-    val builder = new TrinoProcessBuilder("kyuubi", true, conf)
+    val builder = new TrinoProcessBuilder("kyuubi", true, sessionConf)
     val commands = builder.toString.split("\n")
     assert(commands.head.contains("java"))
     assert(builder.toString.contains(s"--conf ${KYUUBI_SESSION_USER_KEY}=kyuubi"))
@@ -45,42 +45,42 @@ class TrinoProcessBuilderSuite extends KyuubiFunSuite {
   }
 
   test("default engine memory") {
-    val conf = KyuubiConf()
+    val sessionConf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
-    val builder = new TrinoProcessBuilder("kyuubi", true, conf)
+    val builder = new TrinoProcessBuilder("kyuubi", true, sessionConf)
     val command = builder.toString
     assert(command.contains("-Xmx1g"))
   }
 
   test("set engine memory") {
-    val conf = KyuubiConf()
+    val sessionConf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
       .set(ENGINE_TRINO_MEMORY, "5g")
-    val builder = new TrinoProcessBuilder("kyuubi", true, conf)
+    val builder = new TrinoProcessBuilder("kyuubi", true, sessionConf)
     val command = builder.toString
     assert(command.contains("-Xmx5g"))
   }
 
   test("set engine java options") {
-    val conf = KyuubiConf()
+    val sessionConf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
       .set(
         ENGINE_TRINO_JAVA_OPTIONS,
         "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005")
-    val builder = new TrinoProcessBuilder("kyuubi", true, conf)
+    val builder = new TrinoProcessBuilder("kyuubi", true, sessionConf)
     val command = builder.toString
     assert(command.contains("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005"))
   }
 
   test("set extra classpath") {
-    val conf = KyuubiConf()
+    val sessionConf = KyuubiConf()
       .set(ENGINE_TRINO_CONNECTION_URL, "dummy_url")
       .set(ENGINE_TRINO_CONNECTION_CATALOG, "dummy_catalog")
       .set(ENGINE_TRINO_EXTRA_CLASSPATH, "/dummy_classpath/*")
-    val builder = new TrinoProcessBuilder("kyuubi", true, conf)
+    val builder = new TrinoProcessBuilder("kyuubi", true, sessionConf)
     val commands = builder.toString
     assert(commands.contains("/dummy_classpath/*"))
   }

@@ -36,14 +36,14 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
 class EngineRefWithZookeeperSuite extends EngineRefTests {
 
   private val zkServer = new EmbeddedZookeeper
-  val conf = KyuubiConf()
+  val sessionConf = KyuubiConf()
 
   override def beforeAll(): Unit = {
     val zkData = Utils.createTempDir()
-    conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
+    sessionConf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
       .set(ZookeeperConf.ZK_CLIENT_PORT, 0)
       .set("spark.sql.catalogImplementation", "in-memory")
-    zkServer.initialize(conf)
+    zkServer.initialize(sessionConf)
     zkServer.start()
     super.beforeAll()
   }
@@ -58,16 +58,16 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
   // TODO mvoe to EngineRefTests when etcd discovery support more engines
   // KYUUBI #2827 remove all engines dependencies except to spark from server
   ignore("different engine type should use its own lock") {
-    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    conf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
-    conf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test1")
-    conf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
-    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+    sessionConf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    sessionConf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    sessionConf.set(KyuubiConf.ENGINE_INIT_TIMEOUT, 3000L)
+    sessionConf.set(HighAvailabilityConf.HA_NAMESPACE, "engine_test1")
+    sessionConf.set(HighAvailabilityConf.HA_ADDRESSES, getConnectString())
+    sessionConf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
-    val conf1 = conf.clone
+    val conf1 = sessionConf.clone
     conf1.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
-    val conf2 = conf.clone
+    val conf2 = sessionConf.clone
     conf2.set(KyuubiConf.ENGINE_TYPE, HIVE_SQL.toString)
 
     val start = System.currentTimeMillis()
@@ -81,7 +81,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
               conf1,
               user,
               true,
-              PluginLoader.loadGroupProvider(conf),
+              PluginLoader.loadGroupProvider(sessionConf),
               UUID.randomUUID().toString,
               null)
               .getOrCreate(client)
@@ -97,7 +97,7 @@ class EngineRefWithZookeeperSuite extends EngineRefTests {
               conf2,
               user,
               true,
-              PluginLoader.loadGroupProvider(conf),
+              PluginLoader.loadGroupProvider(sessionConf),
               UUID.randomUUID().toString,
               null)
               .getOrCreate(client)

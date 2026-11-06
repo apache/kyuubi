@@ -36,9 +36,9 @@ abstract class CompositeService(serviceName: String)
     serviceList += service
   }
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    serviceList.foreach(_.initialize(conf))
-    super.initialize(conf)
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+    serviceList.foreach(_.initialize(kyuubiConf))
+    super.initialize(kyuubiConf)
   }
 
   override def start(): Unit = {

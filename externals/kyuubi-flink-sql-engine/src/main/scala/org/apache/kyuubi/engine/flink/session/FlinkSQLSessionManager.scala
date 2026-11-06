@@ -52,8 +52,8 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    val normalizedConf = conf.map { case (k, v) => k.stripPrefix("flink.") -> v }
+      requestConf: Map[String, String]): Session = {
+    val normalizedConf = requestConf.map { case (k, v) => k.stripPrefix("flink.") -> v }
     normalizedConf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
       .flatMap(getSessionOption).getOrElse {
         val flinkInternalSession = sessionManager.openSession(

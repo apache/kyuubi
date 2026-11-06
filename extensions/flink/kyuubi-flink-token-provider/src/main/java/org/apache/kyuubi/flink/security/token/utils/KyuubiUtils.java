@@ -45,7 +45,7 @@ public class KyuubiUtils {
   public static Map<String, String> fromCommandLineArgs(List<String> args) {
     assert args.size() % 2 == 0 : "Illegal size of arguments.";
 
-    Map<String, String> conf = new HashMap<>();
+    Map<String, String> commandLineConf = new HashMap<>();
     for (int i = 0; i < args.size(); i++) {
       String confKey = args.get(i);
       String confValues = args.get(++i);
@@ -55,13 +55,13 @@ public class KyuubiUtils {
               + ", the argument format is '--conf k=v'.";
       String[] confItem = confValues.split("=", 2);
       if (confItem.length == 2) {
-        conf.put(confItem[0].trim(), confItem[1].trim());
+        commandLineConf.put(confItem[0].trim(), confItem[1].trim());
       } else {
         throw new IllegalArgumentException("Illegal argument: " + confValues + ".");
       }
     }
 
-    return conf;
+    return commandLineConf;
   }
 
   public static void renewDelegationToken(String delegationToken)

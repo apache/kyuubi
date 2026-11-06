@@ -47,9 +47,9 @@ import org.apache.kyuubi.shaded.zookeeper.KeeperException.NodeExistsException
 import org.apache.kyuubi.util.IPStackUtils
 import org.apache.kyuubi.util.ThreadUtils
 
-class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
+class ZookeeperDiscoveryClient(kyuubiConf: KyuubiConf) extends DiscoveryClient {
 
-  private val zkClient: CuratorFramework = buildZookeeperClient(conf)
+  private val zkClient: CuratorFramework = buildZookeeperClient(kyuubiConf)
   @volatile private var serviceNode: PersistentNode = _
   private var watcher: DeRegisterWatcher = _
 
@@ -110,7 +110,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
             case CONNECTED | RECONNECTED => isConnected.set(true)
             case LOST =>
               isConnected.set(false)
-              val delay = getGracefulStopThreadDelay(conf)
+              val delay = getGracefulStopThreadDelay(kyuubiConf)
               connectionChecker.schedule(
                 new Runnable {
                   override def run(): Unit = if (!isConnected.get()) {
@@ -223,7 +223,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def registerService(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
       version: Option[String] = None,
@@ -231,7 +231,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val instance = serviceDiscovery.fe.connectionUrl
     watcher = new DeRegisterWatcher(instance, serviceDiscovery)
     serviceNode = createPersistentNode(
-      conf,
+      kyuubiConf,
       namespace,
       instance,
       version,
@@ -271,12 +271,12 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def createAndGetServiceNode(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       instance: String,
       version: Option[String] = None,
       external: Boolean = false): String = {
-    createPersistentNode(conf, namespace, instance, version, external).getActualPath
+    createPersistentNode(kyuubiConf, namespace, instance, version, external).getActualPath
   }
 
   @VisibleForTesting
@@ -292,7 +292,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       basePath,
       initData.getBytes(StandardCharsets.UTF_8))
     secretNode.start()
-    val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
+    val znodeTimeout = kyuubiConf.get(HA_ZK_NODE_TIMEOUT)
     if (!secretNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
       throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
     }
@@ -313,7 +313,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
    * HiveServer2 should store connection params in ZK
    * when using dynamic service discovery for simpler client connection string.
    */
-  private[client] def addConfsToPublish(conf: KyuubiConf, instance: String): String = {
+  private[client] def addConfsToPublish(kyuubiConf: KyuubiConf, instance: String): String = {
     if (!instance.contains(":")) {
       return instance
     }
@@ -326,19 +326,19 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     confsToPublish += ("hive.server2.transport.mode" -> "binary")
     // Transport specific confs
     confsToPublish += ("hive.server2.thrift.port" -> hostPort.getPort.toString)
-    confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
+    confsToPublish += ("hive.server2.thrift.sasl.qop" -> kyuubiConf.get(KyuubiConf.SASL_QOP))
     // Auth specific confs
-    val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")
+    val authenticationMethod = kyuubiConf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")
     confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
     if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
       confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
-        conf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
+        kyuubiConf.get(KyuubiConf.SERVER_PRINCIPAL).getOrElse(""))
     }
     confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }
 
   private def createPersistentNode(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       instance: String,
       version: Option[String] = None,
@@ -357,7 +357,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
 
-    val session = conf.get(HA_ENGINE_REF_ID)
+    val session = kyuubiConf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
     val extraInfo = attributes.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = ZKPaths.makePath(
@@ -369,8 +369,8 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
     val znodeData =
-      if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
-        addConfsToPublish(conf, instance)
+      if (kyuubiConf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
+        addConfsToPublish(kyuubiConf, instance)
       } else {
         instance
       }
@@ -382,7 +382,7 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
         pathPrefix,
         znodeData.getBytes(StandardCharsets.UTF_8))
       localServiceNode.start()
-      val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
+      val znodeTimeout = kyuubiConf.get(HA_ZK_NODE_TIMEOUT)
       if (!localServiceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
         throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
       }

@@ -43,10 +43,10 @@ class PrometheusReporterService(registry: MetricRegistry)
   private[metrics] var httpServerConnector: ServerConnector = _
   @volatile protected var isStarted = false
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
-    val contextPath = conf.get(MetricsConf.METRICS_PROMETHEUS_PATH)
-    val jettyVersionEnabled = conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
+    val port = kyuubiConf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
+    val contextPath = kyuubiConf.get(MetricsConf.METRICS_PROMETHEUS_PATH)
+    val jettyVersionEnabled = kyuubiConf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
 
     val httpConf = new HttpConfiguration()
     httpConf.setSendServerVersion(jettyVersionEnabled)
@@ -60,7 +60,7 @@ class PrometheusReporterService(registry: MetricRegistry)
     httpServer.setHandler(context)
 
     new DropwizardExports(registry).register(bridgeRegistry)
-    if (conf.get(MetricsConf.METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED)) {
+    if (kyuubiConf.get(MetricsConf.METRICS_PROMETHEUS_LABELS_INSTANCE_ENABLED)) {
       val instanceLabel =
         Map("instance" -> s"${JavaUtils.findLocalInetAddress.getCanonicalHostName}:$port")
       context.addServlet(
@@ -71,7 +71,7 @@ class PrometheusReporterService(registry: MetricRegistry)
       context.addServlet(new ServletHolder(metricsServlet), contextPath)
     }
 
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
   }
 
   override def start(): Unit = synchronized {

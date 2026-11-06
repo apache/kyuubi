@@ -40,7 +40,7 @@ trait ConfigEntry[T] {
     alternatives.foldLeft(provider.get(key))((res, nextKey) => res.orElse(provider.get(nextKey)))
   }
 
-  def readFrom(conf: ConfigProvider): T
+  def readFrom(configProvider: ConfigProvider): T
 
   ConfigEntry.registerEntry(this)
 }
@@ -68,8 +68,8 @@ class OptionalConfigEntry[T](
     ConfigEntry.UNDEFINED
   }
 
-  override def readFrom(conf: ConfigProvider): Option[T] = {
-    readString(conf).map(rawValueConverter)
+  override def readFrom(configProvider: ConfigProvider): Option[T] = {
+    readString(configProvider).map(rawValueConverter)
   }
 
   override def defaultVal: Option[Option[T]] = None
@@ -107,8 +107,8 @@ class ConfigEntryWithDefault[T](
 
   override def defaultVal: Option[T] = Option(_defaultVal)
 
-  override def readFrom(conf: ConfigProvider): T = {
-    readString(conf).map(valueConverter).getOrElse(_defaultVal)
+  override def readFrom(configProvider: ConfigProvider): T = {
+    readString(configProvider).map(valueConverter).getOrElse(_defaultVal)
   }
 
   override def key: String = _key
@@ -148,8 +148,8 @@ class ConfigEntryWithDefaultString[T](
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
 
-  override def readFrom(conf: ConfigProvider): T = {
-    val value = readString(conf).getOrElse(_defaultVal)
+  override def readFrom(configProvider: ConfigProvider): T = {
+    val value = readString(configProvider).getOrElse(_defaultVal)
     valueConverter(value)
   }
 
@@ -187,8 +187,8 @@ class ConfigEntryFallback[T](
 
   override def defaultVal: Option[T] = fallback.defaultVal
 
-  override def readFrom(conf: ConfigProvider): T = {
-    readString(conf).map(valueConverter).getOrElse(fallback.readFrom(conf))
+  override def readFrom(configProvider: ConfigProvider): T = {
+    readString(configProvider).map(valueConverter).getOrElse(fallback.readFrom(configProvider))
   }
 
   override def key: String = _key

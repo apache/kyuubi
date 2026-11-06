@@ -168,7 +168,7 @@ abstract class TFrontendService(name: String)
     res.setServerProtocolVersion(protocol)
     val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
-    val configuration =
+    val requestConf =
       Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
         Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
         Map(
@@ -179,7 +179,7 @@ abstract class TFrontendService(name: String)
       sessionUser,
       req.getPassword,
       ipAddress,
-      configuration)
+      requestConf)
     sessionHandle
   }
 
@@ -243,12 +243,12 @@ abstract class TFrontendService(name: String)
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      val confOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
+      val requestConf = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
       val queryTimeout = req.getQueryTimeout
       val operationHandle = be.executeStatement(
         sessionHandle,
         statement,
-        confOverlay.asScala.toMap,
+        requestConf.asScala.toMap,
         runAsync,
         queryTimeout)
       val tOperationHandle = operationHandle.toTOperationHandle

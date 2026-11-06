@@ -22,13 +22,15 @@ import org.apache.kyuubi.config.KyuubiConf
 /**
  * A factory for common types of directory service search queries.
  */
-final class QueryFactory(conf: KyuubiConf) {
+final class QueryFactory(kyuubiConf: KyuubiConf) {
   private val USER_OBJECT_CLASSES = Array("person", "user", "inetOrgPerson")
 
-  private val guidAttr = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GUID_KEY)
-  private val groupClassAttr = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_CLASS_KEY)
-  private val groupMembershipAttr = conf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_MEMBERSHIP_KEY)
-  private val userMembershipAttrOpt = conf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY)
+  private val guidAttr = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GUID_KEY)
+  private val groupClassAttr = kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_CLASS_KEY)
+  private val groupMembershipAttr =
+    kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_GROUP_MEMBERSHIP_KEY)
+  private val userMembershipAttrOpt =
+    kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_USER_MEMBERSHIP_KEY)
 
   /**
    * Returns a query for finding Group DN based on group unique ID.

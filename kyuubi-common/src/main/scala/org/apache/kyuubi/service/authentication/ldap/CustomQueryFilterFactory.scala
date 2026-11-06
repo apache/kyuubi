@@ -32,8 +32,8 @@ import org.apache.kyuubi.config.KyuubiConf
  * @see [[KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY]]
  */
 object CustomQueryFilterFactory extends FilterFactory {
-  override def getInstance(conf: KyuubiConf): Option[Filter] =
-    conf.get(KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY)
+  override def getInstance(kyuubiConf: KyuubiConf): Option[Filter] =
+    kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY)
       .map { customQuery => new CustomQueryFilter(customQuery) }
 }
 class CustomQueryFilter(query: String) extends Filter with Logging {

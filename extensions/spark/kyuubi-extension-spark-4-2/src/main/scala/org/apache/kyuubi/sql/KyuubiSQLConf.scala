@@ -319,11 +319,11 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
-  def getAdvisoryPartitionSize(conf: SQLConf): Option[Long] = {
-    val rebalanceTargetSize = conf.getConf(REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE)
-    val finalStageTargetSize = if (conf.contains(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY)) {
+  def getAdvisoryPartitionSize(sqlConf: SQLConf): Option[Long] = {
+    val rebalanceTargetSize = sqlConf.getConf(REBALANCE_PARTITIONS_ADVISORY_PARTITION_SIZE)
+    val finalStageTargetSize = if (sqlConf.contains(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY)) {
       Some(JavaUtils.byteStringAs(
-        conf.getConfString(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY),
+        sqlConf.getConfString(FINAL_STAGE_ADVISORY_PARTITION_SIZE_KEY),
         ByteUnit.BYTE))
     } else {
       None

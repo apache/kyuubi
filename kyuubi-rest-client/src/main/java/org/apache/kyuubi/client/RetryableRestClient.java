@@ -36,21 +36,21 @@ public class RetryableRestClient implements InvocationHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(RetryableRestClient.class);
 
-  private final RestClientConf conf;
+  private final RestClientConf clientConf;
   private final List<String> uris;
   private int currentUriIndex;
   private volatile IRestClient restClient;
 
-  private RetryableRestClient(List<String> uris, RestClientConf conf) {
-    this.conf = conf;
+  private RetryableRestClient(List<String> uris, RestClientConf clientConf) {
+    this.clientConf = clientConf;
     this.uris = uris;
     this.currentUriIndex = ThreadLocalRandom.current().nextInt(uris.size());
     newRestClient();
   }
 
   @SuppressWarnings("rawtypes")
-  public static IRestClient getRestClient(List<String> uris, RestClientConf conf) {
-    RetryableRestClient client = new RetryableRestClient(uris, conf);
+  public static IRestClient getRestClient(List<String> uris, RestClientConf clientConf) {
+    RetryableRestClient client = new RetryableRestClient(uris, clientConf);
     return (IRestClient)
         Proxy.newProxyInstance(
             Thread.currentThread().getContextClassLoader(),
@@ -68,7 +68,7 @@ public class RetryableRestClient implements InvocationHandler {
       }
     }
 
-    CloseableHttpClient httpclient = HttpClientFactory.createHttpClient(conf);
+    CloseableHttpClient httpclient = HttpClientFactory.createHttpClient(clientConf);
     assert currentUriIndex < uris.size();
     this.restClient = new RestClient(uris.get(currentUriIndex), httpclient);
     LOG.info("Current connect server uri {}", uris.get(currentUriIndex));
@@ -87,10 +87,10 @@ public class RetryableRestClient implements InvocationHandler {
         } else if (e.getCause() instanceof RetryableKyuubiRestException) {
           // the remote server has some issues or the client machine has some issues
           retryTimes++;
-          if (retryTimes <= conf.getMaxAttempts()) {
-            Thread.sleep(conf.getAttemptWaitTime());
+          if (retryTimes <= clientConf.getMaxAttempts()) {
+            Thread.sleep(clientConf.getAttemptWaitTime());
           } else {
-            LOG.error("Attempt over {} times", conf.getMaxAttempts(), e.getCause());
+            LOG.error("Attempt over {} times", clientConf.getMaxAttempts(), e.getCause());
             throw e.getCause();
           }
           if (currentUriIndex == uris.size() - 1) {

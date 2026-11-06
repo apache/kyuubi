@@ -23,21 +23,21 @@ import org.apache.kyuubi.events.handler.{EventHandler, EventHandlerLoader}
 
 trait EventHandlerRegister extends Logging {
 
-  protected def getLoggers(conf: KyuubiConf): Seq[String]
+  protected def getLoggers(kyuubiConf: KyuubiConf): Seq[String]
 
-  protected def asyncEventLogging(conf: KyuubiConf): Boolean = false
+  protected def asyncEventLogging(kyuubiConf: KyuubiConf): Boolean = false
 
-  def registerEventLoggers(conf: KyuubiConf): Unit = {
-    val loggers = getLoggers(conf)
-    register(loggers, conf)
+  def registerEventLoggers(kyuubiConf: KyuubiConf): Unit = {
+    val loggers = getLoggers(kyuubiConf)
+    register(loggers, kyuubiConf)
   }
 
-  private def register(loggers: Seq[String], conf: KyuubiConf): Unit = {
+  private def register(loggers: Seq[String], kyuubiConf: KyuubiConf): Unit = {
     loggers
       .map(EventLoggerType.withName)
       .foreach { logger =>
-        val handlers = loadEventHandler(logger, conf)
-        if (asyncEventLogging(conf)) {
+        val handlers = loadEventHandler(logger, kyuubiConf)
+        if (asyncEventLogging(kyuubiConf)) {
           handlers.foreach(EventBus.registerAsync)
         } else {
           handlers.foreach(EventBus.register)

@@ -25,8 +25,8 @@ import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 private[kyuubi] object PluginLoader {
 
-  def loadSessionConfAdvisor(conf: KyuubiConf): Seq[SessionConfAdvisor] = {
-    val advisorClass = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)
+  def loadSessionConfAdvisor(serverConf: KyuubiConf): Seq[SessionConfAdvisor] = {
+    val advisorClass = serverConf.get(KyuubiConf.SESSION_CONF_ADVISOR)
     if (advisorClass.isEmpty) {
       return new DefaultSessionConfAdvisor() :: Nil
     }
@@ -45,8 +45,8 @@ private[kyuubi] object PluginLoader {
     }
   }
 
-  def loadGroupProvider(conf: KyuubiConf): GroupProvider = {
-    val groupProviderClass = conf.get(KyuubiConf.GROUP_PROVIDER)
+  def loadGroupProvider(serverConf: KyuubiConf): GroupProvider = {
+    val groupProviderClass = serverConf.get(KyuubiConf.GROUP_PROVIDER)
     try {
       val providerClass = DynClasses.loadSubclass(groupProviderClass, classOf[GroupProvider])
       DynConstructors.builder().impl(providerClass).buildChecked[GroupProvider]().newInstance()

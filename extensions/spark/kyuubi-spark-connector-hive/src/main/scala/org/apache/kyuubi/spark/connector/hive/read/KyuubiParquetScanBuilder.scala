@@ -64,10 +64,10 @@ class KyuubiParquetScanBuilder(
    * `options` do not pollute the source instance.
    */
   lazy val hadoopConf: Configuration = {
-    val conf = new Configuration(hiveTableCatalog.newScanHadoopConf())
+    val scanHadoopConf = new Configuration(hiveTableCatalog.newScanHadoopConf())
     // Hadoop Configurations are case sensitive.
-    options.asCaseSensitiveMap.asScala.foreach { case (k, v) => conf.set(k, v) }
-    conf
+    options.asCaseSensitiveMap.asScala.foreach { case (k, v) => scanHadoopConf.set(k, v) }
+    scanHadoopConf
   }
 
   private var finalSchema = new StructType()

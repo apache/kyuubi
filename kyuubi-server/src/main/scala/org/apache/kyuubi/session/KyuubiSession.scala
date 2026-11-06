@@ -30,15 +30,15 @@ abstract class KyuubiSession(
     user: String,
     password: String,
     ipAddress: String,
-    sessionRequestConf: Map[String, String],
+    requestConf: Map[String, String],
     sessionManager: KyuubiSessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, sessionRequestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
 
   val sessionType: SessionType
 
-  val connectionUrl = sessionRequestConf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, "")
+  val connectionUrl = requestConf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, "")
 
-  val realUser = sessionRequestConf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+  val realUser = requestConf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
 
   def getSessionEvent: Option[KyuubiSessionEvent]
 

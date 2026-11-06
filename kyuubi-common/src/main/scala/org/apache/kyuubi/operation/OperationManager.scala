@@ -50,12 +50,12 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   def allOperations(): Iterable[Operation] = handleToOperation.values().asScala
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
-    super.initialize(conf)
+    super.initialize(kyuubiConf)
 
-    val timeoutPoolSize = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
-    val timeoutPoolKeepAliveTime = conf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
+    val timeoutPoolSize = kyuubiConf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_SIZE)
+    val timeoutPoolKeepAliveTime = kyuubiConf.get(KyuubiConf.OPERATION_TIMEOUT_POOL_KEEPALIVE_TIME)
     timeoutScheduler = ThreadUtils.newDaemonScheduledThreadPool(
       timeoutPoolSize,
       timeoutPoolKeepAliveTime,
@@ -84,7 +84,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation
   def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation
@@ -207,17 +207,17 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   final def processCatalogDatabase(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String]): Operation = {
-    if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
+      requestConf: Map[String, String]): Operation = {
+    if (requestConf.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_SET_CATALOG) {
-      newSetCurrentCatalogOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
-    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
+      newSetCurrentCatalogOperation(session, requestConf(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
+    } else if (requestConf.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_GET_CATALOG) {
       newGetCurrentCatalogOperation(session)
-    } else if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
+    } else if (requestConf.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
       && PATTERN_FOR_SET_SCHEMA.unapplySeq(statement).isDefined) {
-      newSetCurrentDatabaseOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
-    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
+      newSetCurrentDatabaseOperation(session, requestConf(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
+    } else if (requestConf.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
       && PATTERN_FOR_GET_SCHEMA == statement.toLowerCase) {
       newGetCurrentDatabaseOperation(session)
     } else {

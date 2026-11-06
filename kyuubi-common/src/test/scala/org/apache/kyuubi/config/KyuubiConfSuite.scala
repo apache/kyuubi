@@ -237,10 +237,10 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val kyuubiConf = KyuubiConf(false)
     kyuubiConf.set("kyuubi.backend.server.event.kafka.broker", "localhost:9092")
     kyuubiConf.set(FRONTEND_THRIFT_BINARY_BIND_PORT.key, "10009")
-    val userConf = kyuubiConf.getUserDefaults("kyuubi")
+    val sessionConf = kyuubiConf.getUserDefaults("kyuubi")
     assert(
-      userConf.getOption("kyuubi.backend.server.event.kafka.broker") === Some("localhost:9092"))
-    assert(userConf.getOption(FRONTEND_THRIFT_BINARY_BIND_PORT.key) === Some("10009"))
+      sessionConf.getOption("kyuubi.backend.server.event.kafka.broker") === Some("localhost:9092"))
+    assert(sessionConf.getOption(FRONTEND_THRIFT_BINARY_BIND_PORT.key) === Some("10009"))
   }
 
   test("getEngineConf filters server only configs with prefixes") {

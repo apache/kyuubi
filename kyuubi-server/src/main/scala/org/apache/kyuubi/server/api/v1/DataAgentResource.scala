@@ -109,11 +109,11 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
         s"invalid approvalMode, must be one of: ${VALID_APPROVAL_MODES.mkString(", ")}")
       return
     }
-    var confOverlay = model
+    var requestConf = model
       .map(m => Map(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key -> m))
       .getOrElse(Map.empty[String, String])
     approvalMode.foreach { mode =>
-      confOverlay = confOverlay + (KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key -> mode)
+      requestConf = requestConf + (KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key -> mode)
     }
 
     // Validate and authorize before engine startup; launching can be expensive.
@@ -161,7 +161,7 @@ private[v1] class DataAgentResource extends ApiRequestContext with Logging {
     val opSubmitFuture: CompletableFuture[TOperationHandle] =
       try {
         val f = CompletableFuture.supplyAsync(
-          () => client.executeStatement(text, confOverlay, true, 0L),
+          () => client.executeStatement(text, requestConf, true, 0L),
           opSubmitter(fe.getConf.get(
             KyuubiConf.FRONTEND_DATA_AGENT_OPERATION_SUBMIT_VIRTUAL_THREADS_ENABLED)))
         f.whenComplete((handle, _) => {

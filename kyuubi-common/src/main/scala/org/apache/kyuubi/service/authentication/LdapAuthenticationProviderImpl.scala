@@ -30,12 +30,12 @@ import org.apache.kyuubi.service.authentication.ldap._
 import org.apache.kyuubi.service.authentication.ldap.LdapUtils.getUserName
 
 class LdapAuthenticationProviderImpl(
-    conf: KyuubiConf,
+    kyuubiConf: KyuubiConf,
     searchFactory: DirSearchFactory = new LdapSearchFactory)
   extends PasswdAuthenticationProvider with Logging {
 
   private val filterOpt: Option[Filter] = FILTER_FACTORIES
-    .map { f => f.getInstance(conf) }
+    .map { f => f.getInstance(kyuubiConf) }
     .collectFirst { case Some(f: Filter) => f }
 
   /**
@@ -52,8 +52,8 @@ class LdapAuthenticationProviderImpl(
   override def authenticate(user: String, password: String): Unit = {
 
     val (usedBind, bindUser, bindPassword) = (
-      conf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_USER),
-      conf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_PASSWORD)) match {
+      kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_USER),
+      kyuubiConf.get(KyuubiConf.AUTHENTICATION_LDAP_BIND_PASSWORD)) match {
       case (Some(_bindUser), Some(_bindPw)) => (true, _bindUser, _bindPw)
       case _ =>
         // If no bind user or bind password was specified,
@@ -95,12 +95,12 @@ class LdapAuthenticationProviderImpl(
         s" or contains blank space")
     }
 
-    val principals = LdapUtils.createCandidatePrincipals(conf, user)
+    val principals = LdapUtils.createCandidatePrincipals(kyuubiConf, user)
     val iterator = principals.iterator
     while (iterator.hasNext) {
       val principal = iterator.next
       try {
-        return searchFactory.getInstance(conf, principal, password)
+        return searchFactory.getInstance(kyuubiConf, principal, password)
       } catch {
         case ex: AuthenticationException => if (iterator.isEmpty) throw ex
       }

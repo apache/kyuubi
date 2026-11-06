@@ -42,12 +42,12 @@ import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
-  private def conf = KyuubiConf()
+  private def sessionConf = KyuubiConf()
     .set(SESSION_ENGINE_STARTUP_MAX_LOG_LINES, 4096)
     .set("kyuubi.on", "off")
 
   test("spark process builder") {
-    val builder = new SparkProcessBuilder("kentyao", true, conf)
+    val builder = new SparkProcessBuilder("kentyao", true, sessionConf)
     val commands = builder.toString.split(' ')
     assert(commands(2) === "org.apache.kyuubi.engine.spark.SparkSQLEngine")
     assert(commands.contains("spark.kyuubi.on=off"))
@@ -63,7 +63,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("capture error from spark process builder") {
-    val processBuilder = new SparkProcessBuilder("kentyao", true, conf.set("spark.ui.port", "abc"))
+    val processBuilder =
+      new SparkProcessBuilder("kentyao", true, sessionConf.set("spark.ui.port", "abc"))
     processBuilder.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error = processBuilder.getError
@@ -76,7 +77,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       new SparkProcessBuilder(
         "kentyao",
         true,
-        conf.set("spark.hive.metastore.uris", "thrift://dummy"))
+        sessionConf.set("spark.hive.metastore.uris", "thrift://dummy"))
 
     processBuilder1.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
@@ -93,7 +94,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
       new SparkProcessBuilder(
         "kentyao",
         true,
-        conf.set("spark.hive.metastore.uris", "thrift://dummy"))
+        sessionConf.set("spark.hive.metastore.uris", "thrift://dummy"))
     pb.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = pb.getError
@@ -104,7 +105,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val pb2 = new SparkProcessBuilder(
       "kentyao",
       true,
-      conf.set("spark.hive.metastore.uris", "thrift://dummy")
+      sessionConf.set("spark.hive.metastore.uris", "thrift://dummy")
         .set(KyuubiConf.ENGINE_ERROR_MAX_SIZE, 200))
     pb2.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
@@ -114,7 +115,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     }
 
     val pb3 =
-      new SparkProcessBuilder("kentyao", true, conf.set("spark.kerberos.principal", testPrincipal))
+      new SparkProcessBuilder(
+        "kentyao",
+        true,
+        sessionConf.set("spark.kerberos.principal", testPrincipal))
     pb3.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = pb3.getError
@@ -125,24 +129,24 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("proxy user or keytab") {
-    val b1 = new SparkProcessBuilder("kentyao", true, conf)
+    val b1 = new SparkProcessBuilder("kentyao", true, sessionConf)
     assert(b1.toString.contains("--proxy-user kentyao"))
 
-    val conf1 = conf.set("spark.kerberos.principal", testPrincipal)
+    val conf1 = sessionConf.set("spark.kerberos.principal", testPrincipal)
     val b2 = new SparkProcessBuilder("kentyao", true, conf1)
     assert(b2.toString.contains("--proxy-user kentyao"))
 
-    val conf2 = conf.set("spark.kerberos.keytab", testKeytab)
+    val conf2 = sessionConf.set("spark.kerberos.keytab", testKeytab)
     val b3 = new SparkProcessBuilder("kentyao", true, conf2)
     assert(b3.toString.contains("--proxy-user kentyao"))
 
     tryWithSecurityEnabled {
-      val conf3 = conf.set("spark.kerberos.principal", testPrincipal)
+      val conf3 = sessionConf.set("spark.kerberos.principal", testPrincipal)
         .set("spark.kerberos.keytab", "testKeytab")
       val b4 = new SparkProcessBuilder(Utils.currentUser, true, conf3)
       assert(b4.toString.contains(s"--proxy-user ${Utils.currentUser}"))
 
-      val conf4 = conf.set("spark.kerberos.principal", testPrincipal)
+      val conf4 = sessionConf.set("spark.kerberos.principal", testPrincipal)
         .set("spark.kerberos.keytab", testKeytab)
       val b5 = new SparkProcessBuilder("kentyao", true, conf4)
       assert(b5.toString.contains("--proxy-user kentyao"))
@@ -215,9 +219,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
 
   test("overwrite log file should cleanup before write") {
     val fakeWorkDir = Utils.createTempDir("fake")
-    val conf = KyuubiConf()
-    conf.set(ENGINE_LOG_TIMEOUT, Duration.ofDays(1).toMillis)
-    val builder1 = new FakeSparkProcessBuilder(conf) {
+    val sessionConf = KyuubiConf()
+    sessionConf.set(ENGINE_LOG_TIMEOUT, Duration.ofDays(1).toMillis)
+    val builder1 = new FakeSparkProcessBuilder(sessionConf) {
       override val workingDir: Path = fakeWorkDir
     }
     val file1 = builder1.engineLog
@@ -227,7 +231,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(file1.length() == 2)
     file1.setLastModified(System.currentTimeMillis() - Duration.ofDays(1).toMillis - 1000)
 
-    val builder2 = new FakeSparkProcessBuilder(conf) {
+    val builder2 = new FakeSparkProcessBuilder(sessionConf) {
       override val workingDir: Path = fakeWorkDir
     }
     val file2 = builder2.engineLog
@@ -241,25 +245,25 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val jarPath = Paths.get(workDir.toString, "test.jar")
     val hdfsPath = s"hdfs://$jarPath"
 
-    val conf = KyuubiConf()
-    conf.set(ENGINE_SPARK_MAIN_RESOURCE, hdfsPath)
-    val b1 = new SparkProcessBuilder("test", true, conf)
+    val sessionConf = KyuubiConf()
+    sessionConf.set(ENGINE_SPARK_MAIN_RESOURCE, hdfsPath)
+    val b1 = new SparkProcessBuilder("test", true, sessionConf)
     assert(b1.mainResource.get.startsWith("hdfs://"))
     assert(b1.mainResource.get == hdfsPath)
 
     // user specified jar not exist, get default jar and expect not equals
-    conf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
-    val b2 = new SparkProcessBuilder("test", true, conf)
+    sessionConf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
+    val b2 = new SparkProcessBuilder("test", true, sessionConf)
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
   }
 
   test("add spark prefix for conf") {
-    val conf = KyuubiConf(false)
-    conf.set("kyuubi.kent", "yao")
-    conf.set("spark.vino", "yang")
-    conf.set("kent", "yao")
-    conf.set("hadoop.kent", "yao")
-    val builder = new SparkProcessBuilder("", true, conf)
+    val sessionConf = KyuubiConf(false)
+    sessionConf.set("kyuubi.kent", "yao")
+    sessionConf.set("spark.vino", "yang")
+    sessionConf.set("kent", "yao")
+    sessionConf.set("hadoop.kent", "yao")
+    val builder = new SparkProcessBuilder("", true, sessionConf)
     val commands = builder.toString.split(' ')
     assert(commands.contains("spark.kyuubi.kent=yao"))
     assert(commands.contains("spark.vino=yang"))
@@ -268,22 +272,22 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("zookeeper kerberos authentication") {
-    val conf = KyuubiConf()
-    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
-    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_KEYTAB.key, testKeytab)
-    conf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_PRINCIPAL.key, testPrincipal)
+    val sessionConf = KyuubiConf()
+    sessionConf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE.key, AuthTypes.KERBEROS.toString)
+    sessionConf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_KEYTAB.key, testKeytab)
+    sessionConf.set(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_PRINCIPAL.key, testPrincipal)
 
-    val b1 = new SparkProcessBuilder("test", true, conf)
+    val b1 = new SparkProcessBuilder("test", true, sessionConf)
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
   }
 
   test("SparkProcessBuilder commands immutable") {
-    val conf = KyuubiConf(false)
+    val sessionConf = KyuubiConf(false)
     val engineRefId = UUID.randomUUID().toString
-    val pb = new SparkProcessBuilder("", true, conf, engineRefId)
+    val pb = new SparkProcessBuilder("", true, sessionConf, engineRefId)
     assert(pb.toString.contains(engineRefId))
     val engineRefId2 = UUID.randomUUID().toString
-    conf.set("spark.yarn.tags", engineRefId2)
+    sessionConf.set("spark.yarn.tags", engineRefId2)
     assert(!pb.toString.contains(engineRefId2))
     assert(pb.toString.contains(engineRefId))
   }
@@ -297,7 +301,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     assert(c1.contains(s"spark.executorEnv.SPARK_USER_NAME=$proxyName"))
 
     tryWithSecurityEnabled {
-      val conf2 = conf.set("spark.master", "k8s://test:12345")
+      val conf2 = sessionConf.set("spark.master", "k8s://test:12345")
         .set("spark.kerberos.principal", testPrincipal)
         .set("spark.kerberos.keytab", testKeytab)
       val name = ServiceUtils.getShortName(testPrincipal)
@@ -317,7 +321,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
   }
 
   test("[KYUUBI #5009] Test pass spark engine log path to spark conf") {
-    val b1 = new SparkProcessBuilder("kyuubi", true, conf)
+    val b1 = new SparkProcessBuilder("kyuubi", true, sessionConf)
     assert(
       b1.toString.contains(
         s"$CONF spark.$KYUUBI_ENGINE_LOG_PATH_KEY=${b1.engineLog.getAbsolutePath}"))
@@ -329,7 +333,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val processBuilder = new SparkProcessBuilder(
       "kyuubi",
       true,
-      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster"),
+      sessionConf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster"),
       engineRefId)
     val conf1 = Map(APP_KEY -> "test-app")
     val driverPodName1 = processBuilder.appendPodNameConf(conf1).get(KUBERNETES_DRIVER_POD_NAME)
@@ -356,7 +360,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val newProcessBuilder = new SparkProcessBuilder(
       "kyuubi",
       true,
-      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
+      sessionConf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
         KUBERNETES_FORCIBLY_REWRITE_DRIVER_POD_NAME,
         true),
       engineRefId)
@@ -371,7 +375,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val processBuilder = new SparkProcessBuilder(
       "kyuubi",
       true,
-      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster"),
+      sessionConf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster"),
       engineRefId)
     val conf1 = Map(APP_KEY -> "test-app")
     val execPodNamePrefix1 = processBuilder
@@ -394,7 +398,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val newProcessBuilder = new SparkProcessBuilder(
       "kyuubi",
       true,
-      conf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
+      sessionConf.set(MASTER_KEY, "k8s://internal").set(DEPLOY_MODE_KEY, "cluster").set(
         KUBERNETES_FORCIBLY_REWRITE_EXEC_POD_NAME_PREFIX,
         true),
       engineRefId)
@@ -439,7 +443,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val builder = new SparkProcessBuilder("kentyao", true, builderConf)
 
     assert(builder.clusterManager() === Some("yarn"))
-    val encodedInfo = builder.conf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
+    val encodedInfo = builder.sessionConf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
     assert(ApplicationManagerInfo.deserialize(encodedInfo) === ApplicationManagerInfo(Some("yarn")))
   }
 

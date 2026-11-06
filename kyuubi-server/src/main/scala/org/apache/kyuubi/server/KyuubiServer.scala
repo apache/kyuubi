@@ -42,26 +42,26 @@ object KyuubiServer extends Logging {
   @volatile private[kyuubi] var hadoopConf: Configuration = _
   private var commandArgs: Array[String] = Array.empty[String]
 
-  def startServer(conf: KyuubiConf): KyuubiServer = {
-    conf.validateServerVirtualThreadConfigs()
-    hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
+  def startServer(serverConf: KyuubiConf): KyuubiServer = {
+    serverConf.validateServerVirtualThreadConfigs()
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(serverConf)
     var embeddedZkServer: Option[EmbeddedZookeeper] = None
-    if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
+    if (!ServiceDiscovery.supportServiceDiscovery(serverConf)) {
       embeddedZkServer = Some(new EmbeddedZookeeper())
       embeddedZkServer.foreach(zkServer => {
-        zkServer.initialize(conf)
+        zkServer.initialize(serverConf)
         zkServer.start()
-        conf.set(HA_ADDRESSES, zkServer.getConnectString)
-        conf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
+        serverConf.set(HA_ADDRESSES, zkServer.getConnectString)
+        serverConf.set(HA_ZK_AUTH_TYPE, AuthTypes.NONE.toString)
       })
     }
 
-    val server = conf.get(KyuubiConf.SERVER_NAME) match {
+    val server = serverConf.get(KyuubiConf.SERVER_NAME) match {
       case Some(s) => new KyuubiServer(s)
       case _ => new KyuubiServer()
     }
     try {
-      server.initialize(conf)
+      server.initialize(serverConf)
     } catch {
       case e: Exception =>
         embeddedZkServer.filter(_.getServiceState == ServiceState.STARTED).foreach(_.stop())
@@ -99,9 +99,9 @@ object KyuubiServer extends Logging {
 
     // register conf entries
     JDBCMetadataStoreConf
-    val conf = createKyuubiConf()
-    UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
-    startServer(conf)
+    val serverConf = createKyuubiConf()
+    UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(serverConf))
+    startServer(serverConf)
   }
 
   private[kyuubi] def getHadoopConf(): Configuration = {
@@ -202,20 +202,20 @@ class KyuubiServer(name: String) extends Serverable(name) {
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
+  override def initialize(serverConf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
 
     val periodicGCService = new PeriodicGCService
     addService(periodicGCService)
 
-    if (conf.get(MetricsConf.METRICS_ENABLED)) {
+    if (serverConf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
 
-    super.initialize(conf)
+    super.initialize(serverConf)
 
-    initLoggerEventHandler(conf)
+    initLoggerEventHandler(serverConf)
   }
 
   override def start(): Unit = {
@@ -229,8 +229,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
     super.stop()
   }
 
-  private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    ServerEventHandlerRegister.registerEventLoggers(conf)
+  private def initLoggerEventHandler(serverConf: KyuubiConf): Unit = {
+    ServerEventHandlerRegister.registerEventLoggers(serverConf)
   }
 
   override protected def stopServer(): Unit = {

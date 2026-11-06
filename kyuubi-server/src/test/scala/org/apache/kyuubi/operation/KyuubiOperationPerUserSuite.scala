@@ -481,8 +481,8 @@ class KyuubiOperationPerUserSuite
           assert(session.handle === SessionHandle.apply(session.client.remoteSessionHandle))
         }
 
-        def checkOpHandleAlign(statement: String, confOverlay: Map[String, String]): Unit = {
-          val opHandle = session.executeStatement(statement, confOverlay, true, 0L)
+        def checkOpHandleAlign(statement: String, requestConf: Map[String, String]): Unit = {
+          val opHandle = session.executeStatement(statement, requestConf, true, 0L)
           eventually(timeout(10.seconds)) {
             val operation = session.sessionManager.operationManager.getOperation(
               opHandle).asInstanceOf[KyuubiOperation]
@@ -492,15 +492,15 @@ class KyuubiOperationPerUserSuite
 
         val statement = "SELECT engine_id()"
 
-        val confOverlay = Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "PARSE")
-        checkOpHandleAlign(statement, confOverlay)
+        val requestConf = Map(KyuubiConf.OPERATION_PLAN_ONLY_MODE.key -> "PARSE")
+        checkOpHandleAlign(statement, requestConf)
 
         Map(
           statement -> "SQL",
           s"""spark.sql("$statement")""" -> "SCALA",
           s"spark.sql('$statement')" -> "PYTHON").foreach { case (statement, lang) =>
-          val confOverlay = Map(KyuubiConf.OPERATION_LANGUAGE.key -> lang)
-          checkOpHandleAlign(statement, confOverlay)
+          val requestConf = Map(KyuubiConf.OPERATION_LANGUAGE.key -> lang)
+          checkOpHandleAlign(statement, requestConf)
         }
       }
     }

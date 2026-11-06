@@ -35,10 +35,10 @@ class TrinoSessionManager
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      requestConf: Map[String, String]): Session = {
+    requestConf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
       getSessionOption).getOrElse {
-      new TrinoSessionImpl(protocol, user, password, ipAddress, conf, this)
+      new TrinoSessionImpl(protocol, user, password, ipAddress, requestConf, this)
     }
   }
 

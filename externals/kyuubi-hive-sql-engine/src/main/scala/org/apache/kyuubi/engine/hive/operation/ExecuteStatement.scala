@@ -28,7 +28,7 @@ import org.apache.kyuubi.session.Session
 class ExecuteStatement(
     session: Session,
     override val statement: String,
-    confOverlay: Map[String, String],
+    requestConf: Map[String, String],
     runAsync: Boolean,
     queryTimeout: Long)
   extends HiveOperation(session) {
@@ -37,7 +37,7 @@ class ExecuteStatement(
     delegatedOperationManager.newExecuteStatementOperation(
       hive,
       statement,
-      confOverlay.asJava,
+      requestConf.asJava,
       runAsync,
       queryTimeout)
   }

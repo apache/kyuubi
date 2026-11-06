@@ -41,10 +41,10 @@ class AtlasClientConf(configuration: Configuration) {
 object AtlasClientConf {
 
   private lazy val clientConf: AtlasClientConf = {
-    val conf = ApplicationProperties.get()
+    val atlasConf = ApplicationProperties.get()
     SparkContextHelper.globalSparkContext.getConf.getAllWithPrefix("spark.atlas.")
-      .foreach { case (k, v) => conf.setProperty(s"atlas.$k", v) }
-    new AtlasClientConf(conf)
+      .foreach { case (k, v) => atlasConf.setProperty(s"atlas.$k", v) }
+    new AtlasClientConf(atlasConf)
   }
 
   def getConf(): AtlasClientConf = clientConf

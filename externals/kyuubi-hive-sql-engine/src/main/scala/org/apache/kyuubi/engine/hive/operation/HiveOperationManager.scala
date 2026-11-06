@@ -35,19 +35,19 @@ class HiveOperationManager() extends OperationManager("HiveOperationManager") {
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      requestConf: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val normalizedConf = session.asInstanceOf[HiveSessionImpl].normalizedConf
     if (normalizedConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key).map(
         _.toBoolean).getOrElse(
         session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConf)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val operation = new ExecuteStatement(session, statement, confOverlay, runAsync, queryTimeout)
+    val operation = new ExecuteStatement(session, statement, requestConf, runAsync, queryTimeout)
     addOperation(operation)
   }
 

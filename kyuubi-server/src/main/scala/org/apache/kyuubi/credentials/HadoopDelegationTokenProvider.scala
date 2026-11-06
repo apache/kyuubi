@@ -34,7 +34,7 @@ trait HadoopDelegationTokenProvider {
    * Initialize with provided hadoop and kyuubi conf
    * @param hadoopConf Configuration of current Hadoop Compatible system.
    */
-  def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit
+  def initialize(hadoopConf: Configuration, serverConf: KyuubiConf): Unit
 
   /**
    * Returns true if delegation tokens are required for this service. By default, it is based on

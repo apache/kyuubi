@@ -29,7 +29,7 @@ abstract class DataAgentOperation(session: Session) extends AbstractOperation(se
 
   @volatile protected var iter: FetchIterator[Array[String]] = _
 
-  protected lazy val conf: KyuubiConf = session.sessionManager.getConf
+  protected lazy val kyuubiConf: KyuubiConf = session.sessionManager.getConf
 
   override def getNextRowSetInternal(
       order: FetchOrientation,

@@ -32,9 +32,9 @@ abstract class JdbcOperation(session: Session) extends AbstractOperation(session
 
   protected var iter: FetchIterator[Row] = _
 
-  protected lazy val conf: KyuubiConf = session.asInstanceOf[JdbcSessionImpl].sessionConf
+  protected lazy val sessionConf: KyuubiConf = session.asInstanceOf[JdbcSessionImpl].sessionConf
 
-  protected lazy val dialect: JdbcDialect = JdbcDialects.get(conf)
+  protected lazy val dialect: JdbcDialect = JdbcDialects.get(sessionConf)
 
   def validateFetchOrientation(order: FetchOrientation): Unit =
     validateDefaultFetchOrientation(order)

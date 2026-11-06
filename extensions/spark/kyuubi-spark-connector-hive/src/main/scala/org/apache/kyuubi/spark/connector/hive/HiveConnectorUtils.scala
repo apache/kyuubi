@@ -560,11 +560,11 @@ object HiveConnectorUtils extends Logging {
   // compiling with Spark 4.0, then linkage error will happen when run the jar with lower
   // Spark versions.
   def withSparkSQLConf[T](pairs: (String, String)*)(f: => T): T = {
-    val conf = SQLConf.get
+    val sqlConf = SQLConf.get
     val (keys, values) = pairs.unzip
     val currentValues = keys.map { key =>
-      if (conf.contains(key)) {
-        Some(conf.getConfString(key))
+      if (sqlConf.contains(key)) {
+        Some(sqlConf.getConfString(key))
       } else {
         None
       }
@@ -573,13 +573,13 @@ object HiveConnectorUtils extends Logging {
       if (SQLConf.isStaticConfigKey(k)) {
         throw KyuubiHiveConnectorException(s"Cannot modify the value of a static config: $k")
       }
-      conf.setConfString(k, v)
+      sqlConf.setConfString(k, v)
     }
     try f
     finally {
       keys.zip(currentValues).foreach {
-        case (key, Some(value)) => conf.setConfString(key, value)
-        case (key, None) => conf.unsetConf(key)
+        case (key, Some(value)) => sqlConf.setConfString(key, value)
+        case (key, None) => sqlConf.unsetConf(key)
       }
     }
   }

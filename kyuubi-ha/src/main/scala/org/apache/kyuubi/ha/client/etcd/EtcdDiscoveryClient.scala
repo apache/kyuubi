@@ -55,7 +55,7 @@ import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient._
 import org.apache.kyuubi.util.ThreadUtils
 
-class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
+class EtcdDiscoveryClient(kyuubiConf: KyuubiConf) extends DiscoveryClient {
 
   case class ServiceNode(path: String, lease: Long)
 
@@ -68,16 +68,16 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   @volatile var leaseTTL: Long = _
 
   private def buildClient(): Client = {
-    val endpoints = conf.get(HA_ADDRESSES).split(",")
-    val sslEnabled = conf.get(HA_ETCD_SSL_ENABLED)
+    val endpoints = kyuubiConf.get(HA_ADDRESSES).split(",")
+    val sslEnabled = kyuubiConf.get(HA_ETCD_SSL_ENABLED)
     if (!sslEnabled) {
       Client.builder.endpoints(endpoints: _*).build
     } else {
-      val caPath = conf.getOption(HA_ETCD_SSL_CA_PATH.key).getOrElse(
+      val caPath = kyuubiConf.getOption(HA_ETCD_SSL_CA_PATH.key).getOrElse(
         throw new IllegalArgumentException(s"${HA_ETCD_SSL_CA_PATH.key} is not defined"))
-      val crtPath = conf.getOption(HA_ETCD_SSL_CLIENT_CRT_PATH.key).getOrElse(
+      val crtPath = kyuubiConf.getOption(HA_ETCD_SSL_CLIENT_CRT_PATH.key).getOrElse(
         throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLIENT_CRT_PATH.key} is not defined"))
-      val keyPath = conf.getOption(HA_ETCD_SSL_CLIENT_KEY_PATH.key).getOrElse(
+      val keyPath = kyuubiConf.getOption(HA_ETCD_SSL_CLIENT_KEY_PATH.key).getOrElse(
         throw new IllegalArgumentException(s"${HA_ETCD_SSL_CLIENT_KEY_PATH.key} is not defined"))
 
       val context = GrpcSslContexts.forClient()
@@ -97,7 +97,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     lockClient = client.getLockClient()
     leaseClient = client.getLeaseClient()
 
-    leaseTTL = conf.get(HighAvailabilityConf.HA_ETCD_LEASE_TIMEOUT) / 1000
+    leaseTTL = kyuubiConf.get(HighAvailabilityConf.HA_ETCD_LEASE_TIMEOUT) / 1000
   }
 
   override def closeClient(): Unit = {
@@ -245,7 +245,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def registerService(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
       version: Option[String] = None,
@@ -254,7 +254,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val watcher = new DeRegisterWatcher(instance, serviceDiscovery)
 
     serviceNode = createPersistentNode(
-      conf,
+      kyuubiConf,
       namespace,
       instance,
       version,
@@ -291,12 +291,12 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   override def createAndGetServiceNode(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       instance: String,
       version: Option[String] = None,
       external: Boolean = false): String = {
-    createPersistentNode(conf, namespace, instance, version, external).path
+    createPersistentNode(kyuubiConf, namespace, instance, version, external).path
   }
 
   @VisibleForTesting
@@ -324,7 +324,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
   }
 
   private def createPersistentNode(
-      conf: KyuubiConf,
+      kyuubiConf: KyuubiConf,
       namespace: String,
       instance: String,
       version: Option[String] = None,
@@ -333,7 +333,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     val ns = DiscoveryPaths.makePath(null, namespace)
     create(ns, "PERSISTENT")
 
-    val session = conf.get(HA_ENGINE_REF_ID)
+    val session = kyuubiConf.get(HA_ENGINE_REF_ID)
       .map(refId => s"refId=$refId;").getOrElse("")
     val extraInfo = attributes.map(kv => kv._1 + "=" + kv._2).mkString(";", ";", "")
     val pathPrefix = DiscoveryPaths.makePath(
@@ -345,7 +345,7 @@ class EtcdDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
     var leaseId: Long = LEASE_NULL_VALUE
     var realPath: String = null
     // Use the same of engine init timeout
-    val timeout = conf.get(ENGINE_INIT_TIMEOUT)
+    val timeout = kyuubiConf.get(ENGINE_INIT_TIMEOUT)
     // lock to get instance sequence
     tryWithLock(s"$ns$LOCK_PATH_SUFFIX", timeout) {
       val instances = getChildren(pathPrefix).map(_.stripPrefix(pathPrefix).toLong)

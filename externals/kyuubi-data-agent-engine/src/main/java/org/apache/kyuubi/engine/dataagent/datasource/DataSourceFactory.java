@@ -68,18 +68,18 @@ public final class DataSourceFactory {
     if (jdbcUrl == null || jdbcUrl.isEmpty()) {
       throw new IllegalArgumentException("jdbcUrl must not be null or empty");
     }
-    HikariConfig config = new HikariConfig();
-    config.setJdbcUrl(jdbcUrl);
+    HikariConfig connectionPoolConfig = new HikariConfig();
+    connectionPoolConfig.setJdbcUrl(jdbcUrl);
     if (user != null && !user.isEmpty()) {
-      config.setUsername(user);
+      connectionPoolConfig.setUsername(user);
     }
     if (password != null && !password.isEmpty()) {
-      config.setPassword(password);
+      connectionPoolConfig.setPassword(password);
     }
-    config.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
-    config.setMinimumIdle(1);
-    config.setInitializationFailTimeout(-1);
-    config.setPoolName("kyuubi-data-agent");
-    return new HikariDataSource(config);
+    connectionPoolConfig.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
+    connectionPoolConfig.setMinimumIdle(1);
+    connectionPoolConfig.setInitializationFailTimeout(-1);
+    connectionPoolConfig.setPoolName("kyuubi-data-agent");
+    return new HikariDataSource(connectionPoolConfig);
   }
 }
