@@ -32,8 +32,8 @@ import org.apache.kyuubi.session.FileSessionConfAdvisor.sessionConfCache
 class FileSessionConfAdvisor extends SessionConfAdvisor {
   override def getConfOverlay(
       user: String,
-      normalizedConf: JMap[String, String]): JMap[String, String] = {
-    val profiles: String = normalizedConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
+      sessionConf: JMap[String, String]): JMap[String, String] = {
+    val profiles: String = sessionConf.get(KyuubiConf.SESSION_CONF_PROFILE.key)
     profiles match {
       case null => Collections.emptyMap()
       case _ =>

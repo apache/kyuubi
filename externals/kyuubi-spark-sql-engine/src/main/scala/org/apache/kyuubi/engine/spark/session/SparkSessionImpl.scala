@@ -44,13 +44,13 @@ class SparkSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager,
     val spark: SparkSession)
-  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   override val handle: SessionHandle =
-    requestConf.get(
+    sessionConfOverlay.get(
       KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
   private val sessionRunTime = new AtomicLong(0)
   private val sessionCpuTime = new AtomicLong(0)
@@ -64,7 +64,7 @@ class SparkSessionImpl(
   }
 
   override val sessionIdleTimeoutThreshold: Long = {
-    requestConf.get(SESSION_IDLE_TIMEOUT.key)
+    sessionConfOverlay.get(SESSION_IDLE_TIMEOUT.key)
       .map(_.trim)
       .map(v => Try(Duration.parse(v).toMillis).getOrElse(v.toLong))
       .getOrElse(sessionManager.getConf.get(SESSION_IDLE_TIMEOUT))
@@ -74,8 +74,9 @@ class SparkSessionImpl(
 
   override def open(): Unit = {
 
-    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
-      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedSessionConfOverlay.partition {
+      case (k, _) =>
+        Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
     useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>

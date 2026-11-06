@@ -41,8 +41,8 @@ abstract class AbstractBackendService(name: String)
       user: String,
       password: String,
       ipAddr: String,
-      configs: Map[String, String]): SessionHandle = {
-    sessionManager.openSession(protocol, user, password, ipAddr, configs)
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
+    sessionManager.openSession(protocol, user, password, ipAddr, sessionConfOverlay)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
@@ -56,12 +56,12 @@ abstract class AbstractBackendService(name: String)
   override def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(
       statement,
-      requestConf,
+      requestConfOverlay,
       runAsync,
       queryTimeout)
   }

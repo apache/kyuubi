@@ -74,7 +74,7 @@ object ApiUtils extends Logging {
 
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
-    val responseConf = buildConf(session.conf, session)
+    val responseConf = buildConf(session.sessionConfOverlay, session)
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),

@@ -91,23 +91,24 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      requestConf: Map[String, String]): Session = {
-    val sessionConf = this.getConf.getUserDefaults(user)
+      sessionConfOverlay: Map[String, String]): Session = {
+    val sessionDefaultConf = this.getConf.getUserDefaults(user)
     try {
       new KyuubiSessionImpl(
         protocol,
         user,
         password,
         ipAddress,
-        requestConf,
+        sessionConfOverlay,
         this,
-        sessionConf,
-        sessionConf.get(ENGINE_DO_AS_ENABLED),
+        sessionDefaultConf,
+        sessionDefaultConf.get(ENGINE_DO_AS_ENABLED),
         parser)
     } catch {
       case e: Throwable =>
         // The count openSession took is given back by closeSession alone. A session that fails
-        // here - on the session conf validation in AbstractSession.normalizedConf, for one - is
+        // here - on the session conf validation in AbstractSession.normalizedSessionConfOverlay,
+        // for one - is
         // never registered in handleToSession, so closeSession never runs for it and the count
         // stays taken: once as many opens have failed as the limit allows, the user and the
         // client address are turned away by the limiter until the server restarts. A failure
@@ -124,11 +125,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      requestConf: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
-      super.openSession(protocol, username, password, ipAddress, requestConf)
+      super.openSession(protocol, username, password, ipAddress, sessionConfOverlay)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
@@ -161,7 +162,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      requestConf: Map[String, String],
+      sessionConfOverlay: Map[String, String],
       batchType: String,
       batchName: Option[String],
       resource: String,
@@ -171,14 +172,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       fromRecovery: Boolean): KyuubiBatchSession = {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val sessionConf = this.getConf.getUserDefaults(user)
+    val sessionDefaultConf = this.getConf.getUserDefaults(user)
     new KyuubiBatchSession(
       username,
       password,
       ipAddress,
-      requestConf,
+      sessionConfOverlay,
       this,
-      sessionConf,
+      sessionDefaultConf,
       batchType,
       batchName,
       resource,
@@ -241,11 +242,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   def initializeBatchState(
       user: String,
       ipAddress: String,
-      requestConf: Map[String, String],
+      sessionConfOverlay: Map[String, String],
       batchRequest: BatchRequest): String = {
-    val realUser = requestConf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+    val realUser = sessionConfOverlay.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val batchId = requestConf(KYUUBI_BATCH_ID_KEY)
+    val batchId = sessionConfOverlay(KYUUBI_BATCH_ID_KEY)
     val metadata = Metadata(
       identifier = batchId,
       sessionType = SessionType.BATCH,
@@ -256,11 +257,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       resource = batchRequest.getResource,
       className = batchRequest.getClassName,
       requestName = batchRequest.getName,
-      requestConf = requestConf,
+      requestConf = sessionConfOverlay,
       requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType,
-      priority = requestConf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+      priority = sessionConfOverlay.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
     // there is a chance that operation failed w/ duplicated key error
     metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))

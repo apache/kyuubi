@@ -124,11 +124,11 @@ abstract class TFrontendService(name: String)
   }
 
   protected def getProxyUser(
-      sessionConf: java.util.Map[String, String],
+      sessionConfOverlay: java.util.Map[String, String],
       ipAddress: String,
       realUser: String): String = {
-    val proxyUser = Option(sessionConf.get(PROXY_USER.key))
-      .getOrElse(sessionConf.get(AuthUtils.HS2_PROXY_USER))
+    val proxyUser = Option(sessionConfOverlay.get(PROXY_USER.key))
+      .getOrElse(sessionConfOverlay.get(AuthUtils.HS2_PROXY_USER))
     if (proxyUser == null) {
       realUser
     } else {
@@ -168,7 +168,7 @@ abstract class TFrontendService(name: String)
     res.setServerProtocolVersion(protocol)
     val (realUser, sessionUser) = getRealUserAndSessionUser(req)
     val ipAddress = getIpAddress
-    val requestConf =
+    val sessionConfOverlay =
       Map(KYUUBI_CLIENT_IP_KEY -> ipAddress, KYUUBI_SERVER_IP_KEY -> serverAddr.getHostAddress) ++
         Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String]) ++
         Map(
@@ -179,7 +179,7 @@ abstract class TFrontendService(name: String)
       sessionUser,
       req.getPassword,
       ipAddress,
-      requestConf)
+      sessionConfOverlay)
     sessionHandle
   }
 
@@ -243,12 +243,12 @@ abstract class TFrontendService(name: String)
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      val requestConf = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
+      val requestConfOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
       val queryTimeout = req.getQueryTimeout
       val operationHandle = be.executeStatement(
         sessionHandle,
         statement,
-        requestConf.asScala.toMap,
+        requestConfOverlay.asScala.toMap,
         runAsync,
         queryTimeout)
       val tOperationHandle = operationHandle.toTOperationHandle
@@ -616,7 +616,7 @@ abstract class TFrontendService(name: String)
       if (handle != null) {
         info(s"Session [$handle] disconnected without closing properly, close it now")
         try {
-          val needToClose = be.sessionManager.getSession(handle).conf
+          val needToClose = be.sessionManager.getSession(handle).sessionConfOverlay
             .getOrElse(SESSION_CLOSE_ON_DISCONNECT.key, "true").toBoolean
           if (needToClose) {
             be.closeSession(handle)

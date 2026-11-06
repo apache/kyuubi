@@ -56,11 +56,16 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation =
-      new ExecuteStatement(session, statement, requestConf, runAsync, getQueryTimeout(queryTimeout))
+      new ExecuteStatement(
+        session,
+        statement,
+        requestConfOverlay,
+        runAsync,
+        getQueryTimeout(queryTimeout))
     addOperation(operation)
   }
 

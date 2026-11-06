@@ -31,9 +31,9 @@ trait BackendServiceMetric extends BackendService {
       user: String,
       password: String,
       ipAddr: String,
-      configs: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_OPEN_SESSION) {
-      super.openSession(protocol, user, password, ipAddr, configs)
+      super.openSession(protocol, user, password, ipAddr, sessionConfOverlay)
     }
   }
 
@@ -54,11 +54,11 @@ trait BackendServiceMetric extends BackendService {
   abstract override def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_EXECUTE_STATEMENT) {
-      super.executeStatement(sessionHandle, statement, requestConf, runAsync, queryTimeout)
+      super.executeStatement(sessionHandle, statement, requestConfOverlay, runAsync, queryTimeout)
     }
   }
 

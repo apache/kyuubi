@@ -46,7 +46,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
@@ -54,7 +54,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     if (sessionConfig.getOrDefault(
         ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key,
         operationConvertCatalogDatabaseDefault.toString).toBoolean) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConf)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConfOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
@@ -68,12 +68,12 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     val sessionContext = FlinkEngineUtils.getSessionContext(flinkSession.fSession)
     sessionContext.set(OPERATION_PLAN_ONLY_MODE.key, mode.name)
     val resultMaxRows =
-      flinkSession.normalizedConf.getOrElse(
+      flinkSession.normalizedSessionConfOverlay.getOrElse(
         ENGINE_FLINK_MAX_ROWS.key,
         resultMaxRowsDefault.toString).toInt
 
     val resultFetchTimeout =
-      flinkSession.normalizedConf
+      flinkSession.normalizedSessionConfOverlay
         .get(ENGINE_FLINK_FETCH_TIMEOUT.key)
         .map(ENGINE_FLINK_FETCH_TIMEOUT.valueConverter)
         .map(_.get milliseconds)

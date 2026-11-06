@@ -202,11 +202,11 @@ class KyuubiSyncThriftClient private (
       protocol: TProtocolVersion,
       user: String,
       password: String,
-      requestConf: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
-    req.setConfiguration((requestConf ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
+    req.setConfiguration((sessionConfOverlay ++ Map(KYUUBI_SESSION_ALIVE_PROBE -> "false")).asJava)
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
@@ -223,7 +223,7 @@ class KyuubiSyncThriftClient private (
     engineAliveProbeClient.foreach { aliveProbeClient =>
       val sessionName = SessionHandle.apply(_remoteSessionHandle).identifier + "_aliveness_probe"
       Utils.tryLogNonFatalError {
-        req.setConfiguration((requestConf ++ Map(
+        req.setConfiguration((sessionConfOverlay ++ Map(
           KyuubiConf.SESSION_NAME.key -> sessionName,
           KYUUBI_SESSION_HANDLE_KEY -> UUID.randomUUID().toString,
           KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL.key -> "",
@@ -271,13 +271,13 @@ class KyuubiSyncThriftClient private (
 
   def executeStatement(
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       shouldRunAsync: Boolean,
       queryTimeout: Long): TOperationHandle = {
     val req = new TExecuteStatementReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setStatement(statement)
-    req.setConfOverlay(requestConf.asJava)
+    req.setConfOverlay(requestConfOverlay.asJava)
     req.setRunAsync(shouldRunAsync)
     req.setQueryTimeout(queryTimeout)
     val resp = withLockAcquiredAsyncRequest(ExecuteStatement(req))

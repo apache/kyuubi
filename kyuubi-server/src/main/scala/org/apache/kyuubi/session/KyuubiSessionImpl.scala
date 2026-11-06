@@ -46,28 +46,30 @@ class KyuubiSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf,
+    sessionDefaultConf: KyuubiConf,
     doAsEnabled: Boolean,
     parser: KyuubiParser)
-  extends KyuubiSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends KyuubiSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
+
+  private val sessionConf = sessionDefaultConf
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
-  private[kyuubi] val effectiveRequestConf: Map[String, String] = {
+  private[kyuubi] val effectiveSessionConfOverlay: Map[String, String] = {
     val requestAdvisorConf = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
-      normalizedConf.asJava).asScala).reduce(_ ++ _)
+      normalizedSessionConfOverlay.asJava).asScala).reduce(_ ++ _)
     if (requestAdvisorConf != null) {
-      normalizedConf ++ requestAdvisorConf
+      normalizedSessionConfOverlay ++ requestAdvisorConf
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
-      normalizedConf
+      normalizedSessionConfOverlay
     }
   }
 
-  effectiveRequestConf.foreach {
+  effectiveSessionConfOverlay.foreach {
     case (USE_CATALOG, _) =>
     case (USE_DATABASE, _) =>
     case (key, value) => sessionConf.set(key, value)
@@ -133,7 +135,8 @@ class KyuubiSessionImpl(
     handleSessionException {
       withDiscoveryClient(sessionConf) { discoveryClient =>
         var engineRequestConf =
-          effectiveRequestConf ++ Map(KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
+          effectiveSessionConfOverlay ++ Map(
+            KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
         if (engineCredentials.nonEmpty) {
           sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
           engineRequestConf =
@@ -310,7 +313,7 @@ class KyuubiSessionImpl(
 
   override def executeStatement(
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val kyuubiNode = parser.parsePlan(statement)
@@ -321,7 +324,7 @@ class KyuubiSessionImpl(
           runAsync,
           command)
         runOperation(operation)
-      case _ => super.executeStatement(statement, requestConf, runAsync, queryTimeout)
+      case _ => super.executeStatement(statement, requestConfOverlay, runAsync, queryTimeout)
     }
   }
 

@@ -44,18 +44,18 @@ class TrinoSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   val sessionConf: KyuubiConf = {
     val engineConf = sessionManager.getConf.clone
-    requestConf.foreach { case (k, v) => engineConf.set(k, v) }
+    sessionConfOverlay.foreach { case (k, v) => engineConf.set(k, v) }
     engineConf
   }
 
   override val handle: SessionHandle =
-    requestConf.get(
+    sessionConfOverlay.get(
       KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private val sessionUser: String = sessionConf
@@ -69,7 +69,7 @@ class TrinoSessionImpl(
 
   override def open(): Unit = {
 
-    val (useCatalogAndDatabaseConf, _) = normalizedConf.partition { case (k, _) =>
+    val (useCatalogAndDatabaseConf, _) = normalizedSessionConfOverlay.partition { case (k, _) =>
       Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 

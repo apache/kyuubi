@@ -32,21 +32,23 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
   def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val normalizedConf = session.asInstanceOf[TrinoSessionImpl].normalizedConf
-    if (normalizedConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key).map(
+    val normalizedSessionConfOverlay =
+      session.asInstanceOf[TrinoSessionImpl].normalizedSessionConfOverlay
+    if (normalizedSessionConfOverlay.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key).map(
         _.toBoolean).getOrElse(
         session.sessionManager.getConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConf)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConfOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val incrementalCollect = normalizedConf.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT.key).map(
-      _.toBoolean).getOrElse(
-      session.sessionManager.getConf.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT))
+    val incrementalCollect =
+      normalizedSessionConfOverlay.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT.key).map(
+        _.toBoolean).getOrElse(
+        session.sessionManager.getConf.get(ENGINE_TRINO_OPERATION_INCREMENTAL_COLLECT))
     val operation =
       new ExecuteStatement(session, statement, runAsync, queryTimeout, incrementalCollect)
     addOperation(operation)

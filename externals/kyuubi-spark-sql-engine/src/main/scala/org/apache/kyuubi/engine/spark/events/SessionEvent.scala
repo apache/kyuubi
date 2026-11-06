@@ -79,7 +79,7 @@ object SessionEvent {
       session.user,
       session.clientIpAddress,
       session.ipAddress,
-      session.conf,
+      session.sessionConfOverlay,
       session.createTime)
   }
 }

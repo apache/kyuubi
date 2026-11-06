@@ -38,17 +38,17 @@ class HiveSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager,
     override val handle: SessionHandle,
     val hive: HiveSession)
-  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   private val sessionEvent = HiveSessionEvent(this)
 
   override def open(): Unit = {
     val confClone = new util.HashMap[String, String]()
-    confClone.putAll(requestConf.asJava) // pass requestConf.asScala not support `put` method
+    confClone.putAll(sessionConfOverlay.asJava) // pass sessionConf.asScala not support `put` method
     hive.open(confClone)
     KDFRegistry.registerAll()
     EventBus.post(sessionEvent)

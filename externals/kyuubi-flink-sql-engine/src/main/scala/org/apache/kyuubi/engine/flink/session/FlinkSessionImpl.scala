@@ -39,13 +39,13 @@ class FlinkSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager,
     val fSession: FSession)
-  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   override val handle: SessionHandle =
-    requestConf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+    sessionConfOverlay.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
       .getOrElse(SessionHandle.fromUUID(fSession.getSessionHandle.getIdentifier.toString))
 
   val sessionContext: SessionContext = {
@@ -74,8 +74,9 @@ class FlinkSessionImpl(
       }
     }
 
-    val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
-      Array(USE_CATALOG, USE_DATABASE).contains(k)
+    val (useCatalogAndDatabaseConf, otherConf) = normalizedSessionConfOverlay.partition {
+      case (k, _) =>
+        Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
     useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>

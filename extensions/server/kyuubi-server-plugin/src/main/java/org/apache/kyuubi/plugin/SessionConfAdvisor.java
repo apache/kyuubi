@@ -20,11 +20,11 @@ package org.apache.kyuubi.plugin;
 import java.util.Collections;
 import java.util.Map;
 
-/** Provide the session configuration according to the user and normalized request configuration. */
+/** Provide the session configuration according to the user and session configuration. */
 public interface SessionConfAdvisor {
-  /** The returned configuration overrides the normalized request configuration. */
+  /** The returned conf will overwrite the session conf */
   @SuppressWarnings("unchecked")
-  default Map<String, String> getConfOverlay(String user, Map<String, String> normalizedConf) {
+  default Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
     return Collections.EMPTY_MAP;
   }
 }

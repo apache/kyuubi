@@ -52,21 +52,23 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       user: String,
       password: String,
       ipAddress: String,
-      requestConf: Map[String, String]): Session = {
-    val normalizedConf = requestConf.map { case (k, v) => k.stripPrefix("flink.") -> v }
-    normalizedConf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
+      sessionConfOverlay: Map[String, String]): Session = {
+    val normalizedSessionConfOverlay = sessionConfOverlay.map { case (k, v) =>
+      k.stripPrefix("flink.") -> v
+    }
+    normalizedSessionConfOverlay.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID)
       .flatMap(getSessionOption).getOrElse {
         val flinkInternalSession = sessionManager.openSession(
           SessionEnvironment.newBuilder
             .setSessionEndpointVersion(SqlGatewayRestAPIVersion.V1)
-            .addSessionConfig(mapAsJavaMap(normalizedConf))
+            .addSessionConfig(mapAsJavaMap(normalizedSessionConfOverlay))
             .build)
         val session = new FlinkSessionImpl(
           protocol,
           user,
           password,
           ipAddress,
-          normalizedConf,
+          normalizedSessionConfOverlay,
           this,
           flinkInternalSession)
         session

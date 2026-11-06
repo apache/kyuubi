@@ -35,12 +35,12 @@ class JdbcSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    requestConf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, requestConf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   override val handle: SessionHandle =
-    requestConf.get(
+    sessionConfOverlay.get(
       KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private[jdbc] var sessionConnection: Connection = _
@@ -55,7 +55,7 @@ class JdbcSessionImpl(
       kyuubiConf.set(ENGINE_JDBC_CONNECTION_USER, user)
       kyuubiConf.set(ENGINE_JDBC_CONNECTION_PASSWORD, password)
     }
-    requestConf.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    sessionConfOverlay.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
 
@@ -69,14 +69,14 @@ class JdbcSessionImpl(
     // "default" is a stub Hive clients send when the URL has no `/<db>` - skip it, since
     // forwarding it would fail on backends (PG, ClickHouse) lacking that database.
     val dialect = JdbcDialects.get(sessionConf)
-    requestConf.get(USE_CATALOG) match {
+    sessionConfOverlay.get(USE_CATALOG) match {
       case Some("default") =>
         info("Ignoring URL catalog \"default\" stub; backend connection unchanged.")
       case Some(catalog) =>
         dialect.setCatalog(sessionConnection, catalog)
       case None =>
     }
-    requestConf.get(USE_DATABASE) match {
+    sessionConfOverlay.get(USE_DATABASE) match {
       case Some("default") =>
         info("Ignoring URL database \"default\" stub; backend connection unchanged.")
       case Some(db) =>

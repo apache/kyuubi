@@ -31,7 +31,7 @@ class DataAgentOperationManager(
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConf: Map[String, String],
+      requestConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation = if (ApproveToolCall.isApprovalCommand(statement)) {
@@ -40,7 +40,7 @@ class DataAgentOperationManager(
       new ExecuteStatement(
         session,
         statement,
-        requestConf,
+        requestConfOverlay,
         runAsync,
         queryTimeout,
         dataAgentProvider)
