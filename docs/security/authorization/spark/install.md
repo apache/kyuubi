@@ -56,10 +56,13 @@ The security-critical configurations — the authorizer implementation
 (`ranger.authz.remote.pdp.url`), the Ranger service name
 (`ranger.plugin.spark.service.name`), the Ranger PDP client authentication and
 encryption settings (`ranger.authz.remote.authn.*`, `ranger.authz.remote.ssl.*`,
-`ranger.authz.remote.header.*`) and the embedded-mode policy source settings
+`ranger.authz.remote.header.*`), the embedded-mode policy source settings
 (`ranger.plugin.spark.policy.source.impl`, `ranger.plugin.spark.policy.rest.url`,
-`ranger.plugin.spark.policy.cache.dir`, `ranger.plugin.hive.policy.cache.dir`) —
-are read from `ranger-spark-security.xml` only:
+`ranger.plugin.spark.policy.cache.dir`, `ranger.plugin.hive.policy.cache.dir`),
+the Ranger AuthZ alias prefixes (`ranger.authz.default.*`, `ranger.authz.service.*`,
+`ranger.authz.servicetype.*`) and the policy engine disable switches
+(`ranger.plugin.spark.policyengine.option.disable.*`) — are read from
+`ranger-spark-security.xml` only:
 JVM system properties can neither set nor override them, and the plugin fails to
 initialize when the Ranger PDP server address is missing for the Ranger PDP mode.
 Other configurations with the `ranger.` or `xasecure.` prefix can still be overridden

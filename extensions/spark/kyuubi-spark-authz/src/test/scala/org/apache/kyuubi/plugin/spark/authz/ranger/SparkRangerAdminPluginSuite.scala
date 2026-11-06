@@ -182,12 +182,17 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
     }
   }
 
-  test("embedded policy source configurations are admin-only") {
+  test("security-critical configurations are admin-only") {
     Seq(
       "ranger.plugin.spark.policy.source.impl",
       "ranger.plugin.spark.policy.rest.url",
       "ranger.plugin.spark.policy.cache.dir",
-      "ranger.plugin.hive.policy.cache.dir").foreach { key =>
+      "ranger.plugin.hive.policy.cache.dir",
+      "ranger.authz.default.policy.source.impl",
+      "ranger.authz.service.hive_jenkins.policy.source.impl",
+      "ranger.authz.servicetype.spark.policy.source.impl",
+      "ranger.plugin.spark.policyengine.option.disable.policy.refresher",
+      "ranger.plugin.spark.policyengine.option.disable.userstore.retriever").foreach { key =>
       assert(SparkRangerAdminPlugin.isAdminOnlyKey(key), s"$key should be admin-only")
     }
   }

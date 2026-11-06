@@ -70,6 +70,8 @@ object SparkRangerAdminPlugin {
   final private val KEY_POLICY_REST_URL = s"ranger.plugin.$SERVICE_TYPE.policy.rest.url"
   final private val KEY_POLICY_CACHE_DIR = s"ranger.plugin.$SERVICE_TYPE.policy.cache.dir"
   final private val KEY_HIVE_POLICY_CACHE_DIR = "ranger.plugin.hive.policy.cache.dir"
+  final private val POLICY_ENGINE_DISABLE_PREFIX =
+    s"ranger.plugin.$SERVICE_TYPE.policyengine.option.disable."
 
   final private val REMOTE_AUTHORIZER_CLASS: String =
     classOf[org.apache.ranger.authz.remote.RangerRemoteAuthorizer].getName
@@ -92,7 +94,12 @@ object SparkRangerAdminPlugin {
   final private val ADMIN_ONLY_KEY_PREFIXES: Seq[String] = Seq(
     "ranger.authz.remote.authn.",
     "ranger.authz.remote.header.",
-    "ranger.authz.remote.ssl.")
+    "ranger.authz.remote.ssl.",
+    // aliases that Ranger's embedded authorizer maps to ranger.plugin.<serviceType>.*
+    "ranger.authz.default.",
+    "ranger.authz.service.",
+    "ranger.authz.servicetype.",
+    POLICY_ENGINE_DISABLE_PREFIX)
 
   final private val CONFIG_PREFIXES = Seq("ranger.", "xasecure.")
 
