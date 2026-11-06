@@ -49,7 +49,7 @@ object SparkRangerAdminPlugin extends RangerBasePlugin("spark", "sparkSql")
    * It relies on Ranger's UserStore is a feature supported since Ranger 2.1.
    *
    * If true, user bound usergroups will be looked up in in Ranger's UserStore
-   * and the usergroups of AccessRequest is overriden.
+   * and the usergroups of AccessRequest is overridden.
    *
    * Please make sure configs in Ranger set properly:
    * 1. set `ranger.plugin.spark.enable.implicit.userstore.enricher` to true
