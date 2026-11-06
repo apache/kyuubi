@@ -32,12 +32,12 @@ trait AtlasClient extends AutoCloseable {
   def send(entities: Seq[AtlasEntity]): Unit
 }
 
-class AtlasRestClient(clientConf: AtlasClientConf) extends AtlasClient {
+class AtlasRestClient(conf: AtlasClientConf) extends AtlasClient {
 
   private val atlasClient: AtlasClientV2 = {
-    val serverUrl = clientConf.get(ATLAS_REST_ENDPOINT).split(",")
-    val username = clientConf.get(CLIENT_USERNAME)
-    val password = clientConf.get(CLIENT_PASSWORD)
+    val serverUrl = conf.get(ATLAS_REST_ENDPOINT).split(",")
+    val username = conf.get(CLIENT_USERNAME)
+    val password = conf.get(CLIENT_PASSWORD)
     if (StringUtils.isNoneBlank(username, password)) {
       new AtlasClientV2(serverUrl, Array(username, password))
     } else {

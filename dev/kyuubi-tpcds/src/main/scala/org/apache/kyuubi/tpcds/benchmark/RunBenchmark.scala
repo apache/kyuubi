@@ -88,10 +88,10 @@ object RunBenchmark {
   }
 
   def run(config: RunConfig): Unit = {
-    val sparkConf = new SparkConf()
+    val conf = new SparkConf()
       .setAppName(config.benchmarkName)
 
-    val sparkSession = SparkSession.builder.config(sparkConf).enableHiveSupport().getOrCreate()
+    val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
     import sparkSession.implicits._
 
     val timestamp: Long = System.currentTimeMillis()

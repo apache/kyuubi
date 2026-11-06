@@ -73,7 +73,7 @@ object KubernetesUtils extends Logging {
       kubeContext.map("context " + _).getOrElse("current context") +
       " from users K8S config file")
 
-    val kubernetesClientConfig = new ConfigBuilder(autoConfigure(kubeContext.orNull))
+    val config = new ConfigBuilder(autoConfigure(kubeContext.orNull))
       .withApiVersion("v1")
       .withOption(master) { (master, configBuilder) =>
         configBuilder.withMasterUrl(master)
@@ -111,10 +111,10 @@ object KubernetesUtils extends Logging {
 
     debug("Kubernetes client config: " +
       new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(
-        kubernetesClientConfig))
+        config))
     Some(new KubernetesClientBuilder()
       .withHttpClientFactory(factoryWithCustomDispatcher)
-      .withConfig(kubernetesClientConfig)
+      .withConfig(config)
       .build())
   }
 

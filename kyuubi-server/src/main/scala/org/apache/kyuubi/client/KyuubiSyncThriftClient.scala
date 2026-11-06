@@ -485,8 +485,8 @@ private[kyuubi] object KyuubiSyncThriftClient extends Logging {
       socketTimeout: Int,
       connectionTimeout: Int,
       maxMessageSize: Int): TProtocol = {
-    val thriftConf = TConfiguration.custom().setMaxMessageSize(maxMessageSize).build()
-    val tSocket = new TSocket(thriftConf, host, port, socketTimeout, connectionTimeout)
+    val tConf = TConfiguration.custom().setMaxMessageSize(maxMessageSize).build()
+    val tSocket = new TSocket(tConf, host, port, socketTimeout, connectionTimeout)
     val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
     tTransport.open()
     new TBinaryProtocol(tTransport)

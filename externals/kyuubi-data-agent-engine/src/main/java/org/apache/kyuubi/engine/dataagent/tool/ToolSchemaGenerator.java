@@ -43,11 +43,11 @@ public class ToolSchemaGenerator {
 
   static {
     JacksonModule jacksonModule = new JacksonModule(JacksonOption.RESPECT_JSONPROPERTY_REQUIRED);
-    SchemaGeneratorConfig schemaGeneratorConfig =
+    SchemaGeneratorConfig config =
         new SchemaGeneratorConfigBuilder(SchemaVersion.DRAFT_7, OptionPreset.PLAIN_JSON)
             .with(jacksonModule)
             .build();
-    GENERATOR = new SchemaGenerator(schemaGeneratorConfig);
+    GENERATOR = new SchemaGenerator(config);
   }
 
   /** Generate a JSON Schema (as a Map) from the given args class using Jackson annotations. */

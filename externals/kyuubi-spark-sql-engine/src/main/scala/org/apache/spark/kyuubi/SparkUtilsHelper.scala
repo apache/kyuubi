@@ -51,8 +51,8 @@ object SparkUtilsHelper extends Logging {
   /**
    * Get the path of a temporary directory.
    */
-  def getLocalDir(sparkConf: SparkConf): String = {
-    getLocalDirMethod.invoke(sparkConf)
+  def getLocalDir(conf: SparkConf): String = {
+    getLocalDirMethod.invoke(conf)
   }
 
   def classesArePresent(className: String): Boolean = {

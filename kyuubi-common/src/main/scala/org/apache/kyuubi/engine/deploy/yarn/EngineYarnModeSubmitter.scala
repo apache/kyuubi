@@ -479,12 +479,12 @@ abstract class EngineYarnModeSubmitter extends Logging {
   }
 
   def writeConfigurationToArchive(
-      hadoopConf: Configuration,
+      conf: Configuration,
       name: String,
       out: ZipOutputStream): Unit = {
     out.putNextEntry(new ZipEntry(name))
     val writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)
-    hadoopConf.writeXml(writer)
+    conf.writeXml(writer)
     writer.flush()
     out.closeEntry()
   }

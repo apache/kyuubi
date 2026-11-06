@@ -60,10 +60,10 @@ class KyuubiOrcScanBuilder(
    * `options` do not pollute the source instance.
    */
   lazy val hadoopConf: Configuration = {
-    val scanHadoopConf = new Configuration(hiveTableCatalog.newScanHadoopConf())
+    val conf = new Configuration(hiveTableCatalog.newScanHadoopConf())
     // Hadoop Configurations are case sensitive.
-    options.asCaseSensitiveMap.asScala.foreach { case (k, v) => scanHadoopConf.set(k, v) }
-    scanHadoopConf
+    options.asCaseSensitiveMap.asScala.foreach { case (k, v) => conf.set(k, v) }
+    conf
   }
 
   private var finalSchema = new StructType()

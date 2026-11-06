@@ -83,10 +83,10 @@ public class UserHS2ConnectionFileParser implements HS2ConnectionFileParser {
     log.info("Using connection configuration file at {}", fileLocation);
     props.setProperty(HS2ConnectionFileParser.URL_PREFIX_PROPERTY_KEY, "jdbc:hive2://");
     // load the properties from config file
-    Configuration connectionConf = new Configuration(false);
-    connectionConf.addResource(new Path(new File(fileLocation).toURI()));
+    Configuration conf = new Configuration(false);
+    conf.addResource(new Path(new File(fileLocation).toURI()));
     try {
-      for (Entry<String, String> kv : connectionConf) {
+      for (Entry<String, String> kv : conf) {
         String key = kv.getKey();
         if (key.startsWith(BEELINE_CONNECTION_PROPERTY_PREFIX)) {
           props.setProperty(

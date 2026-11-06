@@ -94,11 +94,11 @@ object HiveReader {
 
   def getInputFormat(
       ifc: Class[_ <: InputFormat[Writable, Writable]],
-      jobConf: JobConf): InputFormat[Writable, Writable] = {
-    val newInputFormat = ReflectionUtils.newInstance(ifc.asInstanceOf[Class[_]], jobConf)
+      conf: JobConf): InputFormat[Writable, Writable] = {
+    val newInputFormat = ReflectionUtils.newInstance(ifc.asInstanceOf[Class[_]], conf)
       .asInstanceOf[InputFormat[Writable, Writable]]
     newInputFormat match {
-      case c: Configurable => c.setConf(jobConf)
+      case c: Configurable => c.setConf(conf)
       case _ =>
     }
     newInputFormat

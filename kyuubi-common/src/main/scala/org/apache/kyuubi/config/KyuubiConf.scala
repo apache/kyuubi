@@ -110,9 +110,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     this
   }
 
-  def get[T](configEntry: ConfigEntry[T]): T = {
-    require(containsConfigEntry(configEntry), s"$configEntry is not registered")
-    configEntry.readFrom(reader)
+  def get[T](config: ConfigEntry[T]): T = {
+    require(containsConfigEntry(config), s"$config is not registered")
+    config.readFrom(reader)
   }
 
   def getOption(key: String): Option[String] = Option(settings.get(key))

@@ -28,7 +28,7 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
 
   private IRestClient httpClient;
 
-  private RestClientConf clientConf;
+  private RestClientConf conf;
 
   private List<String> hostUrls;
 
@@ -64,9 +64,9 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
   public KyuubiRestClient clone() {
     KyuubiRestClient kyuubiRestClient = new KyuubiRestClient();
     kyuubiRestClient.version = this.version;
-    kyuubiRestClient.clientConf = this.clientConf;
+    kyuubiRestClient.conf = this.conf;
     kyuubiRestClient.baseUrls = this.baseUrls;
-    kyuubiRestClient.httpClient = RetryableRestClient.getRestClient(this.baseUrls, this.clientConf);
+    kyuubiRestClient.httpClient = RetryableRestClient.getRestClient(this.baseUrls, this.conf);
     kyuubiRestClient.authHeaderGenerator = this.authHeaderGenerator;
     return kyuubiRestClient;
   }
@@ -81,7 +81,7 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     }
     this.hostUrls = hostUrls;
     List<String> baseUrls = initBaseUrls(hostUrls, version);
-    this.httpClient = RetryableRestClient.getRestClient(baseUrls, this.clientConf);
+    this.httpClient = RetryableRestClient.getRestClient(baseUrls, this.conf);
   }
 
   public List<String> getHostUrls() {
@@ -95,14 +95,14 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
     this.hostUrls = builder.hostUrls;
     this.baseUrls = initBaseUrls(builder.hostUrls, builder.version);
 
-    RestClientConf clientConf = new RestClientConf();
-    clientConf.setConnectTimeout(builder.connectTimeout);
-    clientConf.setSocketTimeout(builder.socketTimeout);
-    clientConf.setMaxAttempts(builder.maxAttempts);
-    clientConf.setAttemptWaitTime(builder.attemptWaitTime);
-    this.clientConf = clientConf;
+    RestClientConf conf = new RestClientConf();
+    conf.setConnectTimeout(builder.connectTimeout);
+    conf.setSocketTimeout(builder.socketTimeout);
+    conf.setMaxAttempts(builder.maxAttempts);
+    conf.setAttemptWaitTime(builder.attemptWaitTime);
+    this.conf = conf;
 
-    this.httpClient = RetryableRestClient.getRestClient(this.baseUrls, clientConf);
+    this.httpClient = RetryableRestClient.getRestClient(this.baseUrls, conf);
 
     switch (builder.authHeaderMethod) {
       case BASIC:
@@ -142,7 +142,7 @@ public class KyuubiRestClient implements AutoCloseable, Cloneable {
   }
 
   public RestClientConf getConf() {
-    return clientConf;
+    return conf;
   }
 
   public static Builder builder(String hostUrl) {

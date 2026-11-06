@@ -36,16 +36,16 @@ class KafkaLoggingEventHandler(
     kyuubiConf: KyuubiConf,
     closeTimeoutInMs: Long) extends EventHandler[KyuubiEvent] with Logging {
   private def defaultProducerConf: Properties = {
-    val kafkaProducerConf = new Properties()
-    kafkaProducerConf.setProperty("key.serializer", DEFAULT_SERIALIZER_CLASS)
-    kafkaProducerConf.setProperty("value.serializer", DEFAULT_SERIALIZER_CLASS)
-    kafkaProducerConf
+    val conf = new Properties()
+    conf.setProperty("key.serializer", DEFAULT_SERIALIZER_CLASS)
+    conf.setProperty("value.serializer", DEFAULT_SERIALIZER_CLASS)
+    conf
   }
 
   private val normalizedProducerConf: Properties = {
-    val kafkaProducerConf = defaultProducerConf
-    producerConf.foreach(p => kafkaProducerConf.setProperty(p._1, p._2))
-    kafkaProducerConf
+    val conf = defaultProducerConf
+    producerConf.foreach(p => conf.setProperty(p._1, p._2))
+    conf
   }
 
   private val kafkaProducer = new KafkaProducer[String, String](normalizedProducerConf)

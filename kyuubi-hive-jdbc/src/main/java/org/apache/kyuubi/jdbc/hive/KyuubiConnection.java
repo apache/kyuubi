@@ -520,12 +520,12 @@ public class KyuubiConnection implements SQLConnection, KyuubiLoggable {
     HttpClientBuilder httpClientBuilder = HttpClientBuilder.create();
 
     // Set timeout
-    RequestConfig httpRequestConfig =
+    RequestConfig config =
         RequestConfig.custom()
             .setConnectTimeout(connectTimeout)
             .setSocketTimeout(socketTimeout)
             .build();
-    httpClientBuilder.setDefaultRequestConfig(httpRequestConfig);
+    httpClientBuilder.setDefaultRequestConfig(config);
 
     // Configure http client for cookie based authentication
     if (isCookieEnabled) {
