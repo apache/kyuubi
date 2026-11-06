@@ -38,6 +38,7 @@ class KyuubiBatchSession(
     ipAddress: String,
     conf: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
+    limiter: Option[SessionLimiter],
     val sessionConf: KyuubiConf,
     batchType: String,
     batchName: Option[String],
@@ -52,7 +53,8 @@ class KyuubiBatchSession(
     password,
     ipAddress,
     conf,
-    sessionManager) {
+    sessionManager,
+    limiter) {
   override val sessionType: SessionType = SessionType.BATCH
   override val connectionUrl: String =
     metadata.map(_.kyuubiInstance).getOrElse(conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, ""))
@@ -111,16 +113,22 @@ class KyuubiBatchSession(
   private[kyuubi] lazy val isResourceUploaded: Boolean =
     conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, false.toString).toBoolean
 
-  private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
-    .newBatchJobSubmissionOperation(
-      this,
-      batchType,
-      name.orNull,
-      resource,
-      className,
-      optimizedConf,
-      batchArgs,
-      metadata)
+  @volatile private var _batchJobSubmissionOpInitialized = false
+  private[kyuubi] lazy val batchJobSubmissionOp = {
+    val operation = sessionManager.operationManager
+      .newBatchJobSubmissionOperation(
+        this,
+        batchType,
+        name.orNull,
+        resource,
+        className,
+        optimizedConf,
+        batchArgs,
+        metadata)
+    _batchJobSubmissionOpInitialized = true
+    operation
+  }
+
 
   def startupProcessAlive: Boolean = batchJobSubmissionOp.startupProcessAlive
 
@@ -158,6 +166,11 @@ class KyuubiBatchSession(
 
   override def open(): Unit = handleSessionException {
     traceMetricsOnOpen()
+
+    checkSessionAccessPathURIs()
+
+    // create the operation root directory before running batch job submission operation
+    super.open()
 
     lazy val kubernetesInfo: Map[String, String] = {
       val appMgrInfo = batchJobSubmissionOp.builder.appMgrInfo()
@@ -205,11 +218,6 @@ class KyuubiBatchSession(
       case _ =>
     }
 
-    checkSessionAccessPathURIs()
-
-    // create the operation root directory before running batch job submission operation
-    super.open()
-
     runOperation(batchJobSubmissionOp)
     sessionEvent.totalOperations += 1
   }
@@ -223,8 +231,10 @@ class KyuubiBatchSession(
 
   override def close(): Unit = {
     super.close()
-    batchJobSubmissionOp.close()
-    waitMetadataRequestsRetryCompletion()
+    if (_batchJobSubmissionOpInitialized) {
+      batchJobSubmissionOp.close()
+      waitMetadataRequestsRetryCompletion()
+    }
     sessionEvent.endTime = System.currentTimeMillis()
     EventBus.post(sessionEvent)
     traceMetricsOnClose()
