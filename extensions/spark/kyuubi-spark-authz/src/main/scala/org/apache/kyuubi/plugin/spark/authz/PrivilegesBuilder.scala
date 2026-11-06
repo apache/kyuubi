@@ -19,6 +19,7 @@ package org.apache.kyuubi.plugin.spark.authz
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -176,10 +177,18 @@ object PrivilegesBuilder {
         desc.databaseDescs.foreach { databaseDesc =>
           try {
             val database = databaseDesc.extract(plan)
-            if (databaseDesc.isInput) {
-              inputObjs += PrivilegeObject(database)
-            } else {
-              outputObjs += PrivilegeObject(database)
+            // `USE <catalog>` switches the current catalog without selecting a database,
+            // so the resolved namespace is empty and there is no database privilege to
+            // check. A blank database resource is rejected by the Ranger resource name
+            // parser, so skip it instead of building a request that can never be allowed.
+            val isCatalogOnlyUse = plan.isInstanceOf[SetCatalogAndNamespace] &&
+              StringUtils.isBlank(database.database)
+            if (!isCatalogOnlyUse) {
+              if (databaseDesc.isInput) {
+                inputObjs += PrivilegeObject(database)
+              } else {
+                outputObjs += PrivilegeObject(database)
+              }
             }
           } catch {
             case e: Exception =>
