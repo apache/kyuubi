@@ -34,7 +34,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 class ExecuteStatement(
     session: Session,
     override val statement: String,
-    requestConfOverlay: Map[String, String],
+    reqConfOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(session) {
@@ -59,7 +59,7 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private val isTimeoutMonitorEnabled: Boolean = requestConfOverlay.getOrElse[String](
+  private val isTimeoutMonitorEnabled: Boolean = reqConfOverlay.getOrElse[String](
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.key,
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.defaultValStr).toBoolean
 
@@ -71,7 +71,7 @@ class ExecuteStatement(
       _remoteOpHandle =
         client.executeStatement(
           statement,
-          requestConfOverlay ++ operationHandleConf,
+          reqConfOverlay ++ operationHandleConf,
           true,
           queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)

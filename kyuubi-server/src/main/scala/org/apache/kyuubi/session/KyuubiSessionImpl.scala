@@ -134,17 +134,17 @@ class KyuubiSessionImpl(
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit =
     handleSessionException {
       withDiscoveryClient(sessionConf) { discoveryClient =>
-        var engineRequestConf =
+        var engineSessionConfOverlay =
           effectiveSessionConfOverlay ++ Map(
             KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
         if (engineCredentials.nonEmpty) {
           sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
-          engineRequestConf =
-            engineRequestConf ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
+          engineSessionConfOverlay =
+            engineSessionConfOverlay ++ Map(KYUUBI_ENGINE_CREDENTIALS_KEY -> engineCredentials)
         }
 
         if (sessionConf.get(SESSION_USER_SIGN_ENABLED)) {
-          engineRequestConf = engineRequestConf +
+          engineSessionConfOverlay = engineSessionConfOverlay +
             (SESSION_USER_SIGN_ENABLED.key ->
               sessionConf.get(SESSION_USER_SIGN_ENABLED).toString) +
             (KYUUBI_SESSION_SIGN_PUBLICKEY ->
@@ -181,7 +181,7 @@ class KyuubiSessionImpl(
             engineClient =
               KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
             _engineSessionHandle =
-              engineClient.openSession(protocol, user, passwd, engineRequestConf)
+              engineClient.openSession(protocol, user, passwd, engineSessionConfOverlay)
             _client = engineClient
             if (isClosed) {
               shouldRetry = false
@@ -313,7 +313,7 @@ class KyuubiSessionImpl(
 
   override def executeStatement(
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val kyuubiNode = parser.parsePlan(statement)
@@ -324,7 +324,7 @@ class KyuubiSessionImpl(
           runAsync,
           command)
         runOperation(operation)
-      case _ => super.executeStatement(statement, requestConfOverlay, runAsync, queryTimeout)
+      case _ => super.executeStatement(statement, reqConfOverlay, runAsync, queryTimeout)
     }
   }
 

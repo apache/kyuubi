@@ -56,12 +56,12 @@ abstract class AbstractBackendService(name: String)
   override def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(
       statement,
-      requestConfOverlay,
+      reqConfOverlay,
       runAsync,
       queryTimeout)
   }

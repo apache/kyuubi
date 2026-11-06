@@ -32,7 +32,7 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
   def transform(
       statement: String,
       sessionHandle: SessionHandle,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     parser.parsePlan(statement) match {
@@ -69,7 +69,7 @@ class KyuubiTrinoOperationTranslator(backendService: BackendService) {
         backendService.executeStatement(
           sessionHandle,
           statement,
-          requestConfOverlay,
+          reqConfOverlay,
           runAsync,
           queryTimeout)
     }

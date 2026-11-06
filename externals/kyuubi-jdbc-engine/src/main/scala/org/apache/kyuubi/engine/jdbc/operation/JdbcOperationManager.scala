@@ -34,7 +34,7 @@ class JdbcOperationManager(engineConf: KyuubiConf) extends OperationManager("Jdb
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val normalizedSessionConfOverlay =
@@ -49,7 +49,7 @@ class JdbcOperationManager(engineConf: KyuubiConf) extends OperationManager("Jdb
     // setSchema/getSchema) and route them to the corresponding lifecycle operations instead
     // of forwarding to the backend JDBC driver as raw SQL.
     if (convertCatalogDatabaseEnabled) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, requestConfOverlay)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, reqConfOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }

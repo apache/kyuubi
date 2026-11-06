@@ -84,7 +84,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation
   def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation

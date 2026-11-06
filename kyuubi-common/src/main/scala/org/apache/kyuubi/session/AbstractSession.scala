@@ -137,11 +137,11 @@ abstract class AbstractSession(
 
   override def executeStatement(
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
-      .newExecuteStatementOperation(this, statement, requestConfOverlay, runAsync, queryTimeout)
+      .newExecuteStatementOperation(this, statement, reqConfOverlay, runAsync, queryTimeout)
     runOperation(operation)
   }
 

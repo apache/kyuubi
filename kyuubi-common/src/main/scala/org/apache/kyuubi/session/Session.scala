@@ -50,7 +50,7 @@ trait Session {
 
   def executeStatement(
       statement: String,
-      requestConfOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 

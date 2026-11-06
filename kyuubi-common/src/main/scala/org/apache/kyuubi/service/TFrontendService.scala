@@ -243,12 +243,12 @@ abstract class TFrontendService(name: String)
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      val requestConfOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
+      val reqConfOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
       val queryTimeout = req.getQueryTimeout
       val operationHandle = be.executeStatement(
         sessionHandle,
         statement,
-        requestConfOverlay.asScala.toMap,
+        reqConfOverlay.asScala.toMap,
         runAsync,
         queryTimeout)
       val tOperationHandle = operationHandle.toTOperationHandle

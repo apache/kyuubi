@@ -33,7 +33,7 @@ import org.apache.kyuubi.session.Session
 class ExecuteStatement(
     session: Session,
     override val statement: String,
-    requestConfOverlay: Map[String, String],
+    reqConfOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     dataAgentProvider: DataAgentProvider)
@@ -86,8 +86,8 @@ class ExecuteStatement(
       MDC.put("operationId", operationId)
       MDC.put("sessionId", sessionId)
       val request = new ProviderRunRequest(statement)
-      // Merge session-level conf with per-statement requestConfOverlay (request takes precedence)
-      val mergedConf = session.sessionConfOverlay ++ requestConfOverlay
+      // Merge session-level conf with per-statement reqConfOverlay (request takes precedence)
+      val mergedConf = session.sessionConfOverlay ++ reqConfOverlay
       mergedConf.get(KyuubiConf.ENGINE_DATA_AGENT_MODEL.key).foreach(request.modelName)
       val approvalMode = mergedConf.getOrElse(
         KyuubiConf.ENGINE_DATA_AGENT_APPROVAL_MODE.key,
