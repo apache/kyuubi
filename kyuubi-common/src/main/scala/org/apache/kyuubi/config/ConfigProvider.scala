@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.config
 
-private[kyuubi] class ConfigProvider(configValues: java.util.Map[String, String]) {
+private[kyuubi] class ConfigProvider(conf: java.util.Map[String, String]) {
 
   def get(key: String): Option[String] = {
     if (key.startsWith("kyuubi.")) {
-      Option(configValues.get(key))
+      Option(conf.get(key))
     } else {
       None
     }

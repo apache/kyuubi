@@ -55,7 +55,7 @@ class KyuubiSessionImpl(
 
   override val sessionType: SessionType = SessionType.INTERACTIVE
 
-  private[kyuubi] val effectiveConf: Map[String, String] = {
+  private[kyuubi] val effectiveRequestConf: Map[String, String] = {
     val requestAdvisorConf = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
       normalizedConf.asJava).asScala).reduce(_ ++ _)
@@ -67,7 +67,7 @@ class KyuubiSessionImpl(
     }
   }
 
-  effectiveConf.foreach {
+  effectiveRequestConf.foreach {
     case (USE_CATALOG, _) =>
     case (USE_DATABASE, _) =>
     case (key, value) => sessionConf.set(key, value)
@@ -133,7 +133,7 @@ class KyuubiSessionImpl(
     handleSessionException {
       withDiscoveryClient(sessionConf) { discoveryClient =>
         var engineRequestConf =
-          effectiveConf ++ Map(KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
+          effectiveRequestConf ++ Map(KYUUBI_SESSION_HANDLE_KEY -> handle.identifier.toString)
         if (engineCredentials.nonEmpty) {
           sessionConf.set(KYUUBI_ENGINE_CREDENTIALS_KEY, engineCredentials)
           engineRequestConf =

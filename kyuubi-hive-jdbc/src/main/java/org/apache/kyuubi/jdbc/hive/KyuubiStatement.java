@@ -42,7 +42,7 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
   private final TSessionHandle sessHandle;
-  Map<String, String> sessionConf = new HashMap<>();
+  Map<String, String> statementConf = new HashMap<>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
@@ -324,11 +324,11 @@ public class KyuubiStatement implements SQLStatement, KyuubiLoggable {
      */
     execReq.setRunAsync(true);
     if (confOneTime != null) {
-      Map<String, String> requestConf = new HashMap<String, String>(sessionConf);
+      Map<String, String> requestConf = new HashMap<String, String>(statementConf);
       requestConf.putAll(confOneTime);
       execReq.setConfOverlay(requestConf);
     } else {
-      execReq.setConfOverlay(sessionConf);
+      execReq.setConfOverlay(statementConf);
     }
     execReq.setQueryTimeout(queryTimeout);
     try {

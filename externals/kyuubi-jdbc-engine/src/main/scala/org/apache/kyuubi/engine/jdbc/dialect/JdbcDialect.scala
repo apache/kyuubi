@@ -124,9 +124,9 @@ abstract class JdbcDialect extends SupportServiceLoader with Logging {
 
 object JdbcDialects extends Logging {
 
-  def get(sessionConf: KyuubiConf): JdbcDialect = {
-    val shortName: String = sessionConf.get(ENGINE_JDBC_SHORT_NAME).getOrElse {
-      val url = sessionConf.get(ENGINE_JDBC_CONNECTION_URL).get
+  def get(conf: KyuubiConf): JdbcDialect = {
+    val shortName: String = conf.get(ENGINE_JDBC_SHORT_NAME).getOrElse {
+      val url = conf.get(ENGINE_JDBC_CONNECTION_URL).get
       assert(url.length > 5 && url.substring(5).contains(":"))
       url.substring(5, url.indexOf(":", 5))
     }
