@@ -21,7 +21,7 @@ import java.io.{BufferedReader, InputStreamReader}
 import java.nio.file.Paths
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
+import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
@@ -36,7 +36,23 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TExecuteStatementReq
 class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   private val logRoot = "file://" + Utils.createTempDir().toString
-  private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
+
+  // Read every day partition so the test does not depend on the date the suite was constructed,
+  // which can differ from the date the events are written if a run crosses midnight.
+  private def readEventLines(eventType: String): Seq[String] = {
+    val fileSystem: FileSystem = FileSystem.get(new Configuration())
+    val eventFiles = Option(fileSystem.globStatus(
+      new Path(logRoot, s"$eventType/day=*/${KyuubiSparkUtil.engineId}.json"))).toSeq.flatten
+    eventFiles.sortBy(_.getPath.toString).flatMap { eventFile =>
+      val in = fileSystem.open(eventFile.getPath)
+      try {
+        val reader = new BufferedReader(new InputStreamReader(in))
+        Iterator.continually(reader.readLine()).takeWhile(_ != null).toList
+      } finally {
+        in.close()
+      }
+    }
+  }
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS.key -> s"$JSON",
@@ -47,33 +63,19 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for event logging service") {
-    val engineEventPath = Paths.get(
-      logRoot,
-      "engine",
-      s"day=$currentDate",
-      KyuubiSparkUtil.engineId + ".json")
-    val sessionEventPath = Paths.get(
-      logRoot,
-      "session",
-      s"day=$currentDate",
-      KyuubiSparkUtil.engineId + ".json")
-    val fileSystem: FileSystem = FileSystem.get(new Configuration())
-    val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
-    val engineEventReader = new BufferedReader(new InputStreamReader(fs))
-
-    val readEvent =
-      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[EngineEvent])
+    val sessionEventPath = Paths.get(logRoot, "session")
+    val engineEvents = readEventLines("engine")
+    val readEvent = JsonProtocol.jsonToEvent(engineEvents.head, classOf[EngineEvent])
     assert(readEvent.isInstanceOf[EngineEvent])
     withJdbcStatement() { statement =>
-      val table = engineEventPath.getParent
+      val table = Paths.get(logRoot, "engine")
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`$table`")
       while (resultSet.next()) {
         assert(resultSet.getString("Event") === classOf[EngineEvent].getCanonicalName)
         assert(resultSet.getString("applicationId") === spark.sparkContext.applicationId)
         assert(resultSet.getString("master") === spark.sparkContext.master)
       }
-      val table2 = table.getParent
-      val rs2 = statement.executeQuery(s"SELECT * FROM `json`.`${table2}`" +
+      val rs2 = statement.executeQuery(s"SELECT * FROM `json`.`$table`" +
         s" where Event = '${classOf[EngineEvent].getCanonicalName}'")
       while (rs2.next()) {
         assert(rs2.getString("Event") === classOf[EngineEvent].getCanonicalName)
@@ -81,8 +83,7 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
         assert(rs2.getString("master") === spark.sparkContext.master)
       }
 
-      val table3 = sessionEventPath.getParent
-      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`$table3`")
+      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`$sessionEventPath`")
       while (rs3.next()) {
         assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
         assert(rs3.getString("username") === Utils.currentUser)
@@ -94,7 +95,7 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
     }
 
     withJdbcStatement() { statement =>
-      val rs = statement.executeQuery(s"SELECT * FROM `json`.`${sessionEventPath.getParent}`" +
+      val rs = statement.executeQuery(s"SELECT * FROM `json`.`$sessionEventPath`" +
         " where totalOperations > 0")
       assert(rs.next())
       // there 3 statements executed above
@@ -103,14 +104,10 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
   }
 
   test("statementEvent: generate, dump and query") {
-    val statementEventPath = Paths.get(
-      logRoot,
-      "spark_operation",
-      s"day=$currentDate",
-      spark.sparkContext.applicationId + ".json")
+    val statementEventPath = Paths.get(logRoot, "spark_operation")
     val sql = "select timestamp'2021-09-01';"
     withSessionHandle { (client, handle) =>
-      val table = statementEventPath.getParent
+      val table = statementEventPath
       val req = new TExecuteStatementReq()
       req.setSessionHandle(handle)
       req.setStatement(sql)
