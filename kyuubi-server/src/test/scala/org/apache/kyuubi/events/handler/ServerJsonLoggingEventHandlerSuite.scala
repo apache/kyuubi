@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.events.handler
 
-import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
@@ -46,8 +45,9 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString
-  private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
+  // Event logs are partitioned by event date. Read the event type roots instead of a specific day
+  // partition so a suite run that crosses midnight cannot query the wrong partition.
   private val fileSystem: FileSystem = FileSystem.get(new Configuration())
   fileSystem.delete(new Path(engineLogRoot), true)
 
@@ -63,16 +63,13 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for logging and querying statement events for both kyuubi server and engine") {
-    val hostName = InetAddress.getLocalHost.getCanonicalHostName
-    val serverStatementEventPath =
-      Paths.get(serverLogRoot, "kyuubi_operation", s"day=$currentDate", s"server-$hostName.json")
-    val engineStatementEventPath =
-      Paths.get(engineLogRoot, "spark_operation", s"day=$currentDate", "*.json")
+    val serverStatementEventPath = Paths.get(serverLogRoot, "kyuubi_operation")
+    val engineStatementEventPath = Paths.get(engineLogRoot, "spark_operation")
     val sql = "select timestamp'2021-06-01'"
     withJdbcStatement() { statement =>
       statement.execute(sql)
       // check server statement events
-      val serverTable = serverStatementEventPath.getParent
+      val serverTable = serverStatementEventPath
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
         "where statement = \"" + sql + "\"")
       val states = Array(INITIALIZED, PENDING, RUNNING, FINISHED, CLOSED)
@@ -87,7 +84,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
       }
 
       // check engine statement events
-      val engineTable = engineStatementEventPath.getParent
+      val engineTable = engineStatementEventPath
       val resultSet2 = statement.executeQuery(s"SELECT * FROM `json`.`${engineTable}`" +
         "where statement = \"" + sql + "\"")
       val engineStates = Array(INITIALIZED, PENDING, RUNNING, COMPILED, FINISHED)
@@ -110,7 +107,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     }
 
     val serverSessionEventPath =
-      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
+      Paths.get(serverLogRoot, "kyuubi_session")
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
@@ -170,9 +167,8 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     }
 
     val serverSessionEventPath =
-      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
-    val engineSessionEventPath =
-      Paths.get(engineLogRoot, "session", s"day=$currentDate")
+      Paths.get(serverLogRoot, "kyuubi_session")
+    val engineSessionEventPath = Paths.get(engineLogRoot, "session")
     withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
@@ -201,9 +197,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
     server.stop()
     ServerEventHandlerRegister.registerEventLoggers(conf) // register event loggers again
 
-    val hostName = InetAddress.getLocalHost.getCanonicalHostName
-    val kyuubiServerInfoPath =
-      Paths.get(serverLogRoot, "kyuubi_server_info", s"day=$currentDate", s"server-$hostName.json")
+    val kyuubiServerInfoPath = Paths.get(serverLogRoot, "kyuubi_server_info")
 
     withJdbcStatement() { statement =>
       statement.executeQuery("set spark.sql.caseSensitive=true")
@@ -284,7 +278,7 @@ class ServerJsonLoggingEventHandlerSuite extends WithKyuubiServer with HiveJDBCT
 
     eventually(timeout(2.minutes), interval(10.seconds)) {
       val serverSessionEventPath =
-        Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
+        Paths.get(serverLogRoot, "kyuubi_session")
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
           s"SELECT * FROM `json`.`$serverSessionEventPath` " +

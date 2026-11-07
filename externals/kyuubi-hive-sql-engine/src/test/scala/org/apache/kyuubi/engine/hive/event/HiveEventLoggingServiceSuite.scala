@@ -18,13 +18,11 @@ package org.apache.kyuubi.engine.hive.event
 
 import java.io.{BufferedReader, InputStreamReader}
 import java.net.InetAddress
-import java.nio.file.Paths
 
 import org.apache.commons.lang3.{JavaVersion, StringUtils, SystemUtils}
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
+import org.apache.hadoop.fs.{FileSystem, Path}
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.engine.hive.HiveSQLEngine
@@ -37,8 +35,24 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
 
   private val kyuubiConf = new KyuubiConf()
   private val logRoot = kyuubiConf.get(ENGINE_EVENT_JSON_LOG_PATH)
-  private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
   private val hostName = InetAddress.getLocalHost.getCanonicalHostName
+
+  // Read every day partition so the test does not depend on the date the suite was constructed,
+  // which can differ from the date the events are written if a run crosses midnight.
+  private def readEventLines(eventType: String): Seq[String] = {
+    val fileSystem: FileSystem = FileSystem.get(new Configuration())
+    val eventFiles = Option(fileSystem.globStatus(
+      new Path(logRoot, s"$eventType/day=*/Hive-$hostName.json"))).toSeq.flatten
+    eventFiles.sortBy(_.getPath.toString).flatMap { eventFile =>
+      val in = fileSystem.open(eventFile.getPath)
+      try {
+        val reader = new BufferedReader(new InputStreamReader(in))
+        Iterator.continually(reader.readLine()).takeWhile(_ != null).toList
+      } finally {
+        in.close()
+      }
+    }
+  }
 
   override def beforeAll(): Unit = {
     HiveSQLEngine.startEngine()
@@ -62,20 +76,13 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
   test("test engine event logging") {
     assume(SystemUtils.isJavaVersionAtMost(JavaVersion.JAVA_1_8))
 
-    val engineEventPath = Paths.get(
-      logRoot,
-      "hive_engine",
-      s"day=$currentDate",
-      s"Hive-$hostName.json")
-    val fileSystem: FileSystem = FileSystem.get(new Configuration())
-    val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
-    val engineEventReader = new BufferedReader(new InputStreamReader(fs))
+    val engineEvents = readEventLines("hive_engine")
     val initializedEvent =
-      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveEngineEvent])
+      JsonProtocol.jsonToEvent(engineEvents.head, classOf[HiveEngineEvent])
     assert(initializedEvent.asInstanceOf[HiveEngineEvent].state.equals(ServiceState.INITIALIZED))
 
     val startedEvent =
-      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveEngineEvent])
+      JsonProtocol.jsonToEvent(engineEvents(1), classOf[HiveEngineEvent])
     assert(startedEvent.asInstanceOf[HiveEngineEvent].state.equals(ServiceState.STARTED))
   }
 
@@ -85,16 +92,9 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(!catalogs.next())
-      val sessionEventPath = Paths.get(
-        logRoot,
-        "hive_session",
-        s"day=$currentDate",
-        s"Hive-$hostName.json")
-      val fileSystem: FileSystem = FileSystem.get(new Configuration())
-      val fs: FSDataInputStream = fileSystem.open(new Path(sessionEventPath.toString))
-      val engineEventReader = new BufferedReader(new InputStreamReader(fs))
+      val sessionEvents = readEventLines("hive_session")
       val readEvent =
-        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveSessionEvent])
+        JsonProtocol.jsonToEvent(sessionEvents.head, classOf[HiveSessionEvent])
       assert(readEvent.isInstanceOf[HiveSessionEvent])
     }
   }
@@ -110,32 +110,24 @@ class HiveEventLoggingServiceSuite extends HiveJDBCTestHelper {
       val queryStatement = "SELECT ID, VALUE FROM hive_engine_test"
       statement.executeQuery(queryStatement)
 
-      val operationEventPath = Paths.get(
-        logRoot,
-        "hive_operation",
-        s"day=$currentDate",
-        s"Hive-$hostName.json")
-
-      val fileSystem: FileSystem = FileSystem.get(new Configuration())
-      val fs: FSDataInputStream = fileSystem.open(new Path(operationEventPath.toString))
-      val engineEventReader = new BufferedReader(new InputStreamReader(fs))
+      val operationEvents = readEventLines("hive_operation")
 
       val createTableEvent =
-        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
+        JsonProtocol.jsonToEvent(operationEvents.head, classOf[HiveOperationEvent])
       assert(createTableEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
         createTableEvent.asInstanceOf[HiveOperationEvent].statement,
         createTableStatement))
 
       val insertEvent =
-        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
+        JsonProtocol.jsonToEvent(operationEvents(1), classOf[HiveOperationEvent])
       assert(insertEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
         insertEvent.asInstanceOf[HiveOperationEvent].statement,
         insertStatement))
 
       val queryEvent =
-        JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[HiveOperationEvent])
+        JsonProtocol.jsonToEvent(operationEvents(2), classOf[HiveOperationEvent])
       assert(queryEvent.isInstanceOf[HiveOperationEvent])
       assert(StringUtils.equals(
         queryEvent.asInstanceOf[HiveOperationEvent].statement,
