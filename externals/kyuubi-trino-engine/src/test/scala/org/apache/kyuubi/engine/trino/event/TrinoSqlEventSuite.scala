@@ -16,13 +16,13 @@
  */
 package org.apache.kyuubi.engine.trino.event
 
-import java.io.{BufferedReader, InputStreamReader}
 import java.net.InetAddress
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
+import org.apache.kyuubi.TestUtils
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_SHARE_LEVEL, ENGINE_TRINO_CONNECTION_CATALOG}
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.events.JsonProtocol
@@ -33,23 +33,6 @@ class TrinoSqlEventSuite extends WithTrinoEngine with HiveJDBCTestHelper {
 
   private val logRoot = kyuubiConf.get(ENGINE_EVENT_JSON_LOG_PATH)
   private val hostName = InetAddress.getLocalHost.getCanonicalHostName
-
-  // Read every day partition so the test does not depend on the date the suite was constructed,
-  // which can differ from the date the events are written if a run crosses midnight.
-  private def readEventLines(eventType: String): Seq[String] = {
-    val fileSystem: FileSystem = FileSystem.get(new Configuration())
-    val eventFiles = Option(fileSystem.globStatus(
-      new Path(logRoot, s"$eventType/day=*/Trino-$hostName.json"))).toSeq.flatten
-    eventFiles.sortBy(_.getPath.toString).flatMap { eventFile =>
-      val in = fileSystem.open(eventFile.getPath)
-      try {
-        val reader = new BufferedReader(new InputStreamReader(in))
-        Iterator.continually(reader.readLine()).takeWhile(_ != null).toList
-      } finally {
-        in.close()
-      }
-    }
-  }
 
   override def withKyuubiConf: Map[String, String] = Map(
     ENGINE_TRINO_CONNECTION_CATALOG.key -> "memory",
@@ -70,7 +53,7 @@ class TrinoSqlEventSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   }
 
   test("test engine event logging") {
-    val engineEvents = readEventLines("trino_engine")
+    val engineEvents = TestUtils.readEventLines(logRoot, s"trino_engine/day=*/Trino-$hostName.json")
     val initializedEvent =
       JsonProtocol.jsonToEvent(engineEvents.head, classOf[TrinoEngineEvent])
     assert(initializedEvent.asInstanceOf[TrinoEngineEvent].state.equals(ServiceState.INITIALIZED))
@@ -84,7 +67,8 @@ class TrinoSqlEventSuite extends WithTrinoEngine with HiveJDBCTestHelper {
     withJdbcStatement() { statement =>
       val catalogs = statement.getConnection.getMetaData.getCatalogs
       assert(catalogs.next())
-      val sessionEvents = readEventLines("trino_session")
+      val sessionEvents =
+        TestUtils.readEventLines(logRoot, s"trino_session/day=*/Trino-$hostName.json")
       val readEvent =
         JsonProtocol.jsonToEvent(sessionEvents.head, classOf[TrinoSessionEvent])
       assert(readEvent.isInstanceOf[TrinoSessionEvent])
@@ -101,7 +85,8 @@ class TrinoSqlEventSuite extends WithTrinoEngine with HiveJDBCTestHelper {
       val insertStatement = "INSERT INTO memory.test_schema.trino_engine_test SELECT 1"
       statement.execute(insertStatement)
 
-      val operationEvents = readEventLines("trino_operation")
+      val operationEvents =
+        TestUtils.readEventLines(logRoot, s"trino_operation/day=*/Trino-$hostName.json")
 
       val createSchemaEvent =
         JsonProtocol.jsonToEvent(operationEvents.head, classOf[TrinoOperationEvent])

@@ -17,14 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.events.handler
 
-import java.io.{BufferedReader, InputStreamReader}
 import java.nio.file.Paths
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.{FileSystem, Path}
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{TestUtils, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, SessionEvent}
@@ -37,23 +34,6 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
 
   private val logRoot = "file://" + Utils.createTempDir().toString
 
-  // Read every day partition so the test does not depend on the date the suite was constructed,
-  // which can differ from the date the events are written if a run crosses midnight.
-  private def readEventLines(eventType: String): Seq[String] = {
-    val fileSystem: FileSystem = FileSystem.get(new Configuration())
-    val eventFiles = Option(fileSystem.globStatus(
-      new Path(logRoot, s"$eventType/day=*/${KyuubiSparkUtil.engineId}.json"))).toSeq.flatten
-    eventFiles.sortBy(_.getPath.toString).flatMap { eventFile =>
-      val in = fileSystem.open(eventFile.getPath)
-      try {
-        val reader = new BufferedReader(new InputStreamReader(in))
-        Iterator.continually(reader.readLine()).takeWhile(_ != null).toList
-      } finally {
-        in.close()
-      }
-    }
-  }
-
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_SPARK_EVENT_LOGGERS.key -> s"$JSON",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
@@ -64,7 +44,9 @@ class SparkJsonLoggingEventHandlerSuite extends WithSparkSQLEngine with HiveJDBC
 
   test("round-trip for event logging service") {
     val sessionEventPath = Paths.get(logRoot, "session")
-    val engineEvents = readEventLines("engine")
+    val engineEvents = TestUtils.readEventLines(
+      logRoot,
+      s"engine/day=*/${KyuubiSparkUtil.engineId}.json")
     val readEvent = JsonProtocol.jsonToEvent(engineEvents.head, classOf[EngineEvent])
     assert(readEvent.isInstanceOf[EngineEvent])
     withJdbcStatement() { statement =>
