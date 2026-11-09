@@ -22,6 +22,7 @@ public class RestClientConf {
   private int attemptWaitTime;
   private int socketTimeout;
   private int connectTimeout;
+  private boolean insecureSsl = false;
 
   public int getMaxAttempts() {
     return maxAttempts;
@@ -53,5 +54,13 @@ public class RestClientConf {
 
   public void setConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
+  }
+
+  public boolean isInsecureSsl() {
+    return insecureSsl;
+  }
+
+  public void setInsecureSsl(boolean insecureSsl) {
+    this.insecureSsl = insecureSsl;
   }
 }
