@@ -114,8 +114,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         // since the session is only one
         case CONNECTION => spark
         case USER => newSparkSession(spark, sessionConf)
-        case GROUP | SERVER if userIsolatedSparkSession => newSparkSession(spark, sessionConf)
-        case GROUP | SERVER =>
+        case GROUP | SERVER | SERVER_LOCAL if userIsolatedSparkSession =>
+          newSparkSession(spark, sessionConf)
+        case GROUP | SERVER | SERVER_LOCAL =>
           userIsolatedCacheLock.synchronized {
             if (userIsolatedCache.containsKey(user)) {
               val (count, _) = userIsolatedCacheCount.get(user)
