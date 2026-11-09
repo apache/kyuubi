@@ -53,9 +53,11 @@ public class BatchRestClientTest {
     serverTestHelper.setup(BatchTestServlet.class);
 
     kerberizedTestHelper.login();
+    // the test HTTPS server presents a self-signed certificate
     spnegoClient =
         KyuubiRestClient.builder("https://localhost:8443")
             .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.SPNEGO)
+            .insecureSsl(true)
             .build();
     spnegoBatchRestApi = new BatchRestApi(spnegoClient);
 
@@ -66,6 +68,7 @@ public class BatchRestClientTest {
             .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username(TEST_USERNAME)
             .password(TEST_PASSWORD)
+            .insecureSsl(true)
             .build();
     basicBatchRestApi = new BatchRestApi(basicClient);
   }
@@ -101,6 +104,7 @@ public class BatchRestClientTest {
                   .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
                   .username("test")
                   .password("test")
+                  .insecureSsl(true)
                   .build();
           BatchRestApi invalidBasicBatchRestApi = new BatchRestApi(basicClient);
 
@@ -117,6 +121,7 @@ public class BatchRestClientTest {
         KyuubiRestClient.builder("https://localhost:8443")
             .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
             .username(TEST_USERNAME)
+            .insecureSsl(true)
             .build();
     BatchRestApi noPasswordBasicBatchRestApi = new BatchRestApi(noPasswordBasicClient);
 
@@ -146,6 +151,7 @@ public class BatchRestClientTest {
     KyuubiRestClient anonymousBasicClient =
         KyuubiRestClient.builder("https://localhost:8443")
             .authHeaderMethod(KyuubiRestClient.AuthHeaderMethod.BASIC)
+            .insecureSsl(true)
             .build();
     BatchRestApi anonymousBasicBatchRestApi = new BatchRestApi(anonymousBasicClient);
 
