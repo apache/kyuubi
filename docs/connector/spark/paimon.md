@@ -40,7 +40,7 @@ To enable the integration of Kyuubi Spark SQL engine and Apache Paimon through S
 
 The **classpath** of Kyuubi Spark SQL engine with Apache Paimon consists of:
 
-1. kyuubi-spark-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-spark-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Spark distribution
 3. `paimon-spark-<version>.jar` (example: `paimon-spark-3.5-0.8.1.jar`), which can be found in the [Apache Paimon Supported Engines Spark3](https://paimon.apache.org/docs/master/engines/spark3/)
 

@@ -44,7 +44,7 @@ To enable the integration of Kyuubi Spark SQL engine and TiDB through Spark Data
 
 The classpath of Kyuubi Spark SQL engine with TiDB supported consists of:
 
-1. kyuubi-spark-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-spark-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Spark distribution
 3. `tispark-assembly-<spark.version>_<scala.version>-<tispark.version>.jar` (example: `tispark-assembly-3.2_2.12-3.0.1.jar`), which can be found in the [Maven Central](https://repo1.maven.org/maven2/com/pingcap/tispark/)
 

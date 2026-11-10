@@ -42,7 +42,7 @@ To enable the integration of Kyuubi Hive SQL engine and Iceberg, you need to:
 
 The **classpath** of Kyuubi Hive SQL engine with Iceberg supported consists of:
 
-1. kyuubi-hive-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-hive-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Hive distribution
 3. `iceberg-hive-runtime-<hive.version>_<scala.version>-<iceberg.version>.jar` (example: `iceberg-hive-runtime-3.2_2.12-0.14.0.jar`), which can be found in the [Maven Central](https://mvnrepository.com/artifact/org.apache.iceberg)
 

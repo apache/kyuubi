@@ -40,7 +40,7 @@ To enable the integration of Kyuubi Hive SQL engine and Apache Paimon, you need 
 
 The **classpath** of Kyuubi Hive SQL engine with Iceberg supported consists of:
 
-1. kyuubi-hive-sql-engine-{{ release }}_2.12.jar, the engine jar deployed with a Kyuubi distribution
+1. kyuubi-hive-sql-engine_2.12-{{ release }}.jar, the engine jar deployed with a Kyuubi distribution
 2. A copy of Hive distribution
 3. `paimon-hive-connector-<hive.binary.version>-<paimon.version>.jar` (example: `paimon-hive-connector-3.1-0.4-SNAPSHOT.jar`), which can be found in the [Apache Paimon Supported Engines Hive](https://paimon.apache.org/docs/master/engines/hive/)
 
