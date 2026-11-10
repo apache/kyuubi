@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.client;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import javax.net.ssl.SSLContext;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
@@ -39,14 +42,21 @@ public class HttpClientFactory {
             .setConnectTimeout(conf.getConnectTimeout())
             .build();
     SSLConnectionSocketFactory sslSocketFactory;
-    try {
-      TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
-      SSLContext sslContext =
-          SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
-      sslSocketFactory = new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
-    } catch (Exception e) {
-      LOG.error("Error: ", e);
-      throw new KyuubiRestException("Failed to create HttpClient", e);
+    if (conf.isInsecureSsl()) {
+      LOG.warn("TLS certificate and hostname verification is disabled for the REST client");
+      try {
+        TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
+        SSLContext sslContext =
+            SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
+        sslSocketFactory =
+            new SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE);
+      } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
+        LOG.error("Error: ", e);
+        throw new KyuubiRestException("Failed to create HttpClient", e);
+      }
+    } else {
+      // standard TLS verification: JVM trust store and hostname check
+      sslSocketFactory = SSLConnectionSocketFactory.getSocketFactory();
     }
 
     return HttpClientBuilder.create()

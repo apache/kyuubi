@@ -20,6 +20,7 @@ package org.apache.kyuubi.jdbc.hive.strategy;
 import java.lang.reflect.Constructor;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
 import org.apache.kyuubi.jdbc.hive.strategy.zk.RandomSelectStrategy;
+import org.apache.kyuubi.util.reflect.DynClasses;
 
 public class ServerSelectStrategyFactory {
   public static ServerSelectStrategy createStrategy(String strategyName) {
@@ -30,15 +31,19 @@ public class ServerSelectStrategyFactory {
         case RandomSelectStrategy.strategyName:
           return new RandomSelectStrategy();
         default:
-          Class<?> clazz = Class.forName(strategyName);
-          if (ServerSelectStrategy.class.isAssignableFrom(clazz)) {
-            Constructor<? extends ServerSelectStrategy> constructor =
-                clazz.asSubclass(ServerSelectStrategy.class).getConstructor();
-            return constructor.newInstance();
-          } else {
+          Class<? extends ServerSelectStrategy> clazz;
+          try {
+            clazz =
+                DynClasses.loadSubclass(
+                    strategyName,
+                    ServerSelectStrategy.class,
+                    ServerSelectStrategyFactory.class.getClassLoader());
+          } catch (ClassCastException e) {
             throw new ClassNotFoundException(
                 "The loaded class does not implement ServerSelectStrategy");
           }
+          Constructor<? extends ServerSelectStrategy> constructor = clazz.getConstructor();
+          return constructor.newInstance();
       }
     } catch (Exception e) {
       throw new RuntimeException("Failed to init server select strategy", e);

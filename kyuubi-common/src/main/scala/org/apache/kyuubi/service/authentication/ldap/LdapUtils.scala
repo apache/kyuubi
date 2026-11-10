@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.service.authentication.ldap
 
+import javax.naming.InvalidNameException
+import javax.naming.ldap.{LdapName, Rdn}
+
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.Logging
@@ -49,14 +52,40 @@ object LdapUtils extends Logging {
   /**
    * Extracts the first Relative Distinguished Name (RDN).
    * <br>
-   * <b>Example:</b>
+   * <b>Examples:</b>
    * <br>
    * For DN "cn=user1,ou=CORP,dc=mycompany,dc=com" this method will return "cn=user1"
+   * <br>
+   * For DN "cn=user1" this method will return "cn=user1"
    *
    * @param dn distinguished name
    * @return first RDN
    */
-  def extractFirstRdn(dn: String): String = dn.substring(0, dn.indexOf(","))
+  def extractFirstRdn(dn: String): String = dn.split(",", 2)(0)
+
+  /**
+   * Renders the first RDN of a distinguished name as a single search filter assertion, with
+   * the attribute value escaped per RFC 4515 section 3.
+   * <br>
+   * The RDN has to be decoded before being escaped: inside a distinguished name the value
+   * is escaped per RFC 4514, so escaping the serialized form would turn the '\+' of
+   * "cn=Alice\+Ops" into a literal backslash and the entry would no longer be found.
+   * <br>
+   * Decoding also rejects a malformed name, so the attribute type cannot carry filter
+   * metacharacters into the assertion.
+   *
+   * @param dn distinguished name
+   * @return filter assertion such as "cn=Alice+Ops", or null if the name cannot be parsed
+   */
+  def firstRdnAsFilterFragment(dn: String): String = {
+    try {
+      val name = new LdapName(dn)
+      val rdn = name.getRdn(name.size() - 1)
+      s"${rdn.getType}=${escapeLDAPSearchFilter(String.valueOf(rdn.getValue))}"
+    } catch {
+      case _: InvalidNameException => null
+    }
+  }
 
   /**
    * Extracts username from user DN.
@@ -66,6 +95,7 @@ object LdapUtils extends Logging {
    * LdapUtils.extractUserName("UserName")                        = "UserName"
    * LdapUtils.extractUserName("UserName@mycorp.com")             = "UserName"
    * LdapUtils.extractUserName("cn=UserName,dc=mycompany,dc=com") = "UserName"
+   * LdapUtils.extractUserName("cn=UserName")                     = "UserName"
    * </pre>
    */
   def extractUserName(userDn: String): String = {
@@ -77,7 +107,7 @@ object LdapUtils extends Logging {
       return userDn.substring(0, domainIdx)
     }
     if (userDn.contains("=")) {
-      return userDn.substring(userDn.indexOf("=") + 1, userDn.indexOf(","))
+      return userDn.substring(userDn.indexOf("=") + 1).split(",", 2)(0)
     }
     userDn
   }
@@ -140,6 +170,39 @@ object LdapUtils extends Logging {
   def isDn(name: String): Boolean = {
     name.contains("=")
   }
+
+  /**
+   * Escapes special characters in a value that is to be embedded into an LDAP search filter,
+   * according to RFC 4515 section 3, so that the value is interpreted literally by the
+   * directory server instead of as filter metacharacters such as the wildcard '*'.
+   *
+   * @param value value to be embedded into a search filter
+   * @return escaped value
+   */
+  def escapeLDAPSearchFilter(value: String): String = {
+    val escaped = new StringBuilder(value.length)
+    value.foreach {
+      case '*' => escaped.append("\\2a")
+      case '(' => escaped.append("\\28")
+      case ')' => escaped.append("\\29")
+      case '\\' => escaped.append("\\5c")
+      case '\u0000' => escaped.append("\\00")
+      case c => escaped.append(c)
+    }
+    escaped.result()
+  }
+
+  /**
+   * Escapes a value to be embedded into an LDAP distinguished name as an attribute value,
+   * per RFC 4514 section 3. Delegates to [[Rdn.escapeValue]] and additionally escapes NUL,
+   * which [[Rdn.escapeValue]] leaves alone but which DN parsers treating the name as a C
+   * string would truncate at.
+   *
+   * @param value value to be embedded into a distinguished name
+   * @return escaped value
+   */
+  def escapeLdapDnValue(value: String): String =
+    Rdn.escapeValue(value).replace("\u0000", "\\00")
 
   /**
    * Reads and parses DN patterns from Kyuubi configuration.
@@ -206,7 +269,7 @@ object LdapUtils extends Logging {
       if (userPatterns.isEmpty) {
         return Array(user)
       }
-      userPatterns.map(_.replaceAll("%s", user))
+      userPatterns.map(_.replace("%s", escapeLdapDnValue(user)))
     }
   }
 }

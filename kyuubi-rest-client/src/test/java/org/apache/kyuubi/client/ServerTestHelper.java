@@ -38,6 +38,9 @@ public class ServerTestHelper {
 
   private static final Logger LOG = LoggerFactory.getLogger(ServerTestHelper.class);
 
+  // the self-signed certificate never matches the host the tests connect to
+  private static final String SERVER_CERT_SUBJECT = "CN=kyuubi-test.invalid";
+
   private static final Constructor<?> CONSTRUCTOR;
   private static final Method GENERATE_METHOD;
   private static final Method GET_PRIVATE_KEY_METHOD;
@@ -59,9 +62,7 @@ public class ServerTestHelper {
       getPrivateKeyMethod = certAndKeyGenClass.getMethod("getPrivateKey");
       getSelfCertificateMethod =
           certAndKeyGenClass.getMethod("getSelfCertificate", x500NameClass, Date.class, Long.TYPE);
-      x500NameConstructor =
-          x500NameClass.getConstructor(
-              String.class, String.class, String.class, String.class, String.class, String.class);
+      x500NameConstructor = x500NameClass.getConstructor(String.class);
     } catch (Exception e) {
       LOG.error("Error: ", e);
     }
@@ -77,6 +78,8 @@ public class ServerTestHelper {
   private File keyStoreFile = new File(System.getProperty("test.dir", "target"), "kyuubi-test.jks");
 
   private Server server;
+
+  private X509Certificate serverCertificate;
 
   private int maxThreads = 100;
   private int minThreads = 10;
@@ -96,6 +99,10 @@ public class ServerTestHelper {
     }
   }
 
+  public X509Certificate getServerCertificate() {
+    return serverCertificate;
+  }
+
   private void generateKeyStore() throws Exception {
     KeyStore ks = KeyStore.getInstance("jks");
     ks.load(null, null);
@@ -109,9 +116,10 @@ public class ServerTestHelper {
         (X509Certificate)
             GET_SELF_CERTIFICATE_METHOD.invoke(
                 certAndKeyGen,
-                X500_NAME_CONSTRUCTOR.newInstance("", "", "", "", "", ""),
+                X500_NAME_CONSTRUCTOR.newInstance(SERVER_CERT_SUBJECT),
                 new Date(),
                 (long) 24 * 60 * 60);
+    this.serverCertificate = chain[0];
 
     // store away the key store
     FileOutputStream fos = new FileOutputStream(keyStoreFile);

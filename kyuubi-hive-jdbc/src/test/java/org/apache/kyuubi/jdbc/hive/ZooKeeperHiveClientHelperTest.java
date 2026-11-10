@@ -20,12 +20,37 @@ package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.kyuubi.jdbc.hive.Utils.extractURLComponents;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Properties;
+import org.apache.kyuubi.jdbc.hive.strategy.ServerSelectStrategyFactory;
+import org.apache.kyuubi.jdbc.hive.strategy.zk.PollingSelectStrategy;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 public class ZooKeeperHiveClientHelperTest {
+
+  private static boolean rejectedClassInitialized;
+
+  public static class RejectedStrategy {
+    static {
+      rejectedClassInitialized = true;
+    }
+  }
+
+  @Test
+  public void validateStrategyBeforeInitialization() {
+    assertThrows(
+        RuntimeException.class,
+        () -> ServerSelectStrategyFactory.createStrategy(RejectedStrategy.class.getName()));
+    assertFalse(rejectedClassInitialized);
+    assertEquals(
+        PollingSelectStrategy.class,
+        ServerSelectStrategyFactory.createStrategy(PollingSelectStrategy.class.getName())
+            .getClass());
+  }
 
   @ParameterizedTest
   @ValueSource(

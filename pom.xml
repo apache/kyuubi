@@ -131,13 +131,13 @@
         <apache.archive.dist>https://www.apache.org/dyn/closer.lua</apache.archive.dist>
         <atlas.version>2.3.0</atlas.version>
         <byte-buddy.version>1.17.6</byte-buddy.version>
-        <bouncycastle.version>1.84</bouncycastle.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
         <codahale.metrics.version>4.2.30</codahale.metrics.version>
         <commons-cli.version>1.5.0</commons-cli.version>
         <commons-codec.version>1.17.1</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.16.1</commons-io.version>
-        <commons-lang3.version>3.18.0</commons-lang3.version>
+        <commons-lang3.version>3.21.0</commons-lang3.version>
         <delta.artifact>delta-spark_${scala.binary.version}</delta.artifact>
         <delta.version>3.3.1</delta.version>
         <failsafe.verion>3.3.2</failsafe.verion>
@@ -150,7 +150,7 @@
         <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <grpc.version>1.76.2</grpc.version>
-        <guava.version>33.4.8-jre</guava.version>
+        <guava.version>33.8.0-jre</guava.version>
         <guava.failureaccess.version>1.0.3</guava.failureaccess.version>
         <hadoop.version>3.4.3</hadoop.version>
         <hikaricp.version>4.0.3</hikaricp.version>
@@ -212,7 +212,7 @@
           DO NOT forget to change the following properties when change the minor version of Spark:
           `delta.version`, `delta.artifact`, `maven.plugin.scalatest.exclude.tags`
           -->
-        <spark.version>3.5.8</spark.version>
+        <spark.version>3.5.9</spark.version>
         <spark.binary.version>3.5</spark.binary.version>
         <spark.archive.scala.suffix></spark.archive.scala.suffix>
         <spark.archive.name>spark-${spark.version}-bin-hadoop3${spark.archive.scala.suffix}.tgz</spark.archive.name>
@@ -260,7 +260,6 @@
         <maven.plugin.jacoco.version>0.8.11</maven.plugin.jacoco.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.shade.version>3.5.2</maven.plugin.shade.version>
-        <maven.plugin.silencer.version>1.7.19</maven.plugin.silencer.version>
         <!-- MSOURCES-121 breaks creating source artifacts for shaded modules,
              we should skip upgrading until MSOURCES-141 gets fixed. -->
         <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
@@ -1446,9 +1445,9 @@
                             <arg>-deprecation</arg>
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
-                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
-                            <arg>-P:silencer:globalFilters=.*Could not find any member to link for.*</arg>
-                            <arg>-P:silencer:globalFilters=.*undefined in comment for class.*</arg>
+                            <arg>-Wconf:msg=deprecated:s</arg>
+                            <arg>-Wconf:msg=Could not find any member to link for:s</arg>
+                            <arg>-Wconf:msg=undefined in comment for class:s</arg>
                             <arg>-Xfatal-warnings</arg>
                             <arg>-Ywarn-unused:imports</arg>
                         </args>
@@ -1460,13 +1459,6 @@
                         <javacArgs>
                             <javacArg>-Xlint:all,-serial,-path,-try,-processing</javacArg>
                         </javacArgs>
-                        <compilerPlugins>
-                            <compilerPlugin>
-                                <groupId>com.github.ghik</groupId>
-                                <artifactId>silencer-plugin_${scala.version}</artifactId>
-                                <version>${maven.plugin.silencer.version}</version>
-                            </compilerPlugin>
-                        </compilerPlugins>
                     </configuration>
                     <executions>
                         <execution>
@@ -2059,7 +2051,7 @@
                 <module>extensions/spark/kyuubi-spark-connector-hive</module>
             </modules>
             <properties>
-                <spark.version>3.5.8</spark.version>
+                <spark.version>3.5.9</spark.version>
                 <spark.binary.version>3.5</spark.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
             </properties>
@@ -2074,12 +2066,14 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.0.3</spark.version>
+                <spark.version>4.0.5</spark.version>
                 <spark.binary.version>4.0</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
+                <delta.version>4.4.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
+                <!-- Paimon 2.x references the Spark 4.1+ Table.constraints() API in its Spark 4.0
+                     build, causing java.lang.NoClassDefFoundError at runtime. -->
                 <paimon.version>1.4.2</paimon.version>
                 <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
                 <!-- Exclude SparkLocalClusterTest due to Scala 2.13.17 changes serialVersionUID of scala.collection.immutable.ArraySeq -->
@@ -2097,16 +2091,15 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.1.2</spark.version>
+                <spark.version>4.1.4</spark.version>
                 <spark.binary.version>4.1</spark.binary.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
+                <delta.version>4.4.1</delta.version>
                 <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
-                <!-- TODO: update once Paimon support Spark 4.1. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
-                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.PaimonTest</maven.plugin.scalatest.exclude.tags>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>
         </profile>
@@ -2120,20 +2113,49 @@
             <properties>
                 <maven.compiler.release>17</maven.compiler.release>
                 <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
-                <spark.version>4.2.0</spark.version>
-                <!-- TODO: update once Delta and Iceberg support Spark 4.2. -->
+                <spark.version>4.2.1</spark.version>
+                <!-- TODO: update once Iceberg and Hudi support Spark 4.2. -->
                 <spark.binary.version>4.1</spark.binary.version>
                 <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
                      Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
                      was introduced in Servlet 6.0. -->
                 <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
                 <antlr4.version>4.13.1</antlr4.version>
-                <delta.version>4.3.1</delta.version>
-                <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
+                <delta.version>4.4.1</delta.version>
+                <delta.artifact>delta-spark_4.2_${scala.binary.version}</delta.artifact>
                 <hudi.version>1.2.0</hudi.version>
                 <!-- TODO: update once Paimon support Spark 4.2. -->
-                <paimon.version>1.4.2</paimon.version>
-                <paimon.artifact>paimon-spark-4.0_${scala.binary.version}</paimon.artifact>
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-${spark.binary.version}_${scala.binary.version}</paimon.artifact>
+                <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-4.3</id>
+            <modules>
+                <module>extensions/spark/kyuubi-extension-spark-4-3</module>
+                <module>extensions/spark/kyuubi-spark-connector-hive</module>
+            </modules>
+            <properties>
+                <maven.compiler.release>17</maven.compiler.release>
+                <enforcer.maxJdkVersion>17</enforcer.maxJdkVersion>
+                <spark.version>4.3.0</spark.version>
+                <arrow.version>19.0.0</arrow.version>
+                <!-- TODO: update once Delta and Iceberg support Spark 4.3. -->
+                <spark.binary.version>4.1</spark.binary.version>
+                <!-- SPARK-47086 (4.2.0) upgraded Jetty to 12 (ee10), which requires the
+                     Jakarta Servlet 6.0 API; jakarta.servlet.ServletConnection
+                     was introduced in Servlet 6.0. -->
+                <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
+                <antlr4.version>4.13.1</antlr4.version>
+                <delta.version>4.4.1</delta.version>
+                <delta.artifact>delta-spark_${spark.binary.version}_${scala.binary.version}</delta.artifact>
+                <hudi.version>1.2.0</hudi.version>
+                <!-- TODO: update once Paimon support Spark 4.3. -->
+                <paimon.version>2.1.0</paimon.version>
+                <paimon.artifact>paimon-spark-4.1_${scala.binary.version}</paimon.artifact>
                 <maven.plugin.scalatest.exclude.tags>org.scalatest.tags.Slow,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.PaimonTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
                 <spark.archive.name>spark-${spark.version}-bin-hadoop3.tgz</spark.archive.name>
             </properties>

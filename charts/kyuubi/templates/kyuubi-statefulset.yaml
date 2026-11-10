@@ -21,6 +21,9 @@ metadata:
   name: {{ .Release.Name }}
   labels:
     {{- include "kyuubi.labels" . | nindent 4 }}
+  {{- with .Values.annotations }}
+  annotations: {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   selector:
     matchLabels:
@@ -60,6 +63,9 @@ spec:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext: {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- with .Values.command }}
           command: {{- tpl (toYaml .) $ | nindent 12 }}
           {{- end }}

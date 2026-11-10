@@ -264,7 +264,7 @@ object Benchmark {
 
     /** Returns full iterations from an actively running experiment. */
     def getCurrentRuns(): DataFrame = {
-      val tbl = sparkSession.createDataFrame(currentRuns)
+      val tbl = sparkSession.createDataFrame(currentRuns.toSeq)
       tbl.createOrReplaceTempView("currentRuns")
       tbl
     }

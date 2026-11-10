@@ -24,9 +24,11 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TExecuteStatementReq, T
 
 class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
+  protected def shareLevel: String = "GROUP"
+
   override def withKyuubiConf: Map[String, String] = {
     Map(
-      ENGINE_SHARE_LEVEL.key -> "GROUP",
+      ENGINE_SHARE_LEVEL.key -> shareLevel,
       ENGINE_USER_ISOLATED_SPARK_SESSION.key -> "false",
       ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_INTERVAL.key -> "100",
       ENGINE_USER_ISOLATED_SPARK_SESSION_IDLE_TIMEOUT.key -> "5000")

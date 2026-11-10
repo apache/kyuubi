@@ -186,3 +186,4 @@ No rows selected (0.611 seconds)
 [https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
 [https://github.com/apache/kyuubi](https://github.com/apache/kyuubi)
 [https://spark.apache.org/docs/latest/sql-data-sources.html](https://spark.apache.org/docs/latest/sql-data-sources.html)
+

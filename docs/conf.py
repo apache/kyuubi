@@ -36,11 +36,7 @@ import datetime
 
 sys.path.insert(0, os.path.abspath("."))
 
-source_suffix = {
-    ".rst": "restructuredtext",
-    ".txt": "restructuredtext",
-    ".md": "markdown",
-}
+source_suffix = {".md": "markdown"}
 
 # -- Project information -----------------------------------------------------
 

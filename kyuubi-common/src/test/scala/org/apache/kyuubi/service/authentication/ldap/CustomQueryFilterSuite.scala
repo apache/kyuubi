@@ -20,7 +20,7 @@ package org.apache.kyuubi.service.authentication.ldap
 import javax.security.sasl.AuthenticationException
 
 import org.mockito.ArgumentMatchers.{eq => mockEq}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verify, when}
 import org.scalatestplus.mockito.MockitoSugar.mock
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -65,5 +65,44 @@ class CustomQueryFilterSuite extends KyuubiFunSuite {
       val filter: Filter = factory.getInstance(conf).get
       filter.apply(search, "user3")
     }
+  }
+
+  test("ApplyPositiveWithPlaceholderQuery") {
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY,
+      "(&(objectClass=person)(uid=%s))")
+    when(search.executeCustomQuery(mockEq("(&(objectClass=person)(uid=%s))")))
+      .thenReturn(Array.empty[String])
+    when(search.executeCustomQuery(mockEq("(&(objectClass=person)(uid=user1))")))
+      .thenReturn(Array(USER1_DN))
+    val filter: Filter = factory.getInstance(conf).get
+    filter.apply(search, "user1")
+  }
+
+  test("ApplyNegativeWithWildcardUsername") {
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY,
+      "(&(objectClass=posixGroup)(memberUid=%s))")
+    when(search.executeCustomQuery(mockEq("(&(objectClass=posixGroup)(memberUid=%s))")))
+      .thenReturn(Array.empty[String])
+    val filter: Filter = factory.getInstance(conf).get
+    intercept[AuthenticationException] {
+      filter.apply(search, "user1*")
+    }
+    verify(search).executeCustomQuery(mockEq("(&(objectClass=posixGroup)(memberUid=user1\\2a))"))
+  }
+
+  test("ApplyNegativeWithFilterInjectionUsername") {
+    conf.set(
+      KyuubiConf.AUTHENTICATION_LDAP_CUSTOM_LDAP_QUERY,
+      "(&(objectClass=posixGroup)(memberUid=%s))")
+    when(search.executeCustomQuery(mockEq("(&(objectClass=posixGroup)(memberUid=%s))")))
+      .thenReturn(Array.empty[String])
+    val filter: Filter = factory.getInstance(conf).get
+    intercept[AuthenticationException] {
+      filter.apply(search, "user1*)(objectClass=*")
+    }
+    verify(search).executeCustomQuery(
+      mockEq("(&(objectClass=posixGroup)(memberUid=user1\\2a\\29\\28objectClass=\\2a))"))
   }
 }

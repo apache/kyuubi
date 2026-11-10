@@ -25,7 +25,6 @@ import java.io.PrintStream;
 import java.io.StringWriter;
 import java.text.DecimalFormat;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.fusesource.jansi.Ansi;
 
@@ -161,9 +160,8 @@ public class InPlaceUpdate {
         Lists.transform(
             monitor.rows(),
             new Function<List<String>, String>() {
-              @Nullable
               @Override
-              public String apply(@Nullable List<String> row) {
+              public String apply(List<String> row) {
                 return String.format(VERTEX_FORMAT, row.toArray());
               }
             });

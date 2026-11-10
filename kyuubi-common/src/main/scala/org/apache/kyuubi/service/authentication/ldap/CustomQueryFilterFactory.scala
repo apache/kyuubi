@@ -57,7 +57,7 @@ class CustomQueryFilter(query: String) extends Filter with Logging {
       }
       // try a generic user search
       if (query.contains("%s")) {
-        val userSearchQuery = query.replace("%s", user)
+        val userSearchQuery = query.replace("%s", LdapUtils.escapeLDAPSearchFilter(user))
         info("Trying with generic user search in ldap:" + userSearchQuery)
         try resultList = client.executeCustomQuery(userSearchQuery)
         catch {

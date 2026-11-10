@@ -87,7 +87,7 @@ class Query(
               messages += s"Breakdown: ${node.simpleString(maxFields)}"
               val newNode = buildDataFrame.queryExecution.executedPlan.p(index)
               val executionTime = measureTimeMs {
-                newNode.execute().foreach((row: Any) => Unit)
+                newNode.execute().foreach((row: Any) => ())
               }
               timeMap += ((index, executionTime))
 

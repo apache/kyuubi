@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TStatus;
+import org.apache.kyuubi.util.reflect.DynClasses;
 import org.apache.kyuubi.util.reflect.DynConstructors;
 
 public class KyuubiSQLException extends SQLException {
@@ -187,11 +188,13 @@ public class KyuubiSQLException extends SQLException {
 
   private static Throwable newInstance(String className, String message) {
     try {
+      Class<? extends Throwable> exceptionClass =
+          DynClasses.loadSubclass(className, Throwable.class);
       return DynConstructors.builder()
-          .impl(className, String.class)
+          .impl(exceptionClass, String.class)
           .<Throwable>buildChecked()
           .newInstance(message);
-    } catch (Exception e) {
+    } catch (Exception | NoClassDefFoundError e) {
       return new RuntimeException(className + ":" + message);
     }
   }

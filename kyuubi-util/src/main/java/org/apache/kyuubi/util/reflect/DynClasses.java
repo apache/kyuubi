@@ -27,6 +27,21 @@ public class DynClasses {
 
   private DynClasses() {}
 
+  /** Loads a subclass without initializing it, using the thread context class loader. */
+  public static <T> Class<? extends T> loadSubclass(String className, Class<T> expected)
+      throws ClassNotFoundException {
+    return loadSubclass(className, expected, Thread.currentThread().getContextClassLoader());
+  }
+
+  /**
+   * Loads and checks a class without running its static initializer. Initialization must wait until
+   * after the type check, because the class name may come from an untrusted source.
+   */
+  public static <T> Class<? extends T> loadSubclass(
+      String className, Class<T> expected, ClassLoader loader) throws ClassNotFoundException {
+    return Class.forName(className, false, loader).asSubclass(expected);
+  }
+
   public static Builder builder() {
     return new Builder();
   }

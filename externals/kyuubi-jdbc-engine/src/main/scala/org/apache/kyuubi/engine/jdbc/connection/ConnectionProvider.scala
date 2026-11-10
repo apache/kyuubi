@@ -28,9 +28,18 @@ abstract class AbstractConnectionProvider extends Logging {
   protected val providers = loadProviders()
 
   def getDriverClass(kyuubiConf: KyuubiConf): String = {
-    val driverClass: Class[_ <: Driver] = Option(
-      DynClasses.builder().impl(kyuubiConf.get(ENGINE_JDBC_DRIVER_CLASS).get)
-        .orNull().build[Driver]()).getOrElse {
+    val driverName = kyuubiConf.get(ENGINE_JDBC_DRIVER_CLASS).get
+    val classLoader = Thread.currentThread().getContextClassLoader
+    val configuredDriver: Option[Class[_ <: Driver]] =
+      try {
+        val driverClass = DynClasses.loadSubclass(driverName, classOf[Driver], classLoader)
+        // JDBC drivers register themselves during initialization, after the type check.
+        Class.forName(driverName, true, classLoader)
+        Some(driverClass)
+      } catch {
+        case _: ClassNotFoundException => None
+      }
+    val driverClass: Class[_ <: Driver] = configuredDriver.getOrElse {
       val url = kyuubiConf.get(ENGINE_JDBC_CONNECTION_URL).get
       DriverManager.getDriver(url).getClass
     }

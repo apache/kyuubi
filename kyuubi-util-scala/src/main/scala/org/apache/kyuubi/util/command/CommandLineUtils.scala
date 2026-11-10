@@ -35,9 +35,9 @@ object CommandLineUtils {
   val CP = "-cp"
 
   /**
-   * Assemble key value pair with "=" seperator
+   * Assemble key value pair with "=" seperator, trimming each side of the pair
    */
-  def genKeyValuePair(key: String, value: String): String = s"$key=$value".trim
+  def genKeyValuePair(key: String, value: String): String = s"${key.trim}=${value.trim}"
 
   /**
    * Assemble key value pair with config option prefix

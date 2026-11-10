@@ -19,7 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.util.reflect.DynConstructors
+import org.apache.kyuubi.util.reflect.{DynClasses, DynConstructors}
 
 trait EngineSecuritySecretProvider {
 
@@ -51,8 +51,11 @@ class SimpleEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvide
 
 object EngineSecuritySecretProvider {
   def create(conf: KyuubiConf): EngineSecuritySecretProvider = {
+    val providerClass = DynClasses.loadSubclass(
+      conf.get(INTERNAL_SECURITY_SECRET_PROVIDER),
+      classOf[EngineSecuritySecretProvider])
     val provider = DynConstructors.builder()
-      .impl(conf.get(INTERNAL_SECURITY_SECRET_PROVIDER))
+      .impl(providerClass)
       .buildChecked[EngineSecuritySecretProvider]()
       .newInstance(conf)
     provider.initialize(conf)

@@ -35,7 +35,7 @@ runs:
         URL: ${{ inputs.url }}
       run: |
         # Strip the query string before taking the file name, e.g.
-        # .../spark-3.5.8-bin-hadoop3.tgz?action=download -> spark-3.5.8-bin-hadoop3.tgz
+        # .../spark-3.5.9-bin-hadoop3.tgz?action=download -> spark-3.5.9-bin-hadoop3.tgz
         name="$(basename "${URL%%\?*}")"
         if [[ -z "$name" ]]; then
           echo "Cannot resolve an archive file name from URL: $URL" >&2
