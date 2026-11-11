@@ -33,7 +33,7 @@ class KyuubiServiceDiscovery(
       discoveryClient.deregisterService()
       discoveryClient.closeClient()
       // Closing the client can prevent delivery of the deletion notification.
-      waitForActiveSessions()
+      waitUntilNoActiveSessions()
     } else {
       warn(s"The Zookeeper ensemble is LOST")
     }

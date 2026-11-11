@@ -63,7 +63,7 @@ abstract class ServiceDiscovery(
     super.start()
   }
 
-  final protected def waitForActiveSessions(): Unit = {
+  final protected def waitUntilNoActiveSessions(): Unit = {
     var activeSessionCount = fe.be.sessionManager.getActiveUserSessionCount
     while (activeSessionCount > 0) {
       info(s"$activeSessionCount connection(s) are active, delay shutdown")
@@ -73,7 +73,7 @@ abstract class ServiceDiscovery(
   }
 
   def stopGracefully(isLost: Boolean = false): Unit = {
-    waitForActiveSessions()
+    waitUntilNoActiveSessions()
     isServerLost.set(isLost)
     fe.serverable.stop()
   }
