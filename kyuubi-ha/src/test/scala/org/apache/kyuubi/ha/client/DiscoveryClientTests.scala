@@ -26,6 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ADDRESSES, HA_NAMESPACE}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider.withDiscoveryClient
 import org.apache.kyuubi.service._
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 
 trait DiscoveryClientTests extends KyuubiFunSuite {
 
@@ -126,6 +127,56 @@ trait DiscoveryClientTests extends KyuubiFunSuite {
         service.stop()
         discovery.stop()
       }
+    }
+  }
+
+  test("Stop gracefully without waiting on sessions of a stopped session manager") {
+    val namespace = "kyuubiengine-stopped-backend"
+
+    conf
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    var discovery: ServiceDiscovery = null
+    val service: Serverable = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new KyuubiServiceDiscovery(this)
+            Some(discovery)
+          }
+        })
+    }
+    service.initialize(conf)
+    service.start()
+
+    val basePath = s"/$namespace"
+    val sessionManager = service.backendService.sessionManager
+    try {
+      // simulate a session left open by a disconnected client
+      sessionManager.openSession(
+        TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+        "kyuubi",
+        "",
+        "localhost",
+        Map.empty)
+      sessionManager.stop()
+      assert(sessionManager.getActiveUserSessionCount === 1)
+
+      withDiscoveryClient(conf) { discoveryClient =>
+        discoveryClient.getChildren(basePath).foreach { child =>
+          discoveryClient.delete(s"$basePath/$child")
+        }
+        eventually(timeout(5.seconds), interval(100.millis)) {
+          assert(discovery.getServiceState === ServiceState.STOPPED)
+          assert(service.getServiceState === ServiceState.STOPPED)
+        }
+      }
+    } finally {
+      sessionManager.allSessions().foreach(session => sessionManager.closeSession(session.handle))
+      service.stop()
+      discovery.stop()
     }
   }
 
