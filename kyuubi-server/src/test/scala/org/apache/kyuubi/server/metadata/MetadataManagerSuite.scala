@@ -97,6 +97,30 @@ class MetadataManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("[KYUUBI #7720] duplicate-key insert retry does not block the retry queue") {
+    withMetadataManager(Map(
+      METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "true",
+      METADATA_REQUEST_RETRY_INTERVAL.key -> "100")) { metadataManager =>
+      val metadata = newMetadata()
+      // Insert the row directly, simulating an earlier attempt that actually succeeded.
+      metadataManager.insertMetadata(metadata)
+
+      // Queue a retry of the *same* insert, simulating a replay whose earlier
+      // acknowledgement was lost. Before the fix, this would throw a duplicate-key
+      // error on every retry attempt and never be removed from the queue.
+      metadataManager.addMetadataRetryRequest(InsertMetadata(metadata))
+      // Queue an unrelated update behind it, to confirm it is no longer blocked.
+      val metadataToUpdate = metadata.copy(state = "RUNNING")
+      metadataManager.addMetadataRetryRequest(UpdateMetadata(metadataToUpdate))
+
+      val retryRef = metadataManager.getMetadataRequestsRetryRef(metadata.identifier)
+      eventually(timeout(3.seconds)) {
+        assert(!retryRef.hasRemainingRequests())
+        assert(metadataManager.getBatch(metadata.identifier).map(_.getState).contains("RUNNING"))
+      }
+    }
+  }
+
   test("async metadata request metrics") {
     withMetadataManager(Map(
       METADATA_REQUEST_ASYNC_RETRY_ENABLED.key -> "true",
