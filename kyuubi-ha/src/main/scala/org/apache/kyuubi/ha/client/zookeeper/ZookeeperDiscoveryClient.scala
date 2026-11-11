@@ -117,7 +117,12 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
                     error(s"Zookeeper client connection state changed to: $newState," +
                       s" but failed to reconnect in ${delay / 1000} seconds." +
                       s" Give up retry and stop gracefully . ")
-                    serviceDiscovery.stopGracefully(true)
+                    // Closing a PersistentNode can wait for the ZooKeeper connection timeout.
+                    // Start draining independently so it is not delayed by the close operation.
+                    ThreadUtils.runInNewThread("zk-lost-graceful-stop", isDaemon = false) {
+                      serviceDiscovery.stopGracefully(true)
+                    }
+                    ZookeeperDiscoveryClient.this.deregisterService()
                   }
                 },
                 delay,
