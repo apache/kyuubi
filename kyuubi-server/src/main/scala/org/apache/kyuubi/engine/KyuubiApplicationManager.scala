@@ -25,6 +25,7 @@ import java.util.Locale
 import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.fs.{Path => HadoopPath}
 
 import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -157,15 +158,19 @@ object KyuubiApplicationManager {
           case e: URISyntaxException => throw new IllegalArgumentException(e)
         }
 
-      if (uri.getScheme == null || uri.getScheme == "file") {
+      if (uri.getScheme == null || uri.getScheme.equalsIgnoreCase("file")) {
         if (!uri.getPath.startsWith(File.separator)) {
           throw new KyuubiException(
             s"Relative path ${uri.getPath} is not allowed, please use absolute path.")
         }
 
-        if (!localDirAllowList.exists(Paths.get(uri.getPath).normalize.startsWith(_))) {
+        // Hadoop treats '?' and '#' as path characters instead of URI delimiters, so
+        // validate both interpretations to prevent traversal through query or fragment.
+        val normalizedPaths = Seq(uri.getPath, new HadoopPath(path).toUri.getPath)
+          .map(Paths.get(_).normalize)
+        if (!normalizedPaths.forall(p => localDirAllowList.exists(p.startsWith(_)))) {
           throw new KyuubiException(
-            s"The file ${uri.getPath} to access is not in the local dir allow list" +
+            s"The file $path to access is not in the local dir allow list" +
               s" [${localDirAllowList.mkString(",")}].")
         }
       }

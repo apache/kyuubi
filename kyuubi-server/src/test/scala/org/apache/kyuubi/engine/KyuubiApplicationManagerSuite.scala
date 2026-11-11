@@ -147,6 +147,46 @@ class KyuubiApplicationManagerSuite extends KyuubiFunSuite {
     }
   }
 
+  test("application access path rejects query and fragment traversal") {
+    val localDirLimitConf = KyuubiConf()
+      .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Set("/apache/kyuubi"))
+
+    Seq(
+      "/apache/kyuubi/a.jar?x=/../../etc/passwd",
+      "/apache/kyuubi/a.jar#x=/../../etc/passwd",
+      "file:///apache/kyuubi/a.jar?x=/../../etc/passwd",
+      "file:///apache/kyuubi/a.jar#x=/../../etc/passwd",
+      "/apache/kyuubi/a.jar%3Fx=/../../etc/passwd",
+      "/apache/kyuubi/a.jar%23x=/../../etc/passwd").foreach { path =>
+      val e = intercept[KyuubiException] {
+        KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
+      }
+      assert(e.getMessage.contains("is not in the local dir allow list"), s"path=$path")
+    }
+
+    Seq(
+      "/apache/kyuubi/a?b.jar",
+      "/apache/kyuubi/a#b.jar").foreach { path =>
+      KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
+    }
+  }
+
+  test("application access path checks local file scheme case-insensitively") {
+    val localDirLimitConf = KyuubiConf()
+      .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Set("/apache/kyuubi"))
+
+    Seq("FILE:///apache/kyuubi/a.jar", "File:///apache/kyuubi/a.jar").foreach { path =>
+      KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
+    }
+
+    Seq("FILE:///etc/passwd", "File:///etc/passwd").foreach { path =>
+      val e = intercept[KyuubiException] {
+        KyuubiApplicationManager.checkApplicationAccessPath(path, localDirLimitConf)
+      }
+      assert(e.getMessage.contains("is not in the local dir allow list"), s"path=$path")
+    }
+  }
+
   test("application access path checks the spark engine main resource") {
     val localDirLimitConf = KyuubiConf()
       .set(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST, Set("/apache/kyuubi"))
