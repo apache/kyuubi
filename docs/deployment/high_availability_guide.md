@@ -64,6 +64,113 @@ But it doesn't have any availability to being highly available.
 For production deployment purpose, an external zookeeper cluster is required for `kyuubi.ha.addresses`.
 In this mode, multiple `k.i.`s can be registered to the same ServerSpace configured by `kyuubi.ha.namespace` and serve together.
 
+### etcd for server and engine discovery
+
+Kyuubi can use [etcd](https://etcd.io/) as the discovery ensemble instead of
+ZooKeeper. Set the following on every Kyuubi server (for example via a shared
+`kyuubi-defaults.conf`):
+
+```text
+kyuubi.ha.client.class=org.apache.kyuubi.ha.client.etcd.EtcdDiscoveryClient
+# endpoint URLs must include a scheme: http://, or https:// when TLS is enabled
+kyuubi.ha.addresses=http://etcd1:2379,http://etcd2:2379,http://etcd3:2379
+# optional, defaults to "kyuubi"
+kyuubi.ha.namespace=kyuubi
+# optional, defaults to PT10S
+kyuubi.ha.etcd.lease.timeout=PT10S
+```
+
+If your etcd uses TLS, set `kyuubi.ha.etcd.ssl.enabled=true` together with the
+ca/certificate/key paths: `kyuubi.ha.etcd.ssl.ca.path`,
+`kyuubi.ha.etcd.ssl.client.certificate.path`,
+`kyuubi.ha.etcd.ssl.client.key.path`, and use `https://` endpoint URLs in
+`kyuubi.ha.addresses`.
+
+Notes:
+
+- There is no embedded etcd equivalent to the embedded ZooKeeper in pseudo
+  mode. etcd must run as a service, either inside the Kubernetes cluster
+  (for example a dedicated StatefulSet) or outside it.
+- `kyuubi.ha.addresses` is a comma-separated list of endpoint URLs that
+  include a scheme: `http://host:port`, or `https://host:port` when TLS is
+  enabled. Bare `host:port` addresses will not connect.
+- The etcd discovery client has no authentication other than mTLS; secure etcd
+  with TLS or a network boundary.
+- Server registrations and engine registrations both use the same namespace.
+- The JDBC driver does not support etcd service discovery;
+  `serviceDiscoveryMode` only works with a ZooKeeper ensemble. etcd is used
+  between Kyuubi servers and engines, not from the JDBC client.
+
+## High Availability on Kubernetes (with etcd)
+
+A production Kubernetes deployment of Kyuubi has three moving parts: the
+Kyuubi servers, their engines (Spark applications), and the discovery store
+they share. A Kubernetes Service can balance new connections across the
+servers, but it does not make engines discoverable or sessions portable, so a
+discovery store is required for a real HA setup.
+
+1. **Deploy etcd for discovery.** Any etcd cluster reachable from the Kyuubi
+   pods works, for example a dedicated StatefulSet in the same namespace, or an
+   etcd cluster running outside Kubernetes. Kyuubi does *not* use the
+   Kubernetes cluster's own etcd automatically; you must pass the endpoints to
+   Kyuubi with `kyuubi.ha.addresses`.
+2. **Configure every server with the same options.** All server replicas must
+   use the same `kyuubi.ha.client.class` and `kyuubi.ha.namespace`. Engines
+   inherit their discovery configuration from the server that starts them, so
+   engine driver pods must also be able to reach etcd; server-only
+   connectivity is not enough and engine startup fails without it. When TLS
+   is enabled, the driver pods also need the configured certificate files at
+   the inherited paths, because forwarding the configuration does not copy
+   them. Mount a shared `kyuubi-defaults.conf` (or inject it into the Helm
+   chart values) so this is identical on every pod.
+3. **Let clients connect through the Service.** Point the JDBC driver at the
+   Kyuubi Service (LoadBalancer or NodePort), for example
+   `jdbc:kyuubi://<service-host>:10009/default`. Session stickiness is tied to
+   the server that accepted the connection; if it disappears, reconnecting
+   lands on another replica.
+4. **Engine discovery across servers.** When an engine finishes bootstrapping
+   it registers itself in etcd. A server that can reach etcd can discover
+   engines created by other servers, but only within the same
+   `EngineRef.engineSpace`: the lookup is scoped by the share level and the
+   routing user, so `SERVER_LOCAL` engines are only visible to the server
+   that launched them and `CONNECTION` engines only to their own connection.
+   See the [`kyuubi.engine.share.level`
+   configuration](../configuration/settings.md) for the available levels.
+   Without a working discovery store a server cannot route to engines created
+   elsewhere. Losing discovery does not necessarily leak an engine: Spark
+   engines terminate themselves through their own session-idle check
+   (`SessionManager`'s terminating checker) after their sessions close or
+   time out and the engine idle timeout elapses, independent of the
+   discovery store.
+5. **Batch vs interactive sessions.** etcd does not replicate batch session
+   state, and the default batch metadata store is a local SQLite database per
+   server. With the default store, a batch submitted to one replica returns
+   `Invalid batchId` when a retried operation lands on another replica. Use a
+   shared JDBC metadata store reachable by all replicas, and have batch
+   submission retries reuse the same `kyuubi.batch.id` UUID so a duplicate
+   batch is not created. Interactive session state is not shared: if a server
+   disappears its interactive sessions are lost, and a reconnecting client
+   must re-run its session-initializing statements (`SET spark.sql.*` and
+   similar) before further queries behave as before.
+6. **etcd failure modes.** `kyuubi.ha.etcd.lease.timeout` governs when a
+   registration (server or engine) expires from the discovery store after its
+   last keep-alive, not how quickly a server detects an engine failure. If an
+   outage expires a server's or engine's registration and its watcher
+   observes the deletion, that service calls `stopGracefully()` and shuts
+   down after its sessions drain, without re-registering itself. If etcd
+   stops answering, servers fail to register and discover engines, and log
+   discovery errors until etcd is reachable again; clients already connected
+   to a server keep the server they have.
+7. **Client-side load balancing caveat.** `serviceDiscoveryMode=zooKeeper`
+   (see "Client-side Usage" below) picks a server from a ZooKeeper ensemble;
+   there is no equivalent for etcd in the JDBC driver. With etcd,
+   connections are distributed by the Kubernetes Service instead, which picks
+   the next server per connection rather than per session.
+
+Do not use the embedded ZooKeeper in Kubernetes production deployments: it is
+per server process, vanishes with the process, and provides no failover or
+cross-server engine discovery.
+
 ## Client-side Usage
 
 With [Kyuubi Hive JDBC Driver](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-hive-jdbc) or vanilla Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNamespace=kyuubi;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper addresses in the `/kyuubi` path.
