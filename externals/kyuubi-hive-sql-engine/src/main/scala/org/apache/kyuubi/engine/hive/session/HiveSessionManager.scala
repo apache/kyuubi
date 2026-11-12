@@ -84,12 +84,13 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
+      sessionConfOverlay: Map[String, String]): Session = {
+    sessionConfOverlay.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).flatMap(
       getSessionOption).getOrElse {
       val hiveProtocol = HiveRpcUtils.asHive(protocol)
       val sessionHandle =
-        conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+        sessionConfOverlay.get(
+          KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
       val hiveTSessionHandle = HiveRpcUtils.asHive(sessionHandle.toTSessionHandle)
       val hive = if (internalSessionManager.doAsEnabled) {
         val sessionWithUGI = DynConstructors.builder()
@@ -162,7 +163,7 @@ class HiveSessionManager(engine: HiveSQLEngine) extends SessionManager("HiveSess
         user,
         password,
         ipAddress,
-        conf,
+        sessionConfOverlay,
         this,
         sessionHandle,
         hive)

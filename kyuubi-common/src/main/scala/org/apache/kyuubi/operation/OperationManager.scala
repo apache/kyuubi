@@ -84,7 +84,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation
   def newSetCurrentCatalogOperation(session: Session, catalog: String): Operation
@@ -207,17 +207,17 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   final def processCatalogDatabase(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String]): Operation = {
-    if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
+      reqConfOverlay: Map[String, String]): Operation = {
+    if (reqConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_SET_CATALOG) {
-      newSetCurrentCatalogOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
-    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
+      newSetCurrentCatalogOperation(session, reqConfOverlay(KYUUBI_OPERATION_SET_CURRENT_CATALOG))
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_CATALOG)
       && statement == PATTERN_FOR_GET_CATALOG) {
       newGetCurrentCatalogOperation(session)
-    } else if (confOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_SET_CURRENT_DATABASE)
       && PATTERN_FOR_SET_SCHEMA.unapplySeq(statement).isDefined) {
-      newSetCurrentDatabaseOperation(session, confOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
-    } else if (confOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
+      newSetCurrentDatabaseOperation(session, reqConfOverlay(KYUUBI_OPERATION_SET_CURRENT_DATABASE))
+    } else if (reqConfOverlay.contains(KYUUBI_OPERATION_GET_CURRENT_DATABASE)
       && PATTERN_FOR_GET_SCHEMA == statement.toLowerCase) {
       newGetCurrentDatabaseOperation(session)
     } else {

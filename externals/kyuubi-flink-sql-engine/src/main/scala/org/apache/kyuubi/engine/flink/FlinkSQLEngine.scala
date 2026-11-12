@@ -43,7 +43,7 @@ case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("Fli
   override val backendService = new FlinkSQLBackendService(engineContext)
   override val frontendServices = Seq(new FlinkTBinaryFrontendService(this))
 
-  override def initialize(conf: KyuubiConf): Unit = super.initialize(conf)
+  override def initialize(engineConf: KyuubiConf): Unit = super.initialize(engineConf)
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()

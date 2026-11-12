@@ -42,10 +42,10 @@ import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyVal
 class JdbcYarnModeProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     override val engineRefId: String,
     override val extraEngineLog: Option[OperationLog] = None)
-  extends JdbcProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+  extends JdbcProcessBuilder(proxyUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
   with Logging {
 
   override protected def mainClass: String =
@@ -58,11 +58,11 @@ class JdbcYarnModeProcessBuilder(
   override def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(clusterManager())
 
   override protected val commands: Iterable[String] = {
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), sessionConf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
-    val memory = conf.get(ENGINE_JDBC_MEMORY)
+    val memory = sessionConf.get(ENGINE_JDBC_MEMORY)
     buffer += s"-Xmx$memory"
     buffer += "-cp"
 
@@ -87,7 +87,7 @@ class JdbcYarnModeProcessBuilder(
       KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY,
       yarnConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
 
-    buffer ++= confKeyValues(conf.getEngineConf(EngineType.JDBC))
+    buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.JDBC))
 
     buffer
   }
@@ -95,7 +95,7 @@ class JdbcYarnModeProcessBuilder(
   private def jarFiles(isClasspath: Boolean): util.LinkedHashSet[String] = {
     val jarEntries = new util.LinkedHashSet[String]
     mainResource.foreach(jarEntries.add)
-    val javaOptions = conf.get(ENGINE_JDBC_EXTRA_CLASSPATH).filter(StringUtils.isNotBlank(_))
+    val javaOptions = sessionConf.get(ENGINE_JDBC_EXTRA_CLASSPATH).filter(StringUtils.isNotBlank(_))
     if (isClasspath) {
       javaOptions.foreach(jarEntries.add)
     }

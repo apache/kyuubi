@@ -29,12 +29,12 @@ import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 
 class KyuubiInternalAuthenticationHandler extends AuthenticationHandler with Logging {
 
-  private var conf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
   override val authScheme: AuthScheme = AuthSchemes.KYUUBI_INTERNAL
   private val internalSecurityAccessor = InternalSecurityAccessor.get()
 
-  override def init(conf: KyuubiConf): Unit = {
-    this.conf = conf
+  override def init(serverConf: KyuubiConf): Unit = {
+    this.serverConf = serverConf
   }
 
   override def authenticationSupported: Boolean = {

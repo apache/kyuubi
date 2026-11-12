@@ -36,9 +36,9 @@ class KyuubiBatchSession(
     user: String,
     password: String,
     ipAddress: String,
-    conf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     override val sessionManager: KyuubiSessionManager,
-    val sessionConf: KyuubiConf,
+    sessionDefaultConf: KyuubiConf,
     batchType: String,
     batchName: Option[String],
     resource: String,
@@ -51,14 +51,18 @@ class KyuubiBatchSession(
     user,
     password,
     ipAddress,
-    conf,
+    sessionConfOverlay,
     sessionManager) {
+  val sessionConf = sessionDefaultConf
+
   override val sessionType: SessionType = SessionType.BATCH
   override val connectionUrl: String =
-    metadata.map(_.kyuubiInstance).getOrElse(conf.getOrElse(KYUUBI_SESSION_CONNECTION_URL_KEY, ""))
+    metadata.map(_.kyuubiInstance).getOrElse(sessionConfOverlay.getOrElse(
+      KYUUBI_SESSION_CONNECTION_URL_KEY,
+      ""))
 
   override val handle: SessionHandle = {
-    val batchId = metadata.map(_.identifier).getOrElse(conf(KYUUBI_BATCH_ID_KEY))
+    val batchId = metadata.map(_.identifier).getOrElse(sessionConfOverlay(KYUUBI_BATCH_ID_KEY))
     SessionHandle.fromUUID(batchId)
   }
 
@@ -80,36 +84,39 @@ class KyuubiBatchSession(
   override val sessionIdleTimeoutThreshold: Long =
     sessionManager.getConf.get(KyuubiConf.BATCH_SESSION_IDLE_TIMEOUT)
 
-  override val normalizedConf: Map[String, String] =
-    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(conf)
+  override val normalizedSessionConfOverlay: Map[String, String] =
+    sessionConf.getBatchConf(batchType) ++ sessionManager.validateBatchConf(sessionConfOverlay)
 
   private[kyuubi] def resourceUploadFolderPath: Path =
     KyuubiApplicationManager.sessionUploadFolderPath(handle.identifier.toString)
 
-  val optimizedConf: Map[String, String] = {
-    val confOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
+  val effectiveSessionConfOverlay: Map[String, String] = {
+    val advisorConfOverlay = sessionManager.sessionConfAdvisor.map(_.getConfOverlay(
       user,
-      normalizedConf.asJava).asScala).reduce(_ ++ _)
-    if (confOverlay != null) {
-      val overlayConf = new KyuubiConf(false)
-      confOverlay.foreach { case (k, v) => overlayConf.set(k, v) }
-      normalizedConf ++ overlayConf.getBatchConf(batchType)
+      normalizedSessionConfOverlay.asJava).asScala).reduce(_ ++ _)
+    if (advisorConfOverlay != null) {
+      val batchAdvisorConf = new KyuubiConf(false)
+      advisorConfOverlay.foreach { case (k, v) => batchAdvisorConf.set(k, v) }
+      normalizedSessionConfOverlay ++ batchAdvisorConf.getBatchConf(batchType)
     } else {
       warn(s"the server plugin return null value for user: $user, ignore it")
-      normalizedConf
+      normalizedSessionConfOverlay
     }
   }
 
-  optimizedConf.foreach {
+  effectiveSessionConfOverlay.foreach {
     case (key, value) => sessionConf.set(key, value)
   }
 
   override lazy val name: Option[String] =
-    batchName.filterNot(_.trim.isEmpty).orElse(optimizedConf.get(KyuubiConf.SESSION_NAME.key))
+    batchName.filterNot(
+      _.trim.isEmpty).orElse(effectiveSessionConfOverlay.get(KyuubiConf.SESSION_NAME.key))
 
   // whether the resource file is from uploading
   private[kyuubi] lazy val isResourceUploaded: Boolean =
-    conf.getOrElse(KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY, false.toString).toBoolean
+    sessionConfOverlay.getOrElse(
+      KyuubiReservedKeys.KYUUBI_BATCH_RESOURCE_UPLOADED_KEY,
+      false.toString).toBoolean
 
   private[kyuubi] lazy val batchJobSubmissionOp = sessionManager.operationManager
     .newBatchJobSubmissionOperation(
@@ -118,7 +125,7 @@ class KyuubiBatchSession(
       name.orNull,
       resource,
       className,
-      optimizedConf,
+      effectiveSessionConfOverlay,
       batchArgs,
       metadata)
 
@@ -149,7 +156,7 @@ class KyuubiBatchSession(
   override def checkSessionAccessPathURIs(): Unit = {
     KyuubiApplicationManager.checkApplicationAccessPaths(
       batchType,
-      optimizedConf,
+      effectiveSessionConfOverlay,
       sessionManager.getConf)
     if (resource != SparkProcessBuilder.INTERNAL_RESOURCE) {
       KyuubiApplicationManager.checkApplicationAccessPath(resource, sessionManager.getConf)
@@ -166,7 +173,7 @@ class KyuubiBatchSession(
       }.getOrElse(Map.empty) ++ appMgrInfo.kubernetesInfo.namespace.map { namespace =>
         Map(KyuubiConf.KUBERNETES_NAMESPACE.key -> namespace)
       }.getOrElse(Map.empty) ++ (batchJobSubmissionOp.builder match {
-        case builder: SparkProcessBuilder => builder.appendPodNameConf(optimizedConf)
+        case builder: SparkProcessBuilder => builder.appendPodNameConf(effectiveSessionConfOverlay)
         case _ => Map.empty[String, String]
       })
     }
@@ -177,7 +184,7 @@ class KyuubiBatchSession(
         val metadataToUpdate = Metadata(
           identifier = initialMetadata.identifier,
           requestName = name.orNull,
-          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          requestConf = effectiveSessionConfOverlay ++ kubernetesInfo, // save the kubernetes info
           clusterManager = batchJobSubmissionOp.builder.clusterManager())
         sessionManager.updateMetadata(metadataToUpdate)
       case (None, _) =>
@@ -193,12 +200,12 @@ class KyuubiBatchSession(
           resource = resource,
           className = className,
           requestName = name.orNull,
-          requestConf = optimizedConf ++ kubernetesInfo, // save the kubernetes info
+          requestConf = effectiveSessionConfOverlay ++ kubernetesInfo, // save the kubernetes info
           requestArgs = batchArgs,
           createTime = createTime,
           engineType = batchType,
           clusterManager = batchJobSubmissionOp.builder.clusterManager(),
-          priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+          priority = sessionConfOverlay.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
         // there is a chance that operation failed w/ duplicated key error
         sessionManager.insertMetadata(newMetadata)

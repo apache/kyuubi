@@ -439,7 +439,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper with MockitoSugar {
     val builder = new SparkProcessBuilder("kentyao", true, builderConf)
 
     assert(builder.clusterManager() === Some("yarn"))
-    val encodedInfo = builder.conf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
+    val encodedInfo = builder.sessionConf.getOption(KYUUBI_ENGINE_APP_MGR_INFO_KEY).get
     assert(ApplicationManagerInfo.deserialize(encodedInfo) === ApplicationManagerInfo(Some("yarn")))
   }
 

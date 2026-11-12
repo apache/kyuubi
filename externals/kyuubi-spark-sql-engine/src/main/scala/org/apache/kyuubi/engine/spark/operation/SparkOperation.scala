@@ -314,8 +314,8 @@ abstract class SparkOperation(session: Session)
 
   protected def setSessionUserSign(): Unit = {
     (
-      session.conf.get(KYUUBI_SESSION_SIGN_PUBLICKEY),
-      session.conf.get(KYUUBI_SESSION_USER_SIGN)) match {
+      session.sessionConfOverlay.get(KYUUBI_SESSION_SIGN_PUBLICKEY),
+      session.sessionConfOverlay.get(KYUUBI_SESSION_USER_SIGN)) match {
       case (Some(pubKey), Some(userSign)) =>
         setSparkLocalProperty(KYUUBI_SESSION_SIGN_PUBLICKEY, pubKey)
         setSparkLocalProperty(KYUUBI_SESSION_USER_SIGN, userSign)

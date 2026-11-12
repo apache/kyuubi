@@ -37,9 +37,9 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   private var queryTimeout: Option[Long] = None
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    queryTimeout = conf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
-    super.initialize(conf)
+  override def initialize(serverConf: KyuubiConf): Unit = {
+    queryTimeout = serverConf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
+    super.initialize(serverConf)
   }
 
   private def getQueryTimeout(clientQueryTimeout: Long): Long = {
@@ -56,11 +56,16 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation =
-      new ExecuteStatement(session, statement, confOverlay, runAsync, getQueryTimeout(queryTimeout))
+      new ExecuteStatement(
+        session,
+        statement,
+        reqConfOverlay,
+        runAsync,
+        getQueryTimeout(queryTimeout))
     addOperation(operation)
   }
 

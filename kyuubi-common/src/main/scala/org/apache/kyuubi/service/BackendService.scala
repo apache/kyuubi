@@ -39,7 +39,7 @@ trait BackendService {
       user: String,
       password: String,
       ipAddr: String,
-      configs: Map[String, String]): SessionHandle
+      sessionConfOverlay: Map[String, String]): SessionHandle
   def closeSession(sessionHandle: SessionHandle): Unit
 
   def getInfo(sessionHandle: SessionHandle, infoType: TGetInfoType): TGetInfoValue
@@ -47,7 +47,7 @@ trait BackendService {
   def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 

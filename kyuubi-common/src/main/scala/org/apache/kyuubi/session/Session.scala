@@ -27,7 +27,7 @@ trait Session {
   def handle: SessionHandle
   def name: Option[String]
 
-  def conf: Map[String, String]
+  def sessionConfOverlay: Map[String, String]
 
   def user: String
   def password: String
@@ -50,7 +50,7 @@ trait Session {
 
   def executeStatement(
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 
