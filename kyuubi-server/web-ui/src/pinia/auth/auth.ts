@@ -16,6 +16,7 @@
  */
 
 import { defineStore } from 'pinia'
+import { createBasicAuthHeader } from '@/utils/auth'
 import request from '@/utils/request'
 
 export const useAuthStore = defineStore('auth', {
@@ -37,7 +38,7 @@ export const useAuthStore = defineStore('auth', {
 
       if (response) {
         this.user = user
-        this.authToken = `Basic ${btoa(user + ':' + password)}`
+        this.authToken = createBasicAuthHeader(user, password)
         this.isAuthenticated = true
       } else {
         throw new Error('Authentication failed')

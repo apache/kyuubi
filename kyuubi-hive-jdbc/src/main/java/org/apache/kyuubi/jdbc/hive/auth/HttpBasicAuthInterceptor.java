@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.jdbc.hive.auth;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.http.Header;
 import org.apache.http.HttpRequest;
@@ -43,7 +44,7 @@ public class HttpBasicAuthInterceptor extends HttpRequestInterceptorBase {
       Map<String, String> additionalHeaders,
       Map<String, String> customCookies) {
     super(cookieStore, cn, isSSL, additionalHeaders, customCookies);
-    this.authScheme = new BasicScheme();
+    this.authScheme = new BasicScheme(StandardCharsets.UTF_8);
     if (username != null) {
       this.credentials = new UsernamePasswordCredentials(username, password);
     }
