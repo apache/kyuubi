@@ -58,6 +58,14 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     MetricsConf,
     ZookeeperConf)
 
+  private def normalizeTableCell(text: String): String = {
+    if (text == null || text.isEmpty) {
+      " "
+    } else {
+      text.replace("|", "\\|")
+    }
+  }
+
   test("Check all kyuubi configs") {
     loadConfigs
 
@@ -102,18 +110,15 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
              |"""
 
         entries.sortBy(_.key).foreach { c =>
-          val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
-            // Escape literal `|` (e.g. a regex default like "a|b|c") so it
-            // isn't mistaken for a markdown table delimiter. `doc` isn't
-            // escaped here since existing docs already rely on backticked
-            // code spans to protect any `|` they contain.
-            .replace("|", "\\|")
           builder += Seq(
-            s"${c.key}",
-            s"$dft",
-            s"${c.doc}",
-            s"${c.typ}",
-            s"${c.version}").mkString("|")
+            c.key,
+            c.defaultValStr match {
+              case ConfigEntry.UNDEFINED => "(none)"
+              case other => s"`${normalizeTableCell(c.defaultValStr)}`"
+            },
+            normalizeTableCell(c.doc),
+            c.typ,
+            c.version).mkString("|")
         }
       }
 
