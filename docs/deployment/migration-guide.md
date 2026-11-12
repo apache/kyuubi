@@ -29,6 +29,13 @@
 
 * Since Kyuubi 1.12.1, the REST client verifies server certificates and hostnames by default, so HTTPS connections with untrusted certificates or mismatched hostnames now fail. Java callers can configure a JVM trust store or opt out with `KyuubiRestClient.builder(...).insecureSsl(true)`; `kyuubi-ctl` users can pass the `javax.net.ssl.trustStore*` properties via `KYUUBI_CTL_JAVA_OPTS`, though a hostname mismatch still requires a matching URL or certificate.
 
+## Upgrading from Kyuubi 1.11.x or earlier to 1.12.1 or later
+
+* Since Kyuubi 1.12, internal access token encryption uses a random IV instead of a static zero IV. Starting
+  with Kyuubi 1.12.1, use `kyuubi.internal.security.legacy.crypto.compatMode` to perform a rolling upgrade of
+  servers and engines from Kyuubi 1.11.x or earlier as described in
+  [Internal Secure Access](../security/internal_secure_access.md#rolling-upgrades-from-kyuubi-111x-or-earlier).
+
 ## Upgrading from Kyuubi 1.11 to 1.12
 
 * Since Kyuubi 1.12, the support of variable `<KYUUBI_HOME>` substitution in config `kyuubi.metadata.store.jdbc.url` is deprecated, use `{{KYUUBI_HOME}}` instead.
