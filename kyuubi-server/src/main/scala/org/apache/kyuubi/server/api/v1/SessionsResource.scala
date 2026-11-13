@@ -48,6 +48,12 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   implicit def toSessionHandle(str: String): SessionHandle = SessionHandle.fromUUID(str)
   private def sessionManager = fe.be.sessionManager
 
+  // Respond with the client DTO instead of the server-side Scala OperationHandle: the JSON on the
+  // wire is the same ({"identifier": ...}), but the DTO is also what the generated OpenAPI spec
+  // can describe, as swagger does not introspect Scala case class accessors.
+  private def toOperationHandleDto(handle: OperationHandle): dto.OperationHandle =
+    new dto.OperationHandle(handle.identifier)
+
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
@@ -137,7 +143,9 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      schema = new Schema(implementation = classOf[dto.SessionHandle]))),
     description = "Open(create) a session")
   @POST
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
@@ -179,20 +187,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with EXECUTE_STATEMENT type")
   @POST
   @Path("{sessionHandle}/operations/statement")
   def executeStatement(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: StatementRequest): OperationHandle = {
+      request: StatementRequest): dto.OperationHandle = {
     try {
-      fe.be.executeStatement(
+      toOperationHandleDto(fe.be.executeStatement(
         sessionHandleStr,
         request.getStatement,
         request.getConfOverlay.asScala.toMap,
         request.isRunAsync,
-        request.getQueryTimeout)
+        request.getQueryTimeout))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error executing statement"
@@ -204,13 +212,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_TYPE_INFO type")
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
-  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): dto.OperationHandle = {
     try {
-      fe.be.getTypeInfo(sessionHandleStr)
+      toOperationHandleDto(fe.be.getTypeInfo(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting type information"
@@ -222,13 +230,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_CATALOGS type")
   @POST
   @Path("{sessionHandle}/operations/catalogs")
-  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): dto.OperationHandle = {
     try {
-      fe.be.getCatalogs(sessionHandleStr)
+      toOperationHandleDto(fe.be.getCatalogs(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting catalogs"
@@ -240,19 +248,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_SCHEMAS type")
   @POST
   @Path("{sessionHandle}/operations/schemas")
   def getSchemas(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetSchemasRequest): OperationHandle = {
+      request: GetSchemasRequest): dto.OperationHandle = {
     try {
       val operationHandle = fe.be.getSchemas(
         sessionHandleStr,
         request.getCatalogName,
         request.getSchemaName)
-      operationHandle
+      toOperationHandleDto(operationHandle)
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting schemas"
@@ -264,20 +272,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_TABLES type")
   @POST
   @Path("{sessionHandle}/operations/tables")
   def getTables(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetTablesRequest): OperationHandle = {
+      request: GetTablesRequest): dto.OperationHandle = {
     try {
-      fe.be.getTables(
+      toOperationHandleDto(fe.be.getTables(
         sessionHandleStr,
         request.getCatalogName,
         request.getSchemaName,
         request.getTableName,
-        request.getTableTypes)
+        request.getTableTypes))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting tables"
@@ -289,13 +297,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_TABLE_TYPES type")
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
-  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): dto.OperationHandle = {
     try {
-      fe.be.getTableTypes(sessionHandleStr)
+      toOperationHandleDto(fe.be.getTableTypes(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting table types"
@@ -307,20 +315,20 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_COLUMNS type")
   @POST
   @Path("{sessionHandle}/operations/columns")
   def getColumns(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetColumnsRequest): OperationHandle = {
+      request: GetColumnsRequest): dto.OperationHandle = {
     try {
-      fe.be.getColumns(
+      toOperationHandleDto(fe.be.getColumns(
         sessionHandleStr,
         request.getCatalogName,
         request.getSchemaName,
         request.getTableName,
-        request.getColumnName)
+        request.getColumnName))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting columns"
@@ -332,19 +340,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_FUNCTIONS type")
   @POST
   @Path("{sessionHandle}/operations/functions")
   def getFunctions(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetFunctionsRequest): OperationHandle = {
+      request: GetFunctionsRequest): dto.OperationHandle = {
     try {
-      fe.be.getFunctions(
+      toOperationHandleDto(fe.be.getFunctions(
         sessionHandleStr,
         request.getCatalogName,
         request.getSchemaName,
-        request.getFunctionName)
+        request.getFunctionName))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting functions"
@@ -356,19 +364,19 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_PRIMARY_KEY type")
   @POST
   @Path("{sessionHandle}/operations/primaryKeys")
   def getPrimaryKeys(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetPrimaryKeysRequest): OperationHandle = {
+      request: GetPrimaryKeysRequest): dto.OperationHandle = {
     try {
-      fe.be.getPrimaryKeys(
+      toOperationHandleDto(fe.be.getPrimaryKeys(
         sessionHandleStr,
         request.getCatalogName,
         request.getSchemaName,
-        request.getTableName)
+        request.getTableName))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting primary keys"
@@ -380,22 +388,22 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON,
-      schema = new Schema(implementation = classOf[OperationHandle]))),
+      schema = new Schema(implementation = classOf[dto.OperationHandle]))),
     description = "Create an operation with GET_CROSS_REFERENCE type")
   @POST
   @Path("{sessionHandle}/operations/crossReference")
   def getCrossReference(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      request: GetCrossReferenceRequest): OperationHandle = {
+      request: GetCrossReferenceRequest): dto.OperationHandle = {
     try {
-      fe.be.getCrossReference(
+      toOperationHandleDto(fe.be.getCrossReference(
         sessionHandleStr,
         request.getPrimaryCatalog,
         request.getPrimarySchema,
         request.getPrimaryTable,
         request.getForeignCatalog,
         request.getForeignSchema,
-        request.getForeignTable)
+        request.getForeignTable))
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting cross reference"
