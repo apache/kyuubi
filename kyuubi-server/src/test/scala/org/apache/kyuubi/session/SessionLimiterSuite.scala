@@ -120,6 +120,19 @@ class SessionLimiterSuite extends KyuubiFunSuite {
       .foreach(c => assert(c.get() == 0))
   }
 
+  test("increment tells whether it counted the session") {
+    val limiter = SessionLimiter(10, 10, 10, unlimitedUsers = Set("unlimited_user"))
+    assert(limiter.increment(UserIpAddress("user001", "127.0.0.1")))
+    // an unlimited user is not counted, so its session must not give a count back
+    assert(!limiter.increment(UserIpAddress("unlimited_user", "127.0.0.1")))
+    assert(limiter.asInstanceOf[SessionLimiterImpl].counters().get("127.0.0.1").get() === 1)
+
+    val denying = SessionLimiter(10, 10, 10, denyUsers = Set("denied_user"))
+    intercept[SessionLimiterRejectedException] {
+      denying.increment(UserIpAddress("denied_user", "127.0.0.1"))
+    }
+  }
+
   test("test session limiter with user deny list") {
     val ipAddress = "127.0.0.1"
     val userLimit = 100
