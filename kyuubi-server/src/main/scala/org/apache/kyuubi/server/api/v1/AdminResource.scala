@@ -330,7 +330,9 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
-    content = Array(new Content(mediaType = MediaType.APPLICATION_JSON)),
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON,
+      array = new ArraySchema(schema = new Schema(implementation = classOf[Engine])))),
     description = "list kyuubi engines")
   @GET
   @Path("engine")
@@ -384,7 +386,7 @@ private[v1] class AdminResource extends ApiRequestContext with Logging {
       new Content(
         mediaType = MediaType.APPLICATION_JSON,
         array = new ArraySchema(schema = new Schema(implementation =
-          classOf[OperationData])))),
+          classOf[ServerData])))),
     description = "list all live kyuubi servers")
   @GET
   @Path("server")
