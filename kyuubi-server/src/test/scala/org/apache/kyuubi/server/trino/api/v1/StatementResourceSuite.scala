@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.trino.api.v1
 
+import java.net.InetAddress
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -65,6 +66,28 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
     assert(dataSet == List(List(1)))
   }
 
+  test("the session takes its client address from the proxy client ip header") {
+    // X-Real-IP is the default of kyuubi.frontend.proxy.http.client.ip.header
+    withSubmittedSession(Map("X-Real-IP" -> "10.1.2.3")) { ipAddress =>
+      assert(ipAddress === "10.1.2.3")
+    }
+  }
+
+  test("the session takes the TCP peer address without the proxy client ip header") {
+    withSubmittedSession() { ipAddress =>
+      // compared as addresses, since the spelling depends on the bind host and the IP version
+      assert(InetAddress.getByName(ipAddress) === InetAddress.getByName(webTarget.getUri.getHost))
+    }
+  }
+
+  test("the session takes the TCP peer address when the proxy client ip header is blank") {
+    withSubmittedSession(Map("X-Real-IP" -> " ")) { ipAddress =>
+      // a blank address would resolve to the loopback one as well
+      assert(ipAddress.trim.nonEmpty)
+      assert(InetAddress.getByName(ipAddress) === InetAddress.getByName(webTarget.getUri.getHost))
+    }
+  }
+
   test("query cancel") {
     val response = webTarget.path("v1/statement")
       .request().post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
@@ -90,6 +113,28 @@ class StatementResourceSuite extends KyuubiFunSuite with TrinoRestFrontendTestHe
     assert(nextResponse.getStatus == 204)
     val exception = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
     assert(exception.getMessage === s"Invalid $sessionHandle")
+  }
+
+  /** Submits a statement with `headers` and runs `f` with the IP address of its session. */
+  private def withSubmittedSession(headers: Map[String, String] = Map.empty)(
+      f: String => Unit): Unit = {
+    val request = headers.foldLeft(webTarget.path("v1/statement").request()) {
+      case (builder, (name, value)) => builder.header(name, value)
+    }
+    val response = request.post(Entity.entity("select 1", MediaType.TEXT_PLAIN_TYPE))
+    assert(response.getStatus == 200)
+    val sessionHandle =
+      response.getStringHeaders.get(TRINO_HEADERS.responseSetSession).asScala
+        .map(_.split("="))
+        .collectFirst {
+          case Array(Query.KYUUBI_SESSION_ID, value) =>
+            SessionHandle.fromUUID(TrinoContext.urlDecode(value))
+        }.get
+    try {
+      f(fe.be.sessionManager.getSession(sessionHandle).ipAddress)
+    } finally {
+      fe.be.sessionManager.closeSession(sessionHandle)
+    }
   }
 
   private def getData(current: TrinoResponse): TrinoResponse = {

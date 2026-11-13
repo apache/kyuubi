@@ -76,7 +76,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       throw badRequest(BAD_REQUEST, "SQL statement is empty")
     }
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
+    val remoteAddr = clientIpAddress
     val trinoContext = TrinoContext(headers, remoteAddr)
 
     try {
@@ -137,7 +137,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @Context headers: HttpHeaders,
       @Context uriInfo: UriInfo): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
+    val remoteAddr = clientIpAddress
     val trinoContext = TrinoContext(headers, remoteAddr)
     val waitTime = if (maxWait == null) 0 else maxWait.toMillis
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, QUEUED_QUERY)
@@ -172,7 +172,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @Context headers: HttpHeaders,
       @Context uriInfo: UriInfo): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
+    val remoteAddr = clientIpAddress
     val trinoContext = TrinoContext(headers, remoteAddr)
     val waitTime = if (maxWait == null) 0 else maxWait.toMillis
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, EXECUTING_QUERY)
@@ -202,7 +202,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @PathParam("token") token: Long,
       @Context headers: HttpHeaders): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
+    val remoteAddr = clientIpAddress
     val trinoContext = TrinoContext(headers, remoteAddr)
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, QUEUED_QUERY)
       .flatMap(query => Try(query.cancel))
@@ -229,7 +229,7 @@ private[v1] class StatementResource extends ApiRequestContext with Logging {
       @PathParam("token") token: Long,
       @Context headers: HttpHeaders): Response = {
 
-    val remoteAddr = Option(httpRequest.getRemoteAddr)
+    val remoteAddr = clientIpAddress
     val trinoContext = TrinoContext(headers, remoteAddr)
     getQuery(fe.be, trinoContext, QueryId(queryId), slug, token, EXECUTING_QUERY)
       .flatMap(query => Try(query.cancel))
