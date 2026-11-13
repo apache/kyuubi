@@ -27,6 +27,9 @@ import org.apache.kyuubi.server.metadata.MetadataManager
 class JpsApplicationOperation extends ApplicationOperation {
   import ApplicationOperation._
 
+  private val LOCAL_N_REGEX = """local\[([0-9]+|\*)\]""".r
+  private val LOCAL_N_FAILURES_REGEX = """local\[([0-9]+|\*)\s*,\s*([0-9]+)\]""".r
+
   private var runner: String = _
 
   override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
@@ -43,8 +46,10 @@ class JpsApplicationOperation extends ApplicationOperation {
   }
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
-    runner != null &&
-    (appMgrInfo.resourceManager.isEmpty || appMgrInfo.resourceManager.get == "local")
+    runner != null && appMgrInfo.resourceManager.forall {
+      case "local" | LOCAL_N_REGEX(_) | LOCAL_N_FAILURES_REGEX(_, _) => true
+      case _ => false
+    }
   }
 
   private def getEngine(tag: String): Option[String] = {
