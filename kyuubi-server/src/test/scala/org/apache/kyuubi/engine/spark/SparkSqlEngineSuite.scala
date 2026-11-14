@@ -41,7 +41,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
           assert(rs1.getString("value") === "123")
           val rs2 = statement.executeQuery(s"SET $key")
           assert(rs2.next())
-          assert(rs2.getString("value") === "<undefined>", "ignored")
+          assert(rs2.getString("value") === "(none)", "ignored")
         }
       }
     }
@@ -55,7 +55,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
           val rs = statement.executeQuery(s"SET $key")
           assert(rs.next())
           assert(
-            rs.getString("value") === "<undefined>",
+            rs.getString("value") === "(none)",
             "session configs do not reach on server-side")
         }
 

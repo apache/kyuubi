@@ -215,7 +215,7 @@ class ConfigEntryFallback[T](
 }
 
 object ConfigEntry {
-  val UNDEFINED = "<undefined>"
+  val UNDEFINED = "(none)"
 
   private val knownConfigs = new java.util.concurrent.ConcurrentHashMap[String, ConfigEntry[_]]()
 

@@ -63,13 +63,13 @@ class UserIsolatedSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
     executeSetStatement("user1", "set a=1")
     assert(executeSetStatement("user1", "set a") == "1")
     assert(executeSetStatement("user1", "set a") == "1")
-    assert(executeSetStatement("user2", "set a") == "<undefined>")
+    assert(executeSetStatement("user2", "set a") == "(none)")
     executeSetStatement("user2", "set a=2")
     assert(executeSetStatement("user1", "set a") == "1")
     assert(executeSetStatement("user2", "set a") == "2")
 
     Thread.sleep(6000)
-    assert(executeSetStatement("user1", "set a") == "<undefined>")
-    assert(executeSetStatement("user2", "set a") == "<undefined>")
+    assert(executeSetStatement("user1", "set a") == "(none)")
+    assert(executeSetStatement("user2", "set a") == "(none)")
   }
 }

@@ -46,7 +46,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.internal === false)
     assert(e1.audience === Some(Set(ConfigAudience.SERVER)))
     assert(e1.immutable === true)
-    assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=<undefined>," +
+    assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=(none)," +
       s" doc=$doc, version=<none>, type=int)")
 
     KyuubiConf.register(e1)
