@@ -19,7 +19,9 @@ package org.apache.kyuubi.ha.client.zookeeper
 
 import java.io.{File, IOException}
 import java.net.InetAddress
+import java.nio.charset.StandardCharsets
 import java.util
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.security.auth.login.Configuration
 
@@ -37,8 +39,10 @@ import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
 import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, ServerSelectStrategyFactory}
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.kyuubi.shaded.curator.framework.recipes.nodes.PersistentNode
+import org.apache.kyuubi.shaded.curator.framework.state.ConnectionState
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
-import org.apache.kyuubi.shaded.zookeeper.ZooDefs
+import org.apache.kyuubi.shaded.zookeeper.{CreateMode, ZooDefs}
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
@@ -72,6 +76,12 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
   def startZk(): Unit
 
   def stopZk(): Unit
+
+  private def setField(target: AnyRef, fieldName: String, value: AnyRef): Unit = {
+    val field = target.getClass.getDeclaredField(fieldName)
+    field.setAccessible(true)
+    field.set(target, value)
+  }
 
   override def beforeEach(): Unit = {
     startZk()
@@ -295,5 +305,403 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
 
     zkClient.close()
+  }
+
+  test("rewatch service node after zookeeper reconnect") {
+    val namespace = "kyuubirewatch"
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val stopped = new AtomicBoolean(false)
+    val service = new NoopTBinaryFrontendServer()
+    val discovery = new ServiceDiscovery("test discovery", service.frontendServices.head) {
+      override def stopGracefully(isLost: Boolean = false): Unit = {
+        stopped.set(true)
+      }
+    }
+    val zkDiscoveryClient = new ZookeeperDiscoveryClient(conf)
+    val basePath = s"/$namespace"
+    var serviceNode: PersistentNode = null
+
+    try {
+      zkDiscoveryClient.createClient()
+      val zkClient =
+        getField[CuratorFramework](zkDiscoveryClient, "zkClient")
+      zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(basePath)
+
+      val instance = "localhost:10009"
+      serviceNode = new PersistentNode(
+        zkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$instance;version=$KYUUBI_VERSION;sequence=",
+        instance.getBytes(StandardCharsets.UTF_8))
+      serviceNode.start()
+      assert(serviceNode.waitForInitialCreate(conf.get(HA_ZK_NODE_TIMEOUT), TimeUnit.MILLISECONDS))
+
+      val watcher = new zkDiscoveryClient.DeRegisterWatcher(instance, discovery)
+      setField(zkDiscoveryClient, "serviceNode", serviceNode)
+      setField(zkDiscoveryClient, "watcher", watcher)
+      assert(zkDiscoveryClient.rewatchServiceNodeOnce("test-reconnect"))
+
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathExists(serviceNode.getActualPath))
+        discoveryClient.delete(serviceNode.getActualPath)
+
+        eventually(timeout(10.seconds), interval(100.millis)) {
+          assert(stopped.get())
+        }
+      }
+    } finally {
+      if (serviceNode != null) {
+        try {
+          serviceNode.close()
+        } catch {
+          case _: Exception =>
+        }
+      }
+      zkDiscoveryClient.closeClient()
+    }
+  }
+
+  // Drive a real RECONNECTED event through the ConnectionStateListener registered by the
+  // production monitorState path and prove the engine-side DeRegisterWatcher is rearmed so a
+  // post-reconnect delete triggers stop. Retain the registered listener instead of enumerating
+  // Curator's internal listener container, whose implementation differs across Curator versions.
+  test("real RECONNECTED rearms DeRegisterWatcher so delete triggers stop") {
+    val namespace = "kyuubireconnect"
+    val reconnectConf = new KyuubiConf()
+      .set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val stopped = new AtomicBoolean(false)
+    val service = new NoopTBinaryFrontendServer()
+    val discovery = new ServiceDiscovery("test discovery", service.frontendServices.head) {
+      override def stopGracefully(isLost: Boolean = false): Unit = {
+        stopped.set(true)
+      }
+    }
+    val zkDiscoveryClient = new ZookeeperDiscoveryClient(reconnectConf)
+    val basePath = s"/$namespace"
+    var serviceNode: PersistentNode = null
+
+    try {
+      zkDiscoveryClient.createClient()
+      val zkClient = getField[CuratorFramework](zkDiscoveryClient, "zkClient")
+      val connectionStateListener =
+        zkDiscoveryClient.registerConnectionStateListener(discovery)
+      zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(basePath)
+
+      val instance = "localhost:10010"
+      serviceNode = new PersistentNode(
+        zkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$instance;version=$KYUUBI_VERSION;sequence=",
+        instance.getBytes(StandardCharsets.UTF_8))
+      serviceNode.start()
+      assert(serviceNode.waitForInitialCreate(
+        reconnectConf.get(HA_ZK_NODE_TIMEOUT),
+        TimeUnit.MILLISECONDS))
+
+      val watcher = new zkDiscoveryClient.DeRegisterWatcher(instance, discovery)
+      setField(zkDiscoveryClient, "serviceNode", serviceNode)
+      setField(zkDiscoveryClient, "watcher", watcher)
+      // NOTE: no initial watch is armed here. This models a session reconnect where the previous
+      // one-shot watch from registerService is gone (ZooKeeper drops a disconnected session's
+      // watches without delivering an event). On the old code RECONNECTED only sets isConnected, so
+      // the watcher stays unarmed; on the fixed code RECONNECTED schedules the rearm.
+
+      // Dispatch RECONNECTED through the listener implementation used by monitorState. On the
+      // fixed code this rearms the DeRegisterWatcher off the connection-state dispatch thread; on
+      // the old code it does nothing.
+      connectionStateListener.stateChanged(zkClient, ConnectionState.RECONNECTED)
+      // give the async rewatch executor a moment to rearm
+      Thread.sleep(1000)
+
+      // Now delete the live service node. The rearmed watcher must observe NodeDeleted -> stop.
+      // On the old code (no rearm on RECONNECTED) this delete is missed and stopped stays false.
+      withDiscoveryClient(reconnectConf) { discoveryClient =>
+        assert(discoveryClient.pathExists(serviceNode.getActualPath))
+        discoveryClient.delete(serviceNode.getActualPath)
+      }
+      eventually(timeout(10.seconds), interval(100.millis)) {
+        assert(stopped.get(), "stop not triggered after RECONNECTED-delete sequence")
+      }
+    } finally {
+      if (serviceNode != null) {
+        try serviceNode.close()
+        catch { case _: Exception => }
+      }
+      zkDiscoveryClient.closeClient()
+    }
+  }
+
+  // Absent path -> PersistentNode recreate (NodeCreated) ->
+  // DeRegisterWatcher rearms on NodeCreated -> next delete is observed.
+  test("absent node then NodeCreated rearms watcher so delete is observed") {
+    val namespace = "kyuubirearm"
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val stopped = new AtomicBoolean(false)
+    val service = new NoopTBinaryFrontendServer()
+    val discovery = new ServiceDiscovery("test discovery", service.frontendServices.head) {
+      override def stopGracefully(isLost: Boolean = false): Unit = {
+        stopped.set(true)
+      }
+    }
+    val zkDiscoveryClient = new ZookeeperDiscoveryClient(conf)
+    val basePath = s"/$namespace"
+    var serviceNode: PersistentNode = null
+
+    try {
+      zkDiscoveryClient.createClient()
+      val zkClient = getField[CuratorFramework](zkDiscoveryClient, "zkClient")
+      zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(basePath)
+
+      val instance = "localhost:10011"
+      serviceNode = new PersistentNode(
+        zkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$instance;version=$KYUUBI_VERSION;sequence=",
+        instance.getBytes(StandardCharsets.UTF_8))
+      serviceNode.start()
+      assert(serviceNode.waitForInitialCreate(conf.get(HA_ZK_NODE_TIMEOUT), TimeUnit.MILLISECONDS))
+
+      val watcher = new zkDiscoveryClient.DeRegisterWatcher(instance, discovery)
+      setField(zkDiscoveryClient, "serviceNode", serviceNode)
+      setField(zkDiscoveryClient, "watcher", watcher)
+
+      // Capture the actual path, then close the PersistentNode. close() drops the ephemeral node
+      // and clears nodePath (getActualPath -> null); PersistentNode's auto-recreate stops, giving a
+      // deterministic absent path. Re-inject livePath into the nodePath AtomicReference so the
+      // production rewatch helper still resolves the path to re-arm on.
+      val livePath = serviceNode.getActualPath
+      serviceNode.close()
+      val nodePathField = classOf[PersistentNode].getDeclaredField("nodePath")
+      nodePathField.setAccessible(true)
+      val nodePathRef =
+        nodePathField.get(serviceNode).asInstanceOf[
+          java.util.concurrent.atomic.AtomicReference[String]]
+      nodePathRef.set(livePath)
+      assert(serviceNode.getActualPath === livePath)
+
+      // rewatch on the absent path leaves an exists watch that fires on NodeCreated; returns false
+      assert(
+        zkDiscoveryClient.rewatchServiceNodeOnce("absent path rewatch") === false,
+        "rewatch on an absent path must return false but leave an exists watch")
+
+      // Create the node on the SAME path via an external client; ZK emits NodeCreated on the
+      // exists watch, and the DeRegisterWatcher's NodeCreated branch must re-arm itself.
+      withDiscoveryClient(conf) { discoveryClient =>
+        discoveryClient.create(livePath, "PERSISTENT")
+        assert(discoveryClient.pathExists(livePath))
+      }
+      // give the NodeCreated watch a moment to rearm via the DeRegisterWatcher NodeCreated branch
+      Thread.sleep(1500)
+
+      // now delete the recreated node; the rearmed watcher must observe NodeDeleted -> stop
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathExists(livePath))
+        discoveryClient.delete(livePath)
+      }
+      eventually(timeout(10.seconds), interval(100.millis)) {
+        assert(stopped.get(), "delete after NodeCreated rearm was not observed")
+      }
+    } finally {
+      if (serviceNode != null) {
+        try serviceNode.close()
+        catch { case _: Exception => }
+      }
+      zkDiscoveryClient.closeClient()
+    }
+  }
+
+  // After deregisterService, a pending or subsequent rewatch
+  // must not rearm the watcher on the torn-down node.
+  test("deregister cancels pending rewatch and does not rearm watcher") {
+    val namespace = "kyuubideregister"
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val stopped = new AtomicBoolean(false)
+    val service = new NoopTBinaryFrontendServer()
+    val discovery = new ServiceDiscovery("test discovery", service.frontendServices.head) {
+      override def stopGracefully(isLost: Boolean = false): Unit = {
+        stopped.set(true)
+      }
+    }
+    val zkDiscoveryClient = new ZookeeperDiscoveryClient(conf)
+    val basePath = s"/$namespace"
+    var serviceNode: PersistentNode = null
+
+    try {
+      zkDiscoveryClient.createClient()
+      val zkClient = getField[CuratorFramework](zkDiscoveryClient, "zkClient")
+      zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT).forPath(basePath)
+
+      val instance = "localhost:10012"
+      serviceNode = new PersistentNode(
+        zkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$instance;version=$KYUUBI_VERSION;sequence=",
+        instance.getBytes(StandardCharsets.UTF_8))
+      serviceNode.start()
+      assert(serviceNode.waitForInitialCreate(conf.get(HA_ZK_NODE_TIMEOUT), TimeUnit.MILLISECONDS))
+
+      val watcher = new zkDiscoveryClient.DeRegisterWatcher(instance, discovery)
+      setField(zkDiscoveryClient, "serviceNode", serviceNode)
+      setField(zkDiscoveryClient, "watcher", watcher)
+      // Arm a pending rewatch WITHOUT arming the actual DeRegisterWatcher yet, so deregister's
+      // node close does not fire NodeDeleted->stop. Dispatch RECONNECTED through the production
+      // monitorState listener to schedule the rearm on the dedicated rewatch executor.
+      val connectionStateListener =
+        zkDiscoveryClient.registerConnectionStateListener(discovery)
+      val livePath = serviceNode.getActualPath
+      // drop the live znode WITHOUT a watch armed, so no NodeDeleted fires
+      serviceNode.close()
+      // now dispatch RECONNECTED; the production path schedules a rearm attempt that should find
+      // the path absent and start retrying. deregisterService() below must cancel that retry.
+      connectionStateListener.stateChanged(zkClient, ConnectionState.RECONNECTED)
+      Thread.sleep(300)
+
+      // Deregister tears down the node and must cancel the pending rewatch retry.
+      zkDiscoveryClient.deregisterService()
+      // serviceNode is now null; a subsequent direct rewatch attempt must be a no-op.
+      assert(!zkDiscoveryClient.rewatchServiceNodeOnce("after deregister"))
+
+      // Recreate the node on the same path; the cancelled/stale rewatch must NOT have rearmed a
+      // watcher, so this delete must not trigger stop.
+      withDiscoveryClient(conf) { discoveryClient =>
+        discoveryClient.create(livePath, "PERSISTENT")
+        discoveryClient.delete(livePath)
+      }
+      Thread.sleep(2000)
+      assert(!stopped.get(), "stale rewatch rearmed a torn-down node")
+    } finally {
+      if (serviceNode != null) {
+        try serviceNode.close()
+        catch { case _: Exception => }
+      }
+      zkDiscoveryClient.closeClient()
+    }
+  }
+
+  // Binary and HTTP discovery each own their own
+  // ZookeeperDiscoveryClient; their rewatch executors and serviceNodes are independent, so a rearm
+  // on one client must not arm or unarm the other client's watcher.
+  test("binary and HTTP discovery clients rearm independently") {
+    val namespace = "kyuubiindependent"
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_ADDRESSES, getConnectString)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val stoppedBinary = new AtomicBoolean(false)
+    val stoppedHttp = new AtomicBoolean(false)
+    val service = new NoopTBinaryFrontendServer()
+    val discoveryBinary =
+      new ServiceDiscovery("binary discovery", service.frontendServices.head) {
+        override def stopGracefully(isLost: Boolean = false): Unit = stoppedBinary.set(true)
+      }
+    val discoveryHttp =
+      new ServiceDiscovery("http discovery", service.frontendServices.head) {
+        override def stopGracefully(isLost: Boolean = false): Unit = stoppedHttp.set(true)
+      }
+    val binaryClient = new ZookeeperDiscoveryClient(conf)
+    val httpClient = new ZookeeperDiscoveryClient(conf)
+    val basePath = s"/$namespace"
+    var binaryNode: PersistentNode = null
+    var httpNode: PersistentNode = null
+
+    try {
+      binaryClient.createClient()
+      httpClient.createClient()
+      val binZkClient = getField[CuratorFramework](binaryClient, "zkClient")
+      val httpZkClient = getField[CuratorFramework](httpClient, "zkClient")
+      binZkClient.create().creatingParentsIfNeeded().withMode(
+        CreateMode.PERSISTENT).forPath(basePath)
+
+      val binaryInstance = "localhost:10013"
+      val httpInstance = "localhost:10014"
+      binaryNode = new PersistentNode(
+        binZkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$binaryInstance;version=$KYUUBI_VERSION;sequence=",
+        binaryInstance.getBytes(StandardCharsets.UTF_8))
+      httpNode = new PersistentNode(
+        httpZkClient,
+        CreateMode.EPHEMERAL_SEQUENTIAL,
+        false,
+        s"$basePath/serviceUri=$httpInstance;version=$KYUUBI_VERSION;sequence=",
+        httpInstance.getBytes(StandardCharsets.UTF_8))
+      binaryNode.start()
+      httpNode.start()
+      assert(binaryNode.waitForInitialCreate(conf.get(HA_ZK_NODE_TIMEOUT), TimeUnit.MILLISECONDS))
+      assert(httpNode.waitForInitialCreate(conf.get(HA_ZK_NODE_TIMEOUT), TimeUnit.MILLISECONDS))
+
+      setField(binaryClient, "serviceNode", binaryNode)
+      setField(
+        binaryClient,
+        "watcher",
+        new binaryClient.DeRegisterWatcher(binaryInstance, discoveryBinary))
+      setField(httpClient, "serviceNode", httpNode)
+      setField(httpClient, "watcher", new httpClient.DeRegisterWatcher(httpInstance, discoveryHttp))
+      assert(binaryClient.rewatchServiceNodeOnce("binary initial"))
+      assert(httpClient.rewatchServiceNodeOnce("http initial"))
+
+      // Delete the binary node only; the HTTP watcher must remain armed and unaffected.
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathExists(binaryNode.getActualPath))
+        discoveryClient.delete(binaryNode.getActualPath)
+      }
+      eventually(timeout(10.seconds), interval(100.millis)) {
+        assert(stoppedBinary.get())
+      }
+      // HTTP client was not deleted and must not have stopped.
+      assert(!stoppedHttp.get(), "independent HTTP client stopped on binary delete")
+
+      // Now delete the HTTP node; its own (still armed) watcher must fire.
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(discoveryClient.pathExists(httpNode.getActualPath))
+        discoveryClient.delete(httpNode.getActualPath)
+      }
+      eventually(timeout(10.seconds), interval(100.millis)) {
+        assert(stoppedHttp.get())
+      }
+    } finally {
+      if (binaryNode != null) {
+        try binaryNode.close()
+        catch { case _: Exception => }
+      }
+      if (httpNode != null) {
+        try httpNode.close()
+        catch { case _: Exception => }
+      }
+      binaryClient.closeClient()
+      httpClient.closeClient()
+    }
   }
 }
