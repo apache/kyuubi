@@ -227,29 +227,22 @@ class ZookeeperDiscoveryClient(conf: KyuubiConf) extends DiscoveryClient {
       namespace: String,
       serviceDiscovery: ServiceDiscovery,
       version: Option[String] = None,
-      external: Boolean = false): Unit = {
+      external: Boolean = false): Unit = synchronized {
     val instance = serviceDiscovery.fe.connectionUrl
     watcher = new DeRegisterWatcher(instance, serviceDiscovery)
-    val node = createPersistentNode(
+    serviceNode = createPersistentNode(
       conf,
       namespace,
       instance,
       version,
       external,
       serviceDiscovery.fe.attributes)
-    synchronized {
-      serviceNode = node
-    }
     watchNode()
   }
 
-  override def deregisterService(): Unit = {
-    // Explicit shutdown and the deletion watcher can deregister concurrently.
-    val node = synchronized {
-      val current = serviceNode
-      serviceNode = null
-      current
-    }
+  override def deregisterService(): Unit = synchronized {
+    val node = serviceNode
+    serviceNode = null
     if (node != null) {
       val path = node.getActualPath
       try {

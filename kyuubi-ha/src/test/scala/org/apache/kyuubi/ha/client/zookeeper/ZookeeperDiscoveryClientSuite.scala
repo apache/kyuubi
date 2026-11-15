@@ -20,13 +20,14 @@ package org.apache.kyuubi.ha.client.zookeeper
 import java.io.{File, IOException}
 import java.net.InetAddress
 import java.util
-import java.util.concurrent.{CountDownLatch, Executors, TimeUnit}
+import java.util.concurrent.{CountDownLatch, Executors, FutureTask, TimeUnit}
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.util.StringUtils
+import org.apache.logging.log4j.core.LogEvent
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
@@ -201,7 +202,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
   }
 
-  test("node deletion can complete graceful shutdown during explicit deregistration") {
+  test("node deletion completes graceful shutdown after explicit deregistration closes the node") {
     val client = new ZookeeperDiscoveryClient(conf)
     val zkClient = getField[CuratorFramework](client, "zkClient")
     val path = "/concurrent-deregistration"
@@ -232,18 +233,73 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
         override def run(): Unit = client.deregisterService()
       })
       assert(closeStarted.await(10, TimeUnit.SECONDS))
-      watcher.process(new WatchedEvent(
-        Watcher.Event.EventType.NodeDeleted,
-        Watcher.Event.KeeperState.SyncConnected,
-        path))
-      assert(gracefulShutdown.getCount == 0)
+      val deletion = new FutureTask[Unit](() =>
+        watcher.process(new WatchedEvent(
+          Watcher.Event.EventType.NodeDeleted,
+          Watcher.Event.KeeperState.SyncConnected,
+          path)))
+      val callback = new Thread(deletion)
+      callback.start()
+      eventually(timeout(5.seconds)) {
+        assert(callback.getState == Thread.State.BLOCKED)
+      }
       finishClose.countDown()
       deregistration.get(10, TimeUnit.SECONDS)
+      deletion.get(10, TimeUnit.SECONDS)
+      assert(gracefulShutdown.getCount == 0)
       assert(closeCalls.get() == 1)
     } finally {
       finishClose.countDown()
       executor.shutdownNow()
       client.closeClient()
+    }
+  }
+
+  test("deregistration waits for registration to publish the node and install its watch") {
+    val namespace = "concurrent-registration"
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    val server = new NoopTBinaryFrontendServer()
+    server.initialize(conf)
+    server.start()
+
+    val nodeCreated = new CountDownLatch(1)
+    val finishRegistration = new CountDownLatch(1)
+    val executor = Executors.newSingleThreadExecutor()
+    val appender = new LogAppender() {
+      override def append(event: LogEvent): Unit = {
+        if (event.getMessage.getFormattedMessage.startsWith(s"Created a /$namespace/")) {
+          nodeCreated.countDown()
+          assert(finishRegistration.await(10, TimeUnit.SECONDS))
+        }
+      }
+    }
+    try {
+      withDiscoveryClient(conf) { client =>
+        withLogAppender(appender, Seq(classOf[ZookeeperDiscoveryClient].getName)) {
+          val discovery = new EngineServiceDiscovery(server.frontendServices.head)
+          val registration = executor.submit(new Runnable {
+            override def run(): Unit = client.registerService(conf, namespace, discovery)
+          })
+          try {
+            assert(nodeCreated.await(10, TimeUnit.SECONDS))
+            val deregistration = new FutureTask[Unit](() => client.deregisterService())
+            val shutdown = new Thread(deregistration)
+            shutdown.start()
+            eventually(timeout(5.seconds)) {
+              assert(shutdown.getState == Thread.State.BLOCKED)
+            }
+            finishRegistration.countDown()
+            registration.get(10, TimeUnit.SECONDS)
+            deregistration.get(10, TimeUnit.SECONDS)
+            assert(client.getChildren(s"/$namespace").isEmpty)
+          } finally {
+            finishRegistration.countDown()
+          }
+        }
+      }
+    } finally {
+      executor.shutdownNow()
+      server.stop()
     }
   }
 
