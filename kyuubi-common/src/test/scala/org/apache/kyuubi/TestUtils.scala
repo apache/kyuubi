@@ -16,11 +16,14 @@
  */
 package org.apache.kyuubi
 
+import java.io.{BufferedReader, InputStreamReader}
 import java.sql.ResultSet
 
 import scala.collection.mutable.ArrayBuffer
 
 import com.jakewharton.fliptables.FlipTable
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
 
 object TestUtils {
   def displayResultSet(resultSet: ResultSet): Unit = {
@@ -35,5 +38,25 @@ object TestUtils {
     // scalastyle:off println
     println(FlipTable.of(headers, data.result().toArray))
     // scalastyle:on println
+  }
+
+  /**
+   * Read all lines of the event log files matching the given pattern under the event log root.
+   *
+   * Event logs are partitioned by event date. Reading every day partition keeps tests correct
+   * when a run crosses midnight.
+   */
+  def readEventLines(logRoot: String, filePattern: String): Seq[String] = {
+    val fileSystem: FileSystem = FileSystem.get(new Configuration())
+    val eventFiles = Option(fileSystem.globStatus(new Path(logRoot, filePattern))).toSeq.flatten
+    eventFiles.sortBy(_.getPath.toString).flatMap { eventFile =>
+      val in = fileSystem.open(eventFile.getPath)
+      try {
+        val reader = new BufferedReader(new InputStreamReader(in))
+        Iterator.continually(reader.readLine()).takeWhile(_ != null).toList
+      } finally {
+        in.close()
+      }
+    }
   }
 }
