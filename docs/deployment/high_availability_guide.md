@@ -96,7 +96,12 @@ Notes:
   enabled. Bare `host:port` addresses will not connect.
 - The etcd discovery client has no authentication other than mTLS; secure etcd
   with TLS or a network boundary.
-- Server registrations and engine registrations both use the same namespace.
+- Server registrations and engine registrations both use the same namespace. The
+  engine registration prefix is derived from that namespace as
+  `<namespace>_<kyuubi version>_<share level>_<engine type>`, followed by the
+  routing user and the engine subdomain, for example
+  `/kyuubi_1.13.0-SNAPSHOT_USER_SPARK_SQL/<user>/default` for the default
+  `kyuubi.ha.namespace=kyuubi`.
 - The JDBC driver does not support etcd service discovery;
   `serviceDiscoveryMode` only works with a ZooKeeper ensemble. etcd is used
   between Kyuubi servers and engines, not from the JDBC client.
@@ -123,9 +128,24 @@ discovery store is required for a real HA setup.
    the inherited paths, because forwarding the configuration does not copy
    them. Mount a shared `kyuubi-defaults.conf` (or inject it into the Helm
    chart values) so this is identical on every pod.
+   The driver pod is created in the namespace given by
+   `spark.kubernetes.namespace`, or, when the submission does not set it, in
+   the namespace the server uses for engine pods,
+   `kyuubi.kubernetes.namespace`, which defaults to `default`. It runs under
+   the ServiceAccount named by
+   `spark.kubernetes.authenticate.driver.serviceAccountName`. A driver pod
+   that lands in a namespace whose ServiceAccount may not create pods makes
+   the first query fail while the pod is being created, so point both at the
+   namespace Kyuubi runs in. See
+   [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md#serviceaccount)
+   for the ServiceAccount setup.
 3. **Let clients connect through the Service.** Point the JDBC driver at the
    Kyuubi Service (LoadBalancer or NodePort), for example
-   `jdbc:kyuubi://<service-host>:10009/default`. Session stickiness is tied to
+   `jdbc:kyuubi://<service-host>:10009/default`. Clients outside the cluster
+   reach a NodePort service through the node address and the allocated node
+   port, for example `jdbc:kyuubi://<node-ip>:<nodePort>/default`, where the
+   node port is the one Kubernetes allocated for the service port `10009`.
+   Session stickiness is tied to
    the server that accepted the connection; if it disappears, reconnecting
    lands on another replica.
 4. **Engine discovery across servers.** When an engine finishes bootstrapping
