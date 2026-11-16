@@ -31,6 +31,7 @@ import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
 import org.apache.spark.sql.catalyst.plans.logical.{RepartitionByExpression, Statistics}
 import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.storage.StorageLevel
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.plugin.lineage.Lineage
@@ -828,6 +829,118 @@ class HiveCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
           assert(nested.collect { case r: LogicalRelation => r }.isEmpty)
         } finally {
           df.unpersist()
+        }
+      }
+    }
+  }
+
+  test("[KYUUBI #7855] independently analyzed CTE view reuses its cache") {
+    assume(isClassLoadable("org.apache.spark.sql.catalyst.normalizer.NormalizeCTEIds$"))
+    val source = s"$defaultDb.pvm_cte_source"
+    val view = s"$defaultDb.pvm_cte_view"
+    val query = s"SELECT id FROM $view"
+
+    withCleanTmpResources(Seq((view, "view"), (source, "table"))) {
+      doAs(admin) {
+        sql(s"CREATE TABLE $source (id int) USING parquet")
+        sql(s"INSERT INTO $source VALUES (1), (2)")
+        sql(s"CREATE VIEW $view AS WITH c AS (SELECT id FROM $source) SELECT id FROM c")
+
+        val cached = sql(query).cache()
+        try {
+          assert(cached.count() == 2)
+          val consumer = sql(query)
+          assert(
+            consumer.queryExecution.withCachedData.exists(_.isInstanceOf[InMemoryRelation]),
+            "Expected an independently analyzed CTE view to reuse its cache")
+          assert(consumer.collect().toSet == Set(Row(1), Row(2)))
+        } finally {
+          cached.unpersist(blocking = true)
+        }
+      }
+    }
+  }
+
+  test("[KYUUBI #7855] independently analyzed nested CTE views reuse their cache") {
+    assume(isClassLoadable("org.apache.spark.sql.catalyst.normalizer.NormalizeCTEIds$"))
+    val source = s"$defaultDb.pvm_nested_cte_source"
+    val innerView = s"$defaultDb.pvm_inner_cte_view"
+    val outerView = s"$defaultDb.pvm_outer_cte_view"
+    val query = s"SELECT id FROM $outerView"
+
+    withCleanTmpResources(Seq((outerView, "view"), (innerView, "view"), (source, "table"))) {
+      doAs(admin) {
+        sql(s"CREATE TABLE $source (id int) USING parquet")
+        sql(s"INSERT INTO $source VALUES (1), (2)")
+        sql(s"CREATE VIEW $innerView AS WITH c AS (SELECT id FROM $source) SELECT id FROM c")
+        sql(s"CREATE VIEW $outerView AS WITH c AS (SELECT id FROM $innerView) " +
+          "SELECT id FROM c WHERE id > 0")
+
+        val cached = sql(query).cache()
+        try {
+          assert(cached.count() == 2)
+          val consumer = sql(query)
+          assert(
+            consumer.queryExecution.withCachedData.exists(_.isInstanceOf[InMemoryRelation]),
+            "Expected independently analyzed nested CTE views to reuse their cache")
+          assert(consumer.collect().toSet == Set(Row(1), Row(2)))
+        } finally {
+          cached.unpersist(blocking = true)
+        }
+      }
+    }
+  }
+
+  test("[KYUUBI #7855] a view with a subquery referencing an enclosing CTE reuses its cache") {
+    assume(isClassLoadable("org.apache.spark.sql.catalyst.normalizer.NormalizeCTEIds$"))
+    val source = s"$defaultDb.pvm_subquery_cte_source"
+    val view = s"$defaultDb.pvm_subquery_cte_view"
+    val query = s"SELECT id FROM $view"
+
+    withCleanTmpResources(Seq((view, "view"), (source, "table"))) {
+      doAs(admin) {
+        sql(s"CREATE TABLE $source (id int) USING parquet")
+        sql(s"INSERT INTO $source VALUES (1), (2)")
+        sql(s"CREATE VIEW $view AS WITH c AS (SELECT id FROM $source) " +
+          "SELECT (SELECT max(id) FROM c) AS id FROM c")
+
+        val cached = sql(query).cache()
+        try {
+          assert(cached.count() == 2)
+          val consumer = sql(query)
+          assert(
+            consumer.queryExecution.withCachedData.exists(_.isInstanceOf[InMemoryRelation]),
+            "Expected a CTE view with an enclosing-scope subquery to reuse its cache")
+          assert(consumer.collect().toSeq == Seq(Row(2), Row(2)))
+        } finally {
+          cached.unpersist(blocking = true)
+        }
+      }
+    }
+  }
+
+  test("[KYUUBI #7855] independently analyzed CTE view removes the original cache on unpersist") {
+    assume(isClassLoadable("org.apache.spark.sql.catalyst.normalizer.NormalizeCTEIds$"))
+    val source = s"$defaultDb.pvm_uncache_cte_source"
+    val view = s"$defaultDb.pvm_uncache_cte_view"
+    val query = s"SELECT id FROM $view"
+
+    withCleanTmpResources(Seq((view, "view"), (source, "table"))) {
+      doAs(admin) {
+        sql(s"CREATE TABLE $source (id int) USING parquet")
+        sql(s"INSERT INTO $source VALUES (1), (2)")
+        sql(s"CREATE VIEW $view AS WITH c AS (SELECT id FROM $source) SELECT id FROM c")
+
+        val cached = sql(query).cache()
+        try {
+          assert(cached.count() == 2)
+          assert(cached.storageLevel != StorageLevel.NONE)
+          sql(query).unpersist(blocking = true)
+          assert(
+            cached.storageLevel == StorageLevel.NONE,
+            "Expected unpersist of an independently analyzed view to remove the original cache")
+        } finally {
+          cached.unpersist(blocking = true)
         }
       }
     }
