@@ -20,6 +20,7 @@ package org.apache.kyuubi.ha.client.zookeeper
 import java.io.{File, IOException}
 import java.net.InetAddress
 import java.util
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.security.auth.login.Configuration
 
@@ -37,9 +38,12 @@ import org.apache.kyuubi.ha.client.zookeeper.ZookeeperClientProvider._
 import org.apache.kyuubi.jdbc.hive.strategy.{ServerSelectStrategy, ServerSelectStrategyFactory}
 import org.apache.kyuubi.service._
 import org.apache.kyuubi.shaded.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.kyuubi.shaded.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.kyuubi.shaded.curator.retry.ExponentialBackoffRetry
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.shaded.zookeeper.ZooDefs
 import org.apache.kyuubi.shaded.zookeeper.data.ACL
+import org.apache.kyuubi.util.IPStackUtils
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT
@@ -50,16 +54,96 @@ class EmbeddedZookeeperDiscoveryClientSuite extends ZookeeperDiscoveryClientSuit
 
   override def getConnectString: String = _zkServer.getConnectString
 
-  override def startZk(): Unit = {
+  private def startZk(clientPort: Int): Unit = {
     val embeddedZkConf = KyuubiConf()
-    embeddedZkConf.set(ZK_CLIENT_PORT, 0)
+    embeddedZkConf.set(ZK_CLIENT_PORT, clientPort)
     _zkServer = new EmbeddedZookeeper()
     _zkServer.initialize(embeddedZkConf)
     _zkServer.start()
   }
 
+  override def startZk(): Unit = startZk(0)
+
   override def stopZk(): Unit = {
     _zkServer.stop()
+  }
+
+  test("do not register engine again after graceful shutdown starts on lost connection") {
+    val namespace = "kyuubigracefulstop"
+    var discovery: ServiceDiscovery = null
+    val gracefulStopStarted = new CountDownLatch(1)
+    val service = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            discovery = new EngineServiceDiscovery(this) {
+              override def stopGracefully(isLost: Boolean): Unit = {
+                gracefulStopStarted.countDown()
+                super.stopGracefully(isLost)
+              }
+            }
+            Some(discovery)
+          }
+        })
+    }
+    conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
+      .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_CONN_TIMEOUT, 2000)
+      .set(HA_ZK_SESSION_TIMEOUT, 2000)
+      .set(HA_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    service.initialize(conf)
+    service.start()
+
+    val sessionManager = service.backendService.sessionManager
+    val sessionHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V11,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val zkDiscoveryClient =
+      discovery.discoveryClient.asInstanceOf[ZookeeperDiscoveryClient]
+    val zkClient = getField[CuratorFramework](zkDiscoveryClient, "zkClient")
+    val reconnected = new CountDownLatch(1)
+    zkClient.getConnectionStateListenable.addListener(new ConnectionStateListener {
+      override def stateChanged(
+          client: CuratorFramework,
+          newState: ConnectionState): Unit = {
+        if (newState == ConnectionState.RECONNECTED) {
+          reconnected.countDown()
+        }
+      }
+    })
+
+    val basePath = s"/$namespace"
+    val clientPort = IPStackUtils.getHostAndPort(getConnectString).getPort
+    try {
+      stopZk()
+      assert(gracefulStopStarted.await(10, TimeUnit.SECONDS))
+
+      startZk(clientPort)
+      assert(reconnected.await(10, TimeUnit.SECONDS))
+      Thread.sleep(1000)
+
+      assert(getField[AnyRef](zkDiscoveryClient, "serviceNode") == null)
+      withDiscoveryClient(conf) { discoveryClient =>
+        assert(!discoveryClient.pathExists(basePath) ||
+          discoveryClient.getChildren(basePath).isEmpty)
+      }
+
+      sessionManager.closeSession(sessionHandle)
+      eventually(timeout(15.seconds), interval(100.millis)) {
+        assert(discovery.getServiceState === ServiceState.STOPPED)
+        assert(service.getServiceState === ServiceState.STOPPED)
+      }
+    } finally {
+      sessionManager.getSessionOption(sessionHandle).foreach(_ =>
+        sessionManager.closeSession(sessionHandle))
+      service.stop()
+      discovery.stop()
+      zkDiscoveryClient.closeClient()
+    }
   }
 }
 
@@ -182,6 +266,7 @@ abstract class ZookeeperDiscoveryClientSuite extends DiscoveryClientTests
     }
     conf.set(HA_ZK_CONN_RETRY_POLICY, "ONE_TIME")
       .set(HA_ZK_CONN_BASE_RETRY_WAIT, 1)
+      .set(HA_ZK_CONN_TIMEOUT, 2000)
       .set(HA_ZK_SESSION_TIMEOUT, 2000)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     service.initialize(conf)
