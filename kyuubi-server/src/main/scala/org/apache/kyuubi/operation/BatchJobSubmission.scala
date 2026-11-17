@@ -314,6 +314,7 @@ class BatchJobSubmission(
     }
 
     try {
+      builder.validateConf()
       info(s"Submitting $batchType batch[$batchId] job:\n$builder")
       val process = builder.start
       while (process.isAlive && !applicationFailed(_applicationInfo, appOperation)) {
