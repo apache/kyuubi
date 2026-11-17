@@ -83,10 +83,10 @@ final class KyuubiTHttpFrontendService(
    * http://localhost:10000/servlets/thrifths2/ A gateway may cause actual target
    * URL to differ, e.g. http://gateway:port/hive2/servlets/thrifths2/.
    *
-   * @param conf the configuration of the service
+   * @param serverConf the configuration of the service
    */
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    this.conf = conf
+  override def initialize(serverConf: KyuubiConf): Unit = synchronized {
+    this.conf = serverConf
     if (authFactory.kerberosEnabled && authFactory.effectivePlainAuthType.isEmpty) {
       throw new AuthenticationException("Kerberos is not supported for Thrift HTTP mode")
     }
@@ -95,9 +95,9 @@ final class KyuubiTHttpFrontendService(
       // Server thread pool
       // Start with minWorkerThreads, expand till maxWorkerThreads and reject
       // subsequent requests
-      val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
-      val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
-      val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
+      val minThreads = serverConf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
+      val maxThreads = serverConf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
+      val keepAliveTime = serverConf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
       val executor = new ThreadPoolExecutor(
         minThreads,
         maxThreads,
@@ -112,21 +112,21 @@ final class KyuubiTHttpFrontendService(
 
       val httpConf = new HttpConfiguration
       // Configure header size
-      val requestHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE)
-      val responseHeaderSize = conf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
-      val jettySendVersionEnabled = conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
+      val requestHeaderSize = serverConf.get(FRONTEND_THRIFT_HTTP_REQUEST_HEADER_SIZE)
+      val responseHeaderSize = serverConf.get(FRONTEND_THRIFT_HTTP_RESPONSE_HEADER_SIZE)
+      val jettySendVersionEnabled = serverConf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED)
       httpConf.setRequestHeaderSize(requestHeaderSize)
       httpConf.setResponseHeaderSize(responseHeaderSize)
       httpConf.setSendServerVersion(jettySendVersionEnabled)
       val connectionFactory = new HttpConnectionFactory(httpConf)
 
-      val useSsl = conf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
+      val useSsl = serverConf.get(FRONTEND_THRIFT_HTTP_USE_SSL)
       val schemeName = if (useSsl) "https" else "http"
 
       // Change connector if SSL is used
       val connector =
         if (useSsl) {
-          keyStorePath = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH)
+          keyStorePath = serverConf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH)
 
           if (keyStorePath.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.key +
@@ -134,7 +134,7 @@ final class KyuubiTHttpFrontendService(
               FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PATH.doc)
           }
 
-          keyStorePassword = conf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
+          keyStorePassword = serverConf.get(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD)
           if (keyStorePassword.isEmpty) {
             throw new IllegalArgumentException(FRONTEND_THRIFT_HTTP_SSL_KEYSTORE_PASSWORD.key +
               " Not configured for SSL connection. please set the key with: " +
@@ -142,10 +142,10 @@ final class KyuubiTHttpFrontendService(
           }
 
           val sslContextFactory = new SslContextFactory.Server
-          val excludedProtocols = conf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST)
-          val excludeCipherSuites = conf.get(FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES)
-          keyStoreType = conf.get(FRONTEND_SSL_KEYSTORE_TYPE)
-          val keyStoreAlgorithm = conf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
+          val excludedProtocols = serverConf.get(FRONTEND_THRIFT_HTTP_SSL_PROTOCOL_BLACKLIST)
+          val excludeCipherSuites = serverConf.get(FRONTEND_THRIFT_HTTP_SSL_EXCLUDE_CIPHER_SUITES)
+          keyStoreType = serverConf.get(FRONTEND_SSL_KEYSTORE_TYPE)
+          val keyStoreAlgorithm = serverConf.get(FRONTEND_SSL_KEYSTORE_ALGORITHM)
           info("Thrift HTTP Server SSL: adding excluded protocols: " +
             String.join(",", excludedProtocols: _*))
           sslContextFactory.addExcludeProtocols(excludedProtocols: _*)
@@ -175,14 +175,14 @@ final class KyuubiTHttpFrontendService(
       // without this 2 NN's can start on the same machine and listen on
       // the same port with indeterminate routing of incoming requests to them
       connector.setReuseAddress(!SystemUtils.IS_OS_WINDOWS)
-      val maxIdleTime = conf.get(FRONTEND_THRIFT_HTTP_MAX_IDLE_TIME)
+      val maxIdleTime = serverConf.get(FRONTEND_THRIFT_HTTP_MAX_IDLE_TIME)
       connector.setIdleTimeout(maxIdleTime)
       connector.setAcceptQueueSize(maxThreads)
       server.foreach(_.addConnector(connector))
 
       val processor = new TCLIService.Processor[TCLIService.Iface](this)
       val protocolFactory = new TBinaryProtocol.Factory
-      val servlet = new ThriftHttpServlet(processor, protocolFactory, authFactory, conf)
+      val servlet = new ThriftHttpServlet(processor, protocolFactory, authFactory, serverConf)
       servlet.init()
 
       // Context handler
@@ -204,9 +204,9 @@ final class KyuubiTHttpFrontendService(
         }
       })
 
-      val httpPath = getHttpPath(conf.get(FRONTEND_THRIFT_HTTP_PATH))
+      val httpPath = getHttpPath(serverConf.get(FRONTEND_THRIFT_HTTP_PATH))
 
-      if (conf.get(FRONTEND_THRIFT_HTTP_COMPRESSION_ENABLED)) {
+      if (serverConf.get(FRONTEND_THRIFT_HTTP_COMPRESSION_ENABLED)) {
         val gzipHandler = new GzipHandler
         gzipHandler.setHandler(context)
         gzipHandler.addIncludedMethods(HttpMethod.POST.asString())
@@ -229,7 +229,7 @@ final class KyuubiTHttpFrontendService(
           s"Failed to initialize frontend service on $serverAddr:$portNum.",
           e)
     }
-    super.initialize(conf)
+    super.initialize(serverConf)
   }
 
   /** Same as KyuubiTBinaryFrontendService, to return launch engine op handle. */

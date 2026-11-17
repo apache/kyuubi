@@ -22,9 +22,9 @@ import org.apache.kyuubi.config.KyuubiConf
 case class ServerKafkaLoggingEventHandler(
     topic: String,
     producerConf: Iterable[(String, String)],
-    kyuubiConf: KyuubiConf,
+    serverConf: KyuubiConf,
     closeTimeoutInMs: Long)
-  extends KafkaLoggingEventHandler(topic, producerConf, kyuubiConf, closeTimeoutInMs)
+  extends KafkaLoggingEventHandler(topic, producerConf, serverConf, closeTimeoutInMs)
 
 object ServerKafkaLoggingEventHandler {
   val KAFKA_SERVER_EVENT_HANDLER_PREFIX = "kyuubi.backend.server.event.kafka"

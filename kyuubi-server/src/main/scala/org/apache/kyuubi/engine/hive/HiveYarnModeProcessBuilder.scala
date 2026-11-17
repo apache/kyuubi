@@ -41,10 +41,10 @@ import org.apache.kyuubi.util.command.CommandLineUtils.{confKeyValue, confKeyVal
 class HiveYarnModeProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     override val engineRefId: String,
     override val extraEngineLog: Option[OperationLog] = None)
-  extends HiveProcessBuilder(proxyUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+  extends HiveProcessBuilder(proxyUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
   with Logging {
 
   override protected def mainClass: String =
@@ -57,11 +57,11 @@ class HiveYarnModeProcessBuilder(
   override def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(clusterManager())
 
   override protected val commands: Iterable[String] = {
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), sessionConf)
     val buffer = new ArrayBuffer[String]()
     buffer += executable
 
-    val memory = conf.get(ENGINE_HIVE_MEMORY)
+    val memory = sessionConf.get(ENGINE_HIVE_MEMORY)
     buffer += s"-Xmx$memory"
     buffer += "-cp"
 
@@ -91,7 +91,7 @@ class HiveYarnModeProcessBuilder(
       KYUUBI_ENGINE_DEPLOY_YARN_MODE_YARN_CONF_KEY,
       yarnConfFiles().asScala.mkString(KYUUBI_ENGINE_DEPLOY_YARN_MODE_ARCHIVE_SEPARATOR))
 
-    buffer ++= confKeyValues(conf.getEngineConf(EngineType.HIVE_SQL))
+    buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.HIVE_SQL))
 
     buffer
   }
@@ -104,7 +104,7 @@ class HiveYarnModeProcessBuilder(
     jarEntries.add(s"$hiveHome${File.separator}lib${appendClasspathSuffix(isClasspath)}")
 
     val hadoopCp = env.get(HIVE_HADOOP_CLASSPATH_KEY)
-    val extraCp = conf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
+    val extraCp = sessionConf.get(ENGINE_HIVE_EXTRA_CLASSPATH)
     // the classpath of the ApplicationMaster is resolved when submit hive engine to YARN.
     if (isClasspath) {
       extraCp.foreach(jarEntries.add)

@@ -51,13 +51,13 @@ class CreateServerCommand(cliConfig: CliConfig)
    * Expose Kyuubi server instance to another domain.
    */
   override def doRun(): Iterable[ServiceNodeInfo] = {
-    val kyuubiConf = conf
+    val serverConf = conf
 
-    kyuubiConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
-    withDiscoveryClient(kyuubiConf) { discoveryClient =>
+    serverConf.setIfMissing(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
+    withDiscoveryClient(serverConf) { discoveryClient =>
       val fromNamespace =
-        DiscoveryPaths.makePath(null, kyuubiConf.get(HA_NAMESPACE))
-      val toNamespace = CtlUtils.getZkServerNamespace(kyuubiConf, normalizedCliConfig)
+        DiscoveryPaths.makePath(null, serverConf.get(HA_NAMESPACE))
+      val toNamespace = CtlUtils.getZkServerNamespace(serverConf, normalizedCliConfig)
 
       val currentServerNodes = discoveryClient.getServiceNodesInfo(fromNamespace)
       val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()
@@ -68,7 +68,7 @@ class CreateServerCommand(cliConfig: CliConfig)
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
             val newNodePath = zc.createAndGetServiceNode(
-              kyuubiConf,
+              serverConf,
               normalizedCliConfig.zkOpts.namespace,
               sn.instance,
               sn.version,
@@ -79,11 +79,11 @@ class CreateServerCommand(cliConfig: CliConfig)
           }
         }
 
-        if (kyuubiConf.get(HA_ADDRESSES) == normalizedCliConfig.zkOpts.zkQuorum) {
+        if (serverConf.get(HA_ADDRESSES) == normalizedCliConfig.zkOpts.zkQuorum) {
           doCreate(discoveryClient)
         } else {
-          kyuubiConf.set(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
-          withDiscoveryClient(kyuubiConf)(doCreate)
+          serverConf.set(HA_ADDRESSES, normalizedCliConfig.zkOpts.zkQuorum)
+          withDiscoveryClient(serverConf)(doCreate)
         }
       }
       exposedServiceNodes

@@ -36,14 +36,14 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 class TrinoProcessBuilder(
     override val proxyUser: String,
     override val doAsEnabled: Boolean,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
-    this(proxyUser, doAsEnabled, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, sessionConf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, sessionConf, "")
   }
 
   override protected def module: String = "kyuubi-trino-engine"
@@ -51,19 +51,19 @@ class TrinoProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.trino.TrinoSqlEngine"
 
   override protected val commands: Iterable[String] = {
-    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), conf)
+    KyuubiApplicationManager.tagApplication(engineRefId, shortName, clusterManager(), sessionConf)
     require(
-      conf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,
+      sessionConf.get(ENGINE_TRINO_CONNECTION_URL).nonEmpty,
       s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
     require(
-      conf.get(ENGINE_TRINO_CONNECTION_CATALOG).nonEmpty,
+      sessionConf.get(ENGINE_TRINO_CONNECTION_CATALOG).nonEmpty,
       s"Trino default catalog can not be null! Please set ${ENGINE_TRINO_CONNECTION_CATALOG.key}")
     val buffer = new mutable.ListBuffer[String]()
     buffer += executable
 
-    val memory = conf.get(ENGINE_TRINO_MEMORY)
+    val memory = sessionConf.get(ENGINE_TRINO_MEMORY)
     buffer += s"-Xmx$memory"
-    val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
+    val javaOptions = sessionConf.get(ENGINE_TRINO_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
       buffer ++= parseOptionString(javaOptions.get)
     }
@@ -86,7 +86,7 @@ class TrinoProcessBuilder(
       }
     }
 
-    val extraCp = conf.get(ENGINE_TRINO_EXTRA_CLASSPATH)
+    val extraCp = sessionConf.get(ENGINE_TRINO_EXTRA_CLASSPATH)
     extraCp.foreach(classpathEntries.add)
 
     buffer ++= genClasspathOption(classpathEntries)
@@ -99,7 +99,7 @@ class TrinoProcessBuilder(
     // or just leave it, because we can handle it at operation layer
     buffer ++= confKeyValue(KYUUBI_SESSION_USER_KEY, proxyUser)
 
-    buffer ++= confKeyValues(conf.getEngineConf(EngineType.TRINO))
+    buffer ++= confKeyValues(sessionConf.getEngineConf(EngineType.TRINO))
 
     buffer
   }
@@ -111,7 +111,7 @@ class TrinoProcessBuilder(
       super.toString
     } else {
       redactConfValues(
-        Utils.redactCommandLineArgs(conf, commands),
+        Utils.redactCommandLineArgs(sessionConf, commands),
         Set(
           ENGINE_TRINO_CONNECTION_PASSWORD.key,
           ENGINE_TRINO_CONNECTION_KEYSTORE_PASSWORD.key,

@@ -26,7 +26,7 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class SparkBatchProcessBuilder(
     override val proxyUser: String,
-    override val conf: KyuubiConf,
+    override val sessionConf: KyuubiConf,
     batchId: String,
     batchName: String,
     override val mainResource: Option[String],
@@ -35,7 +35,7 @@ class SparkBatchProcessBuilder(
     batchArgs: Seq[String],
     override val extraEngineLog: Option[OperationLog])
 // TODO respect doAsEnabled
-  extends SparkProcessBuilder(proxyUser, true, conf, batchId, extraEngineLog) {
+  extends SparkProcessBuilder(proxyUser, true, sessionConf, batchId, extraEngineLog) {
   import SparkProcessBuilder._
 
   override protected[kyuubi] lazy val commands: Iterable[String] = {

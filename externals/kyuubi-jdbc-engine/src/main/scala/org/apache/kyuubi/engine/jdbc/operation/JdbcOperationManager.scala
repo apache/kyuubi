@@ -26,7 +26,7 @@ import org.apache.kyuubi.engine.jdbc.util.SupportServiceLoader
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
-class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOperationManager")
+class JdbcOperationManager(engineConf: KyuubiConf) extends OperationManager("JdbcOperationManager")
   with SupportServiceLoader {
 
   override def name(): String = "jdbc"
@@ -34,12 +34,13 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val normalizedConf = session.asInstanceOf[JdbcSessionImpl].normalizedConf
+    val normalizedSessionConfOverlay =
+      session.asInstanceOf[JdbcSessionImpl].normalizedSessionConfOverlay
     val engineConf = session.sessionManager.getConf
-    val convertCatalogDatabaseEnabled = normalizedConf
+    val convertCatalogDatabaseEnabled = normalizedSessionConfOverlay
       .get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
       .map(_.toBoolean)
       .getOrElse(engineConf.get(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED))
@@ -48,16 +49,16 @@ class JdbcOperationManager(conf: KyuubiConf) extends OperationManager("JdbcOpera
     // setSchema/getSchema) and route them to the corresponding lifecycle operations instead
     // of forwarding to the backend JDBC driver as raw SQL.
     if (convertCatalogDatabaseEnabled) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, reqConfOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val incrementalCollect = normalizedConf
+    val incrementalCollect = normalizedSessionConfOverlay
       .get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT.key)
       .map(_.toBoolean)
       .getOrElse(engineConf.get(ENGINE_JDBC_OPERATION_INCREMENTAL_COLLECT))
-    val fetchSize = normalizedConf
+    val fetchSize = normalizedSessionConfOverlay
       .get(ENGINE_JDBC_FETCH_SIZE.key)
       .map(_.toInt)
       .getOrElse(engineConf.get(ENGINE_JDBC_FETCH_SIZE))

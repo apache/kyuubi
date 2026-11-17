@@ -33,7 +33,7 @@ trait ApplicationOperation {
   /**
    * Step for initializing the instance.
    */
-  def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit
+  def initialize(serverConf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit
 
   /**
    * Step to clean up the instance

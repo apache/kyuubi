@@ -73,17 +73,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val tempFileService = new TempFileService()
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-    if (conf.isRESTEnabled) metadataManager = Some(new MetadataManager())
+  override def initialize(serverConf: KyuubiConf): Unit = {
+    this.conf = serverConf
+    if (serverConf.isRESTEnabled) metadataManager = Some(new MetadataManager())
     applicationManager = new KyuubiApplicationManager(metadataManager)
     addService(applicationManager)
     addService(credentialsManager)
     addService(tempFileService)
     metadataManager.foreach(addService)
-    initSessionLimiter(conf)
-    initEngineStartupProcessSemaphore(conf)
-    super.initialize(conf)
+    initSessionLimiter(serverConf)
+    initEngineStartupProcessSemaphore(serverConf)
+    super.initialize(serverConf)
   }
 
   override protected def createSession(
@@ -91,23 +91,24 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session = {
-    val userConf = this.getConf.getUserDefaults(user)
+      sessionConfOverlay: Map[String, String]): Session = {
+    val sessionDefaultConf = this.getConf.getUserDefaults(user)
     try {
       new KyuubiSessionImpl(
         protocol,
         user,
         password,
         ipAddress,
-        conf,
+        sessionConfOverlay,
         this,
-        userConf,
-        userConf.get(ENGINE_DO_AS_ENABLED),
+        sessionDefaultConf,
+        sessionDefaultConf.get(ENGINE_DO_AS_ENABLED),
         parser)
     } catch {
       case e: Throwable =>
         // The count openSession took is given back by closeSession alone. A session that fails
-        // here - on the session conf validation in AbstractSession.normalizedConf, for one - is
+        // here - on the session conf validation in AbstractSession.normalizedSessionConfOverlay,
+        // for one - is
         // never registered in handleToSession, so closeSession never runs for it and the count
         // stays taken: once as many opens have failed as the limit allows, the user and the
         // client address are turned away by the limiter until the server restarts. A failure
@@ -124,11 +125,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
     limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
-      super.openSession(protocol, username, password, ipAddress, conf)
+      super.openSession(protocol, username, password, ipAddress, sessionConfOverlay)
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
@@ -161,7 +162,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String],
+      sessionConfOverlay: Map[String, String],
       batchType: String,
       batchName: Option[String],
       resource: String,
@@ -171,14 +172,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       fromRecovery: Boolean): KyuubiBatchSession = {
     // scalastyle:on
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val sessionConf = this.getConf.getUserDefaults(user)
+    val sessionDefaultConf = this.getConf.getUserDefaults(user)
     new KyuubiBatchSession(
       username,
       password,
       ipAddress,
-      conf,
+      sessionConfOverlay,
       this,
-      sessionConf,
+      sessionDefaultConf,
       batchType,
       batchName,
       resource,
@@ -241,11 +242,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   def initializeBatchState(
       user: String,
       ipAddress: String,
-      conf: Map[String, String],
+      sessionConfOverlay: Map[String, String],
       batchRequest: BatchRequest): String = {
-    val realUser = conf.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
+    val realUser = sessionConfOverlay.getOrElse(KYUUBI_SESSION_REAL_USER_KEY, user)
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    val batchId = conf(KYUUBI_BATCH_ID_KEY)
+    val batchId = sessionConfOverlay(KYUUBI_BATCH_ID_KEY)
     val metadata = Metadata(
       identifier = batchId,
       sessionType = SessionType.BATCH,
@@ -256,11 +257,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       resource = batchRequest.getResource,
       className = batchRequest.getClassName,
       requestName = batchRequest.getName,
-      requestConf = conf,
+      requestConf = sessionConfOverlay,
       requestArgs = batchRequest.getArgs.asScala.toSeq,
       createTime = System.currentTimeMillis(),
       engineType = batchRequest.getBatchType,
-      priority = conf.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
+      priority = sessionConfOverlay.get(KYUUBI_BATCH_PRIORITY).map(_.toInt).getOrElse(10))
 
     // there is a chance that operation failed w/ duplicated key error
     metadataManager.foreach(_.insertMetadata(metadata, asyncRetryOnError = false))
@@ -402,14 +403,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override protected def isServer: Boolean = true
 
-  private def initSessionLimiter(conf: KyuubiConf): Unit = {
-    val userLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
-    val ipAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
-    val userIpAddressLimit = conf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+  private def initSessionLimiter(serverConf: KyuubiConf): Unit = {
+    val userLimit = serverConf.get(SERVER_LIMIT_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressLimit = serverConf.get(SERVER_LIMIT_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userIpAddressLimit =
+      serverConf.get(SERVER_LIMIT_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     val userUnlimitedList =
-      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
-    val userDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
-    val ipDenyList = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
+      serverConf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
+    val userDenyList = serverConf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+    val ipDenyList = serverConf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
     limiter = applySessionLimiter(
       userLimit,
       ipAddressLimit,
@@ -418,10 +420,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       userDenyList,
       ipDenyList)
 
-    val userBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
-    val ipAddressBatchLimit = conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
+    val userBatchLimit = serverConf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER).getOrElse(0)
+    val ipAddressBatchLimit =
+      serverConf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_IPADDRESS).getOrElse(0)
     val userIpAddressBatchLimit =
-      conf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
+      serverConf.get(SERVER_LIMIT_BATCH_CONNECTIONS_PER_USER_IPADDRESS).getOrElse(0)
     batchLimiter = applySessionLimiter(
       userBatchLimit,
       ipAddressBatchLimit,
@@ -435,9 +438,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     limiter.orElse(batchLimiter).map(SessionLimiter.getUnlimitedUsers).getOrElse(Set.empty)
   }
 
-  private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
+  private[kyuubi] def refreshUnlimitedUsers(serverConf: KyuubiConf): Unit = {
     val unlimitedUsers =
-      conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
+      serverConf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
     limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
     batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
   }
@@ -446,8 +449,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     limiter.orElse(batchLimiter).map(SessionLimiter.getDenyUsers).getOrElse(Set.empty)
   }
 
-  private[kyuubi] def refreshDenyUsers(conf: KyuubiConf): Unit = {
-    val denyUsers = conf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
+  private[kyuubi] def refreshDenyUsers(serverConf: KyuubiConf): Unit = {
+    val denyUsers = serverConf.get(SERVER_LIMIT_CONNECTIONS_USER_DENY_LIST).filter(_.nonEmpty)
     limiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
     batchLimiter.foreach(SessionLimiter.resetDenyUsers(_, denyUsers))
   }
@@ -456,8 +459,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     limiter.orElse(batchLimiter).map(SessionLimiter.getDenyIps).getOrElse(Set.empty)
   }
 
-  private[kyuubi] def refreshDenyIps(conf: KyuubiConf): Unit = {
-    val denyIps = conf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
+  private[kyuubi] def refreshDenyIps(serverConf: KyuubiConf): Unit = {
+    val denyIps = serverConf.get(SERVER_LIMIT_CONNECTIONS_IP_DENY_LIST).filter(_.nonEmpty)
     limiter.foreach(SessionLimiter.resetDenyIps(_, denyIps))
     batchLimiter.foreach(SessionLimiter.resetDenyIps(_, denyIps))
   }
@@ -508,8 +511,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       TimeUnit.MILLISECONDS)
   }
 
-  private def initEngineStartupProcessSemaphore(conf: KyuubiConf): Unit = {
-    val engineCreationLimit = conf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
+  private def initEngineStartupProcessSemaphore(serverConf: KyuubiConf): Unit = {
+    val engineCreationLimit = serverConf.get(KyuubiConf.SERVER_LIMIT_ENGINE_CREATION)
     engineCreationLimit.filter(_ > 0).foreach { limit =>
       engineStartupProcessSemaphore = Some(new Semaphore(limit))
     }

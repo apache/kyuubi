@@ -90,7 +90,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): Session
+      sessionConfOverlay: Map[String, String]): Session
 
   protected def logSessionCountInfo(session: Session, action: String): Unit = {
     info(s"${session.user}'s ${session.getClass.getSimpleName} with" +
@@ -103,9 +103,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       user: String,
       password: String,
       ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
+      sessionConfOverlay: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val session = createSession(protocol, user, password, ipAddress, conf)
+    val session = createSession(protocol, user, password, ipAddress, sessionConfOverlay)
     val handle = session.handle
     try {
       setSession(handle, session)

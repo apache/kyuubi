@@ -31,13 +31,13 @@ import org.apache.kyuubi.util.reflect.DynClasses
 
 class BearerAuthenticationHandler(providerClass: String)
   extends AuthenticationHandler with Logging {
-  private var conf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
   private val allowAnonymous = classOf[AnonymousAuthenticationProviderImpl].getName == providerClass
 
   override val authScheme: AuthScheme = AuthSchemes.BEARER
 
-  override def init(conf: KyuubiConf): Unit = {
-    this.conf = conf
+  override def init(serverConf: KyuubiConf): Unit = {
+    this.serverConf = serverConf
   }
 
   override def authenticationSupported: Boolean = {
@@ -83,7 +83,7 @@ class BearerAuthenticationHandler(providerClass: String)
     } else {
       val credential = DefaultTokenCredential(inputToken, HttpAuthUtils.getCredentialExtraInfo)
       principal = AuthenticationProviderFactory
-        .getHttpBearerAuthenticationProvider(providerClass, conf)
+        .getHttpBearerAuthenticationProvider(providerClass, serverConf)
         .authenticate(credential).getName
       response.setStatus(HttpServletResponse.SC_OK)
     }

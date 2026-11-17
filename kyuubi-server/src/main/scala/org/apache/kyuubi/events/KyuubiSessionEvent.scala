@@ -72,7 +72,7 @@ object KyuubiSessionEvent {
       session.user,
       session.ipAddress,
       session.connectionUrl,
-      session.conf,
+      session.sessionConfOverlay,
       System.currentTimeMillis(),
       session.createTime)
   }

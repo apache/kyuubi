@@ -152,7 +152,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
 
   /** Get the kubernetes conf for specified kubernetes context and namespace. */
   def getKubernetesConf(context: Option[String], namespace: Option[String]): KyuubiConf = {
-    val conf = this.clone
+    val kubernetesConf = this.clone
     context.foreach { c =>
       val contextConf =
         getAllWithPrefix(s"$KYUUBI_KUBERNETES_CONF_PREFIX.$c", "").map { case (suffix, value) =>
@@ -166,13 +166,13 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       }.getOrElse(Map.empty)
 
       (contextConf ++ contextNamespaceConf).map { case (key, value) =>
-        conf.set(key, value)
+        kubernetesConf.set(key, value)
       }
-      conf.set(KUBERNETES_CONTEXT, c)
-      conf
+      kubernetesConf.set(KUBERNETES_CONTEXT, c)
+      kubernetesConf
     }
-    namespace.foreach(ns => conf.set(KUBERNETES_NAMESPACE, ns))
-    conf
+    namespace.foreach(ns => kubernetesConf.set(KUBERNETES_NAMESPACE, ns))
+    kubernetesConf
   }
 
   /**

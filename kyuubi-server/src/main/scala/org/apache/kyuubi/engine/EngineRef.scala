@@ -52,12 +52,12 @@ import org.apache.kyuubi.util.{IPStackUtils, JavaUtils}
 /**
  * The description and functionality of an engine at server side
  *
- * @param conf Engine configuration
+ * @param sessionConf Session configuration used to discover or launch the engine
  * @param sessionUser Caller of the engine
  * @param engineRefId Id of the corresponding session in which the engine is created
  */
 private[kyuubi] class EngineRef(
-    conf: KyuubiConf,
+    sessionConf: KyuubiConf,
     sessionUser: String,
     doAsEnabled: Boolean,
     groupProvider: GroupProvider,
@@ -66,26 +66,26 @@ private[kyuubi] class EngineRef(
     startupProcessSemaphore: Option[Semaphore] = None)
   extends Logging {
   // The corresponding ServerSpace where the engine belongs to
-  private val serverSpace: String = conf.get(HA_NAMESPACE)
+  private val serverSpace: String = sessionConf.get(HA_NAMESPACE)
 
-  private val timeout: Long = conf.get(ENGINE_INIT_TIMEOUT)
+  private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   // Share level of the engine
-  private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
+  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARE_LEVEL))
 
-  private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
+  private val engineType: EngineType = EngineType.withName(sessionConf.get(ENGINE_TYPE))
 
   // Server-side engine pool size threshold
   private val poolThreshold: Int =
     Option(engineManager).map(_.getConf).getOrElse(KyuubiConf()).get(ENGINE_POOL_SIZE_THRESHOLD)
 
-  private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
+  private val clientPoolSize: Int = sessionConf.get(ENGINE_POOL_SIZE)
 
-  private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
+  private val clientPoolName: String = sessionConf.get(ENGINE_POOL_NAME)
 
-  private val enginePoolIgnoreSubdomain: Boolean = conf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
+  private val enginePoolIgnoreSubdomain: Boolean = sessionConf.get(ENGINE_POOL_IGNORE_SUBDOMAIN)
 
-  private val enginePoolSelectPolicy: String = conf.get(ENGINE_POOL_SELECT_POLICY)
+  private val enginePoolSelectPolicy: String = sessionConf.get(ENGINE_POOL_SELECT_POLICY)
 
   private lazy val localHostAddr = {
     val host = JavaUtils.findLocalInetAddress.getHostAddress
@@ -107,7 +107,7 @@ private[kyuubi] class EngineRef(
   // user for routing session to the engine
   private[kyuubi] val routingUser: String = shareLevel match {
     case SERVER | SERVER_LOCAL => Utils.currentUser
-    case GROUP => groupProvider.primaryGroup(sessionUser, conf.getAll.asJava)
+    case GROUP => groupProvider.primaryGroup(sessionUser, sessionConf.getAll.asJava)
     case _ => sessionUser
   }
 
@@ -115,7 +115,7 @@ private[kyuubi] class EngineRef(
   private[kyuubi] val appUser: String = if (doAsEnabled) routingUser else Utils.currentUser
 
   @VisibleForTesting
-  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+  private[kyuubi] val subdomain: String = sessionConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
     // A DATA_AGENT engine is bound 1:1 to a JDBC datasource because the provider SPI is
     // constructed once per engine from a single kyuubi.engine.data.agent.jdbc.url, and
     // ProviderRunRequest carries no datasource field — there is no way to dispatch a request
@@ -126,7 +126,7 @@ private[kyuubi] class EngineRef(
     // override the datasource-based isolation and route different datasources to the same
     // engine pool).
     case _ if engineType == DATA_AGENT =>
-      conf.get(ENGINE_DATA_AGENT_JDBC_URL).map { url =>
+      sessionConf.get(ENGINE_DATA_AGENT_JDBC_URL).map { url =>
         val digest = MessageDigest.getInstance("SHA-256")
         val hex = digest.digest(url.getBytes(StandardCharsets.UTF_8))
           .take(8).map("%02x".format(_)).mkString
@@ -145,7 +145,7 @@ private[kyuubi] class EngineRef(
               s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_${engineType}_seqNum",
               routingUser,
               clientPoolName)
-          DiscoveryClientProvider.withDiscoveryClient(conf) { client =>
+          DiscoveryClientProvider.withDiscoveryClient(sessionConf) { client =>
             client.getAndIncrement(snPath)
           }
         case "RANDOM" =>
@@ -228,44 +228,44 @@ private[kyuubi] class EngineRef(
     var engineRef = discoveryClient.getServerHost(engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
-    conf.set(HA_NAMESPACE, engineSpace)
-    conf.set(HA_ENGINE_REF_ID, engineRefId)
+    sessionConf.set(HA_NAMESPACE, engineSpace)
+    sessionConf.set(HA_ENGINE_REF_ID, engineRefId)
     val started = System.currentTimeMillis()
-    conf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
+    sessionConf.set(KYUUBI_ENGINE_SUBMIT_TIME_KEY, String.valueOf(started))
     builder = engineType match {
       case SPARK_SQL =>
-        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-        new SparkProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        new SparkProcessBuilder(appUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
       case FLINK_SQL =>
-        conf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
-        new FlinkProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        sessionConf.setIfMissing(FlinkProcessBuilder.APP_KEY, defaultEngineName)
+        new FlinkProcessBuilder(appUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
       case TRINO =>
-        new TrinoProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        new TrinoProcessBuilder(appUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
       case HIVE_SQL =>
-        conf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
+        sessionConf.setIfMissing(HiveProcessBuilder.HIVE_ENGINE_NAME, defaultEngineName)
         HiveProcessBuilder(
           appUser,
           doAsEnabled,
-          conf,
+          sessionConf,
           engineRefId,
           extraEngineLog,
           defaultEngineName)
       case JDBC =>
-        conf.setIfMissing(JdbcProcessBuilder.JDBC_ENGINE_NAME, defaultEngineName)
+        sessionConf.setIfMissing(JdbcProcessBuilder.JDBC_ENGINE_NAME, defaultEngineName)
         JdbcProcessBuilder(
           appUser,
           doAsEnabled,
-          conf,
+          sessionConf,
           engineRefId,
           extraEngineLog,
           defaultEngineName)
       case DATA_AGENT =>
-        if (conf.get(ENGINE_DATA_AGENT_JDBC_URL).isEmpty) {
-          val jdbcUrl = EngineRef.deriveDataAgentJdbcUrl(conf, serverSpace)
-          conf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
+        if (sessionConf.get(ENGINE_DATA_AGENT_JDBC_URL).isEmpty) {
+          val jdbcUrl = EngineRef.deriveDataAgentJdbcUrl(sessionConf, serverSpace)
+          sessionConf.set(ENGINE_DATA_AGENT_JDBC_URL.key, jdbcUrl)
           info(s"Data Agent JDBC URL not configured, using Kyuubi server: $jdbcUrl")
         }
-        new DataAgentProcessBuilder(appUser, doAsEnabled, conf, engineRefId, extraEngineLog)
+        new DataAgentProcessBuilder(appUser, doAsEnabled, sessionConf, engineRefId, extraEngineLog)
     }
 
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
@@ -433,36 +433,38 @@ private[kyuubi] object EngineRef {
   /**
    * Derive the default JDBC URL the Data Agent engine uses to connect back to this Kyuubi server,
    * used when `kyuubi.engine.data.agent.jdbc.url` is unset. `serverSpace` is passed in rather than
-   * read from `conf` because `create()` has already remapped `HA_NAMESPACE` to the per-engine space
-   * by the time the engine is built.
+   * read from `sessionConf` because `create()` has already remapped `HA_NAMESPACE` to the
+   * per-engine space by the time the engine is built.
    */
-  private[engine] def deriveDataAgentJdbcUrl(conf: KyuubiConf, serverSpace: String): String = {
+  private[engine] def deriveDataAgentJdbcUrl(
+      sessionConf: KyuubiConf,
+      serverSpace: String): String = {
     // TODO: temporary fail-closed. The engine does no Kerberos login of its own, so an auto-derived
     //  back-connection would reuse the server's ambient proxy super-user TGT and could impersonate
     //  arbitrary users. Lift once the engine logs in with its own principal/keytab and proxies the
     //  session user via hadoop.proxyuser ACLs.
-    val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    val authTypes = sessionConf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
     if (AuthUtils.kerberosEnabled(authTypes)) {
       throw KyuubiSQLException(
         "Data Agent does not support Kerberos yet; configure a non-Kerberos " +
           s"${ENGINE_DATA_AGENT_JDBC_URL.key} instead.")
     }
-    val haAddresses = conf.get(HA_ADDRESSES)
+    val haAddresses = sessionConf.get(HA_ADDRESSES)
     val isZkHa = haAddresses.nonEmpty &&
-      conf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
+      sessionConf.get(HA_CLIENT_CLASS).endsWith("ZookeeperDiscoveryClient")
     if (isZkHa) {
       s"jdbc:kyuubi://$haAddresses/default;" +
         s"serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=$serverSpace"
     } else {
-      val port = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
+      val port = sessionConf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
       if (port == 0) {
         throw KyuubiSQLException(
           s"Cannot derive a default Data Agent JDBC URL: " +
             s"${FRONTEND_THRIFT_BINARY_BIND_PORT.key} is 0 (random). " +
             s"Set ${ENGINE_DATA_AGENT_JDBC_URL.key} explicitly.")
       }
-      val host = conf.get(FRONTEND_ADVERTISED_HOST)
-        .orElse(conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
+      val host = sessionConf.get(FRONTEND_ADVERTISED_HOST)
+        .orElse(sessionConf.get(FRONTEND_THRIFT_BINARY_BIND_HOST))
         .getOrElse(JavaUtils.findLocalInetAddress.getHostAddress)
       s"jdbc:kyuubi://${IPStackUtils.concatHostPort(host, port)}/default"
     }

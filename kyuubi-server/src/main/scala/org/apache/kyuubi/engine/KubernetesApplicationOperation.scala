@@ -53,20 +53,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     new ConcurrentHashMap[KubernetesInfo, SharedIndexInformer[Service]]
 
   private var submitTimeout: Long = _
-  private var kyuubiConf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
 
   private def allowedContexts: Set[String] =
-    kyuubiConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
+    serverConf.get(KyuubiConf.KUBERNETES_CONTEXT_ALLOW_LIST)
   private def allowedNamespaces: Set[String] =
-    kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
+    serverConf.get(KyuubiConf.KUBERNETES_NAMESPACE_ALLOW_LIST)
 
   private def appStateSource: KubernetesApplicationStateSource =
     KubernetesApplicationStateSource.withName(
-      kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_SOURCE))
+      serverConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_SOURCE))
   private def appStateContainer: String =
-    kyuubiConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
+    serverConf.get(KyuubiConf.KUBERNETES_APPLICATION_STATE_CONTAINER)
 
-  private lazy val sparkAppUrlPattern = kyuubiConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
+  private lazy val sparkAppUrlPattern = serverConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
   private lazy val sparkAppUrlSource = if (sparkAppUrlPattern.contains(SPARK_DRIVER_SVC_PATTERN)) {
     KubernetesApplicationUrlSource.SVC
   } else {
@@ -109,7 +109,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   private def buildKubernetesClient(kubernetesInfo: KubernetesInfo): KubernetesClient = {
     val kubernetesConf =
-      kyuubiConf.getKubernetesConf(kubernetesInfo.context, kubernetesInfo.namespace)
+      serverConf.getKubernetesConf(kubernetesInfo.context, kubernetesInfo.namespace)
     KubernetesUtils.buildKubernetesClient(kubernetesConf) match {
       case Some(client) =>
         info(s"[$kubernetesInfo] Initialized Kubernetes Client connect to: ${client.getMasterUrl}")
@@ -130,16 +130,18 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
     }
   }
 
-  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
-    kyuubiConf = conf
+  override def initialize(
+      serverConf: KyuubiConf,
+      metadataManager: Option[MetadataManager]): Unit = {
+    this.serverConf = serverConf
     this.metadataManager = metadataManager
     info("Start initializing Kubernetes application operation.")
-    submitTimeout = conf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
+    submitTimeout = serverConf.get(KyuubiConf.ENGINE_KUBERNETES_SUBMIT_TIMEOUT)
     // Defer cleaning terminated application information
-    val retainPeriod = conf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
+    val retainPeriod = serverConf.get(KyuubiConf.KUBERNETES_TERMINATED_APPLICATION_RETAIN_PERIOD)
     val cleanupDriverPodStrategy = KubernetesCleanupDriverPodStrategy.withName(
-      conf.get(KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND))
-    val cleanupDriverPodCheckInterval = conf.get(
+      serverConf.get(KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND))
+    val cleanupDriverPodCheckInterval = serverConf.get(
       KyuubiConf.KUBERNETES_SPARK_CLEANUP_TERMINATED_DRIVER_POD_KIND_CHECK_INTERVAL)
     cleanupTerminatedAppInfoTrigger = CacheBuilder.newBuilder()
       .expireAfterWrite(retainPeriod, TimeUnit.MILLISECONDS)
@@ -174,20 +176,20 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       cleanupDriverPodCheckInterval,
       TimeUnit.MILLISECONDS)
     val useVirtualThreads =
-      conf.get(KyuubiConf.KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED)
+      serverConf.get(KyuubiConf.KUBERNETES_APPLICATION_CLEANUP_VIRTUAL_THREADS_ENABLED)
     cleanupCanceledAppPodExecutor = if (useVirtualThreads) {
       ThreadUtils.newVirtualThreadPerTaskExecutor("cleanup-canceled-app-pod-thread")
     } else {
       ThreadUtils.newDaemonCachedThreadPool("cleanup-canceled-app-pod-thread")
     }
-    initializeKubernetesClient(kyuubiConf)
+    initializeKubernetesClient(serverConf)
   }
 
   private[kyuubi] def getKubernetesClientInitializeInfo(
-      kyuubiConf: KyuubiConf,
+      serverConf: KyuubiConf,
       environment: Map[String, String] = sys.env): Seq[KubernetesInfo] = {
     val configuredInitializeInfo =
-      kyuubiConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
+      serverConf.get(KyuubiConf.KUBERNETES_CLIENT_INITIALIZE_LIST).map { init =>
         val (context, namespace) = init.split(":") match {
           case Array(ctx, ns) => (Some(ctx).filterNot(_.isEmpty), Some(ns).filterNot(_.isEmpty))
           case Array(ctx) => (Some(ctx).filterNot(_.isEmpty), None)
@@ -201,14 +203,14 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       Seq(KubernetesInfo(
         // Kube context is not applicable to in-cluster configuration.
         None,
-        Some(kyuubiConf.get(KyuubiConf.KUBERNETES_NAMESPACE))))
+        Some(serverConf.get(KyuubiConf.KUBERNETES_NAMESPACE))))
     } else {
       Nil
     }
   }
 
-  private[kyuubi] def initializeKubernetesClient(kyuubiConf: KyuubiConf): Unit = {
-    getKubernetesClientInitializeInfo(kyuubiConf).foreach { kubernetesInfo =>
+  private[kyuubi] def initializeKubernetesClient(serverConf: KyuubiConf): Unit = {
+    getKubernetesClientInitializeInfo(serverConf).foreach { kubernetesInfo =>
       try {
         getOrCreateKubernetesClient(kubernetesInfo)
       } catch {
@@ -219,7 +221,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
 
   override def isSupported(appMgrInfo: ApplicationManagerInfo): Boolean = {
     // TODO add deploy mode to check whether is supported
-    kyuubiConf != null &&
+    serverConf != null &&
     appMgrInfo.resourceManager.exists(_.toLowerCase(Locale.ROOT).startsWith("k8s"))
   }
 
@@ -227,7 +229,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       appMgrInfo: ApplicationManagerInfo,
       tag: String,
       proxyUser: Option[String] = None): KillResponse = {
-    if (kyuubiConf == null) {
+    if (serverConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
     val kubernetesInfo = appMgrInfo.kubernetesInfo
@@ -273,7 +275,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
       tag: String,
       proxyUser: Option[String] = None,
       submitTime: Option[Long] = None): ApplicationInfo = {
-    if (kyuubiConf == null) {
+    if (serverConf == null) {
       throw new IllegalStateException("Methods initialize and isSupported must be called ahead")
     }
     debug(s"Getting application[${toLabel(tag)}]'s info from Kubernetes cluster")
@@ -481,7 +483,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private def updateApplicationUrl(kubernetesInfo: KubernetesInfo, svc: Service): Unit = {
     svc.getSpec.getPorts.asScala.find(_.getName == SPARK_UI_PORT_NAME).map(_.getPort).map {
       sparkUiPort =>
-        val appUrlPattern = kyuubiConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
+        val appUrlPattern = serverConf.get(KyuubiConf.KUBERNETES_SPARK_APP_URL_PATTERN)
         val sparkAppId = svc.getSpec.getSelector.get(SPARK_APP_ID_LABEL)
         val sparkDriverSvc = svc.getMetadata.getName
         val kubernetesNamespace = kubernetesInfo.namespace.getOrElse("")
@@ -557,7 +559,7 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   }
 
   private def checkPodAppCanceled(kubernetesInfo: KubernetesInfo, pod: Pod): Unit = {
-    if (kyuubiConf.isRESTEnabled) {
+    if (serverConf.isRESTEnabled) {
       cleanupCanceledAppPodExecutor.submit(new Runnable {
         override def run(): Unit = Utils.tryLogNonFatalError {
           val kyuubiUniqueKey = pod.getMetadata.getLabels.get(LABEL_KYUUBI_UNIQUE_KEY)

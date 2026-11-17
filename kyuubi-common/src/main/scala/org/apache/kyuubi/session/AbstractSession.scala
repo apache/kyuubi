@@ -36,11 +36,11 @@ abstract class AbstractSession(
     val user: String,
     val password: String,
     val ipAddress: String,
-    val conf: Map[String, String],
+    val sessionConfOverlay: Map[String, String],
     val sessionManager: SessionManager) extends Session with Logging {
   override val handle: SessionHandle = SessionHandle()
 
-  def clientIpAddress: String = conf.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
+  def clientIpAddress: String = sessionConfOverlay.getOrElse(KYUUBI_CLIENT_IP_KEY, ipAddress)
   protected def logSessionInfo(msg: String): Unit = info(s"[$user:$clientIpAddress] $handle - $msg")
 
   final private val _createTime: Long = System.currentTimeMillis()
@@ -60,9 +60,10 @@ abstract class AbstractSession(
 
   override val sessionIdleTimeoutThreshold: Long = sessionManager.getConf.get(SESSION_IDLE_TIMEOUT)
 
-  val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
+  val normalizedSessionConfOverlay: Map[String, String] =
+    sessionManager.validateAndNormalizeConf(sessionConfOverlay)
 
-  override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
+  override lazy val name: Option[String] = normalizedSessionConfOverlay.get(SESSION_NAME.key)
 
   final private val opHandleSet = ConcurrentHashMap.newKeySet[OperationHandle]()
 
@@ -136,11 +137,11 @@ abstract class AbstractSession(
 
   override def executeStatement(
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
-      .newExecuteStatementOperation(this, statement, confOverlay, runAsync, queryTimeout)
+      .newExecuteStatementOperation(this, statement, reqConfOverlay, runAsync, queryTimeout)
     runOperation(operation)
   }
 
@@ -277,5 +278,6 @@ abstract class AbstractSession(
   }
 
   val isForAliveProbe: Boolean =
-    conf.get(KyuubiReservedKeys.KYUUBI_SESSION_ALIVE_PROBE).exists(_.equalsIgnoreCase("true"))
+    sessionConfOverlay.get(
+      KyuubiReservedKeys.KYUUBI_SESSION_ALIVE_PROBE).exists(_.equalsIgnoreCase("true"))
 }
