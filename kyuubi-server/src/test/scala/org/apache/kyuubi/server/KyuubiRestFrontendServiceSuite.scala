@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server
 
+import com.fasterxml.jackson.databind.ObjectMapper
+
 import org.apache.kyuubi.{KYUUBI_VERSION, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto.VersionInfo
 import org.apache.kyuubi.config.KyuubiConf
@@ -55,6 +57,15 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
   test("swagger ui json data") {
     val resp = webTarget.path("/openapi.json").request().get()
     assert(resp.getStatus === 200)
+  }
+
+  test("swagger ui json data only includes Kyuubi REST API resources") {
+    val resp = webTarget.path("api/openapi.json").request().get()
+    assert(resp.getStatus === 200)
+    val paths = new ObjectMapper().readTree(resp.readEntity(classOf[String])).get("paths")
+    assert(paths.has("/v1/ping"))
+    assert(!paths.has("/application.wadl"))
+    assert(!paths.has("/v1/statement"))
   }
 }
 
