@@ -35,6 +35,7 @@ import org.apache.kyuubi.plugin.spark.authz.serde.QueryExtractor.queryExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableExtractor.tableExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.TableTypeExtractor.tableTypeExtractors
 import org.apache.kyuubi.plugin.spark.authz.serde.URIExtractor.uriExtractors
+import org.apache.kyuubi.plugin.spark.authz.util.AuthZUtils.SPARK_RUNTIME_MAJOR_MINOR
 import org.apache.kyuubi.util.reflect.ReflectUtils._
 
 package object serde {
@@ -87,6 +88,8 @@ package object serde {
     SCAN_SPECS.contains(r.getClass.getName)
   }
 
+  final lazy val SCAN_SPEC_CLASSNAMES: Set[String] = SCAN_SPECS.keySet
+
   def getScanSpec(r: AnyRef): ScanSpec = {
     SCAN_SPECS(r.getClass.getName)
   }
@@ -104,6 +107,37 @@ package object serde {
 
   def getFunctionSpec(r: AnyRef): ScanSpec = {
     FUNCTION_SPECS(r.getClass.getName)
+  }
+
+  /**
+   * Whether the classname has an entry in any command spec file. Note that spec presence
+   * alone is not coverage: the node must also be routable to the command dispatch, see
+   * [[org.apache.kyuubi.plugin.spark.authz.ParanoidMode.ViolationKind.UNREACHABLE_SPEC]].
+   */
+  def hasCommandSpec(classname: String): Boolean = {
+    TABLE_COMMAND_SPECS.contains(classname) ||
+    DB_COMMAND_SPECS.contains(classname) ||
+    FUNCTION_COMMAND_SPECS.contains(classname)
+  }
+
+  final lazy val KNOWN_HARMLESS_NODES: Map[String, HarmlessNodeSpec] = {
+    val is = getClass.getClassLoader.getResourceAsStream("known_harmless_spec.json")
+    mapper.readValue(is, new TypeReference[Array[HarmlessNodeSpec]] {})
+      .map(e => (e.classname, e)).toMap
+  }
+
+  /**
+   * An allowlist entry only classifies a node on the Spark minor versions its "harmless"
+   * assertion was reviewed against: a class is free to change shape under the same name
+   * in the next release, so on an unverified version the entry is inert and the node
+   * counts as unclassified (fail closed).
+   */
+  def isKnownHarmless(r: AnyRef): Boolean = {
+    isKnownHarmlessClassname(r.getClass.getName)
+  }
+
+  def isKnownHarmlessClassname(classname: String): Boolean = {
+    KNOWN_HARMLESS_NODES.get(classname).exists(_.appliesTo(SPARK_RUNTIME_MAJOR_MINOR))
   }
 
   def operationType(plan: LogicalPlan): OperationType = {
