@@ -25,11 +25,29 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.kyuubi.KyuubiSQLException
 
 trait SessionLimiter {
-  def increment(userIpAddress: UserIpAddress): Unit
+
+  /**
+   * Counts a new session, or throws [[SessionLimiterRejectedException]] if it is refused.
+   *
+   * @return whether the session is counted. Only a counted session may be given back with
+   *         [[decrement]]: the address counters are shared by all users of the address.
+   */
+  def increment(userIpAddress: UserIpAddress): Boolean
+
   def decrement(userIpAddress: UserIpAddress): Unit
 }
 
 case class UserIpAddress(user: String, ipAddress: String)
+
+/**
+ * A session refused by the limiter, kept apart from other failures to open a session so that it
+ * reaches the client as it is.
+ */
+class SessionLimiterRejectedException(reason: String, cause: Throwable)
+  extends KyuubiSQLException(reason, null, 0, cause) {
+
+  def this(reason: String) = this(reason, null)
+}
 
 class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit: Int)
   extends SessionLimiter {
@@ -39,7 +57,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
 
   private[session] def counters(): java.util.Map[String, AtomicInteger] = _counters
 
-  override def increment(userIpAddress: UserIpAddress): Unit = {
+  override def increment(userIpAddress: UserIpAddress): Boolean = {
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
     // increment userIpAddress count
@@ -65,6 +83,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
         ipAddressLimit,
         s"Connection limit per ipaddress reached (ipaddress: $ipAddress limit: $ipAddressLimit)")
     }
+    true
   }
 
   override def decrement(userIpAddress: UserIpAddress): Unit = {
@@ -89,7 +108,7 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
     val count = _counters.computeIfAbsent(key, _ => new AtomicInteger())
     if (count.incrementAndGet() > limit) {
       count.decrementAndGet()
-      throw KyuubiSQLException(errorMsg)
+      throw new SessionLimiterRejectedException(errorMsg)
     }
   }
 
@@ -110,23 +129,21 @@ class SessionLimiterWithAccessControlListImpl(
     var denyUsers: Set[String],
     var denyIps: Set[String])
   extends SessionLimiterImpl(userLimit, ipAddressLimit, userIpAddressLimit) {
-  override def increment(userIpAddress: UserIpAddress): Unit = {
+  override def increment(userIpAddress: UserIpAddress): Boolean = {
     val user = userIpAddress.user
     if (StringUtils.isNotBlank(user) && denyUsers.contains(user)) {
       val errorMsg =
         s"Connection denied because the user is in the deny user list. (user: $user)"
-      throw KyuubiSQLException(errorMsg)
+      throw new SessionLimiterRejectedException(errorMsg)
     }
     val ip = userIpAddress.ipAddress
     if (StringUtils.isNotBlank(ip) && denyIps.contains(ip)) {
       val errorMsg =
         s"Connection denied because the client ip is in the deny ip list. (ipAddress: $ip)"
-      throw KyuubiSQLException(errorMsg)
+      throw new SessionLimiterRejectedException(errorMsg)
     }
 
-    if (!unlimitedUsers.contains(user)) {
-      super.increment(userIpAddress)
-    }
+    !unlimitedUsers.contains(user) && super.increment(userIpAddress)
   }
 
   private[kyuubi] def setUnlimitedUsers(unlimitedUsers: Set[String]): Unit = {
