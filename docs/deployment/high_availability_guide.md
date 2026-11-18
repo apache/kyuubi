@@ -128,15 +128,16 @@ discovery store is required for a real HA setup.
    the inherited paths, because forwarding the configuration does not copy
    them. Mount a shared `kyuubi-defaults.conf` (or inject it into the Helm
    chart values) so this is identical on every pod.
-   The driver pod is created in the namespace given by
-   `spark.kubernetes.namespace`, or, when the submission does not set it, in
-   the namespace the server uses for engine pods,
-   `kyuubi.kubernetes.namespace`, which defaults to `default`. It runs under
-   the ServiceAccount named by
-   `spark.kubernetes.authenticate.driver.serviceAccountName`. A driver pod
-   that lands in a namespace whose ServiceAccount may not create pods makes
-   the first query fail while the pod is being created, so point both at the
-   namespace Kyuubi runs in. See
+   Set `spark.kubernetes.namespace` to the namespace where Spark should
+   create the driver and executor pods. Spark defaults to `default` when
+   this property is unset. `kyuubi.kubernetes.namespace` sets the default
+   namespace for Kyuubi's own Kubernetes client to discover and manage
+   engine pods.
+   The credentials used to submit the Spark application need permission
+   to create the driver pod in the target namespace. Set
+   `spark.kubernetes.authenticate.driver.serviceAccountName` to a
+   ServiceAccount in that namespace with permission to create and watch
+   executor pods. See
    [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md#serviceaccount)
    for the ServiceAccount setup.
 3. **Let clients connect through the Service.** Point the JDBC driver at the
