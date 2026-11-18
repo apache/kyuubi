@@ -53,13 +53,67 @@
         "type" : "write",
         "isAllowed" : true
       } ],
-      "users" : [ "admin" ],
+      "users" : [ "admin", "user_url_deny" ],
       "delegateAdmin" : true
     } ],
     "isDenyAllElse" : false
   }, {
     "id" : 1,
     "guid" : "c4ca4238-a0b9-3382-8dcc-509a6f75849b",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "deny - url secret",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Deny access to /data/secret without recursion",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "url" : {
+        "values" : [ "/data/secret" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "denyPolicyItems" : [ {
+      "accesses" : [ {
+        "type" : "read",
+        "isAllowed" : true
+      } ],
+      "users" : [ "user_url_deny" ],
+      "delegateAdmin" : false
+    } ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 2,
+    "guid" : "c81e728d-9d4c-3f63-af06-7f89cc14862c",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "read - exact url path",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Read grant on /tmp/exact without a wildcard policy",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "url" : {
+        "values" : [ "/tmp/exact" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "read",
+        "isAllowed" : true
+      } ],
+      "users" : [ "user_url_exact_path" ],
+      "delegateAdmin" : false
+    } ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 3,
+    "guid" : "eccbc87e-4b5c-32fe-a830-8fd9f2a7baf3",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -122,8 +176,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 2,
-    "guid" : "c81e728d-9d4c-3f63-af06-7f89cc14862c",
+    "id" : 4,
+    "guid" : "a87ff679-a2f3-371d-9181-a67b7542122c",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -181,8 +235,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 3,
-    "guid" : "eccbc87e-4b5c-32fe-a830-8fd9f2a7baf3",
+    "id" : 5,
+    "guid" : "e4da3b7f-bbce-3345-9777-2b0674a318d5",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -252,8 +306,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 4,
-    "guid" : "a87ff679-a2f3-371d-9181-a67b7542122c",
+    "id" : 6,
+    "guid" : "1679091c-5a88-3faf-afb5-e6087eb1b2dc",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -322,8 +376,45 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 5,
-    "guid" : "e4da3b7f-bbce-3345-9777-2b0674a318d5",
+    "id" : 7,
+    "guid" : "8f14e45f-ceea-367a-9a36-dedd4bea2543",
+    "isEnabled" : true,
+    "version" : 1,
+    "service" : "hive_jenkins",
+    "name" : "column only - row filter user",
+    "policyType" : 0,
+    "policyPriority" : 0,
+    "description" : "Select grant on the column key only",
+    "isAuditEnabled" : true,
+    "resources" : {
+      "column" : {
+        "values" : [ "key" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "database" : {
+        "values" : [ "default" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      },
+      "table" : {
+        "values" : [ "src" ],
+        "isExcludes" : false,
+        "isRecursive" : false
+      }
+    },
+    "policyItems" : [ {
+      "accesses" : [ {
+        "type" : "select",
+        "isAllowed" : true
+      } ],
+      "users" : [ "user_column_only_row_filter" ],
+      "delegateAdmin" : false
+    } ],
+    "isDenyAllElse" : false
+  }, {
+    "id" : 8,
+    "guid" : "c9f0f895-fb98-3b91-99f5-1fd0297e236d",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -358,8 +449,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 6,
-    "guid" : "1679091c-5a88-3faf-afb5-e6087eb1b2dc",
+    "id" : 9,
+    "guid" : "45c48cce-2e2d-3fbd-aa1a-fc51c7c6ad26",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -397,8 +488,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 7,
-    "guid" : "8f14e45f-ceea-367a-9a36-dedd4bea2543",
+    "id" : 10,
+    "guid" : "d3d94468-02a4-3259-b55d-38e6d163e820",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -433,8 +524,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 8,
-    "guid" : "c9f0f895-fb98-3b91-99f5-1fd0297e236d",
+    "id" : 11,
+    "guid" : "6512bd43-d9ca-36e0-ac99-0b0a82652dca",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -469,8 +560,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 9,
-    "guid" : "45c48cce-2e2d-3fbd-aa1a-fc51c7c6ad26",
+    "id" : 12,
+    "guid" : "c20ad4d7-6fe9-3759-aa27-a0c99bff6710",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -505,8 +596,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 10,
-    "guid" : "d3d94468-02a4-3259-b55d-38e6d163e820",
+    "id" : 13,
+    "guid" : "c51ce410-c124-310e-8db5-e4b97fc2af39",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -571,8 +662,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 11,
-    "guid" : "6512bd43-d9ca-36e0-ac99-0b0a82652dca",
+    "id" : 14,
+    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc56",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -597,7 +688,7 @@
         "type" : "select",
         "isAllowed" : true
       } ],
-      "users" : [ "bob", "perm_view_user" ],
+      "users" : [ "bob", "perm_view_user", "user_column_only_row_filter" ],
       "delegateAdmin" : false,
       "rowFilterInfo" : {
         "filterExpr" : "key<20"
@@ -605,8 +696,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 12,
-    "guid" : "c20ad4d7-6fe9-3759-aa27-a0c99bff6710",
+    "id" : 15,
+    "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -639,8 +730,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 13,
-    "guid" : "c51ce410-c124-310e-8db5-e4b97fc2af39",
+    "id" : 16,
+    "guid" : "c74d97b0-1eae-357e-84aa-9d5bade97baf",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -678,8 +769,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 14,
-    "guid" : "aab32389-22bc-325a-af60-6eb525ffdc56",
+    "id" : 17,
+    "guid" : "70efdf2e-c9b0-3607-9795-c442636b55fb",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -717,8 +808,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 15,
-    "guid" : "9bf31c7f-f062-336a-96d3-c8bd1f8f2ff3",
+    "id" : 18,
+    "guid" : "6f4922f4-5568-361a-8cdf-4ad2299f6d23",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -756,8 +847,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 16,
-    "guid" : "c74d97b0-1eae-357e-84aa-9d5bade97baf",
+    "id" : 19,
+    "guid" : "1f0e3dad-9990-3345-b743-9f8ffabdffc4",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -795,8 +886,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 17,
-    "guid" : "70efdf2e-c9b0-3607-9795-c442636b55fb",
+    "id" : 20,
+    "guid" : "98f13708-2101-34c4-b568-7be6106a3b84",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -834,8 +925,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 18,
-    "guid" : "6f4922f4-5568-361a-8cdf-4ad2299f6d23",
+    "id" : 21,
+    "guid" : "3c59dc04-8e88-3024-bbe8-079a5c74d079",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",
@@ -873,8 +964,8 @@
     } ],
     "isDenyAllElse" : false
   }, {
-    "id" : 19,
-    "guid" : "1f0e3dad-9990-3345-b743-9f8ffabdffc4",
+    "id" : 22,
+    "guid" : "b6d767d2-f8ed-3d21-a44b-0e5886680cb9",
     "isEnabled" : true,
     "version" : 1,
     "service" : "hive_jenkins",

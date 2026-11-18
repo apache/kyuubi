@@ -30,6 +30,9 @@ object RangerTestUsers {
   val permViewOnlyUser = "user_perm_view_only"
   val table2OnlyUser = "user_table2_only"
   val table1OnlyUserForNs = "user_table1_only_for_ns"
+  val columnOnlyRowFilterUser = "user_column_only_row_filter"
+  val urlDenyUser = "user_url_deny"
+  val urlExactPathUser = "user_url_exact_path"
 
   // non-authorized users
   val invisibleUser = "i_am_invisible"

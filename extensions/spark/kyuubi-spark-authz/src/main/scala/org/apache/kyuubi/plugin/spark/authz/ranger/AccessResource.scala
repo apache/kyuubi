@@ -36,7 +36,7 @@ import org.apache.kyuubi.plugin.spark.authz.OperationType.OperationType
  * @param objectType the type of the object
  * @param database   the database name, or null if not applicable
  * @param table      the table name, or null if not applicable
- * @param column     the column names joined by comma, or null if not applicable
+ * @param columns    the column names, or empty if not applicable
  * @param udf        the function name, or null if not applicable
  * @param uri        the uri path, or null if not applicable
  * @param owner      the owner of the object, if any
@@ -46,7 +46,7 @@ case class AccessResource private[ranger] (
     objectType: ObjectType,
     database: String,
     table: String,
-    column: String,
+    columns: Seq[String],
     udf: String,
     uri: String,
     owner: Option[String],
@@ -55,11 +55,9 @@ case class AccessResource private[ranger] (
   def getDatabase: String = database
   def getUdf: String = udf
   def getTable: String = table
-  def getColumn: String = column
+  def getColumn: String = columns.headOption.orNull
 
-  def getColumns: Seq[String] = {
-    if (column == null) Nil else column.split(",").filter(_.nonEmpty)
-  }
+  def getColumns: Seq[String] = columns
 
   def getOwnerUser: String = owner.orNull
 
@@ -69,14 +67,14 @@ case class AccessResource private[ranger] (
    */
   def getAsString: String = objectType match {
     case COLUMN =>
-      Seq(database, table, column).filter(_ != null).mkString("/")
+      (Seq(database, table).filter(_ != null) ++ columns).mkString("/")
     case FUNCTION =>
       Seq(database, udf).filter(_ != null).mkString("/")
     case URI =>
       // the uri is matched against both the exact path and the path with a
-      // trailing slash, as the legacy plugin did
-      val path = Option(uri).map(_.stripSuffix(File.separator)).getOrElse("")
-      s"[$path, $path/]"
+      // trailing slash, as the legacy plugin did; the root path has no second variant
+      val path = Option(uri).map(normalizeUriPath).getOrElse("")
+      if (path == File.separator) s"[$path]" else s"[$path, $path/]"
     case _ =>
       Seq(database, table).filter(_ != null).mkString("/")
   }
@@ -103,36 +101,48 @@ case class AccessResource private[ranger] (
           null,
           attributes))
       case COLUMN =>
-        val columns = getColumns
-        // all the column requests need the database and the table
-        val parent =
-          s"column:${requireRrnComponent(database, "database")}" +
-            s"/${requireRrnComponent(table, "table")}"
-        if (columns.length == 1) {
-          Seq(new RangerResourceInfo(
-            s"$parent/${requireRrnComponent(columns.head, "column")}",
-            null,
-            null,
-            attributes))
-        } else if (columns.isEmpty) {
-          Seq(new RangerResourceInfo(parent, null, null, attributes))
-        } else {
-          val subResources = columns
-            .map(col => s"column:${requireRrnComponent(col, "column")}")
-            .toSet.asJava
-          Seq(new RangerResourceInfo(parent, subResources, null, attributes))
+        val db = requireRrnComponent(database, "database")
+        val tableName = requireRrnComponent(table, "table")
+        columns match {
+          case Seq() =>
+            // A COLUMN request must name a column, otherwise the RRN is incomplete
+            // and would hide a data mask from the top-level result.
+            requireRrnComponent(null, "column")
+            Seq.empty[RangerResourceInfo]
+          case Seq(column) =>
+            // A column name may contain a comma. Treat it as a single resource value
+            // instead of splitting it on the comma.
+            Seq(new RangerResourceInfo(
+              s"column:$db/$tableName/${requireRrnComponent(column, "column")}",
+              null,
+              null,
+              attributes))
+          case _ =>
+            // Multiple columns are represented as a table parent with column
+            // sub-resources, which is how Ranger models multi-column requests.
+            val subResources = columns
+              .map(column => s"column:${requireRrnComponent(column, "column")}")
+              .toSet.asJava
+            Seq(new RangerResourceInfo(
+              s"table:$db/$tableName",
+              subResources,
+              null,
+              attributes))
         }
       case URI =>
         // Url policies may be written with or without a trailing slash, and the legacy
         // plugin matched a uri against both the exact path and the path with a trailing
         // slash. The RRN request carries a single resource value set, so the two variants
         // are returned and authorized as alternatives by separate requests.
-        val path = requireRrnComponent(
-          Option(uri).map(_.stripSuffix(File.separator)).orNull,
-          "uri")
-        Seq(
-          new RangerResourceInfo(s"url:$path", null, null, attributes),
-          new RangerResourceInfo(s"url:$path/", null, null, attributes))
+        val normalized = Option(uri).map(normalizeUriPath).orNull
+        val path = requireRrnComponent(normalized, "uri")
+        if (normalized == File.separator) {
+          Seq(new RangerResourceInfo(s"url:$path", null, null, attributes))
+        } else {
+          Seq(
+            new RangerResourceInfo(s"url:$path", null, null, attributes),
+            new RangerResourceInfo(s"url:$path/", null, null, attributes))
+        }
       case VIEW =>
         // A local temporary view has no database in the SHOW TABLES output. The legacy
         // plugin left the database blank, and blank values in the legacy resource matched
@@ -165,6 +175,9 @@ case class AccessResource private[ranger] (
   private def escapeRrnMetaChars(value: String): String =
     value.replace("\\", "\\\\").replace("/", "\\/")
 
+  private def normalizeUriPath(path: String): String =
+    if (path == File.separator) path else path.stripSuffix(File.separator)
+
   /**
    * Returns the RRN component for the given resource name, throwing an access
    * control exception for a blank name. The RRN parser rejects blank resource
@@ -191,13 +204,13 @@ object AccessResource {
       owner: Option[String] = None,
       catalog: Option[String] = None): AccessResource = objectType match {
     case DATABASE =>
-      new AccessResource(DATABASE, firstLevelResource, null, null, null, null, owner, catalog)
+      new AccessResource(DATABASE, firstLevelResource, null, Nil, null, null, owner, catalog)
     case FUNCTION =>
       new AccessResource(
         FUNCTION,
         Option(firstLevelResource).getOrElse(""),
         null,
-        null,
+        Nil,
         secondLevelResource,
         null,
         owner,
@@ -207,7 +220,7 @@ object AccessResource {
         COLUMN,
         firstLevelResource,
         secondLevelResource,
-        thirdLevelResource,
+        Option(thirdLevelResource).map(Seq(_)).getOrElse(Nil),
         null,
         null,
         owner,
@@ -217,13 +230,33 @@ object AccessResource {
         objectType,
         firstLevelResource,
         secondLevelResource,
-        null,
+        Nil,
         null,
         null,
         owner,
         catalog)
     case URI =>
-      new AccessResource(URI, null, null, null, null, firstLevelResource, owner, catalog)
+      new AccessResource(URI, null, null, Nil, null, firstLevelResource, owner, catalog)
+  }
+
+  /**
+   * Creates a resource for multiple columns.
+   */
+  private[ranger] def forColumns(
+      firstLevelResource: String,
+      secondLevelResource: String,
+      columns: Seq[String],
+      owner: Option[String] = None,
+      catalog: Option[String] = None): AccessResource = {
+    new AccessResource(
+      COLUMN,
+      firstLevelResource,
+      secondLevelResource,
+      columns,
+      null,
+      null,
+      owner,
+      catalog)
   }
 
   def apply(
@@ -236,12 +269,18 @@ object AccessResource {
   def apply(
       obj: PrivilegeObject,
       opType: OperationType): AccessResource = {
-    apply(
-      ObjectType(obj, opType),
-      obj.dbname,
-      obj.objectName,
-      obj.columns.mkString(","),
-      obj.owner,
-      obj.catalog)
+    val objectType = ObjectType(obj, opType)
+    objectType match {
+      case COLUMN =>
+        forColumns(obj.dbname, obj.objectName, obj.columns, obj.owner, obj.catalog)
+      case _ =>
+        apply(
+          objectType,
+          obj.dbname,
+          obj.objectName,
+          obj.columns.mkString(","),
+          obj.owner,
+          obj.catalog)
+    }
   }
 }

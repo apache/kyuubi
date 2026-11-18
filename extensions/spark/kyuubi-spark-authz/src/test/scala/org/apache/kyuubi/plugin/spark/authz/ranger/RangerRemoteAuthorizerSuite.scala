@@ -80,6 +80,13 @@ class RangerRemoteAuthorizerSuite extends KyuubiFunSuite {
       OperationType.QUERY,
       accessType)
 
+  private def uriReq(user: String, path: String) =
+    AccessRequest(
+      AccessResource(URI, path, null, null),
+      ugiOf(user),
+      OperationType.LOAD,
+      READ)
+
   private def initializeRemoteAuthorizer(): Unit = {
     // ensures the Ranger configuration resources are loaded
     SparkRangerAdminPlugin.initialize()
@@ -127,18 +134,32 @@ class RangerRemoteAuthorizerSuite extends KyuubiFunSuite {
   }
 
   test("verify multiple denied accesses in single call") {
-    val requests = Seq(
-      tableReq(someone, "default", "src", SELECT),
-      tableReq(someone, "default", "perm_view", SELECT))
-    val e = intercept[AccessControlException] {
-      SparkRangerAdminPlugin.verify(requests)
+    val config = SparkRangerAdminPlugin.config
+    config.setBoolean("ranger.plugin.spark.authorize.in.single.call", true)
+    try {
+      initializeRemoteAuthorizer()
+      val requests = Seq(
+        tableReq(someone, "default", "src", SELECT),
+        tableReq(someone, "default", "perm_view", SELECT))
+      val e = intercept[AccessControlException] {
+        SparkRangerAdminPlugin.verify(requests)
+      }
+      assert(e.getMessage.contains("[select] privilege on [default/src,default/perm_view]"))
+    } finally {
+      config.unset("ranger.plugin.spark.authorize.in.single.call")
+      initializeRemoteAuthorizer()
     }
-    assert(e.getMessage.contains("[select] privilege on [default/src,default/perm_view]"))
   }
 
   test("get filter expr") {
     val filterExpr =
       SparkRangerAdminPlugin.getFilterExpr(tableReq(bob, "default", "src", SELECT))
+    assert(filterExpr.nonEmpty && filterExpr.get == "key<20")
+  }
+
+  test("get filter expr with a column-only grant") {
+    val filterExpr = SparkRangerAdminPlugin.getFilterExpr(
+      tableReq(columnOnlyRowFilterUser, "default", "src", SELECT))
     assert(filterExpr.nonEmpty && filterExpr.get == "key<20")
   }
 
@@ -167,18 +188,29 @@ class RangerRemoteAuthorizerSuite extends KyuubiFunSuite {
       tableReq(someone, "default_bob", "table_use1", USE)))
   }
 
-  test("access allowed for uri") {
-    val uri = AccessRequest(
-      AccessResource(URI, "/tmp/data", null, null),
-      ugiOf(admin),
-      OperationType.LOAD,
-      READ)
-    assert(SparkRangerAdminPlugin.isAccessAllowed(uri))
-    val denied = AccessRequest(
-      AccessResource(URI, "/tmp/data", null, null),
-      ugiOf(someone),
-      OperationType.LOAD,
-      READ)
-    assert(!SparkRangerAdminPlugin.isAccessAllowed(denied))
+  test("verify allowed uri") {
+    SparkRangerAdminPlugin.verify(Seq(uriReq(admin, "/tmp/data")))
+  }
+
+  test("allow an exact url path without a wildcard policy") {
+    SparkRangerAdminPlugin.verify(Seq(uriReq(urlExactPathUser, "/tmp/exact")))
+  }
+
+  test("verify denied uri") {
+    val e = intercept[AccessControlException] {
+      SparkRangerAdminPlugin.verify(Seq(uriReq(someone, "/tmp/data")))
+    }
+    assert(e.getMessage.contains("does not have [read] privilege on [[/tmp/data, /tmp/data/]]"))
+  }
+
+  test("deny on one uri variant wins") {
+    val e = intercept[AccessControlException] {
+      SparkRangerAdminPlugin.verify(Seq(uriReq(urlDenyUser, "/data/secret")))
+    }
+    assert(e.getMessage.contains(
+      "does not have [read] privilege on [[/data/secret, /data/secret/]]"))
+
+    // the deny is not recursive, so a child path remains allowed
+    SparkRangerAdminPlugin.verify(Seq(uriReq(urlDenyUser, "/data/secret/file")))
   }
 }

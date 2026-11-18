@@ -41,6 +41,48 @@ class NoResultAuthorizer(properties: Properties) extends RangerAuthorizer(proper
       request: RangerResourcePermissionsRequest): RangerResourcePermissions = null
 }
 
+/**
+ * An authorizer that returns a NOT_DETERMINED result with an unknown mask type
+ * and no masked value, to verify that masking fails closed.
+ */
+class UnknownMaskAuthorizer(properties: Properties) extends RangerAuthorizer(properties) {
+  override def init(): Unit = ()
+  override def close(): Unit = {}
+  override def authorize(request: RangerAuthzRequest): RangerAuthzResult = {
+    val dataMask = new RangerAuthzResult.DataMaskResult()
+    dataMask.setMaskType("MASK_WITHOUT_VALUE")
+    val permission = new RangerAuthzResult.PermissionResult("select")
+    permission.setDataMask(dataMask)
+    val result = new RangerAuthzResult("request", RangerAuthzResult.AccessDecision.NOT_DETERMINED)
+    result.setPermissions(java.util.Collections.singletonMap("select", permission))
+    result
+  }
+  override def authorize(request: RangerMultiAuthzRequest): RangerMultiAuthzResult = null
+  override def getResourcePermissions(
+      request: RangerResourcePermissionsRequest): RangerResourcePermissions = null
+}
+
+/**
+ * An authorizer that returns a MASK_NONE data mask, which must leave the column
+ * unmasked.
+ */
+class MaskNoneAuthorizer(properties: Properties) extends RangerAuthorizer(properties) {
+  override def init(): Unit = ()
+  override def close(): Unit = {}
+  override def authorize(request: RangerAuthzRequest): RangerAuthzResult = {
+    val dataMask = new RangerAuthzResult.DataMaskResult()
+    dataMask.setMaskType("MASK_NONE")
+    val permission = new RangerAuthzResult.PermissionResult("select")
+    permission.setDataMask(dataMask)
+    val result = new RangerAuthzResult("request", RangerAuthzResult.AccessDecision.ALLOW)
+    result.setPermissions(java.util.Collections.singletonMap("select", permission))
+    result
+  }
+  override def authorize(request: RangerMultiAuthzRequest): RangerMultiAuthzResult = null
+  override def getResourcePermissions(
+      request: RangerResourcePermissionsRequest): RangerResourcePermissions = null
+}
+
 class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
 
   private val RemoteAuthorizer = "org.apache.ranger.authz.remote.RangerRemoteAuthorizer"
@@ -107,6 +149,54 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
     }
   }
 
+  test("get row filter with a column-only grant") {
+    val req = tableSelectRequest(columnOnlyRowFilterUser, defaultDb, "src")
+    assert(getFilterExpr(req).contains("key<20"))
+  }
+
+  test("MASK_NONE leaves the column unmasked") {
+    val properties = new Properties
+    properties.setProperty("ranger.authorizer.impl.class", classOf[MaskNoneAuthorizer].getName)
+    withAuthorizer(properties) {
+      val req = AccessRequest(
+        AccessResource(ObjectType.COLUMN, defaultDb, "src", "value1"),
+        UserGroupInformation.createRemoteUser(bob),
+        OperationType.QUERY,
+        AccessType.SELECT)
+      assert(getMaskingExpr(req).isEmpty)
+    }
+  }
+
+  test("unknown mask type fails closed") {
+    val properties = new Properties
+    properties.setProperty("ranger.authorizer.impl.class", classOf[UnknownMaskAuthorizer].getName)
+    withAuthorizer(properties) {
+      val req = AccessRequest(
+        AccessResource(ObjectType.COLUMN, defaultDb, "src", "value1"),
+        UserGroupInformation.createRemoteUser(bob),
+        OperationType.QUERY,
+        AccessType.SELECT)
+      assert(getMaskingExpr(req).contains("NULL"))
+    }
+  }
+
+  test("fail fast when use.usergroups.from.userstore.enabled is set") {
+    SparkRangerAdminPlugin.initialize()
+    val config = SparkRangerAdminPlugin.config
+    config.setBoolean("ranger.plugin.spark.use.usergroups.from.userstore.enabled", true)
+    try {
+      SparkRangerAdminPlugin.reset()
+      val e = intercept[IllegalArgumentException] {
+        SparkRangerAdminPlugin.initialize()
+      }
+      assert(e.getMessage.contains("use.usergroups.from.userstore.enabled"))
+    } finally {
+      config.unset("ranger.plugin.spark.use.usergroups.from.userstore.enabled")
+      SparkRangerAdminPlugin.reset()
+      SparkRangerAdminPlugin.initialize()
+    }
+  }
+
   test("deny accesses when the authorizer returns no result") {
     val properties = new Properties
     properties.setProperty("ranger.authorizer.impl.class", classOf[NoResultAuthorizer].getName)
@@ -140,7 +230,7 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
     }
   }
 
-  test("the security-critical configurations cannot be overridden by system properties") {
+  test("Ranger configuration is not read from system properties") {
     System.setProperty("ranger.authorizer.impl.class", RemoteAuthorizer)
     // an unreachable Ranger PDP server, to detect an unwanted switch to the remote
     // authorizer by a failed access check
@@ -179,21 +269,6 @@ class SparkRangerAdminPluginSuite extends KyuubiFunSuite {
       }
       SparkRangerAdminPlugin.reset()
       SparkRangerAdminPlugin.initialize()
-    }
-  }
-
-  test("security-critical configurations are admin-only") {
-    Seq(
-      "ranger.plugin.spark.policy.source.impl",
-      "ranger.plugin.spark.policy.rest.url",
-      "ranger.plugin.spark.policy.cache.dir",
-      "ranger.plugin.hive.policy.cache.dir",
-      "ranger.authz.default.policy.source.impl",
-      "ranger.authz.service.hive_jenkins.policy.source.impl",
-      "ranger.authz.servicetype.spark.policy.source.impl",
-      "ranger.plugin.spark.policyengine.option.disable.policy.refresher",
-      "ranger.plugin.spark.policyengine.option.disable.userstore.retriever").foreach { key =>
-      assert(SparkRangerAdminPlugin.isAdminOnlyKey(key), s"$key should be admin-only")
     }
   }
 

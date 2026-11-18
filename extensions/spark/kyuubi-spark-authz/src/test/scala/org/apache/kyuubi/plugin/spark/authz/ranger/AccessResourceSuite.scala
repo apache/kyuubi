@@ -62,8 +62,9 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource.catalog.isEmpty)
     assert(resource4.getDatabase === "my_db_name")
     assert(resource4.getTable === "my_table_name")
+    // a comma is part of the column name, not a separator
     assert(resource4.getColumn === "my_col_1,my_col_2")
-    assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
+    assert(resource4.getColumns === Seq("my_col_1,my_col_2"))
   }
 
   test("KYUUBI #3605: generate spark ranger resources with catalog") {
@@ -82,7 +83,17 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource1.getDatabase === "my_db_name")
     assert(resource1.getTable === "my_table_name")
     assert(resource1.getColumn === "my_col_1,my_col_2")
-    assert(resource1.getColumns === Seq("my_col_1", "my_col_2"))
+    assert(resource1.getColumns === Seq("my_col_1,my_col_2"))
+  }
+
+  test("treat a column name containing a comma as one resource value") {
+    assert(AccessResource(COLUMN, "d", "t", "a,b").toResourceInfos.head.getName ===
+      "column:d/t/a,b")
+  }
+
+  test("deny a column request without a column") {
+    intercept[AccessControlException](AccessResource(COLUMN, "d", "t", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, "d", "t", "").toResourceInfos)
   }
 
   test("escape RRN metacharacters in resource names") {
@@ -93,8 +104,8 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(
       AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName === "column:d/t/c\\/1")
 
-    val columns = AccessResource(COLUMN, "d", "t", "c1,c/2").toResourceInfos.head
-    assert(columns.getName === "column:d/t")
+    val columns = AccessResource.forColumns("d", "t", Seq("c1", "c/2")).toResourceInfos.head
+    assert(columns.getName === "table:d/t")
     assert(columns.getSubResources.asScala.toSeq.sorted ===
       Seq("column:c1", "column:c\\/2"))
 
@@ -113,6 +124,12 @@ class AccessResourceSuite extends KyuubiFunSuite {
       Seq(s"url:\\/tmp\\/data", s"url:\\/tmp\\/data/"))
   }
 
+  test("keep the root uri path") {
+    val resource = AccessResource(URI, "/", null, null)
+    assert(resource.toResourceInfos.map(_.getName) === Seq("url:\\/"))
+    assert(resource.getAsString === "[/]")
+  }
+
   test("RRN metacharacter escaping round-trips through RangerResourceNameParser") {
     def parse(name: String, template: String): java.util.Map[String, String] =
       new RangerResourceNameParser(template).parseToMap(name.substring(name.indexOf(':') + 1))
@@ -129,6 +146,12 @@ class AccessResourceSuite extends KyuubiFunSuite {
         AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName,
         "database/table/column")
     assert(columnComponents.get("column") === "c/1")
+
+    val commaColumnComponents =
+      parse(
+        AccessResource(COLUMN, "d", "t", "a,b").toResourceInfos.head.getName,
+        "database/table/column")
+    assert(commaColumnComponents.get("column") === "a,b")
   }
 
   test("deny blank resource names") {

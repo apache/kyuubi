@@ -65,41 +65,11 @@ object SparkRangerAdminPlugin {
   final private val KEY_CLUSTER_NAME = s"ranger.plugin.$SERVICE_TYPE.access.cluster.name"
   final private val KEY_AUTHORIZE_IN_SINGLE_CALL =
     s"ranger.plugin.$SERVICE_TYPE.authorize.in.single.call"
-  final private val KEY_POLICY_SOURCE_IMPL =
-    s"ranger.plugin.$SERVICE_TYPE.policy.source.impl"
-  final private val KEY_POLICY_REST_URL = s"ranger.plugin.$SERVICE_TYPE.policy.rest.url"
-  final private val KEY_POLICY_CACHE_DIR = s"ranger.plugin.$SERVICE_TYPE.policy.cache.dir"
-  final private val KEY_HIVE_POLICY_CACHE_DIR = "ranger.plugin.hive.policy.cache.dir"
-  final private val POLICY_ENGINE_DISABLE_PREFIX =
-    s"ranger.plugin.$SERVICE_TYPE.policyengine.option.disable."
+  final private val KEY_USE_USERGROUPS_FROM_USERSTORE =
+    s"ranger.plugin.$SERVICE_TYPE.use.usergroups.from.userstore.enabled"
 
   final private val REMOTE_AUTHORIZER_CLASS: String =
     classOf[org.apache.ranger.authz.remote.RangerRemoteAuthorizer].getName
-
-  /**
-   * The security-critical configurations which are read from the Ranger configuration
-   * resources only: JVM system properties can neither set nor override them, so a tenant
-   * who can control the JVM options of the engine process cannot point the authorization
-   * to a server they control, load policies from another source, or bypass the policies.
-   */
-  final private val ADMIN_ONLY_KEYS: Seq[String] = Seq(
-    KEY_IMPL_CLASS,
-    KEY_PDP_URL,
-    KEY_SERVICE_NAME,
-    KEY_POLICY_SOURCE_IMPL,
-    KEY_POLICY_REST_URL,
-    KEY_POLICY_CACHE_DIR,
-    KEY_HIVE_POLICY_CACHE_DIR)
-
-  final private val ADMIN_ONLY_KEY_PREFIXES: Seq[String] = Seq(
-    "ranger.authz.remote.authn.",
-    "ranger.authz.remote.header.",
-    "ranger.authz.remote.ssl.",
-    // aliases that Ranger's embedded authorizer maps to ranger.plugin.<serviceType>.*
-    "ranger.authz.default.",
-    "ranger.authz.service.",
-    "ranger.authz.servicetype.",
-    POLICY_ENGINE_DISABLE_PREFIX)
 
   final private val CONFIG_PREFIXES = Seq("ranger.", "xasecure.")
 
@@ -107,7 +77,7 @@ object SparkRangerAdminPlugin {
     s"ranger-$SERVICE_TYPE-security.xml",
     s"ranger-$SERVICE_TYPE-audit.xml")
 
-  private var authorizer: RangerAuthorizer = null
+  @volatile private var authorizer: RangerAuthorizer = null
 
   /**
    * The Ranger configurations loaded from the Hadoop configuration resources,
@@ -134,40 +104,43 @@ object SparkRangerAdminPlugin {
    */
   def initialize(): Unit = {
     ensureConfig()
+    validateUnsupportedConfig()
     val props = new Properties
     config.iterator.asScala
       .filter(entry => CONFIG_PREFIXES.exists(entry.getKey.startsWith))
       .foreach(entry => props.put(entry.getKey, entry.getValue))
-    System.getProperties.asScala
-      .filter { case (key, _) =>
-        CONFIG_PREFIXES.exists(key.startsWith) && !isAdminOnlyKey(key)
-      }
-      .foreach { case (key, value) => props.put(key, value) }
     // The Ranger authorizer factory defaults to the embedded authorizer, but the
     // plugin default is the Ranger PDP remote authorizer. Set it explicitly when
     // the configuration does not select an implementation.
     if (!props.containsKey(KEY_IMPL_CLASS)) {
       props.put(KEY_IMPL_CLASS, REMOTE_AUTHORIZER_CLASS)
     }
-    validateAdminOnlyKeys(props)
+    validateRequiredConfig(props)
     initialize(props)
   }
 
-  private[ranger] def isAdminOnlyKey(key: String): Boolean =
-    ADMIN_ONLY_KEYS.contains(key) || ADMIN_ONLY_KEY_PREFIXES.exists(key.startsWith)
+  /**
+   * Fails fast for configuration that the Ranger 2.9 authorization API no longer
+   * supports, instead of silently ignoring it.
+   */
+  private def validateUnsupportedConfig(): Unit = {
+    if (config.getBoolean(KEY_USE_USERGROUPS_FROM_USERSTORE, false)) {
+      throw new IllegalArgumentException(
+        s"$KEY_USE_USERGROUPS_FROM_USERSTORE is no longer supported. " +
+          "Use ranger.authz.default.use.rangerGroups=true instead.")
+    }
+  }
 
   /**
    * Fails fast when the Ranger configuration resources lack a configuration the
    * authorizer needs: the authorizer implementation defaults to the Ranger PDP mode,
-   * which requires the Ranger PDP server address. The configuration cannot fall back
-   * to JVM system properties, which tenant users may control.
+   * which requires the Ranger PDP server address.
    */
-  private def validateAdminOnlyKeys(props: Properties): Unit = {
+  private def validateRequiredConfig(props: Properties): Unit = {
     val implClass = props.getProperty(KEY_IMPL_CLASS, REMOTE_AUTHORIZER_CLASS)
     if (implClass == REMOTE_AUTHORIZER_CLASS && props.getProperty(KEY_PDP_URL) == null) {
       throw new IllegalArgumentException(
-        s"$KEY_PDP_URL must be configured in ${CONFIG_RESOURCES.mkString(", ")} and " +
-          "cannot be set by JVM system properties")
+        s"$KEY_PDP_URL must be configured in ${CONFIG_RESOURCES.mkString(", ")}")
     }
   }
 
@@ -191,12 +164,13 @@ object SparkRangerAdminPlugin {
   private[ranger] def initialize(props: Properties): Unit = synchronized {
     if (authorizer == null) {
       props.put("ranger.authz.app.type", APP_TYPE)
-      authorizer = RangerAuthorizerFactory.createAuthorizer(props)
-      authorizer.init()
-      registerCleanupShutdownHook(authorizer)
+      val newAuthorizer = RangerAuthorizerFactory.createAuthorizer(props)
+      newAuthorizer.init()
+      registerCleanupShutdownHook(newAuthorizer)
+      authorizer = newAuthorizer
       LOG.info(
         s"initialized ranger authorizer, service: $serviceName, " +
-          s"impl: ${authorizer.getClass.getName}")
+          s"impl: ${newAuthorizer.getClass.getName}")
     }
   }
 
@@ -300,7 +274,8 @@ object SparkRangerAdminPlugin {
           val variantResults = req.resource.toResourceInfos.map { resourceInfo =>
             Option(authorizer.authorize(toAuthzRequest(req, resourceInfo)))
           }
-          variantResults.find(_.exists(_.getDecision == AccessDecision.ALLOW))
+          variantResults.find(_.exists(isDeniedByPolicy))
+            .orElse(variantResults.find(_.exists(_.getDecision == AccessDecision.ALLOW)))
             .getOrElse(variantResults.head)
         }
       }
@@ -341,12 +316,31 @@ object SparkRangerAdminPlugin {
       result
     }
 
+  /**
+   * An unmatched request is reported as DENY with policy id -1 by Ranger, while a
+   * policy that explicitly denies the request has a real policy id. Only the latter
+   * must override an ALLOW from another uri variant.
+   */
+  private def isDeniedByPolicy(result: RangerAuthzResult): Boolean = {
+    result.getDecision == AccessDecision.DENY &&
+    Option(result.getPermissions).toSeq
+      .flatMap(_.values().asScala)
+      .exists { permission =>
+        Option(permission.getAccess)
+          .flatMap(access => Option(access.getPolicy))
+          .exists(policy => policy.getId != null && policy.getId.longValue() != -1L)
+      }
+  }
+
   def getFilterExpr(req: AccessRequest): Option[String] = {
-    val result = requireResult(checkInitialized().authorize(toAuthzRequest(req)), req)
+    // Use any-access for the table-level request so Ranger evaluates policies on
+    // descendant resources, e.g. a column-only select grant. The row filter is
+    // still selected by the service definition's row-filter access type.
+    val filterReq = req.copy(accessType = USE)
+    val result = requireResult(checkInitialized().authorize(toAuthzRequest(filterReq)), req)
     Option(result)
-      .filter(_.getDecision == AccessDecision.ALLOW)
       .flatMap { r =>
-        Option(r.getPermissions.get(permissionOf(req.accessType)))
+        Option(r.getPermissions.get(permissionOf(filterReq.accessType)))
       }
       .map(_.getRowFilter)
       .filter(rf => rf != null && rf.getFilterExpr != null && rf.getFilterExpr.nonEmpty)
@@ -357,12 +351,13 @@ object SparkRangerAdminPlugin {
     val col = req.resource.getColumn
     val result = requireResult(checkInitialized().authorize(toAuthzRequest(req)), req)
     Option(result)
-      .filter(_.getDecision == AccessDecision.ALLOW)
       .flatMap { r =>
         Option(r.getPermissions.get(permissionOf(req.accessType)))
       }
       .map(_.getDataMask)
-      .filter(dm => dm != null && dm.getMaskType != null)
+      .filter(dm =>
+        dm != null && dm.getMaskType != null &&
+          !"MASK_NONE".equalsIgnoreCase(dm.getMaskType))
       .map { dm =>
         val maskType = dm.getMaskType
         if ("MASK_NULL".equalsIgnoreCase(maskType)) {
@@ -387,7 +382,7 @@ object SparkRangerAdminPlugin {
             case _ => Option(dm.getMaskedValue)
                 .filter(_.nonEmpty)
                 .map(maskedValue => s"${maskedValue.replace("{col}", col)}")
-                .orNull
+                .getOrElse("NULL")
           }
         }
       }

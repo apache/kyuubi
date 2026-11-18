@@ -51,23 +51,13 @@ The plugin supports two authorizer modes, selected by `ranger.authorizer.impl.cl
   requests are evaluated locally on the Spark driver side.
 
 :::{warning}
-The security-critical configurations — the authorizer implementation
-(`ranger.authorizer.impl.class`), the Ranger PDP server address
-(`ranger.authz.remote.pdp.url`), the Ranger service name
-(`ranger.plugin.spark.service.name`), the Ranger PDP client authentication and
-encryption settings (`ranger.authz.remote.authn.*`, `ranger.authz.remote.ssl.*`,
-`ranger.authz.remote.header.*`), the embedded-mode policy source settings
-(`ranger.plugin.spark.policy.source.impl`, `ranger.plugin.spark.policy.rest.url`,
-`ranger.plugin.spark.policy.cache.dir`, `ranger.plugin.hive.policy.cache.dir`),
-the Ranger AuthZ alias prefixes (`ranger.authz.default.*`, `ranger.authz.service.*`,
-`ranger.authz.servicetype.*`) and the policy engine disable switches
-(`ranger.plugin.spark.policyengine.option.disable.*`) — are read from
-`ranger-spark-security.xml` only:
-JVM system properties can neither set nor override them, and the plugin fails to
-initialize when the Ranger PDP server address is missing for the Ranger PDP mode.
-Other configurations with the `ranger.` or `xasecure.` prefix can still be overridden
-by JVM system properties, so make sure tenant users cannot control the JVM options of
-the engine process (e.g. `spark.driver.extraJavaOptions`).
+The plugin reads Ranger configuration only from `ranger-spark-security.xml` and
+`ranger-spark-audit.xml`; JVM system properties are ignored. This prevents tenant
+users who control the JVM options of the engine process (for example through
+`spark.driver.extraJavaOptions`) from changing the authorizer implementation, the
+Ranger server address, the policy source, or the user and group settings. Protect
+these configuration files accordingly. The plugin also fails to initialize when the
+Ranger PDP server address is missing for the Ranger PDP mode.
 :::
 
 #### Ranger PDP mode (default)

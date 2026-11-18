@@ -98,11 +98,14 @@ class PolicyJsonFileGenerator extends KyuubiFunSuite {
     List[RangerPolicy](
       // access for all
       policyAccessForAllUrl,
+      policyDenyUrlSecret,
+      policyAccessForUrlExactPath,
       policyAccessForAllDbTableColumns,
       policyAccessForAllDbUdf,
       // access
       policyAccessForDbAllColumns,
       policyAccessForDefaultDbSrcTable,
+      policyAccessForColumnOnlyRowFilterUser,
       policyAccessForDefaultBobUse,
       policyAccessForDefaultBobSelect,
       policyAccessForPermViewAccessOnly,
@@ -149,9 +152,29 @@ class PolicyJsonFileGenerator extends KyuubiFunSuite {
       values = List("*"),
       isRecursive = true)),
     policyItems = List(KRangerPolicyItem(
-      users = List(admin),
+      users = List(admin, urlDenyUser),
       accesses = allowTypes(select, update, create, drop, alter, index, lock, all, read, write),
       delegateAdmin = true)))
+
+  private val policyDenyUrlSecret = KRangerPolicy(
+    name = "deny - url secret",
+    description = "Deny access to /data/secret without recursion",
+    resources = Map("url" -> KRangerPolicyResource(
+      values = List("/data/secret"),
+      isRecursive = false)),
+    denyPolicyItems = List(KRangerPolicyItem(
+      users = List(urlDenyUser),
+      accesses = allowTypes(read))))
+
+  private val policyAccessForUrlExactPath = KRangerPolicy(
+    name = "read - exact url path",
+    description = "Read grant on /tmp/exact without a wildcard policy",
+    resources = Map("url" -> KRangerPolicyResource(
+      values = List("/tmp/exact"),
+      isRecursive = false)),
+    policyItems = List(KRangerPolicyItem(
+      users = List(urlExactPathUser),
+      accesses = allowTypes(read))))
 
   private val policyAccessForAllDbTableColumns = KRangerPolicy(
     name = "all - database, table, column",
@@ -210,6 +233,17 @@ class PolicyJsonFileGenerator extends KyuubiFunSuite {
         accesses = allowTypes(create),
         delegateAdmin = true)))
 
+  private val policyAccessForColumnOnlyRowFilterUser = KRangerPolicy(
+    name = "column only - row filter user",
+    description = "Select grant on the column key only",
+    resources = Map(
+      databaseRes(defaultDb),
+      srcTableRes,
+      columnRes("key")),
+    policyItems = List(KRangerPolicyItem(
+      users = List(columnOnlyRowFilterUser),
+      accesses = allowTypes(select))))
+
   private val policyFilterForSrcTableKeyLessThan20 = KRangerPolicy(
     name = "src_key_less_than_20",
     policyType = POLICY_TYPE_ROWFILTER,
@@ -220,7 +254,7 @@ class PolicyJsonFileGenerator extends KyuubiFunSuite {
       KRangerRowFilterPolicyItem(
         rowFilterInfo = KRangerPolicyItemRowFilterInfo(filterExpr = "key<20"),
         accesses = allowTypes(select),
-        users = List(bob, permViewUser))))
+        users = List(bob, permViewUser, columnOnlyRowFilterUser))))
 
   private val policyFilterForPermViewKeyLessThan20 = KRangerPolicy(
     name = "perm_view_key_less_than_20",
