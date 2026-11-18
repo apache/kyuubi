@@ -376,9 +376,11 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
       setClauses += "engine_state = ?"
       params += metadata.engineState
     }
-    metadata.engineError.foreach { error =>
+    // Update engineError when it's defined or when engineId is defined
+    // This ensures pending reasons are cleared when app transitions to success
+    if (metadata.engineError.isDefined || Option(metadata.engineId).isDefined) {
       setClauses += "engine_error = ?"
-      params += error
+      params += metadata.engineError.orNull
     }
     if (metadata.peerInstanceClosed) {
       setClauses += "peer_instance_closed = ?"
