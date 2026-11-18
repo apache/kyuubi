@@ -18,6 +18,7 @@
 package org.apache.kyuubi.plugin.spark.authz.gen
 
 import org.apache.kyuubi.plugin.spark.authz.OperationType
+import org.apache.kyuubi.plugin.spark.authz.OperationType.{CREATEVIEW, DROPVIEW}
 import org.apache.kyuubi.plugin.spark.authz.PrivilegeObjectActionType._
 import org.apache.kyuubi.plugin.spark.authz.serde._
 
@@ -113,6 +114,31 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     AddPartitionFiled.copy(cmd)
   }
 
+  val CreateIcebergView = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.views.CreateIcebergView"
+    val tableDesc = TableDesc(
+      "child",
+      classOf[ResolvedIdentifierTableExtractor],
+      isInput = false)
+    val queryDesc = QueryDesc("query")
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      CREATEVIEW,
+      queryDescs = Seq(queryDesc))
+  }
+
+  val DropIcebergView = {
+    val cmd = "org.apache.spark.sql.catalyst.plans.logical.views.DropIcebergView"
+    val tableDesc = TableDesc(
+      "child",
+      classOf[ResolvedIdentifierTableExtractor])
+    TableCommandSpec(
+      cmd,
+      Seq(tableDesc),
+      DROPVIEW)
+  }
+
   override def specs: Seq[TableCommandSpec] = Seq(
     CallProcedure,
     DeleteFromIcebergTable,
@@ -128,6 +154,8 @@ object IcebergCommands extends CommandSpecs[TableCommandSpec] {
     CreateOrReplaceTag,
     DropBranch,
     DropTag,
+    CreateIcebergView,
+    DropIcebergView,
     MergeIntoIcebergTable.copy(classname =
       "org.apache.spark.sql.catalyst.plans.logical.UnresolvedMergeIntoIcebergTable"))
 }
