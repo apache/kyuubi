@@ -17,7 +17,12 @@
 
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
+import scala.collection.JavaConverters._
+
+import org.apache.ranger.authz.util.RangerResourceNameParser
+
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.plugin.spark.authz.AccessControlException
 import org.apache.kyuubi.plugin.spark.authz.ObjectType._
 
 class AccessResourceSuite extends KyuubiFunSuite {
@@ -42,7 +47,7 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource.catalog.isEmpty)
     assert(resource2.getDatabase === "my_db_name")
     assert(resource2.getTable === null)
-    assert(resource2.getValue("udf") === "my_func_name")
+    assert(resource2.getUdf === "my_func_name")
     assert(resource1.getColumn === null)
     assert(resource1.getColumns.isEmpty)
 
@@ -57,8 +62,9 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource.catalog.isEmpty)
     assert(resource4.getDatabase === "my_db_name")
     assert(resource4.getTable === "my_table_name")
+    // a comma is part of the column name, not a separator
     assert(resource4.getColumn === "my_col_1,my_col_2")
-    assert(resource4.getColumns === Seq("my_col_1", "my_col_2"))
+    assert(resource4.getColumns === Seq("my_col_1,my_col_2"))
   }
 
   test("KYUUBI #3605: generate spark ranger resources with catalog") {
@@ -77,6 +83,106 @@ class AccessResourceSuite extends KyuubiFunSuite {
     assert(resource1.getDatabase === "my_db_name")
     assert(resource1.getTable === "my_table_name")
     assert(resource1.getColumn === "my_col_1,my_col_2")
-    assert(resource1.getColumns === Seq("my_col_1", "my_col_2"))
+    assert(resource1.getColumns === Seq("my_col_1,my_col_2"))
+  }
+
+  test("treat a column name containing a comma as one resource value") {
+    assert(AccessResource(COLUMN, "d", "t", "a,b").toResourceInfos.head.getName ===
+      "column:d/t/a,b")
+  }
+
+  test("deny a column request without a column") {
+    intercept[AccessControlException](AccessResource(COLUMN, "d", "t", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, "d", "t", "").toResourceInfos)
+  }
+
+  test("escape RRN metacharacters in resource names") {
+    assert(
+      AccessResource(TABLE, "my/db", "my\\table", null).toResourceInfos.head.getName ===
+        s"table:my\\/db/my\\\\table")
+
+    assert(
+      AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName === "column:d/t/c\\/1")
+
+    val columns = AccessResource.forColumns("d", "t", Seq("c1", "c/2")).toResourceInfos.head
+    assert(columns.getName === "table:d/t")
+    assert(columns.getSubResources.asScala.toSeq.sorted ===
+      Seq("column:c1", "column:c\\/2"))
+
+    assert(AccessResource(
+      FUNCTION,
+      "d",
+      "u/f",
+      null).toResourceInfos.head.getName === "udf:d/u\\/f")
+
+    assert(AccessResource(URI, "/tmp/a b", null, null).toResourceInfos.map(_.getName) ===
+      Seq(s"url:\\/tmp\\/a b", s"url:\\/tmp\\/a b/"))
+  }
+
+  test("generate two uri resource variants as alternatives") {
+    assert(AccessResource(URI, "/tmp/data", null, null).toResourceInfos.map(_.getName) ===
+      Seq(s"url:\\/tmp\\/data", s"url:\\/tmp\\/data/"))
+  }
+
+  test("keep the root uri path") {
+    val resource = AccessResource(URI, "/", null, null)
+    assert(resource.toResourceInfos.map(_.getName) === Seq("url:\\/"))
+    assert(resource.getAsString === "[/]")
+  }
+
+  test("RRN metacharacter escaping round-trips through RangerResourceNameParser") {
+    def parse(name: String, template: String): java.util.Map[String, String] =
+      new RangerResourceNameParser(template).parseToMap(name.substring(name.indexOf(':') + 1))
+
+    val tableComponents =
+      parse(
+        AccessResource(TABLE, "my/db", "my\\table", null).toResourceInfos.head.getName,
+        "database/table")
+    assert(tableComponents.get("database") === "my/db")
+    assert(tableComponents.get("table") === "my\\table")
+
+    val columnComponents =
+      parse(
+        AccessResource(COLUMN, "d", "t", "c/1").toResourceInfos.head.getName,
+        "database/table/column")
+    assert(columnComponents.get("column") === "c/1")
+
+    val commaColumnComponents =
+      parse(
+        AccessResource(COLUMN, "d", "t", "a,b").toResourceInfos.head.getName,
+        "database/table/column")
+    assert(commaColumnComponents.get("column") === "a,b")
+  }
+
+  test("deny blank resource names") {
+    intercept[AccessControlException](AccessResource(DATABASE, null, null, null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(TABLE, null, "t", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(TABLE, "d", " ", null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, null, "t", "c").toResourceInfos)
+    intercept[AccessControlException](AccessResource(COLUMN, "d", null, "c").toResourceInfos)
+    intercept[AccessControlException](AccessResource(FUNCTION, "d", null, null).toResourceInfos)
+    intercept[AccessControlException](AccessResource(URI, null, null, null).toResourceInfos)
+  }
+
+  test("blank function database is checked against any database") {
+    assert(AccessResource(FUNCTION, "", "func", null).toResourceInfos.head.getName === "udf:*/func")
+    assert(AccessResource(
+      FUNCTION,
+      null,
+      "func",
+      null).toResourceInfos.head.getName === "udf:*/func")
+  }
+
+  test("blank view database is checked against any database") {
+    // a local temporary view has no database in the SHOW TABLES output
+    assert(AccessResource(VIEW, "", "temp_view", null).toResourceInfos.head.getName ===
+      "table:*/temp_view")
+    assert(AccessResource(VIEW, null, "temp_view", null).toResourceInfos.head.getName ===
+      "table:*/temp_view")
+    assert(AccessResource(
+      VIEW,
+      "my_db_name",
+      "my_view_name",
+      null).toResourceInfos.head.getName === "table:my_db_name/my_view_name")
   }
 }
