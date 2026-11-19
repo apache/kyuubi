@@ -25,7 +25,7 @@ import scala.util.matching.Regex
 object CommandLineUtils {
   val CONF = "--conf"
 
-  val PATTERN_FOR_KEY_VALUE_ARG: Regex = "(.+?)=(.+)".r
+  val PATTERN_FOR_KEY_VALUE_ARG: Regex = "(?s)(.+?)=(.+)".r
 
   val REDACTION_REPLACEMENT_TEXT = "*********(redacted)"
 
