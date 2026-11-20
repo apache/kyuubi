@@ -47,7 +47,7 @@ trait WithSimpleHMSContainer extends KyuubiFunSuite with TestContainerForAll {
 object SimpleHMSContainer {
   final val DOCKER_IMAGE_NAME = "nekyuubi/kyuubi-hive-metastore:latest"
   final val EXPOSED_HMS_PORT = 9083
-  final val STARTUP_TIMEOUT = Duration.ofSeconds(60)
+  final val STARTUP_TIMEOUT = Duration.ofMinutes(3)
 
   def newBaseContainer(
       dockerImage: String,

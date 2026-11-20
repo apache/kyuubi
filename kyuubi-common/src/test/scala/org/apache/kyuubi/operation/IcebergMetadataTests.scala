@@ -19,13 +19,14 @@ package org.apache.kyuubi.operation
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.kyuubi.IcebergSuiteMixin
+import org.apache.kyuubi.HMSIcebergSuiteMixin
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.AssertionUtils._
 import org.apache.kyuubi.util.SparkVersionUtil
 
-trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin with SparkVersionUtil {
+trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
+  self: HMSIcebergSuiteMixin =>
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
@@ -143,6 +144,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
     val table = "ignore_props_table"
     val view = "ignore_props_view"
     val schema = "ignore_db"
+    val comment = "tbl_comment"
     withSessionConf()(
       Map(KyuubiConf.OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES.key -> "true"))() {
       withDatabases(schema) { statement =>
@@ -150,7 +152,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
         try {
           statement.execute(
             s"CREATE TABLE IF NOT EXISTS $cg.$schema.$table(c STRING) " +
-              s"USING iceberg COMMENT 'tbl_comment'")
+              s"USING iceberg COMMENT '$comment'")
           statement.execute(s"CREATE VIEW $cg.$schema.$view AS SELECT 1 AS a")
 
           // When ignoreTableProperties is true, skips the view probe and table property loading.
@@ -194,11 +196,13 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
     val table = "table_type"
     val view = "view_type"
     val schema = "db_type"
+    val comment = "tbl_comment"
     withDatabases(schema) { statement =>
       statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $cg.$schema")
       try {
         statement.execute(
-          s"CREATE TABLE IF NOT EXISTS $cg.$schema.$table(c STRING) USING iceberg")
+          s"CREATE TABLE IF NOT EXISTS $cg.$schema.$table(c STRING) " +
+            s"USING iceberg COMMENT '$comment'")
         statement.execute(s"CREATE VIEW $cg.$schema.$view AS SELECT 1 AS a")
 
         val metaData = statement.getConnection.getMetaData
@@ -206,16 +210,20 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
         // Without a tableTypes filter, both table and view are returned with their true types.
         val rsAll = metaData.getTables(cg, schema, "%", null)
         val typeByName = scala.collection.mutable.Map.empty[String, String]
+        val remarkByName = scala.collection.mutable.Map.empty[String, String]
         while (rsAll.next()) {
           val name = rsAll.getString(TABLE_NAME)
           if (name == table || name == view) {
             typeByName += name -> rsAll.getString(TABLE_TYPE)
+            remarkByName += name -> rsAll.getString(REMARKS)
             assert(rsAll.getString(TABLE_SCHEM) === schema)
             assert(rsAll.getString(TABLE_CAT) === cg)
           }
         }
         assert(typeByName(table) == "TABLE")
         assert(typeByName(view) == "VIEW")
+        assert(remarkByName(table) == comment)
+        assert(remarkByName(view) == "")
 
         // tableTypes = TABLE returns only table.
         val rsTable = metaData.getTables(cg, schema, "%", Array("TABLE"))
@@ -234,10 +242,37 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
         }
         assert(viewNames.contains(view))
         assert(!viewNames.contains(table))
+
+        // Session catalog pattern matching is case-insensitive.
+        val rsUpper = metaData.getTables(cg, "DB_TYPE", "TABLE%", null)
+        assert(rsUpper.next())
+        assert(rsUpper.getString(TABLE_SCHEM) === schema)
+        assert(rsUpper.getString(TABLE_NAME) === table)
+        assert(!rsUpper.next())
       } finally {
         statement.execute(s"DROP VIEW IF EXISTS $cg.$schema.$view")
         statement.execute(s"DROP TABLE IF EXISTS $cg.$schema.$table PURGE")
         statement.execute(s"DROP NAMESPACE IF EXISTS $cg.$schema")
+      }
+    }
+  }
+
+  test("get tables labels temp views with the session catalog") {
+    val schema = "global_temp"
+    val view = "temp_view_type"
+    withJdbcStatement() { statement =>
+      statement.execute(s"CREATE GLOBAL TEMP VIEW $view AS SELECT 1 AS a")
+      try {
+        val metaData = statement.getConnection.getMetaData
+        val rs = metaData.getTables(null, schema, "%", Array("VIEW"))
+        assert(rs.next())
+        assert(rs.getString(TABLE_CAT) === "spark_catalog")
+        assert(rs.getString(TABLE_SCHEM) === schema)
+        assert(rs.getString(TABLE_NAME) === view)
+        assert(rs.getString(TABLE_TYPE) === "VIEW")
+        assert(!rs.next())
+      } finally {
+        statement.execute(s"DROP VIEW IF EXISTS $schema.$view")
       }
     }
   }
