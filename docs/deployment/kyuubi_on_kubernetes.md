@@ -87,7 +87,7 @@ See more related details in [Using RBAC Authorization](https://kubernetes.io/doc
 
 You can configure Kyuubi the old-fashioned way by placing `kyuubi-defaults.conf` inside the image. Kyuubi does not recommend using this way on Kubernetes.
 
-Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build ConfigMap for Kyuubi.
+Kyuubi provides `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build ConfigMap for Kyuubi.
 
 You can find out how to use it in the comments inside the above file.
 
