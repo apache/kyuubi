@@ -19,10 +19,14 @@ package org.apache.kyuubi.engine.spark.util
 
 import java.util.regex.Pattern
 
+import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType
+import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, Identifier, SupportsNamespaces, TableCatalog}
 import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.Logging
@@ -36,6 +40,7 @@ object SparkCatalogUtils extends Logging {
 
   private val VIEW = "VIEW"
   private val TABLE = "TABLE"
+  private val METRIC_VIEW = "METRIC_VIEW"
 
   val SESSION_CATALOG: String = "spark_catalog"
   val sparkTableTypes: Set[String] = Set(VIEW, TABLE)
@@ -103,6 +108,11 @@ object SparkCatalogUtils extends Logging {
     }
   }
 
+  // SPARK-50700 (4.0.0) adds the `builtin` magic value
+  private def hasCustomSessionCatalog(spark: SparkSession): Boolean = {
+    !spark.conf.get(s"spark.sql.catalog.$SESSION_CATALOG", "builtin").equalsIgnoreCase("builtin")
+  }
+
   // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           Schema                                            //
   // ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -114,13 +124,17 @@ object SparkCatalogUtils extends Logging {
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
-    if (catalogName == SparkCatalogUtils.SESSION_CATALOG) {
-      (spark.sessionState.catalog.listDatabases(schemaPattern) ++
-        getGlobalTempViewManager(spark, schemaPattern))
-        .map(Row(_, SparkCatalogUtils.SESSION_CATALOG))
+    val catalog = getCatalog(spark, catalogName)
+    if (catalog.name() == SESSION_CATALOG) {
+      val dbs = if (hasCustomSessionCatalog(spark)) {
+        getSchemasWithPattern(catalog, schemaPattern, quote = false)
+      } else {
+        spark.sessionState.catalog.listDatabases(schemaPattern)
+      }
+      (dbs ++ getGlobalTempViewManager(spark, schemaPattern))
+        .map(Row(_, catalog.name()))
     } else {
-      val catalog = getCatalog(spark, catalogName)
-      getSchemasWithPattern(catalog, schemaPattern).map(Row(_, catalog.name))
+      getSchemasWithPattern(catalog, schemaPattern).map(Row(_, catalog.name()))
     }
   }
 
@@ -153,23 +167,38 @@ object SparkCatalogUtils extends Logging {
         val rootSchema = catalog.listNamespaces()
         val allSchemas = listAllNamespaces(catalog, rootSchema)
         allSchemas
+      case _ =>
+        Array.empty[Array[String]]
+    }
+  }
+
+  private def compilePattern(catalog: CatalogPlugin, pattern: String): Pattern = {
+    if (catalog.name() == SESSION_CATALOG) {
+      Pattern.compile(pattern, Pattern.CASE_INSENSITIVE)
+    } else {
+      Pattern.compile(pattern)
     }
   }
 
   private def listNamespacesWithPattern(
       catalog: CatalogPlugin,
-      schemaPattern: String): Array[Array[String]] = {
+      schemaPattern: String,
+      quote: Boolean = true): Array[Array[String]] = {
+    val p = compilePattern(catalog, schemaPattern)
     listAllNamespaces(catalog).filter { ns =>
-      val quoted = ns.map(quoteIfNeeded).mkString(".")
-      schemaPattern.r.pattern.matcher(quoted).matches()
+      val name = if (quote) ns.map(quoteIfNeeded).mkString(".") else ns.mkString(".")
+      p.matcher(name).matches()
     }.map(_.toList).toList.distinct.map(_.toArray).toArray
   }
 
-  private def getSchemasWithPattern(catalog: CatalogPlugin, schemaPattern: String): Seq[String] = {
-    val p = schemaPattern.r.pattern
+  private def getSchemasWithPattern(
+      catalog: CatalogPlugin,
+      schemaPattern: String,
+      quote: Boolean = true): Seq[String] = {
+    val p = compilePattern(catalog, schemaPattern)
     listAllNamespaces(catalog).flatMap { ns =>
-      val quoted = ns.map(quoteIfNeeded).mkString(".")
-      if (p.matcher(quoted).matches()) Some(quoted) else None
+      val name = if (quote) ns.map(quoteIfNeeded).mkString(".") else ns.mkString(".")
+      if (p.matcher(name).matches()) Some(name) else None
     }.distinct
   }
 
@@ -185,9 +214,10 @@ object SparkCatalogUtils extends Logging {
       tableTypes: Set[String],
       ignoreTableProperties: Boolean = false): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
-    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
+    val quoteNamespaces = catalog.name() != SESSION_CATALOG
+    val namespaces = listNamespacesWithPattern(catalog, schemaPattern, quote = quoteNamespaces)
     catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG =>
+      case builtin if builtin.name() == SESSION_CATALOG && !hasCustomSessionCatalog(spark) =>
         val sessionCatalog = spark.sessionState.catalog
         val databases = sessionCatalog.listDatabases(schemaPattern)
 
@@ -202,7 +232,7 @@ object SparkCatalogUtils extends Logging {
           if (ignoreTableProperties) {
             identifiers.map { ti: TableIdentifier =>
               Row(
-                catalogName,
+                catalog.name(),
                 ti.database.getOrElse("default"),
                 ti.table,
                 TABLE, // ignore tableTypes criteria and simply treat all table type as TABLE
@@ -218,7 +248,7 @@ object SparkCatalogUtils extends Logging {
               .filter(t => isMatchedTableType(tableTypes, t.tableType.name)).map { t =>
                 val typ = if (t.tableType.name == VIEW) VIEW else TABLE
                 Row(
-                  catalogName,
+                  catalog.name(),
                   t.database,
                   t.identifier.table,
                   typ,
@@ -231,23 +261,223 @@ object SparkCatalogUtils extends Logging {
               }
           }
         }
+
+      case tc: TableCatalog if tc.name() == SESSION_CATALOG =>
+        getCustomSessionCatalogTablesOrViews(
+          spark,
+          tc,
+          namespaces,
+          tablePattern,
+          tableTypes,
+          ignoreTableProperties)
+
       case tc: TableCatalog =>
         val tp = tablePattern.r.pattern
-        val identifiers = namespaces.flatMap { ns =>
-          tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
-        }
-        identifiers.map { ident =>
-          // TODO: restore view type for session catalog
-          val comment = if (ignoreTableProperties) ""
-          else { // load table is a time consuming operation
-            tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+        if (ignoreTableProperties) {
+          namespaces.flatMap { ns =>
+            listTableSummaries(tc, ns).map { summaries =>
+              summaries.collect {
+                case (ident, tableType)
+                    if ident.namespace().nonEmpty &&
+                      tp.matcher(quoteIfNeeded(ident.name())).matches() =>
+                  (ident, toTableType(tableType))
+              }.filter { case (_, typ) => tableTypes.exists(typ.equalsIgnoreCase) }
+            }.getOrElse {
+              tc.listTables(ns)
+                .filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+                .map((_, TABLE))
+                .toSeq
+            }
+          }.map { case (ident, typ) =>
+            val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+            val tableName = quoteIfNeeded(ident.name())
+            Row(catalog.name(), schema, tableName, typ, "", null, null, null, null, null)
           }
-          val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
-          val tableName = quoteIfNeeded(ident.name())
-          Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
+        } else {
+          val identifiers = namespaces.flatMap { ns =>
+            tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+          }
+          identifiers.map { ident =>
+            // TODO: support view type once v2 ViewCatalog is mature enough.
+            // load table is a time consuming operation
+            val comment =
+              tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+            val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+            val tableName = quoteIfNeeded(ident.name())
+            Row(catalog.name(), schema, tableName, TABLE, comment, null, null, null, null, null)
+          }
         }
+
       case _ => Seq.empty[Row]
     }
+  }
+
+  private def getCustomSessionCatalogTablesOrViews(
+      spark: SparkSession,
+      tc: TableCatalog,
+      namespaces: Array[Array[String]],
+      tablePattern: String,
+      tableTypes: Set[String],
+      ignoreTableProperties: Boolean): Seq[Row] = {
+    val tp = compilePattern(tc, tablePattern)
+    val sessionCatalog = spark.sessionState.catalog
+
+    def loadComment(ident: Identifier): String = {
+      // loadTable may fail for v1-delegated tables, degrade REMARKS to "" on failure.
+      attempt {
+        tc.loadTable(ident).properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+      } match {
+        case Success(comment) => comment
+        case Failure(e) =>
+          warn(s"Failed to load table $ident for the comment", e)
+          ""
+      }
+    }
+
+    def listMatchingTables(ns: Array[String]): Seq[Identifier] = {
+      // listTables returns local temp views (empty namespace), skip them.
+      tc.listTables(ns).filter { t =>
+        t.namespace().nonEmpty && tp.matcher(t.name()).matches()
+      }.toSeq
+    }
+
+    val typedTables =
+      if (ignoreTableProperties) {
+        namespaces.flatMap { ns =>
+          listTableSummaries(tc, ns).map { summaries =>
+            summaries.collect {
+              case (ident, tableType)
+                  if ident.namespace().nonEmpty && tp.matcher(ident.name()).matches() =>
+                (ident, toTableType(tableType), "")
+            }.filter { case (_, typ, _) => tableTypes.exists(typ.equalsIgnoreCase) }
+          }.getOrElse(listMatchingTables(ns).map((_, TABLE, "")))
+        }
+      } else {
+        namespaces.flatMap { ns =>
+          val tables = listMatchingTables(ns)
+          if (tables.isEmpty) {
+            Seq.empty
+          } else {
+            // Multi-level namespaces never refer to v1 tables, so only single-level
+            // identifiers can join the batched metastore lookup below.
+            val (v1Candidates, nonV1Tables) = tables.partition(_.namespace().length == 1)
+            // One batched metastore call per namespace returns both the table type and the
+            // comment for v1-backed tables, avoiding per-table loads.
+            val batched = attempt {
+              sessionCatalog.getTablesByName(
+                v1Candidates.map(t => TableIdentifier(t.name(), Some(t.namespace().head))))
+                .map(ct => (ct.database.toLowerCase, ct.identifier.table.toLowerCase) -> ct)
+                .toMap
+            }
+
+            lazy val viewNames: Set[String] = ns.headOption match {
+              case Some(db) if sessionCatalog.databaseExists(db) =>
+                // listViews returns local temp views (empty namespace), skip them.
+                sessionCatalog.listViews(db, tablePattern)
+                  .filter(_.database.isDefined)
+                  .map(_.table.toLowerCase)
+                  .toSet
+              case _ => Set.empty
+            }
+
+            // The v1 catalog is case-insensitive, so join case-insensitively to survive
+            // catalogs whose identifiers differ in case from the metastore's.
+            def joinKey(ident: Identifier): (String, String) =
+              (ident.namespace().head.toLowerCase, ident.name().toLowerCase)
+
+            val fromBatch = batched match {
+              case Success(byName) =>
+                v1Candidates.flatMap { ident =>
+                  byName.get(joinKey(ident)).map { ct =>
+                    val typ = if (ct.tableType == CatalogTableType.VIEW) VIEW else TABLE
+                    (ident, typ, ct.comment.getOrElse(""))
+                  }
+                }
+              case Failure(_) => Seq.empty
+            }
+
+            val unmatched = batched match {
+              case Success(byName) =>
+                v1Candidates.filterNot(ident => byName.contains(joinKey(ident)))
+              case Failure(_) => v1Candidates
+            }
+
+            // Tables the batch does not cover: DSv2-only tables, or the whole namespace
+            // when the batch fails to load.
+            val remaining = nonV1Tables ++ unmatched
+            fromBatch ++ remaining.map { ident =>
+              val typ = if (viewNames.contains(ident.name().toLowerCase)) VIEW else TABLE
+              (ident, typ, loadComment(ident))
+            }
+          }
+        }
+      }
+
+    typedTables
+      .filter { case (_, typ, _) =>
+        ignoreTableProperties || tableTypes.exists(typ.equalsIgnoreCase)
+      }
+      .map { case (ident, typ, comment) =>
+        val schema = ident.namespace().mkString(".")
+        val tableName = ident.name()
+        Row(tc.name(), schema, tableName, typ, comment, null, null, null, null, null)
+      }
+  }
+
+  private def attempt[A](f: => A): Try[A] = {
+    try {
+      Success(f)
+    } catch {
+      // scala.util.Try does not catch LinkageError (e.g. a NoClassDefFoundError from a missing
+      // storage handler dependency), but one unloadable table must not fail the operation.
+      case NonFatal(e) => Failure(e)
+      case e: LinkageError => Failure(e)
+    }
+  }
+
+  // SPARK-52109 (4.1.0): added TableCatalog.listTableSummaries. Detect it by reflection
+  // instead of by Spark version, since vendors may backport it. Use it only when the
+  // catalog provides its own implementation, because the TableCatalog default calls
+  // loadTable for every table, which is what this path avoids. Java reflection cannot
+  // tell the two apart: scalac emits a bytecode forwarder to the interface default in
+  // Scala classes that directly implement TableCatalog and rely on the default (e.g.
+  // V2SessionCatalog), which looks like a real implementation by declaring class. Scala
+  // reflection can, because forwarders never enter the Scala symbol table: resolving
+  // the member lands on the TableCatalog symbol for classes relying on the default,
+  // and on the implementing class for real implementations, including inherited ones.
+  private[util] def implementsListTableSummaries(tc: TableCatalog): Boolean = {
+    try {
+      import scala.reflect.runtime.universe._
+      val mirror = runtimeMirror(tc.getClass.getClassLoader)
+      val tableCatalogSym = mirror.classSymbol(classOf[TableCatalog])
+      val member = mirror.classSymbol(tc.getClass).toType.member(TermName("listTableSummaries"))
+      member != NoSymbol && member.isMethod && member.owner != tableCatalogSym
+    } catch {
+      case NonFatal(_) => false
+    }
+  }
+
+  // Lists (identifier, tableType) pairs via SPARK-52109 (4.1.0) listTableSummaries without
+  // loading tables, or None when the catalog does not implement it or the call fails.
+  private def listTableSummaries(
+      tc: TableCatalog,
+      ns: Array[String]): Option[Seq[(Identifier, String)]] = {
+    if (implementsListTableSummaries(tc)) {
+      attempt {
+        invokeAs[Array[AnyRef]](tc, "listTableSummaries", (classOf[Array[String]], ns)).toSeq
+          .map { summary =>
+            invokeAs[Identifier](summary, "identifier") -> invokeAs[String](summary, "tableType")
+          }
+      }.toOption
+    } else {
+      None
+    }
+  }
+
+  // Maps SPARK-52109 table types to the JDBC TABLE_TYPE; VIEW and METRIC_VIEW both surface as VIEW.
+  private def toTableType(tableType: String): String = {
+    if (tableType.equalsIgnoreCase(VIEW) || tableType.equalsIgnoreCase(METRIC_VIEW)) VIEW
+    else TABLE
   }
 
   private def getColumnsByCatalog(
@@ -282,7 +512,7 @@ object SparkCatalogUtils extends Logging {
           catalog.getTablesByName(identifiers).flatMap { t =>
             t.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
               .map { case (f, i) =>
-                toColumnResult(catalogName, t.database, t.identifier.table, f, i)
+                toColumnResult(builtin.name(), t.database, t.identifier.table, f, i)
               }
           }
         }
@@ -295,8 +525,20 @@ object SparkCatalogUtils extends Logging {
       schemaPattern: String,
       tablePattern: String): Seq[Row] = {
     val views = getViews(spark, schemaPattern, tablePattern)
+    // Temp views live in the session catalog regardless of the requested catalog, so label them
+    // with SESSION_CATALOG to keep the rows resolvable, as getColumns does for temp view columns.
     views.map { ident =>
-      Row(catalogName, ident.database.orNull, ident.table, VIEW, "", null, null, null, null, null)
+      Row(
+        SESSION_CATALOG,
+        ident.database.orNull,
+        ident.table,
+        VIEW,
+        "",
+        null,
+        null,
+        null,
+        null,
+        null)
     }
   }
 

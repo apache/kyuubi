@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.kyuubi.{HMSIcebergSuiteMixin, WithSimpleHMSContainer}
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.{IcebergMetadataTests, RowLevelOperationTests}
 import org.apache.kyuubi.tags.IcebergTest
@@ -24,7 +25,9 @@ import org.apache.kyuubi.tags.IcebergTest
 @IcebergTest
 class SparkIcebergOperationSuite extends WithSparkSQLEngine
   with IcebergMetadataTests
-  with RowLevelOperationTests {
+  with RowLevelOperationTests
+  with HMSIcebergSuiteMixin
+  with WithSimpleHMSContainer {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
