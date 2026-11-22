@@ -54,4 +54,4 @@ Configuration guide documentation for Kyuubi lives [on the website](https://kyuu
 
 ## Contributing
 
-Want to help build Apache Kyuubi? Check out our [contributing documentation](https://kyuubi.readthedocs.io/en/master/community/CONTRIBUTING.html).
+Want to help build Apache Kyuubi? Check out our [contributing documentation](https://kyuubi.readthedocs.io/en/master/contributing/code/index.html).
