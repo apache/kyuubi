@@ -93,30 +93,17 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): Session = {
     val userConf = this.getConf.getUserDefaults(user)
-    try {
-      new KyuubiSessionImpl(
-        protocol,
-        user,
-        password,
-        ipAddress,
-        conf,
-        this,
-        userConf,
-        userConf.get(ENGINE_DO_AS_ENABLED),
-        parser)
-    } catch {
-      case e: Throwable =>
-        // The count openSession took is given back by closeSession alone. A session that fails
-        // here - on the session conf validation in AbstractSession.normalizedConf, for one - is
-        // never registered in handleToSession, so closeSession never runs for it and the count
-        // stays taken: once as many opens have failed as the limit allows, the user and the
-        // client address are turned away by the limiter until the server restarts. A failure
-        // after setSession is already given back by the closeSession call in
-        // SessionManager.openSession, so giving it back here alone keeps it from going back
-        // twice.
-        limiter.foreach(_.decrement(UserIpAddress(user, ipAddress)))
-        throw e
-    }
+    new KyuubiSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      limiter,
+      userConf,
+      userConf.get(ENGINE_DO_AS_ENABLED),
+      parser)
   }
 
   override def openSession(
@@ -126,7 +113,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-    limiter.foreach(_.increment(UserIpAddress(username, ipAddress)))
     try {
       super.openSession(protocol, username, password, ipAddress, conf)
     } catch {
@@ -139,20 +125,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         throw KyuubiSQLException(
           s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
           e)
-    }
-  }
-
-  override def closeSession(sessionHandle: SessionHandle): Unit = {
-    val session = getSession(sessionHandle)
-    try {
-      super.closeSession(sessionHandle)
-    } finally {
-      session match {
-        case _: KyuubiBatchSession =>
-          batchLimiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
-        case _ =>
-          limiter.foreach(_.decrement(UserIpAddress(session.user, session.ipAddress)))
-      }
     }
   }
 
@@ -178,6 +150,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
+      batchLimiter,
       sessionConf,
       batchType,
       batchName,
@@ -191,7 +164,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def openBatchSession(batchSession: KyuubiBatchSession): SessionHandle = {
     val user = batchSession.user
     val ipAddress = batchSession.ipAddress
-    batchLimiter.foreach(_.increment(UserIpAddress(user, ipAddress)))
     val handle = batchSession.handle
     try {
       setSession(handle, batchSession)
@@ -438,8 +410,21 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   private[kyuubi] def refreshUnlimitedUsers(conf: KyuubiConf): Unit = {
     val unlimitedUsers =
       conf.get(SERVER_LIMIT_CONNECTIONS_USER_UNLIMITED_LIST).filter(_.nonEmpty)
-    limiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
-    batchLimiter.foreach(SessionLimiter.resetUnlimitedUsers(_, unlimitedUsers))
+    // new limiter/batchLimiter if the unlimited users are changed
+    limiter.foreach { l =>
+      val oldUnlimitedUsers = SessionLimiter.getUnlimitedUsers(l)
+      if (unlimitedUsers.size != oldUnlimitedUsers.size
+        || unlimitedUsers.diff(oldUnlimitedUsers).nonEmpty) {
+        limiter = Some(SessionLimiter.resetUnlimitedUsers(l, unlimitedUsers))
+      }
+    }
+    batchLimiter.foreach { l =>
+      val oldUnlimitedUsers = SessionLimiter.getUnlimitedUsers(l)
+      if (unlimitedUsers.size != oldUnlimitedUsers.size
+        || unlimitedUsers.diff(oldUnlimitedUsers).nonEmpty) {
+        batchLimiter = Some(SessionLimiter.resetUnlimitedUsers(l, unlimitedUsers))
+      }
+    }
   }
 
   private[kyuubi] def getDenyUsers: Set[String] = {
