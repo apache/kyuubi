@@ -15,10 +15,6 @@
  * limitations under the License.
  */
 
-.bd-main .bd-content .bd-article-container .bd-article {
-    padding-right: 0;
-}
-
 table.table {
     width: 100%;
     border: 0;
@@ -31,6 +27,10 @@ table.table td {
     vertical-align: middle;
     min-width: 70px;
     word-break: break-word;
+}
+
+table.table tr:hover {
+    background: var(--pst-color-table-row-hover-bg);
 }
 
 table.table span.pre {
