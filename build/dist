@@ -266,6 +266,12 @@ for arg in "$@"; do
       FILTERED_ARG="${FILTERED_ARG/${BASH_REMATCH[0]}/$EXTRA_SCALA_212_SPARK_PROFILE}"
     done
     FILTERED_ARG="${FILTERED_ARG//spark-master/$EXTRA_SCALA_212_SPARK_PROFILE}"
+    # Drop Spark 4.x version overrides so the spark-3.5 profile defaults apply;
+    # otherwise the extra Scala 2.12 engine build would still resolve Spark 4.x
+    # artifacts that are unavailable for Scala 2.12.
+    if [[ $FILTERED_ARG == -Dspark.version=* || $FILTERED_ARG == -Dspark.binary.version=* ]]; then
+      continue
+    fi
   fi
   FILTERED_ARGS+=("$FILTERED_ARG")
 done
