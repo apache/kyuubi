@@ -446,15 +446,13 @@ object SparkCatalogUtils extends Logging {
   // the member lands on the TableCatalog symbol for classes relying on the default,
   // and on the implementing class for real implementations, including inherited ones.
   private[util] def implementsListTableSummaries(tc: TableCatalog): Boolean = {
-    try {
-      import scala.reflect.runtime.universe._
+    import scala.reflect.runtime.universe._
+    attempt {
       val mirror = runtimeMirror(tc.getClass.getClassLoader)
       val tableCatalogSym = mirror.classSymbol(classOf[TableCatalog])
       val member = mirror.classSymbol(tc.getClass).toType.member(TermName("listTableSummaries"))
       member != NoSymbol && member.isMethod && member.owner != tableCatalogSym
-    } catch {
-      case NonFatal(_) => false
-    }
+    }.getOrElse(false)
   }
 
   // Lists (identifier, tableType) pairs via SPARK-52109 (4.1.0) listTableSummaries without
@@ -491,7 +489,7 @@ object SparkCatalogUtils extends Logging {
     catalog match {
       case tc: TableCatalog =>
         val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
-        val tp = tablePattern.r.pattern
+        val tp = compilePattern(catalog, tablePattern)
         val identifiers = namespaces.flatMap { ns =>
           tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
         }

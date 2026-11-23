@@ -21,6 +21,7 @@ import java.sql.{Connection, DriverManager}
 import java.util.Locale
 
 import org.apache.spark.sql.connector.catalog.{DelegatingCatalogExtension, TableCatalog}
+import org.apache.spark.sql.execution.datasources.v2.V2SessionCatalog
 import org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
@@ -75,6 +76,11 @@ class SparkCatalogUtilsSuite extends WithSparkSQLEngine {
       .asInstanceOf[TableCatalog]
     assert(catalog.isInstanceOf[DummySessionCatalog])
     assert(!SparkCatalogUtils.implementsListTableSummaries(catalog))
+
+    // V2SessionCatalog relies on the interface default via a scalac forwarder (SPARK-52109, 4.1+),
+    // which the probe must not mistake for an own implementation.
+    assert(!SparkCatalogUtils.implementsListTableSummaries(
+      new V2SessionCatalog(spark.sessionState.catalog)))
   }
 }
 

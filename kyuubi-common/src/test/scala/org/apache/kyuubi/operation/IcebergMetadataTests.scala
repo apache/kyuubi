@@ -174,7 +174,8 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
           assert(remarkByName(table) == "")
           assert(remarkByName(view) == "")
 
-          // When ignoreTableProperties is true, skips the tableTypes filter.
+          // The session catalog (Iceberg 1.11.0) does not implement listTableSummaries,
+          // so tableTypes is not honored: a VIEW query still returns all entries as TABLE.
           val rsView = metaData.getTables(cg, schema, "%", Array("VIEW"))
           val viewNames = scala.collection.mutable.Set.empty[String]
           while (rsView.next()) {
@@ -243,12 +244,19 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
         assert(viewNames.contains(view))
         assert(!viewNames.contains(table))
 
-        // Session catalog pattern matching is case-insensitive.
+        // Session catalog pattern matching in getTables is case-insensitive.
         val rsUpper = metaData.getTables(cg, "DB_TYPE", "TABLE%", null)
         assert(rsUpper.next())
         assert(rsUpper.getString(TABLE_SCHEM) === schema)
         assert(rsUpper.getString(TABLE_NAME) === table)
         assert(!rsUpper.next())
+
+        // Session catalog pattern matching in getColumns is case-insensitive.
+        val rsUpperCols = metaData.getColumns(cg, "DB_TYPE", "TABLE%", "%")
+        assert(rsUpperCols.next())
+        assert(rsUpperCols.getString(TABLE_SCHEM) === schema)
+        assert(rsUpperCols.getString(TABLE_NAME) === table)
+        assert(!rsUpperCols.next())
       } finally {
         statement.execute(s"DROP VIEW IF EXISTS $cg.$schema.$view")
         statement.execute(s"DROP TABLE IF EXISTS $cg.$schema.$table PURGE")
