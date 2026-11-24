@@ -70,6 +70,23 @@ class SparkCatalogUtilsSuite extends WithSparkSQLEngine {
     assert(schemaNames.contains(DummySessionCatalog.extraNamespace.head))
   }
 
+  test("getSchemas matches the global temp database case-insensitively") {
+    val rows = SparkCatalogUtils.getSchemas(spark, SparkCatalogUtils.SESSION_CATALOG, ".*")
+    assert(rows.map(_.getString(0)).toSet.contains("global_temp"))
+
+    val upper = SparkCatalogUtils.getSchemas(
+      spark,
+      SparkCatalogUtils.SESSION_CATALOG,
+      "GLOBAL_TEMP")
+    assert(upper.map(_.getString(0)).toSet == Set("global_temp"))
+  }
+
+  test("toV1Pattern rewrites converted regexes back to SQL-like patterns") {
+    assert(SparkCatalogUtils.toV1Pattern(".*") === "*")
+    assert(SparkCatalogUtils.toV1Pattern("prefix.*") === "prefix*")
+    assert(SparkCatalogUtils.toV1Pattern("v") === "v")
+  }
+
   test("implementsListTableSummaries is false without an own implementation") {
     val catalog = SparkCatalogUtils
       .getCatalog(spark, SparkCatalogUtils.SESSION_CATALOG)

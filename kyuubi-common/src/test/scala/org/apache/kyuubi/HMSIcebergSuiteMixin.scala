@@ -31,5 +31,9 @@ trait HMSIcebergSuiteMixin extends IcebergSuiteMixin {
     "spark.sql.catalog.spark_catalog.uris" -> hmsThriftUris,
     "spark.sql.catalog.spark_catalog.cache-enabled" -> "false",
     "spark.hadoop.iceberg.engine.hive.lock-enabled" -> "false",
+    // Reproduces https://github.com/apache/kyuubi/issues/7673: with this flag the Hive
+    // storage handler is registered in the metastore but missing from the Iceberg runtime,
+    // so the batched v1 lookup fails and GetTables falls back. Tables created with
+    // TBLPROPERTIES ('engine.hive.enabled' = 'false') exercise the successful batch.
     "spark.hadoop.iceberg.engine.hive.enabled" -> "true")
 }

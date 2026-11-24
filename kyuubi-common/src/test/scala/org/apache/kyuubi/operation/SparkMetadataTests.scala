@@ -59,6 +59,23 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
     }
   }
 
+  test("get schemas matches a trailing % against zero characters") {
+    val dbs = Seq("prefix", "prefixx", "prefixxyz")
+    val catalog = "spark_catalog"
+
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE DATABASE IF NOT EXISTS $db"))
+      val metaData = statement.getConnection.getMetaData
+
+      // The null catalog resolves to the session catalog.
+      Seq(catalog, null).foreach { cg =>
+        Seq("prefix%", "prefix.*") foreach { pattern =>
+          checkGetSchemas(metaData.getSchemas(cg, pattern), dbs, catalog)
+        }
+      }
+    }
+  }
+
   test("get tables") {
     val table_test = "table_1_test"
     val view_test = "view_1_test"
@@ -127,6 +144,61 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
       statement.execute(s"DROP TABLE IF EXISTS ${schemas(0)}.$table_test")
       statement.execute(s"DROP VIEW IF EXISTS ${schemas(1)}.$view_test")
       statement.execute(s"DROP VIEW IF EXISTS ${schemas(2)}.$view_global_test")
+    }
+  }
+
+  test("get tables and views whose names equal the pattern prefix") {
+    val table = "prefix"
+    val tempView = "prefix"
+    val another = "prefixx"
+    withJdbcStatement(table, another) { statement =>
+      statement.execute(
+        s"CREATE TABLE IF NOT EXISTS $table(key int) USING parquet COMMENT '$table'")
+      statement.execute(s"CREATE TABLE IF NOT EXISTS $another(key int) USING parquet")
+      // Temp views shadow same-named tables in SQL, but the metadata APIs report both.
+      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS SELECT 1 AS a")
+      try {
+        val metaData = statement.getConnection.getMetaData
+
+        val rsTable = metaData.getTables("spark_catalog", "default", "prefix%", Array("TABLE"))
+        val tableNames = scala.collection.mutable.Set.empty[String]
+        while (rsTable.next()) {
+          tableNames += rsTable.getString(TABLE_NAME)
+        }
+        assert(tableNames == Set(table, another))
+
+        val rsView = metaData.getTables("spark_catalog", "default", "prefix%", Array("VIEW"))
+        val viewNames = scala.collection.mutable.Set.empty[String]
+        while (rsView.next()) {
+          viewNames += rsView.getString(TABLE_NAME)
+        }
+        assert(viewNames == Set(tempView))
+      } finally {
+        // The qualified drops bypass the same-named temp view.
+        statement.execute(s"DROP VIEW IF EXISTS $tempView")
+        statement.execute(s"DROP TABLE IF EXISTS default.$table")
+        statement.execute(s"DROP TABLE IF EXISTS default.$another")
+      }
+    }
+  }
+
+  test("get functions whose names equal the pattern prefix") {
+    val function = "prefix"
+    withJdbcStatement() { statement =>
+      statement.execute(
+        s"CREATE OR REPLACE TEMPORARY FUNCTION $function" +
+          " AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFAbs'")
+      try {
+        val metaData = statement.getConnection.getMetaData
+        val rs = metaData.getFunctions(null, null, "prefix%")
+        val functionNames = scala.collection.mutable.Set.empty[String]
+        while (rs.next()) {
+          functionNames += rs.getString(FUNCTION_NAME)
+        }
+        assert(functionNames.contains(function))
+      } finally {
+        statement.execute(s"DROP TEMPORARY FUNCTION IF EXISTS $function")
+      }
     }
   }
 
