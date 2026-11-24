@@ -70,6 +70,42 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("get tables and views whose names equal the pattern prefix") {
+    val table = "prefix"
+    val tempView = "prefix"
+    val another = "prefixx"
+    withJdbcStatement(table, another) { statement =>
+      statement.execute(
+        s"CREATE TABLE IF NOT EXISTS $table(key int) USING parquet COMMENT '$table'")
+      statement.execute(s"CREATE TABLE IF NOT EXISTS $another(key int) USING parquet")
+      // Local temp views need a stable session, which the Trino frontend does not
+      // preserve across statements, so this test lives here instead of the shared trait.
+      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS SELECT 1 AS a")
+      try {
+        val metaData = statement.getConnection.getMetaData
+
+        val rsTable = metaData.getTables("spark_catalog", "default", "prefix%", Array("TABLE"))
+        val tableNames = scala.collection.mutable.Set.empty[String]
+        while (rsTable.next()) {
+          tableNames += rsTable.getString(TABLE_NAME)
+        }
+        assert(tableNames == Set(table, another))
+
+        val rsView = metaData.getTables("spark_catalog", "default", "prefix%", Array("VIEW"))
+        val viewNames = scala.collection.mutable.Set.empty[String]
+        while (rsView.next()) {
+          viewNames += rsView.getString(TABLE_NAME)
+        }
+        assert(viewNames == Set(tempView))
+      } finally {
+        // The qualified table drops bypass the same-named temp view.
+        statement.execute(s"DROP VIEW IF EXISTS $tempView")
+        statement.execute(s"DROP TABLE IF EXISTS default.$table")
+        statement.execute(s"DROP TABLE IF EXISTS default.$another")
+      }
+    }
+  }
+
   test("get columns operation") {
     val tableName = "spark_get_col_operation"
     var schema = new StructType()
@@ -252,6 +288,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
   test("get columns operation should handle interval column properly") {
     val viewName = "view_interval"
     val ddl = s"CREATE GLOBAL TEMP VIEW $viewName AS SELECT INTERVAL 1 DAY AS i"
+    // INTERVAL literals are CalendarIntervalType or ANSI DayTimeIntervalType depending on
+    // the Spark version and legacy config.
+    val intervalType = spark.sql("SELECT INTERVAL 1 DAY AS i").schema.head.dataType
 
     withJdbcStatement(viewName) { statement =>
       statement.execute(ddl)
@@ -263,8 +302,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         assert(rowSet.getString(TABLE_NAME) === viewName)
         assert(rowSet.getString(COLUMN_NAME) === "i")
         assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
-        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(CalendarIntervalType.sql))
-        assert(rowSet.getInt(COLUMN_SIZE) === CalendarIntervalType.defaultSize)
+        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(intervalType.sql))
+        assert(rowSet.getInt(COLUMN_SIZE) === intervalType.defaultSize)
         assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
         assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
         assert(rowSet.getInt(NULLABLE) === 0)

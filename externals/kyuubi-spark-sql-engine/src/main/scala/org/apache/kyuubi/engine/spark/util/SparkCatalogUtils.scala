@@ -631,8 +631,10 @@ object SparkCatalogUtils extends Logging {
 
     getGlobalTempViewManager(spark, schemaPattern).flatMap { globalTmpDb =>
       catalog.globalTempViewManager.listViewNames(toV1Pattern(tablePattern)).flatMap { v =>
-        catalog.globalTempViewManager.get(v).map { plan =>
-          plan.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+        catalog.globalTempViewManager.get(v).map { viewInfo =>
+          // The relation is unresolved, the metadata carries the analyzed schema.
+          viewInfo.tableMeta.schema.zipWithIndex
+            .filter(f => columnPattern.matcher(f._1.name).matches())
             .map { case (f, i) =>
               toColumnResult(SparkCatalogUtils.SESSION_CATALOG, globalTmpDb, v, f, i)
             }
@@ -648,9 +650,10 @@ object SparkCatalogUtils extends Logging {
     val catalog = spark.sessionState.catalog
 
     catalog.listLocalTempViews(toV1Pattern(tablePattern))
-      .map(v => (v, catalog.getTempView(v.table).get))
-      .flatMap { case (v, plan) =>
-        plan.schema.zipWithIndex
+      .flatMap { v =>
+        // getTempView returns an unanalyzed plan, the metadata stores the analyzed schema.
+        val schema = catalog.getRawTempView(v.table).get.tableMeta.schema
+        schema.zipWithIndex
           .filter(f => columnPattern.matcher(f._1.name).matches())
           .map { case (f, i) =>
             toColumnResult(SparkCatalogUtils.SESSION_CATALOG, null, v.table, f, i)

@@ -147,41 +147,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("get tables and views whose names equal the pattern prefix") {
-    val table = "prefix"
-    val tempView = "prefix"
-    val another = "prefixx"
-    withJdbcStatement(table, another) { statement =>
-      statement.execute(
-        s"CREATE TABLE IF NOT EXISTS $table(key int) USING parquet COMMENT '$table'")
-      statement.execute(s"CREATE TABLE IF NOT EXISTS $another(key int) USING parquet")
-      // Temp views shadow same-named tables in SQL, but the metadata APIs report both.
-      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS SELECT 1 AS a")
-      try {
-        val metaData = statement.getConnection.getMetaData
-
-        val rsTable = metaData.getTables("spark_catalog", "default", "prefix%", Array("TABLE"))
-        val tableNames = scala.collection.mutable.Set.empty[String]
-        while (rsTable.next()) {
-          tableNames += rsTable.getString(TABLE_NAME)
-        }
-        assert(tableNames == Set(table, another))
-
-        val rsView = metaData.getTables("spark_catalog", "default", "prefix%", Array("VIEW"))
-        val viewNames = scala.collection.mutable.Set.empty[String]
-        while (rsView.next()) {
-          viewNames += rsView.getString(TABLE_NAME)
-        }
-        assert(viewNames == Set(tempView))
-      } finally {
-        // The qualified drops bypass the same-named temp view.
-        statement.execute(s"DROP VIEW IF EXISTS $tempView")
-        statement.execute(s"DROP TABLE IF EXISTS default.$table")
-        statement.execute(s"DROP TABLE IF EXISTS default.$another")
-      }
-    }
-  }
-
   test("get type info") {
     withJdbcStatement() { statement =>
       val typeInfo = statement.getConnection.getMetaData.getTypeInfo
