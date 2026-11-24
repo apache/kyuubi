@@ -53,6 +53,19 @@ class CommandUtilsSuite extends AnyFunSuite {
       REDACTION_REPLACEMENT_TEXT)
   }
 
+  test("redact multiline values for specified config keys") {
+    Seq("\n", "\r\n", "\r").foreach { separator =>
+      val value = s"first=part${separator}second=part${separator}third=part"
+      val commands = Seq("--conf", s"api.key=$value", "--conf", s"regular.key=$value")
+
+      assert(redactConfValues(commands, Seq("api.key")) === Seq(
+        "--conf",
+        s"api.key=$REDACTION_REPLACEMENT_TEXT",
+        "--conf",
+        s"regular.key=$value"))
+    }
+  }
+
   test("assemble key value pair with config option") {
     assertResult("--conf abc=123")(confKeyValueStr("abc", "123"))
     assertResult("--conf abc.def=xyz.123")(confKeyValueStr("abc.def", "xyz.123"))
