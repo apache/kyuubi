@@ -15,33 +15,29 @@
  * limitations under the License.
  */
 
-table.docutils {
+table.table {
     width: 100%;
-    margin-top: 10px;
-    margin-bottom: 10px;
     border: 0;
-    border-collapse: collapse;
-    table-layout: auto;
 }
-table.docutils th {
-    padding: 1px 8px 1px 5px;
-    border-top: 1px;
-    border-left: 1px;
-    border-right: 1px;
-    border-bottom: 1px solid #aaa;
-}
-table.docutils td {
+
+table.table th,
+table.table td {
+    padding: 4px;
+    border: 0;
+    vertical-align: middle;
+    min-width: 70px;
     word-break: break-word;
-    min-width: 10%;
 }
-table.docutils tr:hover {
-    background: #efefef;
+
+table.table tbody tr:hover {
+    background: var(--pst-color-table-row-hover-bg);
 }
-table.docutils tbody tr:nth-child(2n) {
-    background: #9EBCE21E;
+
+table.table span.pre {
+    white-space: normal;
 }
-table.docutils td:nth-child(1) {
+
+table.table td:nth-child(1) {
     width: 25%;
-    word-break: break-all;
     font-weight: 500;
 }
