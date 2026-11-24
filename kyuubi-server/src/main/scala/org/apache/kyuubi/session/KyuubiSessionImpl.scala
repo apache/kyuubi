@@ -31,7 +31,7 @@ import org.apache.kyuubi.engine.{EngineRef, KyuubiApplicationManager}
 import org.apache.kyuubi.events.{EventBus, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.DiscoveryClientProvider._
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
-import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.{LaunchEngine, Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.service.authentication.InternalSecurityAccessor
 import org.apache.kyuubi.session.SessionType.SessionType
@@ -83,8 +83,21 @@ class KyuubiSessionImpl(
     handle.identifier.toString,
     sessionManager.applicationManager,
     sessionManager.engineStartupProcessSemaphore)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager
+  private[kyuubi] val launchEngineOp: LaunchEngine = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
+
+  override def getNoOperationTime: Long = {
+    if (launchEngineOp != null && !launchEngineOp.isTerminal) {
+      0L
+    } else if (lastIdleTime > 0) {
+      val idleStartTime =
+        if (launchEngineOp != null) math.max(lastIdleTime, launchEngineOp.getCompletedTime)
+        else lastIdleTime
+      System.currentTimeMillis() - idleStartTime
+    } else {
+      0L
+    }
+  }
 
   private lazy val sessionUserSignBase64: String =
     SignUtils.signWithPrivateKey(user, sessionManager.signingPrivateKey)
