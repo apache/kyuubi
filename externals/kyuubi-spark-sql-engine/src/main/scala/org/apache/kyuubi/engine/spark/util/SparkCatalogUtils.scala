@@ -172,8 +172,8 @@ object SparkCatalogUtils extends Logging {
     }
   }
 
-  // Rewrites the Java regex produced by `toJavaRegex` back into a SQL-like pattern: the v1
-  // catalog APIs compile the pattern themselves, so a converted regex would be re-expanded.
+  // Converts the regex from `toJavaRegex` to the pattern form of the v1 catalog APIs, which
+  // prepend (?i) and expand * themselves.
   def toV1Pattern(pattern: String): String = pattern.replace(".*", "*")
 
   // Session V1 identifiers are case-insensitive, so are the patterns matched against them.
@@ -384,6 +384,11 @@ object SparkCatalogUtils extends Logging {
             def joinKey(ident: Identifier): (String, String) =
               (ident.namespace().head.toLowerCase, ident.name().toLowerCase)
 
+            // getTablesByName throws when the metastore lacks the database (e.g. DSv2-only
+            // namespaces of a custom catalog), that is not a degradation, so no warn is logged.
+            lazy val metastoreDatabaseExists: Boolean =
+              ns.headOption.exists(sessionCatalog.databaseExists)
+
             val (fromBatch, unmatched) = batched match {
               case Success(byName) =>
                 // Identifiers a successful batch did not return are absent from the
@@ -397,10 +402,12 @@ object SparkCatalogUtils extends Logging {
                   },
                   v1Candidates.filterNot(ident => byName.contains(joinKey(ident))))
               case Failure(e) =>
-                warn(
-                  s"Failed to batch load metastore tables in namespace ${ns.mkString(".")}, " +
-                    "falling back to loading tables individually",
-                  e)
+                if (metastoreDatabaseExists) {
+                  warn(
+                    s"Failed to batch load metastore tables in namespace ${ns.mkString(".")}, " +
+                      "falling back to loading tables individually",
+                    e)
+                }
                 (Seq.empty, v1Candidates)
             }
 
@@ -408,16 +415,13 @@ object SparkCatalogUtils extends Logging {
             // be typed VIEW just because v1 database a has a view v.
             lazy val viewNames: Set[String] = batched match {
               case Success(_) => Set.empty
-              case Failure(_) =>
-                ns.headOption match {
-                  case Some(db) if sessionCatalog.databaseExists(db) =>
-                    // listViews returns local temp views (empty namespace), skip them.
-                    sessionCatalog.listViews(db, toV1Pattern(tablePattern))
-                      .filter(_.database.isDefined)
-                      .map(_.table.toLowerCase)
-                      .toSet
-                  case _ => Set.empty
-                }
+              case Failure(_) if metastoreDatabaseExists =>
+                // listViews returns local temp views (empty namespace), skip them.
+                sessionCatalog.listViews(ns.head, toV1Pattern(tablePattern))
+                  .filter(_.database.isDefined)
+                  .map(_.table.toLowerCase)
+                  .toSet
+              case _ => Set.empty
             }
 
             // Tables the batch does not cover: DSv2-only tables, or the whole namespace
@@ -546,13 +550,18 @@ object SparkCatalogUtils extends Logging {
           }
         }
         identifiers.flatMap { ident =>
-          val table = tc.loadTable(ident)
           val namespace =
             ident.namespace().map(ns => if (quote) quoteIfNeeded(ns) else ns).mkString(".")
           val tableName = if (quote) quoteIfNeeded(ident.name()) else ident.name()
-
-          table.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
-            .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
+          // Skip the columns of a table that fails to load, as GetTables degrades it to "".
+          attempt(tc.loadTable(ident)) match {
+            case Success(table) =>
+              table.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+                .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
+            case Failure(e) =>
+              warn(s"Failed to load table $ident for the columns", e)
+              Seq.empty
+          }
         }
 
       case _ => Seq.empty[Row]

@@ -28,7 +28,6 @@ trait HMSIcebergSuiteMixin extends IcebergSuiteMixin {
   override protected def extraConfigs: Map[String, String] = super.extraConfigs ++ Map(
     "spark.sql.catalogImplementation" -> "hive",
     "spark.hadoop.hive.metastore.uris" -> hmsThriftUris,
-    "spark.sql.catalog.spark_catalog.uris" -> hmsThriftUris,
     "spark.sql.catalog.spark_catalog.cache-enabled" -> "false",
     "spark.hadoop.iceberg.engine.hive.lock-enabled" -> "false",
     // Reproduces https://github.com/apache/kyuubi/issues/7673: with this flag the Hive

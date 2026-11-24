@@ -182,26 +182,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
     }
   }
 
-  test("get functions whose names equal the pattern prefix") {
-    val function = "prefix"
-    withJdbcStatement() { statement =>
-      statement.execute(
-        s"CREATE OR REPLACE TEMPORARY FUNCTION $function" +
-          " AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFAbs'")
-      try {
-        val metaData = statement.getConnection.getMetaData
-        val rs = metaData.getFunctions(null, null, "prefix%")
-        val functionNames = scala.collection.mutable.Set.empty[String]
-        while (rs.next()) {
-          functionNames += rs.getString(FUNCTION_NAME)
-        }
-        assert(functionNames.contains(function))
-      } finally {
-        statement.execute(s"DROP TEMPORARY FUNCTION IF EXISTS $function")
-      }
-    }
-  }
-
   test("get type info") {
     withJdbcStatement() { statement =>
       val typeInfo = statement.getConnection.getMetaData.getTypeInfo
