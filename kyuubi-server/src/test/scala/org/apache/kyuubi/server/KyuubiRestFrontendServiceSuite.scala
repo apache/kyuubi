@@ -55,11 +55,6 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
   }
 
   test("swagger ui json data") {
-    val resp = webTarget.path("/openapi.json").request().get()
-    assert(resp.getStatus === 200)
-  }
-
-  test("swagger ui json data only includes Kyuubi REST API resources") {
     val resp = webTarget.path("api/openapi.json").request().get()
     assert(resp.getStatus === 200)
     val paths = new ObjectMapper().readTree(resp.readEntity(classOf[String])).get("paths")
