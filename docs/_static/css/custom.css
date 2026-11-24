@@ -29,7 +29,7 @@ table.table td {
     word-break: break-word;
 }
 
-table.table tr:hover {
+table.table tbody tr:hover {
     background: var(--pst-color-table-row-hover-bg);
 }
 
