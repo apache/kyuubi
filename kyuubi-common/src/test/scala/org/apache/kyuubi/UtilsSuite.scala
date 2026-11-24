@@ -173,6 +173,36 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(expectBuffer === redactedCmdArgs)
   }
 
+  test("redact multiline sensitive information in command line args") {
+    val conf = new KyuubiConf()
+    conf.set(SERVER_SECRET_REDACTION_PATTERN, "(?i)secret|password|private[._-]?key".r)
+
+    Seq("\n", "\r\n", "\r").foreach { separator =>
+      val value = s"first=part${separator}second=part${separator}third=part"
+      val commands = Seq(
+        "main",
+        "--conf",
+        s"spark.example.password=$value",
+        "--conf",
+        s"spark.driverEnv.MULTI_LINE_PRIVATE_KEY=$value",
+        "--conf",
+        s"spark.example.property=first${separator}password=second",
+        "--conf",
+        s"spark.example.regular=$value")
+
+      assert(Utils.redactCommandLineArgs(conf, commands) === Seq(
+        "main",
+        "--conf",
+        s"spark.example.password=$REDACTION_REPLACEMENT_TEXT",
+        "--conf",
+        s"spark.driverEnv.MULTI_LINE_PRIVATE_KEY=$REDACTION_REPLACEMENT_TEXT",
+        "--conf",
+        s"spark.example.property=$REDACTION_REPLACEMENT_TEXT",
+        "--conf",
+        s"spark.example.regular=$value"))
+    }
+  }
+
   test("redact sensitive information") {
     val secretKeys = Some("my.password".r)
     assert(Utils.redact(secretKeys, Seq(("kyuubi.my.password", "12345"))) ===
