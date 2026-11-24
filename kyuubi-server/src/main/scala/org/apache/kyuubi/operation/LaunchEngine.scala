@@ -69,6 +69,10 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
+  private[kyuubi] def isTerminal: Boolean = isTerminalState(state)
+
+  private[kyuubi] def getCompletedTime: Long = completedTime
+
   override protected def applicationInfoMap: Option[Map[String, String]] = {
     super.applicationInfoMap.map { _ + ("refId" -> session.engine.getEngineRefId) }
   }

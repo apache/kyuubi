@@ -203,9 +203,12 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     }
   }
 
-  def newLaunchEngineOperation(session: KyuubiSessionImpl, shouldRunAsync: Boolean): Operation = {
+  def newLaunchEngineOperation(
+      session: KyuubiSessionImpl,
+      shouldRunAsync: Boolean): LaunchEngine = {
     val operation = new LaunchEngine(session, shouldRunAsync)
     addOperation(operation)
+    operation
   }
 
   override def getOperationLogRowSet(
