@@ -42,28 +42,40 @@ class SessionLimiterImpl(userLimit: Int, ipAddressLimit: Int, userIpAddressLimit
   override def increment(userIpAddress: UserIpAddress): Unit = {
     val user = userIpAddress.user
     val ipAddress = userIpAddress.ipAddress
-    // increment userIpAddress count
-    if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
-      StringUtils.isNotBlank(ipAddress)) {
-      incrLimitCount(
-        s"$user:$ipAddress",
-        userIpAddressLimit,
-        "Connection limit per user:ipaddress reached" +
-          s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
-    }
-    // increment user count
-    if (userLimit > 0 && StringUtils.isNotBlank(user)) {
-      incrLimitCount(
-        user,
-        userLimit,
-        s"Connection limit per user reached (user: $user limit: $userLimit)")
-    }
-    // increment ipAddress count
-    if (ipAddressLimit > 0 && StringUtils.isNotBlank(ipAddress)) {
-      incrLimitCount(
-        ipAddress,
-        ipAddressLimit,
-        s"Connection limit per ipaddress reached (ipaddress: $ipAddress limit: $ipAddressLimit)")
+    // A rejected session is never opened, so nobody would decrement the keys counted before the
+    // one that rejects it: they are given back here.
+    var countedKeys = List.empty[String]
+    try {
+      // increment userIpAddress count
+      if (userIpAddressLimit > 0 && StringUtils.isNotBlank(user) &&
+        StringUtils.isNotBlank(ipAddress)) {
+        val userIpAddressKey = s"$user:$ipAddress"
+        incrLimitCount(
+          userIpAddressKey,
+          userIpAddressLimit,
+          "Connection limit per user:ipaddress reached" +
+            s" (user:ipaddress: $user:$ipAddress limit: $userIpAddressLimit)")
+        countedKeys = userIpAddressKey :: countedKeys
+      }
+      // increment user count
+      if (userLimit > 0 && StringUtils.isNotBlank(user)) {
+        incrLimitCount(
+          user,
+          userLimit,
+          s"Connection limit per user reached (user: $user limit: $userLimit)")
+        countedKeys = user :: countedKeys
+      }
+      // increment ipAddress count
+      if (ipAddressLimit > 0 && StringUtils.isNotBlank(ipAddress)) {
+        incrLimitCount(
+          ipAddress,
+          ipAddressLimit,
+          s"Connection limit per ipaddress reached (ipaddress: $ipAddress limit: $ipAddressLimit)")
+      }
+    } catch {
+      case e: KyuubiSQLException =>
+        countedKeys.foreach(decrLimitCount)
+        throw e
     }
   }
 
