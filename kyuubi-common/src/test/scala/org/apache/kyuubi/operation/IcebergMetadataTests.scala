@@ -417,7 +417,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
     val tempView = "columns_temp_view"
     val column = "c"
     withJdbcStatement() { statement =>
-      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView($column INT) AS SELECT 1")
+      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS SELECT 1 AS $column")
       try {
         val metaData = statement.getConnection.getMetaData
         val rs = metaData.getColumns(cg, "default", "%", "%")
