@@ -24,7 +24,7 @@ import java.util.{Iterator => JIterator}
 import com.google.common.collect.AbstractIterator
 import io.trino.tpcds._
 import io.trino.tpcds.`type`.{Decimal => TPCDSDecimal}
-import io.trino.tpcds.row.generator.RowGenerator
+import io.trino.tpcds.row.generator.{AbstractRowGenerator, RowGenerator}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
 import org.apache.spark.sql.catalyst.util.{DateTimeUtils, RebaseDateTime}
@@ -93,33 +93,36 @@ class KyuubiResultsIterator(
   skipRowsUntilStartingRowNumber(startingRowNumber)
 
   private def skipRowsUntilStartingRowNumber(startingRowNumber: Long): Unit = {
-    rowGenerator.skipRowsUntilStartingRowNumber(startingRowNumber)
-    parentRowGenerator.foreach(_.skipRowsUntilStartingRowNumber(startingRowNumber))
-    childRowGenerator.foreach(_.skipRowsUntilStartingRowNumber(startingRowNumber))
+    def skipRows(generator: RowGenerator, sourceTable: Table): Unit = {
+      // tpcds 1.4 narrows the starting row to Int. Store orders exceed Int.MaxValue at
+      // SF10000, so seek each random stream using the full Long offset instead.
+      val abstractGenerator = generator.asInstanceOf[AbstractRowGenerator]
+      sourceTable.getGeneratorColumns.foreach { column =>
+        abstractGenerator.getRandomNumberStream(column).skipRows(startingRowNumber - 1)
+      }
+    }
+
+    skipRows(rowGenerator, table)
+    parentRowGenerator.foreach(skipRows(_, table.getParent))
+    childRowGenerator.foreach(skipRows(_, table.getChild))
   }
 
   override protected def computeNext(): InternalRow = {
-    if (rowNumber > endingRowNumber) {
-      return endOfData
+    while (rowNumber <= endingRowNumber) {
+      val result = rowGenerator.generateRowAndChildRows(
+        rowNumber,
+        session,
+        parentRowGenerator.orNull,
+        childRowGenerator.orNull)
+      if (result.shouldEndRow) {
+        rowStop()
+        rowNumber += 1
+      }
+      if (!result.getRowAndChildRows.isEmpty) {
+        return toInternalRow(KyuubiTableRows.getValues(result.getRowAndChildRows.get(0)))
+      }
     }
-    val result = rowGenerator.generateRowAndChildRows(
-      rowNumber,
-      session,
-      parentRowGenerator.orNull,
-      childRowGenerator.orNull)
-    var row: InternalRow = null
-    if (!result.getRowAndChildRows.isEmpty) {
-      row = toInternalRow(KyuubiTableRows.getValues(result.getRowAndChildRows.get(0)))
-    }
-
-    if (result.shouldEndRow) {
-      rowStop()
-      rowNumber += 1
-    }
-    if (result.getRowAndChildRows().isEmpty()) {
-      row = computeNext()
-    }
-    row
+    endOfData()
   }
 
   private def rowStop(): Unit = {

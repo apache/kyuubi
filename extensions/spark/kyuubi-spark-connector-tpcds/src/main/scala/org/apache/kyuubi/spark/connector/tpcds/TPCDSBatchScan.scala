@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import java.math.RoundingMode
 import java.util.OptionalLong
 
+import com.google.common.math.LongMath
 import io.trino.tpcds._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
@@ -44,7 +46,10 @@ class TPCDSBatchScan(
     if (table.isSmall) 1
     else math.max(
       SparkSession.active.sparkContext.defaultParallelism,
-      (_sizeInBytes / readConf.maxPartitionBytes).ceil.toInt)
+      Math.toIntExact(LongMath.divide(
+        _sizeInBytes,
+        readConf.maxPartitionBytes,
+        RoundingMode.CEILING)))
 
   override def build: Scan = this
 
