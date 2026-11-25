@@ -541,11 +541,7 @@ private class StatementStatsPagedTable(
       </td>
       <td> {formatDuration(event.operationRunTime.getOrElse(0L))} </td>
       <td> {formatDuration(event.operationCpuTime.getOrElse(0L) / 1000000)} </td>
-      <td>
-        <span class="description-input">
-          {event.statement}
-        </span>
-      </td>
+      {statementCell(event.statement)}
       <td>
         {event.state}
       </td>
@@ -566,6 +562,18 @@ private class StatementStatsPagedTable(
       if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage) else <td></td>
     }
     </tr>
+  }
+
+  /**
+   * The `description-input` CSS class from Spark collapses line breaks even when expanded,
+   * so multi-line statements also keep the original format in a collapsible `<pre>` block,
+   * similar to the description cell of Spark's SQL tab.
+   */
+  private def statementCell(statement: String): Seq[Node] = {
+    val isMultiline = statement.trim.indexOf('\n') >= 0
+    <td>
+      <span class="description-input">{statement}</span>{detailsUINode(isMultiline, statement)}
+    </td>
   }
 
   private def errorMessageCell(errorMessage: String): Seq[Node] = {
