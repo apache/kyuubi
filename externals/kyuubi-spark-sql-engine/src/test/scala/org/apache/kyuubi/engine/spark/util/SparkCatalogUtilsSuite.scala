@@ -18,13 +18,15 @@
 package org.apache.kyuubi.engine.spark.util
 
 import java.sql.{Connection, DriverManager}
-import java.util.{Collections, Locale, Set => JSet}
+import java.util.{Collections, Locale, Map => JMap, Set => JSet}
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.{CatalogDatabase, CatalogStorageFormat, CatalogTable, CatalogTableType}
 import org.apache.spark.sql.connector.catalog.{DelegatingCatalogExtension, Identifier, Table, TableCapability, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.V2SessionCatalog
 import org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{IntegerType, StructType}
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
@@ -69,7 +71,20 @@ class UnreadableSchemaTable extends Table {
   override def capabilities(): JSet[TableCapability] = Collections.emptySet()
 }
 
-class UnloadableJdbcCatalog extends JDBCTableCatalog {
+// JDBCTableCatalog does not report table comments.
+class CommentedJdbcCatalog extends JDBCTableCatalog {
+  override def loadTable(ident: Identifier): Table = new CommentedTable(super.loadTable(ident))
+}
+
+class CommentedTable(delegate: Table) extends Table {
+  override def name(): String = delegate.name()
+  override def schema(): StructType = delegate.schema()
+  override def capabilities(): JSet[TableCapability] = delegate.capabilities()
+  override def properties(): JMap[String, String] =
+    Collections.singletonMap(TableCatalog.PROP_COMMENT, SummariesJdbcCatalog.tableComment)
+}
+
+class UnloadableJdbcCatalog extends CommentedJdbcCatalog {
   import SummariesJdbcCatalog._
 
   override def listTables(namespace: Array[String]): Array[Identifier] =
@@ -86,10 +101,12 @@ object SummariesJdbcCatalog {
   val url = "jdbc:derby:memory:kyuubi_summaries_catalog;create=true"
   val driver = "org.apache.derby.jdbc.EmbeddedDriver"
   val catalogName = "summaries_catalog"
+  val commentedCatalogImpl = "org.apache.kyuubi.engine.spark.util.CommentedJdbcCatalog"
   val unloadableCatalogImpl = "org.apache.kyuubi.engine.spark.util.UnloadableJdbcCatalog"
   val unloadableCatalogName = "unloadable_catalog"
   val schema = "summaries_db"
   val table = "summaries_table"
+  val tableComment = "summaries_comment"
   val unloadableTable = "unloadable_table"
 }
 
@@ -189,7 +206,7 @@ class SummariesCatalogUtilsSuite extends WithSparkSQLEngine {
   import SummariesJdbcCatalog._
 
   override def withKyuubiConf: Map[String, String] = Map(
-    "spark.sql.catalog.spark_catalog" -> catalogImpl,
+    "spark.sql.catalog.spark_catalog" -> commentedCatalogImpl,
     "spark.sql.catalog.spark_catalog.url" -> url,
     "spark.sql.catalog.spark_catalog.driver" -> driver,
     s"spark.sql.catalog.$catalogName" -> catalogImpl,
@@ -264,18 +281,84 @@ class SummariesCatalogUtilsSuite extends WithSparkSQLEngine {
     }
   }
 
-  test("getTables falls back to per-table loading when the batched v1 lookup fails") {
-    val rows = SparkCatalogUtils.getCatalogTablesOrViews(
-      spark,
-      SparkCatalogUtils.SESSION_CATALOG,
-      schema,
-      ".*",
-      Set("TABLE"),
-      ignoreTableProperties = false)
-    assert(rows.forall(_.getString(1) == schema))
-    assert(rows.map(_.getString(2)).toSet == Set(table))
-    assert(rows.forall(_.getString(3) == "TABLE"))
-    assert(rows.forall(_.getString(4) == ""))
+  test("getTables skips v1 lookup for standalone non-CatalogExtension session catalog") {
+    val sessionCatalog = spark.sessionState.catalog
+    val v1Database =
+      CatalogDatabase(schema, "", sessionCatalog.getDefaultDBPath(schema), Map.empty)
+    val v1View = CatalogTable(
+      identifier = TableIdentifier(table, Some(schema)),
+      tableType = CatalogTableType.VIEW,
+      storage = CatalogStorageFormat.empty,
+      schema = new StructType().add("id", IntegerType),
+      viewText = Some("SELECT 1 AS id"),
+      comment = Some("v1_view_comment"))
+    try {
+      sessionCatalog.createDatabase(v1Database, ignoreIfExists = true)
+      sessionCatalog.createTable(v1View, ignoreIfExists = true, validateLocation = false)
+      // A same-named v1 view in the metastore must not shadow the standalone catalog's table.
+      val rows = SparkCatalogUtils.getCatalogTablesOrViews(
+        spark,
+        SparkCatalogUtils.SESSION_CATALOG,
+        schema,
+        ".*",
+        Set("TABLE", "VIEW"),
+        ignoreTableProperties = false)
+      assert(rows.map(_.getString(1)) == Seq(schema))
+      assert(rows.map(_.getString(2)) == Seq(table))
+      assert(rows.map(_.getString(3)) == Seq("TABLE"))
+      assert(rows.map(_.getString(4)) == Seq(tableComment))
+
+      val viewRows = SparkCatalogUtils.getCatalogTablesOrViews(
+        spark,
+        SparkCatalogUtils.SESSION_CATALOG,
+        schema,
+        ".*",
+        Set("VIEW"),
+        ignoreTableProperties = false)
+      assert(viewRows.isEmpty)
+    } finally {
+      sessionCatalog.dropDatabase(schema, ignoreIfNotExists = true, cascade = true)
+    }
+  }
+
+  test("getTempViews and getColumns omit temp views when another catalog is requested") {
+    val localView = "other_catalog_local_view"
+    val globalView = "other_catalog_global_view"
+    try {
+      spark.sql(s"CREATE OR REPLACE TEMPORARY VIEW $localView AS SELECT 1 AS a")
+      spark.sql(s"CREATE OR REPLACE GLOBAL TEMP VIEW $globalView AS SELECT 1 AS b")
+      Seq(null, "", SparkCatalogUtils.SESSION_CATALOG, "SPARK_CATALOG").foreach { requested =>
+        val globalRows =
+          SparkCatalogUtils.getTempViews(spark, requested, "global_temp", globalView)
+        assert(globalRows.map(r => (r.getString(0), r.getString(1), r.getString(2))) ==
+          Seq((SparkCatalogUtils.SESSION_CATALOG, "global_temp", globalView)))
+
+        val localRows = SparkCatalogUtils.getTempViews(spark, requested, "default", localView)
+        assert(localRows.map(r => (r.getString(0), r.getString(1), r.getString(2))) ==
+          Seq((SparkCatalogUtils.SESSION_CATALOG, null, localView)))
+      }
+
+      assert(SparkCatalogUtils.getTempViews(spark, catalogName, "global_temp", globalView).isEmpty)
+      assert(SparkCatalogUtils.getTempViews(spark, catalogName, "default", localView).isEmpty)
+
+      assert(SparkCatalogUtils
+        .getColumns(spark, catalogName, "global_temp", globalView, ".*").isEmpty)
+      assert(SparkCatalogUtils
+        .getColumns(spark, catalogName, "default", localView, ".*").isEmpty)
+
+      val globalColumns = SparkCatalogUtils
+        .getColumns(spark, SparkCatalogUtils.SESSION_CATALOG, "global_temp", globalView, ".*")
+      assert(globalColumns.map(r => (r.getString(1), r.getString(2), r.getString(3))) ==
+        Seq(("global_temp", globalView, "b")))
+
+      val localColumns = SparkCatalogUtils
+        .getColumns(spark, SparkCatalogUtils.SESSION_CATALOG, "default", localView, ".*")
+      assert(localColumns.map(r => (r.getString(1), r.getString(2), r.getString(3))) ==
+        Seq((null, localView, "a")))
+    } finally {
+      spark.sql(s"DROP VIEW IF EXISTS $localView")
+      spark.sql(s"DROP VIEW IF EXISTS global_temp.$globalView")
+    }
   }
 
   test("getTables and getColumns tolerate tables that fail to load in a non-session catalog") {
@@ -285,8 +368,8 @@ class SummariesCatalogUtilsSuite extends WithSparkSQLEngine {
       schema,
       ".*",
       Set("TABLE"))
-    assert(tableRows.map(_.getString(2)).toSet == Set(unloadableTable, table))
-    assert(tableRows.forall(_.getString(4) == ""))
+    assert(tableRows.map(r => r.getString(2) -> r.getString(4)).toSet ==
+      Set(unloadableTable -> "", table -> tableComment))
 
     val columnRows =
       SparkCatalogUtils.getColumns(spark, unloadableCatalogName, schema, ".*", ".*")

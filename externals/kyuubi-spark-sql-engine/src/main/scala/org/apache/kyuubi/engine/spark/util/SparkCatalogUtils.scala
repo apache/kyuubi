@@ -354,6 +354,17 @@ object SparkCatalogUtils extends Logging {
             }.filter { case (_, typ, _) => matchesTableType(typ) }
           }.getOrElse(listMatchingTables(ns).map((_, TABLE, "")))
         }
+      } else if (!tc.isInstanceOf[CatalogExtension]) {
+        // Standalone session catalogs do not delegate to the v1 SessionCatalog, so skip the v1
+        // batch lookup and view probe to avoid cross-talk with same-named v1 tables or views.
+        // DSv2 has no batch API that returns comments yet, so each table is loaded for REMARKS.
+        if (matchesTableType(TABLE)) {
+          namespaces.flatMap { ns =>
+            listMatchingTables(ns).map(ident => (ident, TABLE, loadComment(tc, ident)))
+          }
+        } else {
+          Array.empty[(Identifier, String, String)]
+        }
       } else {
         namespaces.flatMap { ns =>
           val tables = listMatchingTables(ns)
@@ -570,14 +581,23 @@ object SparkCatalogUtils extends Logging {
     }
   }
 
+  // Temp views live in the session catalog; omit them when another catalog is explicitly
+  // requested, while keeping them for blank/null (unfiltered) and spark_catalog.
+  private def includeTempViews(catalogName: String): Boolean = {
+    StringUtils.isBlank(catalogName) || catalogName.equalsIgnoreCase(SESSION_CATALOG)
+  }
+
   def getTempViews(
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String,
       tablePattern: String): Seq[Row] = {
+    if (!includeTempViews(catalogName)) {
+      return Seq.empty
+    }
     val views = getViews(spark, schemaPattern, tablePattern)
-    // Temp views live in the session catalog regardless of the requested catalog, so label them
-    // with SESSION_CATALOG to keep the rows resolvable, as getColumns does for temp view columns.
+    // Temp views live in the session catalog, so label them with SESSION_CATALOG to keep the
+    // rows resolvable even when defaultCatalog is another catalog, as getColumns does.
     views.map { ident =>
       Row(
         SESSION_CATALOG,
@@ -618,10 +638,13 @@ object SparkCatalogUtils extends Logging {
 
     val cp = columnPattern.r.pattern
     val byCatalog = getColumnsByCatalog(spark, catalogName, schemaPattern, tablePattern, cp)
-    val byGlobalTmpDB = getColumnsByGlobalTempViewManager(spark, schemaPattern, tablePattern, cp)
-    val byLocalTmp = getColumnsByLocalTempViews(spark, tablePattern, cp)
-
-    byCatalog ++ byGlobalTmpDB ++ byLocalTmp
+    if (includeTempViews(catalogName)) {
+      val byGlobalTmpDB = getColumnsByGlobalTempViewManager(spark, schemaPattern, tablePattern, cp)
+      val byLocalTmp = getColumnsByLocalTempViews(spark, tablePattern, cp)
+      byCatalog ++ byGlobalTmpDB ++ byLocalTmp
+    } else {
+      byCatalog
+    }
   }
 
   private def getColumnsByGlobalTempViewManager(

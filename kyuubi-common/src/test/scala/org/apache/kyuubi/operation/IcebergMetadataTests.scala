@@ -357,7 +357,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
     }
   }
 
-  test("get tables labels temp views with the session catalog") {
+  test("get tables reports temp views under the session catalog only") {
     val schema = "global_temp"
     val view = "temp_view_type"
     withJdbcStatement() { statement =>
@@ -371,6 +371,10 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with SparkVersionUtil {
         assert(rs.getString(TABLE_NAME) === view)
         assert(rs.getString(TABLE_TYPE) === "VIEW")
         assert(!rs.next())
+
+        // Explicitly requesting another catalog omits session temp views.
+        val rsOther = metaData.getTables(catalog, schema, "%", Array("VIEW"))
+        assert(!rsOther.next())
       } finally {
         statement.execute(s"DROP VIEW IF EXISTS $schema.$view")
       }
