@@ -240,6 +240,16 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.scalastyle</groupId>
+                <artifactId>scalastyle-maven-plugin</artifactId>
+                <configuration>
+                    <testSourceDirectories>
+                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala-spark-4.2</testSourceDirectory>
+                    </testSourceDirectories>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
@@ -490,4 +500,57 @@
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
+
+    <profiles>
+        <profile>
+            <id>spark-4.2</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-view-catalog-test-sources</id>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <sources>
+                                        <source>src/test/scala-spark-4.2</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>spark-4.3</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>build-helper-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>add-view-catalog-test-sources</id>
+                                <goals>
+                                    <goal>add-test-source</goal>
+                                </goals>
+                                <phase>generate-test-sources</phase>
+                                <configuration>
+                                    <sources>
+                                        <source>src/test/scala-spark-4.2</source>
+                                    </sources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
