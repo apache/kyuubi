@@ -28,6 +28,7 @@ import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
+import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -129,10 +130,12 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c17", "struct<X: string>", nullable = true, "17")
       .add("c18", "interval day", nullable = true, "18")
       .add("c19", "interval year", nullable = true, "19")
+      .add("c20", "varchar(5)", nullable = true, "20")
+      .add("c21", "char(5)", nullable = true, "21")
     // since spark3.4.0
-    schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
+    schema = schema.add("c22", "timestamp_ntz", nullable = true, "22")
     if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-      schema = schema.add("c21", "variant", nullable = true, "21")
+      schema = schema.add("c23", "variant", nullable = true, "23")
     }
 
     val ddl =
@@ -141,6 +144,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
          |  ${schema.toDDL}
          |)
          |USING parquet""".stripMargin
+
+    // Spark loads CHAR/VARCHAR columns as STRING.
+    schema = CharVarcharUtils.replaceCharVarcharWithStringInSchema(schema)
 
     withJdbcStatement(tableName) { statement =>
       statement.execute(ddl)
@@ -172,6 +178,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           STRUCT,
           OTHER,
           OTHER,
+          VARCHAR,
+          VARCHAR,
           TIMESTAMP,
           OTHER)
 
@@ -285,6 +293,22 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("get columns operation should return columns not stored in the metastore") {
+    // SPARK-46043 (4.0.0): V2SessionCatalog.loadTable resolves the DSv2 provider
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "4.0")
+    val tableName = "spark_get_col_not_stored"
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(s"CREATE TABLE IF NOT EXISTS $defaultSchema.$tableName USING rate")
+      val rowSet = statement.getConnection.getMetaData.getColumns("", defaultSchema, tableName, "%")
+      assert(rowSet.next())
+      assert(rowSet.getString(COLUMN_NAME) === "timestamp")
+      assert(rowSet.next())
+      assert(rowSet.getString(COLUMN_NAME) === "value")
+      assert(!rowSet.next())
+    }
+  }
+
   test("get columns operation should handle interval column properly") {
     val viewName = "view_interval"
     val ddl = s"CREATE GLOBAL TEMP VIEW $viewName AS SELECT INTERVAL 1 DAY AS i"
@@ -296,22 +320,22 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       statement.execute(ddl)
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, null)
-      while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
-        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
-        assert(rowSet.getString(TABLE_NAME) === viewName)
-        assert(rowSet.getString(COLUMN_NAME) === "i")
-        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
-        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(intervalType.sql))
-        assert(rowSet.getInt(COLUMN_SIZE) === intervalType.defaultSize)
-        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
-        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
-        assert(rowSet.getInt(NULLABLE) === 0)
-        assert(rowSet.getString(REMARKS) === "")
-        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
-        assert(rowSet.getString(IS_NULLABLE) === "YES")
-        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
-      }
+      assert(rowSet.next())
+      assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
+      assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+      assert(rowSet.getString(TABLE_NAME) === viewName)
+      assert(rowSet.getString(COLUMN_NAME) === "i")
+      assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(intervalType.sql))
+      assert(rowSet.getInt(COLUMN_SIZE) === intervalType.defaultSize)
+      assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+      assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+      assert(rowSet.getInt(NULLABLE) === 0)
+      assert(rowSet.getString(REMARKS) === "")
+      assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+      assert(rowSet.getString(IS_NULLABLE) === "YES")
+      assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+      assert(!rowSet.next())
     }
   }
 
@@ -323,22 +347,22 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       statement.execute(ddl)
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, "n")
-      while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
-        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
-        assert(rowSet.getString(TABLE_NAME) === viewName)
-        assert(rowSet.getString(COLUMN_NAME) === "n")
-        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
-        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
-        assert(rowSet.getInt(COLUMN_SIZE) === 1)
-        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
-        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
-        assert(rowSet.getInt(NULLABLE) === 1)
-        assert(rowSet.getString(REMARKS) === "")
-        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
-        assert(rowSet.getString(IS_NULLABLE) === "YES")
-        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
-      }
+      assert(rowSet.next())
+      assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
+      assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+      assert(rowSet.getString(TABLE_NAME) === viewName)
+      assert(rowSet.getString(COLUMN_NAME) === "n")
+      assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
+      assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
+      assert(rowSet.getInt(COLUMN_SIZE) === 1)
+      assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+      assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+      assert(rowSet.getInt(NULLABLE) === 1)
+      assert(rowSet.getString(REMARKS) === "")
+      assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+      assert(rowSet.getString(IS_NULLABLE) === "YES")
+      assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+      assert(!rowSet.next())
     }
   }
 

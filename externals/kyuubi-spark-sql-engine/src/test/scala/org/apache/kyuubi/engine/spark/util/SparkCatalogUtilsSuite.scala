@@ -18,24 +18,66 @@
 package org.apache.kyuubi.engine.spark.util
 
 import java.sql.{Connection, DriverManager}
-import java.util.Locale
+import java.util.{Collections, Locale, Set => JSet}
+import java.util.concurrent.atomic.AtomicInteger
 
-import org.apache.spark.sql.connector.catalog.{DelegatingCatalogExtension, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{DelegatingCatalogExtension, Identifier, Table, TableCapability, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.V2SessionCatalog
 import org.apache.spark.sql.execution.datasources.v2.jdbc.JDBCTableCatalog
+import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 
 object DummySessionCatalog {
   val extraNamespace: Array[String] = Array("2026_db")
+  val unloadableTable = "dummy_unloadable"
+  val unreadableSchemaTable = "dummy_unreadable_schema"
+  val loadTableCalls = new AtomicInteger()
 }
 
 class DummySessionCatalog extends DelegatingCatalogExtension {
+  import DummySessionCatalog._
 
   override def listNamespaces(namespace: Array[String]): Array[Array[String]] = {
     val base = super.listNamespaces(namespace)
-    if (namespace.isEmpty) base :+ DummySessionCatalog.extraNamespace else base
+    if (namespace.isEmpty) base :+ extraNamespace else base
+  }
+
+  override def listTables(namespace: Array[String]): Array[Identifier] = {
+    if (namespace.sameElements(extraNamespace)) {
+      Array(unloadableTable, unreadableSchemaTable).map(Identifier.of(namespace, _))
+    } else {
+      super.listTables(namespace)
+    }
+  }
+
+  override def loadTable(ident: Identifier): Table = {
+    loadTableCalls.incrementAndGet()
+    ident.name() match {
+      case `unloadableTable` => throw new NoClassDefFoundError("MissingStorageHandler")
+      case `unreadableSchemaTable` => new UnreadableSchemaTable
+      case _ => super.loadTable(ident)
+    }
+  }
+}
+
+// Resolves the schema lazily, as Delta tables do.
+class UnreadableSchemaTable extends Table {
+  override def name(): String = DummySessionCatalog.unreadableSchemaTable
+  override def schema(): StructType = throw new IllegalStateException("unreadable schema")
+  override def capabilities(): JSet[TableCapability] = Collections.emptySet()
+}
+
+class UnloadableJdbcCatalog extends JDBCTableCatalog {
+  import SummariesJdbcCatalog._
+
+  override def listTables(namespace: Array[String]): Array[Identifier] =
+    Identifier.of(namespace, unloadableTable) +: super.listTables(namespace)
+
+  override def loadTable(ident: Identifier): Table = ident.name() match {
+    case `unloadableTable` => throw new NoClassDefFoundError("MissingStorageHandler")
+    case _ => super.loadTable(ident)
   }
 }
 
@@ -44,8 +86,11 @@ object SummariesJdbcCatalog {
   val url = "jdbc:derby:memory:kyuubi_summaries_catalog;create=true"
   val driver = "org.apache.derby.jdbc.EmbeddedDriver"
   val catalogName = "summaries_catalog"
+  val unloadableCatalogImpl = "org.apache.kyuubi.engine.spark.util.UnloadableJdbcCatalog"
+  val unloadableCatalogName = "unloadable_catalog"
   val schema = "summaries_db"
   val table = "summaries_table"
+  val unloadableTable = "unloadable_table"
 }
 
 class SparkCatalogUtilsSuite extends WithSparkSQLEngine {
@@ -81,6 +126,45 @@ class SparkCatalogUtilsSuite extends WithSparkSQLEngine {
     assert(upper.map(_.getString(0)).toSet == Set("global_temp"))
   }
 
+  test("getTables and getColumns tolerate tables that fail to load") {
+    import DummySessionCatalog._
+
+    val regularTable = "dummy_regular"
+    spark.sql(
+      s"CREATE TABLE IF NOT EXISTS default.$regularTable(key INT) USING parquet COMMENT 'regular'")
+    try {
+      val tableRows = SparkCatalogUtils.getCatalogTablesOrViews(
+        spark,
+        SparkCatalogUtils.SESSION_CATALOG,
+        ".*",
+        "dummy_.*",
+        Set("TABLE"))
+      assert(tableRows.map(r => r.getString(2) -> r.getString(4)).toSet ==
+        Set(regularTable -> "regular", unloadableTable -> "", unreadableSchemaTable -> ""))
+
+      val columnRows = SparkCatalogUtils.getColumns(
+        spark,
+        SparkCatalogUtils.SESSION_CATALOG,
+        ".*",
+        "dummy_.*",
+        ".*")
+      assert(columnRows.map(r => r.getString(2) -> r.getString(3)) == Seq(regularTable -> "key"))
+
+      // Filtering by tableTypes skips loadTable for entries whose type does not match.
+      loadTableCalls.set(0)
+      val viewRows = SparkCatalogUtils.getCatalogTablesOrViews(
+        spark,
+        SparkCatalogUtils.SESSION_CATALOG,
+        extraNamespace.head,
+        "dummy_.*",
+        Set("VIEW"))
+      assert(viewRows.isEmpty)
+      assert(loadTableCalls.get() == 0)
+    } finally {
+      spark.sql(s"DROP TABLE IF EXISTS default.$regularTable")
+    }
+  }
+
   test("toV1Pattern rewrites converted regexes back to v1 catalog patterns") {
     assert(SparkCatalogUtils.toV1Pattern(".*") === "*")
     assert(SparkCatalogUtils.toV1Pattern("prefix.*") === "prefix*")
@@ -110,7 +194,10 @@ class SummariesCatalogUtilsSuite extends WithSparkSQLEngine {
     "spark.sql.catalog.spark_catalog.driver" -> driver,
     s"spark.sql.catalog.$catalogName" -> catalogImpl,
     s"spark.sql.catalog.$catalogName.url" -> url,
-    s"spark.sql.catalog.$catalogName.driver" -> driver)
+    s"spark.sql.catalog.$catalogName.driver" -> driver,
+    s"spark.sql.catalog.$unloadableCatalogName" -> unloadableCatalogImpl,
+    s"spark.sql.catalog.$unloadableCatalogName.url" -> url,
+    s"spark.sql.catalog.$unloadableCatalogName.driver" -> driver)
 
   private var derbyConnection: Connection = _
 
@@ -189,5 +276,20 @@ class SummariesCatalogUtilsSuite extends WithSparkSQLEngine {
     assert(rows.map(_.getString(2)).toSet == Set(table))
     assert(rows.forall(_.getString(3) == "TABLE"))
     assert(rows.forall(_.getString(4) == ""))
+  }
+
+  test("getTables and getColumns tolerate tables that fail to load in a non-session catalog") {
+    val tableRows = SparkCatalogUtils.getCatalogTablesOrViews(
+      spark,
+      unloadableCatalogName,
+      schema,
+      ".*",
+      Set("TABLE"))
+    assert(tableRows.map(_.getString(2)).toSet == Set(unloadableTable, table))
+    assert(tableRows.forall(_.getString(4) == ""))
+
+    val columnRows =
+      SparkCatalogUtils.getColumns(spark, unloadableCatalogName, schema, ".*", ".*")
+    assert(columnRows.map(r => r.getString(2) -> r.getString(3)) == Seq(table -> "id"))
   }
 }
