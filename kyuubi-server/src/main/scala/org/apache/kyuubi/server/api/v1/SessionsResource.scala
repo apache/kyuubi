@@ -423,13 +423,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
   @Path("{sessionHandle}/operations")
   def getOperation(@PathParam("sessionHandle") sessionHandleStr: String): Seq[OperationData] = {
     try {
-      fe.be.sessionManager.operationManager.allOperations().map { operation =>
-        if (StringUtils.equalsIgnoreCase(
-            operation.getSession.handle.identifier.toString,
-            sessionHandleStr)) {
-          ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])
-        }
-      }.toSeq.asInstanceOf[Seq[OperationData]]
+      fe.be.sessionManager.operationManager.allOperations().filter { operation =>
+        StringUtils.equalsIgnoreCase(
+          operation.getSession.handle.identifier.toString,
+          sessionHandleStr)
+      }.map { operation =>
+        ApiUtils.operationData(operation.asInstanceOf[KyuubiOperation])
+      }.toSeq
     } catch {
       case NonFatal(e) =>
         val errorMsg = "Error getting the list of all type operations belong to session"

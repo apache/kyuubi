@@ -386,7 +386,17 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val sessionHandle = sessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
 
-    // get operations belongs to specified session
+    val otherSessionOpenResp = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(
+        AUTHORIZATION_HEADER,
+        s"Basic ${new String(Base64.getEncoder.encode(user), StandardCharsets.UTF_8)}")
+      .post(Entity.entity(sessionOpenRequest, MediaType.APPLICATION_JSON_TYPE))
+    assert(otherSessionOpenResp.getStatus == 200)
+    val otherSessionHandle = otherSessionOpenResp.readEntity(classOf[SessionHandle]).getIdentifier
+    assert(otherSessionHandle != sessionHandle)
+
+    // Only operations belonging to the requested session should be returned.
     val response = webTarget
       .path(s"api/v1/sessions/${sessionHandle.toString}/operations")
       .request().get()
