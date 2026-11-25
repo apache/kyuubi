@@ -57,6 +57,16 @@ object TPCDSSchemaUtils {
     case right => right.getName
   }
 
+  // io.trino.tpcds 1.4 declares these four foreign-key date_sk columns as INTEGER instead of
+  // IDENTIFIER, even though their row classes store them as long and the TPC-DS spec defines
+  // them as Identifier (Tables 2-12 and 2-13).
+  def reviseColumnType(col: Column): ColumnType = col match {
+    case CallCenterColumn.CC_CLOSED_DATE_SK | CallCenterColumn.CC_OPEN_DATE_SK |
+        CatalogPageColumn.CP_START_DATE_SK | CatalogPageColumn.CP_END_DATE_SK =>
+      ColumnTypes.IDENTIFIER
+    case right => right.getType
+  }
+
   def tablePartitionColumnNames(table: Table, useTableSchema_2_6: Boolean): Array[String] =
     TABLE_DATE_COLUMNS.getOrElse(table, Array.empty).map(reviseColumnName(_, useTableSchema_2_6))
 

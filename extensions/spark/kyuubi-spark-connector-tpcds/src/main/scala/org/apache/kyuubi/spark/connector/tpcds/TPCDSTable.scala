@@ -57,7 +57,7 @@ class TPCDSTable(tbl: String, scale: Double, tpcdsConf: TPCDSConf)
         val index = TPCDSSchemaUtils.reviseNullColumnIndex(tpcdsTable, i)
         StructField(
           TPCDSSchemaUtils.reviseColumnName(c, tpcdsConf.useTableSchema_2_6),
-          toSparkDataType(c.getType),
+          toSparkDataType(TPCDSSchemaUtils.reviseColumnType(c)),
           nullable(index))
       })
   }

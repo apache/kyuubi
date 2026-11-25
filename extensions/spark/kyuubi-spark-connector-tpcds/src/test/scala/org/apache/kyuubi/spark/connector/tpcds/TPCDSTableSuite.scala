@@ -25,6 +25,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.datasources.v2.BatchScanExec
+import org.apache.spark.sql.types.LongType
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -231,6 +232,29 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       intercept[IllegalArgumentException] {
         spark.sql("select * from tpcds.sf1.store_sales").queryExecution.executedPlan
       }
+    }
+  }
+
+  test("all identifier columns use LongType") {
+    val sparkConf = new SparkConf().setMaster("local[1]")
+      .set("spark.ui.enabled", "false")
+      .set("spark.sql.catalogImplementation", "in-memory")
+    withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
+      val conf = TPCDSConf(spark, CaseInsensitiveStringMap.empty())
+      var identifierCount = 0
+      TPCDSSchemaUtils.BASE_TABLES.foreach { table =>
+        val schema = new TPCDSTable(table.getName, 1, conf).schema
+        schema.fields.foreach { field =>
+          val isIdentifier = field.name.endsWith("_sk") ||
+            field.name.endsWith("_ticket_number") ||
+            field.name.endsWith("_order_number")
+          if (isIdentifier) {
+            identifierCount += 1
+            assert(field.dataType == LongType, s"${table.getName}.${field.name}")
+          }
+        }
+      }
+      assert(identifierCount == 127)
     }
   }
 }
