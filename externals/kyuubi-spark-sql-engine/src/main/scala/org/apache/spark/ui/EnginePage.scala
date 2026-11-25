@@ -570,9 +570,10 @@ private class StatementStatsPagedTable(
    * similar to the description cell of Spark's SQL tab.
    */
   private def statementCell(statement: String): Seq[Node] = {
-    val isMultiline = statement.trim.indexOf('\n') >= 0
+    val stmt = Option(statement).getOrElse("")
+    val isMultiline = stmt.trim.indexOf('\n') >= 0
     <td>
-      <span class="description-input">{statement}</span>{detailsUINode(isMultiline, statement)}
+      <span class="description-input">{stmt}</span>{detailsUINode(isMultiline, stmt)}
     </td>
   }
 
