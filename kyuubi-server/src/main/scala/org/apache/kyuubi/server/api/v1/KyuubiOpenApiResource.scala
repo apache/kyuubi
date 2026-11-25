@@ -57,7 +57,7 @@ class KyuubiOpenApiResource extends BaseOpenApiResource with ApiRequestContext {
     val ctx: OpenApiContext = new KyuubiJaxrsOpenApiContextBuilder()
       .servletConfig(config)
       .application(app)
-      .resourcePackages(resourcePackages)
+      .resourcePackages(Set("org.apache.kyuubi.server.api.v1").asJava)
       .configLocation(configLocation)
       .openApiConfiguration(openApiConfiguration)
       .ctxId(ctxId)
