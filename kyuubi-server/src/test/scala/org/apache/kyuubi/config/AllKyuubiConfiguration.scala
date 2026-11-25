@@ -114,6 +114,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
             c.key,
             c.defaultValStr match {
               case ConfigEntry.UNDEFINED => "(none)"
+              case "" => "(empty)"
               case other => s"`${normalizeTableCell(other)}`"
             },
             normalizeTableCell(c.doc),
