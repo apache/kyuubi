@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.time.Instant
+import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
 import java.util.Locale
 import java.util.concurrent.{ConcurrentHashMap, ExecutorService, ScheduledExecutorService, TimeUnit}
@@ -362,26 +362,34 @@ class KubernetesApplicationOperation extends ApplicationOperation with Logging {
   private[engine] class SparkEnginePodEventHandler(kubernetesInfo: KubernetesInfo)
     extends ResourceEventHandler[Pod] {
 
+    private val handlerCreatedAt = System.currentTimeMillis()
+
     override def onAdd(pod: Pod): Unit = {
       val observedAt = System.currentTimeMillis()
       if (isSparkEnginePod(pod)) {
-        Option(pod.getMetadata.getCreationTimestamp) match {
-          case Some(creationTimestamp) =>
-            try {
-              val latency = observedAt - Instant.parse(creationTimestamp).toEpochMilli
-              if (latency >= 0) {
-                MetricsSystem.tracing(_.updateHistogram(
-                  ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY,
-                  latency))
+        MetricsSystem.tracing { metricsSystem =>
+          val podName = Option(pod.getMetadata.getNamespace)
+            .map(namespace => s"$namespace/${pod.getMetadata.getName}")
+            .getOrElse(pod.getMetadata.getName)
+          Option(pod.getMetadata.getCreationTimestamp) match {
+            case Some(creationTimestamp) =>
+              try {
+                val podCreatedAt = OffsetDateTime.parse(creationTimestamp).toInstant.toEpochMilli
+                val latency = observedAt - podCreatedAt
+                if (podCreatedAt >= handlerCreatedAt && latency >= 0) {
+                  metricsSystem.updateHistogram(ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY, latency)
+                }
+              } catch {
+                case e: DateTimeParseException =>
+                  warn(
+                    s"[$kubernetesInfo] Invalid creation timestamp for engine pod $podName, " +
+                      "skipping pod discovery latency metric",
+                    e)
               }
-            } catch {
-              case e: DateTimeParseException =>
-                warn(s"Invalid creation timestamp for engine pod ${pod.getMetadata.getName}", e)
-            }
-          case None =>
-            warn(s"[$kubernetesInfo] Missing creation timestamp for engine pod " +
-              s"${pod.getMetadata.getNamespace}/${pod.getMetadata.getName}, " +
-              "skipping pod discovery latency metric")
+            case None =>
+              warn(s"[$kubernetesInfo] Missing creation timestamp for engine pod $podName, " +
+                "skipping pod discovery latency metric")
+          }
         }
         val eventType = KubernetesResourceEventTypes.ADD
         updateApplicationState(kubernetesInfo, pod, eventType)
