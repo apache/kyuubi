@@ -59,6 +59,23 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
     }
   }
 
+  test("get schemas matches a trailing % against zero characters") {
+    val dbs = Seq("prefix", "prefixx", "prefixxyz")
+    val catalog = "spark_catalog"
+
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE DATABASE IF NOT EXISTS $db"))
+      val metaData = statement.getConnection.getMetaData
+
+      // The null catalog resolves to the session catalog.
+      Seq(catalog, null).foreach { cg =>
+        Seq("prefix%", "prefix.*") foreach { pattern =>
+          checkGetSchemas(metaData.getSchemas(cg, pattern), dbs, catalog)
+        }
+      }
+    }
+  }
+
   test("get tables") {
     val table_test = "table_1_test"
     val view_test = "view_1_test"

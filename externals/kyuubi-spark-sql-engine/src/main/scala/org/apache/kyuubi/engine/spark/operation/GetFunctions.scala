@@ -22,6 +22,7 @@ import java.sql.DatabaseMetaData
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.util.SparkCatalogUtils
 import org.apache.kyuubi.operation.IterableFetchIterator
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -65,18 +66,20 @@ class GetFunctions(
       val schemaPattern = toJavaRegex(schemaName)
       val functionPattern = toJavaRegex(functionName)
       val catalog = spark.sessionState.catalog
-      val a: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
-        catalog.listFunctions(db, functionPattern).map { case (f, _) =>
-          val info = catalog.lookupFunctionInfo(f)
-          Row(
-            "",
-            info.getDb,
-            info.getName,
-            s"Usage: ${info.getUsage}\nExtended Usage:${info.getExtended}",
-            DatabaseMetaData.functionResultUnknown,
-            info.getClassName)
+      val a: Seq[Row] =
+        catalog.listDatabases(SparkCatalogUtils.toV1Pattern(schemaPattern)).flatMap { db =>
+          catalog.listFunctions(db, SparkCatalogUtils.toV1Pattern(functionPattern)).map {
+            case (f, _) =>
+              val info = catalog.lookupFunctionInfo(f)
+              Row(
+                "",
+                info.getDb,
+                info.getName,
+                s"Usage: ${info.getUsage}\nExtended Usage:${info.getExtended}",
+                DatabaseMetaData.functionResultUnknown,
+                info.getClassName)
+          }
         }
-      }
       iter = new IterableFetchIterator(a.toList)
     } catch {
       onError()

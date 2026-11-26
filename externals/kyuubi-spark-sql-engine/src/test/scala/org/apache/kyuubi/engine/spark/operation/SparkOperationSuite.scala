@@ -28,6 +28,7 @@ import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
+import org.apache.spark.sql.catalyst.util.CharVarcharUtils
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -70,6 +71,42 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("get tables and views whose names equal the pattern prefix") {
+    val table = "prefix"
+    val tempView = "prefix"
+    val another = "prefixx"
+    withJdbcStatement(table, another) { statement =>
+      statement.execute(
+        s"CREATE TABLE IF NOT EXISTS $table(key int) USING parquet COMMENT '$table'")
+      statement.execute(s"CREATE TABLE IF NOT EXISTS $another(key int) USING parquet")
+      // Local temp views need a stable session, which the Trino frontend does not
+      // preserve across statements, so this test lives here instead of the shared trait.
+      statement.execute(s"CREATE OR REPLACE TEMPORARY VIEW $tempView AS SELECT 1 AS a")
+      try {
+        val metaData = statement.getConnection.getMetaData
+
+        val rsTable = metaData.getTables("spark_catalog", "default", "prefix%", Array("TABLE"))
+        val tableNames = scala.collection.mutable.Set.empty[String]
+        while (rsTable.next()) {
+          tableNames += rsTable.getString(TABLE_NAME)
+        }
+        assert(tableNames == Set(table, another))
+
+        val rsView = metaData.getTables("spark_catalog", "default", "prefix%", Array("VIEW"))
+        val viewNames = scala.collection.mutable.Set.empty[String]
+        while (rsView.next()) {
+          viewNames += rsView.getString(TABLE_NAME)
+        }
+        assert(viewNames == Set(tempView))
+      } finally {
+        // The qualified table drops bypass the same-named temp view.
+        statement.execute(s"DROP VIEW IF EXISTS $tempView")
+        statement.execute(s"DROP TABLE IF EXISTS default.$table")
+        statement.execute(s"DROP TABLE IF EXISTS default.$another")
+      }
+    }
+  }
+
   test("get columns operation") {
     val tableName = "spark_get_col_operation"
     var schema = new StructType()
@@ -93,10 +130,12 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       .add("c17", "struct<X: string>", nullable = true, "17")
       .add("c18", "interval day", nullable = true, "18")
       .add("c19", "interval year", nullable = true, "19")
+      .add("c20", "varchar(5)", nullable = true, "20")
+      .add("c21", "char(5)", nullable = true, "21")
     // since spark3.4.0
-    schema = schema.add("c20", "timestamp_ntz", nullable = true, "20")
+    schema = schema.add("c22", "timestamp_ntz", nullable = true, "22")
     if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") {
-      schema = schema.add("c21", "variant", nullable = true, "21")
+      schema = schema.add("c23", "variant", nullable = true, "23")
     }
 
     val ddl =
@@ -105,6 +144,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
          |  ${schema.toDDL}
          |)
          |USING parquet""".stripMargin
+
+    // Spark loads CHAR/VARCHAR columns as STRING.
+    schema = CharVarcharUtils.replaceCharVarcharWithStringInSchema(schema)
 
     withJdbcStatement(tableName) { statement =>
       statement.execute(ddl)
@@ -136,6 +178,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
           STRUCT,
           OTHER,
           OTHER,
+          VARCHAR,
+          VARCHAR,
           TIMESTAMP,
           OTHER)
 
@@ -249,30 +293,49 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     }
   }
 
+  test("get columns operation should return columns not stored in the metastore") {
+    // SPARK-46043 (4.0.0): V2SessionCatalog.loadTable resolves the DSv2 provider
+    assume(SPARK_ENGINE_RUNTIME_VERSION >= "4.0")
+    val tableName = "spark_get_col_not_stored"
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(s"CREATE TABLE IF NOT EXISTS $defaultSchema.$tableName USING rate")
+      val rowSet = statement.getConnection.getMetaData.getColumns("", defaultSchema, tableName, "%")
+      assert(rowSet.next())
+      assert(rowSet.getString(COLUMN_NAME) === "timestamp")
+      assert(rowSet.next())
+      assert(rowSet.getString(COLUMN_NAME) === "value")
+      assert(!rowSet.next())
+    }
+  }
+
   test("get columns operation should handle interval column properly") {
     val viewName = "view_interval"
     val ddl = s"CREATE GLOBAL TEMP VIEW $viewName AS SELECT INTERVAL 1 DAY AS i"
+    // INTERVAL literals are CalendarIntervalType or ANSI DayTimeIntervalType depending on
+    // the Spark version and legacy config.
+    val intervalType = spark.sql("SELECT INTERVAL 1 DAY AS i").schema.head.dataType
 
     withJdbcStatement(viewName) { statement =>
       statement.execute(ddl)
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, null)
-      while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
-        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
-        assert(rowSet.getString(TABLE_NAME) === viewName)
-        assert(rowSet.getString(COLUMN_NAME) === "i")
-        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
-        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(CalendarIntervalType.sql))
-        assert(rowSet.getInt(COLUMN_SIZE) === CalendarIntervalType.defaultSize)
-        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
-        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
-        assert(rowSet.getInt(NULLABLE) === 0)
-        assert(rowSet.getString(REMARKS) === "")
-        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
-        assert(rowSet.getString(IS_NULLABLE) === "YES")
-        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
-      }
+      assert(rowSet.next())
+      assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
+      assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+      assert(rowSet.getString(TABLE_NAME) === viewName)
+      assert(rowSet.getString(COLUMN_NAME) === "i")
+      assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(intervalType.sql))
+      assert(rowSet.getInt(COLUMN_SIZE) === intervalType.defaultSize)
+      assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+      assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+      assert(rowSet.getInt(NULLABLE) === 0)
+      assert(rowSet.getString(REMARKS) === "")
+      assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+      assert(rowSet.getString(IS_NULLABLE) === "YES")
+      assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+      assert(!rowSet.next())
     }
   }
 
@@ -284,22 +347,22 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       statement.execute(ddl)
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, "n")
-      while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
-        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
-        assert(rowSet.getString(TABLE_NAME) === viewName)
-        assert(rowSet.getString(COLUMN_NAME) === "n")
-        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
-        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
-        assert(rowSet.getInt(COLUMN_SIZE) === 1)
-        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
-        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
-        assert(rowSet.getInt(NULLABLE) === 1)
-        assert(rowSet.getString(REMARKS) === "")
-        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
-        assert(rowSet.getString(IS_NULLABLE) === "YES")
-        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
-      }
+      assert(rowSet.next())
+      assert(rowSet.getString(TABLE_CAT) === SparkCatalogUtils.SESSION_CATALOG)
+      assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+      assert(rowSet.getString(TABLE_NAME) === viewName)
+      assert(rowSet.getString(COLUMN_NAME) === "n")
+      assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
+      assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
+      assert(rowSet.getInt(COLUMN_SIZE) === 1)
+      assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+      assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+      assert(rowSet.getInt(NULLABLE) === 1)
+      assert(rowSet.getString(REMARKS) === "")
+      assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+      assert(rowSet.getString(IS_NULLABLE) === "YES")
+      assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+      assert(!rowSet.next())
     }
   }
 
@@ -320,6 +383,26 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
             assert(resultSet.getString(SPECIFIC_NAME) === exprInfo.getClassName)
           }
         }
+      }
+    }
+  }
+
+  test("get functions whose names equal the pattern prefix") {
+    val function = "prefix"
+    withJdbcStatement() { statement =>
+      statement.execute(
+        s"CREATE OR REPLACE TEMPORARY FUNCTION $function" +
+          " AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDFAbs'")
+      try {
+        val metaData = statement.getConnection.getMetaData
+        val rs = metaData.getFunctions(null, null, "prefix%")
+        val functionNames = scala.collection.mutable.Set.empty[String]
+        while (rs.next()) {
+          functionNames += rs.getString(FUNCTION_NAME)
+        }
+        assert(functionNames.contains(function))
+      } finally {
+        statement.execute(s"DROP TEMPORARY FUNCTION IF EXISTS $function")
       }
     }
   }

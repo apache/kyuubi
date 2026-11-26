@@ -4351,8 +4351,9 @@ object KyuubiConf {
 
   val OPERATION_GET_TABLES_IGNORE_TABLE_PROPERTIES: ConfigEntry[Boolean] =
     buildConf("kyuubi.operation.getTables.ignoreTableProperties")
-      .doc("Speed up the `GetTables` operation by ignoring `tableTypes` query criteria, " +
-        "and returning table identities only.")
+      .doc("Speed up the GetTables operation by not loading table metadata: REMARKS is left " +
+        "empty, and tableTypes is honored only when the catalog implements Spark's " +
+        "listTableSummaries (SPARK-52109, 4.1.0); otherwise all entries are reported as TABLE.")
       .version("1.8.0")
       .booleanConf
       .createWithDefault(false)
