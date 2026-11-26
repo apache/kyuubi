@@ -246,6 +246,10 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
             .exists(_.state == ApplicationState.NOT_FOUND))
         }
         assert(!conn.isValid(3000))
+        // KYUUBI #7880: the session is closed once a request fails on the broken connection
+        eventually(timeout(30.seconds), interval(100.milliseconds)) {
+          assert(sessionManager.allSessions().isEmpty)
+        }
       }
     }
   }
