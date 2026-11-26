@@ -243,6 +243,25 @@ class IcebergCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite 
       s" on [$namespace1/$table1]"))
   }
 
+  test("REPLACE TABLE requires both CREATE and DROP") {
+    val table = "replace_table_test"
+    withCleanTmpResources(Seq((s"$catalogV2.$namespace1.$table", "table"))) {
+      doAs(
+        admin,
+        sql(s"CREATE TABLE $catalogV2.$namespace1.$table" +
+          " (id int, name string, city string) USING iceberg"))
+      val replaceTableSql =
+        s"REPLACE TABLE $catalogV2.$namespace1.$table (id int, name string, city string)" +
+          " USING iceberg"
+      // createOnlyUser only has [create] on $namespace1, REPLACE TABLE also needs [drop]
+      // on the table being replaced.
+      interceptEndsWith[AccessControlException] {
+        doAs(createOnlyUser, sql(replaceTableSql))
+      }(s"does not have [drop] privilege on [$namespace1/$table]")
+      doAs(admin, sql(replaceTableSql))
+    }
+  }
+
   test("CALL RewriteDataFilesProcedure") {
     val tableName = "table_select_call_command_table"
     val table = s"$catalogV2.$namespace1.$tableName"
