@@ -53,10 +53,7 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
 
       Seq(null, catalog).foreach { cg =>
         matchAllPatterns foreach { pattern =>
-          checkGetSchemas(
-            metaData.getSchemas(cg, pattern),
-            dbs,
-            catalog)
+          checkGetSchemas(metaData.getSchemas(cg, pattern), dbs, catalog)
         }
       }
 
@@ -110,26 +107,23 @@ trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin wit
       "`a.b.c`",
       "db1.db2.db3",
       "db4") ++ (if (SPARK_ENGINE_RUNTIME_VERSION < "4.0") Seq("`a.b``.c`") else Nil)
-
     withDatabases(dbs: _*) { statement =>
-      dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
-      val metaData = statement.getConnection.getMetaData
-
-      Seq(catalog).foreach { cg =>
+      Seq("spark_catalog", catalog).foreach { cg =>
+        dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $cg.$db"))
+        val metaData = statement.getConnection.getMetaData
         dbs.foreach { db =>
           try {
             statement.execute(
               s"CREATE TABLE IF NOT EXISTS $cg.$db.tbl(c STRING) USING iceberg")
 
             val rs1 = metaData.getTables(cg, db, "%", null)
-            while (rs1.next()) {
-              val catalogName = rs1.getString(TABLE_CAT)
-              assert(catalogName === cg)
-              assert(rs1.getString(TABLE_SCHEM) === db)
-              assert(rs1.getString(TABLE_NAME) === "tbl")
-              assert(rs1.getString(TABLE_TYPE) == "TABLE")
-              assert(rs1.getString(REMARKS) === "")
-            }
+            assert(rs1.next())
+            val catalogName = rs1.getString(TABLE_CAT)
+            assert(catalogName === cg)
+            assert(rs1.getString(TABLE_SCHEM) === db)
+            assert(rs1.getString(TABLE_NAME) === "tbl")
+            assert(rs1.getString(TABLE_TYPE) == "TABLE")
+            assert(rs1.getString(REMARKS) === "")
             assert(!rs1.next())
           } finally {
             statement.execute(s"DROP TABLE IF EXISTS $cg.$db.tbl PURGE")
