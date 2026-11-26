@@ -105,7 +105,7 @@ class KubernetesApplicationOperationSuite extends KyuubiFunSuite {
       val deletedPod = new PodBuilder()
         .withNewMetadata()
         .withName("deleted-driver")
-        .withCreationTimestamp(Instant.now().minusSeconds(180).toString)
+        .withCreationTimestamp(Instant.now().toString)
         .addToLabels(LABEL_KYUUBI_UNIQUE_KEY, "deleted-app")
         .addToLabels("spark-app-selector", "spark-application")
         .endMetadata()
