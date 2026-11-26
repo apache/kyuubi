@@ -28,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.session.USE_CATALOG
-import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOpenSessionReq
+import org.apache.kyuubi.shaded.hive.service.rpc.thrift.{TCloseSessionReq, TOpenSessionReq, TStatusCode}
 
 /**
  * Catalog plugins only read `spark.sql.catalog.<name>.*` once, at initialization. Session configs
@@ -58,9 +58,13 @@ class SessionConfBeforeCatalogInitSuite extends WithSparkSQLEngine with HiveJDBC
       req.setUsername(user)
       req.setPassword("anonymous")
       req.setConfiguration(conf.asJava)
-      val resp = client.OpenSession(req)
-      val status = resp.getStatus
-      assert(status.getStatusCode.getValue === 0, String.valueOf(status.getErrorMessage))
+      val openResp = client.OpenSession(req)
+      val openStatus = openResp.getStatus
+      assert(
+        openStatus.getStatusCode === TStatusCode.SUCCESS_STATUS,
+        String.valueOf(openStatus.getErrorMessage))
+      val closeResp = client.CloseSession(new TCloseSessionReq(openResp.getSessionHandle))
+      assert(closeResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 

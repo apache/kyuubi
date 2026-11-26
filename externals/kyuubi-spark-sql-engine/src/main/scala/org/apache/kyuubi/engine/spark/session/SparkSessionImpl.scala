@@ -30,7 +30,7 @@ import org.apache.spark.ui.SparkUIUtils.formatDuration
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.setModifiableConfig
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{setModifiableConfig, withActiveSession}
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
@@ -64,19 +64,6 @@ class SparkSessionImpl(
 
   private val sessionEvent = SessionEvent(this)
 
-  private def withActiveSession[T](f: => T): T = {
-    val originalSession = SparkSession.getActiveSession
-    try {
-      SparkSession.setActiveSession(spark)
-      f
-    } finally {
-      originalSession match {
-        case Some(session) => SparkSession.setActiveSession(session)
-        case None => SparkSession.clearActiveSession()
-      }
-    }
-  }
-
   override def open(): Unit = {
 
     val (useCatalogAndDatabaseConf, otherConf) = normalizedConf.partition { case (k, _) =>
@@ -91,7 +78,7 @@ class SparkSessionImpl(
 
     // CatalogManager reads configs via SQLConf.get, i.e. from the thread's active session, so this
     // session must be active while switching, otherwise catalogs are loaded with foreign configs.
-    withActiveSession {
+    withActiveSession(spark) {
       useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
         try {
           SparkCatalogUtils.setCurrentCatalog(spark, catalog)
@@ -101,7 +88,7 @@ class SparkSessionImpl(
         }
       }
 
-      useCatalogAndDatabaseConf.get("use:database").foreach { database =>
+      useCatalogAndDatabaseConf.get(USE_DATABASE).foreach { database =>
         try {
           SparkCatalogUtils.setCurrentNamespace(spark, Array(database))
         } catch {

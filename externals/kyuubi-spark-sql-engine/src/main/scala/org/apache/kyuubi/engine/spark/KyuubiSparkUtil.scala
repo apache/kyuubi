@@ -67,6 +67,22 @@ object KyuubiSparkUtil extends Logging {
     }
   }
 
+  /**
+   * Run `f` with `spark` as the thread's active session, restoring the previous one afterwards.
+   */
+  def withActiveSession[T](spark: SparkSession)(f: => T): T = {
+    val originalSession = SparkSession.getActiveSession
+    try {
+      SparkSession.setActiveSession(spark)
+      f
+    } finally {
+      originalSession match {
+        case Some(session) => SparkSession.setActiveSession(session)
+        case None => SparkSession.clearActiveSession()
+      }
+    }
+  }
+
   def engineId: String = globalSparkContext.applicationId
   def engineName: String = globalSparkContext.appName
   def engineUrl: String = {
