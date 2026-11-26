@@ -69,42 +69,84 @@ class TPCDSTableSuite extends KyuubiFunSuite {
     }
   }
 
-  test("large scale partition counts match native dsdgen") {
+  test("large scale partitions match native dsdgen counts and first-row keys") {
     val sparkConf = new SparkConf().setMaster("local[1]")
       .set("spark.ui.enabled", "false")
       .set("spark.sql.catalogImplementation", "in-memory")
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
       val conf = TPCDSConf(spark, CaseInsensitiveStringMap.empty())
+      val keyColumns = Map(
+        Table.STORE_SALES -> ("ss_ticket_number", "ss_item_sk", "ss_sold_date_sk"),
+        Table.STORE_RETURNS -> ("sr_ticket_number", "sr_item_sk", "sr_returned_date_sk"),
+        Table.CATALOG_SALES -> ("cs_order_number", "cs_item_sk", "cs_sold_date_sk"),
+        Table.CATALOG_RETURNS -> ("cr_order_number", "cr_item_sk", "cr_returned_date_sk"),
+        Table.WEB_SALES -> ("ws_order_number", "ws_item_sk", "ws_sold_date_sk"),
+        Table.WEB_RETURNS -> ("wr_order_number", "wr_item_sk", "wr_returned_date_sk"))
       // Native dsdgen -scale 10000 -table store_sales -parallel 24000000 -child 23000001.
       // At SF30000 and SF100000, use 100 orders per chunk and select the penultimate chunk.
       // dsdgen writes both the sales and corresponding returns table for each sales command.
       val samples = Seq(
-        (10000, Table.STORE_SALES, 24000000, 23000001, 1176),
-        (10000, Table.STORE_RETURNS, 24000000, 23000001, 121),
-        (30000, Table.STORE_SALES, 72000000, 71999999, 1160),
-        (30000, Table.STORE_RETURNS, 72000000, 71999999, 125),
-        (30000, Table.CATALOG_SALES, 48000000, 47999999, 863),
-        (30000, Table.CATALOG_RETURNS, 48000000, 47999999, 80),
-        (30000, Table.WEB_SALES, 18000000, 17999999, 1195),
-        (30000, Table.WEB_RETURNS, 18000000, 17999999, 113),
-        (100000, Table.STORE_SALES, 240000000, 239999999, 1154),
-        (100000, Table.STORE_RETURNS, 240000000, 239999999, 120),
-        (100000, Table.CATALOG_SALES, 160000000, 159999999, 893),
-        (100000, Table.CATALOG_RETURNS, 160000000, 159999999, 98),
-        (100000, Table.WEB_SALES, 60000000, 59999999, 1160),
-        (100000, Table.WEB_RETURNS, 60000000, 59999999, 121))
-      samples.foreach { case (scale, table, parallelism, chunk, expected) =>
+        (10000, Table.STORE_SALES, 24000000, 23000001, 1176, (2300000001L, 205451L, 2452217L)),
+        (10000, Table.STORE_RETURNS, 24000000, 23000001, 121, (2300000001L, 14211L, 2452355L)),
+        (30000, Table.STORE_SALES, 72000000, 71999999, 1160, (7199999801L, 212533L, 2452640L)),
+        (30000, Table.STORE_RETURNS, 72000000, 71999999, 125, (7199999801L, 63085L, 2452738L)),
+        (30000, Table.CATALOG_SALES, 48000000, 47999999, 863, (4799999801L, 362637L, 2452654L)),
+        (30000, Table.CATALOG_RETURNS, 48000000, 47999999, 80, (4799999802L, 352399L, 2452699L)),
+        (30000, Table.WEB_SALES, 18000000, 17999999, 1195, (1799999801L, 200725L, 2451765L)),
+        (30000, Table.WEB_RETURNS, 18000000, 17999999, 113, (1799999803L, 434260L, 2451821L)),
+        (
+          100000,
+          Table.STORE_SALES,
+          240000000,
+          239999999,
+          1154,
+          (23999999801L, 388081L, 2452252L)),
+        (
+          100000,
+          Table.STORE_RETURNS,
+          240000000,
+          239999999,
+          120,
+          (23999999801L, 186049L, 2452331L)),
+        (
+          100000,
+          Table.CATALOG_SALES,
+          160000000,
+          159999999,
+          893,
+          (15999999801L, 270073L, 2452654L)),
+        (
+          100000,
+          Table.CATALOG_RETURNS,
+          160000000,
+          159999999,
+          98,
+          (15999999801L, 270073L, 2452803L)),
+        (100000, Table.WEB_SALES, 60000000, 59999999, 1160, (5999999801L, 498363L, 2452374L)),
+        (100000, Table.WEB_RETURNS, 60000000, 59999999, 121, (5999999802L, 432290L, 2451818L)))
+      samples.foreach { case (scale, table, parallelism, chunk, expectedCount, expectedFirstKeys) =>
         val schema = new TPCDSTable(table.getName, scale, conf).schema
+        val (orderCol, itemCol, dateCol) = keyColumns(table)
+        val orderIdx = schema.fieldIndex(orderCol)
+        val itemIdx = schema.fieldIndex(itemCol)
+        val dateIdx = schema.fieldIndex(dateCol)
         val reader = new TPCDSPartitionReader(table.getName, scale, parallelism, chunk, schema)
         var count = 0
+        var firstKeys: Option[(Long, Long, Long)] = None
         try {
           while (reader.next()) {
+            if (firstKeys.isEmpty) {
+              val row = reader.get()
+              firstKeys = Some((row.getLong(orderIdx), row.getLong(itemIdx), row.getLong(dateIdx)))
+            }
             count += 1
           }
         } finally {
           reader.close()
         }
-        assert(count == expected, s"${table.getName} SF$scale chunk $chunk/$parallelism")
+        val sampleLabel = s"${table.getName} SF$scale chunk $chunk/$parallelism"
+        assert(count == expectedCount, sampleLabel)
+        assert(firstKeys.contains(expectedFirstKeys), sampleLabel)
       }
     }
   }
@@ -209,7 +251,7 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       .set("spark.sql.catalogImplementation", "in-memory")
       .set("spark.sql.catalog.tpcds", classOf[TPCDSCatalog].getName)
     withSparkSession(SparkSession.builder.config(sparkConf).getOrCreate()) { spark =>
-      def assertPartitions(tableName: String, maxBytes: Long, expected: Int): Unit = {
+      def planScan(tableName: String, maxBytes: Long): TPCDSBatchScan = {
         spark.conf.set(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF", maxBytes)
         val df = spark.sql(s"select * from $tableName")
         val scan = df.queryExecution.executedPlan.collectFirst {
@@ -217,21 +259,46 @@ class TPCDSTableSuite extends KyuubiFunSuite {
             scanExec.scan.asInstanceOf[TPCDSBatchScan]
         }
         assert(scan.isDefined)
-        assert(scan.get.planInputPartitions.length == expected)
+        scan.get
       }
 
-      val size = TPCDSStatisticsUtils.sizeInBytes(Table.STORE_SALES, 1)
-      assertPartitions("tpcds.sf1.store_sales", size / 4, 4)
-      assertPartitions("tpcds.sf1.store_sales", size / 4 - 1, 5)
-      assertPartitions("tpcds.sf1.store_sales", size / 4 + 1, 4)
-      assertPartitions("tpcds.sf1.store_sales", size * 2, 2)
-      assertPartitions("tpcds.sf0.store_sales", size, 2)
-      assertPartitions("tpcds.sf1.call_center", 1, 1)
+      def assertPartitions(
+          tableName: String,
+          maxBytes: Long,
+          expected: Int,
+          checkNonEmpty: Boolean = false): Unit = {
+        val scan = planScan(tableName, maxBytes)
+        val partitions = scan.planInputPartitions
+        assert(partitions.length == expected)
+        if (checkNonEmpty) {
+          val readerFactory = scan.createReaderFactory
+          partitions.foreach { partition =>
+            val reader = readerFactory.createReader(partition)
+            try {
+              assert(reader.next(), s"Expected non-empty partition: $partition")
+            } finally {
+              reader.close()
+            }
+          }
+        }
+      }
+
+      val sf10Size = TPCDSStatisticsUtils.sizeInBytes(Table.STORE_SALES, 10)
+      assertPartitions("tpcds.sf10.store_sales", sf10Size / 4, 4)
+      assertPartitions("tpcds.sf10.store_sales", sf10Size / 4 - 1, 5, checkNonEmpty = true)
+      assertPartitions("tpcds.sf10.store_sales", sf10Size / 4 + 1, 4)
+      assertPartitions("tpcds.sf10.store_sales", sf10Size * 2, 2)
+      assertPartitions("tpcds.sf1.store_sales", 1, 1, checkNonEmpty = true)
+      assertPartitions("tpcds.sf0.store_sales", sf10Size, 1)
+      assertPartitions("tpcds.sf1.call_center", 1, 1, checkNonEmpty = true)
 
       spark.conf.set(s"$TPCDS_CONNECTOR_READ_CONF_PREFIX.$MAX_PARTITION_BYTES_CONF", 0L)
-      intercept[IllegalArgumentException] {
-        spark.sql("select * from tpcds.sf1.store_sales").queryExecution.executedPlan
-      }
+      Seq("tpcds.sf10.store_sales", "tpcds.sf1.store_sales", "tpcds.sf1.call_center")
+        .foreach { tableName =>
+          intercept[IllegalArgumentException] {
+            spark.sql(s"select * from $tableName").queryExecution.executedPlan
+          }
+        }
     }
   }
 

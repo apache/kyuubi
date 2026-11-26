@@ -40,16 +40,21 @@ class TPCDSBatchScan(
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
   private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
-  // Tables with fewer than 1000000 are not parallelized,
-  // the limit made in `io.trino.tpcds.Parallel#splitWork`.
-  private val parallelism: Int =
-    if (table.isSmall) 1
-    else math.max(
-      SparkSession.active.sparkContext.defaultParallelism,
-      Math.toIntExact(LongMath.divide(
-        _sizeInBytes,
-        readConf.maxPartitionBytes,
-        RoundingMode.CEILING)))
+  // Tables with fewer than 1000000 rows (orders) are not parallelized,
+  // matching the limit in `io.trino.tpcds.Parallel#splitWork`.
+  private val parallelism: Int = {
+    val maxPartitionBytes = readConf.maxPartitionBytes
+    if (table.isSmall || new Scaling(scale).getRowCount(table) < TPCDSBatchScan.MIN_PARALLEL_ROWS) {
+      1
+    } else {
+      math.max(
+        SparkSession.active.sparkContext.defaultParallelism,
+        Math.toIntExact(LongMath.divide(
+          _sizeInBytes,
+          maxPartitionBytes,
+          RoundingMode.CEILING)))
+    }
+  }
 
   override def build: Scan = this
 
@@ -73,6 +78,10 @@ class TPCDSBatchScan(
     override def sizeInBytes: OptionalLong = OptionalLong.of(_sizeInBytes)
     override def numRows: OptionalLong = OptionalLong.of(_numRows)
   }
+}
+
+object TPCDSBatchScan {
+  private val MIN_PARALLEL_ROWS = 1000000L
 }
 
 class TPCDSPartitionReader(
