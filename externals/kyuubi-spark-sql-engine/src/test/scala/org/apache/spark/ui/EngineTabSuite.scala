@@ -153,6 +153,27 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
     assert(resp.contains("Completed Statement Statistics"))
   }
 
+  test("multi-line statement keeps original format in engine tab") {
+    assert(spark.sparkContext.ui.nonEmpty)
+    val client = HttpClients.createDefault()
+    val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/kyuubi/")
+    val multiLineStatement =
+      "SELECT\n  id,\n  id * 2 AS doubled\nFROM range(10)"
+    // only surrounding line breaks, should be treated as a single-line statement
+    val singleLineStatement = "\nSELECT 1\n"
+    withJdbcStatement() { statement =>
+      statement.execute(multiLineStatement)
+      statement.execute(singleLineStatement)
+      val response = client.execute(req)
+      assert(response.getStatusLine.getStatusCode === 200)
+      val resp = EntityUtils.toString(response.getEntity)
+      assert(resp.contains(s"""<span class="description-input">$multiLineStatement</span>"""))
+      assert(resp.contains(s"<pre>$multiLineStatement</pre>"))
+      assert(resp.contains(s"""<span class="description-input">$singleLineStatement</span>"""))
+      assert(!resp.contains(s"<pre>$singleLineStatement</pre>"))
+    }
+  }
+
   test("statement redact for engine tab") {
     assert(spark.sparkContext.ui.nonEmpty)
     val client = HttpClients.createDefault()
