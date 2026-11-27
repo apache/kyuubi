@@ -110,6 +110,24 @@ class SessionManagerValidationSuite extends KyuubiFunSuite {
     assert(result("spark.executor.memory") === "4g")
   }
 
+  test("validateAndNormalizeConf drops null-valued keys") {
+    val conf = Map(
+      "sfPassword" -> null,
+      "kyuubi.operation.idle.timeout" -> "5h")
+    val result = sessionManager.validateAndNormalizeConf(conf)
+    assert(!result.contains("sfPassword"))
+    assert(result("kyuubi.operation.idle.timeout") === "5h")
+  }
+
+  test("validateBatchConf drops null-valued keys") {
+    val conf = Map(
+      "sfPassword" -> null,
+      "spark.executor.memory" -> "4g")
+    val result = sessionManager.validateBatchConf(conf)
+    assert(!result.contains("sfPassword"))
+    assert(result("spark.executor.memory") === "4g")
+  }
+
   test("server operation pool uses virtual threads when enabled") {
     val conf = KyuubiConf(false)
       .set(SERVER_EXEC_POOL_VIRTUAL_THREADS_ENABLED, true)

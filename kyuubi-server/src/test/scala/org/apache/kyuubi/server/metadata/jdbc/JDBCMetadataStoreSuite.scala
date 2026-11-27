@@ -454,6 +454,42 @@ class JDBCMetadataStoreSuite extends KyuubiFunSuite {
     assert(jdbcMetadataStore.getKubernetesMetaEngineInfo(tag) == null)
   }
 
+  test("filter null-valued request conf when reading legacy metadata") {
+    val batchId = UUID.randomUUID().toString
+    val metadata = Metadata(
+      identifier = batchId,
+      sessionType = SessionType.BATCH,
+      realUser = "kyuubi",
+      username = "kyuubi",
+      ipAddress = "127.0.0.1",
+      kyuubiInstance = "localhost:10099",
+      state = "PENDING",
+      resource = "intern",
+      className = "org.apache.kyuubi.SparkWC",
+      requestName = "kyuubi_batch",
+      requestConf = Map("spark.master" -> "local"),
+      requestArgs = Seq.empty,
+      createTime = System.currentTimeMillis(),
+      engineType = "spark")
+
+    jdbcMetadataStore.insertMetadata(metadata)
+
+    val legacyJson =
+      s"""{"spark.master":"local","sfPassword":null,""" +
+        s""""${KyuubiConf.KUBERNETES_CONTEXT.key}":null}"""
+    executeSql(
+      s"UPDATE metadata SET request_conf = '$legacyJson' WHERE identifier = '$batchId'")
+    val legacy = jdbcMetadataStore.getMetadata(batchId)
+    assert(legacy.requestConf === Map("spark.master" -> "local"))
+    assert(legacy.appMgrInfo.kubernetesInfo.context.isEmpty)
+
+    executeSql(s"UPDATE metadata SET request_conf = 'null' WHERE identifier = '$batchId'")
+    val nullJson = jdbcMetadataStore.getMetadata(batchId)
+    assert(nullJson.requestConf.isEmpty)
+
+    jdbcMetadataStore.cleanupMetadataByIdentifier(batchId)
+  }
+
   private def executeSql(sql: String): Unit = {
     val connection = jdbcMetadataStore.hikariDataSource.getConnection
     try {

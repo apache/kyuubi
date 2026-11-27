@@ -247,6 +247,15 @@ private[v1] class BatchesResource extends ApiRequestContext with Logging {
     }
     request.setBatchType(request.getBatchType.toUpperCase(Locale.ROOT))
 
+    val requestConf = request.getConf.asScala.filter {
+      case (key, null) =>
+        warn(s"Ignore batch conf $key because value is null")
+        false
+      case _ => true
+    }
+    // Keep a mutable map because handleUploadingExtraResourcesFiles mutates request.getConf.
+    request.setConf(new util.HashMap[String, String](requestConf.asJava))
+
     val userName = fe.getSessionUser(request.getConf.asScala.toMap)
     val ipAddress = fe.getIpAddress
     val userProvidedBatchId = request.getConf.asScala.get(KYUUBI_BATCH_ID_KEY)
