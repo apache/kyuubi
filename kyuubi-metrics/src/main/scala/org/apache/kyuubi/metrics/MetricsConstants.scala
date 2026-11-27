@@ -58,6 +58,8 @@ object MetricsConstants {
   final private val ENGINE = KYUUBI + "engine."
   final val ENGINE_FAIL: String = ENGINE + "failed"
   final val ENGINE_STARTUP_TIME: String = ENGINE + "startup.time"
+  final val ENGINE_KUBERNETES_POD_DISCOVERY_LATENCY: String =
+    ENGINE + "kubernetes.pod.discovery.latency"
   final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
   final val ENGINE_TOTAL: String = ENGINE + "total"
 
