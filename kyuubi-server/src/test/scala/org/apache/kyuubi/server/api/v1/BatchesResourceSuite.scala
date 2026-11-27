@@ -37,7 +37,7 @@ import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationOperation, ApplicationState, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
@@ -245,7 +245,9 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     assert(getBatchResponse.getStatus === 200)
     batch = getBatchResponse.readEntity(classOf[Batch])
     assert(batch.getId === batch.getId)
-    if (closeBatchResponse.isSuccess) {
+    // A local application may finish before its operation observes the exit.
+    if (closeBatchResponse.isSuccess ||
+      closeBatchResponse.getMsg == ApplicationOperation.NOT_FOUND) {
       assert(batch.getState === "CANCELED")
     } else {
       assert(batch.getState != "CANCELED")
