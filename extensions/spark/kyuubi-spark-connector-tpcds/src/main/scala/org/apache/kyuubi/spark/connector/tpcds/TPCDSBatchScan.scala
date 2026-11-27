@@ -17,8 +17,10 @@
 
 package org.apache.kyuubi.spark.connector.tpcds
 
+import java.math.RoundingMode
 import java.util.OptionalLong
 
+import com.google.common.math.LongMath
 import io.trino.tpcds._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
@@ -38,13 +40,21 @@ class TPCDSBatchScan(
   private val _sizeInBytes: Long = TPCDSStatisticsUtils.sizeInBytes(table, scale)
   private val _numRows: Long = TPCDSStatisticsUtils.numRows(table, scale)
 
-  // Tables with fewer than 1000000 are not parallelized,
-  // the limit made in `io.trino.tpcds.Parallel#splitWork`.
-  private val parallelism: Int =
-    if (table.isSmall) 1
-    else math.max(
-      SparkSession.active.sparkContext.defaultParallelism,
-      (_sizeInBytes / readConf.maxPartitionBytes).ceil.toInt)
+  // Tables with fewer than 1000000 rows (orders) are not parallelized,
+  // matching the limit in `io.trino.tpcds.Parallel#splitWork`.
+  // Cap parallelism at `rowCount` so excess partitions are not assigned empty ranges.
+  private[tpcds] val parallelism: Int = {
+    val maxPartitionBytes = readConf.maxPartitionBytes
+    val rowCount = new Scaling(scale).getRowCount(table)
+    if (table.isSmall || rowCount < TPCDSBatchScan.MIN_PARALLEL_ROWS) {
+      1
+    } else {
+      val desired = math.max(
+        SparkSession.active.sparkContext.defaultParallelism.toLong,
+        LongMath.divide(_sizeInBytes, maxPartitionBytes, RoundingMode.CEILING))
+      Math.toIntExact(math.min(desired, rowCount))
+    }
+  }
 
   override def build: Scan = this
 
@@ -68,6 +78,10 @@ class TPCDSBatchScan(
     override def sizeInBytes: OptionalLong = OptionalLong.of(_sizeInBytes)
     override def numRows: OptionalLong = OptionalLong.of(_numRows)
   }
+}
+
+object TPCDSBatchScan {
+  private val MIN_PARALLEL_ROWS = 1000000L
 }
 
 class TPCDSPartitionReader(

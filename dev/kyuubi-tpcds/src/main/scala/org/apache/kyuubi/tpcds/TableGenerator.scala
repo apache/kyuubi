@@ -19,7 +19,7 @@ package org.apache.kyuubi.tpcds
 
 import scala.collection.JavaConverters._
 
-import io.trino.tpcds.{Options, Results}
+import io.trino.tpcds.Options
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.functions.col
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -56,8 +56,8 @@ case class TableGenerator(
       val session = opt.toSession.withChunkNumber(i)
       val table = session.getOnlyTableToGenerate
 
-      Results.constructResults(table, session).iterator.asScala
-        .map { _.get(0).asScala } // 1st row is specific table row
+      TPCDSRowIterator(table, session).asScala
+        .map { _.asScala }
         .map { row => row.map { v => if (v == Options.DEFAULT_NULL_STRING) null else v } }
         .map { row => Row.fromSeq(row.toSeq) }
     }
