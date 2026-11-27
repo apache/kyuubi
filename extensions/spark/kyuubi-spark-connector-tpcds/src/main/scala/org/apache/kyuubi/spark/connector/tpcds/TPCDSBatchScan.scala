@@ -42,17 +42,17 @@ class TPCDSBatchScan(
 
   // Tables with fewer than 1000000 rows (orders) are not parallelized,
   // matching the limit in `io.trino.tpcds.Parallel#splitWork`.
-  private val parallelism: Int = {
+  // Cap parallelism at `rowCount` so excess partitions are not assigned empty ranges.
+  private[tpcds] val parallelism: Int = {
     val maxPartitionBytes = readConf.maxPartitionBytes
-    if (table.isSmall || new Scaling(scale).getRowCount(table) < TPCDSBatchScan.MIN_PARALLEL_ROWS) {
+    val rowCount = new Scaling(scale).getRowCount(table)
+    if (table.isSmall || rowCount < TPCDSBatchScan.MIN_PARALLEL_ROWS) {
       1
     } else {
-      math.max(
-        SparkSession.active.sparkContext.defaultParallelism,
-        Math.toIntExact(LongMath.divide(
-          _sizeInBytes,
-          maxPartitionBytes,
-          RoundingMode.CEILING)))
+      val desired = math.max(
+        SparkSession.active.sparkContext.defaultParallelism.toLong,
+        LongMath.divide(_sizeInBytes, maxPartitionBytes, RoundingMode.CEILING))
+      Math.toIntExact(math.min(desired, rowCount))
     }
   }
 

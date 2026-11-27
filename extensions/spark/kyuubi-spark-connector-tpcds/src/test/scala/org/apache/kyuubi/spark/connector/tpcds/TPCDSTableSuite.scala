@@ -288,6 +288,8 @@ class TPCDSTableSuite extends KyuubiFunSuite {
       assertPartitions("tpcds.sf10.store_sales", sf10Size / 4 - 1, 5, checkNonEmpty = true)
       assertPartitions("tpcds.sf10.store_sales", sf10Size / 4 + 1, 4)
       assertPartitions("tpcds.sf10.store_sales", sf10Size * 2, 2)
+      assert(planScan("tpcds.sf10.store_sales", 1024).parallelism == 2400000)
+      assert(planScan("tpcds.sf10.store_sales", 1).parallelism == 2400000)
       assertPartitions("tpcds.sf1.store_sales", 1, 1, checkNonEmpty = true)
       assertPartitions("tpcds.sf0.store_sales", sf10Size, 1)
       assertPartitions("tpcds.sf1.call_center", 1, 1, checkNonEmpty = true)
