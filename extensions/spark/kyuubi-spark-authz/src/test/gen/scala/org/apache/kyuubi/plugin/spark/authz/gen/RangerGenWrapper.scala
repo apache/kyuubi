@@ -60,6 +60,7 @@ case class KRangerPolicy(
     p.setResources(resources)
     p.setConditions(conditions)
     p.setPolicyItems(policyItems)
+    p.setDenyPolicyItems(denyPolicyItems)
     p.setAllowExceptions(allowExceptions)
     p.setDenyExceptions(denyExceptions)
     p.setDataMaskPolicyItems(dataMaskPolicyItems)

@@ -207,19 +207,12 @@ This project bundles some components that are licensed under the
 
 Apache License Version 2.0
 --------------------------
-org.apache.ranger:ranger-plugins-common
-org.apache.ranger:ranger-plugins-audit
-org.codehaus.jackson:jackson-jaxrs
-org.codehaus.jackson:jackson-core-asl
-org.codehaus.jackson:jackson-mapper-asl
-net.java.dev.jna:jna
-net.java.dev.jna:jna-platform
-
-Common Development and Distribution License (CDDL) 1.1
-------------------------------------------------------
-com.sun.jersey:jersey-client
-com.sun.jersey:jersey-core
-
-MIT license
------------
-com.kstruct:gethostname4j
+com.fasterxml.jackson.core:jackson-annotations
+com.fasterxml.jackson.core:jackson-core
+com.fasterxml.jackson.core:jackson-databind
+com.fasterxml.jackson.module:jackson-module-scala_*
+org.apache.commons:commons-lang3
+org.apache.httpcomponents:httpclient
+org.apache.httpcomponents:httpcore
+org.apache.ranger:authz-remote
+org.apache.ranger:ranger-authz-api

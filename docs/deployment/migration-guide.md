@@ -24,6 +24,8 @@
 * Since Kyuubi 1.13, the support of Flink engine for Flink 2.0 is deprecated, and will be removed in the future.
 * Since Kyuubi 1.13, `kyuubi.server.redaction.regex` defaults to `(?i)secret|password|token|access[.]key` instead of being unset, so `kyuubi.server.conf.retrieveMode=REDACTED` (the default) redacts matching session-config keys/values out of the box; it also affects the command-line arguments Kyuubi logs for spawned engine processes. Set it to a different pattern to override.
 * Since Kyuubi 1.13, the REST client verifies server certificates and hostnames by default, so HTTPS connections with untrusted certificates or mismatched hostnames now fail. Java callers can configure a JVM trust store or opt out with `KyuubiRestClient.builder(...).insecureSsl(true)`; `kyuubi-ctl` users can pass the `javax.net.ssl.trustStore*` properties via `KYUUBI_CTL_JAVA_OPTS`, though a hostname mismatch still requires a matching URL or certificate.
+* Since Kyuubi 1.13, the Spark authorization plugin is migrated from the Ranger plugin API to the Ranger 2.9 authorization API, and Apache Ranger 2.9.0 or above is required for both authorizer modes. See [Installing and Configuring Kyuubi Spark AuthZ Plugin](../security/authorization/spark/install.md) for how to set up the new API.
+* Since Kyuubi 1.13, the Spark authorization plugin uses Ranger PDP mode by default. If you previously used `ranger.plugin.spark.use.usergroups.from.userstore.enabled=true`, the plugin now fails to initialize with that setting; use `ranger.authz.default.use.rangerGroups=true` instead.
 
 ## Upgrading from Kyuubi 1.12.0 to 1.12.1
 

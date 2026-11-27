@@ -22,7 +22,7 @@ import scala.reflect.io.File
 import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogStorageFormat, CatalogTable, CatalogTableType}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SetCatalogAndNamespace}
 import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, SchemaRelationProvider}
 import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
@@ -706,6 +706,18 @@ abstract class PrivilegesBuilderSuite extends KyuubiFunSuite with SparkSessionPr
     } finally {
       sql("USE default")
     }
+  }
+
+  test("SetCatalogAndNamespaceCommand without namespace") {
+    val catalog = spark.sessionState.catalogManager.currentCatalog.name()
+    val plan = sql(s"USE $catalog").queryExecution.analyzed
+    assert(plan.isInstanceOf[SetCatalogAndNamespace])
+
+    val (in, out, operationType) = PrivilegesBuilder.build(plan, spark)
+    assert(operationType === SWITCHDATABASE)
+    // Switching to a catalog does not select a database, so there is no database privilege.
+    assert(in.isEmpty)
+    assert(out.isEmpty)
   }
 
   test("TruncateTableCommand") {
