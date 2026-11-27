@@ -23,13 +23,14 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.kyuubi.SparkSQLKeywordHelper
 import org.apache.spark.ui.SparkUIUtils.formatDuration
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.SESSION_IDLE_TIMEOUT
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_HANDLE_KEY
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{setModifiableConfig, withActiveSession}
 import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
@@ -54,14 +55,6 @@ class SparkSessionImpl(
   private val sessionRunTime = new AtomicLong(0)
   private val sessionCpuTime = new AtomicLong(0)
 
-  private def setModifiableConfig(key: String, value: String): Unit = {
-    try {
-      spark.conf.set(key, value)
-    } catch {
-      case e: AnalysisException => warn(e.getMessage())
-    }
-  }
-
   override val sessionIdleTimeoutThreshold: Long = {
     conf.get(SESSION_IDLE_TIMEOUT.key)
       .map(_.trim)
@@ -77,32 +70,39 @@ class SparkSessionImpl(
       Array(USE_CATALOG, USE_DATABASE).contains(k)
     }
 
-    useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
-      try {
-        SparkCatalogUtils.setCurrentCatalog(spark, catalog)
-      } catch {
-        case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
-          warn(e.getMessage())
-      }
-    }
-
-    useCatalogAndDatabaseConf.get("use:database").foreach { database =>
-      try {
-        SparkCatalogUtils.setCurrentNamespace(spark, Array(database))
-      } catch {
-        case e
-            if database == "default" &&
-              StringUtils.containsAny(
-                e.getMessage,
-                "not found",
-                "SCHEMA_NOT_FOUND",
-                "is not authorized to perform: glue:GetDatabase") =>
-      }
-    }
-
+    // Apply session configs before switching catalog/database, because switching triggers
+    // catalog plugin initialization, which only reads `spark.sql.catalog.<name>.*` once.
     otherConf.foreach {
-      case (key, value) => setModifiableConfig(key, value)
+      case (key, value) => setModifiableConfig(spark, key, value)
     }
+
+    // CatalogManager reads configs via SQLConf.get, i.e. from the thread's active session, so this
+    // session must be active while switching, otherwise catalogs are loaded with foreign configs.
+    withActiveSession(spark) {
+      useCatalogAndDatabaseConf.get(USE_CATALOG).foreach { catalog =>
+        try {
+          SparkCatalogUtils.setCurrentCatalog(spark, catalog)
+        } catch {
+          case e if e.getMessage.contains("Cannot find catalog plugin class for catalog") =>
+            warn(e.getMessage())
+        }
+      }
+
+      useCatalogAndDatabaseConf.get(USE_DATABASE).foreach { database =>
+        try {
+          SparkCatalogUtils.setCurrentNamespace(spark, Array(database))
+        } catch {
+          case e
+              if database == "default" &&
+                StringUtils.containsAny(
+                  e.getMessage,
+                  "not found",
+                  "SCHEMA_NOT_FOUND",
+                  "is not authorized to perform: glue:GetDatabase") =>
+        }
+      }
+    }
+
     KDFRegistry.registerAll(spark)
     EventBus.post(sessionEvent)
     super.open()

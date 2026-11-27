@@ -32,7 +32,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ARROW_BASED_ROWSET_TIMESTAMP_AS_STRING, ENGINE_SPARK_OUTPUT_MODE, EngineSparkOutputMode, OPERATION_SPARK_LISTENER_ENABLED, SESSION_PROGRESS_ENABLE, SESSION_USER_SIGN_ENABLED}
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_SIGN_PUBLICKEY, KYUUBI_SESSION_USER_KEY, KYUUBI_SESSION_USER_SIGN, KYUUBI_STATEMENT_ID_KEY}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, SPARK_SCHEDULER_POOL_KEY}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.{getSessionConf, withActiveSession, SPARK_SCHEDULER_POOL_KEY}
 import org.apache.kyuubi.engine.spark.events.SparkOperationEvent
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.schema.{SchemaHelper, SparkArrowTRowSetGenerator, SparkTRowSetGenerator}
@@ -157,38 +157,34 @@ abstract class SparkOperation(session: Session)
 
   protected def withLocalProperties[T](f: => T): T = {
     SparkSQLExecutionHelper.withSQLConfPropagated(spark) {
-      val originalSession = SparkSession.getActiveSession
-      try {
-        SparkSession.setActiveSession(spark)
-        spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
-        spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
-        // Set the session (proxy) user as the current user so that Spark built-in functions
-        // current_user() (SPARK-21957, 3.2.0), session_user() (SPARK-44860, 4.0.0) and user
-        // return it instead of the engine user.
-        CURRENT_USER.set(session.user)
-        schedulerPool match {
-          case Some(pool) =>
-            spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
-          case None =>
-        }
-        if (isSessionUserSignEnabled) {
-          setSessionUserSign()
-        }
+      withActiveSession(spark) {
+        try {
+          spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
+          spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+          spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+          // Set the session (proxy) user as the current user so that Spark built-in functions
+          // current_user() (SPARK-21957, 3.2.0), session_user() (SPARK-44860, 4.0.0) and user
+          // return it instead of the engine user.
+          CURRENT_USER.set(session.user)
+          schedulerPool match {
+            case Some(pool) =>
+              spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+            case None =>
+          }
+          if (isSessionUserSignEnabled) {
+            setSessionUserSign()
+          }
 
-        f
-      } finally {
-        spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
-        spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
-        spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-        CURRENT_USER.remove()
-        spark.sparkContext.clearJobGroup()
-        if (isSessionUserSignEnabled) {
-          clearSessionUserSign()
-        }
-        originalSession match {
-          case Some(session) => SparkSession.setActiveSession(session)
-          case None => SparkSession.clearActiveSession()
+          f
+        } finally {
+          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+          spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+          spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+          CURRENT_USER.remove()
+          spark.sparkContext.clearJobGroup()
+          if (isSessionUserSignEnabled) {
+            clearSessionUserSign()
+          }
         }
       }
     }

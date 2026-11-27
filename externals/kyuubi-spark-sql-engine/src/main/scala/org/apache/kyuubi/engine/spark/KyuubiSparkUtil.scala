@@ -23,7 +23,7 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 import scala.annotation.meta.getter
 
 import org.apache.spark.{SPARK_VERSION, SparkContext}
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Logging
@@ -51,6 +51,34 @@ object KyuubiSparkUtil extends Logging {
         spark.sql(sql).isEmpty
       } finally {
         spark.sparkContext.clearJobGroup()
+      }
+    }
+  }
+
+  /**
+   * Set a session level config, ignoring keys that Spark refuses to modify at runtime,
+   * e.g. static SQL configs.
+   */
+  def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
+    try {
+      spark.conf.set(key, value)
+    } catch {
+      case e: AnalysisException => warn(e.getMessage())
+    }
+  }
+
+  /**
+   * Run `f` with `spark` as the thread's active session, restoring the previous one afterwards.
+   */
+  def withActiveSession[T](spark: SparkSession)(f: => T): T = {
+    val originalSession = SparkSession.getActiveSession
+    try {
+      SparkSession.setActiveSession(spark)
+      f
+    } finally {
+      originalSession match {
+        case Some(session) => SparkSession.setActiveSession(session)
+        case None => SparkSession.clearActiveSession()
       }
     }
   }
