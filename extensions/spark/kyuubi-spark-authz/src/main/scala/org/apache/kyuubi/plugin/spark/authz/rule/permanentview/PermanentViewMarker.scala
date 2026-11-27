@@ -23,8 +23,11 @@ import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute}
 import org.apache.spark.sql.catalyst.plans.QueryPlan
-import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics}
+import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Project, Statistics, View}
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
+
+import org.apache.kyuubi.util.reflect.ReflectUtils.getField
 
 case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   extends LeafNode with MultiInstanceRelation {
@@ -55,6 +58,17 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
   }
 
   override def doCanonicalize(): LogicalPlan = {
+    val plan = canonicalizationPlan
+    // Subquery markers can reference CTEs outside their child. Normalize them together with
+    // the enclosing permanent view, which has its own CTE scope.
+    val normalized = plan match {
+      case _: View => PermanentViewMarker.normalizeCTEIds.map(_(plan)).getOrElse(plan)
+      case _ => plan
+    }
+    normalized.canonicalized
+  }
+
+  private def canonicalizationPlan: LogicalPlan = {
     // newInstance() wraps the child in a Project, and a new instance of a new instance nests one
     // inside another, so strip every layer it added rather than only the outermost one.
     @tailrec
@@ -63,6 +77,24 @@ case class PermanentViewMarker(child: LogicalPlan, catalogTable: CatalogTable)
         stripNewInstanceProjects(p.child)
       case other => other
     }
-    stripNewInstanceProjects(child).canonicalized
+    // Expose nested views and subqueries only for cache-key comparison. The analyzed plan
+    // must retain its markers for privilege checks.
+    stripNewInstanceProjects(child).transformDownWithSubqueries {
+      case marker: PermanentViewMarker => marker.canonicalizationPlan
+    }
+  }
+}
+
+object PermanentViewMarker {
+  // SPARK-46741 introduced this rule in Spark 4.1.1. Keep older runtimes loadable and use
+  // Spark's own normalization, including recursive CTE handling, wherever it is available.
+  private lazy val normalizeCTEIds: Option[Rule[LogicalPlan]] = {
+    try {
+      Some(getField[Rule[LogicalPlan]](
+        "org.apache.spark.sql.catalyst.normalizer.NormalizeCTEIds$",
+        "MODULE$"))
+    } catch {
+      case _: ClassNotFoundException => None
+    }
   }
 }
