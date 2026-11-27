@@ -37,6 +37,7 @@ import org.apache.kyuubi.client.util.BatchUtils
 import org.apache.kyuubi.client.util.BatchUtils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_BATCH_PRIORITY
 import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
@@ -258,6 +259,92 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .delete()
     assert(deleteBatchResponse.getStatus === 200)
     assert(!deleteBatchResponse.readEntity(classOf[CloseBatchResponse]).isSuccess)
+  }
+
+  test("ignore null-valued batch configuration") {
+    val nullConfigKey = "sfPassword"
+    val requestObj = newSparkBatchRequest(Map(
+      "spark.master" -> "local",
+      nullConfigKey -> null,
+      PROXY_USER.key -> null,
+      KYUUBI_BATCH_ID_KEY -> null,
+      BATCH_IMPL_VERSION.key -> null,
+      KYUUBI_BATCH_PRIORITY -> null))
+
+    val response = webTarget.path("api/v1/batches")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+    val batch = response.readEntity(classOf[Batch])
+
+    val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+    eventually(timeout(10.seconds)) {
+      val metadata = sessionManager.getBatchMetadata(batch.getId)
+      assert(metadata.isDefined)
+      assert(metadata.get.requestConf.get("spark.master").contains("local"))
+      assert(!metadata.get.requestConf.contains(nullConfigKey))
+      assert(!metadata.get.requestConf.contains(PROXY_USER.key))
+      assert(!metadata.get.requestConf.contains(BATCH_IMPL_VERSION.key))
+      assert(!metadata.get.requestConf.contains(KYUUBI_BATCH_PRIORITY))
+      assert(metadata.get.requestConf.get(KYUUBI_BATCH_ID_KEY).contains(batch.getId))
+    }
+  }
+
+  test("open batch session with uploading resource, extra resources, and null-valued conf") {
+    val nullConfigKey = "sfPassword"
+    val exampleJarFile = Paths.get(sparkBatchTestResource.get).toFile
+    val extraResourceFile = java.nio.file.Files.createTempFile("kyuubi-extra", ".txt").toFile
+    try {
+      val requestObj = newSparkBatchRequest(Map(
+        "spark.master" -> "local",
+        nullConfigKey -> null,
+        "spark.files" -> null))
+      requestObj.setExtraResourcesMap(Map("spark.files" -> extraResourceFile.getName).asJava)
+      val multipart = new FormDataMultiPart()
+        .field("batchRequest", requestObj, MediaType.APPLICATION_JSON_TYPE)
+        .bodyPart(new FileDataBodyPart("resourceFile", exampleJarFile))
+        .bodyPart(new FileDataBodyPart(extraResourceFile.getName, extraResourceFile))
+        .asInstanceOf[FormDataMultiPart]
+
+      val response = webTarget.path("api/v1/batches")
+        .request(MediaType.APPLICATION_JSON)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .post(Entity.entity(multipart, MediaType.MULTIPART_FORM_DATA))
+      assert(response.getStatus === 200)
+      val batch = response.readEntity(classOf[Batch])
+
+      val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
+      val expectedPrefix = extraResourceFile.getName.stripSuffix(".txt")
+      eventually(timeout(10.seconds)) {
+        val metadata = sessionManager.getBatchMetadata(batch.getId)
+        assert(metadata.isDefined)
+        assert(!metadata.get.requestConf.contains(nullConfigKey))
+        assert(metadata.get.requestConf.get("spark.files").exists { path =>
+          path.contains(expectedPrefix) && path.endsWith(".txt")
+        })
+      }
+
+      eventually(timeout(10.seconds), interval(200.millis)) {
+        val resp = webTarget.path(s"api/v1/batches/${batch.getId}")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+          .get()
+        val batchState = resp.readEntity(classOf[Batch]).getState
+        assert(batchState === "PENDING" || batchState === "RUNNING" ||
+          BatchUtils.isTerminalState(batchState))
+      }
+
+      webTarget.path(s"api/v1/batches/${batch.getId}")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+        .delete()
+      eventually(timeout(5.seconds), interval(200.millis)) {
+        assert(KyuubiApplicationManager.uploadWorkDir.toFile.listFiles().isEmpty)
+      }
+    } finally {
+      extraResourceFile.delete()
+    }
   }
 
   test("open batch session with uploading resource") {
@@ -587,14 +674,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       resource = sparkBatchTestResource.get,
       className = sparkBatchTestMainClass,
       requestName = "PENDING_RECOVERY",
-      requestConf = Map("spark.master" -> "local"),
+      requestConf = Map("spark.master" -> "local", "sfPassword" -> null),
       requestArgs = Seq.empty,
       createTime = System.currentTimeMillis(),
       engineType = "SPARK")
 
     val batchMetadata2 = batchMetadata.copy(
       identifier = batchId2,
-      requestName = "RUNNING_RECOVERY")
+      requestName = "RUNNING_RECOVERY",
+      requestConf = Map("spark.master" -> "local"))
     sessionManager.insertMetadata(batchMetadata)
     sessionManager.insertMetadata(batchMetadata2)
 
@@ -639,6 +727,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
     val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
     assert(session1.createTime === batchMetadata.createTime)
+    assert(!session1.normalizedConf.contains("sfPassword"))
     assert(session2.createTime === batchMetadata2.createTime)
 
     eventually(timeout(10.seconds)) {
@@ -676,14 +765,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       resource = sparkBatchTestResource.get,
       className = sparkBatchTestMainClass,
       requestName = "PENDING_RECOVERY",
-      requestConf = Map("spark.master" -> "local"),
+      requestConf = Map("spark.master" -> "local", "sfPassword" -> null),
       requestArgs = Seq.empty,
       createTime = System.currentTimeMillis(),
       engineType = "SPARK")
 
     val batchMetadata2 = batchMetadata.copy(
       identifier = batchId2,
-      requestName = "RUNNING_RECOVERY")
+      requestName = "RUNNING_RECOVERY",
+      requestConf = Map("spark.master" -> "local"))
     sessionManager.insertMetadata(batchMetadata)
     sessionManager.insertMetadata(batchMetadata2)
 
@@ -738,6 +828,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val session1 = sessionManager.getSession(sessionHandle1).asInstanceOf[KyuubiBatchSession]
     val session2 = sessionManager.getSession(sessionHandle2).asInstanceOf[KyuubiBatchSession]
     assert(session1.createTime === batchMetadata.createTime)
+    assert(!session1.normalizedConf.contains("sfPassword"))
     assert(session2.createTime === batchMetadata2.createTime)
 
     eventually(timeout(10.seconds)) {

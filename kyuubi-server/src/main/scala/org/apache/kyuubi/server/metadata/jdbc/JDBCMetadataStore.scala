@@ -694,7 +694,9 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     if (str == null || str.isEmpty) {
       Map.empty
     } else {
-      mapper.readValue(str, classOf[Map[String, String]])
+      Option(mapper.readValue(str, classOf[Map[String, String]]))
+        .getOrElse(Map.empty)
+        .filter(_._2 != null)
     }
   }
 

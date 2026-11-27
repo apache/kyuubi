@@ -149,7 +149,13 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
     description = "Open(create) a session")
   @POST
   def openSession(request: SessionOpenRequest): dto.SessionHandle = {
-    val userName = fe.getSessionUser(request.getConfigs.asScala.toMap)
+    val sessionConfigs = request.getConfigs.asScala.filter {
+      case (key, null) =>
+        warn(s"Ignore session conf $key because value is null")
+        false
+      case _ => true
+    }
+    val userName = fe.getSessionUser(sessionConfigs.toMap)
     val ipAddress = fe.getIpAddress
     val handle = fe.be.openSession(
       Option(request.getProtocolVersion).map(v => TProtocolVersion.findByValue(v))
@@ -157,7 +163,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       userName,
       "",
       ipAddress,
-      (request.getConfigs.asScala ++ Map(
+      (sessionConfigs ++ Map(
         KYUUBI_CLIENT_IP_KEY -> ipAddress,
         KYUUBI_SERVER_IP_KEY -> fe.host,
         KYUUBI_SESSION_CONNECTION_URL_KEY -> fe.connectionUrl,
