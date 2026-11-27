@@ -31,11 +31,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{SessionData, _}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_ALIVE_PROBE, KYUUBI_SESSION_CONNECTION_URL_KEY}
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
+import org.apache.kyuubi.service.authentication.AuthUtils
 import org.apache.kyuubi.session.SessionType
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -85,6 +86,35 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount2 = response.readEntity(classOf[SessionOpenCount])
     assert(openedSessionCount2.getOpenSessionCount == 0)
+  }
+
+  test("ignore null-valued session configuration") {
+    val requestObj = new SessionOpenRequest(Map(
+      "testConfig" -> "testValue",
+      "sfPassword" -> null,
+      KyuubiConf.PROXY_USER.key -> null,
+      AuthUtils.HS2_PROXY_USER -> null,
+      KYUUBI_SESSION_ALIVE_PROBE -> null).asJava)
+
+    val response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+
+    val sessionHandle = response.readEntity(classOf[SessionHandle]).getIdentifier
+    try {
+      val infoResponse = webTarget.path(s"api/v1/sessions/$sessionHandle").request().get()
+      assert(infoResponse.getStatus === 200)
+      val sessionConf = infoResponse.readEntity(classOf[KyuubiSessionEvent]).getConf
+      assert(sessionConf.get("testConfig") === "testValue")
+      assert(!sessionConf.containsKey("sfPassword"))
+      assert(!sessionConf.containsKey(KyuubiConf.PROXY_USER.key))
+      assert(!sessionConf.containsKey(AuthUtils.HS2_PROXY_USER))
+      assert(!sessionConf.containsKey(KYUUBI_SESSION_ALIVE_PROBE))
+    } finally {
+      val closeResponse = webTarget.path(s"api/v1/sessions/$sessionHandle").request().delete()
+      assert(closeResponse.getStatus === 200)
+    }
   }
 
   test("getSessionList") {
