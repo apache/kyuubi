@@ -85,8 +85,8 @@ object TrinoSqlEngine extends Logging {
     }
   }
 
-  private def initLoggerEventHandler(conf: KyuubiConf): Unit = {
-    TrinoEventHandlerRegister.registerEventLoggers(conf)
+  private def initLoggerEventHandler(engineConf: KyuubiConf): Unit = {
+    TrinoEventHandlerRegister.registerEventLoggers(engineConf)
   }
 
   def main(args: Array[String]): Unit = {

@@ -48,7 +48,7 @@ object ApiUtils extends Logging {
 
   def sessionEvent(session: KyuubiSession): dto.KyuubiSessionEvent = {
     session.getSessionEvent.map { event =>
-      val conf = buildConf(event.conf, session)
+      val responseConf = buildConf(event.conf, session)
       dto.KyuubiSessionEvent.builder()
         .sessionId(event.sessionId)
         .clientVersion(event.clientVersion)
@@ -57,7 +57,7 @@ object ApiUtils extends Logging {
         .user(event.user)
         .clientIp(event.clientIP)
         .serverIp(event.serverIP)
-        .conf(conf)
+        .conf(responseConf)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
         .engineName(event.engineName)
@@ -74,13 +74,13 @@ object ApiUtils extends Logging {
 
   def sessionData(session: KyuubiSession): SessionData = {
     val sessionEvent = session.getSessionEvent
-    val conf = buildConf(session.conf, session)
+    val responseConf = buildConf(session.sessionConfOverlay, session)
     new SessionData(
       session.handle.identifier.toString,
       sessionEvent.map(_.remoteSessionId).getOrElse(""),
       session.user,
       session.ipAddress,
-      conf,
+      responseConf,
       session.createTime,
       session.lastAccessTime - session.createTime,
       session.getNoOperationTime,

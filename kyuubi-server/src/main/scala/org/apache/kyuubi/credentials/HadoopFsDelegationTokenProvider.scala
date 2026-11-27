@@ -38,18 +38,18 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 
   private var tokenRequired: Boolean = _
   private var hadoopConf: Configuration = _
-  private var kyuubiConf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
   private var fsUris: Seq[URI] = _
 
   override val serviceName: String = "hadoopfs"
 
-  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
+  override def initialize(hadoopConf: Configuration, serverConf: KyuubiConf): Unit = {
     this.tokenRequired =
       SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
 
-    this.kyuubiConf = kyuubiConf
-    this.fsUris = validatedFsUris(kyuubiConf, hadoopConf)
-    this.hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf, loadDefaults = false)
+    this.serverConf = serverConf
+    this.fsUris = validatedFsUris(serverConf, hadoopConf)
+    this.hadoopConf = KyuubiHadoopUtils.newHadoopConf(serverConf, loadDefaults = false)
 
     // Using HdfsConfiguration to ensure hdfs-site.xml is loaded
     new HdfsConfiguration(hadoopConf).iterator().asScala.foreach(e =>
@@ -89,8 +89,8 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 
 object HadoopFsDelegationTokenProvider extends Logging {
 
-  def validatedFsUris(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Seq[URI] = {
-    val uris = kyuubiConf.get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS) :+
+  def validatedFsUris(serverConf: KyuubiConf, hadoopConf: Configuration): Seq[URI] = {
+    val uris = serverConf.get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS) :+
       hadoopConf.get("fs.defaultFS", "file:///")
     uris.flatMap { str =>
       try {

@@ -27,15 +27,16 @@ import org.apache.kyuubi.config.KyuubiConf.buildConf
 object JDBCMetadataStoreConf {
   final val METADATA_STORE_JDBC_DATASOURCE_PREFIX = "kyuubi.metadata.store.jdbc.datasource"
 
-  def getMetadataStoreJdbcUrl(conf: KyuubiConf): String = {
-    Utils.substituteKyuubiEnvVars(conf.get(METADATA_STORE_JDBC_URL))
+  def getMetadataStoreJdbcUrl(serverConf: KyuubiConf): String = {
+    Utils.substituteKyuubiEnvVars(serverConf.get(METADATA_STORE_JDBC_URL))
   }
 
   /** Get metadata store jdbc datasource properties. */
-  def getMetadataStoreJDBCDataSourceProperties(conf: KyuubiConf): Properties = {
+  def getMetadataStoreJDBCDataSourceProperties(serverConf: KyuubiConf): Properties = {
     val datasourceProperties = new Properties()
-    conf.getAllWithPrefix(METADATA_STORE_JDBC_DATASOURCE_PREFIX, "").foreach { case (key, value) =>
-      datasourceProperties.put(key, value)
+    serverConf.getAllWithPrefix(METADATA_STORE_JDBC_DATASOURCE_PREFIX, "").foreach {
+      case (key, value) =>
+        datasourceProperties.put(key, value)
     }
     datasourceProperties
   }

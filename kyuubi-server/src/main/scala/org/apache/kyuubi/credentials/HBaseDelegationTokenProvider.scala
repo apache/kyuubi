@@ -32,10 +32,10 @@ private class HBaseDelegationTokenProvider
   override def serviceName: String = "hbase"
   private var tokenRequired: Boolean = _
   private var hbaseConf: Configuration = _
-  private var kyuubiConf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
 
-  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
-    this.kyuubiConf = kyuubiConf
+  override def initialize(hadoopConf: Configuration, serverConf: KyuubiConf): Unit = {
+    this.serverConf = serverConf
     this.hbaseConf = hadoopConf
     this.tokenRequired =
       hbaseConf.get("hbase.security.authentication", "simple").toLowerCase() == "kerberos"

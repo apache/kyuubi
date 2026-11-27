@@ -34,7 +34,7 @@ import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TOperationState._
 class ExecuteStatement(
     session: Session,
     override val statement: String,
-    confOverlay: Map[String, String],
+    reqConfOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(session) {
@@ -59,7 +59,7 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private val isTimeoutMonitorEnabled: Boolean = confOverlay.getOrElse[String](
+  private val isTimeoutMonitorEnabled: Boolean = reqConfOverlay.getOrElse[String](
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.key,
     OPERATION_QUERY_TIMEOUT_MONITOR_ENABLED.defaultValStr).toBoolean
 
@@ -69,7 +69,11 @@ class ExecuteStatement(
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
       _remoteOpHandle =
-        client.executeStatement(statement, confOverlay ++ operationHandleConf, true, queryTimeout)
+        client.executeStatement(
+          statement,
+          reqConfOverlay ++ operationHandleConf,
+          true,
+          queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }

@@ -94,17 +94,17 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   def isAdministrator(userName: String): Boolean =
     if (securityEnabled) administrators.contains(userName) else true
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    this.conf = conf
+  override def initialize(serverConf: KyuubiConf): Unit = synchronized {
+    this.conf = serverConf
     server = JettyServer(
       getName,
       host,
       port,
-      conf.get(FRONTEND_REST_MAX_WORKER_THREADS),
-      conf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT),
-      conf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
+      serverConf.get(FRONTEND_REST_MAX_WORKER_THREADS),
+      serverConf.get(FRONTEND_REST_JETTY_STOP_TIMEOUT),
+      serverConf.get(FRONTEND_JETTY_SEND_VERSION_ENABLED))
     batchService.foreach(addService)
-    super.initialize(conf)
+    super.initialize(serverConf)
   }
 
   override def connectionUrl: String = {

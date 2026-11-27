@@ -43,15 +43,15 @@ class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
   private val operations =
     loadFromServiceLoader[ApplicationOperation](Utils.getContextOrKyuubiClassLoader).toSeq
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(serverConf: KyuubiConf): Unit = {
     operations.foreach { op =>
       try {
-        op.initialize(conf, metadataManager)
+        op.initialize(serverConf, metadataManager)
       } catch {
         case NonFatal(e) => warn(s"Error starting ${op.getClass.getSimpleName}: ${e.getMessage}")
       }
     }
-    super.initialize(conf)
+    super.initialize(serverConf)
   }
 
   override def stop(): Unit = {
@@ -112,30 +112,30 @@ class KyuubiApplicationManager(metadataManager: Option[MetadataManager])
 }
 
 object KyuubiApplicationManager {
-  private def setupSparkYarnTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
+  private def setupSparkYarnTag(tag: String, sessionConf: KyuubiConf): Unit = {
+    val originalTag = sessionConf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
-    conf.set(SparkProcessBuilder.TAG_KEY, newTag)
+    sessionConf.set(SparkProcessBuilder.TAG_KEY, newTag)
   }
 
-  private def setupEngineYarnModeTag(tag: String, conf: KyuubiConf): Unit = {
+  private def setupEngineYarnModeTag(tag: String, sessionConf: KyuubiConf): Unit = {
     val originalTag =
-      conf.getOption(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key).map(_ + ",").getOrElse("")
+      sessionConf.getOption(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key).map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
-    conf.set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key, newTag)
+    sessionConf.set(KyuubiConf.ENGINE_DEPLOY_YARN_MODE_TAGS.key, newTag)
   }
 
-  private def setupSparkK8sTag(tag: String, conf: KyuubiConf): Unit = {
-    conf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
+  private def setupSparkK8sTag(tag: String, sessionConf: KyuubiConf): Unit = {
+    sessionConf.set("spark.kubernetes.driver.label." + LABEL_KYUUBI_UNIQUE_KEY, tag)
   }
 
-  private def setupFlinkYarnTag(tag: String, conf: KyuubiConf): Unit = {
-    val originalTag = conf
+  private def setupFlinkYarnTag(tag: String, sessionConf: KyuubiConf): Unit = {
+    val originalTag = sessionConf
       .getOption(s"${FlinkProcessBuilder.FLINK_CONF_PREFIX}.${FlinkProcessBuilder.YARN_TAG_KEY}")
-      .orElse(conf.getOption(FlinkProcessBuilder.YARN_TAG_KEY))
+      .orElse(sessionConf.getOption(FlinkProcessBuilder.YARN_TAG_KEY))
       .map(_ + ",").getOrElse("")
     val newTag = s"${originalTag}KYUUBI" + Some(tag).filterNot(_.isEmpty).map("," + _).getOrElse("")
-    conf.set(FlinkProcessBuilder.YARN_TAG_KEY, newTag)
+    sessionConf.set(FlinkProcessBuilder.YARN_TAG_KEY, newTag)
   }
 
   val uploadWorkDir: Path = {
@@ -147,8 +147,8 @@ object KyuubiApplicationManager {
     path
   }
 
-  private[kyuubi] def checkApplicationAccessPath(path: String, conf: KyuubiConf): Unit = {
-    var localDirAllowList: Set[String] = conf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
+  private[kyuubi] def checkApplicationAccessPath(path: String, serverConf: KyuubiConf): Unit = {
+    var localDirAllowList: Set[String] = serverConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST)
     if (localDirAllowList.nonEmpty) {
       localDirAllowList ++= Set(uploadWorkDir.toUri.getPath)
       val uri =
@@ -179,22 +179,22 @@ object KyuubiApplicationManager {
 
   private def checkSparkAccessPaths(
       appConf: Map[String, String],
-      kyuubiConf: KyuubiConf): Unit = {
-    if (kyuubiConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
+      serverConf: KyuubiConf): Unit = {
+    if (serverConf.get(KyuubiConf.SESSION_LOCAL_DIR_ALLOW_LIST).nonEmpty) {
       val policedKeys = SparkProcessBuilder.PATH_CONFIGS.toSet ++
-        kyuubiConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
+        serverConf.get(KyuubiConf.SERVER_SPARK_FILE_CONFIG_LIST)
           .map(SparkProcessBuilder.convertConfigKey)
       appConf.foreach { case (key, value) =>
         if (policedKeys.contains(SparkProcessBuilder.convertConfigKey(key))) {
           value.split(",").filter(_.nonEmpty).foreach { path =>
-            checkApplicationAccessPath(path, kyuubiConf)
+            checkApplicationAccessPath(path, serverConf)
           }
         }
       }
       // the main resource is not a spark.* conf but spark-submit uploads it from the server
       // host as the primary resource of the engine application
       appConf.get(KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE.key).filter(_.nonEmpty).foreach { path =>
-        checkApplicationAccessPath(path, kyuubiConf)
+        checkApplicationAccessPath(path, serverConf)
       }
     }
   }
@@ -204,27 +204,28 @@ object KyuubiApplicationManager {
    * @param applicationTag a unique tag to identify application
    * @param applicationType application short type, e.g. SPARK_SQL SPARK_BATCH is SPARK
    * @param resourceManager yarn, kubernetes(k8s) etc.
-   * @param conf  kyuubi conf instance in session layer
+   * @param sessionConf kyuubi conf instance in session layer
    */
   def tagApplication(
       applicationTag: String,
       applicationType: String,
       resourceManager: Option[String],
-      conf: KyuubiConf): Unit = {
+      sessionConf: KyuubiConf): Unit = {
     (applicationType.toUpperCase, resourceManager.map(_.toUpperCase())) match {
-      case ("SPARK", Some("YARN")) => setupSparkYarnTag(applicationTag, conf)
-      case ("SPARK", Some(rm)) if rm.startsWith("K8S") => setupSparkK8sTag(applicationTag, conf)
+      case ("SPARK", Some("YARN")) => setupSparkYarnTag(applicationTag, sessionConf)
+      case ("SPARK", Some(rm)) if rm.startsWith("K8S") =>
+        setupSparkK8sTag(applicationTag, sessionConf)
       case ("SPARK", _) =>
         // if the master is not identified ahead, add all tags
-        setupSparkYarnTag(applicationTag, conf)
-        setupSparkK8sTag(applicationTag, conf)
+        setupSparkYarnTag(applicationTag, sessionConf)
+        setupSparkK8sTag(applicationTag, sessionConf)
       case ("FLINK", Some("YARN")) =>
         // running flink on other platforms is not yet supported
-        setupFlinkYarnTag(applicationTag, conf)
+        setupFlinkYarnTag(applicationTag, sessionConf)
       case ("HIVE", Some("YARN")) =>
-        setupEngineYarnModeTag(applicationTag, conf)
+        setupEngineYarnModeTag(applicationTag, sessionConf)
       case ("JDBC", Some("YARN")) =>
-        setupEngineYarnModeTag(applicationTag, conf)
+        setupEngineYarnModeTag(applicationTag, sessionConf)
       // other engine types are running locally yet
       case _ =>
     }
@@ -233,9 +234,9 @@ object KyuubiApplicationManager {
   def checkApplicationAccessPaths(
       applicationType: String,
       appConf: Map[String, String],
-      kyuubiConf: KyuubiConf): Unit = {
+      serverConf: KyuubiConf): Unit = {
     applicationType.toUpperCase(Locale.ROOT) match {
-      case appType if appType.contains("SPARK") => checkSparkAccessPaths(appConf, kyuubiConf)
+      case appType if appType.contains("SPARK") => checkSparkAccessPaths(appConf, serverConf)
       case appType if appType.startsWith("FLINK") => // TODO: check flink app access local paths
       case _ =>
     }

@@ -42,11 +42,11 @@ import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.util.JdbcUtils
 import org.apache.kyuubi.util.reflect.ReflectUtils
 
-class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
+class JDBCMetadataStore(serverConf: KyuubiConf) extends MetadataStore with Logging {
   import JDBCMetadataStore._
 
-  private val dbType = DatabaseType.withName(conf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
-  private val driverClassOpt = conf.get(METADATA_STORE_JDBC_DRIVER)
+  private val dbType = DatabaseType.withName(serverConf.get(METADATA_STORE_JDBC_DATABASE_TYPE))
+  private val driverClassOpt = serverConf.get(METADATA_STORE_JDBC_DRIVER)
   private lazy val mysqlDriverClass =
     if (ReflectUtils.isClassLoadable("com.mysql.cj.jdbc.Driver")) {
       "com.mysql.cj.jdbc.Driver"
@@ -68,15 +68,15 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     case CUSTOM => new GenericDatabaseDialect
   }
 
-  private val priorityEnabled = conf.get(METADATA_STORE_JDBC_PRIORITY_ENABLED)
+  private val priorityEnabled = serverConf.get(METADATA_STORE_JDBC_PRIORITY_ENABLED)
 
   private val datasourceProperties =
-    JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(conf)
+    JDBCMetadataStoreConf.getMetadataStoreJDBCDataSourceProperties(serverConf)
   private val hikariConfig = new HikariConfig(datasourceProperties)
   hikariConfig.setDriverClassName(driverClass)
-  hikariConfig.setJdbcUrl(getMetadataStoreJdbcUrl(conf))
-  hikariConfig.setUsername(conf.get(METADATA_STORE_JDBC_USER))
-  hikariConfig.setPassword(conf.get(METADATA_STORE_JDBC_PASSWORD))
+  hikariConfig.setJdbcUrl(getMetadataStoreJdbcUrl(serverConf))
+  hikariConfig.setUsername(serverConf.get(METADATA_STORE_JDBC_USER))
+  hikariConfig.setPassword(serverConf.get(METADATA_STORE_JDBC_PASSWORD))
   hikariConfig.setPoolName("jdbc-metadata-store-pool")
 
   @VisibleForTesting
@@ -84,7 +84,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
-  if (conf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
+  if (serverConf.get(METADATA_STORE_JDBC_DATABASE_SCHEMA_INIT)) {
     initSchema()
   }
 

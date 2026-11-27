@@ -58,21 +58,21 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
-      confOverlay: Map[String, String],
+      reqConfOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
     if (spark.conf.getOption(ENGINE_OPERATION_CONVERT_CATALOG_DATABASE_ENABLED.key)
         .map(_.toBoolean).getOrElse(operationConvertCatalogDatabaseDefault)) {
-      val catalogDatabaseOperation = processCatalogDatabase(session, statement, confOverlay)
+      val catalogDatabaseOperation = processCatalogDatabase(session, statement, reqConfOverlay)
       if (catalogDatabaseOperation != null) {
         return catalogDatabaseOperation
       }
     }
-    val lang = OperationLanguages(confOverlay.getOrElse(
+    val lang = OperationLanguages(reqConfOverlay.getOrElse(
       OPERATION_LANGUAGE.key,
       spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)))
-    val opHandle = confOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(
+    val opHandle = reqConfOverlay.get(KYUUBI_OPERATION_HANDLE_KEY).map(
       OperationHandle.apply).getOrElse(OperationHandle())
     val operation =
       lang match {

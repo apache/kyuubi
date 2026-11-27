@@ -26,12 +26,13 @@ class DataAgentSessionImpl(
     user: String,
     password: String,
     ipAddress: String,
-    conf: Map[String, String],
+    sessionConfOverlay: Map[String, String],
     sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  extends AbstractSession(protocol, user, password, ipAddress, sessionConfOverlay, sessionManager) {
 
   override val handle: SessionHandle =
-    conf.get(KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
+    sessionConfOverlay.get(
+      KYUUBI_SESSION_HANDLE_KEY).map(SessionHandle.fromUUID).getOrElse(SessionHandle())
 
   private val dataAgentProvider =
     sessionManager.asInstanceOf[DataAgentSessionManager].dataAgentProvider

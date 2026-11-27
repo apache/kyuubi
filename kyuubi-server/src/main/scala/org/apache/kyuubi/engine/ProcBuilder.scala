@@ -64,14 +64,15 @@ trait ProcBuilder {
   def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
     val jarName: String = s"${module}_$engineScalaBinaryVersion-$KYUUBI_VERSION.jar"
-    conf.getOption(s"kyuubi.session.engine.$shortName.main.resource").filter { userSpecified =>
-      // skip check exist if not local file.
-      val uri = new URI(userSpecified)
-      val schema = if (uri.getScheme != null) uri.getScheme else "file"
-      schema match {
-        case "file" => Files.exists(Paths.get(userSpecified))
-        case _ => true
-      }
+    sessionConf.getOption(s"kyuubi.session.engine.$shortName.main.resource").filter {
+      userSpecified =>
+        // skip check exist if not local file.
+        val uri = new URI(userSpecified)
+        val schema = if (uri.getScheme != null) uri.getScheme else "file"
+        schema match {
+          case "file" => Files.exists(Paths.get(userSpecified))
+          case _ => true
+        }
     }.orElse {
       // 2. get the main resource jar from system build default
       env.get(KYUUBI_HOME_ENV_VAR_NAME).toSeq
@@ -103,9 +104,9 @@ trait ProcBuilder {
 
   protected val commands: Iterable[String]
 
-  def conf: KyuubiConf
+  def sessionConf: KyuubiConf
 
-  def env: Map[String, String] = conf.getEnvs
+  def env: Map[String, String] = sessionConf.getEnvs
 
   protected val extraEngineLog: Option[OperationLog]
 
@@ -115,7 +116,7 @@ trait ProcBuilder {
    * explicitly when kyuubi-servers are on kubernetes, which also helps in case that
    * api-server is not exposed to us.
    */
-  protected def completeMasterUrl(conf: KyuubiConf) = {}
+  protected def completeMasterUrl(sessionConf: KyuubiConf) = {}
 
   protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
@@ -157,10 +158,10 @@ trait ProcBuilder {
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
-  private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
+  private val engineLogMaxLines = sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
 
   private val engineStartupDestroyTimeout =
-    conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
+    sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_DESTROY_TIMEOUT)
 
   protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
@@ -170,12 +171,12 @@ trait ProcBuilder {
   @volatile private[kyuubi] var processLaunched: Boolean = false
 
   // Set engine application manger info conf
-  conf.set(
+  sessionConf.set(
     KyuubiReservedKeys.KYUUBI_ENGINE_APP_MGR_INFO_KEY,
     ApplicationManagerInfo.serialize(appMgrInfo()))
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
-    val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
+    val engineLogTimeout = sessionConf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
     val currentTime = System.currentTimeMillis()
     val processLogPath = workingDir
     val totalExistsFile = processLogPath.toFile.listFiles { (_, name) => name.startsWith(module) }
@@ -219,7 +220,7 @@ trait ProcBuilder {
 
     val redirect: Runnable = { () =>
       try {
-        val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
+        val maxErrorSize = sessionConf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         while (true) {
           if (reader.ready()) {
             var line: String = reader.readLine()
@@ -255,7 +256,7 @@ trait ProcBuilder {
 
     logCaptureThreadReleased = false
     logCaptureThread =
-      if (conf.get(KyuubiConf.SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED)) {
+      if (sessionConf.get(KyuubiConf.SERVER_ENGINE_LOG_CAPTURE_VIRTUAL_THREADS_ENABLED)) {
         PROC_BUILD_VIRTUAL_LOGGER.newThread(redirect)
       } else {
         PROC_BUILD_LOGGER.newThread(redirect)
@@ -300,7 +301,7 @@ trait ProcBuilder {
     if (commands == null) {
       super.toString
     } else {
-      Utils.redactCommandLineArgs(conf, commands).map {
+      Utils.redactCommandLineArgs(sessionConf, commands).map {
         case arg if arg.startsWith("-") => s"\\\n\t$arg"
         case arg => arg
       }.mkString(" ")
@@ -362,7 +363,7 @@ trait ProcBuilder {
   def appMgrInfo(): ApplicationManagerInfo = ApplicationManagerInfo(None)
 
   def waitEngineCompletion: Boolean = {
-    !isClusterMode() || conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
+    !isClusterMode() || sessionConf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
   }
 }
 

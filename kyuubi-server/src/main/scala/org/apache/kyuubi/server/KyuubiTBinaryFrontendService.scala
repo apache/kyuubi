@@ -53,8 +53,8 @@ final class KyuubiTBinaryFrontendService(
 
   private lazy val defaultFetchSize = conf.get(KYUUBI_SERVER_THRIFT_RESULTSET_DEFAULT_FETCH_SIZE)
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
-    super.initialize(conf)
+  override def initialize(serverConf: KyuubiConf): Unit = synchronized {
+    super.initialize(serverConf)
 
     server.foreach(_.setServerEventHandler(new FeTServerEventHandler() {
       override def createContext(input: TProtocol, output: TProtocol): ServerContext = {

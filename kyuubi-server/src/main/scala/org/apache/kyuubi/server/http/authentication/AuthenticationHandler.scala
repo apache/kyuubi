@@ -34,7 +34,7 @@ trait AuthenticationHandler {
   /**
    *  Initializes the authentication handler instance.
    */
-  def init(conf: KyuubiConf): Unit
+  def init(serverConf: KyuubiConf): Unit
 
   /**
    * Whether this authentication handler is configured well and support authentication.

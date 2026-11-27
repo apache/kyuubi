@@ -31,13 +31,13 @@ import org.apache.kyuubi.service.authentication.AuthTypes._
 class BasicAuthenticationHandler(basicAuthType: AuthType)
   extends AuthenticationHandler with Logging {
 
-  private var conf: KyuubiConf = _
+  private var serverConf: KyuubiConf = _
   private val allowAnonymous = basicAuthType == NOSASL || basicAuthType == NONE
 
   override val authScheme: AuthScheme = AuthSchemes.BASIC
 
-  override def init(conf: KyuubiConf): Unit = {
-    this.conf = conf
+  override def init(serverConf: KyuubiConf): Unit = {
+    this.serverConf = serverConf
   }
 
   override def authenticationSupported: Boolean = {
@@ -80,7 +80,9 @@ class BasicAuthenticationHandler(basicAuthType: AuthType)
       } else {
         val Seq(user, password) = creds.toSeq.take(2)
         val passwdAuthenticationProvider = AuthenticationProviderFactory
-          .getHttpBasicAuthenticationProvider(AuthMethods.withName(basicAuthType.toString), conf)
+          .getHttpBasicAuthenticationProvider(
+            AuthMethods.withName(basicAuthType.toString),
+            serverConf)
         passwdAuthenticationProvider.authenticate(user, password)
         response.setStatus(HttpServletResponse.SC_OK)
         authUser = user

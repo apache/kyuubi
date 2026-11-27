@@ -41,9 +41,11 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
   @volatile private var adminYarnClient: Option[YarnClient] = None
   private var submitTimeout: Long = _
 
-  override def initialize(conf: KyuubiConf, metadataManager: Option[MetadataManager]): Unit = {
-    submitTimeout = conf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
-    yarnConf = KyuubiHadoopUtils.newYarnConfiguration(conf)
+  override def initialize(
+      serverConf: KyuubiConf,
+      metadataManager: Option[MetadataManager]): Unit = {
+    submitTimeout = serverConf.get(KyuubiConf.ENGINE_YARN_SUBMIT_TIMEOUT)
+    yarnConf = KyuubiHadoopUtils.newYarnConfiguration(serverConf)
 
     def createYarnClientWithCurrentUser(): Unit = {
       val c = createYarnClient(yarnConf)
@@ -57,13 +59,13 @@ class YarnApplicationOperation extends ApplicationOperation with Logging {
       adminYarnClient = Some(c)
     }
 
-    YarnUserStrategy.withName(conf.get(KyuubiConf.YARN_USER_STRATEGY)) match {
+    YarnUserStrategy.withName(serverConf.get(KyuubiConf.YARN_USER_STRATEGY)) match {
       case NONE =>
         createYarnClientWithCurrentUser()
-      case ADMIN if conf.get(KyuubiConf.YARN_USER_ADMIN) == Utils.currentUser =>
+      case ADMIN if serverConf.get(KyuubiConf.YARN_USER_ADMIN) == Utils.currentUser =>
         createYarnClientWithCurrentUser()
       case ADMIN =>
-        createYarnClientWithProxyUser(conf.get(KyuubiConf.YARN_USER_ADMIN))
+        createYarnClientWithProxyUser(serverConf.get(KyuubiConf.YARN_USER_ADMIN))
       case OWNER =>
         info("Skip initializing admin YARN client")
     }
