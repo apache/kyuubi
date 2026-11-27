@@ -27,6 +27,7 @@ import org.apache.kyuubi.metrics.{MetricsConf, MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 
 class KyuubiOperationSuite extends KyuubiFunSuite {
 
@@ -71,6 +72,19 @@ class KyuubiOperationSuite extends KyuubiFunSuite {
     assert(operation.getStatus.state === OperationState.FINISHED)
   }
 
+  test("preserve transport error for a non-interactive session") {
+    val operation = new TestKyuubiOperation(mockSession())
+    try {
+      val error = intercept[KyuubiSQLException] {
+        operation.fail(new TTransportException("Socket is closed by peer"))
+      }
+      assert(error.getMessage.contains(classOf[TTransportException].getName))
+      assert(error.getMessage.contains("Socket is closed by peer"))
+    } finally {
+      operation.close()
+    }
+  }
+
   private def mockSession(): Session = {
     val conf = KyuubiConf()
     val sessionManager = mock[SessionManager]
@@ -93,6 +107,11 @@ class KyuubiOperationSuite extends KyuubiFunSuite {
 }
 
 private class TestKyuubiOperation(session: Session) extends KyuubiOperation(session) {
+
+  def fail(t: Throwable): Unit = {
+    setState(OperationState.PENDING)
+    onError()(t)
+  }
 
   def transitState(newState: OperationState): Unit = setState(newState)
 

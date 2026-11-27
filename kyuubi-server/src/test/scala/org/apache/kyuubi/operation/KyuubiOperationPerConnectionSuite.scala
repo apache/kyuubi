@@ -29,13 +29,14 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.{KyuubiConf, KyuubiReservedKeys}
 import org.apache.kyuubi.config.KyuubiConf.SESSION_CONF_ADVISOR
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState}
+import org.apache.kyuubi.engine.{ApplicationInfo, ApplicationManagerInfo, ApplicationState, KyuubiApplicationManager}
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver
 import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiSQLException, KyuubiStatement}
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.plugin.SessionConfAdvisor
 import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, SessionHandle, SessionType}
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift._
+import org.apache.kyuubi.shaded.thrift.transport.TTransportException
 
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
@@ -300,6 +301,93 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     }
   }
 
+  test("close session only for a confirmed terminated engine application") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "false"))(Map.empty)(
+      Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val preReq = new TExecuteStatementReq()
+        preReq.setStatement("select engine_name()")
+        preReq.setSessionHandle(handle)
+        preReq.setRunAsync(false)
+        client.ExecuteStatement(preReq)
+
+        val sessionHandle = SessionHandle(handle)
+        val sessionManager =
+          server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+        val session =
+          sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+        val sessionEvent = session.getSessionEvent.get
+        val originalApplicationManager = sessionManager.applicationManager
+        var applicationInfo: () => Option[ApplicationInfo] =
+          () => Some(ApplicationInfo("engine-id", "engine-name", ApplicationState.RUNNING))
+
+        sessionManager.applicationManager = new KyuubiApplicationManager(None) {
+          override def getApplicationInfo(
+              appMgrInfo: ApplicationManagerInfo,
+              tag: String,
+              proxyUser: Option[String],
+              submitTime: Option[Long]): Option[ApplicationInfo] = applicationInfo()
+        }
+
+        class TestExecuteStatement
+          extends ExecuteStatement(session, "SELECT 1", Map.empty, false, 0L) {
+          def fail(t: Throwable): Unit = {
+            setState(OperationState.PENDING)
+            onError()(t)
+          }
+        }
+
+        def failWithTransportError(): org.apache.kyuubi.KyuubiSQLException = {
+          val operation = new TestExecuteStatement
+          try {
+            intercept[org.apache.kyuubi.KyuubiSQLException] {
+              operation.fail(new TTransportException("Socket is closed by peer"))
+            }
+          } finally {
+            operation.close()
+          }
+        }
+
+        try {
+          val runningError = failWithTransportError()
+          assert(!runningError.getMessage.contains("engine application has been terminated"))
+          assert(sessionManager.getSessionOption(sessionHandle).nonEmpty)
+
+          applicationInfo = () => Some(ApplicationInfo.NOT_FOUND)
+          val notFoundError = failWithTransportError()
+          assert(!notFoundError.getMessage.contains("engine application has been terminated"))
+          assert(sessionManager.getSessionOption(sessionHandle).nonEmpty)
+
+          applicationInfo = () => throw new RuntimeException("application lookup failed")
+          val lookupError = failWithTransportError()
+          assert(!lookupError.getMessage.contains("engine application has been terminated"))
+          assert(sessionManager.getSessionOption(sessionHandle).nonEmpty)
+
+          applicationInfo = () =>
+            Some(ApplicationInfo(
+              "engine-id",
+              "engine-name",
+              ApplicationState.FAILED,
+              error = Some("driver terminated")))
+          val engineError = failWithTransportError()
+          assert(engineError.getMessage.contains("The engine application has been terminated"))
+          assert(engineError.getMessage.contains("ApplicationInfo"))
+          assert(engineError.getMessage.contains("driver terminated"))
+          assert(sessionEvent.exception.contains(engineError))
+          eventually(timeout(5.seconds), interval(100.milliseconds)) {
+            assert(session.client.remoteEngineBroken)
+            assert(session.client.engineConnectionClosed)
+            assert(session.client.asyncRequestInterrupted)
+            assert(sessionManager.getSessionOption(sessionHandle).isEmpty)
+          }
+        } finally {
+          sessionManager.applicationManager = originalApplicationManager
+        }
+      }
+    }
+  }
+
   test("support to interrupt the thrift request if remote engine is broken") {
     withSessionConf(Map(
       KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED.key -> "true",
@@ -314,8 +402,10 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         client.ExecuteStatement(preReq)
 
         val sessionHandle = SessionHandle(handle)
-        val session = server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
-          .getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
+        val sessionManager =
+          server.backendService.sessionManager.asInstanceOf[KyuubiSessionManager]
+        val session =
+          sessionManager.getSession(sessionHandle).asInstanceOf[KyuubiSessionImpl]
 
         val exitReq = new TExecuteStatementReq()
         exitReq.setStatement("SELECT java_method('java.lang.Thread', 'sleep', 1000L)," +
@@ -344,6 +434,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(elapsedTime < 20 * 1000)
         eventually(timeout(3.seconds)) {
           assert(session.client.asyncRequestInterrupted)
+        }
+        eventually(timeout(15.seconds), interval(100.milliseconds)) {
+          assert(sessionManager.getSessionOption(sessionHandle).isEmpty)
         }
       }
     }
